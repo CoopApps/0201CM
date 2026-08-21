@@ -133,8 +133,8 @@ impl App {
                 screens::dashboard(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *squad_scroll);
                 // Overlay the persistent menu bar (game_mbr / FUN_00745540) on
                 // top of the dashboard's own sidebar column.
-                if let Some(game) = self.game.as_ref() {
-                    let bar = cm_domain::menu::MenuBar::in_game(&game.save);
+                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                    let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
                     screens::menu_sidebar(
                         &mut self.frame, &mut self.fonts, &bar, self.menu_open, &game.save.date,
                     );
@@ -180,8 +180,8 @@ impl App {
         // The persistent menu bar (sidebar) is global on in-game screens and
         // takes clicks before the screen's own controls. Handle it first.
         if matches!(self.screen, Screen::Dashboard { .. }) {
-            if let Some(game) = self.game.as_ref() {
-                let bar = cm_domain::menu::MenuBar::in_game(&game.save);
+            if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
                 match screens::menu_sidebar_hit(&bar, self.menu_open, x, y) {
                     Some(screens::SidebarHit::Top(i)) => {
                         // Toggle the drop-down; a direct-action top-level fires
@@ -906,7 +906,7 @@ fn dump(path: &str, which: &str) {
                     }
                     if let Some(view) = world.dashboard_for(&save, h) {
                         screens::dashboard(&mut frame, &mut fonts, bg.as_ref(), &view, 0);
-                        let bar = cm_domain::menu::MenuBar::in_game(&save);
+                        let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
                         // Open a drop-down for the screenshot if CM_MENU_OPEN=N.
                         let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
                         screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date);

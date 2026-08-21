@@ -14258,6 +14258,26 @@ impl World {
     /// Assemble the dashboard the active human sees (port of FUN_00454620 +
     /// draw FUN_004551c0). If they manage a club → a `ClubDashboard`; if
     /// unemployed → the manager-status / job view.
+    /// Primary name of a club by id (for menu labels like "Pro Vercelli Squad").
+    pub fn club_name(&self, club_id: u32) -> Option<String> {
+        self.core
+            .clubs
+            .iter()
+            .map(|r| crate::typed_records::ClubView::new(r))
+            .find(|v| v.id() == club_id)
+            .map(|v| v.primary_name())
+    }
+
+    /// Primary name of a nation by id.
+    pub fn nation_name(&self, nation_id: u32) -> Option<String> {
+        self.core
+            .nations
+            .iter()
+            .map(|r| crate::typed_records::NationView::new(r))
+            .find(|v| v.id() == nation_id)
+            .map(|v| v.primary_name())
+    }
+
     pub fn dashboard_for(&self, save: &RuntimeSaveGame, human: usize) -> Option<DashboardView> {
         let h = save.humans.get(human)?;
         let name = h.identity.display_name();

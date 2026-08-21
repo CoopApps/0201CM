@@ -129,10 +129,10 @@ impl MenuBar {
     /// active human of `save`. Item presence follows the same gates the exe
     /// applies: nation items only when the human holds a nation job, club
     /// items only when they hold a club, resign items only when appointed.
-    pub fn in_game(save: &RuntimeSaveGame) -> Self {
+    pub fn in_game(world: &crate::World, save: &RuntimeSaveGame) -> Self {
         let human = save.humans.get(save.active_human);
-        let has_club = human.map(|h| h.club.is_some()).unwrap_or(false);
-        let has_nation = human.map(|h| h.nation.is_some()).unwrap_or(false);
+        let has_club = human.and_then(|h| h.club).is_some();
+        let has_nation = human.and_then(|h| h.nation).is_some();
         let appointed = has_club || has_nation;
         // Manager Options is labelled with the manager's own name once
         // appointed (the exe's FUN_005276f0 into the header), else the generic
@@ -141,6 +141,16 @@ impl MenuBar {
             Some(h) if appointed => h.identity.display_name(),
             _ => "Manager Options".to_string(),
         };
+        // Resolve the appointed club / nation names so the squad items read
+        // "<Club> Squad" / "<Nation> Squad" exactly as the exe does.
+        let club_name = human
+            .and_then(|h| h.club)
+            .and_then(|id| world.club_name(id))
+            .unwrap_or_else(|| "Club".to_string());
+        let nation_name = human
+            .and_then(|h| h.nation)
+            .and_then(|id| world.nation_name(id))
+            .unwrap_or_else(|| "Nation".to_string());
         let multi_human = save.humans.len() > 1;
 
         let mut menus = Vec::new();
@@ -151,21 +161,25 @@ impl MenuBar {
         // ---- Manager Options (labelled with the manager's name) ----
         let mut mo = Vec::new();
         if has_nation {
-            mo.push(MenuItem::new("Nation Squad", cmd::SQUAD, true));
-            mo.push(MenuItem::new("Nation U21 Squad", cmd::SQUAD, true));
+            mo.push(MenuItem::new(&format!("{nation_name} Squad"), cmd::SQUAD, true));
+            mo.push(MenuItem::new(&format!("{nation_name} U21 Squad"), cmd::SQUAD, true));
             mo.push(MenuItem::new("Control All Teams", cmd::CONTROL_ALL_TEAMS, true));
             mo.push(MenuItem::new("FA Confidence", cmd::FA_CONFIDENCE, true));
-            mo.push(MenuItem::new("Resign from Nation", cmd::RESIGN_FROM_NATION, true).sep());
+            mo.push(MenuItem::new("Resign from Nation", cmd::RESIGN_FROM_NATION, true));
         }
         if has_club {
-            mo.push(MenuItem::new("Club Squad", cmd::SQUAD, true));
-            mo.push(MenuItem::new("Club Reserves", cmd::B_SQUAD, true));
+            // Divider between the nation block and the club block, when both show.
+            let squad = MenuItem::new(&format!("{club_name} Squad"), cmd::SQUAD, true);
+            mo.push(if has_nation { squad.sep() } else { squad });
+            mo.push(MenuItem::new(&format!("{club_name} Reserves"), cmd::B_SQUAD, true));
             mo.push(MenuItem::new("Control Reserve Team", cmd::CONTROL_RESERVE, true));
             mo.push(MenuItem::new("Board Confidence", cmd::BOARD_CONFIDENCE, true));
-            mo.push(MenuItem::new("Resign from Club", cmd::RESIGN_FROM_CLUB, true).sep());
+            mo.push(MenuItem::new("Resign from Club", cmd::RESIGN_FROM_CLUB, true));
         }
         // Always-present manager tools (the exe shows them even when unemployed).
-        mo.push(MenuItem::new("News", cmd::NEWS, true));
+        // A separator divides the appointment items from the tools.
+        let news = MenuItem::new("News", cmd::NEWS, true);
+        mo.push(if appointed { news.sep() } else { news });
         mo.push(MenuItem::new("Player & Staff Search", cmd::PLAYER_STAFF_SEARCH, true));
         mo.push(MenuItem::new("Compare two chosen players", cmd::COMPARE_PLAYERS, true));
         mo.push(MenuItem::new("Manager Stats", cmd::MANAGER_STATS, true));
