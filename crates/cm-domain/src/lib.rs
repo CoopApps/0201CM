@@ -499,15 +499,36 @@ pub fn weekday(year: u16, month: u8, day: u8) -> u8 {
     (((y + y / 4 - y / 100 + y / 400 + T[m - 1] + day as i32) % 7) as u8).min(6)
 }
 
-/// Format a game date the way the news list does: "Wed 10 Jul".
-pub fn news_date_label(d: &GameDate) -> String {
+/// English ordinal suffix for a day-of-month (1st, 2nd, 3rd, 4th…).
+pub fn day_ordinal(day: u8) -> &'static str {
+    match (day % 10, day % 100) {
+        (1, 11) | (2, 12) | (3, 13) => "th",
+        (1, _) => "st",
+        (2, _) => "nd",
+        (3, _) => "rd",
+        _ => "th",
+    }
+}
+
+/// The three intra-day phases the game stamps on the clock and on news
+/// (`DAT_00acde88`): morning / afternoon / evening.
+pub fn phase_label(phase: u8) -> &'static str {
+    match phase % 3 {
+        0 => "AM",
+        1 => "PM",
+        _ => "EVE",
+    }
+}
+
+/// Format a game date the way the news list does: "Tue 7th Aug PM".
+pub fn news_date_label(d: &GameDate, phase: u8) -> String {
     const WD: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const MON: [&str; 12] = [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
     let wd = WD[weekday(d.year, d.month, d.day) as usize];
     let mon = MON[(d.month.clamp(1, 12) - 1) as usize];
-    format!("{wd} {} {mon}", d.day)
+    format!("{wd} {}{} {mon} {}", d.day, day_ordinal(d.day), phase_label(phase))
 }
 
 /// A human manager's typed name (Enter Name screen fields).
@@ -10750,6 +10771,15 @@ pub struct RuntimeEvent {
     pub date: GameDate,
     pub kind: String,
     pub message: String,
+    /// Intra-day phase the event occurred in (0=AM,1=PM,2=EVE), stamped from
+    /// the clock's `DAT_00acde88` when the event was generated. Defaults to
+    /// evening for older saves that predate the field.
+    #[serde(default = "default_event_phase")]
+    pub phase: u8,
+}
+
+fn default_event_phase() -> u8 {
+    2
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -11756,6 +11786,7 @@ impl World {
                 },
                 kind: "season-start".to_string(),
                 message: "Rust-native game created from canonical rust-db.".to_string(),
+                phase: 0,
             }],
             phase_trace: Vec::new(),
             table_counts: RuntimeTableCounts {
@@ -14468,7 +14499,7 @@ impl World {
                 };
                 NewsItem {
                     date: e.date.clone(),
-                    date_label: news_date_label(&e.date),
+                    date_label: news_date_label(&e.date, e.phase),
                     headline,
                     body,
                     category: NewsCategory::from_kind(&e.kind),
@@ -14497,7 +14528,7 @@ impl World {
             };
             items.push(NewsItem {
                 date: save.date.clone(),
-                date_label: news_date_label(&save.date),
+                date_label: news_date_label(&save.date, 0),
                 headline,
                 body,
                 category: NewsCategory::Message,
@@ -15286,6 +15317,9 @@ impl RuntimeSaveGame {
                 date: date.clone(),
                 kind: report.news_kind,
                 message: format!("{} - {}", report.headline, report.summary),
+                // Match results land in the evening phase (this batch runs when
+                // the tick's phase_before == 2).
+                phase: 2,
             });
         }
         self.sort_headless_standings();

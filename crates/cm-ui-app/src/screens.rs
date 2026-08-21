@@ -392,11 +392,12 @@ pub fn news(
                 F_SOLID_FILL, pal.banner_red,
             );
         }
-        // Date cell (blue background).
+        // Date cell (blue background) — narrow font so "Tue 7th Aug EVE" fits.
         s.draw_panel(lo.col_left[0], lo.row_top[row], lo.col_right[0], lo.row_bottom[row], F_SOLID_FILL, pal.btn_blue);
-        let f = fonts.slot(3);
-        s.draw_text_box(lo.col_left[0] + 4, lo.row_top[row], lo.col_right[0], lo.row_bottom[row], 0x1, f, pal.near_white, &item.date_label);
+        let fd = fonts.slot(1);
+        s.draw_text_box(lo.col_left[0] + 4, lo.row_top[row], lo.col_right[0], lo.row_bottom[row], 0x1, fd, pal.near_white, &item.date_label);
         // Headline cell.
+        let f = fonts.slot(3);
         let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
         s.draw_text_box(lo.col_left[1] + 6, lo.row_top[row], lo.col_right[1], lo.row_bottom[row], 0x1, f, ink, &item.headline);
     }
@@ -451,7 +452,9 @@ fn draw_tab_strip(
         s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
         let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
         if let Some(label) = labels.get(i) {
-            let f = fonts.slot(3);
+            // Tabs use the narrow font (FUN_005d7070 font=1, arial_narrow_10) so
+            // long labels like "Contracts and Media" fit the cell.
+            let f = fonts.slot(1);
             s.draw_text_box(l, t, r, b, 0, f, ink, label);
         }
         if is_sel {
@@ -654,7 +657,9 @@ pub fn menu_sidebar(
                     if item.separator_before && j > 0 {
                         s.draw_panel(x0 + 4, iy, x1 - 4, iy + 1, F_TRANSPARENT | F_BEVEL, pal.grey);
                     }
-                    let ink = if item.enabled { pal.near_white } else { (120, 120, 120) };
+                    // Menu items render in yellow (the game's menu-item ink);
+                    // disabled items are greyed.
+                    let ink = if item.enabled { pal.highlight_fg } else { (120, 120, 120) };
                     s.draw_text_box(x0 + 8, iy, x1 - 6, iy + MENU_ITEM_H, 0x1, f, ink, &item.label);
                 }
             }
