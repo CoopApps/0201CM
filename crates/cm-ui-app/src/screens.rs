@@ -286,18 +286,46 @@ pub enum NewsClick {
     Next,
 }
 
-const NEWS_LIST: (i32, i32, i32, i32) = (92, 118, 792, 300);
+// ── EXACT geometry, emulated from the news draw callback 0x00770170 via
+//    tools/capture_news.py (the binary computing its own coordinates). Every
+//    rect below cites the construction site it came from. ──
+/// Title banner: area #1 (100,10,790,70) flags 0x30; text inner area #2
+/// (100,25,790,55).
+const NEWS_BANNER: (i32, i32, i32, i32) = (100, 10, 790, 70);
+/// Top filter-tab strip: `FUN_005d7070` at x 100..790 (0x64..0x316), row height
+/// 0x23=35, top_y=80 (emulated). 4 tabs top, 4 bottom (count=8, split).
+const NEWS_TOP_TABS: (i32, i32, i32, i32) = (100, 80, 790, 115);
+/// Bottom tab strip: same builder, bot_y=545 → row 510..545.
+const NEWS_BOTTOM_TABS_RECT: (i32, i32, i32, i32) = (100, 510, 790, 545);
+/// News list: area at 0x7706e9, x 110..780 (0x6e..0x30c), 2 cols; top_y after
+/// the tab strip advanced (+0x2d)=125, height 0x5a=90.
+const NEWS_LIST: (i32, i32, i32, i32) = (110, 125, 780, 215);
+/// Filter area: 0x770e1a, x 405..655 (0x195..0x28f); T = list_top+0x5f, B = T+0x14.
+const NEWS_FILTER: (i32, i32, i32, i32) = (405, 220, 655, 240);
+/// "Next Unread": item 0x770f7c, x 655..780.
+const NEWS_NEXT_UNREAD: (i32, i32, i32, i32) = (655, 220, 780, 245);
+/// Selected-item body: areas 0x770fb9/0x771067, x 110..780, below the filter row.
+const NEWS_BODY_TOP: i32 = 250;
+/// Bottom Back/Next bar: `FUN_005d75b0` area (100,555,790,590), cols [3,1].
+const NEWS_NAV: (i32, i32, i32, i32) = (100, 555, 790, 590);
+
 pub const NEWS_ROWS_VISIBLE: usize = 5;
 const NEWS_BOTTOM_TABS: [&str; 4] = ["Contracts and Media", "Transfers", "Jobs", "Records"];
 
-fn news_tab_rects() -> [(i32, i32, i32, i32); 4] {
-    let lo = rebuild_layout((92, 78, 792, 112), 1, &[1, 1, 1, 1], &[1], false);
-    [lo.cell(0, 0), lo.cell(1, 0), lo.cell(2, 0), lo.cell(3, 0)]
+/// Contiguous N-column strip within `rect` (the layout engine's own 2px gutter,
+/// matching `FUN_005d7070`'s split area).
+fn strip_cells(rect: (i32, i32, i32, i32), n: usize) -> Vec<(i32, i32, i32, i32)> {
+    let weights = vec![1; n];
+    let lo = rebuild_layout(rect, 2, &weights, &[1], false);
+    (0..n).map(|i| lo.cell(i, 0)).collect()
 }
 
-fn news_bottom_tab_rects() -> [(i32, i32, i32, i32); 4] {
-    let lo = rebuild_layout((92, 505, 792, 540), 1, &[1, 1, 1, 1], &[1], false);
-    [lo.cell(0, 0), lo.cell(1, 0), lo.cell(2, 0), lo.cell(3, 0)]
+fn news_tab_rects() -> Vec<(i32, i32, i32, i32)> {
+    strip_cells(NEWS_TOP_TABS, 4)
+}
+
+fn news_bottom_tab_rects() -> Vec<(i32, i32, i32, i32)> {
+    strip_cells(NEWS_BOTTOM_TABS_RECT, 4)
 }
 
 fn news_row_layout() -> cm_render::layout::Layout {
@@ -335,25 +363,23 @@ pub fn news(
     }
     // Sidebar column (menu bar overlays this in render()).
     s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
-    // Title banner — white with dark text, "<Manager> News".
-    s.draw_panel(92, 10, 792, 70, F_SOLID_FILL | F_BEVEL, (231, 227, 231));
+    // Title banner — white bevel, dark-blue title text (area #1/#2).
+    let (bl, bt, br, bb) = NEWS_BANNER;
+    s.draw_panel(bl, bt, br, bb, F_SOLID_FILL | F_BEVEL, (231, 227, 231));
     {
         let f = fonts.slot(7);
-        s.draw_text_box(92, 10, 792, 70, 0, f, (0, 0, 90), &view.title);
+        s.draw_text_box(bl, bt + 15, br, bb - 15, 0, f, (0, 0, 90), &view.title);
     }
-    // Filter tabs.
-    for (i, rect) in news_tab_rects().iter().enumerate() {
-        let (l, t, r, b) = *rect;
-        let is_sel = NewsTab::ALL[i] == tab;
-        let col = if is_sel { pal.btn_blue } else { pal.grey };
-        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, col);
-        let f = fonts.slot(3);
-        let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
-        s.draw_text_box(l, t, r, b, 0, f, ink, NewsTab::ALL[i].label());
-    }
+    // Top filter-tab strip + bottom action-tab strip.
+    draw_tab_strip(s, fonts, &news_tab_rects(),
+        &NewsTab::ALL.iter().map(|t| t.label()).collect::<Vec<_>>(),
+        NewsTab::ALL.iter().position(|t| *t == tab), &pal);
+    draw_tab_strip(s, fonts, &news_bottom_tab_rects(), &NEWS_BOTTOM_TABS, None, &pal);
+
     // News list.
+    let _ = F_TRANSPARENT;
+    let _ = F_VGRADIENT;
     let visible = news_visible(view, tab);
-    s.draw_panel(NEWS_LIST.0, NEWS_LIST.1, NEWS_LIST.2, NEWS_LIST.3, F_TRANSPARENT, (40, 40, 40));
     let lo = news_row_layout();
     for row in 0..NEWS_ROWS_VISIBLE {
         let Some(&item_ix) = visible.get(scroll + row) else { break };
@@ -374,45 +400,58 @@ pub fn news(
         let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
         s.draw_text_box(lo.col_left[1] + 6, lo.row_top[row], lo.col_right[1], lo.row_bottom[row], 0x1, f, ink, &item.headline);
     }
-    // Scrollbar.
-    if visible.len() > NEWS_ROWS_VISIBLE {
-        let tl = NEWS_LIST.2 - 12;
-        s.draw_panel(tl, NEWS_LIST.1, NEWS_LIST.2, NEWS_LIST.3, F_SOLID_FILL | F_BEVEL, pal.grey);
-    }
-    // Filter + Next Unread row.
+    // Filter row (x 405..655) + Next Unread (x 655..780).
     {
         let f = fonts.slot(3);
-        s.draw_text_box(92, 306, 300, 332, 0x1, f, pal.near_white, "Filter:");
-        s.draw_panel(600, 306, 792, 332, F_SOLID_FILL | F_BEVEL, pal.grey);
-        s.draw_text_box(600, 306, 792, 332, 0, f, pal.near_white, "Next Unread");
+        s.draw_text_box(NEWS_FILTER.0, NEWS_FILTER.1, NEWS_FILTER.0 + 70, NEWS_FILTER.3, 0x1, f, pal.near_white, "Filter :");
+        s.draw_panel(NEWS_FILTER.0 + 74, NEWS_FILTER.1, NEWS_FILTER.2, NEWS_FILTER.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let (nl, nt, nr, nb) = NEWS_NEXT_UNREAD;
+        s.draw_panel(nl, nt, nr, nb, F_SOLID_FILL | F_BEVEL, pal.grey);
+        s.draw_text_box(nl, nt, nr, nb, 0, f, pal.near_white, "Next Unread");
     }
     // Selected item body.
     if let Some(item) = view.items.get(selected) {
         let f6 = fonts.slot(6);
-        s.draw_text_box(92, 340, 792, 380, 0, f6, pal.highlight_fg, &item.headline);
+        s.draw_text_box(110, NEWS_BODY_TOP, 780, NEWS_BODY_TOP + 34, 0, f6, pal.highlight_fg, &item.headline);
         let f3 = fonts.slot(3);
-        // Wrap the body across the content width.
-        let lines = wrap_lines(f3, &item.body, NEWS_LIST.2 - NEWS_LIST.0 - 16);
-        let mut y = 390;
-        for line in lines.iter().take(6) {
-            s.draw_text_box(100, y, 784, y + 22, 0x1, f3, pal.near_white, line);
+        let lines = wrap_lines(f3, &item.body, 780 - 110 - 12);
+        let mut y = NEWS_BODY_TOP + 42;
+        for line in lines.iter().take(9) {
+            s.draw_text_box(110, y, 780, y + 22, 0x1, f3, pal.near_white, line);
             y += 22;
         }
     }
-    // Bottom tabs.
-    for (i, rect) in news_bottom_tab_rects().iter().enumerate() {
-        let (l, t, r, b) = *rect;
-        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
-        let f = fonts.slot(3);
-        s.draw_text_box(l, t, r, b, 0, f, pal.near_white, NEWS_BOTTOM_TABS[i]);
-    }
-    // Back / Next.
-    let nav = rebuild_layout((92, 550, 792, 585), 1, &[1, 1], &[1], false);
+    // Back / Next bar (cols [3,1] — Back wide, Next narrow).
+    let nav = rebuild_layout(NEWS_NAV, 1, &[3, 1], &[1], false);
     let bf = fonts.slot(3);
     for (rect, label) in [(nav.cell(0, 0), "Back"), (nav.cell(1, 0), "Next")] {
         let (l, t, r, b) = rect;
         s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
         s.draw_text_box(l, t, r, b, 0, bf, pal.near_white, label);
+    }
+}
+
+/// Draw a horizontal tab strip: contiguous bevelled cells (`FUN_005d7070`'s
+/// 0x30 tabs). The selected tab (if any) takes the highlight ink; the rest read
+/// as inactive tabs. Not standalone buttons — a single connected strip.
+fn draw_tab_strip(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    cells: &[(i32, i32, i32, i32)],
+    labels: &[&str],
+    selected: Option<usize>,
+    pal: &cm_widget::Palette,
+) {
+    for (i, &(l, t, r, b)) in cells.iter().enumerate() {
+        let is_sel = selected == Some(i);
+        // Selected tab: lighter fill that connects to the content; others darker.
+        let fill = if is_sel { pal.btn_blue } else { pal.grey };
+        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, fill);
+        let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
+        if let Some(label) = labels.get(i) {
+            let f = fonts.slot(3);
+            s.draw_text_box(l, t, r, b, 0, f, ink, label);
+        }
     }
 }
 
@@ -439,7 +478,7 @@ pub fn news_hit(x: i32, y: i32, view: &cm_domain::NewsView, scroll: usize, tab: 
             return Some(NewsClick::BottomTab(i));
         }
     }
-    let nav = rebuild_layout((92, 550, 792, 585), 1, &[1, 1], &[1], false);
+    let nav = rebuild_layout(NEWS_NAV, 1, &[3, 1], &[1], false);
     let (bl, bt, br, bb) = nav.cell(0, 0);
     if x >= bl && x <= br && y >= bt && y <= bb {
         return Some(NewsClick::Back);
@@ -485,6 +524,28 @@ fn menu_top_rect(i: usize) -> (i32, i32, i32, i32) {
 /// The two nav-arrow rects (◀ prev, ▶ next).
 fn menu_nav_rects() -> [(i32, i32, i32, i32); 2] {
     [(4, 60, 43, 86), (46, 60, 85, 86)]
+}
+
+/// Draw a horizontal filled triangle centred in `rect` — left-pointing when
+/// `left`, else right-pointing. Built from stacked horizontal spans.
+fn draw_triangle(s: &mut Surface, rect: (i32, i32, i32, i32), left: bool, rgb: (u8, u8, u8)) {
+    let (l, t, r, b) = rect;
+    let hh = (((b - t).min(r - l)) / 2 - 3).max(4); // half-height = half-width
+    let cx = (l + r) / 2;
+    let cy = (t + b) / 2;
+    for dy in -hh..=hh {
+        // Horizontal extent is widest at the vertical centre, tapering to the
+        // point at top and bottom. Flat side on the base, point toward `left`.
+        let w = hh - dy.abs(); // 0..hh
+        let (x0, x1) = if left {
+            let xr = cx + hh / 2; // flat right base
+            (xr - w, xr)
+        } else {
+            let xl = cx - hh / 2; // flat left base
+            (xl, xl + w)
+        };
+        s.fill_rect(x0, cy + dy, x1 + 1, cy + dy + 1, rgb);
+    }
 }
 
 /// Greedy word-wrap of `text` to at most `max_w` px using font `f`, returning
@@ -548,13 +609,13 @@ pub fn menu_sidebar(
         s.draw_text_box(2, 6, SIDEBAR.2 - 2, 26, 0, f, pal.highlight_fg, &format!("{} {}", date.day, month_name(date.month)));
         s.draw_text_box(2, 26, SIDEBAR.2 - 2, 46, 0, f, pal.near_white, &format!("{}", date.year));
     }
-    // ◀ ▶ nav arrows.
+    // ◀ ▶ nav arrows — bevelled buttons with a filled triangle (the game.mbr
+    // sidebar chrome draws triangle glyphs, not the ASCII "<"/">").
     {
-        let f = fonts.slot(3);
-        for (rect, glyph) in menu_nav_rects().iter().zip(["<", ">"]) {
-            let (l, t, r, b) = *rect;
+        let rects = menu_nav_rects();
+        for (i, &(l, t, r, b)) in rects.iter().enumerate() {
             s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
-            s.draw_text_box(l, t, r, b, 0, f, pal.near_white, glyph);
+            draw_triangle(s, (l, t, r, b), i == 0, pal.near_white);
         }
     }
     // Top-level entries.
