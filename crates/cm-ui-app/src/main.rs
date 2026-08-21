@@ -332,6 +332,36 @@ impl App {
         }
     }
 
+    /// Continue — advance the game one calendar day (the exe's FUN_005b6a90
+    /// driver, three phases per day: build+play the day's matches, dispatch the
+    /// subsystems, roll the calendar via the add-days primitive FUN_00536190).
+    /// Completing any part of a day dirties the game, so the quit guard now
+    /// refuses to close without a save.
+    fn advance_active_day(&mut self) {
+        let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_mut()) else {
+            return;
+        };
+        let before = game.save.date.clone();
+        game.save.tick_days(1);
+        game.dirty = true;
+        eprintln!(
+            "[tick] {} -> {} ({} days elapsed)",
+            before.iso(),
+            game.save.date.iso(),
+            game.save.elapsed_days
+        );
+        // Rebuild the active human's dashboard so the moved date, resolved
+        // fixtures, and updated standings show.
+        let human = game.save.active_human;
+        if let Some(view) = world.dashboard_for(&game.save, human) {
+            let squad_scroll = match &self.screen {
+                Screen::Dashboard { squad_scroll, .. } => *squad_scroll,
+                _ => 0,
+            };
+            self.screen = Screen::Dashboard { view, squad_scroll };
+        }
+    }
+
     /// Build the Select Club pick list from the current game's chosen country
     /// (its manageable divisions) and advance to that screen.
     fn goto_select_club(&mut self) {
@@ -412,15 +442,22 @@ impl App {
                     }
                 }
             }
+        } else if matches!(self.screen, Screen::Dashboard { .. }) {
+            // Continue = advance one day (Enter or Space, matching the exe's
+            // Continue button and spacebar shortcut).
+            if matches!(named, Some(NamedKeyAction::Continue)) || ch == Some(' ') {
+                self.advance_active_day();
+            }
         }
     }
 }
 
-/// Named (non-character) keys the Enter Name screen reacts to.
+/// Named (non-character) keys the app reacts to outside plain text entry.
 #[derive(Debug, Clone, Copy)]
 enum NamedKeyAction {
     Backspace,
     Tab,
+    Continue,
 }
 
 /// Build the picker choices into NewGameOptions (the exe's accumulated
@@ -567,6 +604,7 @@ impl ApplicationHandler for App {
                 let named = match &key_event.logical_key {
                     Key::Named(NamedKey::Backspace) => Some(NamedKeyAction::Backspace),
                     Key::Named(NamedKey::Tab) => Some(NamedKeyAction::Tab),
+                    Key::Named(NamedKey::Enter) => Some(NamedKeyAction::Continue),
                     _ => None,
                 };
                 // Character text (letters, space, punctuation) from the key.
@@ -739,6 +777,11 @@ fn dump(path: &str, which: &str) {
                     });
                     save.install_manager_at_club(h, 676, Some(60)); // Arsenal
                     save.switch_active(h);
+                    // Optional: advance N days to verify the tick (CM_ADV_DAYS).
+                    if let Ok(n) = std::env::var("CM_ADV_DAYS").unwrap_or_default().parse::<u32>() {
+                        save.tick_days(n);
+                        eprintln!("[dump] advanced {n} days -> {}", save.date.iso());
+                    }
                     if let Some(view) = world.dashboard_for(&save, h) {
                         screens::dashboard(&mut frame, &mut fonts, bg.as_ref(), &view, 0);
                     }

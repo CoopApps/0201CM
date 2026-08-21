@@ -216,6 +216,11 @@ pub fn dashboard(
                 let tt = DASH_SQUAD.1 + (squad_scroll as i32) * (h - th) / maxs.max(1);
                 s.draw_panel(tl + 1, tt, DASH_SQUAD.2 - 1, (tt + th).min(DASH_SQUAD.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
             }
+            // Continue hint (the exe's Continue button / spacebar advances a day).
+            s.draw_text_box(
+                110, DASH_SQUAD.3 + 6, 780, DASH_SQUAD.3 + 34, 0x1, f3, (170, 170, 170),
+                "Press Enter or Space to Continue (advance one day)",
+            );
         }
     }
 }
