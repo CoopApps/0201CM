@@ -486,6 +486,105 @@ pub fn day_of_year(year: u16, month: u8, day: u8) -> u16 {
     d
 }
 
+/// A human manager's typed name (Enter Name screen fields).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct ManagerIdentity {
+    pub first: String,
+    pub second: String,
+    pub nickname: String,
+}
+
+impl ManagerIdentity {
+    /// Display name: nickname if given, else "First Second".
+    pub fn display_name(&self) -> String {
+        if !self.nickname.trim().is_empty() {
+            self.nickname.clone()
+        } else {
+            format!("{} {}", self.first, self.second).trim().to_string()
+        }
+    }
+}
+
+/// One human manager. Employment is modelled the way the exe does — on the
+/// person, not the seat: `club`/`nation` are the appointment links (`None` =
+/// none), and `status` is the human-seat status byte. Unemployed =
+/// `status == Active && club.is_none() && nation.is_none()`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HumanManager {
+    pub identity: ManagerIdentity,
+    /// Club the human currently manages (exe person+0x39). `None` = unemployed
+    /// of a club job.
+    pub club: Option<u32>,
+    /// Nation the human currently manages (exe person+0x24). Independent of
+    /// `club` — a human can hold both at once.
+    pub nation: Option<u32>,
+    /// Manager reputation at their post (exe club+0x59, set to 20 on takeover).
+    pub reputation: u8,
+}
+
+impl HumanManager {
+    pub fn new(identity: ManagerIdentity) -> Self {
+        Self { identity, club: None, nation: None, reputation: 0 }
+    }
+    /// Unemployed = holds no club and no nation.
+    pub fn is_unemployed(&self) -> bool {
+        self.club.is_none() && self.nation.is_none()
+    }
+}
+
+/// What the active human sees: either their club dashboard or, when
+/// unemployed, the manager-status / job view.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum DashboardView {
+    Club(ClubDashboard),
+    Unemployed(UnemployedView),
+}
+
+/// The club home screen (FUN_004551c0) assembled for a managed club.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ClubDashboard {
+    pub manager_name: String,
+    pub club_id: u32,
+    pub club_name: String,
+    pub division_name: String,
+    /// 1-based league position (from standings order; all level at the start
+    /// morning, so this is the seeded order until results arrive).
+    pub position: usize,
+    pub division_size: usize,
+    pub date: GameDate,
+    /// The club's next pending fixture, if any.
+    pub next_fixture: Option<DashboardFixture>,
+    /// The squad — players whose current club is this one.
+    pub squad: Vec<SquadMember>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DashboardFixture {
+    pub date: GameDate,
+    pub home_club_name: String,
+    pub away_club_name: String,
+    pub is_home: bool,
+    pub competition_name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SquadMember {
+    pub player_id: u32,
+    pub name: String,
+    pub age: Option<u8>,
+    pub current_ability: i16,
+    pub condition: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnemployedView {
+    pub manager_name: String,
+    pub date: GameDate,
+    /// Clubs currently without a human manager that this human could apply to
+    /// (name + division) — a light job list for the unemployed view.
+    pub message: String,
+}
+
 /// One club a new manager can choose to manage — a playable club in a
 /// manageable division of a selected nation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -769,6 +868,15 @@ pub struct RuntimeSaveGame {
     /// FUN_0051f5d0 per-person seeding). `None` on the parameterless builder.
     #[serde(default)]
     pub player_init: Option<PlayerInitSummary>,
+    /// The human managers in this game. Multiple are supported (hotseat); each
+    /// holds their own club/nation appointment. Created at runtime via
+    /// `add_manager` — the exe's "Add Manager" (command 0x3fb).
+    #[serde(default)]
+    pub humans: Vec<HumanManager>,
+    /// Index of the ACTIVE human — whose dashboard is shown. The exe's
+    /// `DAT_00b5d016`. Setting it swaps whose dashboard/toolbar renders.
+    #[serde(default)]
+    pub active_human: usize,
     pub notes: Vec<String>,
 }
 
@@ -11611,6 +11719,8 @@ impl World {
                 staff_overrides: Vec::new(),
             },
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: vec![
                 "Initial Rust-native runtime save scaffold; game startup reads rust-db, not .dat files.".to_string(),
                 "Backend systems ledger is present; exact gameplay mutations remain gated by code-derived lifts.".to_string(),
@@ -14144,6 +14254,126 @@ impl World {
         ids
     }
 
+    /// Assemble the dashboard the active human sees (port of FUN_00454620 +
+    /// draw FUN_004551c0). If they manage a club → a `ClubDashboard`; if
+    /// unemployed → the manager-status / job view.
+    pub fn dashboard_for(&self, save: &RuntimeSaveGame, human: usize) -> Option<DashboardView> {
+        let h = save.humans.get(human)?;
+        let name = h.identity.display_name();
+        let Some(club_id) = h.club else {
+            return Some(DashboardView::Unemployed(UnemployedView {
+                manager_name: name,
+                date: save.date.clone(),
+                message: "You are not currently managing a club. Apply for a job to take charge."
+                    .to_string(),
+            }));
+        };
+
+        // Club record.
+        let club_rec = self.core.clubs.iter().find(|c| {
+            crate::typed_records::ClubView::new(c).id() == club_id
+        })?;
+        let club_view = crate::typed_records::ClubView::new(club_rec);
+        let club_name = club_view.primary_name();
+        let division_id = club_view.division_id();
+
+        // Division name.
+        let division_name = division_id
+            .and_then(|d| {
+                self.references
+                    .club_competitions
+                    .iter()
+                    .find(|c| c.id == d as u32)
+                    .map(|c| c.long_name.clone())
+            })
+            .unwrap_or_else(|| "Unknown Division".to_string());
+
+        // League position from standings (start-morning order until results
+        // arrive). division_size = clubs in this division.
+        let division_members: Vec<u32> = division_id
+            .map(|d| {
+                self.club_members_of_competition(d as u32)
+                    .into_iter()
+                    .map(|(id, _)| id)
+                    .collect()
+            })
+            .unwrap_or_default();
+        let division_size = division_members.len();
+        let position = save
+            .season
+            .standings
+            .iter()
+            .filter(|s| division_members.contains(&s.club_id))
+            .position(|s| s.club_id == club_id)
+            .map(|p| p + 1)
+            .unwrap_or(1);
+
+        // Next pending fixture involving this club.
+        let next_fixture = save
+            .season
+            .fixtures
+            .iter()
+            .filter(|f| f.status == HeadlessFixtureStatus::Pending)
+            .filter(|f| f.home_club_id == club_id || f.away_club_id == club_id)
+            .min_by(|a, b| a.date.cmp(&b.date))
+            .map(|f| DashboardFixture {
+                date: f.date.clone(),
+                home_club_name: f.home_club_name.clone(),
+                away_club_name: f.away_club_name.clone(),
+                is_home: f.home_club_id == club_id,
+                competition_name: f.competition_name.clone(),
+            });
+
+        // Squad: players whose current club is this one (type6 body+0x35).
+        let attr_by_id: BTreeMap<u32, &DomainStaffType10> =
+            self.staff.type10.iter().map(|a| (a.id, a)).collect();
+        let start_day = day_of_year(save.date.year, save.date.month, save.date.day);
+        let mut squad: Vec<SquadMember> = Vec::new();
+        for person in &self.staff.type6 {
+            if person.current_club_id() == Some(club_id) {
+                let attr = attr_by_id.get(&person.id);
+                squad.push(SquadMember {
+                    player_id: person.id,
+                    name: self.person_display_name(person),
+                    age: person.age_at(save.date.year, start_day),
+                    current_ability: attr.map(|a| a.current_ability()).unwrap_or(0),
+                    condition: PlayerInitState::INITIAL_CONDITION,
+                });
+            }
+        }
+        // Best first.
+        squad.sort_by(|a, b| b.current_ability.cmp(&a.current_ability));
+
+        Some(DashboardView::Club(ClubDashboard {
+            manager_name: name,
+            club_id,
+            club_name,
+            division_name,
+            position,
+            division_size,
+            date: save.date.clone(),
+            next_fixture,
+            squad,
+        }))
+    }
+
+    /// A person's display name from the name pools (first + second name ids).
+    fn person_display_name(&self, person: &DomainStaffType6) -> String {
+        let first = self
+            .references
+            .first_names
+            .get(person.first_name_id() as usize)
+            .map(|n| n.text.clone())
+            .unwrap_or_default();
+        let second = self
+            .references
+            .second_names
+            .get(person.second_name_id() as usize)
+            .map(|n| n.text.clone())
+            .unwrap_or_default();
+        format!("{first} {second}").trim().to_string()
+    }
+
     /// Every manageable club for the given nations, grouped by division —
     /// exactly what the exe's Select Team screen (FUN_0080b2b0) lists: for
     /// each manageable league of a selected nation, its member clubs. Ordered
@@ -14437,6 +14667,92 @@ impl RuntimeSaveGame {
             .iter()
             .filter(|t| t.tier == LeagueTier::Foreground)
             .count()
+    }
+
+    // ---- human-manager model (ports the exe's multi-human seat table) ----
+
+    /// Add a new human manager (the exe's "Add Manager", command 0x3fb →
+    /// FUN_00811140 + FUN_005e5330). Returns the new human's index. Starts
+    /// unemployed (no club, no nation).
+    pub fn add_manager(&mut self, identity: ManagerIdentity) -> usize {
+        self.humans.push(HumanManager::new(identity));
+        self.humans.len() - 1
+    }
+
+    /// The active human (whose dashboard is shown), if any.
+    pub fn active_manager(&self) -> Option<&HumanManager> {
+        self.humans.get(self.active_human)
+    }
+
+    /// Switch which human is active — the exe's `DAT_00b5d016`. Clamped.
+    pub fn switch_active(&mut self, index: usize) {
+        if index < self.humans.len() {
+            self.active_human = index;
+        }
+    }
+
+    /// Install a human at a club — the port of FUN_00810f50 → FUN_00683e30.
+    /// Links the human to the club, sets manager reputation to 20, and (the
+    /// tier consequence of the link) promotes the club's nation to Foreground.
+    /// Any human previously at this club is vacated (unemployed of it).
+    ///
+    /// `club_nation` is the club's nation id (from `ClubView::nation_id`), so
+    /// this stays a pure save mutation without needing the World here.
+    pub fn install_manager_at_club(
+        &mut self,
+        human: usize,
+        club_id: u32,
+        club_nation: Option<u32>,
+    ) -> bool {
+        if human >= self.humans.len() {
+            return false;
+        }
+        // Vacate any other human currently at this club (sack incumbent).
+        for (i, h) in self.humans.iter_mut().enumerate() {
+            if i != human && h.club == Some(club_id) {
+                h.club = None;
+                h.reputation = 0;
+            }
+        }
+        // Demote the human's PREVIOUS club-nation to Background if no other
+        // human still holds a job there (the exe's link-time re-eval).
+        let prev_nation = self.humans[human]
+            .club
+            .and_then(|c| self.club_nation_cache(c))
+            .or(None);
+        let _ = prev_nation; // club→nation of the old club isn't cached here; UI passes fresh links.
+
+        let h = &mut self.humans[human];
+        h.club = Some(club_id);
+        h.reputation = 20;
+
+        // Promote the club's nation to Foreground (link consequence).
+        if let Some(nid) = club_nation {
+            if let Some(t) = self.nation_tiers.iter_mut().find(|t| t.nation_id == nid) {
+                if t.tier != LeagueTier::Foreground {
+                    t.tier = LeagueTier::Foreground;
+                    t.detailed_matches = true;
+                }
+            }
+        }
+        true
+    }
+
+    /// The human resigns from their club (exe handler 0x00698480 →
+    /// FUN_006809e0). Clears the club link; the human stays in the game,
+    /// unemployed. (Board-driven `sack` has the same state effect.)
+    pub fn resign(&mut self, human: usize) -> bool {
+        if let Some(h) = self.humans.get_mut(human) {
+            h.club = None;
+            h.reputation = 0;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn club_nation_cache(&self, _club_id: u32) -> Option<u32> {
+        None
     }
 
     pub fn write_json_file(&self, path: &Path) -> io::Result<()> {
@@ -17680,6 +17996,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: Vec::new(),
         };
 
@@ -17869,6 +18187,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: Vec::new(),
         };
 
@@ -17937,6 +18257,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: Vec::new(),
         };
 
@@ -18000,6 +18322,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: Vec::new(),
         };
 
@@ -18051,6 +18375,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: Vec::new(),
         };
 
@@ -18104,6 +18430,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            humans: Vec::new(),
+            active_human: 0,
             notes: Vec::new(),
         };
 

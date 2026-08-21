@@ -118,6 +118,125 @@ pub fn enter_name(
     }
 }
 
+// ------- Club Dashboard -------
+
+/// The squad-list area on the dashboard and how many rows show at once.
+const DASH_SQUAD: (i32, i32, i32, i32) = (110, 250, 780, 535);
+pub const DASH_SQUAD_ROWS: usize = 11;
+
+fn dash_squad_layout() -> cm_render::layout::Layout {
+    rebuild_layout(DASH_SQUAD, 2, &[10, 3, 3, 3], &[1; DASH_SQUAD_ROWS as i32 as usize], false)
+}
+
+/// Render the club dashboard (or the unemployed view) — the game's home screen.
+pub fn dashboard(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    view: &cm_domain::DashboardView,
+    squad_scroll: usize,
+) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, pal.banner_red);
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+
+    match view {
+        cm_domain::DashboardView::Unemployed(u) => {
+            let f7 = fonts.slot(7);
+            s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, "Championship Manager 2001/02");
+            let f6 = fonts.slot(6);
+            s.draw_text_box(100, 80, 790, 125, 0, f6, pal.near_white, &format!("{} — Unemployed", u.manager_name));
+            let f3 = fonts.slot(3);
+            s.draw_text_box(120, 200, 780, 240, 0x1, f3, pal.near_white, &u.message);
+        }
+        cm_domain::DashboardView::Club(d) => {
+            // Banner shows the club name.
+            let f7 = fonts.slot(7);
+            s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, &d.club_name);
+            // Sub-heading: division + position + manager + date.
+            let f4 = fonts.slot(4);
+            s.draw_text_box(
+                110, 78, 780, 108, 0x1, f4, pal.near_white,
+                &format!("{}  —  {}{} of {}", d.division_name, ordinal(d.position), "", d.division_size),
+            );
+            let f3 = fonts.slot(3);
+            s.draw_text_box(
+                110, 110, 780, 138, 0x1, f3, (200, 200, 200),
+                &format!(
+                    "Manager: {}    {} {} {}",
+                    d.manager_name,
+                    month_name(d.date.month), d.date.day, d.date.year
+                ),
+            );
+            // Next fixture panel.
+            s.draw_panel(110, 150, 780, 200, F_TRANSPARENT | F_BEVEL, pal.btn_blue);
+            let nf = match &d.next_fixture {
+                Some(f) => format!(
+                    "Next match:  {} v {}   ({})   {} {} {}",
+                    f.home_club_name, f.away_club_name, f.competition_name,
+                    month_name(f.date.month), f.date.day, f.date.year
+                ),
+                None => "Next match:  no fixtures scheduled".to_string(),
+            };
+            s.draw_text_box(120, 150, 770, 200, 0x1, f3, pal.highlight_fg, &nf);
+            // Squad header.
+            s.draw_text_box(110, 220, 780, 248, 0x1, f3, pal.near_white,
+                &format!("Squad ({} players)", d.squad.len()));
+            // Squad list.
+            s.draw_panel(DASH_SQUAD.0, DASH_SQUAD.1, DASH_SQUAD.2, DASH_SQUAD.3, F_TRANSPARENT, (40, 40, 40));
+            let lo = dash_squad_layout();
+            for row in 0..DASH_SQUAD_ROWS {
+                let Some(p) = d.squad.get(squad_scroll + row) else { break };
+                let cells = [
+                    (0, p.name.clone()),
+                    (1, format!("Age {}", p.age.map(|a| a.to_string()).unwrap_or_else(|| "?".into()))),
+                    (2, format!("CA {}", p.current_ability)),
+                    (3, format!("Cond {}", p.condition)),
+                ];
+                for (col, text) in cells {
+                    s.draw_text_box(
+                        lo.col_left[col], lo.row_top[row], lo.col_right[col], lo.row_bottom[row],
+                        0x1, f3, pal.near_white, &text,
+                    );
+                }
+            }
+            // Squad scrollbar.
+            if d.squad.len() > DASH_SQUAD_ROWS {
+                let tl = DASH_SQUAD.2 - 12;
+                s.draw_panel(tl, DASH_SQUAD.1, DASH_SQUAD.2, DASH_SQUAD.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+                let h = (DASH_SQUAD.3 - DASH_SQUAD.1).max(1);
+                let th = (DASH_SQUAD_ROWS as i32 * h / d.squad.len() as i32).max(12);
+                let maxs = (d.squad.len() - DASH_SQUAD_ROWS) as i32;
+                let tt = DASH_SQUAD.1 + (squad_scroll as i32) * (h - th) / maxs.max(1);
+                s.draw_panel(tl + 1, tt, DASH_SQUAD.2 - 1, (tt + th).min(DASH_SQUAD.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
+            }
+        }
+    }
+}
+
+fn ordinal(n: usize) -> String {
+    let suffix = match (n % 10, n % 100) {
+        (1, 11) | (2, 12) | (3, 13) => "th",
+        (1, _) => "st",
+        (2, _) => "nd",
+        (3, _) => "rd",
+        _ => "th",
+    };
+    format!("{n}{suffix}")
+}
+
+fn month_name(m: u8) -> &'static str {
+    ["", "January", "February", "March", "April", "May", "June", "July",
+     "August", "September", "October", "November", "December"]
+        .get(m as usize).copied().unwrap_or("")
+}
+
 // ------- Select Club (manage) -------
 
 /// Clicks on the Select Club screen.

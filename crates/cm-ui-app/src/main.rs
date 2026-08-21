@@ -37,6 +37,11 @@ enum Screen {
         clubs: Vec<cm_domain::ManagerClubChoice>,
         scroll: usize,
     },
+    /// The club dashboard — the game's home screen for the managed club.
+    Dashboard {
+        view: cm_domain::DashboardView,
+        squad_scroll: usize,
+    },
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -118,6 +123,9 @@ impl App {
             Screen::SelectClub { clubs, scroll } => {
                 screens::select_club(&mut self.frame, &mut self.fonts, self.bg.as_ref(), clubs, *scroll);
             }
+            Screen::Dashboard { view, squad_scroll } => {
+                screens::dashboard(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *squad_scroll);
+            }
         }
     }
 
@@ -146,6 +154,7 @@ impl App {
                     None => Pressed::None,
                 }
             }
+            Screen::Dashboard { .. } => Pressed::None,
         }
     }
 
@@ -158,6 +167,8 @@ impl App {
         let mut start_game: Option<(SelectLeaguesState, StartSeasonState)> = None;
         // Deferred: Enter Name -> Select Club (needs self.world + self.game).
         let mut goto_select_club = false;
+        // Deferred: club picked on Select Club -> install + Dashboard.
+        let mut install_club: Option<cm_domain::ManagerClubChoice> = None;
         match &mut self.screen {
             Screen::Setup => {
                 if let Some(idx) = screens::setup_hit(x, y) {
@@ -264,18 +275,14 @@ impl App {
             Screen::SelectClub { clubs, scroll } => {
                 match screens::select_club_hit(x, y, *scroll, clubs.len()) {
                     Some(screens::ClubClick::Pick(i)) => {
-                        if let Some(choice) = clubs.get(i) {
-                            eprintln!(
-                                "[manager] take control of [{}] {} ({}) — install pending",
-                                choice.club_id, choice.club_name, choice.division_name
-                            );
-                            // Installing the human manager at the club
-                            // (FUN_00810f50) is the next lift.
-                        }
+                        install_club = clubs.get(i).cloned();
                     }
                     Some(screens::ClubClick::Back) => self.screen = Screen::EnterName,
                     None => {}
                 }
+            }
+            Screen::Dashboard { .. } => {
+                // No interactive controls wired on the dashboard yet.
             }
         }
         // The screen borrow is released here — safe to build the working game.
@@ -284,6 +291,44 @@ impl App {
         }
         if goto_select_club {
             self.goto_select_club();
+        }
+        if let Some(choice) = install_club {
+            self.take_control_of_club(&choice);
+        }
+    }
+
+    /// Install the active game's manager at the picked club (port of the exe's
+    /// Take Control → FUN_00810f50), then open the club dashboard.
+    fn take_control_of_club(&mut self, choice: &cm_domain::ManagerClubChoice) {
+        let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_mut()) else {
+            return;
+        };
+        // Register the human from the typed name (add_manager), if not already.
+        let identity = cm_domain::ManagerIdentity {
+            first: game.manager.first.clone(),
+            second: game.manager.second.clone(),
+            nickname: game.manager.nickname.clone(),
+        };
+        let human = game.save.add_manager(identity);
+        // Club's nation (for the tier promote).
+        let club_nation = world
+            .core
+            .clubs
+            .iter()
+            .find(|c| cm_db::ClubView::new(c).id() == choice.club_id)
+            .and_then(|c| cm_db::ClubView::new(c).nation_id())
+            .map(|n| n as u32);
+        game.save.install_manager_at_club(human, choice.club_id, club_nation);
+        game.save.switch_active(human);
+        eprintln!(
+            "[manager] {} {} takes control of {} ({})",
+            game.manager.first, game.manager.second,
+            choice.club_name,
+            choice.division_name
+        );
+        let view = world.dashboard_for(&game.save, human);
+        if let Some(view) = view {
+            self.screen = Screen::Dashboard { view, squad_scroll: 0 };
         }
     }
 
@@ -459,18 +504,25 @@ impl ApplicationHandler for App {
                 self.cursor = (position.x as i32, position.y as i32);
             }
             WindowEvent::MouseWheel { delta, .. } => {
-                // Scroll the club list.
-                if let Screen::SelectClub { clubs, scroll } = &mut self.screen {
-                    let dy = match delta {
-                        winit::event::MouseScrollDelta::LineDelta(_, y) => y,
-                        winit::event::MouseScrollDelta::PixelDelta(p) => (p.y / 20.0) as f32,
-                    };
-                    let max_scroll = clubs.len().saturating_sub(screens::CLUB_ROWS_VISIBLE);
-                    if dy > 0.0 {
-                        *scroll = scroll.saturating_sub(1);
-                    } else if dy < 0.0 {
-                        *scroll = (*scroll + 1).min(max_scroll);
+                let dy = match delta {
+                    winit::event::MouseScrollDelta::LineDelta(_, y) => y,
+                    winit::event::MouseScrollDelta::PixelDelta(p) => (p.y / 20.0) as f32,
+                };
+                let mut changed = false;
+                match &mut self.screen {
+                    Screen::SelectClub { clubs, scroll } => {
+                        let max = clubs.len().saturating_sub(screens::CLUB_ROWS_VISIBLE);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
+                        changed = true;
                     }
+                    Screen::Dashboard { view: cm_domain::DashboardView::Club(d), squad_scroll } => {
+                        let max = d.squad.len().saturating_sub(screens::DASH_SQUAD_ROWS);
+                        *squad_scroll = if dy > 0.0 { squad_scroll.saturating_sub(1) } else { (*squad_scroll + 1).min(max) };
+                        changed = true;
+                    }
+                    _ => {}
+                }
+                if changed {
                     self.render();
                     if let Some(w) = self.window.as_ref() {
                         w.request_redraw();
@@ -670,6 +722,27 @@ fn dump(path: &str, which: &str) {
                     .map(|w| w.manageable_clubs_for_nations(&["England".to_string()]))
                     .unwrap_or_default();
                 screens::select_club(&mut frame, &mut fonts, bg.as_ref(), &clubs, 0);
+            }
+            "dashboard" => {
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![],
+                        use_real_players: true,
+                        attribute_masking: true,
+                        start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60)); // Arsenal
+                    save.switch_active(h);
+                    if let Some(view) = world.dashboard_for(&save, h) {
+                        screens::dashboard(&mut frame, &mut fonts, bg.as_ref(), &view, 0);
+                    }
+                }
             }
             _ => {
                 let pressed = std::env::args().nth(4).and_then(|a| a.parse::<usize>().ok());

@@ -32,3 +32,11 @@ path = "src/bin/newgame_tiers.rs"
 [[bin]]
 name = "pa-rng"
 path = "src/bin/pa_rng.rs"
+
+[[bin]]
+name = "clubs-check"
+path = "src/bin/clubs_check.rs"
+
+[[bin]]
+name = "dash-check"
+path = "src/bin/dash_check.rs"
