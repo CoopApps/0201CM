@@ -242,6 +242,220 @@ fn month_name(m: u8) -> &'static str {
         .get(m as usize).copied().unwrap_or("")
 }
 
+// ------- News page (the home screen — the exe's news.c / LAB_00770170) -------
+
+/// The four news filter tabs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NewsTab {
+    All,
+    Messages,
+    Competitions,
+    InjuriesAndBans,
+}
+
+impl NewsTab {
+    pub const ALL: [NewsTab; 4] =
+        [NewsTab::All, NewsTab::Messages, NewsTab::Competitions, NewsTab::InjuriesAndBans];
+    fn label(self) -> &'static str {
+        match self {
+            NewsTab::All => "All",
+            NewsTab::Messages => "Messages",
+            NewsTab::Competitions => "Competitions",
+            NewsTab::InjuriesAndBans => "Injuries and Bans",
+        }
+    }
+    /// Does an item's category pass this tab's filter?
+    fn accepts(self, cat: cm_domain::NewsCategory) -> bool {
+        use cm_domain::NewsCategory as C;
+        match self {
+            NewsTab::All => true,
+            NewsTab::Messages => cat == C::Message,
+            NewsTab::Competitions => cat == C::Competition,
+            NewsTab::InjuriesAndBans => cat == C::InjuryBan,
+        }
+    }
+}
+
+/// Clicks on the News page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NewsClick {
+    Tab(usize),
+    Row(usize),
+    BottomTab(usize),
+    Back,
+    Next,
+}
+
+const NEWS_LIST: (i32, i32, i32, i32) = (92, 118, 792, 300);
+pub const NEWS_ROWS_VISIBLE: usize = 5;
+const NEWS_BOTTOM_TABS: [&str; 4] = ["Contracts and Media", "Transfers", "Jobs", "Records"];
+
+fn news_tab_rects() -> [(i32, i32, i32, i32); 4] {
+    let lo = rebuild_layout((92, 78, 792, 112), 1, &[1, 1, 1, 1], &[1], false);
+    [lo.cell(0, 0), lo.cell(1, 0), lo.cell(2, 0), lo.cell(3, 0)]
+}
+
+fn news_bottom_tab_rects() -> [(i32, i32, i32, i32); 4] {
+    let lo = rebuild_layout((92, 505, 792, 540), 1, &[1, 1, 1, 1], &[1], false);
+    [lo.cell(0, 0), lo.cell(1, 0), lo.cell(2, 0), lo.cell(3, 0)]
+}
+
+fn news_row_layout() -> cm_render::layout::Layout {
+    // date column (narrow) | headline column.
+    rebuild_layout(NEWS_LIST, 2, &[4, 13], &[1; NEWS_ROWS_VISIBLE as i32 as usize], false)
+}
+
+/// The filtered item indices (into `view.items`) that the current tab shows.
+fn news_visible(view: &cm_domain::NewsView, tab: NewsTab) -> Vec<usize> {
+    view.items
+        .iter()
+        .enumerate()
+        .filter(|(_, it)| tab.accepts(it.category))
+        .map(|(i, _)| i)
+        .collect()
+}
+
+/// Render the News page. `selected` indexes into the FULL item list; `scroll`
+/// is the first visible row within the current tab's filtered view.
+pub fn news(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    view: &cm_domain::NewsView,
+    selected: usize,
+    scroll: usize,
+    tab: NewsTab,
+) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    // Sidebar column (menu bar overlays this in render()).
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    // Title banner — white with dark text, "<Manager> News".
+    s.draw_panel(92, 10, 792, 70, F_SOLID_FILL | F_BEVEL, (231, 227, 231));
+    {
+        let f = fonts.slot(7);
+        s.draw_text_box(92, 10, 792, 70, 0, f, (0, 0, 90), &view.title);
+    }
+    // Filter tabs.
+    for (i, rect) in news_tab_rects().iter().enumerate() {
+        let (l, t, r, b) = *rect;
+        let is_sel = NewsTab::ALL[i] == tab;
+        let col = if is_sel { pal.btn_blue } else { pal.grey };
+        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, col);
+        let f = fonts.slot(3);
+        let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
+        s.draw_text_box(l, t, r, b, 0, f, ink, NewsTab::ALL[i].label());
+    }
+    // News list.
+    let visible = news_visible(view, tab);
+    s.draw_panel(NEWS_LIST.0, NEWS_LIST.1, NEWS_LIST.2, NEWS_LIST.3, F_TRANSPARENT, (40, 40, 40));
+    let lo = news_row_layout();
+    for row in 0..NEWS_ROWS_VISIBLE {
+        let Some(&item_ix) = visible.get(scroll + row) else { break };
+        let item = &view.items[item_ix];
+        let is_sel = item_ix == selected;
+        // Selected row: red highlight bar across both columns.
+        if is_sel {
+            s.draw_panel(
+                lo.col_left[0], lo.row_top[row], lo.col_right[1], lo.row_bottom[row],
+                F_SOLID_FILL, pal.banner_red,
+            );
+        }
+        // Date cell (blue background).
+        s.draw_panel(lo.col_left[0], lo.row_top[row], lo.col_right[0], lo.row_bottom[row], F_SOLID_FILL, pal.btn_blue);
+        let f = fonts.slot(3);
+        s.draw_text_box(lo.col_left[0] + 4, lo.row_top[row], lo.col_right[0], lo.row_bottom[row], 0x1, f, pal.near_white, &item.date_label);
+        // Headline cell.
+        let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
+        s.draw_text_box(lo.col_left[1] + 6, lo.row_top[row], lo.col_right[1], lo.row_bottom[row], 0x1, f, ink, &item.headline);
+    }
+    // Scrollbar.
+    if visible.len() > NEWS_ROWS_VISIBLE {
+        let tl = NEWS_LIST.2 - 12;
+        s.draw_panel(tl, NEWS_LIST.1, NEWS_LIST.2, NEWS_LIST.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+    }
+    // Filter + Next Unread row.
+    {
+        let f = fonts.slot(3);
+        s.draw_text_box(92, 306, 300, 332, 0x1, f, pal.near_white, "Filter:");
+        s.draw_panel(600, 306, 792, 332, F_SOLID_FILL | F_BEVEL, pal.grey);
+        s.draw_text_box(600, 306, 792, 332, 0, f, pal.near_white, "Next Unread");
+    }
+    // Selected item body.
+    if let Some(item) = view.items.get(selected) {
+        let f6 = fonts.slot(6);
+        s.draw_text_box(92, 340, 792, 380, 0, f6, pal.highlight_fg, &item.headline);
+        let f3 = fonts.slot(3);
+        // Wrap the body across the content width.
+        let lines = wrap_lines(f3, &item.body, NEWS_LIST.2 - NEWS_LIST.0 - 16);
+        let mut y = 390;
+        for line in lines.iter().take(6) {
+            s.draw_text_box(100, y, 784, y + 22, 0x1, f3, pal.near_white, line);
+            y += 22;
+        }
+    }
+    // Bottom tabs.
+    for (i, rect) in news_bottom_tab_rects().iter().enumerate() {
+        let (l, t, r, b) = *rect;
+        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
+        let f = fonts.slot(3);
+        s.draw_text_box(l, t, r, b, 0, f, pal.near_white, NEWS_BOTTOM_TABS[i]);
+    }
+    // Back / Next.
+    let nav = rebuild_layout((92, 550, 792, 585), 1, &[1, 1], &[1], false);
+    let bf = fonts.slot(3);
+    for (rect, label) in [(nav.cell(0, 0), "Back"), (nav.cell(1, 0), "Next")] {
+        let (l, t, r, b) = rect;
+        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
+        s.draw_text_box(l, t, r, b, 0, bf, pal.near_white, label);
+    }
+}
+
+/// Hit-test the News page.
+pub fn news_hit(x: i32, y: i32, view: &cm_domain::NewsView, scroll: usize, tab: NewsTab) -> Option<NewsClick> {
+    for (i, r) in news_tab_rects().iter().enumerate() {
+        if x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3 {
+            return Some(NewsClick::Tab(i));
+        }
+    }
+    // List rows -> resolve to the underlying item index.
+    let lo = news_row_layout();
+    let visible = news_visible(view, tab);
+    for row in 0..NEWS_ROWS_VISIBLE {
+        if visible.get(scroll + row).is_some()
+            && x >= lo.col_left[0] && x <= lo.col_right[1]
+            && y >= lo.row_top[row] && y <= lo.row_bottom[row]
+        {
+            return Some(NewsClick::Row(scroll + row));
+        }
+    }
+    for (i, r) in news_bottom_tab_rects().iter().enumerate() {
+        if x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3 {
+            return Some(NewsClick::BottomTab(i));
+        }
+    }
+    let nav = rebuild_layout((92, 550, 792, 585), 1, &[1, 1], &[1], false);
+    let (bl, bt, br, bb) = nav.cell(0, 0);
+    if x >= bl && x <= br && y >= bt && y <= bb {
+        return Some(NewsClick::Back);
+    }
+    let (nl, nt, nr, nb) = nav.cell(1, 0);
+    if x >= nl && x <= nr && y >= nt && y <= nb {
+        return Some(NewsClick::Next);
+    }
+    None
+}
+
+/// Map a filtered/visible row back to the item index (for scroll wheel etc).
+pub fn news_visible_indices(view: &cm_domain::NewsView, tab: NewsTab) -> Vec<usize> {
+    news_visible(view, tab)
+}
+
 // ------- Persistent menu bar (the exe's game_mbr sidebar, FUN_00745540) -------
 
 /// The menu bar is the 89px vertical sidebar (`FUN_00549790(0,0,0x59,599,…)`),

@@ -487,6 +487,29 @@ pub fn day_of_year(year: u16, month: u8, day: u8) -> u16 {
     d
 }
 
+/// Day-of-week for a Gregorian date (0=Sunday..6=Saturday) via Sakamoto's
+/// algorithm — used to format news dates like the game ("Wed 10 Jul").
+pub fn weekday(year: u16, month: u8, day: u8) -> u8 {
+    const T: [i32; 12] = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    let mut y = year as i32;
+    let m = month.clamp(1, 12) as usize;
+    if m < 3 {
+        y -= 1;
+    }
+    (((y + y / 4 - y / 100 + y / 400 + T[m - 1] + day as i32) % 7) as u8).min(6)
+}
+
+/// Format a game date the way the news list does: "Wed 10 Jul".
+pub fn news_date_label(d: &GameDate) -> String {
+    const WD: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const MON: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    let wd = WD[weekday(d.year, d.month, d.day) as usize];
+    let mon = MON[(d.month.clamp(1, 12) - 1) as usize];
+    format!("{wd} {} {mon}", d.day)
+}
+
 /// A human manager's typed name (Enter Name screen fields).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct ManagerIdentity {
@@ -575,6 +598,51 @@ pub struct SquadMember {
     pub age: Option<u8>,
     pub current_ability: i16,
     pub condition: u16,
+}
+
+/// The News page — the manager's home screen (the exe's news.c, drawn by the
+/// LAB_00770170 callback registered in FUN_0076ffb0). Titled "<Manager> News",
+/// with the four filter tabs and a dated headline list feeding a body panel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewsView {
+    pub title: String,
+    pub items: Vec<NewsItem>,
+}
+
+/// One item in the news inbox.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewsItem {
+    pub date: GameDate,
+    /// Pre-formatted "Wed 10 Jul" style date label.
+    pub date_label: String,
+    pub headline: String,
+    pub body: String,
+    pub category: NewsCategory,
+    pub unread: bool,
+}
+
+/// The four news filter tabs (All spans every category).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum NewsCategory {
+    Message,
+    Competition,
+    InjuryBan,
+}
+
+impl NewsCategory {
+    /// Classify a RuntimeEvent `kind` string into a tab bucket.
+    fn from_kind(kind: &str) -> Self {
+        let k = kind.to_ascii_lowercase();
+        if k.contains("injur") || k.contains("ban") || k.contains("suspend") {
+            NewsCategory::InjuryBan
+        } else if k.contains("result") || k.contains("match") || k.contains("league")
+            || k.contains("competition") || k.contains("cup") || k.contains("fixture")
+        {
+            NewsCategory::Competition
+        } else {
+            NewsCategory::Message
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -14376,6 +14444,67 @@ impl World {
             next_fixture,
             squad,
         }))
+    }
+
+    /// Build the News page (home screen) for the given human — titled
+    /// "<Manager> News", newest item first, drawn from `save.pending_events`.
+    /// When the inbox is empty (e.g. the very first morning) a welcome item is
+    /// synthesised so the page is never blank, matching the game's start.
+    pub fn news_for(&self, save: &RuntimeSaveGame, human: usize) -> NewsView {
+        let manager = save
+            .humans
+            .get(human)
+            .map(|h| h.identity.display_name())
+            .unwrap_or_else(|| "Manager".to_string());
+        let mut items: Vec<NewsItem> = save
+            .pending_events
+            .iter()
+            .rev()
+            .map(|e| {
+                // Events carry "<headline> - <summary>"; split for the body.
+                let (headline, body) = match e.message.split_once(" - ") {
+                    Some((h, b)) => (h.to_string(), b.to_string()),
+                    None => (e.message.clone(), e.message.clone()),
+                };
+                NewsItem {
+                    date: e.date.clone(),
+                    date_label: news_date_label(&e.date),
+                    headline,
+                    body,
+                    category: NewsCategory::from_kind(&e.kind),
+                    unread: true,
+                }
+            })
+            .collect();
+        if items.is_empty() {
+            let club = save
+                .humans
+                .get(human)
+                .and_then(|h| h.club)
+                .and_then(|id| self.club_name(id));
+            let (headline, body) = match club {
+                Some(c) => (
+                    format!("Welcome to {c}"),
+                    format!(
+                        "The board have appointed {manager} as the new manager of {c}. \
+                         The new season is about to begin — good luck."
+                    ),
+                ),
+                None => (
+                    "Welcome".to_string(),
+                    format!("{manager} is currently without a club. Apply for a job to take charge."),
+                ),
+            };
+            items.push(NewsItem {
+                date: save.date.clone(),
+                date_label: news_date_label(&save.date),
+                headline,
+                body,
+                category: NewsCategory::Message,
+                unread: true,
+            });
+        }
+        NewsView { title: format!("{manager} News"), items }
     }
 
     /// A person's display name from the name pools (first + second name ids).

@@ -37,7 +37,16 @@ enum Screen {
         clubs: Vec<cm_domain::ManagerClubChoice>,
         scroll: usize,
     },
-    /// The club dashboard — the game's home screen for the managed club.
+    /// The News page — the game's actual home screen (the exe's news.c). This
+    /// is what the manager lands on each morning.
+    News {
+        view: cm_domain::NewsView,
+        selected: usize,
+        scroll: usize,
+        tab: screens::NewsTab,
+    },
+    /// The club Squad / Information screen (reached from the "Squad" menu item,
+    /// cmd 0x7d5) — the squad overview with the player table.
     Dashboard {
         view: cm_domain::DashboardView,
         squad_scroll: usize,
@@ -129,20 +138,28 @@ impl App {
             Screen::SelectClub { clubs, scroll } => {
                 screens::select_club(&mut self.frame, &mut self.fonts, self.bg.as_ref(), clubs, *scroll);
             }
+            Screen::News { view, selected, scroll, tab } => {
+                screens::news(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *selected, *scroll, *tab);
+                self.overlay_menu_bar();
+            }
             Screen::Dashboard { view, squad_scroll } => {
                 screens::dashboard(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *squad_scroll);
-                // Overlay the persistent menu bar (game_mbr / FUN_00745540) on
-                // top of the dashboard's own sidebar column.
-                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
-                    let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
-                    screens::menu_sidebar(
-                        &mut self.frame, &mut self.fonts, &bar, self.menu_open, &game.save.date,
-                    );
-                }
-                if let Some(msg) = self.status.as_ref() {
-                    screens::status_line(&mut self.frame, &mut self.fonts, msg);
-                }
+                self.overlay_menu_bar();
             }
+        }
+    }
+
+    /// Draw the persistent menu bar (game_mbr / FUN_00745540) and any status
+    /// line on top of the current in-game screen's sidebar column.
+    fn overlay_menu_bar(&mut self) {
+        if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+            let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
+            screens::menu_sidebar(
+                &mut self.frame, &mut self.fonts, &bar, self.menu_open, &game.save.date,
+            );
+        }
+        if let Some(msg) = self.status.clone() {
+            screens::status_line(&mut self.frame, &mut self.fonts, &msg);
         }
     }
 
@@ -171,7 +188,7 @@ impl App {
                     None => Pressed::None,
                 }
             }
-            Screen::Dashboard { .. } => Pressed::None,
+            Screen::Dashboard { .. } | Screen::News { .. } => Pressed::None,
         }
     }
 
@@ -179,7 +196,7 @@ impl App {
     fn on_release(&mut self, x: i32, y: i32) {
         // The persistent menu bar (sidebar) is global on in-game screens and
         // takes clicks before the screen's own controls. Handle it first.
-        if matches!(self.screen, Screen::Dashboard { .. }) {
+        if matches!(self.screen, Screen::Dashboard { .. } | Screen::News { .. }) {
             if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                 let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
                 match screens::menu_sidebar_hit(&bar, self.menu_open, x, y) {
@@ -229,6 +246,8 @@ impl App {
         let mut goto_select_club = false;
         // Deferred: club picked on Select Club -> install + Dashboard.
         let mut install_club: Option<cm_domain::ManagerClubChoice> = None;
+        // Deferred: a News control without a ported target was clicked.
+        let mut news_note = false;
         match &mut self.screen {
             Screen::Setup => {
                 if let Some(idx) = screens::setup_hit(x, y) {
@@ -341,9 +360,36 @@ impl App {
                     None => {}
                 }
             }
-            Screen::Dashboard { .. } => {
-                // No interactive controls wired on the dashboard yet.
+            Screen::News { view, selected, scroll, tab } => {
+                match screens::news_hit(x, y, view, *scroll, *tab) {
+                    Some(screens::NewsClick::Tab(i)) => {
+                        *tab = screens::NewsTab::ALL[i];
+                        *scroll = 0;
+                        // Move selection to the first item of the new tab.
+                        if let Some(&first) = screens::news_visible_indices(view, *tab).first() {
+                            *selected = first;
+                        }
+                    }
+                    Some(screens::NewsClick::Row(item_ix)) => {
+                        if let Some(item) = view.items.get_mut(item_ix) {
+                            item.unread = false;
+                        }
+                        *selected = item_ix;
+                    }
+                    Some(screens::NewsClick::BottomTab(_))
+                    | Some(screens::NewsClick::Back)
+                    | Some(screens::NewsClick::Next) => {
+                        news_note = true;
+                    }
+                    None => {}
+                }
             }
+            Screen::Dashboard { .. } => {
+                // The squad/info screen has no non-menu controls wired yet.
+            }
+        }
+        if news_note {
+            self.status = Some("That news control is not yet implemented".into());
         }
         // The screen borrow is released here — safe to build the working game.
         if let Some((leagues, season)) = start_game {
@@ -360,35 +406,41 @@ impl App {
     /// Install the active game's manager at the picked club (port of the exe's
     /// Take Control → FUN_00810f50), then open the club dashboard.
     fn take_control_of_club(&mut self, choice: &cm_domain::ManagerClubChoice) {
-        let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_mut()) else {
-            return;
-        };
-        // Register the human from the typed name (add_manager), if not already.
-        let identity = cm_domain::ManagerIdentity {
-            first: game.manager.first.clone(),
-            second: game.manager.second.clone(),
-            nickname: game.manager.nickname.clone(),
-        };
-        let human = game.save.add_manager(identity);
-        // Club's nation (for the tier promote).
-        let club_nation = world
-            .core
-            .clubs
-            .iter()
-            .find(|c| cm_db::ClubView::new(c).id() == choice.club_id)
-            .and_then(|c| cm_db::ClubView::new(c).nation_id())
-            .map(|n| n as u32);
-        game.save.install_manager_at_club(human, choice.club_id, club_nation);
-        game.save.switch_active(human);
-        eprintln!(
-            "[manager] {} {} takes control of {} ({})",
-            game.manager.first, game.manager.second,
-            choice.club_name,
-            choice.division_name
-        );
-        let view = world.dashboard_for(&game.save, human);
-        if let Some(view) = view {
-            self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+        // Club's nation (for the tier promote) — resolved from the locked world.
+        let club_nation = self.world.as_ref().and_then(|world| {
+            world
+                .core
+                .clubs
+                .iter()
+                .find(|c| cm_db::ClubView::new(c).id() == choice.club_id)
+                .and_then(|c| cm_db::ClubView::new(c).nation_id())
+                .map(|n| n as u32)
+        });
+        {
+            let Some(game) = self.game.as_mut() else { return };
+            let identity = cm_domain::ManagerIdentity {
+                first: game.manager.first.clone(),
+                second: game.manager.second.clone(),
+                nickname: game.manager.nickname.clone(),
+            };
+            let human = game.save.add_manager(identity);
+            game.save.install_manager_at_club(human, choice.club_id, club_nation);
+            game.save.switch_active(human);
+            eprintln!(
+                "[manager] {} {} takes control of {} ({})",
+                game.manager.first, game.manager.second, choice.club_name, choice.division_name
+            );
+        }
+        // Land on the News page — the game's home screen for the new morning.
+        self.open_news();
+    }
+
+    /// Build the News page (home screen) for the active human and show it.
+    fn open_news(&mut self) {
+        if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+            let view = world.news_for(&game.save, game.save.active_human);
+            let selected = 0;
+            self.screen = Screen::News { view, selected, scroll: 0, tab: screens::NewsTab::All };
         }
     }
 
@@ -400,16 +452,12 @@ impl App {
         self.status = None;
         match command {
             cmd::CONTINUE => self.advance_active_day(),
+            cmd::NEWS => self.open_news(),
             cmd::SQUAD | cmd::B_SQUAD => {
-                // Already the dashboard/squad view — rebuild it for the active
-                // human (a no-op refresh for now).
+                // Open the club Squad / Information screen (0x7d5 -> FUN_00454620).
                 if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                     if let Some(view) = world.dashboard_for(&game.save, game.save.active_human) {
-                        let squad_scroll = match &self.screen {
-                            Screen::Dashboard { squad_scroll, .. } => *squad_scroll,
-                            _ => 0,
-                        };
-                        self.screen = Screen::Dashboard { view, squad_scroll };
+                        self.screen = Screen::Dashboard { view, squad_scroll: 0 };
                     }
                 }
             }
@@ -433,9 +481,8 @@ impl App {
                     let human = game.save.active_human;
                     game.save.resign(human);
                     game.dirty = true;
-                    if let Some(view) = world.dashboard_for(&game.save, human) {
-                        self.screen = Screen::Dashboard { view, squad_scroll: 0 };
-                    }
+                    let _ = world;
+                    self.open_news();
                     self.status = Some("Resigned. You are now unemployed.".into());
                 }
             }
@@ -458,27 +505,29 @@ impl App {
     /// Completing any part of a day dirties the game, so the quit guard now
     /// refuses to close without a save.
     fn advance_active_day(&mut self) {
-        let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_mut()) else {
-            return;
-        };
-        let before = game.save.date.clone();
-        game.save.tick_days(1);
-        game.dirty = true;
-        eprintln!(
-            "[tick] {} -> {} ({} days elapsed)",
-            before.iso(),
-            game.save.date.iso(),
-            game.save.elapsed_days
-        );
-        // Rebuild the active human's dashboard so the moved date, resolved
-        // fixtures, and updated standings show.
-        let human = game.save.active_human;
-        if let Some(view) = world.dashboard_for(&game.save, human) {
-            let squad_scroll = match &self.screen {
-                Screen::Dashboard { squad_scroll, .. } => *squad_scroll,
-                _ => 0,
-            };
-            self.screen = Screen::Dashboard { view, squad_scroll };
+        {
+            let Some(game) = self.game.as_mut() else { return };
+            let before = game.save.date.clone();
+            game.save.tick_days(1);
+            game.dirty = true;
+            eprintln!(
+                "[tick] {} -> {} ({} days elapsed)",
+                before.iso(),
+                game.save.date.iso(),
+                game.save.elapsed_days
+            );
+        }
+        // After a day advances the game shows the News page (any results /
+        // events that arrived) — unless the manager is currently looking at the
+        // Squad screen, which we refresh in place.
+        if matches!(self.screen, Screen::Dashboard { .. }) {
+            if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                if let Some(view) = world.dashboard_for(&game.save, game.save.active_human) {
+                    self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+                }
+            }
+        } else {
+            self.open_news();
         }
     }
 
@@ -573,11 +622,9 @@ impl App {
         manager.first = "Alex".into();
         manager.second = "Ferguson".into();
         manager.nickname = "Fergie".into();
-        if let Some(view) = world.dashboard_for(&save, h) {
-            self.screen = Screen::Dashboard { view, squad_scroll: 0 };
-        }
         self.game = Some(GameInstance { save, manager, saved_path: None, dirty: false });
-        eprintln!("[boot] jumped straight to dashboard (Arsenal / Fergie)");
+        self.open_news();
+        eprintln!("[boot] jumped straight to the News page (Arsenal / Fergie)");
     }
 
     /// Keyboard input — only the Enter Name screen consumes it (typing into the
@@ -743,7 +790,14 @@ impl ApplicationHandler for App {
                             (Pressed::Club(a), Pressed::Club(b)) => a == b,
                             _ => false,
                         };
-                        if same {
+                        // In-game screens (News / Dashboard) hit-test internally
+                        // via their own click enums rather than the Pressed
+                        // mechanism, so they always process a release.
+                        let in_game = matches!(
+                            self.screen,
+                            Screen::Dashboard { .. } | Screen::News { .. }
+                        );
+                        if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
                         }
                         self.pressed = Pressed::None;
@@ -946,6 +1000,32 @@ fn dump(path: &str, which: &str) {
                         let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
                         screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date);
                     }
+                }
+            }
+            "news" => {
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    // Advance to generate news (default 40 days; CM_ADV_DAYS overrides).
+                    let n = std::env::var("CM_ADV_DAYS").ok().and_then(|v| v.parse::<u32>().ok()).unwrap_or(40);
+                    save.tick_days(n);
+                    eprintln!("[dump] news after {n} days: {} events", save.pending_events.len());
+                    let view = world.news_for(&save, h);
+                    let tab = screens::NewsTab::All;
+                    screens::news(&mut frame, &mut fonts, bg.as_ref(), &view, 0, 0, tab);
+                    let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                    let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                    screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date);
                 }
             }
             _ => {
