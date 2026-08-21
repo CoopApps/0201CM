@@ -31,6 +31,12 @@ enum Screen {
     /// After initialisation: the manager enters their name. The working game
     /// (and the name being typed) lives in `App.game`, not here.
     EnterName,
+    /// Pick the club to manage — every playable club in the chosen country's
+    /// manageable divisions.
+    SelectClub {
+        clubs: Vec<cm_domain::ManagerClubChoice>,
+        scroll: usize,
+    },
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -41,6 +47,7 @@ enum Pressed {
     Leagues(LeaguesClick),
     Season(SeasonClick),
     Name(screens::NameClick),
+    Club(screens::ClubClick),
 }
 
 /// A working game instance — held in memory, never auto-written. The master
@@ -108,6 +115,9 @@ impl App {
                 let manager = self.game.as_ref().map(|g| &g.manager).unwrap_or(&empty);
                 screens::enter_name(&mut self.frame, &mut self.fonts, self.bg.as_ref(), manager);
             }
+            Screen::SelectClub { clubs, scroll } => {
+                screens::select_club(&mut self.frame, &mut self.fonts, self.bg.as_ref(), clubs, *scroll);
+            }
         }
     }
 
@@ -130,6 +140,12 @@ impl App {
                 Some(c) => Pressed::Name(c),
                 None => Pressed::None,
             },
+            Screen::SelectClub { clubs, scroll } => {
+                match screens::select_club_hit(x, y, *scroll, clubs.len()) {
+                    Some(c) => Pressed::Club(c),
+                    None => Pressed::None,
+                }
+            }
         }
     }
 
@@ -140,6 +156,8 @@ impl App {
         // `self.world` + `self.game`). Processed after the match releases the
         // screen borrow.
         let mut start_game: Option<(SelectLeaguesState, StartSeasonState)> = None;
+        // Deferred: Enter Name -> Select Club (needs self.world + self.game).
+        let mut goto_select_club = false;
         match &mut self.screen {
             Screen::Setup => {
                 if let Some(idx) = screens::setup_hit(x, y) {
@@ -235,15 +253,28 @@ impl App {
                         }
                         screens::NameClick::Next => {
                             if game.manager.is_valid() {
-                                eprintln!(
-                                    "[manager] {} {} ({}) — ready to install at a club",
-                                    game.manager.first, game.manager.second, game.manager.nickname
-                                );
-                                // Next screen (Select Nationality / Club) is a
-                                // follow-up; for now log the created manager.
+                                // Advance to Select Club: build the pick list
+                                // from the chosen country's manageable divisions.
+                                goto_select_club = true;
                             }
                         }
                     }
+                }
+            }
+            Screen::SelectClub { clubs, scroll } => {
+                match screens::select_club_hit(x, y, *scroll, clubs.len()) {
+                    Some(screens::ClubClick::Pick(i)) => {
+                        if let Some(choice) = clubs.get(i) {
+                            eprintln!(
+                                "[manager] take control of [{}] {} ({}) — install pending",
+                                choice.club_id, choice.club_name, choice.division_name
+                            );
+                            // Installing the human manager at the club
+                            // (FUN_00810f50) is the next lift.
+                        }
+                    }
+                    Some(screens::ClubClick::Back) => self.screen = Screen::EnterName,
+                    None => {}
                 }
             }
         }
@@ -251,6 +282,30 @@ impl App {
         if let Some((leagues, season)) = start_game {
             self.start_new_game(&leagues, &season);
         }
+        if goto_select_club {
+            self.goto_select_club();
+        }
+    }
+
+    /// Build the Select Club pick list from the current game's chosen country
+    /// (its manageable divisions) and advance to that screen.
+    fn goto_select_club(&mut self) {
+        let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) else {
+            return;
+        };
+        let nations: Vec<String> = game
+            .save
+            .new_game
+            .as_ref()
+            .map(|o| o.selected_nations.clone())
+            .unwrap_or_default();
+        let clubs = world.manageable_clubs_for_nations(&nations);
+        eprintln!(
+            "[club] {} playable clubs across {}'s manageable divisions",
+            clubs.len(),
+            nations.join(", ")
+        );
+        self.screen = Screen::SelectClub { clubs, scroll: 0 };
     }
 
     /// Build a NEW working game IN MEMORY from the locked master database and
@@ -403,6 +458,25 @@ impl ApplicationHandler for App {
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor = (position.x as i32, position.y as i32);
             }
+            WindowEvent::MouseWheel { delta, .. } => {
+                // Scroll the club list.
+                if let Screen::SelectClub { clubs, scroll } = &mut self.screen {
+                    let dy = match delta {
+                        winit::event::MouseScrollDelta::LineDelta(_, y) => y,
+                        winit::event::MouseScrollDelta::PixelDelta(p) => (p.y / 20.0) as f32,
+                    };
+                    let max_scroll = clubs.len().saturating_sub(screens::CLUB_ROWS_VISIBLE);
+                    if dy > 0.0 {
+                        *scroll = scroll.saturating_sub(1);
+                    } else if dy < 0.0 {
+                        *scroll = (*scroll + 1).min(max_scroll);
+                    }
+                    self.render();
+                    if let Some(w) = self.window.as_ref() {
+                        w.request_redraw();
+                    }
+                }
+            }
             WindowEvent::MouseInput { state, button, .. }
                 if button == winit::event::MouseButton::Left =>
             {
@@ -420,6 +494,7 @@ impl ApplicationHandler for App {
                             (Pressed::Leagues(a), Pressed::Leagues(b)) => a == b,
                             (Pressed::Season(a), Pressed::Season(b)) => a == b,
                             (Pressed::Name(a), Pressed::Name(b)) => a == b,
+                            (Pressed::Club(a), Pressed::Club(b)) => a == b,
                             _ => false,
                         };
                         if same {
@@ -588,6 +663,13 @@ fn dump(path: &str, which: &str) {
                     focus: 1,
                 };
                 screens::enter_name(&mut frame, &mut fonts, bg.as_ref(), &manager);
+            }
+            "club" => {
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                let clubs = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir))
+                    .map(|w| w.manageable_clubs_for_nations(&["England".to_string()]))
+                    .unwrap_or_default();
+                screens::select_club(&mut frame, &mut fonts, bg.as_ref(), &clubs, 0);
             }
             _ => {
                 let pressed = std::env::args().nth(4).and_then(|a| a.parse::<usize>().ok());

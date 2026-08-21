@@ -118,6 +118,122 @@ pub fn enter_name(
     }
 }
 
+// ------- Select Club (manage) -------
+
+/// Clicks on the Select Club screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClubClick {
+    Pick(usize),
+    Back,
+}
+
+/// The club list area and how many rows are visible at once.
+const CLUB_LIST: (i32, i32, i32, i32) = (110, 145, 780, 535);
+pub const CLUB_ROWS_VISIBLE: usize = 15;
+
+fn club_row_rects() -> cm_render::layout::Layout {
+    rebuild_layout(
+        CLUB_LIST,
+        2,
+        &[13, 1, 6], // club name / gap / division
+        &[1; CLUB_ROWS_VISIBLE as i32 as usize],
+        false,
+    )
+}
+
+/// Render the Select Club screen: the playable clubs of the chosen country,
+/// grouped by division (top flight first), scrollable. The manager picks the
+/// club they'll take charge of. Mirrors the exe's Select Team screen
+/// (FUN_0080b2b0) for a single-nation game.
+pub fn select_club(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    clubs: &[cm_domain::ManagerClubChoice],
+    scroll: usize,
+) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, pal.banner_red);
+    {
+        let f = fonts.slot(7);
+        s.draw_text_box(100, 10, 790, 70, 0, f, pal.highlight_fg, "Championship Manager 2001/02");
+    }
+    {
+        let f = fonts.slot(6);
+        s.draw_text_box(100, 80, 790, 125, 0, f, pal.near_white, "Select Club To Manage");
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+
+    // Dimmed list background (F_TRANSPARENT area, like the picker).
+    s.draw_panel(CLUB_LIST.0, CLUB_LIST.1, CLUB_LIST.2, CLUB_LIST.3, F_TRANSPARENT, (40, 40, 40));
+
+    let lo = club_row_rects();
+    let f = fonts.slot(3);
+    let mut last_div = String::new();
+    for row in 0..CLUB_ROWS_VISIBLE {
+        let idx = scroll + row;
+        let Some(club) = clubs.get(idx) else { break };
+        let (nl, nt, nr, nb) = (
+            lo.col_left[0], lo.row_top[row], lo.col_right[0], lo.row_bottom[row],
+        );
+        // Division changes get a yellow division name; repeats stay grey.
+        let div_new = club.division_name != last_div;
+        last_div = club.division_name.clone();
+        s.draw_text_box(nl, nt, nr, nb, 0x1, f, pal.near_white, &club.club_name);
+        // Division text ends before the scrollbar track (right edge - 16).
+        let (dl, dt, dr, db) = (
+            lo.col_left[2], lo.row_top[row], CLUB_LIST.2 - 16, lo.row_bottom[row],
+        );
+        let div_ink = if div_new { pal.highlight_fg } else { (150, 150, 150) };
+        s.draw_text_box(dl, dt, dr, db, 0x1, f, div_ink, &club.division_name);
+    }
+
+    // Scrollbar indicator when the list overflows.
+    if clubs.len() > CLUB_ROWS_VISIBLE {
+        let track_l = CLUB_LIST.2 - 12;
+        s.draw_panel(track_l, CLUB_LIST.1, CLUB_LIST.2, CLUB_LIST.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let h = (CLUB_LIST.3 - CLUB_LIST.1).max(1);
+        let thumb_h = (CLUB_ROWS_VISIBLE as i32 * h / clubs.len() as i32).max(12);
+        let max_scroll = (clubs.len() - CLUB_ROWS_VISIBLE) as i32;
+        let thumb_t = CLUB_LIST.1 + (scroll as i32) * (h - thumb_h) / max_scroll.max(1);
+        s.draw_panel(track_l + 1, thumb_t, CLUB_LIST.2 - 1, (thumb_t + thumb_h).min(CLUB_LIST.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
+    }
+
+    // Back only (Next happens by picking a club).
+    let nav = rebuild_layout((100, 555, 790, 590), 1, &[3, 1], &[1], false);
+    let bf = fonts.slot(3);
+    let (l, t, r, b) = nav.cell(0, 0);
+    s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
+    s.draw_text_box(l, t, r, b, 0, bf, pal.near_white, "Back");
+}
+
+/// Hit-test Select Club. Returns the clicked club index (accounting for
+/// scroll) or Back.
+pub fn select_club_hit(x: i32, y: i32, scroll: usize, club_count: usize) -> Option<ClubClick> {
+    let lo = club_row_rects();
+    if x >= lo.col_left[0] && x <= lo.col_right[2] {
+        for row in 0..CLUB_ROWS_VISIBLE {
+            if y >= lo.row_top[row] && y <= lo.row_bottom[row] {
+                let idx = scroll + row;
+                if idx < club_count {
+                    return Some(ClubClick::Pick(idx));
+                }
+            }
+        }
+    }
+    let nav = rebuild_layout((100, 555, 790, 590), 1, &[3, 1], &[1], false);
+    if in_rect(x, y, nav.cell(0, 0)) {
+        return Some(ClubClick::Back);
+    }
+    None
+}
+
 /// Hit-test the Enter Name screen.
 pub fn enter_name_hit(x: i32, y: i32) -> Option<NameClick> {
     for (i, &(l, t, r, b)) in name_field_rects().iter().enumerate() {

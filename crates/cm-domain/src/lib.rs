@@ -486,6 +486,16 @@ pub fn day_of_year(year: u16, month: u8, day: u8) -> u16 {
     d
 }
 
+/// One club a new manager can choose to manage — a playable club in a
+/// manageable division of a selected nation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ManagerClubChoice {
+    pub club_id: u32,
+    pub club_name: String,
+    pub division_id: u32,
+    pub division_name: String,
+}
+
 /// Summary of the player-initialisation pass, stored in a new-game save.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlayerInitSummary {
@@ -14132,6 +14142,40 @@ impl World {
             }
         }
         ids
+    }
+
+    /// Every manageable club for the given nations, grouped by division —
+    /// exactly what the exe's Select Team screen (FUN_0080b2b0) lists: for
+    /// each manageable league of a selected nation, its member clubs. Ordered
+    /// by division reputation (top flight first), then club name. This is the
+    /// pick list a new manager chooses their club from.
+    pub fn manageable_clubs_for_nations(&self, nations: &[String]) -> Vec<ManagerClubChoice> {
+        let league_ids = self.manageable_league_ids_for_nations(nations);
+        // Division metadata (name + reputation) for ordering.
+        let mut divisions: Vec<(u32, String, u16)> = self
+            .references
+            .club_competitions
+            .iter()
+            .filter(|c| league_ids.contains(&c.id))
+            .map(|c| (c.id, c.long_name.clone(), c.reputation))
+            .collect();
+        // Higher reputation = higher division, listed first.
+        divisions.sort_by(|a, b| b.2.cmp(&a.2).then(a.1.cmp(&b.1)));
+
+        let mut out = Vec::new();
+        for (div_id, div_name, _rep) in &divisions {
+            let mut members = self.club_members_of_competition(*div_id);
+            members.sort_by(|a, b| a.1.cmp(&b.1));
+            for (club_id, club_name) in members {
+                out.push(ManagerClubChoice {
+                    club_id,
+                    club_name,
+                    division_id: *div_id,
+                    division_name: div_name.clone(),
+                });
+            }
+        }
+        out
     }
 
     /// League member clubs of a competition — clubs whose PRIMARY division
