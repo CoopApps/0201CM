@@ -545,6 +545,41 @@ impl App {
         self.screen = Screen::EnterName;
     }
 
+    /// Dev shortcut (CM_BOOT=dashboard): skip the setup flow — build an England
+    /// game, install a default manager at Arsenal, and open the dashboard.
+    fn boot_dashboard(&mut self) {
+        let Some(world) = self.world.as_ref() else { return };
+        let db_dir =
+            std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".to_string());
+        let options = cm_domain::NewGameOptions {
+            selected_nations: vec!["England".into()],
+            background_nations: vec![],
+            use_real_players: true,
+            attribute_masking: true,
+            start_year: 2001,
+        };
+        let mut save = world.new_game_from_rust_db(std::path::Path::new(&db_dir), &options);
+        let identity = cm_domain::ManagerIdentity {
+            first: "Alex".into(),
+            second: "Ferguson".into(),
+            nickname: "Fergie".into(),
+        };
+        let h = save.add_manager(identity);
+        // Arsenal (club id 676); nation England (60).
+        let club_nation = world.club_name(676).and(Some(60u32));
+        save.install_manager_at_club(h, 676, club_nation);
+        save.switch_active(h);
+        let mut manager = game_state::ManagerName::default();
+        manager.first = "Alex".into();
+        manager.second = "Ferguson".into();
+        manager.nickname = "Fergie".into();
+        if let Some(view) = world.dashboard_for(&save, h) {
+            self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+        }
+        self.game = Some(GameInstance { save, manager, saved_path: None, dirty: false });
+        eprintln!("[boot] jumped straight to dashboard (Arsenal / Fergie)");
+    }
+
     /// Keyboard input — only the Enter Name screen consumes it (typing into the
     /// focused field of the working game's manager).
     fn key_input(&mut self, ch: Option<char>, named: Option<NamedKeyAction>) {
@@ -1002,5 +1037,9 @@ fn main() {
     let event_loop = EventLoop::new().unwrap();
     let mut app = App::default();
     app.world = world;
+    // Dev shortcut: CM_BOOT=dashboard jumps past the setup flow.
+    if std::env::var("CM_BOOT").as_deref() == Ok("dashboard") {
+        app.boot_dashboard();
+    }
     event_loop.run_app(&mut app).unwrap();
 }
