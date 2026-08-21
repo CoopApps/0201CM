@@ -28,12 +28,9 @@ enum Screen {
     Setup,
     SelectLeagues(SelectLeaguesState),
     StartSeason { leagues: SelectLeaguesState, season: StartSeasonState },
-    /// After initialisation: the manager enters their name. `save_path` is the
-    /// initialised game this manager will be installed into.
-    EnterName {
-        manager: game_state::ManagerName,
-        save_path: String,
-    },
+    /// After initialisation: the manager enters their name. The working game
+    /// (and the name being typed) lives in `App.game`, not here.
+    EnterName,
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -46,6 +43,23 @@ enum Pressed {
     Name(screens::NameClick),
 }
 
+/// A working game instance — held in memory, never auto-written. The master
+/// database (`rust-db`) is LOCKED and read-only; a new game produces one of
+/// these in memory, and it only becomes a file when the user explicitly saves.
+struct GameInstance {
+    /// The runtime save state (tiers, schedule, player init, overlay, …). This
+    /// references the immutable base by fingerprint, not by copying it.
+    save: cm_domain::RuntimeSaveGame,
+    /// The manager the user is creating for this game.
+    manager: game_state::ManagerName,
+    /// The file this game has been saved to, once the user saves. `None` until
+    /// the first save.
+    saved_path: Option<String>,
+    /// True once the game state has advanced (a half-day tick) since the last
+    /// save. The exe won't let you quit dirty without saving — we mirror that.
+    dirty: bool,
+}
+
 struct App {
     window: Option<Rc<Window>>,
     context: Option<softbuffer::Context<Rc<Window>>>,
@@ -56,6 +70,12 @@ struct App {
     cursor: (i32, i32),
     pressed: Pressed,
     screen: Screen,
+    /// The LOCKED master database — loaded once at startup, read-only, shared
+    /// by every new game. Never modified or written back.
+    world: Option<cm_domain::World>,
+    /// The current in-memory working game (temporary until saved). `None` on
+    /// the menu screens before a game is started.
+    game: Option<GameInstance>,
 }
 
 impl App {
@@ -83,7 +103,9 @@ impl App {
                 };
                 screens::start_season(&mut self.frame, &mut self.fonts, self.bg.as_ref(), season, p);
             }
-            Screen::EnterName { manager, .. } => {
+            Screen::EnterName => {
+                let empty = game_state::ManagerName::default();
+                let manager = self.game.as_ref().map(|g| &g.manager).unwrap_or(&empty);
                 screens::enter_name(&mut self.frame, &mut self.fonts, self.bg.as_ref(), manager);
             }
         }
@@ -104,7 +126,7 @@ impl App {
                 Some(c) => Pressed::Season(c),
                 None => Pressed::None,
             },
-            Screen::EnterName { .. } => match screens::enter_name_hit(x, y) {
+            Screen::EnterName => match screens::enter_name_hit(x, y) {
                 Some(c) => Pressed::Name(c),
                 None => Pressed::None,
             },
@@ -113,6 +135,11 @@ impl App {
 
     /// Convert a mouse-release into a screen transition + state update.
     fn on_release(&mut self, x: i32, y: i32) {
+        // Deferred new-game start: the click handlers below borrow `self.screen`,
+        // so they set this instead of building the game inline (which needs
+        // `self.world` + `self.game`). Processed after the match releases the
+        // screen borrow.
+        let mut start_game: Option<(SelectLeaguesState, StartSeasonState)> = None;
         match &mut self.screen {
             Screen::Setup => {
                 if let Some(idx) = screens::setup_hit(x, y) {
@@ -146,13 +173,10 @@ impl App {
                                 0 => {}
                                 1 => {
                                     // Single league: its season is fixed, so
-                                    // initialise directly and go to the manager
-                                    // name screen (Season page is skipped).
+                                    // initialise directly (Season page skipped).
                                     let leagues = state.clone();
                                     let season = StartSeasonState::from_leagues(&leagues);
-                                    if let Some(next) = initialise_and_enter_name(&leagues, &season) {
-                                        self.screen = next;
-                                    }
+                                    start_game = Some((leagues, season));
                                 }
                                 _ => {
                                     let leagues = state.clone();
@@ -192,26 +216,28 @@ impl App {
                         }
                         SeasonClick::Next => {
                             // The "Start" action — initialise the game
-                            // (FUN_008120d0) then advance to the manager name
-                            // screen.
-                            if let Some(next) = initialise_and_enter_name(leagues, season) {
-                                self.screen = next;
-                            }
+                            // (FUN_008120d0) then advance to the manager name.
+                            start_game = Some((leagues.clone(), season.clone()));
                         }
                         SeasonClick::Select(i) => season.selected = i,
                     }
                 }
             }
-            Screen::EnterName { manager, .. } => {
+            Screen::EnterName => {
                 if let Some(click) = screens::enter_name_hit(x, y) {
+                    let Some(game) = self.game.as_mut() else { return };
                     match click {
-                        screens::NameClick::Field(i) => manager.focus = i,
-                        screens::NameClick::Back => self.screen = Screen::Setup,
+                        screens::NameClick::Field(i) => game.manager.focus = i,
+                        screens::NameClick::Back => {
+                            // Abandon the in-memory game and return to menu.
+                            self.game = None;
+                            self.screen = Screen::Setup;
+                        }
                         screens::NameClick::Next => {
-                            if manager.is_valid() {
+                            if game.manager.is_valid() {
                                 eprintln!(
                                     "[manager] {} {} ({}) — ready to install at a club",
-                                    manager.first, manager.second, manager.nickname
+                                    game.manager.first, game.manager.second, game.manager.nickname
                                 );
                                 // Next screen (Select Nationality / Club) is a
                                 // follow-up; for now log the created manager.
@@ -221,18 +247,68 @@ impl App {
                 }
             }
         }
+        // The screen borrow is released here — safe to build the working game.
+        if let Some((leagues, season)) = start_game {
+            self.start_new_game(&leagues, &season);
+        }
+    }
+
+    /// Build a NEW working game IN MEMORY from the locked master database and
+    /// the picker choices — the Rust counterpart of the exe's "Initialising
+    /// game data" (FUN_008120d0). Nothing is written to disk: the instance is
+    /// temporary until the user explicitly saves it. The master `rust-db` is
+    /// never modified. Advances to the Enter Name screen.
+    fn start_new_game(
+        &mut self,
+        leagues: &game_state::SelectLeaguesState,
+        season: &game_state::StartSeasonState,
+    ) {
+        // Ensure the locked master database is loaded (once).
+        if self.world.is_none() {
+            let dir = std::env::var("CM_RUST_DB")
+                .unwrap_or_else(|_| "D:/cm0102-rs/rust-db".to_string());
+            match cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                Ok(w) => self.world = Some(w),
+                Err(e) => {
+                    eprintln!("[start] cannot open master database: {e}");
+                    return;
+                }
+            }
+        }
+        let world = self.world.as_ref().unwrap();
+        let options = new_game_options(leagues, season);
+        let db_dir = std::env::var("CM_RUST_DB")
+            .unwrap_or_else(|_| "D:/cm0102-rs/rust-db".to_string());
+        let save = world.new_game_from_rust_db(std::path::Path::new(&db_dir), &options);
+        eprintln!(
+            "[start] game initialised IN MEMORY: {} foreground nation(s), {} fixtures, date {}-{:02}-{:02} — not saved to disk yet",
+            save.foreground_count(),
+            save.season.fixtures.len(),
+            save.date.year, save.date.month, save.date.day,
+        );
+        self.game = Some(GameInstance {
+            save,
+            manager: game_state::ManagerName::default(),
+            saved_path: None,
+            dirty: false,
+        });
+        self.screen = Screen::EnterName;
     }
 
     /// Keyboard input — only the Enter Name screen consumes it (typing into the
-    /// focused field). Tab cycles fields; Enter advances like Next.
+    /// focused field of the working game's manager).
     fn key_input(&mut self, ch: Option<char>, named: Option<NamedKeyAction>) {
-        if let Screen::EnterName { manager, .. } = &mut self.screen {
-            match named {
-                Some(NamedKeyAction::Backspace) => manager.backspace(),
-                Some(NamedKeyAction::Tab) => manager.focus = (manager.focus + 1) % 3,
-                _ => {
-                    if let Some(c) = ch {
-                        manager.type_char(c);
+        if matches!(self.screen, Screen::EnterName) {
+            if let Some(game) = self.game.as_mut() {
+                match named {
+                    Some(NamedKeyAction::Backspace) => game.manager.backspace(),
+                    Some(NamedKeyAction::Tab) => {
+                        game.manager.focus = (game.manager.focus + 1) % 3
+                    }
+                    _ => {
+                        if let Some(c) = ch {
+                            game.manager.type_char(c);
+                        }
                     }
                 }
             }
@@ -247,90 +323,21 @@ enum NamedKeyAction {
     Tab,
 }
 
-/// Create a new game from the native database using the picker's choices.
-///
-/// This is the Rust counterpart of the exe's post-Next path: the exe calls
-/// `FUN_008120d0` ("Initialising game data"), which fixes up the loaded pools
-/// against the selection flags and constructs ~35 runtime subsystems. Our
-/// equivalent is `World::new_game_from_rust_db`, which records the same inputs
-/// and restricts the season to the selected nations' competitions.
-///
-/// HONEST SCOPE: the exe's init also builds per-staff/per-club runtime arrays,
-/// fictionalises names when Real Players is No (`FUN_0051c970`), and stands up
-/// the fixture/finance/transfer/fog-of-war subsystems. Those are separate lifts
-/// still in progress — see the backend ledger inside the written save.
-/// Initialise the game from the picker choices, then return the EnterName
-/// screen for the manager to create their identity. `None` if init failed.
-fn initialise_and_enter_name(
+/// Build the picker choices into NewGameOptions (the exe's accumulated
+/// Select-League(s)/Season inputs). Reading only — the master DB is untouched.
+fn new_game_options(
     leagues: &game_state::SelectLeaguesState,
-    season: &game_state::StartSeasonState,
-) -> Option<Screen> {
-    match create_new_game(leagues, season) {
-        Ok(path) => {
-            eprintln!("[start] game initialised: {path} — entering manager name");
-            Some(Screen::EnterName {
-                manager: game_state::ManagerName::default(),
-                save_path: path,
-            })
-        }
-        Err(e) => {
-            eprintln!("[start] could not create game: {e}");
-            None
-        }
-    }
-}
-
-fn create_new_game(
-    leagues: &game_state::SelectLeaguesState,
-    season: &game_state::StartSeasonState,
-) -> Result<String, String> {
-    let db_dir = std::env::var("CM_RUST_DB")
-        .unwrap_or_else(|_| "D:/cm0102-rs/rust-db".to_string());
-    let world = cm_db::World::read_rust_db_dir(std::path::Path::new(&db_dir))
-        .map_err(|e| format!("open database: {e}"))?;
-
-    let options = cm_domain::NewGameOptions {
-        selected_nations: leagues
-            .slots
-            .iter()
-            .filter(|slot| slot.selected)
-            .map(|slot| slot.primary_name.clone())
-            .collect(),
-        background_nations: leagues
-            .slots
-            .iter()
-            .filter(|slot| slot.background_marker)
-            .map(|slot| slot.primary_name.clone())
-            .collect(),
+    _season: &game_state::StartSeasonState,
+) -> cm_domain::NewGameOptions {
+    cm_domain::NewGameOptions {
+        selected_nations: leagues.slots.iter().filter(|s| s.selected)
+            .map(|s| s.primary_name.clone()).collect(),
+        background_nations: leagues.slots.iter().filter(|s| s.background_marker)
+            .map(|s| s.primary_name.clone()).collect(),
         use_real_players: leagues.options.use_real_players,
         attribute_masking: leagues.options.attribute_masking,
-        // The season label is "<Country> 01/02" or "<Country> 2002"; the
-        // shipped database starts in 2001 either way.
         start_year: 2001,
-    };
-    let _ = season;
-
-    let save = world.new_game_from_rust_db(std::path::Path::new(&db_dir), &options);
-    let out = std::env::var("CM_SAVE_PATH")
-        .unwrap_or_else(|_| "D:/cm0102-rs/saves/new_game.json".to_string());
-    save.write_json_file(std::path::Path::new(&out))
-        .map_err(|e| format!("write save: {e}"))?;
-    let fg = save.foreground_count();
-    let bg = save
-        .nation_tiers
-        .iter()
-        .filter(|t| t.tier == cm_domain::LeagueTier::Background)
-        .count();
-    eprintln!(
-        "[start] tiers: {fg} foreground / {bg} background / {} total nations (world not culled); {} fixtures, {} standings, date {}-{:02}-{:02}",
-        save.nation_tiers.len(),
-        save.season.fixtures.len(),
-        save.season.standings.len(),
-        save.date.year,
-        save.date.month,
-        save.date.day,
-    );
-    Ok(out)
+    }
 }
 
 /// Load the first Pictures/*.RGN as a menu background (the original randomises it).
@@ -357,6 +364,8 @@ impl Default for App {
             cursor: (0, 0),
             pressed: Pressed::None,
             screen: Screen::Setup,
+            world: None,
+            game: None,
         }
     }
 }
@@ -379,7 +388,18 @@ impl ApplicationHandler for App {
 
     fn window_event(&mut self, el: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
-            WindowEvent::CloseRequested => el.exit(),
+            WindowEvent::CloseRequested => {
+                // The exe won't let you quit a game that has advanced (a
+                // half-day ticked) without saving. Mirror that: block the
+                // close while the working game is dirty. (Once a Save Game
+                // screen exists, this will prompt to save; for now it refuses
+                // and logs.)
+                if self.game.as_ref().map(|g| g.dirty).unwrap_or(false) {
+                    eprintln!("[quit] game has unsaved progress — save before quitting (close refused)");
+                } else {
+                    el.exit();
+                }
+            }
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor = (position.x as i32, position.y as i32);
             }
@@ -643,7 +663,6 @@ fn open_database() -> Option<cm_db::Database> {
 }
 
 fn main() {
-    let _db = open_database();
     let mut args = std::env::args().skip(1);
     if let Some(first) = args.next() {
         if first == "--dump" {
@@ -653,7 +672,11 @@ fn main() {
             return;
         }
     }
+    // Load the LOCKED master database ONCE and hand it to the app; every new
+    // game builds an in-memory instance from it without re-reading disk.
+    let world = open_database().map(|db| db.world);
     let event_loop = EventLoop::new().unwrap();
     let mut app = App::default();
+    app.world = world;
     event_loop.run_app(&mut app).unwrap();
 }
