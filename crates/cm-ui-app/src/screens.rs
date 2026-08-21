@@ -442,15 +442,20 @@ fn draw_tab_strip(
     selected: Option<usize>,
     pal: &cm_widget::Palette,
 ) {
+    // Ported from FUN_005d7070's item emission (matching cm-widget's own tab
+    // rendering): each tab is a BLUE bevelled panel (flags 0x30, colP=btn_blue),
+    // NOT a grey button. The selected tab adds the 0x800 highlight — yellow text
+    // and a 1px yellow outline; the rest take white ink.
     for (i, &(l, t, r, b)) in cells.iter().enumerate() {
         let is_sel = selected == Some(i);
-        // Selected tab: lighter fill that connects to the content; others darker.
-        let fill = if is_sel { pal.btn_blue } else { pal.grey };
-        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, fill);
+        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
         let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
         if let Some(label) = labels.get(i) {
             let f = fonts.slot(3);
             s.draw_text_box(l, t, r, b, 0, f, ink, label);
+        }
+        if is_sel {
+            s.draw_hollow_rect(l - 1, t - 1, r + 1, b + 1, pal.highlight_fg);
         }
     }
 }
