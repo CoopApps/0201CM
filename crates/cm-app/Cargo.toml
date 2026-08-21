@@ -1,0 +1,13 @@
+[package]
+name = "cm-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+cm-data = { path = "../cm-data" }
+cm-domain = { path = "../cm-domain" }
+cm-events = { path = "../cm-events" }
+cm-rng = { path = "../cm-rng" }
+serde = "1"
+serde_json = "1"

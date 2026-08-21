@@ -1,0 +1,16 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "0201CM window shell: winit window presenting the cm-render surface. GPU (wgpu) components grow from here."
+
+[dependencies]
+cm-render = { path = "../cm-render" }
+cm-widget = { path = "../cm-widget" }
+cm-db = { path = "../cm-db" }
+cm-domain = { path = "../cm-domain" }
+winit = "0.30"
+softbuffer = "0.4"
+# used to load the shared world data (parsed CM01/02 .dat) from cm0102-rs/rust-db JSON
+serde_json = "1"

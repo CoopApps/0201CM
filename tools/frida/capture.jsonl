@@ -1,0 +1,122 @@
+{"t": "ready", "cfg": {"draw": true, "font": true, "view": true, "match": false, "rng": false}}
+{"t": "color", "r": 0, "g": 128, "b": 0}
+{"t": "color", "r": 0, "g": 64, "b": 0}
+{"t": "color", "r": 0, "g": 255, "b": 255}
+{"t": "color", "r": 128, "g": 255, "b": 255}
+{"t": "color", "r": 0, "g": 0, "b": 255}
+{"t": "color", "r": 0, "g": 128, "b": 255}
+{"t": "color", "r": 0, "g": 0, "b": 128}
+{"t": "color", "r": 0, "g": 0, "b": 96}
+{"t": "color", "r": 128, "g": 0, "b": 128}
+{"t": "color", "r": 64, "g": 0, "b": 64}
+{"t": "color", "r": 128, "g": 64, "b": 64}
+{"t": "color", "r": 128, "g": 128, "b": 128}
+{"t": "color", "r": 224, "g": 224, "b": 224}
+{"t": "color", "r": 192, "g": 192, "b": 192}
+{"t": "color", "r": 64, "g": 64, "b": 64}
+{"t": "color", "r": 0, "g": 128, "b": 128}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615600}
+{"t": "imgload", "file": "data\\logo.rgn"}
+{"t": "imgload", "file": "data\\eidos.rgn"}
+{"t": "imgload", "file": "data\\kio.rgn"}
+{"t": "imgblt", "a0": 140, "a1": 40, "buf": 58615656}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615600}
+{"t": "imgblt", "a0": 81, "a1": 209, "buf": 58615712}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615600}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615768}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615600}
+{"t": "slotset", "index": 0, "str": ""}
+{"t": "imgload", "file": "pictures\\boro1.rgn"}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615600}
+{"t": "panel", "l": 0, "top": 0, "r": 89, "b": 599, "flags": 1, "color": 0}
+{"t": "imgload", "file": "data\\game.mbr"}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58616488}
+{"t": "panel", "l": 0, "top": 0, "r": 89, "b": 599, "flags": 1, "color": 0}
+{"t": "panel", "l": 5, "top": 10, "r": 85, "b": 590, "flags": 1, "color": 0}
+{"t": "panel", "l": 5, "top": 10, "r": 85, "b": 53, "flags": 4193, "color": 0}
+{"t": "text", "l": 7, "top": 12, "r": 87, "b": 55, "flags": 12, "font": 4294901761, "color": 65504, "s": "Version\n3.9.60"}
+{"t": "panel", "l": 5, "top": 100, "r": 85, "b": 143, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 100, "r": 85, "b": 143, "flags": 44, "font": 4294901761, "color": 59164, "s": "Add\nManager"}
+{"t": "panel", "l": 5, "top": 145, "r": 85, "b": 187, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 145, "r": 85, "b": 187, "flags": 12, "font": 4294901761, "color": 65504, "s": "Restart\nGame"}
+{"t": "panel", "l": 5, "top": 189, "r": 85, "b": 232, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 189, "r": 85, "b": 232, "flags": 12, "font": 4294901761, "color": 65504, "s": "Exit\nGame"}
+{"t": "panel", "l": 5, "top": 10, "r": 85, "b": 590, "flags": 1, "color": 0}
+{"t": "panel", "l": 5, "top": 55, "r": 44, "b": 98, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 55, "r": 44, "b": 98, "flags": 12, "font": 4294901760, "color": 65504, "s": "("}
+{"t": "panel", "l": 46, "top": 55, "r": 85, "b": 98, "flags": 4129, "color": 0}
+{"t": "text", "l": 46, "top": 55, "r": 85, "b": 98, "flags": 12, "font": 4294901760, "color": 65504, "s": ")"}
+{"t": "panel", "l": 110, "top": 145, "r": 780, "b": 535, "flags": 1, "color": 0}
+{"t": "panel", "l": 110, "top": 145, "r": 444, "b": 209, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 145, "r": 444, "b": 209, "flags": 12, "font": 4294901763, "color": 59164, "s": "Start New Game"}
+{"t": "panel", "l": 446, "top": 145, "r": 780, "b": 209, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 145, "r": 780, "b": 209, "flags": 12, "font": 4294901763, "color": 59164, "s": "Quick Start Game"}
+{"t": "panel", "l": 110, "top": 211, "r": 444, "b": 274, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 211, "r": 444, "b": 274, "flags": 12, "font": 4294901763, "color": 59164, "s": "Restore Saved Game"}
+{"t": "panel", "l": 446, "top": 211, "r": 780, "b": 274, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 211, "r": 780, "b": 274, "flags": 12, "font": 4294901763, "color": 59164, "s": "Delete Saved Game"}
+{"t": "panel", "l": 110, "top": 276, "r": 444, "b": 339, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 276, "r": 444, "b": 339, "flags": 12, "font": 4294901763, "color": 59164, "s": "Network Play"}
+{"t": "panel", "l": 446, "top": 276, "r": 780, "b": 339, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 276, "r": 780, "b": 339, "flags": 12, "font": 4294901763, "color": 59164, "s": "Game Settings"}
+{"t": "panel", "l": 110, "top": 341, "r": 444, "b": 404, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 341, "r": 444, "b": 404, "flags": 12, "font": 4294901763, "color": 59164, "s": "Hall Of Fame"}
+{"t": "panel", "l": 446, "top": 341, "r": 780, "b": 404, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 341, "r": 780, "b": 404, "flags": 12, "font": 4294901763, "color": 59164, "s": "Game Credits"}
+{"t": "panel", "l": 278, "top": 406, "r": 611, "b": 469, "flags": 34, "color": 16}
+{"t": "text", "l": 278, "top": 406, "r": 611, "b": 469, "flags": 12, "font": 4294901763, "color": 59164, "s": "Web Sites"}
+{"t": "panel", "l": 100, "top": 555, "r": 790, "b": 590, "flags": 1, "color": 0}
+{"t": "panel", "l": 100, "top": 555, "r": 617, "b": 590, "flags": 48, "color": 33808}
+{"t": "text", "l": 100, "top": 555, "r": 617, "b": 590, "flags": 44, "font": 4294901763, "color": 59164, "s": "Back"}
+{"t": "panel", "l": 619, "top": 555, "r": 790, "b": 590, "flags": 48, "color": 33808}
+{"t": "text", "l": 619, "top": 555, "r": 790, "b": 590, "flags": 44, "font": 4294901763, "color": 59164, "s": "Next"}
+{"t": "panel", "l": 100, "top": 10, "r": 790, "b": 70, "flags": 48, "color": 63488}
+{"t": "text", "l": 100, "top": 10, "r": 790, "b": 70, "flags": 12, "font": 4294901767, "color": 59164, "s": "Championship Manager 2001/02"}
+{"t": "panel", "l": 100, "top": 80, "r": 790, "b": 125, "flags": 2, "color": 0}
+{"t": "text", "l": 100, "top": 80, "r": 790, "b": 125, "flags": 12, "font": 4294901766, "color": 65504, "s": "Setup Game"}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58615600}
+{"t": "panel", "l": 0, "top": 0, "r": 89, "b": 599, "flags": 1, "color": 0}
+{"t": "imgblt", "a0": 0, "a1": 0, "buf": 58616488}
+{"t": "panel", "l": 0, "top": 0, "r": 89, "b": 599, "flags": 1, "color": 0}
+{"t": "panel", "l": 5, "top": 10, "r": 85, "b": 590, "flags": 1, "color": 0}
+{"t": "panel", "l": 5, "top": 10, "r": 85, "b": 53, "flags": 4193, "color": 0}
+{"t": "text", "l": 7, "top": 12, "r": 87, "b": 55, "flags": 12, "font": 4294901761, "color": 65504, "s": "Version\n3.9.60"}
+{"t": "panel", "l": 5, "top": 100, "r": 85, "b": 143, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 100, "r": 85, "b": 143, "flags": 44, "font": 4294901761, "color": 59164, "s": "Add\nManager"}
+{"t": "panel", "l": 5, "top": 145, "r": 85, "b": 187, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 145, "r": 85, "b": 187, "flags": 12, "font": 4294901761, "color": 65504, "s": "Restart\nGame"}
+{"t": "panel", "l": 5, "top": 189, "r": 85, "b": 232, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 189, "r": 85, "b": 232, "flags": 12, "font": 4294901761, "color": 65504, "s": "Exit\nGame"}
+{"t": "panel", "l": 5, "top": 10, "r": 85, "b": 590, "flags": 1, "color": 0}
+{"t": "panel", "l": 5, "top": 55, "r": 44, "b": 98, "flags": 4129, "color": 0}
+{"t": "text", "l": 5, "top": 55, "r": 44, "b": 98, "flags": 12, "font": 4294901760, "color": 65504, "s": "("}
+{"t": "panel", "l": 46, "top": 55, "r": 85, "b": 98, "flags": 4129, "color": 0}
+{"t": "text", "l": 46, "top": 55, "r": 85, "b": 98, "flags": 12, "font": 4294901760, "color": 65504, "s": ")"}
+{"t": "panel", "l": 110, "top": 145, "r": 780, "b": 535, "flags": 1, "color": 0}
+{"t": "panel", "l": 110, "top": 145, "r": 444, "b": 209, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 145, "r": 444, "b": 209, "flags": 12, "font": 4294901763, "color": 59164, "s": "Start New Game"}
+{"t": "panel", "l": 446, "top": 145, "r": 780, "b": 209, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 145, "r": 780, "b": 209, "flags": 12, "font": 4294901763, "color": 59164, "s": "Quick Start Game"}
+{"t": "panel", "l": 110, "top": 211, "r": 444, "b": 274, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 211, "r": 444, "b": 274, "flags": 12, "font": 4294901763, "color": 59164, "s": "Restore Saved Game"}
+{"t": "panel", "l": 446, "top": 211, "r": 780, "b": 274, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 211, "r": 780, "b": 274, "flags": 12, "font": 4294901763, "color": 59164, "s": "Delete Saved Game"}
+{"t": "panel", "l": 110, "top": 276, "r": 444, "b": 339, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 276, "r": 444, "b": 339, "flags": 12, "font": 4294901763, "color": 59164, "s": "Network Play"}
+{"t": "panel", "l": 446, "top": 276, "r": 780, "b": 339, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 276, "r": 780, "b": 339, "flags": 12, "font": 4294901763, "color": 59164, "s": "Game Settings"}
+{"t": "panel", "l": 110, "top": 341, "r": 444, "b": 404, "flags": 34, "color": 16}
+{"t": "text", "l": 110, "top": 341, "r": 444, "b": 404, "flags": 12, "font": 4294901763, "color": 59164, "s": "Hall Of Fame"}
+{"t": "panel", "l": 446, "top": 341, "r": 780, "b": 404, "flags": 34, "color": 16}
+{"t": "text", "l": 446, "top": 341, "r": 780, "b": 404, "flags": 12, "font": 4294901763, "color": 59164, "s": "Game Credits"}
+{"t": "panel", "l": 278, "top": 406, "r": 611, "b": 469, "flags": 34, "color": 16}
+{"t": "text", "l": 278, "top": 406, "r": 611, "b": 469, "flags": 12, "font": 4294901763, "color": 59164, "s": "Web Sites"}
+{"t": "panel", "l": 100, "top": 555, "r": 790, "b": 590, "flags": 1, "color": 0}
+{"t": "panel", "l": 100, "top": 555, "r": 617, "b": 590, "flags": 48, "color": 33808}
+{"t": "text", "l": 100, "top": 555, "r": 617, "b": 590, "flags": 44, "font": 4294901763, "color": 59164, "s": "Back"}
+{"t": "panel", "l": 619, "top": 555, "r": 790, "b": 590, "flags": 48, "color": 33808}
+{"t": "text", "l": 619, "top": 555, "r": 790, "b": 590, "flags": 44, "font": 4294901763, "color": 59164, "s": "Next"}
+{"t": "panel", "l": 100, "top": 10, "r": 790, "b": 70, "flags": 48, "color": 63488}
+{"t": "text", "l": 100, "top": 10, "r": 790, "b": 70, "flags": 12, "font": 4294901767, "color": 59164, "s": "Championship Manager 2001/02"}
+{"t": "panel", "l": 100, "top": 80, "r": 790, "b": 125, "flags": 2, "color": 0}
+{"t": "text", "l": 100, "top": 80, "r": 790, "b": 125, "flags": 12, "font": 4294901766, "color": 65504, "s": "Setup Game"}

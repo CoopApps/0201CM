@@ -1,0 +1,26 @@
+; Engine configuration file.
+; Prefer editing through Godot once the project is open.
+
+config_version=5
+
+[application]
+
+config/name="CM0102 Rust"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7")
+
+[autoload]
+
+CmApi="*res://scripts/cm_api.gd"
+
+[display]
+
+window/size/viewport_width=1024
+window/size/viewport_height=768
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.08, 0.1, 0.09, 1)

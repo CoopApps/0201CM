@@ -1,0 +1,34 @@
+[package]
+name = "cm-import"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "One-time importer / verifier: reads an original CM01/02 install's Data/*.dat and (re)generates the native rust-db database. Run once; the game never touches .dat files again."
+
+[dependencies]
+cm-domain = { path = "../cm-domain" }
+cm-db = { path = "../cm-db" }
+cm-rng = { path = "../cm-rng" }
+
+[[bin]]
+name = "cm-import"
+path = "src/main.rs"
+
+[[bin]]
+name = "rng-check"
+path = "src/bin/rng_check.rs"
+
+[[bin]]
+name = "decode-check"
+path = "src/bin/decode_check.rs"
+
+[[bin]]
+name = "newgame-check"
+path = "src/bin/newgame_check.rs"
+
+[[bin]]
+name = "newgame-tiers"
+path = "src/bin/newgame_tiers.rs"
+[[bin]]
+name = "pa-rng"
+path = "src/bin/pa_rng.rs"

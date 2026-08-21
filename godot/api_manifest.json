@@ -1,0 +1,67 @@
+{
+  "format": "cm0102-rs-godot-api-manifest",
+  "version": 1,
+  "source_of_truth": "Rust DB and Rust runtime save",
+  "default_base_url": "http://127.0.0.1:8770",
+  "must_not_read": [
+    ".dat files",
+    "world.json as canonical runtime state"
+  ],
+  "startup_command": "cargo run -p cm-app -- serve-rust-db D:/cm0102-rs/rust-db 8770",
+  "endpoints": [
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/api/health",
+      "purpose": "Confirm Rust backend is reachable."
+    },
+    {
+      "name": "backend_acceptance",
+      "method": "GET",
+      "path": "/api/backend-acceptance",
+      "purpose": "Show whether the Rust backend infrastructure and headless gates pass."
+    },
+    {
+      "name": "promotion_control_room",
+      "method": "GET",
+      "path": "/api/promotion-control-room-cached",
+      "purpose": "Show cached exact-remake status, original-capture progress, parity failures, and promotion blockers quickly enough for front ends."
+    },
+    {
+      "name": "runtime_save",
+      "method": "GET",
+      "path": "/api/runtime-save",
+      "purpose": "Show the current Rust-native save shell and manager/session state."
+    },
+    {
+      "name": "tables",
+      "method": "GET",
+      "path": "/api/tables",
+      "purpose": "List Rust-owned table datasets that Godot can browse or request."
+    },
+    {
+      "name": "table",
+      "method": "GET",
+      "path": "/api/table/<path>",
+      "purpose": "Fetch one Rust-owned table, for example core.clubs or staff.type10."
+    },
+    {
+      "name": "headless_campaign",
+      "method": "POST",
+      "path": "/api/headless/campaign",
+      "purpose": "Run a backend-only campaign simulation once gameplay gates are exact."
+    },
+    {
+      "name": "runtime_tick",
+      "method": "POST",
+      "path": "/api/runtime-save/tick",
+      "purpose": "Advance the Rust-native runtime save by a small number of days."
+    },
+    {
+      "name": "headless_run",
+      "method": "POST",
+      "path": "/api/headless/run",
+      "purpose": "Run the current headless backend shell for a small number of days."
+    }
+  ]
+}

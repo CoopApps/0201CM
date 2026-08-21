@@ -1,0 +1,6 @@
+[package]
+name = "cm-data"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CM0102 data files: index.dat manifest + fixed-record .dat containers"

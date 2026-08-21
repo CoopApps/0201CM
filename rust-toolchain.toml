@@ -1,0 +1,4 @@
+# MSVC build tools aren't installed on this box; the windows-gnu toolchain ships
+# its own linker. Pin it so `cargo build/test` works without `+toolchain`.
+[toolchain]
+channel = "stable-x86_64-pc-windows-gnu"

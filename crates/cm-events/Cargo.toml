@@ -1,0 +1,6 @@
+[package]
+name = "cm-events"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CM0102 match event/commentary config (events_*.cfg) parser"

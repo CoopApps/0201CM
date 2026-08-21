@@ -1,0 +1,24 @@
+# Rust build output — all target dirs (many CARGO_TARGET_DIR variants exist)
+/target
+target*/
+**/target/
+
+# The native database (157 MB) is regenerated from an original CM01/02
+# install by `cm-import` — not committed. Rebuild with:
+#   cargo run -p cm-import -- import --from <cm0102_dir> --to rust-db
+/rust-db/
+/rust-db-export/
+/owned-data/
+
+# Original-game assets (copyrighted CM01/02 data/fonts/pictures) — the game
+# reads these from the install path, they are not bundled in the repo.
+/assets/
+
+# Generated saves and analysis output
+/saves/
+/reports/
+/viewer_tables/
+
+# Scratch / temp
+*.ppm
+*.bak

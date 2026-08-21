@@ -1,0 +1,12 @@
+[package]
+name = "cm-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CM0102 clean internal world model scaffolding"
+
+[dependencies]
+cm-data = { path = "../cm-data" }
+cm-rng = { path = "../cm-rng" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

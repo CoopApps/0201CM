@@ -1,0 +1,18 @@
+[package]
+name = "cm-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# CM0102 faithful GUI runtime. Renders screens by executing the decoded generator
+# (object trees + bound formulas + layout engine + draw primitives) against a
+# backend-filled 60-slot view-model, software-rasterized to an 800x600 buffer.
+# Every primitive is a port of a lifted cm0102.exe function (cited in-source).
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[[bin]]
+name = "cm-gui-render"
+path = "src/main.rs"

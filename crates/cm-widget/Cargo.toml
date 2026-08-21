@@ -1,0 +1,11 @@
+[package]
+name = "cm-widget"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Data-driven widget evaluator: reads screen specs (from D:/cm0102-carve/analysis/screens/*.json produced by the structural_carver's ui/ pass) and drives cm-render's primitives. Eliminates hand-porting UI per screen — every screen is data."
+
+[dependencies]
+cm-render = { path = "../cm-render" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

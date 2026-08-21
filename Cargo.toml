@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/cm-rng",
+    "crates/cm-data",
+    "crates/cm-events",
+    "crates/cm-domain",
+    "crates/cm-app",
+    "crates/cm-gui",
+    # UI consolidated from D:/0201CM (archived there 2026-08-20):
+    "crates/cm-render",
+    "crates/cm-widget",
+    "crates/cm-ui-app",
+    # Native Rust database (one-time import from the CM install's .dat files):
+    "crates/cm-db",
+    "crates/cm-import",
+]
+
+# CM0102 clean-room reimplementation — verified pieces only.
+# Each crate cites the carve finding it was lifted from (D:/cm0102-carve).
+# VERIFIED = bit-exact / code-derived. INFERRED items are marked in-source.
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
