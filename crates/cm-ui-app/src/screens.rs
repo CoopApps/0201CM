@@ -31,11 +31,15 @@ pub enum NameClick {
 }
 
 /// Row geometry for the three name fields — from the manager-creation decode
-/// (FUN_00809cc0): row areas at (150,217)-(740,277), +62px per row, 3 cols
-/// weight {8,1,12} (label / gap / edit box).
+/// (FUN_00809cc0). Each row is an AREA at (150, t, 740, b) with flags 0x22
+/// (F_TRANSPARENT | F_BEVEL) — the standard blue-bordered input box — split
+/// into 3 columns weight {8,1,12}: label / gap / typed text. Disassembled
+/// area rects: (150,217)-(740,277), (150,279)-(740,339), (150,341)-(740,401).
 const NAME_ROWS: [(i32, i32); 3] = [(217, 277), (279, 339), (341, 401)];
 const NAME_LABELS: [&str; 3] = ["   First Name", "   Second Name", "   Nickname"];
 
+/// The edit-text sub-rect (column 2) of a row — where the caret/typed text go
+/// and where a click focuses the field.
 fn name_field_rects() -> [(i32, i32, i32, i32); 3] {
     let mut out = [(0, 0, 0, 0); 3];
     for (i, &(t, b)) in NAME_ROWS.iter().enumerate() {
@@ -46,21 +50,21 @@ fn name_field_rects() -> [(i32, i32, i32, i32); 3] {
 }
 
 /// Render the Enter Name screen (draw 0x00809cc0). Title banner, "Enter Name"
-/// heading, three labelled edit rows, and Back/Next — the manager creates
-/// their identity here, right after game initialisation.
+/// heading, three blue-bordered input rows (label + typed text), and Back/Next.
 pub fn enter_name(
     s: &mut Surface,
     fonts: &mut Fonts,
     bg: Option<&Image>,
     manager: &ManagerName,
 ) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
     let pal = palette();
     if let Some(image) = bg {
         s.blit_image(image, 0, 0);
     } else {
         s.fill(0, 0, 0);
     }
-    // Banner + heading via cm-render primitives.
+    // Banner + heading.
     s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, pal.banner_red);
     {
         let f = fonts.slot(7);
@@ -70,36 +74,39 @@ pub fn enter_name(
         let f = fonts.slot(6);
         s.draw_text_box(100, 80, 790, 125, 0, f, pal.near_white, "Enter Name");
     }
-    // Sidebar (mode 4) — reuse the shared spec sidebar look via a plain panel.
-    s.draw_panel(0, 0, 89, 599, cm_render::panel::F_VGRADIENT, pal.sidebar_blue);
+    // Sidebar (mode 4).
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
 
-    let field_rects = name_field_rects();
     for i in 0..3u8 {
         let (t, b) = (NAME_ROWS[i as usize].0, NAME_ROWS[i as usize].1);
-        // Label (col 0), left-justified.
-        let llo = rebuild_layout((150, t, 740, b), 2, &[8, 1, 12], &[1], false);
+        // The row IS the input box: transparent + blue bevel (area flags 0x22),
+        // spanning the whole 150..740 row, exactly as the exe draws it.
+        s.draw_panel(150, t, 740, b, F_TRANSPARENT | F_BEVEL, pal.btn_blue);
+
+        let lo = rebuild_layout((150, t, 740, b), 2, &[8, 1, 12], &[1], false);
         let f = fonts.slot(3);
+        // Label in column 0 (left-justified).
         s.draw_text_box(
-            llo.col_left[0], llo.row_top[0], llo.col_right[0], llo.row_bottom[0],
+            lo.col_left[0], lo.row_top[0], lo.col_right[0], lo.row_bottom[0],
             0x1, f, pal.near_white, NAME_LABELS[i as usize],
         );
-        // Edit box: grey fill, bevel; focused field gets a yellow outline.
-        let (fl, ft, fr, fb) = field_rects[i as usize];
-        s.draw_panel(fl, ft, fr, fb, F_SOLID_FILL | F_BEVEL, pal.grey);
+        // Typed text in column 2 (left-justified), caret on the focused field.
         let text = manager.field(i);
         let shown = if manager.focus == i {
-            format!("{text}_") // caret
+            format!("{text}_")
         } else {
             text.to_string()
         };
-        let ef = fonts.slot(3);
-        s.draw_text_box(fl + 6, ft, fr, fb, 0x1, ef, pal.near_white, &shown);
+        let (el, et, er, eb) = (lo.col_left[2], lo.row_top[0], lo.col_right[2], lo.row_bottom[0]);
+        s.draw_text_box(el, et, er, eb, 0x1, f, pal.highlight_fg, &shown);
+        // Focused field: brighten the blue box border to a yellow outline.
         if manager.focus == i {
-            s.draw_hollow_rect(fl - 1, ft - 1, fr + 1, fb + 1, pal.highlight_fg);
+            s.draw_hollow_rect(150, t, 740, b, pal.highlight_fg);
         }
     }
 
-    // Back / Next.
+    // Back / Next (grey bevelled buttons — the exe uses F_SOLID_FILL|F_BEVEL,
+    // flags 0x30, on these two, distinct from the input rows).
     let nav = rebuild_layout((100, 555, 790, 590), 1, &[3, 1], &[1], false);
     let bf = fonts.slot(3);
     for (rect, label, enabled) in [
@@ -108,7 +115,7 @@ pub fn enter_name(
     ] {
         let (l, t, r, b) = rect;
         s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
-        let ink = if enabled { pal.dark_ink } else { (90, 90, 90) };
+        let ink = if enabled { pal.near_white } else { (120, 120, 120) };
         s.draw_text_box(l, t, r, b, 0, bf, ink, label);
     }
 }
