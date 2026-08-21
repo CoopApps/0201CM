@@ -90,7 +90,9 @@ pub fn enter_name(
             lo.col_left[0], lo.row_top[0], lo.col_right[0], lo.row_bottom[0],
             0x1, f, pal.near_white, NAME_LABELS[i as usize],
         );
-        // Typed text in column 2 (left-justified), caret on the focused field.
+        // Typed text in column 2 (left-justified), white ink (the exe's edit
+        // item ink), with a caret on the focused field. Focus is shown by the
+        // caret alone — there is NO coloured border on this screen.
         let text = manager.field(i);
         let shown = if manager.focus == i {
             format!("{text}_")
@@ -98,11 +100,7 @@ pub fn enter_name(
             text.to_string()
         };
         let (el, et, er, eb) = (lo.col_left[2], lo.row_top[0], lo.col_right[2], lo.row_bottom[0]);
-        s.draw_text_box(el, et, er, eb, 0x1, f, pal.highlight_fg, &shown);
-        // Focused field: brighten the blue box border to a yellow outline.
-        if manager.focus == i {
-            s.draw_hollow_rect(150, t, 740, b, pal.highlight_fg);
-        }
+        s.draw_text_box(el, et, er, eb, 0x1, f, pal.near_white, &shown);
     }
 
     // Back / Next (grey bevelled buttons — the exe uses F_SOLID_FILL|F_BEVEL,
