@@ -28,6 +28,12 @@ enum Screen {
     Setup,
     SelectLeagues(SelectLeaguesState),
     StartSeason { leagues: SelectLeaguesState, season: StartSeasonState },
+    /// After initialisation: the manager enters their name. `save_path` is the
+    /// initialised game this manager will be installed into.
+    EnterName {
+        manager: game_state::ManagerName,
+        save_path: String,
+    },
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -37,6 +43,7 @@ enum Pressed {
     Setup(usize),
     Leagues(LeaguesClick),
     Season(SeasonClick),
+    Name(screens::NameClick),
 }
 
 struct App {
@@ -76,6 +83,9 @@ impl App {
                 };
                 screens::start_season(&mut self.frame, &mut self.fonts, self.bg.as_ref(), season, p);
             }
+            Screen::EnterName { manager, .. } => {
+                screens::enter_name(&mut self.frame, &mut self.fonts, self.bg.as_ref(), manager);
+            }
         }
     }
 
@@ -92,6 +102,10 @@ impl App {
             },
             Screen::StartSeason { season, .. } => match screens::season_hit(season, x, y) {
                 Some(c) => Pressed::Season(c),
+                None => Pressed::None,
+            },
+            Screen::EnterName { .. } => match screens::enter_name_hit(x, y) {
+                Some(c) => Pressed::Name(c),
                 None => Pressed::None,
             },
         }
@@ -132,15 +146,12 @@ impl App {
                                 0 => {}
                                 1 => {
                                     // Single league: its season is fixed, so
-                                    // build the one-row season implicitly and
-                                    // initialise directly.
+                                    // initialise directly and go to the manager
+                                    // name screen (Season page is skipped).
                                     let leagues = state.clone();
                                     let season = StartSeasonState::from_leagues(&leagues);
-                                    match create_new_game(&leagues, &season) {
-                                        Ok(path) => {
-                                            eprintln!("[start] single-league: skipped Season page; new game written to {path}")
-                                        }
-                                        Err(e) => eprintln!("[start] could not create game: {e}"),
+                                    if let Some(next) = initialise_and_enter_name(&leagues, &season) {
+                                        self.screen = next;
                                     }
                                 }
                                 _ => {
@@ -180,21 +191,60 @@ impl App {
                             self.screen = Screen::SelectLeagues(leagues.clone());
                         }
                         SeasonClick::Next => {
-                            // The "Start" action — the Rust equivalent of the
-                            // exe falling into FUN_008120d0 ("Initialising game
-                            // data"). Build the native new-game state from the
-                            // database using the picker's choices.
-                            match create_new_game(leagues, season) {
-                                Ok(path) => eprintln!("[start] new game written to {path}"),
-                                Err(e) => eprintln!("[start] could not create game: {e}"),
+                            // The "Start" action — initialise the game
+                            // (FUN_008120d0) then advance to the manager name
+                            // screen.
+                            if let Some(next) = initialise_and_enter_name(leagues, season) {
+                                self.screen = next;
                             }
                         }
                         SeasonClick::Select(i) => season.selected = i,
                     }
                 }
             }
+            Screen::EnterName { manager, .. } => {
+                if let Some(click) = screens::enter_name_hit(x, y) {
+                    match click {
+                        screens::NameClick::Field(i) => manager.focus = i,
+                        screens::NameClick::Back => self.screen = Screen::Setup,
+                        screens::NameClick::Next => {
+                            if manager.is_valid() {
+                                eprintln!(
+                                    "[manager] {} {} ({}) — ready to install at a club",
+                                    manager.first, manager.second, manager.nickname
+                                );
+                                // Next screen (Select Nationality / Club) is a
+                                // follow-up; for now log the created manager.
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+
+    /// Keyboard input — only the Enter Name screen consumes it (typing into the
+    /// focused field). Tab cycles fields; Enter advances like Next.
+    fn key_input(&mut self, ch: Option<char>, named: Option<NamedKeyAction>) {
+        if let Screen::EnterName { manager, .. } = &mut self.screen {
+            match named {
+                Some(NamedKeyAction::Backspace) => manager.backspace(),
+                Some(NamedKeyAction::Tab) => manager.focus = (manager.focus + 1) % 3,
+                _ => {
+                    if let Some(c) = ch {
+                        manager.type_char(c);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Named (non-character) keys the Enter Name screen reacts to.
+#[derive(Debug, Clone, Copy)]
+enum NamedKeyAction {
+    Backspace,
+    Tab,
 }
 
 /// Create a new game from the native database using the picker's choices.
@@ -209,6 +259,27 @@ impl App {
 /// fictionalises names when Real Players is No (`FUN_0051c970`), and stands up
 /// the fixture/finance/transfer/fog-of-war subsystems. Those are separate lifts
 /// still in progress — see the backend ledger inside the written save.
+/// Initialise the game from the picker choices, then return the EnterName
+/// screen for the manager to create their identity. `None` if init failed.
+fn initialise_and_enter_name(
+    leagues: &game_state::SelectLeaguesState,
+    season: &game_state::StartSeasonState,
+) -> Option<Screen> {
+    match create_new_game(leagues, season) {
+        Ok(path) => {
+            eprintln!("[start] game initialised: {path} — entering manager name");
+            Some(Screen::EnterName {
+                manager: game_state::ManagerName::default(),
+                save_path: path,
+            })
+        }
+        Err(e) => {
+            eprintln!("[start] could not create game: {e}");
+            None
+        }
+    }
+}
+
 fn create_new_game(
     leagues: &game_state::SelectLeaguesState,
     season: &game_state::StartSeasonState,
@@ -328,6 +399,7 @@ impl ApplicationHandler for App {
                             (Pressed::Setup(a), Pressed::Setup(b)) => a == b,
                             (Pressed::Leagues(a), Pressed::Leagues(b)) => a == b,
                             (Pressed::Season(a), Pressed::Season(b)) => a == b,
+                            (Pressed::Name(a), Pressed::Name(b)) => a == b,
                             _ => false,
                         };
                         if same {
@@ -336,6 +408,27 @@ impl ApplicationHandler for App {
                         self.pressed = Pressed::None;
                     }
                 }
+                self.render();
+                if let Some(w) = self.window.as_ref() {
+                    w.request_redraw();
+                }
+            }
+            WindowEvent::KeyboardInput { event: key_event, .. }
+                if key_event.state == winit::event::ElementState::Pressed =>
+            {
+                use winit::keyboard::{Key, NamedKey};
+                let named = match &key_event.logical_key {
+                    Key::Named(NamedKey::Backspace) => Some(NamedKeyAction::Backspace),
+                    Key::Named(NamedKey::Tab) => Some(NamedKeyAction::Tab),
+                    _ => None,
+                };
+                // Character text (letters, space, punctuation) from the key.
+                let ch = key_event
+                    .text
+                    .as_ref()
+                    .and_then(|t| t.chars().next())
+                    .filter(|c| !c.is_control());
+                self.key_input(ch, named);
                 self.render();
                 if let Some(w) = self.window.as_ref() {
                     w.request_redraw();
@@ -466,6 +559,15 @@ fn dump(path: &str, which: &str) {
             "season" => {
                 let state = StartSeasonState::default();
                 screens::start_season(&mut frame, &mut fonts, bg.as_ref(), &state, None);
+            }
+            "name" => {
+                let manager = game_state::ManagerName {
+                    first: "Alex".into(),
+                    second: "Ferguson".into(),
+                    nickname: "Fergie".into(),
+                    focus: 1,
+                };
+                screens::enter_name(&mut frame, &mut fonts, bg.as_ref(), &manager);
             }
             _ => {
                 let pressed = std::env::args().nth(4).and_then(|a| a.parse::<usize>().ok());

@@ -311,6 +311,51 @@ pub fn real_34_slots() -> Vec<PickerSlot> {
     real_picker_slots()
 }
 
+/// The three fields entered on the "Enter Name" screen (draw 0x00809cc0,
+/// event 0x0080a450). Geometry + fields verified from the manager-creation
+/// flow decode. The exe's screen also has optional Password/Re-Type rows;
+/// this port collects the manager's identity as first / second / nickname.
+#[derive(Debug, Clone, Default)]
+pub struct ManagerName {
+    pub first: String,
+    pub second: String,
+    pub nickname: String,
+    /// Which field has keyboard focus (0=first, 1=second, 2=nickname).
+    pub focus: u8,
+}
+
+impl ManagerName {
+    pub fn field(&self, i: u8) -> &str {
+        match i {
+            0 => &self.first,
+            1 => &self.second,
+            _ => &self.nickname,
+        }
+    }
+    fn field_mut(&mut self, i: u8) -> &mut String {
+        match i {
+            0 => &mut self.first,
+            1 => &mut self.second,
+            _ => &mut self.nickname,
+        }
+    }
+    /// Append a typed character to the focused field (max 26 like the exe).
+    pub fn type_char(&mut self, c: char) {
+        let f = self.focus;
+        if self.field(f).chars().count() < 26 && !c.is_control() {
+            self.field_mut(f).push(c);
+        }
+    }
+    pub fn backspace(&mut self) {
+        let f = self.focus;
+        self.field_mut(f).pop();
+    }
+    /// Next validates: first and second names non-empty (the exe's rule).
+    pub fn is_valid(&self) -> bool {
+        !self.first.trim().is_empty() && !self.second.trim().is_empty()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

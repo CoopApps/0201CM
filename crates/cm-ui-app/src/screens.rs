@@ -13,12 +13,122 @@
 //! 50-line adapter. Every bug fix propagates through one evaluator, not 150
 //! per-screen Rust functions.
 
-use crate::game_state::{SelectLeaguesState, StartSeasonState};
+use crate::game_state::{ManagerName, SelectLeaguesState, StartSeasonState};
 use cm_render::font::Fonts;
 use cm_render::image::Image;
+use cm_render::layout::rebuild_layout;
+use cm_render::panel::{F_BEVEL, F_SOLID_FILL};
 use cm_render::Surface;
 use cm_widget::{HighlightHint, NullProvider, Palette, ScreenSpec, StateProvider};
 use crate::game_state::real_picker_slots;
+
+/// Clicks on the Enter Name screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NameClick {
+    Field(u8),
+    Back,
+    Next,
+}
+
+/// Row geometry for the three name fields — from the manager-creation decode
+/// (FUN_00809cc0): row areas at (150,217)-(740,277), +62px per row, 3 cols
+/// weight {8,1,12} (label / gap / edit box).
+const NAME_ROWS: [(i32, i32); 3] = [(217, 277), (279, 339), (341, 401)];
+const NAME_LABELS: [&str; 3] = ["   First Name", "   Second Name", "   Nickname"];
+
+fn name_field_rects() -> [(i32, i32, i32, i32); 3] {
+    let mut out = [(0, 0, 0, 0); 3];
+    for (i, &(t, b)) in NAME_ROWS.iter().enumerate() {
+        let lo = rebuild_layout((150, t, 740, b), 2, &[8, 1, 12], &[1], false);
+        out[i] = (lo.col_left[2], lo.row_top[0], lo.col_right[2], lo.row_bottom[0]);
+    }
+    out
+}
+
+/// Render the Enter Name screen (draw 0x00809cc0). Title banner, "Enter Name"
+/// heading, three labelled edit rows, and Back/Next — the manager creates
+/// their identity here, right after game initialisation.
+pub fn enter_name(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    manager: &ManagerName,
+) {
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    // Banner + heading via cm-render primitives.
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, pal.banner_red);
+    {
+        let f = fonts.slot(7);
+        s.draw_text_box(100, 10, 790, 70, 0, f, pal.highlight_fg, "Championship Manager 2001/02");
+    }
+    {
+        let f = fonts.slot(6);
+        s.draw_text_box(100, 80, 790, 125, 0, f, pal.near_white, "Enter Name");
+    }
+    // Sidebar (mode 4) — reuse the shared spec sidebar look via a plain panel.
+    s.draw_panel(0, 0, 89, 599, cm_render::panel::F_VGRADIENT, pal.sidebar_blue);
+
+    let field_rects = name_field_rects();
+    for i in 0..3u8 {
+        let (t, b) = (NAME_ROWS[i as usize].0, NAME_ROWS[i as usize].1);
+        // Label (col 0), left-justified.
+        let llo = rebuild_layout((150, t, 740, b), 2, &[8, 1, 12], &[1], false);
+        let f = fonts.slot(3);
+        s.draw_text_box(
+            llo.col_left[0], llo.row_top[0], llo.col_right[0], llo.row_bottom[0],
+            0x1, f, pal.near_white, NAME_LABELS[i as usize],
+        );
+        // Edit box: grey fill, bevel; focused field gets a yellow outline.
+        let (fl, ft, fr, fb) = field_rects[i as usize];
+        s.draw_panel(fl, ft, fr, fb, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let text = manager.field(i);
+        let shown = if manager.focus == i {
+            format!("{text}_") // caret
+        } else {
+            text.to_string()
+        };
+        let ef = fonts.slot(3);
+        s.draw_text_box(fl + 6, ft, fr, fb, 0x1, ef, pal.near_white, &shown);
+        if manager.focus == i {
+            s.draw_hollow_rect(fl - 1, ft - 1, fr + 1, fb + 1, pal.highlight_fg);
+        }
+    }
+
+    // Back / Next.
+    let nav = rebuild_layout((100, 555, 790, 590), 1, &[3, 1], &[1], false);
+    let bf = fonts.slot(3);
+    for (rect, label, enabled) in [
+        (nav.cell(0, 0), "Back", true),
+        (nav.cell(1, 0), "Next", manager.is_valid()),
+    ] {
+        let (l, t, r, b) = rect;
+        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let ink = if enabled { pal.dark_ink } else { (90, 90, 90) };
+        s.draw_text_box(l, t, r, b, 0, bf, ink, label);
+    }
+}
+
+/// Hit-test the Enter Name screen.
+pub fn enter_name_hit(x: i32, y: i32) -> Option<NameClick> {
+    for (i, &(l, t, r, b)) in name_field_rects().iter().enumerate() {
+        if x >= l && x <= r && y >= t && y <= b {
+            return Some(NameClick::Field(i as u8));
+        }
+    }
+    let nav = rebuild_layout((100, 555, 790, 590), 1, &[3, 1], &[1], false);
+    if in_rect(x, y, nav.cell(0, 0)) {
+        return Some(NameClick::Back);
+    }
+    if in_rect(x, y, nav.cell(1, 0)) {
+        return Some(NameClick::Next);
+    }
+    None
+}
 use std::path::PathBuf;
 
 /// Location of the widget-spec JSONs produced by the carver.
