@@ -88,6 +88,12 @@ struct App {
     /// The current in-memory working game (temporary until saved). `None` on
     /// the menu screens before a game is started.
     game: Option<GameInstance>,
+    /// Which top-level menu of the persistent sidebar is open (`FUN_00745540`),
+    /// or `None` when no drop-down is showing.
+    menu_open: Option<usize>,
+    /// Transient status line shown under the content (e.g. "not yet
+    /// implemented" for menu commands without a ported screen).
+    status: Option<String>,
 }
 
 impl App {
@@ -125,6 +131,17 @@ impl App {
             }
             Screen::Dashboard { view, squad_scroll } => {
                 screens::dashboard(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *squad_scroll);
+                // Overlay the persistent menu bar (game_mbr / FUN_00745540) on
+                // top of the dashboard's own sidebar column.
+                if let Some(game) = self.game.as_ref() {
+                    let bar = cm_domain::menu::MenuBar::in_game(&game.save);
+                    screens::menu_sidebar(
+                        &mut self.frame, &mut self.fonts, &bar, self.menu_open, &game.save.date,
+                    );
+                }
+                if let Some(msg) = self.status.as_ref() {
+                    screens::status_line(&mut self.frame, &mut self.fonts, msg);
+                }
             }
         }
     }
@@ -160,6 +177,49 @@ impl App {
 
     /// Convert a mouse-release into a screen transition + state update.
     fn on_release(&mut self, x: i32, y: i32) {
+        // The persistent menu bar (sidebar) is global on in-game screens and
+        // takes clicks before the screen's own controls. Handle it first.
+        if matches!(self.screen, Screen::Dashboard { .. }) {
+            if let Some(game) = self.game.as_ref() {
+                let bar = cm_domain::menu::MenuBar::in_game(&game.save);
+                match screens::menu_sidebar_hit(&bar, self.menu_open, x, y) {
+                    Some(screens::SidebarHit::Top(i)) => {
+                        // Toggle the drop-down; a direct-action top-level fires
+                        // its command immediately (e.g. Continue Game).
+                        if let Some(cmd) = bar.menus[i].command {
+                            self.menu_open = None;
+                            self.dispatch_menu_command(cmd);
+                        } else {
+                            self.menu_open = if self.menu_open == Some(i) { None } else { Some(i) };
+                        }
+                        return;
+                    }
+                    Some(screens::SidebarHit::Item { top, item }) => {
+                        let it = &bar.menus[top].items[item];
+                        let (cmd, enabled) = (it.command, it.enabled);
+                        self.menu_open = None;
+                        if enabled {
+                            self.dispatch_menu_command(cmd);
+                        }
+                        return;
+                    }
+                    Some(screens::SidebarHit::PrevScreen)
+                    | Some(screens::SidebarHit::NextScreen) => {
+                        // Screen history (◀▶) is not modelled yet.
+                        self.status = Some("Screen history not yet implemented".into());
+                        self.menu_open = None;
+                        return;
+                    }
+                    None => {
+                        // A click elsewhere closes an open drop-down.
+                        if self.menu_open.is_some() {
+                            self.menu_open = None;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
         // Deferred new-game start: the click handlers below borrow `self.screen`,
         // so they set this instead of building the game inline (which needs
         // `self.world` + `self.game`). Processed after the match releases the
@@ -329,6 +389,66 @@ impl App {
         let view = world.dashboard_for(&game.save, human);
         if let Some(view) = view {
             self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+        }
+    }
+
+    /// Route a menu-bar command (the Rust side of the exe's two dispatchers
+    /// FUN_007491e0 / FUN_0074bf60). Commands with a ported screen act; the
+    /// rest surface a "not yet implemented" status naming their exe target.
+    fn dispatch_menu_command(&mut self, command: u16) {
+        use cm_domain::menu::cmd;
+        self.status = None;
+        match command {
+            cmd::CONTINUE => self.advance_active_day(),
+            cmd::SQUAD | cmd::B_SQUAD => {
+                // Already the dashboard/squad view — rebuild it for the active
+                // human (a no-op refresh for now).
+                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                    if let Some(view) = world.dashboard_for(&game.save, game.save.active_human) {
+                        let squad_scroll = match &self.screen {
+                            Screen::Dashboard { squad_scroll, .. } => *squad_scroll,
+                            _ => 0,
+                        };
+                        self.screen = Screen::Dashboard { view, squad_scroll };
+                    }
+                }
+            }
+            cmd::ADD_MANAGER => {
+                // Add a new (unemployed) human — the exe's cmd 0x3fb. They join
+                // the hotseat; appointment happens via Apply/Take Control later.
+                if let Some(game) = self.game.as_mut() {
+                    let n = game.save.humans.len();
+                    let identity = cm_domain::ManagerIdentity {
+                        first: "Manager".into(),
+                        second: format!("{}", n + 1),
+                        nickname: String::new(),
+                    };
+                    let h = game.save.add_manager(identity);
+                    game.dirty = true;
+                    self.status = Some(format!("Added manager #{} (unemployed)", h + 1));
+                }
+            }
+            cmd::RESIGN_FROM_CLUB | cmd::RESIGN_FROM_NATION => {
+                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_mut()) {
+                    let human = game.save.active_human;
+                    game.save.resign(human);
+                    game.dirty = true;
+                    if let Some(view) = world.dashboard_for(&game.save, human) {
+                        self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+                    }
+                    self.status = Some("Resigned. You are now unemployed.".into());
+                }
+            }
+            cmd::EXIT_GAME => {
+                self.status = Some("Exit: quit the window (unsaved progress is guarded)".into());
+            }
+            other => {
+                self.status = Some(format!(
+                    "'{}' not yet implemented ({})",
+                    cm_domain::menu::describe_command(other),
+                    format_args!("cmd 0x{other:x}"),
+                ));
+            }
         }
     }
 
@@ -503,6 +623,8 @@ impl Default for App {
             screen: Screen::Setup,
             world: None,
             game: None,
+            menu_open: None,
+            status: None,
         }
     }
 }
@@ -784,6 +906,10 @@ fn dump(path: &str, which: &str) {
                     }
                     if let Some(view) = world.dashboard_for(&save, h) {
                         screens::dashboard(&mut frame, &mut fonts, bg.as_ref(), &view, 0);
+                        let bar = cm_domain::menu::MenuBar::in_game(&save);
+                        // Open a drop-down for the screenshot if CM_MENU_OPEN=N.
+                        let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                        screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date);
                     }
                 }
             }

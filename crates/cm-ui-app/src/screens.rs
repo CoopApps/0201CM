@@ -242,6 +242,195 @@ fn month_name(m: u8) -> &'static str {
         .get(m as usize).copied().unwrap_or("")
 }
 
+// ------- Persistent menu bar (the exe's game_mbr sidebar, FUN_00745540) -------
+
+/// The menu bar is the 89px vertical sidebar (`FUN_00549790(0,0,0x59,599,…)`),
+/// not a top strip. Date + ◀▶ nav sit at the top; the top-level entries stack
+/// below it. Clicking a menu header opens its drop-down to the right.
+pub const SIDEBAR: (i32, i32, i32, i32) = (0, 0, 89, 599);
+const MENU_TOP_Y: i32 = 92;
+const MENU_ENTRY_H: i32 = 46;
+const MENU_ITEM_H: i32 = 26;
+const MENU_DROPDOWN_W: i32 = 232;
+
+/// What a click in the sidebar / open drop-down resolves to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SidebarHit {
+    PrevScreen,
+    NextScreen,
+    Top(usize),
+    Item { top: usize, item: usize },
+}
+
+/// Rect of top-level entry `i` in the sidebar column.
+fn menu_top_rect(i: usize) -> (i32, i32, i32, i32) {
+    let t = MENU_TOP_Y + i as i32 * MENU_ENTRY_H;
+    (2, t, SIDEBAR.2 - 2, t + MENU_ENTRY_H - 2)
+}
+
+/// The two nav-arrow rects (◀ prev, ▶ next).
+fn menu_nav_rects() -> [(i32, i32, i32, i32); 2] {
+    [(4, 60, 43, 86), (46, 60, 85, 86)]
+}
+
+/// Greedy word-wrap of `text` to at most `max_w` px using font `f`, returning
+/// up to 3 lines.
+fn wrap_lines(f: &cm_render::font::Font, text: &str, max_w: i32) -> Vec<String> {
+    let mut lines: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    for word in text.split_whitespace() {
+        let trial = if cur.is_empty() { word.to_string() } else { format!("{cur} {word}") };
+        if f.text_width(&trial) <= max_w || cur.is_empty() {
+            cur = trial;
+        } else {
+            lines.push(std::mem::take(&mut cur));
+            cur = word.to_string();
+        }
+    }
+    if !cur.is_empty() {
+        lines.push(cur);
+    }
+    if lines.is_empty() {
+        lines.push(text.to_string());
+    }
+    lines
+}
+
+/// Draw wrapped, centred text within a rect (up to 3 lines).
+fn draw_wrapped_center(
+    s: &mut Surface,
+    f: &cm_render::font::Font,
+    rect: (i32, i32, i32, i32),
+    ink: (u8, u8, u8),
+    text: &str,
+) {
+    let (l, t, r, b) = rect;
+    let lines = wrap_lines(f, text, (r - l) - 6);
+    let lh = 15;
+    let total = lines.len() as i32 * lh;
+    let mut y = t + ((b - t) - total) / 2;
+    for line in &lines {
+        s.draw_text_box(l, y, r, y + lh, 0, f, ink, line);
+        y += lh;
+    }
+}
+
+/// Render the persistent sidebar menu bar for the active human, plus the open
+/// drop-down (if any). `date` labels the top of the bar.
+pub fn menu_sidebar(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bar: &cm_domain::menu::MenuBar,
+    open: Option<usize>,
+    date: &cm_domain::GameDate,
+) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    // Sidebar column.
+    s.draw_panel(SIDEBAR.0, SIDEBAR.1, SIDEBAR.2, SIDEBAR.3, F_VGRADIENT, pal.sidebar_blue);
+    // Date (two lines) at the very top.
+    {
+        let f = fonts.slot(3);
+        s.draw_text_box(2, 6, SIDEBAR.2 - 2, 26, 0, f, pal.highlight_fg, &format!("{} {}", date.day, month_name(date.month)));
+        s.draw_text_box(2, 26, SIDEBAR.2 - 2, 46, 0, f, pal.near_white, &format!("{}", date.year));
+    }
+    // ◀ ▶ nav arrows.
+    {
+        let f = fonts.slot(3);
+        for (rect, glyph) in menu_nav_rects().iter().zip(["<", ">"]) {
+            let (l, t, r, b) = *rect;
+            s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
+            s.draw_text_box(l, t, r, b, 0, f, pal.near_white, glyph);
+        }
+    }
+    // Top-level entries.
+    for (i, top) in bar.menus.iter().enumerate() {
+        let rect = menu_top_rect(i);
+        let (l, t, r, b) = rect;
+        let is_open = open == Some(i);
+        // The open header (and direct-action Continue) get a highlighted panel.
+        if is_open {
+            s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
+        }
+        let ink = if is_open { pal.highlight_fg } else { pal.near_white };
+        // Narrow font (arial_narrow_11) — the real sidebar font; fits
+        // "Competitions" in the 89px column.
+        let f = fonts.slot(2);
+        draw_wrapped_center(s, f, rect, ink, &top.label);
+    }
+    // Open drop-down to the right of the sidebar.
+    if let Some(i) = open {
+        if let Some(top) = bar.menus.get(i) {
+            if !top.items.is_empty() {
+                let (_, ty, _, _) = menu_top_rect(i);
+                let x0 = SIDEBAR.2 + 1;
+                let x1 = x0 + MENU_DROPDOWN_W;
+                let h = top.items.len() as i32 * MENU_ITEM_H;
+                let y0 = ty.min(SIDEBAR.3 - h - 4);
+                s.draw_panel(x0, y0, x1, y0 + h + 4, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
+                let f = fonts.slot(3);
+                for (j, item) in top.items.iter().enumerate() {
+                    let iy = y0 + 2 + j as i32 * MENU_ITEM_H;
+                    if item.separator_before && j > 0 {
+                        s.draw_panel(x0 + 4, iy, x1 - 4, iy + 1, F_TRANSPARENT | F_BEVEL, pal.grey);
+                    }
+                    let ink = if item.enabled { pal.near_white } else { (120, 120, 120) };
+                    s.draw_text_box(x0 + 8, iy, x1 - 6, iy + MENU_ITEM_H, 0x1, f, ink, &item.label);
+                }
+            }
+        }
+    }
+}
+
+/// A transient status line at the very bottom of the screen (used for the
+/// "not yet implemented" note on menu commands without a ported screen).
+pub fn status_line(s: &mut Surface, fonts: &mut Fonts, msg: &str) {
+    let pal = palette();
+    s.draw_panel(90, 574, 799, 599, F_SOLID_FILL | F_BEVEL, pal.grey);
+    let f = fonts.slot(3);
+    s.draw_text_box(98, 574, 799, 599, 0x1, f, pal.near_white, msg);
+}
+
+/// Hit-test the sidebar + open drop-down. Returns the resolved target, if any.
+pub fn menu_sidebar_hit(
+    bar: &cm_domain::menu::MenuBar,
+    open: Option<usize>,
+    x: i32,
+    y: i32,
+) -> Option<SidebarHit> {
+    // Open drop-down takes priority (it overlays the content area).
+    if let Some(i) = open {
+        if let Some(top) = bar.menus.get(i) {
+            if !top.items.is_empty() {
+                let (_, ty, _, _) = menu_top_rect(i);
+                let x0 = SIDEBAR.2 + 1;
+                let x1 = x0 + MENU_DROPDOWN_W;
+                let h = top.items.len() as i32 * MENU_ITEM_H;
+                let y0 = ty.min(SIDEBAR.3 - h - 4);
+                if x >= x0 && x <= x1 && y >= y0 && y <= y0 + h + 4 {
+                    let j = ((y - (y0 + 2)) / MENU_ITEM_H).clamp(0, top.items.len() as i32 - 1);
+                    return Some(SidebarHit::Item { top: i, item: j as usize });
+                }
+            }
+        }
+    }
+    // Nav arrows.
+    for (rect, hit) in menu_nav_rects().iter().zip([SidebarHit::PrevScreen, SidebarHit::NextScreen]) {
+        let (l, t, r, b) = *rect;
+        if x >= l && x <= r && y >= t && y <= b {
+            return Some(hit);
+        }
+    }
+    // Top-level entries.
+    for i in 0..bar.menus.len() {
+        let (l, t, r, b) = menu_top_rect(i);
+        if x >= l && x <= r && y >= t && y <= b {
+            return Some(SidebarHit::Top(i));
+        }
+    }
+    None
+}
+
 // ------- Select Club (manage) -------
 
 /// Clicks on the Select Club screen.

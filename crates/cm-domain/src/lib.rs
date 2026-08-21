@@ -2,6 +2,7 @@
 
 pub mod gameplay_mutators;
 pub mod league_calendar;
+pub mod menu;
 pub mod typed_records;
 pub mod ui_schema;
 
