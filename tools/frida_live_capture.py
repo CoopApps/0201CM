@@ -160,12 +160,16 @@ recv('arm', function () {
 recv('dump', function onDump(msg) {
     const burst = msg.burst;
     try {
-        let na = POOL_BASE.add(AREA_CNT_OFF).readS16();
-        let nw = POOL_BASE.add(WIDGET_CNT_OFF).readS16();
+        // DAT_00B59FE8 holds a POINTER to the pool struct (verified live:
+        // *0xB59FE8 = 0xB5D030, counts through it match the constructor
+        // stream exactly).
+        const pool = POOL_BASE.readPointer();
+        let na = pool.add(AREA_CNT_OFF).readS16();
+        let nw = pool.add(WIDGET_CNT_OFF).readS16();
         if (na < 0 || na > AREA_CAP) na = 0;
         if (nw < 0 || nw > WIDGET_CAP) nw = 0;
-        const areas = na ? POOL_BASE.add(AREA_OFF).readByteArray(na * AREA_STRIDE) : new ArrayBuffer(0);
-        const widgets = nw ? POOL_BASE.add(WIDGET_OFF).readByteArray(nw * WIDGET_STRIDE) : new ArrayBuffer(0);
+        const areas = na ? pool.add(AREA_OFF).readByteArray(na * AREA_STRIDE) : new ArrayBuffer(0);
+        const widgets = nw ? pool.add(WIDGET_OFF).readByteArray(nw * WIDGET_STRIDE) : new ArrayBuffer(0);
         const total = new Uint8Array(areas.byteLength + widgets.byteLength);
         total.set(new Uint8Array(areas), 0);
         total.set(new Uint8Array(widgets), areas.byteLength);

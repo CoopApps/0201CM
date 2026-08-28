@@ -64,12 +64,18 @@ def decode_pool(meta: dict, blob: bytes) -> dict:
     off = na * sa
     for i in range(nw):
         r = blob[off + i * sw:off + (i + 1) * sw]
-        l, t, rr, b = struct.unpack_from("<4i", r, 0)
-        (maxcols,) = struct.unpack_from("<i", r, 0x14)
-        (flags,) = struct.unpack_from("<I", r, 0x18)
+        # Empirical live-dump layout (burst_001 hexdump): the record opens
+        # with two pointers (self/link), then post-layout rect at +0x10,
+        # constructor-arg echoes around +0x28 (L,R,T,B), rflags at +0x38,
+        # tflags at +0x3C, text copy at +0x80. The decode doc's offsets
+        # were relative to a base 0x10 earlier.
+        l, t, rr, b = struct.unpack_from("<4i", r, 0x10)
+        (rflags,) = struct.unpack_from("<I", r, 0x38)
+        (tflags,) = struct.unpack_from("<I", r, 0x3C)
         widgets.append({
-            "i": i, "L": l, "T": t, "R": rr, "B": b, "flags": flags,
-            "max_columns": maxcols, "text": cstr(r[0x80:0x80 + 0x30]),
+            "i": i, "L": l, "T": t, "R": rr, "B": b,
+            "rflags": rflags, "tflags": tflags,
+            "text": cstr(r[0x80:0x80 + 0x30]),
         })
     return {"areas": areas, "widgets": widgets}
 
