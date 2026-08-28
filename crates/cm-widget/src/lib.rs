@@ -32,6 +32,8 @@
 //! The `Value::as_i32()` etc helpers keep evaluator code short. A missing key
 //! yields `None` — the render pass then knows to fall back or skip cleanly.
 
+pub mod tab_strip;
+
 use cm_render::font::Fonts;
 use cm_render::image::Image;
 use cm_render::layout::{rebuild_layout, Layout};

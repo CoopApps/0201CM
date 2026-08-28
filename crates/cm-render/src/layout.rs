@@ -18,9 +18,16 @@ fn axis(extent: i32, weights: &[i32], inset: i32) -> (Vec<i32>, Vec<i32>) {
     let mut far = vec![0i32; n];
     let mut cum = 0i32;
     for i in 0..n {
-        cum += weights[i];
+        cum = cum.saturating_add(weights[i]);
         near[i] = if i == 0 { inset } else { far[i - 1] + 2 };
-        far[i] = if i + 1 < n { cum * extent / s - 1 + inset } else { extent - 1 + inset };
+        far[i] = if i + 1 < n {
+            // The exe's `imul` here can overflow 32 bits when cumulative weights
+            // are large; do the multiply in 64 bits to match the arithmetic
+            // result without panicking (rustc catches the overflow in debug).
+            ((cum as i64) * (extent as i64) / (s as i64)) as i32 - 1 + inset
+        } else {
+            extent - 1 + inset
+        };
     }
     (near, far)
 }

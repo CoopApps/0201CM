@@ -10,15 +10,60 @@
 //! exe to the bit (e.g. red `(198,0,0)` is `0xC000` packed then unpacked). It presents as
 //! RGBA8 for a modern GPU window.
 
+pub mod area;
+pub mod background;
+pub mod bevel;
+pub mod blit;
+pub mod cursor;
+pub mod drawstring;
+pub mod fade;
 pub mod font;
+pub mod font_loader;
+pub mod gen_screen_types;
+pub mod gen_screens;
+pub mod glyph_blit;
 pub mod image;
+pub mod inflection;
+pub mod l10n;
+pub mod lang_bank;
 pub mod layout;
+pub mod line;
+pub mod msgbox;
+pub mod palette;
 pub mod panel;
+pub mod primitives;
+pub mod sidebar_msg;
+pub mod view_render;
+pub mod widget_pool;
+pub mod window_init;
 
 /// Exact port of graphics_rgb_to_surface_pixel (0x005ce4f0), RGB565 path (green mask 0x7e0).
 #[inline]
 pub fn pack565(r: u8, g: u8, b: u8) -> u16 {
     ((((r as u16 & 0xf8) << 5 | (g as u16 & 0xfc)) << 3) | (b as u16 & 0xff) >> 3) & 0xffff
+}
+
+/// Full port of `FUN_005CE4F0` (129 bytes). Selects RGB565 vs RGB555
+/// based on the pixel-format descriptor's green mask (exe's `param_4[5]`
+/// = green mask; `0x7E0` = 565, else 555).
+///
+/// When the DD-init flag `DAT_00AD6BFC` is non-zero the exe returns 0 —
+/// the port takes that as `None`.
+#[inline]
+pub fn rgb_to_surface_pixel(r: u8, g: u8, b: u8, green_mask: u16) -> u16 {
+    if green_mask == 0x7E0 {
+        // RGB565: (r & 0xF8) << 5 | (g & 0xFC) → << 3, or (b & 0xFF) >> 3.
+        let r5 = ((r as u16) & 0xF8) << 5;
+        let g6 = (g as u16) & 0xFC;
+        let b5 = (b as u16) >> 3;
+        ((r5 | g6) << 3) | b5
+    } else {
+        // RGB555: (r & 0xF8) << 5 | (g & 0xF8) → << 2, or (b & 0xFF) >> 3.
+        let r5 = ((r as u16) & 0xF8) << 5;
+        let g5 = (g as u16) & 0xF8;
+        let b5 = (b as u16) >> 3;
+        ((r5 | g5) << 2) | b5
+    }
 }
 
 /// Inverse of [`pack565`]: expand 5/6/5 to 8-bit by bit-replication.

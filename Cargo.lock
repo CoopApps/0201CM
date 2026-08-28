@@ -255,6 +255,9 @@ dependencies = [
 [[package]]
 name = "cm-render"
 version = "0.1.0"
+dependencies = [
+ "cm-domain",
+]
 
 [[package]]
 name = "cm-rng"

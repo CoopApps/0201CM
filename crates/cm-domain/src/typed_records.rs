@@ -592,8 +592,23 @@ impl<'a> NationView<'a> {
     }
 
     /// One of the `i32` cross-refs; probable continent link (nations map to 6 continents).
+    ///
+    /// SUPERSEDED — this offset holds text, not the continent. Use
+    /// [`Self::continent_id`] (`+0x71`) instead.
     pub fn continent_id_probable(&self) -> Option<i32> {
         id_opt(le_i32(self.raw, 0x5d))
+    }
+
+    /// **The nation's continent id** (`+0x71`). VERIFIED against the shipped
+    /// data — 14/14 known nations map correctly (Africa=0, Asia=1, Europe=2,
+    /// N.America=3, Oceania=4, S.America=5), and it is exactly the field the
+    /// African Cup of Nations draw reads: `afrcup_draw_qualifiers`
+    /// (`FUN_00402300`) compares `*(*(nation+0x71))` against the Africa
+    /// continent object `DAT_009bbeb8`. On disk `+0x71` is the continent id
+    /// (a single byte, high bytes zero); at runtime the loader swizzles it into
+    /// a continent-object pointer. Read as the low byte so it works pre-swizzle.
+    pub fn continent_id(&self) -> i32 {
+        u8_at(self.raw, 0x71) as i32
     }
 
     /// One of the `i32` cross-refs; probable capital-city link.

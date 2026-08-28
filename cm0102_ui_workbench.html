@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CM0102 UI Static Workbench</title>
+  <style>
+    :root {
+      --blue: #00006c;
+      --deep: #000014;
+      --panel: #c0c0c0;
+      --paper: #efefef;
+      --ink: #080808;
+      --muted: #4d4d4d;
+      --line: #707070;
+      --green: #008000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(90deg, var(--blue) 0 90px, var(--deep) 90px 100%);
+    }
+    header {
+      margin-left: 90px;
+      padding: 14px 18px;
+      color: white;
+      background: #000040;
+      border-bottom: 2px solid #808080;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { margin: 0; color: #dddddd; }
+    main {
+      margin-left: 90px;
+      padding: 16px;
+      min-height: calc(100vh - 64px);
+      background: var(--panel);
+    }
+    .stats, .layout {
+      display: grid;
+      gap: 10px;
+    }
+    .stats {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      margin-bottom: 12px;
+    }
+    .stat, .box {
+      background: var(--paper);
+      border: 2px solid;
+      border-color: #ffffff #606060 #606060 #ffffff;
+      padding: 10px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 24px;
+    }
+    .layout {
+      grid-template-columns: 260px 1fr;
+      align-items: start;
+    }
+    select, input {
+      width: 100%;
+      padding: 6px;
+      border: 2px solid;
+      border-color: #606060 #ffffff #ffffff #606060;
+      background: white;
+      font: inherit;
+    }
+    button {
+      padding: 6px 12px;
+      border: 2px solid;
+      border-color: #ffffff #606060 #606060 #ffffff;
+      background: #d8d8d8;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:active { border-color: #606060 #ffffff #ffffff #606060; }
+    h2 { margin: 0 0 8px; font-size: 18px; }
+    h3 { margin: 14px 0 6px; font-size: 15px; }
+    .labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .label {
+      padding: 3px 6px;
+      background: #ffffd8;
+      border: 1px solid #909070;
+      font-size: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #a0a0a0;
+      padding: 4px 6px;
+      vertical-align: top;
+    }
+    th {
+      text-align: left;
+      background: #00006c;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+    code {
+      font-family: Consolas, monospace;
+      color: #002060;
+      overflow-wrap: anywhere;
+    }
+    .muted { color: var(--muted); }
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .font-card {
+      background: white;
+      border: 1px solid #909090;
+      padding: 8px;
+    }
+    .font-card strong, .font-card span, .font-card code { display: block; }
+    .screen {
+      height: 600px;
+      width: 800px;
+      max-width: 100%;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00006c 0 90px, #c0c0c0 90px 100%);
+      border: 2px solid #000;
+    }
+    .chrome-note {
+      position: absolute;
+      left: 110px;
+      top: 20px;
+      right: 20px;
+      padding: 10px;
+      background: #efefef;
+      border: 2px solid;
+      border-color: #ffffff #606060 #606060 #ffffff;
+    }
+    @media (max-width: 900px) {
+      header, main { margin-left: 0; }
+      body { background: var(--panel); }
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CM0102 UI Static Workbench</h1>
+    <p>Original executable-derived labels, draw calls, regions, globals, and asset inventory.</p>
+  </header>
+  <main>
+    <section class="stats" id="stats"></section>
+    <section class="layout">
+      <aside class="box">
+        <h2>Screen</h2>
+        <select id="screen"></select>
+        <h3>Filter Calls</h3>
+        <input id="filter" placeholder="function, semantic, arg, symbol...">
+        <h3>Exports</h3>
+        <button id="csv">Export Calls CSV</button>
+        <h3>Source Files</h3>
+        <div id="files" class="muted"></div>
+      </aside>
+      <section class="box">
+        <div class="screen">
+          <div class="chrome-note">
+            <strong id="screenTitle">No screen loaded</strong>
+            <div class="muted">This is not a final render. It is a CM0102-shaped workbench for original draw facts.</div>
+          </div>
+        </div>
+        <h2>Original Labels</h2>
+        <div id="labels" class="labels"></div>
+        <h2 style="margin-top: 14px;">Decoded Original Fonts</h2>
+        <div id="fonts" class="font-grid"></div>
+        <h2 style="margin-top: 14px;">Draw / Text Calls</h2>
+        <div id="table"></div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const specUrl = 'reports/cm0102_ui_specs.json';
+    const fontUrl = 'assets/cm0102/fonts/font_manifest.json';
+    let spec = null;
+    let fontManifest = null;
+    let currentRows = [];
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+
+    function argSummary(call) {
+      return call.args.map((arg, index) => {
+        const numeric = arg.numeric === null || arg.numeric === undefined ? '' : ` = ${arg.numeric}`;
+        const symbols = arg.symbols && arg.symbols.length ? ` [${arg.symbols.join(', ')}]` : '';
+        return `p${index + 1}: ${arg.expr}${numeric}${symbols}`;
+      }).join(' | ');
+    }
+
+    function renderStats() {
+      const s = spec.summary;
+      $('stats').innerHTML = [
+        ['Files', s.files],
+        ['UI Calls', s.display_calls],
+        ['Screens', s.screens],
+        ['Labels', s.labels],
+        ['Globals', s.global_symbols],
+      ].map(([label, value]) => `<div class="stat"><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`).join('');
+    }
+
+    function renderScreens() {
+      const screens = Object.keys(spec.summary.screen_call_counts).sort();
+      $('screen').innerHTML = screens.map(screen => `<option value="${esc(screen)}">${esc(screen)}</option>`).join('');
+    }
+
+    function renderFonts() {
+      if (!fontManifest) {
+        $('fonts').innerHTML = '<span class="muted">Font manifest not loaded.</span>';
+        return;
+      }
+      $('fonts').innerHTML = fontManifest.fonts.map(font => {
+        const widths = Object.entries(font.sample_widths || {})
+          .map(([name, width]) => `${name}: ${width}`)
+          .join(', ');
+        return `<div class="font-card">
+          <strong>${esc(font.file)}</strong>
+          <span>height ${esc(font.height)} · ${esc(font.non_empty_glyphs)} glyph bitmaps</span>
+          <code>${esc(widths)}</code>
+        </div>`;
+      }).join('');
+    }
+
+    function selectScreen() {
+      const screen = $('screen').value;
+      $('screenTitle').textContent = screen;
+      const labels = spec.labels_by_screen[screen] || [];
+      $('labels').innerHTML = labels.length
+        ? labels.map(label => `<span class="label">${esc(label)}</span>`).join('')
+        : '<span class="muted">No resolved labels for this function yet.</span>';
+      const files = spec.files.filter(file => file.screen === screen);
+      $('files').innerHTML = files.map(file => `<code>${esc(file.file)}</code>`).join('<br>');
+      renderTable();
+    }
+
+    function renderTable() {
+      const screen = $('screen').value;
+      const needle = $('filter').value.trim().toLowerCase();
+      currentRows = spec.calls.filter(call => call.screen === screen);
+      if (needle) {
+        currentRows = currentRows.filter(call => JSON.stringify(call).toLowerCase().includes(needle));
+      }
+      $('table').innerHTML = `
+        <table>
+          <thead><tr><th>Line</th><th>Function</th><th>Semantic</th><th>Arguments</th><th>Resolved Text</th></tr></thead>
+          <tbody>
+            ${currentRows.slice(0, 500).map(call => {
+              const text = (call.resolved_strings || []).map(row => row.text).filter(Boolean).join(' / ');
+              return `<tr>
+                <td><code>${esc(call.relative_file)}:${esc(call.line)}</code></td>
+                <td><code>${esc(call.function)}</code></td>
+                <td>${esc(call.semantic)}</td>
+                <td><code>${esc(argSummary(call))}</code></td>
+                <td>${esc(text)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        <p class="muted">Showing ${Math.min(currentRows.length, 500)} of ${currentRows.length} call(s).</p>`;
+    }
+
+    function exportCsv() {
+      const rows = [['screen', 'file', 'line', 'function', 'semantic', 'args', 'resolved_text']];
+      for (const call of currentRows) {
+        rows.push([
+          call.screen,
+          call.relative_file,
+          call.line,
+          call.function,
+          call.semantic,
+          argSummary(call),
+          (call.resolved_strings || []).map(row => row.text).filter(Boolean).join(' / '),
+        ]);
+      }
+      const csv = rows.map(row => row.map(cell => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${$('screen').value}_ui_calls.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function boot() {
+      spec = await fetch(specUrl).then(response => response.json());
+      try {
+        fontManifest = await fetch(fontUrl).then(response => response.json());
+      } catch (_) {
+        fontManifest = null;
+      }
+      renderStats();
+      renderScreens();
+      renderFonts();
+      $('screen').addEventListener('change', selectScreen);
+      $('filter').addEventListener('input', renderTable);
+      $('csv').addEventListener('click', exportCsv);
+      $('screen').value = 'squad_screen';
+      selectScreen();
+    }
+
+    boot().catch(error => {
+      document.body.innerHTML = `<pre>Could not load ${specUrl}\n${esc(error.stack || error)}</pre>`;
+    });
+  </script>
+</body>
+</html>

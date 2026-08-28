@@ -40,3 +40,11 @@ path = "src/bin/clubs_check.rs"
 [[bin]]
 name = "dash-check"
 path = "src/bin/dash_check.rs"
+
+[[bin]]
+name = "comp-counts"
+path = "src/bin/comp_counts.rs"
+
+[[bin]]
+name = "export-club-comp"
+path = "src/bin/export_club_comp.rs"

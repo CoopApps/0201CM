@@ -6,3 +6,4 @@ license.workspace = true
 description = "0201CM design-system renderer: exact CM0102 look (RGB565 surface, panels/bevels, .fnt text, layout) as a modern, extensible component library."
 
 [dependencies]
+cm-domain = { path = "../cm-domain" }

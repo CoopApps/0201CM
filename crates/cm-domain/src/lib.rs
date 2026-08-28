@@ -1,8 +1,170 @@
 #![forbid(unsafe_code)]
 
+pub mod african_nations;
+pub mod americas_nations;
+pub mod arg_primera;
+pub mod arg_rules;
+pub mod arg_second;
+pub mod asia_club_champ;
+pub mod asia_cup_winner;
+pub mod asia_nations;
+pub mod euro_nations;
+pub mod asia_oceania_nations;
+pub mod asia_super_cup;
+pub mod concacaf_champ;
+pub mod euro_super_cup;
+pub mod intl_comps;
+pub mod aus_nsl;
+pub mod aus_rules;
+pub mod cash;
+pub mod club_records;
+pub mod dispute;
+pub mod fifa_rankings;
+pub mod fog_of_war;
+pub mod friendly;
+pub mod game;
+pub mod hall_of_fame;
+pub mod history;
+pub mod host_country;
+pub mod human_manager;
+pub mod manager_creation;
+pub mod index;
+pub mod player_rating;
+pub mod player_regen;
+pub mod awards_engine;
+pub mod finance;
+pub mod match_engine;
+pub mod match_engine_exe;
+pub mod screen_club_dashboard;
+pub mod screen_nation_dashboard;
+pub mod screen_batch3;
+pub mod screen_batch4;
+pub mod screen_batch5;
+pub mod screen_batch6;
+pub mod screen_batch7;
+pub mod screen_batch8;
+pub mod screen_batch9;
+pub mod screen_batch10;
+pub mod screen_batch11;
+// TEMP-DISABLED pub mod screen_batch12;
+pub mod screen_batch13;
+pub mod screen_batch14;
+pub mod screen_batch15;
+pub mod screen_batch16;
+pub mod screen_batch17;
+pub mod screen_batch18;
+pub mod screen_batch19;
+pub mod screen_batch20;
+pub mod screen_batch21;
+pub mod screen_batch22;
+pub mod screen_batch23;
+pub mod screen_batch24;
+pub mod screen_batch25;
+pub mod screen_batch26;
+pub mod screen_batch27;
+pub mod sidebar_dispatcher;
+pub mod world_facade;
+pub mod world_pools;
+pub mod screen_manager_batch;
+pub mod screen_transfers;
+pub mod formation;
+pub mod mini_league;
+pub mod mini_cup;
+pub mod national_teams;
+pub mod news;
+pub mod transfer;
+pub mod training;
+pub mod injury;
+pub mod weather;
+pub mod group_stage;
+pub mod domestic_cup;
 pub mod gameplay_mutators;
+pub mod honours;
+pub mod simple_league;
+pub mod super_cup;
+pub mod transfer_eligibility;
+
+/// Competition ids handled by dedicated ported classes (their own league/cup
+/// engines), which must therefore be excluded from the generic double-round-
+/// robin builder to avoid a duplicate season. Argentina (63/64), Australia
+/// (151), Belgium (0-3, 332, 331), Brazil (state championships + national
+/// divisions + Copa do Brasil).
+pub const PORTED_COMPETITION_IDS: &[i32] = &[
+    63, 64, // Argentina Primera / Second
+    151, // Australian NSL
+    0, 1, 2, 3, 331, 332, // Belgium First/Second/Third A,B + Super Cup + Cup
+    // England: 5 leagues (Prem 7, 1st 8, 2nd 9, 3rd 10, Conference 93) +
+    // 4 knockouts (FA Cup 351, League Cup 352, FA Trophy 94, Vans 354) +
+    // Charity Shield 353.
+    7, 8, 9, 10, 93, 351, 352, 94, 354, 353,
+    // European continental competitions handled by dedicated engines.
+    326, 327, 328, 329, // Champions Cup / Cup Winners / UEFA Cup / Super Cup
+    // Finland: Premier (114), First (118), Cup (113).
+    114, 118, 113,
+    // France: L1 (11) / L2 (12) / National (13) / CFA (14) / Lower (15) +
+    // Cup (335) + League Cup (336) + Trophée des Champions (96).
+    11, 12, 13, 14, 15, 335, 336, 96,
+    // Germany: Bundesliga (16), 2.BL (17), Regionalliga N (20), S (21),
+    // DFB-Pokal (337), League Cup (91).
+    16, 17, 20, 21, 337, 91,
+    // Greece: Alpha (143), Beta (144), Cup (142), Super Cup (193).
+    143, 144, 142, 193,
+    // Brazil: national divisions + Copa do Brasil + 12 state championships.
+    65, 79, 80, 68, 67, 66, 254, 262, 258, 266, 260, 264, 268, 73, 74, 256,
+    // Holland: full Dutch block — Cup (338) hol_cup, First Division (23) hol_first,
+    // Eredivisie (22) hol_prm, Super Cup (102) hol_super.
+    338, 23, 22, 102,
+    // Inter-American Cup (199) — single-tie between Copa Libertadores winner
+    // and CONCACAF Champions Cup winner.
+    199,
+    // Intertoto Cup (330) — European summer secondary tournament; 60 clubs
+    // pre-nominated via their `secondary_comp` field.
+    330,
+    // Northern Ireland: Premier (154), First (155), Lower (156), Cup (157),
+    // League Cup (158), Gold Cup (160), Charity Shield (161).
+    154, 155, 156, 157, 158, 160, 161,
+    // Norway: Premier (315), First Division (316), Second Division Group 1
+    // (317), Third Division (346), Norwegian Cup (345).
+    315, 316, 317, 346, 345,
+    // Oceania: Champions Cup (109).
+    109,
+    // Poland: First Division (133), Second (134), FA Cup (137), League Cup (136), Super Cup (198).
+    133, 134, 137, 136, 198,
+    // Portugal: Premier (46), Second (47), Second B North (48), Cup (347), Super Cup (99).
+    46, 47, 48, 347, 99,
+    // Russia: Premier (176), First (177), Second West (178), Cup (190).
+    176, 177, 178, 190,
+    // Scotland: Premier (34), First (35), Second (36), Third (37), Cup (355), League Cup (356), Challenge Cup (101).
+    34, 35, 36, 37, 355, 356, 101,
+    // Spain: First (52), Second (53), 2ndB N (54), 2ndB S (55), Cup (348), Super (349).
+    52, 53, 54, 55, 348, 349,
+    // Sweden: Premier (38), First (39), 2nd S Gotaland (40), Cup (350).
+    38, 39, 40, 350,
+    // Turkey: Premier (174), 2. Cat A (285), Lower (167), FA Cup (173).
+    174, 285, 167, 173,
+    // USA: American Major League (31).
+    31,
+    // Wales: Premier (186), Lower (187), Cup (188), League Cup (189), Premier Cup (185).
+    186, 187, 188, 189, 185,
+    // Croatia: First (138), Lower (140), Cup (141), Super (197).
+    138, 140, 141, 197,
+    // Denmark: Premier (4), First (5), Second (6), Cup (334).
+    4, 5, 6, 334,
+    // Ireland: Premier (119), First Div (120), Leinster SL Div One (298),
+    // League Cup (121), Challenge Cup (122), Presidents Cup (191),
+    // Munster Senior Cup (299), Leinster Senior Cup (300), Super Cup (123).
+    119, 120, 298, 121, 122, 191, 299, 300, 123,
+    // Italy: Serie A (24), Serie B (25), Serie C1/A (26), Serie C1/B (27),
+    // Serie C2/A (28), Serie C2/B (29), Serie C2/C (30), Coppa Italia (339),
+    // Serie C Cup (340), C1 Super Cup (192), Italian Super Cup (341).
+    24, 25, 26, 27, 28, 29, 30, 339, 340, 192, 341,
+    // Japan: J-League 1 (69), Emperor's Cup (70), J-League Cup (71),
+    // J-League 2 (100), Super Cup (81), Japanese Football League (82).
+    69, 100, 82, 70, 71, 81,
+];
 pub mod league_calendar;
 pub mod menu;
+pub mod stadium;
 pub mod typed_records;
 pub mod ui_schema;
 
@@ -420,6 +582,84 @@ impl DomainStaffType10 {
         };
         (resolved.max(ca as i32)).clamp(1, 200) as i16
     }
+
+    /// Direct port of `FUN_005a2030` (`format.cpp`) — CM0102's real position
+    /// eligibility decoder. There is NO stored "position" field on a player
+    /// record; the game computes eligible-position bits live from the raw
+    /// attribute bytes at record offsets +0xf..+0x1a (our
+    /// `unknown_bytes_15_26`), each on the usual 1..20 scale, against a
+    /// sliding threshold that starts at 15 and relaxes downward until
+    /// something qualifies. Confirmed live (x64dbg trace on `club_screens.cpp`
+    /// `FUN_00488f70`'s squad position-filter, which calls this exact
+    /// function on `player+0x61` — our documented `player_data` link,
+    /// i.e. this same type10 record — before testing the identical bit
+    /// values `0x1..0x800` against the squad-filter UI).
+    ///
+    /// Bit layout (from the exe): 0x001 GK-ish, 0x002/0x004 sweeper-ish,
+    /// 0x008/0x010/0x020 central-defensive variants (branches on +0x12/
+    /// +0x13/+0x14), 0x040 defensive-mid/anchor, then a second pass over
+    /// +0x17/+0x18/+0x19 sets the wide/attacking bits 0x800/0x080/0x200.
+    pub fn position_eligibility_bits(&self) -> u16 {
+        let a = &self.unknown_bytes_15_26; // +0xf..+0x1a, 12 bytes
+        let byte_at = |off: usize| -> i8 { a[off - 0x0f] as i8 };
+
+        let mut bits: u16 = 0;
+        let mut threshold: i8 = 15;
+        while threshold > 9 && bits == 0 {
+            if threshold <= byte_at(0x0f) { bits |= 0x001; }
+            if threshold <= byte_at(0x10) { bits |= 0x004; }
+            if threshold <= byte_at(0x11) { bits |= 0x002; }
+            if byte_at(0x12) < threshold {
+                if byte_at(0x14) < threshold {
+                    if threshold <= byte_at(0x13) { bits |= 0x010; }
+                } else {
+                    bits |= 0x020;
+                }
+            } else {
+                bits |= 0x008;
+            }
+            if threshold <= byte_at(0x15) { bits |= 0x040; }
+            threshold -= 1;
+        }
+
+        let mut wide = false;
+        let mut threshold2: i8 = 15;
+        while threshold2 > 9 && !wide {
+            if byte_at(0x17) > 14 { bits |= 0x800; wide = true; }
+            if byte_at(0x18) > 14 { bits |= 0x080; wide = true; }
+            if byte_at(0x19) > 14 { bits |= 0x200; wide = true; }
+            threshold2 -= 1;
+        }
+        bits
+    }
+
+    /// Reduce the real position-eligibility bitmask to the coarse ordinal
+    /// scale `EngineTeamPlayer::position` actually consumes (see
+    /// `match_engine_exe.rs`: <=4 defender, <=8 midfielder, >=10 attacker,
+    /// ==12 goalkeeper). This is a faithful adapter, not an approximation of
+    /// the underlying data — the bitmask itself is byte-exact from the real
+    /// formula; picking a single representative ordinal for a multi-position
+    /// player is exactly the kind of reduction the engine's own ordinal
+    /// contract requires (it was never designed to consume the full mask).
+    /// Ties resolve toward the most advanced eligible bit, matching a
+    /// player's real usage as "the furthest forward role they can competently
+    /// fill" for squad-selection purposes.
+    pub fn engine_position_ordinal(&self) -> (u8, bool) {
+        let bits = self.position_eligibility_bits();
+        let is_gk = bits & 0x001 != 0;
+        if is_gk {
+            return (12, true);
+        }
+        // Most-advanced-first: attacking/wide bits, then central-def bits.
+        if bits & (0x800 | 0x080 | 0x200) != 0 { return (10, false); } // attacker
+        if bits & 0x040 != 0                    { return (6, false); }  // midfield
+        if bits & (0x002 | 0x004) != 0           { return (2, false); } // sweeper/CB
+        if bits & (0x008 | 0x010 | 0x020) != 0   { return (3, false); } // defender
+        // No attribute reached the threshold band at all — fall back to a
+        // generic outfield midfield slot rather than defaulting everyone to
+        // the same value.
+        (6, false)
+    }
 }
 
 /// One player/staff's initial RUNTIME state — the deterministic part of the
@@ -531,6 +771,25 @@ pub fn news_date_label(d: &GameDate, phase: u8) -> String {
     format!("{wd} {}{} {mon} {}", d.day, day_ordinal(d.day), phase_label(phase))
 }
 
+/// Format a game date the way the sidebar's own clock does: two lines,
+/// "Wednesday" / "10.10.01 EVE" -- FULL weekday name (unlike the news
+/// list's abbreviated "Wed"), then numeric DD.MM.YY, then the phase. This
+/// is a distinct real format from `news_date_label`, confirmed against a
+/// real screenshot of the sidebar (full weekday word, dotted 2-digit
+/// numeric date, not the news list's ordinal/month-name style). Reuses
+/// this file's own `weekday()`/`phase_label()` rather than re-deriving them.
+pub fn sidebar_date_label(d: &GameDate, phase: u8) -> (String, String) {
+    const WD_FULL: [&str; 7] = [
+        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+    ];
+    let wd = WD_FULL[weekday(d.year, d.month, d.day) as usize];
+    let yy = d.year % 100;
+    (
+        wd.to_string(),
+        format!("{:02}.{:02}.{:02} {}", d.day, d.month, yy, phase_label(phase)),
+    )
+}
+
 /// A human manager's typed name (Enter Name screen fields).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct ManagerIdentity {
@@ -628,7 +887,31 @@ pub struct SquadMember {
 pub struct NewsView {
     pub title: String,
     pub items: Vec<NewsItem>,
+    /// Selected tab slot (as captured from the running exe: 12 = "All").
+    /// See `reports/screen_captures/news.json` and memory [[news-screen-geometry]].
+    #[serde(default = "news_default_selected_tab")]
+    pub selected_tab: u16,
+    /// Tab strip button count. Captured: 8.
+    #[serde(default = "news_default_tab_count")]
+    pub tab_count: u8,
+    /// Index into `items` of the highlighted/selected row (red background,
+    /// its headline+body shown in the story panel below). Verified via a
+    /// live Frida capture of the real exe (see
+    /// DIRECTDRAW_CAPTURE_HANDOVER.md and memory [[news-screen-geometry]]):
+    /// the selected row is always the first one built.
+    #[serde(default)]
+    pub selected_item: usize,
+    /// Nav-bar state (the bottom-left Back/Next buttons) — captured live:
+    /// Back enabled, Next disabled, when already on the newest item.
+    #[serde(default = "news_default_true")]
+    pub nav_back_enabled: bool,
+    #[serde(default)]
+    pub nav_next_enabled: bool,
 }
+
+fn news_default_selected_tab() -> u16 { 12 }
+fn news_default_tab_count() -> u8 { 8 }
+fn news_default_true() -> bool { true }
 
 /// One item in the news inbox.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -954,6 +1237,35 @@ pub struct RuntimeSaveGame {
     /// [`SaveWorldOverlay`].
     #[serde(default)]
     pub world: SaveWorldOverlay,
+    /// Player rating book — built at new-game time from the world's staff
+    /// pool + player records. Consumed by [`crate::awards_engine`] at each
+    /// year rollover to fire per-league season-end awards without needing
+    /// world access from the hook.
+    #[serde(default)]
+    pub player_ratings: crate::player_rating::PlayerRatingBook,
+    /// Club finance state — per-club balance + wage bill + transfer budget,
+    /// plus per-country rules registered by each `*_rules.cpp` port.
+    /// Ticked weekly (`pay_weekly_wages`) and monthly (`end_of_month`) by
+    /// the daily driver.
+    #[serde(default)]
+    pub finance: crate::finance::FinanceBook,
+    /// Transfer market state — Bosman flags + live bids + accepted deals.
+    /// Ticked weekly by [`hook_weekly_wednesday`] via
+    /// [`crate::transfer::TransferMarket::update_bosman_flags`]; ported
+    /// from `transfer_manager.cpp` + `contract_manager.cpp`.
+    #[serde(default)]
+    pub transfers: crate::transfer::TransferMarket,
+    /// Per-player training schedules + fractional CA growth accumulator.
+    /// Ticked weekly by [`hook_weekly_wednesday`] via
+    /// [`crate::training::TrainingBook::apply_weekly_growth`]; ported
+    /// from `training_manager.cpp`.
+    #[serde(default)]
+    pub training: crate::training::TrainingBook,
+    /// Physio + discipline book — active injuries, suspensions, card
+    /// tallies. Advanced daily by [`crate::injury::InjuryBook::advance_day`];
+    /// reset at season end. Ported from `physio.cpp` + `discipline.cpp`.
+    #[serde(default)]
+    pub injuries: crate::injury::InjuryBook,
     /// The player-initialisation summary (the deterministic core of the exe's
     /// FUN_0051f5d0 per-person seeding). `None` on the parameterless builder.
     #[serde(default)]
@@ -967,6 +1279,99 @@ pub struct RuntimeSaveGame {
     /// `DAT_00b5d016`. Setting it swaps whose dashboard/toolbar renders.
     #[serde(default)]
     pub active_human: usize,
+    /// The current African Cup of Nations edition, if one has been drawn for
+    /// this game. The port of `african_nations.cpp` (see
+    /// [`crate::african_nations`]): drawn at new-game time, advanced round by
+    /// round each evening tick. `None` until an edition falls due.
+    #[serde(default)]
+    pub african_nations: Option<african_nations::AcnState>,
+    /// The current Asian Club Championship edition, if drawn. Port of
+    /// `asia_club_champ.cpp`; reuses the ACN group+knockout engine
+    /// ([`african_nations::AcnState`]).
+    #[serde(default)]
+    pub asia_club_champ: Option<african_nations::AcnState>,
+    /// The current Asian Cup Winners' Cup edition (club cup), if drawn. Port of
+    /// `asia_cup_winner.cpp`; reuses the ACN engine.
+    #[serde(default)]
+    pub asia_cup_winner: Option<african_nations::AcnState>,
+    /// The current Asian Cup of Nations edition (national teams), if drawn. Port
+    /// of `asia_nations.cpp`; reuses the ACN engine. Quadrennial.
+    #[serde(default)]
+    pub asia_cup_of_nations: Option<african_nations::AcnState>,
+    /// The current European Football Championship edition (national teams),
+    /// quadrennial. Port of `euro_champ.cpp`; reuses the ACN engine.
+    #[serde(default)]
+    pub european_championship: Option<african_nations::AcnState>,
+    /// The current FIFA Confederations Cup edition (national teams, biennial).
+    /// Port of `fifa_confed.cpp`; reuses the ACN engine.
+    #[serde(default)]
+    pub fifa_confederations_cup: Option<african_nations::AcnState>,
+    /// The current CONCACAF Gold Cup edition (North American national teams,
+    /// biennial). Port of `goldcup.cpp`; reuses the ACN engine.
+    #[serde(default)]
+    pub concacaf_gold_cup: Option<african_nations::AcnState>,
+    /// The Asian Super Cup: the tie between the Club Championship and Cup
+    /// Winners' Cup holders. Port of `asia_super_cup.cpp`.
+    #[serde(default)]
+    pub asia_super_cup: Option<asia_super_cup::AsiaSuperCupState>,
+    /// The Australian NSL (double round-robin + finals series). Port of
+    /// `aus_nsl.cpp`.
+    #[serde(default)]
+    pub aus_nsl: Option<aus_nsl::AusNslState>,
+    /// The Australian salary cap. Port of `australia_rules.cpp`. A ready rule
+    /// API — no club-finances system feeds it yet.
+    #[serde(default)]
+    pub aus_salary_cap: Option<aus_rules::AusSalaryCap>,
+    /// Plain double-round-robin leagues ported via [`simple_league`] (e.g. the
+    /// Belgian First/Second Divisions). Each crowns a champion at season end.
+    #[serde(default)]
+    pub simple_leagues: Vec<simple_league::SimpleLeagueState>,
+    /// Single-elimination domestic cups ported via [`domestic_cup`] (e.g. the
+    /// Belgian Cup). Each crowns a winner.
+    #[serde(default)]
+    pub domestic_cups: Vec<domestic_cup::CupState>,
+    /// Domestic super cups (league champion vs cup winner) ported via
+    /// [`super_cup`] (e.g. the Belgian Super Cup).
+    #[serde(default)]
+    pub super_cups: Vec<super_cup::SuperCupState>,
+    /// Knockout playoffs seeded from a league's final table (e.g. the Brazilian
+    /// national title off the Série A table). Port of `bra_champ_cup.cpp`.
+    #[serde(default)]
+    pub league_playoffs: Vec<simple_league::LeaguePlayoff>,
+    /// The `dispute.dat` records the exe carries. Empty until cm-import picks up
+    /// `dispute.dat` — the honest stand-in. Port of `dispute.cpp`.
+    #[serde(default)]
+    pub disputes: Vec<dispute::DisputeRecord>,
+    /// Scheduled/played friendly matches — port of `friendly.cpp`. Empty until
+    /// a calendar slot for friendlies is wired into the tick.
+    #[serde(default)]
+    pub friendlies: Vec<friendly::FriendlyMatch>,
+    /// The most recently computed FIFA-style nation ranking (best-first).
+    /// Recomputed on each year rollover — port of `game_recompute_fifa_rankings`
+    /// (`0x005c01d0`, inline in game.cpp) via [`crate::fifa_rankings::compute`].
+    #[serde(default)]
+    pub fifa_rankings: Vec<fifa_rankings::NationRanking>,
+    /// Year of the last year-rollover we ran (for the `year_rollover` hook).
+    #[serde(default)]
+    pub last_year_rollover: u16,
+    /// The current Argentine Primera split-season (Apertura + Clausura), if
+    /// drawn for this game. Port of `arg_prm.cpp` (see [`crate::arg_primera`]):
+    /// built at new-game time, its two champions and promedios relegation
+    /// announced by the evening tick.
+    #[serde(default)]
+    pub argentine_primera: Option<arg_primera::ArgPrimeraState>,
+    /// The current Argentine Second Division (Primera B Nacional) season, if
+    /// built. Port of `arg_second.cpp` (see [`crate::arg_second`]).
+    #[serde(default)]
+    pub argentine_second: Option<arg_second::ArgSecondState>,
+    /// Championship honours awarded during play — the port of the `award/`
+    /// subsystem (`argentina_awards.cpp`). Each crowned champion adds a row.
+    #[serde(default)]
+    pub honours: Vec<honours::Honour>,
+    /// Argentine transfer-registration window rule (port of
+    /// `argentina_rules.cpp`): caps clubs to two signings per window.
+    #[serde(default)]
+    pub argentine_transfer_rules: Option<arg_rules::ArgTransferRuleState>,
     pub notes: Vec<String>,
 }
 
@@ -11818,9 +12223,120 @@ impl World {
                 club_overrides: Vec::new(),
                 staff_overrides: Vec::new(),
             },
+            // Cache the CA-derived rating book for season-end awards. Built
+            // once here and reused by every year-rollover — the underlying
+            // CA doesn't change until the match engine's per-fixture stats
+            // feed back into it, which is a follow-up.
+            player_ratings: crate::player_rating::PlayerRatingBook::build(
+                &self.core.clubs,
+                &self.staff,
+            ),
+            // Seed per-club finance state from club reputation. Country
+            // rules bundles get registered by the country-block loops below
+            // (holland_rules, ireland_rules, italy_rules, japan_rules etc.).
+            finance: {
+                let mut fb = crate::finance::FinanceBook::seed_from_clubs(&self.core.clubs);
+                // Country rules registrations — one per *_rules.cpp port.
+                use crate::finance::{CountryRulesSpec, STANDARD_EUROPEAN_TOP_FLIGHT};
+                // Holland (nation 83) — post-Bosman, no wage cap, Aug window.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 83, ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Ireland (nation 92) — same shape as Holland.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 92, ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Italy (nation 94) — no foreigner limit pre-2002/03, Aug window.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 94, max_foreigners_matchday: 0,
+                    ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Japan (nation 97) — Feb-Mar transfer window (calendar-year season),
+                // 3 foreigners allowed traditionally.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 97, transfer_window_open_month: 2,
+                    max_foreigners_matchday: 3,
+                    ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Northern Ireland (nation 128) — same shape as Ireland.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 128, ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Norway (nation 138) — calendar-year season, Mar transfer window.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 138, transfer_window_open_month: 3,
+                    ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Poland (nation 148) — European standard.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 148, ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Portugal (nation 149) — European standard.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 149, ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Russia (nation 154) — calendar-year season, Feb window.
+                fb.rules.register(CountryRulesSpec {
+                    nation_id: 154, transfer_window_open_month: 2,
+                    ..STANDARD_EUROPEAN_TOP_FLIGHT
+                });
+                // Scotland (nation 160), Spain (171), Sweden (179), Turkey (192),
+                // USA (196), Wales (207), Croatia (47), Denmark (52).
+                // Calendar-year: Sweden (Mar window), USA (Mar window).
+                for &(nation, month, foreigners) in &[
+                    (160u16, 8u8, 3u8),    // Scotland — Aug window
+                    (171,    8,   3),      // Spain
+                    (179,    3,   3),      // Sweden — calendar-year
+                    (192,    8,   6),      // Turkey — traditionally higher foreigner cap
+                    (196,    3,   4),      // USA — MLS calendar-year, more foreigners
+                    (207,    8,   3),      // Wales
+                    (47,     8,   4),      // Croatia
+                    (52,     8,   3),      // Denmark
+                ] {
+                    fb.rules.register(CountryRulesSpec {
+                        nation_id: nation as i32,
+                        transfer_window_open_month: month,
+                        max_foreigners_matchday: foreigners,
+                        ..STANDARD_EUROPEAN_TOP_FLIGHT
+                    });
+                }
+                fb
+            },
+            // Seed transfer/training substrates from the freshly-built rating
+            // book. Injuries start empty (nobody's hurt on day 0).
+            transfers: crate::transfer::TransferMarket::seed_from_ratings(
+                &crate::player_rating::PlayerRatingBook::build(&self.core.clubs, &self.staff),
+                2001,
+            ),
+            training: crate::training::TrainingBook::seed_from_ratings(
+                &crate::player_rating::PlayerRatingBook::build(&self.core.clubs, &self.staff),
+            ),
+            injuries: crate::injury::InjuryBook::new(),
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: vec![
                 "Initial Rust-native runtime save scaffold; game startup reads rust-db, not .dat files.".to_string(),
                 "Backend systems ledger is present; exact gameplay mutations remain gated by code-derived lifts.".to_string(),
@@ -14190,6 +14706,1677 @@ impl World {
             }
         }
 
+        // Draw the African Cup of Nations edition due this game and add its
+        // group-stage fixtures to the season. This is a BACKGROUND continental
+        // competition (national teams, not the player's clubs): it self-runs
+        // through the phase-2 batch and its knockout rounds are drawn as results
+        // land (see `RuntimeSaveGame::advance_african_nations`). Port of
+        // african_nations.cpp — runs regardless of which leagues were picked,
+        // exactly as the exe builds its intercomps as background competitions.
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) =
+                self.build_african_nations_edition(db_dir, options.start_year, next_row)
+            {
+                let team_count: usize = state.groups.iter().map(|g| g.len()).sum();
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "African Cup of Nations {} drawn: {} national teams in {} groups (ported from african_nations.cpp; continent filter nation+0x71==0, RNG draw via cm_rng).",
+                    state.year, team_count, state.groups.len()
+                ));
+                save.african_nations = Some(state);
+            }
+        }
+
+        // European Cup / Champions League — port of european_cup.cpp
+        // (club base, vtable 0x009581c8, [+0x2c]=0xd = 13 stages of group+
+        // knockout). The exact 13-stage format needs its own decoded engine;
+        // here we run a 32-team knockout of the strongest European clubs, which
+        // crowns a real champion and activates the European Super Cup. Flagged
+        // as a documented shape simplification.
+        //
+        // European Cup Winners' Cup (comp 327, european_cup.cpp branch) and
+        // UEFA Cup (comp 328) are wired in the same table below.
+        // (comp_id, name, month, per-league slice offset/take). This partitions
+        // the top European league clubs so each competition draws a DIFFERENT
+        // set of participants — otherwise Man United would win all three and
+        // the Super Cup would pit them against themselves. Champions Cup gets
+        // the champions (top 2 per league), Cup Winners' Cup gets clubs 3-4
+        // (a rough cup-winner tier proxy), UEFA Cup gets clubs 5-6.
+        let european_top_leagues: &[i32] = &[
+            7, 8, // English Prem + 1st
+            11, // French
+            16, // German
+            24, // Italian A
+            52, // Spanish
+            22, // Dutch
+            46, // Portuguese
+            34, // Scottish
+            38, // Swedish
+            315, // Norwegian
+            4, // Danish
+            114, // Finnish
+            119, // Irish
+            186, // Welsh
+            245, // Austrian
+            174, // Turkish
+        ];
+        for &(comp_id, name, month, slice_start, slice_end) in &[
+            (326u32, "European Champions Cup", 10u8, 0usize, 2usize),
+            (327u32, "European Cup Winners' Cup", 10, 2, 4),
+            (328u32, "UEFA Cup", 10, 4, 8),
+        ] {
+            let mut pool: Vec<crate::arg_primera::ArgTeam> = Vec::new();
+            for &lg in european_top_leagues {
+                let mut in_lg = arg_primera::clubs_in_division(&self.core.clubs, lg);
+                in_lg.sort_by(|a, b| {
+                    b.reputation
+                        .cmp(&a.reputation)
+                        .then(a.club_id.cmp(&b.club_id))
+                });
+                for t in in_lg.into_iter().skip(slice_start).take(slice_end - slice_start) {
+                    pool.push(t);
+                }
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                comp_id as i32,
+                name,
+                options.start_year,
+                GameDate { year: options.start_year, month, day: 20 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                "european_cup.cpp 0x0056d460",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season
+                    .fixtures
+                    .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // CONCACAF Gold Cup — port of goldcup.cpp (nation base, vtable
+        // 0x009593b8, BIENNIAL year-snap 0x80000001, no shipped nation_comp id
+        // so we use synthetic 0x900). 16 North American national teams
+        // (continent 3). Reuses the ACN engine.
+        {
+            let year = african_nations::next_edition_year_period(options.start_year, 1996, 2);
+            let pool = african_nations::continental_national_teams(
+                &self.core.nat_clubs,
+                &self.core.nations,
+                3, // North America
+            );
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) = self.build_cup_edition(
+                db_dir,
+                pool,
+                year,
+                0x900,
+                "CONCACAF Gold Cup",
+                "CONCACAF champions",
+                GameDate { year, month: 7, day: 5 },
+                0x00C0u32.wrapping_mul(0x1_0001),
+                next_row,
+                format!(
+                    "CONCACAF Gold Cup {year}: 16 North American national teams (continent==3), biennial; ported from goldcup.cpp (0x005ca350), reusing the ACN engine.",
+                ),
+            ) {
+                save.season.fixtures.extend(fixtures);
+                save.concacaf_gold_cup = Some(state);
+            }
+        }
+
+        // FIFA Confederations Cup — port of fifa_confed.cpp (nation base,
+        // vtable 0x00958268, BIENNIAL year-snap 0x80000001, comp 403). An 8-team
+        // national-teams tournament. The ACN engine's 16-team group+KO is a
+        // reasonable shape; we draw from the strongest nations across ALL
+        // continents. Documented simplification: the real Confederations Cup
+        // seeded from confederation winners.
+        {
+            let year = african_nations::next_edition_year_period(options.start_year, 1996, 2);
+            let mut pool = Vec::new();
+            for continent in 0..6 {
+                pool.extend(african_nations::continental_national_teams(
+                    &self.core.nat_clubs,
+                    &self.core.nations,
+                    continent,
+                ));
+            }
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) = self.build_cup_edition(
+                db_dir,
+                pool,
+                year,
+                403,
+                "FIFA Confederations Cup",
+                "Confederations Cup winners",
+                GameDate { year, month: 6, day: 1 },
+                0x00CFu32.wrapping_mul(0x1_0001),
+                next_row,
+                format!(
+                    "FIFA Confederations Cup {year}: 16 nations across all continents, biennial; ported from fifa_confed.cpp (0x005750c0), reusing the ACN engine.",
+                ),
+            ) {
+                save.season.fixtures.extend(fixtures);
+                save.fifa_confederations_cup = Some(state);
+            }
+        }
+
+        // ---- France ----
+        // fra_first (Ligue 1 comp 11, 18), fra_second (12, 20), fra_third
+        // (National 13, 20), fra_cfa (14, capped), fra_lower (15, capped)
+        // via simple_league. fra_cup (French Cup 335), fra_lge_cup (League Cup
+        // 336) via domestic_cup. fra_super (Champions Trophy 96) via super_cup
+        // (Ligue 1 champion vs French Cup winner).
+        // Ligue 1 / 2 / National as full double round-robins. fra_cfa (59
+        // clubs; the real CFA has multiple regional groups) and fra_lower
+        // (139-club bucket) are structurally NOT single tables — porting them
+        // as a flat 59/139-club double-RR would generate tens of thousands of
+        // synthetic fixtures per season, so they're DECODED but not registered
+        // as flat leagues. Ctors are named in the ledger.
+        for &(comp_id, name, legs, va) in &[
+            (11i32, "French Ligue 1", 2u8, "fra_first.cpp 0x005a5390"),
+            (12i32, "French Ligue 2", 2, "fra_second.cpp 0x005a8600"),
+            (13i32, "French National", 2, "fra_third.cpp 0x005a9e10"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 3 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams,
+                comp_id,
+                name,
+                options.start_year,
+                start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                legs,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // French Cup (top 3 divisions — the CFA/Lower flat pools would balloon
+        // the bracket) and League Cup (top 3).
+        // French Cup date VERIFIED from FUN_005a4650 round helper decode
+        // (reports/cup_round_schedules.md): round 0 leg A = 10 Oct 2001
+        // (month is 0-indexed in the exe, so month=9 → October, +1 for Rust).
+        // The full schedule has 9 rounds and two-legged ties — our single-leg
+        // domestic_cup engine only takes the first-round date; the rest is
+        // debt tracked in reports/cup_round_schedules.md.
+        // French League Cup date VERIFIED from FUN_005a6e80 round helper
+        // decode (reports/cup_round_schedules_batch2.md): R0 = 1 Sep 2001.
+        for &(comp_id, name, sources, m, d, va) in &[
+            (335i32, "French Cup", &[11i32, 12, 13][..], 10u8, 10u8, "fra_cup.cpp 0x005a4390"),
+            (336i32, "French League Cup", &[11, 12, 13][..], 9, 1, "fra_lge_cup.cpp 0x005a6bc0"),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in sources {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                comp_id,
+                name,
+                options.start_year,
+                GameDate { year: options.start_year, month: m, day: d },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season
+                    .fixtures
+                    .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Trophée des Champions (comp 96): Ligue 1 champion vs French Cup winner.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Trophée des Champions".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 96,
+            league_competition: "French Ligue 1".to_string(),
+            cup_competition: "French Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // ---- Germany ----
+        // ger_first (Bundesliga 16, 18), ger_second (2.BL 17, 18), ger_regional
+        // North (20)/South (21) 18 clubs each via simple_league;
+        // ger_cup (DFB-Pokal 337) + ger_lge_cup (League Cup 91) via
+        // domestic_cup. NB: Regionalliga West/Southwest (18) and East (19) have
+        // 0 primary members in the shipped data (probably tertiary, like the
+        // Brazilian states) — skipped as flat leagues here, ctors ledgered.
+        for &(comp_id, name, legs, va) in &[
+            (16i32, "German Bundesliga", 2u8, "ger_first.cpp 0x005c3660"),
+            (17i32, "German 2. Bundesliga", 2, "ger_second.cpp 0x005c7f80"),
+            (20i32, "German Regionalliga North", 2, "ger_regional.cpp 0x005c6880"),
+            (21i32, "German Regionalliga South", 2, "ger_regional.cpp 0x005c6880"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 10 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams,
+                comp_id,
+                name,
+                options.start_year,
+                start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                legs,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // DFB-Pokal (all leagues) + League Cup (top 2).
+        // DFB-Pokal date VERIFIED from FUN_005c2b90 round helper decode
+        // (reports/cup_round_schedules.md): round 0 leg A = 10 Jul 2001
+        // (month 0-indexed: 6 → July, +1 for Rust). Full schedule = 6 rounds,
+        // R0+R5 single-leg, R1-R4 two-legged, final has year-conditional date.
+        // German League Cup date NOT YET VERIFIED — still invented Aug 29.
+        for &(comp_id, name, sources, m, d, va) in &[
+            (337i32, "German Cup (DFB-Pokal)", &[16i32, 17, 20, 21][..], 7u8, 10u8, "ger_cup.cpp 0x005c28d0"),
+            // German League Cup date VERIFIED from FUN_005c6050 (two-branch
+            // by year parity). 2001 = odd year → branch B, R0 = 1 Jul 2001.
+            (91i32, "German League Cup", &[16, 17][..], 7, 1, "ger_lge_cup.cpp 0x005c5d90"),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in sources {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                comp_id,
+                name,
+                options.start_year,
+                GameDate { year: options.start_year, month: m, day: d },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season
+                    .fixtures
+                    .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Greece ----
+        // gre_prm (Alpha Ethniki comp 143, 14 clubs) + gre_second (B Ethniki
+        // 144, 14) via simple_league; gre_cup (Greek Cup 142) via
+        // domestic_cup; gre_super (Greek Super Cup 193) via super_cup.
+        // gre_lower (145, 86 clubs) skipped as aggregate.
+        for &(comp_id, name, va) in &[
+            (143i32, "Greek Alpha Ethniki", "gre_prm.cpp 0x005d3d00"),
+            (144i32, "Greek Beta Ethniki", "gre_second.cpp 0x005d4ba0"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 9, day: 1 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[143, 144] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 142, "Greek Cup", options.start_year,
+                // VERIFIED from FUN_005d5be0 (gre_cup ROUND helper): main
+                // knockout R0 = 5 Jul 2001. Group phase precedes via 10×
+                // sub-comps FUN_005d2ff0(0..9) — those dates not decoded.
+                GameDate { year: options.start_year, month: 7, day: 5 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "gre_cup.cpp 0x005d2240",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Greek Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 193,
+            league_competition: "Greek Alpha Ethniki".to_string(),
+            cup_competition: "Greek Cup".to_string(),
+            champion_honour: 0x83c, created: false, announced: false,
+        });
+
+        // ---- Holland: full Dutch block ----
+        //   hol_cup.cpp  0x005dcee0 — KNVB Beker (comp 338), single-elim
+        //   hol_first.cpp 0x005def20 — Eerste Divisie (comp 23), 18 clubs 2-leg
+        //   hol_prm.cpp   0x005e10a0 — Eredivisie (comp 22), 18 clubs 2-leg
+        //   hol_super.cpp 0x005e22b0 — Johan Cruyff Schaal (comp 102) — Eredivisie champion vs KNVB Beker winner
+        //   holland_awards.cpp 0x005e2b00 — DECODED-NOT-PORTED (blocked on player ratings)
+        //   holland_rules.cpp 0x005e3120 — DECODED-NOT-PORTED (blocked on finance/transfer system)
+        {
+            let mut pool = arg_primera::clubs_in_division(&self.core.clubs, 22);
+            pool.extend(arg_primera::clubs_in_division(&self.core.clubs, 23));
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                338,
+                "Dutch Cup",
+                options.start_year,
+                // VERIFIED from FUN_005dd170 (hol_cup ROUND helper, disasm-only,
+                // reports/cup_round_schedules.md): the ctor's -1 path hits the
+                // "short" branch (param_2 < 0x13) with round 0 = day 4, month
+                // 7 (0-indexed) → Aug 4 2001. Full schedule (param_2 == 0x13)
+                // has 6 rounds later in the season.
+                GameDate { year: options.start_year, month: 8, day: 4 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                "hol_cup.cpp 0x005dcee0",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season
+                    .fixtures
+                    .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.notes.push(format!(
+                    "Dutch Cup {} built: {}-team knockout (ported from hol_cup.cpp).",
+                    cup.year, cup.teams.len()
+                ));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Dutch leagues — Eredivisie (22) + First Division (23), both 18-club 2-leg.
+        for &(comp_id, name, va) in &[
+            (22i32, "Dutch Premier Division", "hol_prm.cpp 0x005e10a0"),
+            (23i32, "Dutch First Division",   "hol_first.cpp 0x005def20"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 18 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams,
+                comp_id,
+                name,
+                options.start_year,
+                start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                2,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // ---- Japan: full Japanese block ----
+        //   jap_j1.cpp       0x0064c200 — J-League 1 (comp 69, 16 clubs, 2-leg)
+        //   jap_j2.cpp       0x0064db90 — J-League 2 (comp 100, 12 clubs, 2-leg)
+        //   jap_emp_cup.cpp  0x0064b3d0 — Emperor's Cup (comp 70, single-elim knockout)
+        //   jap_j_cup.cpp    0x0064eb00 — Japanese Cup / Nabisco Cup (comp 71)
+        //   jap_super.cpp    0x0064f520 — Xerox Super Cup (comp 81, J1 champ vs Emperor's Cup winner)
+        //   japan_awards.cpp 0x0064fed0 — DECODED-NOT-PORTED (blocked on player ratings)
+        //   japan_rules.cpp  0x006503f0 — DECODED-NOT-PORTED (blocked on finance/transfer)
+        // Season runs CALENDAR YEAR (SEASON_STARTS: Japan Feb 6, calendar_year=true → 2002).
+        // Also present: Japanese Football League (comp 82, 16 clubs) — tier below J2, no
+        // dedicated TU in the exe but has clubs registered, using shared simple_league.
+        for &(comp_id, name, va) in &[
+            (69i32,  "Japanese J-League 1",         "jap_j1.cpp 0x0064c200"),
+            (100i32, "Japanese J-League 2",         "jap_j2.cpp 0x0064db90"),
+            (82i32,  "Japanese Football League",    "(tier-3, no dedicated TU)"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            // Season starts Feb 2002 per league_calendar::SEASON_STARTS.
+            // Real first-fixture date needs per-league +0x3c handler emulation.
+            let start = GameDate { year: options.start_year + 1, month: 3, day: 2 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // Emperor's Cup (comp 70) and Japanese Cup (comp 71) — pool = J1 + J2.
+        // Dates INVENTED — not yet verified against exe ROUND helpers.
+        for &(comp_id, name, month, day, va) in &[
+            (70i32, "Japanese Emperor's Cup", 12u8, 15u8, "jap_emp_cup.cpp 0x0064b3d0"),
+            (71i32, "Japanese Cup",           4,   1,    "jap_j_cup.cpp 0x0064eb00"),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in &[69, 100] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, comp_id, name, options.start_year,
+                GameDate { year: options.start_year + 1, month, day },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Xerox Super Cup — J-League 1 champ vs Emperor's Cup winner (comp 81,
+        // jap_super.cpp 0x0064f520). Feeder wiring by name; not verified against
+        // exe feeder-fetch helper.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Japanese Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 81,
+            league_competition: "Japanese J-League 1".to_string(),
+            cup_competition: "Japanese Emperor's Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // ---- Italy: full Italian block ----
+        //   ita_ser_a.cpp    0x00629d50 — Serie A (comp 24, 18 clubs, 2-leg)
+        //   ita_ser_b.cpp    0x0062ef10 — Serie B (comp 25, 20 clubs, 2-leg)
+        //   ita_ser_c1a.cpp  0x006340e0 — Serie C1/A (comp 26, 18 clubs)
+        //   ita_ser_c1b.cpp  0x00638290 — Serie C1/B (comp 27, 18 clubs)
+        //   ita_ser_c2a.cpp  0x0063c620 — Serie C2/A (comp 28, 18 clubs)
+        //   ita_ser_c2b.cpp  0x006407b0 — Serie C2/B (comp 29, 18 clubs)
+        //   ita_ser_c2c.cpp  0x00644940 — Serie C2/C (comp 30, 18 clubs)
+        //   ita_cup.cpp      0x00627f80 — Coppa Italia (comp 339, 16 funcs = groups+KO shape)
+        //   ita_c_cup.cpp    0x006262c0 — Serie C Cup (comp 340, 16 funcs)
+        //   ita_c1_super.cpp 0x00625c60 — Italian C1 Super Cup (comp 192, Serie C1/A vs C1/B champs)
+        //   ita_super.cpp    0x00648ce0 — Italian Super Cup (comp 341, Serie A champ vs Coppa Italia winner = Supercoppa Italiana)
+        //   italy_awards.cpp 0x00649560 — DECODED-NOT-PORTED (blocked on player ratings)
+        //   italy_rules.cpp  0x0064aa90 — DECODED-NOT-PORTED (blocked on finance/transfer)
+        for &(comp_id, name, va) in &[
+            (24i32, "Italian Serie A",    "ita_ser_a.cpp 0x00629d50"),
+            (25i32, "Italian Serie B",    "ita_ser_b.cpp 0x0062ef10"),
+            (26i32, "Italian Serie C1/A", "ita_ser_c1a.cpp 0x006340e0"),
+            (27i32, "Italian Serie C1/B", "ita_ser_c1b.cpp 0x00638290"),
+            (28i32, "Italian Serie C2/A", "ita_ser_c2a.cpp 0x0063c620"),
+            (29i32, "Italian Serie C2/B", "ita_ser_c2b.cpp 0x006407b0"),
+            (30i32, "Italian Serie C2/C", "ita_ser_c2c.cpp 0x00644940"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 26 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // Coppa Italia — pool = Serie A + Serie B (the exe uses a
+        // groups+knockout format; using single-elim as a playable stand-in
+        // until we build a group-stage engine).
+        {
+            let mut pool = Vec::new();
+            for &lg in &[24, 25] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 339, "Italian Cup", options.start_year,
+                // VERIFIED from FUN_006282d0 (ita_cup ROUND helper,
+                // disasm-only, reports/cup_round_schedules.md): the ctor's -1
+                // path hits the "short" branch (param_2 < 7) with round 0 =
+                // day 12, month 7 (0-indexed) → Aug 12 2001. Full 5-round
+                // paired-leg schedule kicks in later.
+                GameDate { year: options.start_year, month: 8, day: 12 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "ita_cup.cpp 0x00627f80",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Serie C Cup — pool = Serie C1 + C2 (five divisions).
+        {
+            let mut pool = Vec::new();
+            for &lg in &[26, 27, 28, 29, 30] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 340, "Italian Serie C Cup", options.start_year,
+                // VERIFIED from FUN_006245f0 (ita_c_cup main KO ROUND
+                // helper, shared with ire_super_cup): R0 = 27 Jun 2001. A
+                // separate group phase (FUN_00627060(0..14)) runs later.
+                GameDate { year: options.start_year, month: 6, day: 27 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "ita_c_cup.cpp 0x006262c0",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Italian Super Cup (Supercoppa Italiana) — Serie A champ vs Coppa Italia winner.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Italian Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 341,
+            league_competition: "Italian Serie A".to_string(),
+            cup_competition: "Italian Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+        // Italian C1 Super Cup — Serie C1/A champ vs Serie C1/B champ.
+        // Note: our super_cup engine currently links (league champ) + (cup
+        // winner) by comp name; wiring "champ of A" vs "champ of B" needs a
+        // second-league variant. Registering with the closest shape (C1/A
+        // champ + C Cup winner as a rough stand-in) so it's not dropped.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Italian C1 Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 192,
+            league_competition: "Italian Serie C1/A".to_string(),
+            cup_competition: "Italian Serie C Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // ---- Ireland: full Irish block ----
+        //   ire_prm.cpp        0x00623240 — Irish Premier Division (comp 119, 12 clubs, 2-leg)
+        //   ire_first.cpp      0x0061e2a0 — Irish First Division (comp 120, 9 clubs, 2-leg)
+        //   ire_leinster_cup.cpp 0x0061fb00 — Irish Leinster Senior Cup (comp 300)
+        //   ire_lge_cup.cpp    0x00620430 — Irish League Cup (comp 121)
+        //   ire_munster_cup.cpp 0x00621e00 — Irish Munster Senior Cup (comp 299)
+        //   ire_pres_cup.cpp   0x00622900 — Irish Presidents Cup (comp 191)
+        //   ire_chal_cup.cpp   0x0061d730 — Irish Senior Challenge Cup (comp 122, standard cup ctor)
+        //   ire_super_cup.cpp  0x00624360 — Irish Super Cup (comp 123, super-cup shape)
+        //   ireland_awards.cpp 0x00624ce0 — DECODED-NOT-PORTED (blocked on player ratings)
+        //   ireland_rules.cpp  0x006258b0 — DECODED-NOT-PORTED (blocked on finance/transfer)
+        //   Also present: Leinster Senior League Div One (comp 298, 19 clubs) — 2-leg regional league.
+        for &(comp_id, name, va) in &[
+            (119i32, "Irish Premier Division",              "ire_prm.cpp 0x00623240"),
+            (120i32, "Irish First Division",                "ire_first.cpp 0x0061e2a0"),
+            (298i32, "Irish Leinster Senior League Div One","(regional; 19 clubs)"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            // Irish league season opens Fri 10 Aug (verified vs the real
+            // game's Waterford United fixture list on the Fixtures screen —
+            // first entry "Fri 10th Aug — Drogheda Utd — First Division").
+            let start = GameDate { year: options.start_year, month: 8, day: 10 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // Irish knockout cups — pool = Premier (119) + First Division (120).
+        for &(comp_id, name, month, day, va) in &[
+            // Verified vs Waterford Utd fixture screen: League Cup opens Wed
+            // 19 Sep 2001, GROUP STAGE ("Grp 7" — not straight knockout, so
+            // the domestic_cup shape is a rough stand-in until we build a
+            // group-stage engine; matches the ledger note on ire_lge_cup.cpp
+            // being 16 funcs vs a standard 6-func cup).
+            // Ireland cup dates from FUN_006220c0 (lge_cup KO), FUN_0061d9f0
+            // (chal_cup), FUN_00622bb0 (pres_cup), FUN_0061fdc0 (leinster).
+            // Munster ROUND helper UNRESOLVED — using leinster's date as
+            // stand-in (same event window; both regional). Full schedules in
+            // reports/cup_round_schedules_batch2.md.
+            // NB: user's Waterford Utd screenshot shows League Cup opening
+            // Sep 19 in GROUP STAGE ("Grp 7"); knockout R0 = Aug 1 per exe.
+            // Keeping Sep 19 to match the visible fixture list until we port
+            // the group-phase engine.
+            (121i32, "Irish League Cup",             9u8, 19u8, "ire_lge_cup.cpp 0x00620430"),
+            (122i32, "Irish Senior Challenge Cup",   11,   1,   "ire_chal_cup.cpp 0x0061d730"),
+            (191i32, "Irish Presidents Cup",         7,    5,   "ire_pres_cup.cpp 0x00622900"),
+            (299i32, "Irish Munster Senior Cup",     8,    1,   "ire_munster_cup.cpp 0x00621e00"),
+            (300i32, "Irish Leinster Senior Cup",    8,    1,   "ire_leinster_cup.cpp 0x0061fb00"),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in &[119, 120] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, comp_id, name, options.start_year,
+                GameDate { year: options.start_year, month, day },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Irish Super Cup — Premier champ vs Challenge Cup winner
+        // (ported from ire_super_cup.cpp comp 123, vtbl PTR_FUN_0095a080).
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Irish Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 123,
+            league_competition: "Irish Premier Division".to_string(),
+            cup_competition: "Irish Senior Challenge Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // ---- Northern Ireland: nir_* block ----
+        //   nir_prm.cpp       0x00776140 — NI Premier (154, 10 clubs, 2-leg)
+        //   nir_first.cpp     0x007730e0 — NI First Division (155, 10 clubs, 2-leg)
+        //   (implicit)                    — NI Lower Division (156, 20 clubs, 2-leg)
+        //   nir_cup.cpp       0x00772680 — NI Cup (157) knockout
+        //   nir_lge_cup.cpp   0x00774850 — NI League Cup (158) — 16 funcs = group+KO shape
+        //   (implicit)                    — NI Gold Cup (160) knockout
+        //   nir_charity.cpp   0x00771ec0 — NI Charity Shield (161, Prem champ vs Cup winner)
+        //   northern_ireland_awards.cpp 0x0077ae50 — awards_engine slate
+        //   northern_ireland_rules.cpp  0x0077b7a0 — finance rules
+        // SEASON_STARTS: Jul 12, 2001 (calendar_year=false).
+        for &(comp_id, name, va) in &[
+            (154i32, "Northern Irish Premier Division", "nir_prm.cpp 0x00776140"),
+            (155i32, "Northern Irish First Division",   "nir_first.cpp 0x007730e0"),
+            (156i32, "Northern Irish Lower Division",   "(implicit)"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 11 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // NI knockouts — pool = Premier + First (Lower doesn't compete in top cups).
+        for &(comp_id, name, month, day, va) in &[
+            (157i32, "Northern Irish Cup",         12u8, 1u8,  "nir_cup.cpp 0x00772680"),
+            (158i32, "Northern Irish League Cup",  9,    18,   "nir_lge_cup.cpp 0x00774850"),
+            (160i32, "Northern Irish Gold Cup",    10,   5,    "(implicit)"),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in &[154, 155] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, comp_id, name, options.start_year,
+                GameDate { year: options.start_year, month, day },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // NI Charity Shield — Prem champion vs Cup winner.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Northern Irish Charity Shield".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 161,
+            league_competition: "Northern Irish Premier Division".to_string(),
+            cup_competition: "Northern Irish Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+        // NI finance rules — sit under UK finance conventions.
+        // (Registered below in the finance init block; kept as a note here.)
+
+        // ---- Norway: nor_* block ----
+        //   nor_prm.cpp    0x00776... — Norwegian Premier (315, 14 clubs, 2-leg calendar-year)
+        //   nor_first.cpp  0x00777... — Norwegian First Division (316, 16 clubs, 2-leg)
+        //   (implicit)                 — Norwegian Third Division (346)
+        //   (implicit)                 — Second Division Groups (317-324, one wired)
+        //   (implicit cup)             — Norwegian Cup (345)
+        //   norway_awards.cpp          — awards engine slate
+        //   norway_rules.cpp           — finance rules (calendar-year season)
+        // SEASON_STARTS: Mar 12 2002 (calendar_year=true).
+        for &(comp_id, name, va) in &[
+            (315i32, "Norwegian Premier Division",    "nor_prm.cpp 0x00776xxx"),
+            (316i32, "Norwegian First Division",      "nor_first.cpp 0x00777xxx"),
+            (317i32, "Norwegian Second Division Grp 1","(implicit)"),
+            (346i32, "Norwegian Third Division",      "(implicit)"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year + 1, month: 4, day: 6 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        // Norwegian Cup — pool = Premier + First Division.
+        {
+            let mut pool = Vec::new();
+            for &lg in &[315, 316] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 345, "Norwegian Cup", options.start_year,
+                GameDate { year: options.start_year + 1, month: 5, day: 1 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "(implicit nor_cup)",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // ---- Oceania: continental Champions Cup (comp 109) ----
+        // oceania_club_champ.cpp 0x00xxx — Oceanian club champion of the year.
+        // oceania_nations.cpp 0x00xxx — Oceanian nations cup (quadrennial).
+        // The Oceania Champions Cup uses the ACN engine (shared).
+        // Registration is minimal: it'll draw its participants at cup time.
+        // No lib.rs registration needed — the ACN engine picks up the comp id
+        // via the shared continental cup registration path elsewhere.
+
+        // ---- Poland: pol_* block ----
+        // 5 TUs: pol_first (First Div 133, 16), pol_second (Second 134, 20),
+        // pol_cup (FA Cup 137), pol_lge_cup (League Cup 136), pol_super (Super 198).
+        // SEASON_STARTS: Jun 17 2001. Poland Premier is comp 133 despite the
+        // "First Division" name (the exe's shipped naming — the top flight is
+        // called "First Division" in Polish/Danish/Belgian conventions).
+        for &(comp_id, name, va) in &[
+            (133i32, "Polish First Division",  "pol_first.cpp"),
+            (134i32, "Polish Second Division", "pol_second.cpp"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 7, day: 20 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        for &(comp_id, name, month, day, va) in &[
+            (137i32, "Polish FA Cup",     8u8, 15u8, "pol_cup.cpp"),
+            (136i32, "Polish League Cup", 9,   10,   "pol_lge_cup.cpp"),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in &[133, 134] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, comp_id, name, options.start_year,
+                GameDate { year: options.start_year, month, day },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Polish Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 198,
+            league_competition: "Polish First Division".to_string(),
+            cup_competition: "Polish FA Cup".to_string(),
+            champion_honour: 0x83c, created: false, announced: false,
+        });
+
+        // ---- Portugal: por_* block ----
+        // 5 TUs: por_prm (Prem 46, 18), por_second (Second 47, 18),
+        // por_second_b (Second B 48-50), por_cup (Cup 347), por_super (99).
+        // SEASON_STARTS: Jul 25 2001.
+        for &(comp_id, name, va) in &[
+            (46i32, "Portuguese Premier League",        "por_prm.cpp"),
+            (47i32, "Portuguese Second League",         "por_second.cpp"),
+            (48i32, "Portuguese Second Division B North", "por_second_b.cpp"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 25 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[46, 47] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 347, "Portuguese Cup", options.start_year,
+                GameDate { year: options.start_year, month: 9, day: 15 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "por_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Portuguese Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 99,
+            league_competition: "Portuguese Premier League".to_string(),
+            cup_competition: "Portuguese Cup".to_string(),
+            champion_honour: 0x83c, created: false, announced: false,
+        });
+
+        // ---- Russia: rus_* block ----
+        // 3 TUs: rus_prm (Prem 176, 16), rus_first (First 177, 18), rus_cup (190).
+        // SEASON_STARTS: Feb 25 2002 (calendar_year=true).
+        for &(comp_id, name, va) in &[
+            (176i32, "Russian Premier Division",        "rus_prm.cpp"),
+            (177i32, "Russian First Division",          "rus_first.cpp"),
+            (178i32, "Russian Second Division - West",  "(implicit)"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year + 1, month: 3, day: 16 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[176, 177] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 190, "Russian Cup", options.start_year,
+                GameDate { year: options.start_year + 1, month: 4, day: 1 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "rus_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Scotland: sco_* block ----
+        // sco_prm.cpp (34, 12), sco_first (35, 10), sco_second (36, 10),
+        // sco_third (37, 10), sco_fa_cup (355), sco_lge_cup (356),
+        // sco_chal_cup (101). SEASON_STARTS: Jul 2 2001 (calendar_year=false).
+        for &(comp_id, name) in &[
+            (34i32, "Scottish Premier Division"),
+            (35i32, "Scottish First Division"),
+            (36i32, "Scottish Second Division"),
+            (37i32, "Scottish Third Division"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 4 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "sco_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        for &(comp_id, name, month, day) in &[
+            (355i32, "Scottish Cup",             12u8, 8u8),
+            (356i32, "Scottish League Cup",      9,    18),
+            (101i32, "Scottish Challenge Cup",   9,    5),
+        ] {
+            let mut pool = Vec::new();
+            for &lg in &[34, 35, 36, 37] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, comp_id, name, options.start_year,
+                GameDate { year: options.start_year, month, day },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "sco_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Spain: spa_* block ----
+        // spa_first (52, 20), spa_second (53, 22), spa_second_b (54, 20),
+        // spa_lower (98, 377 - registered but a flat pool), spa_cup (348),
+        // spa_super (349). SEASON_STARTS: Aug 1 2001.
+        for &(comp_id, name) in &[
+            (52i32, "Spanish First Division"),
+            (53i32, "Spanish Second Division"),
+            (54i32, "Spanish Second Division B1"),
+            (55i32, "Spanish Second Division B2"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 9, day: 1 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "spa_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[52, 53] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 348, "Spanish Cup", options.start_year,
+                GameDate { year: options.start_year, month: 10, day: 15 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "spa_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Spanish Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 349,
+            league_competition: "Spanish First Division".to_string(),
+            cup_competition: "Spanish Cup".to_string(),
+            champion_honour: 0x83c, created: false, announced: false,
+        });
+
+        // ---- Sweden: swe_* block ----
+        // swe_prm (38, 14), swe_first (39, 16), swe_second (40, 12 - one regional group),
+        // swe_cup (350). SEASON_STARTS: Mar 6 2002 (calendar_year=true).
+        for &(comp_id, name) in &[
+            (38i32, "Swedish Premier Division"),
+            (39i32, "Swedish First Division"),
+            (40i32, "Swedish Second Division South Gotaland"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year + 1, month: 4, day: 6 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "swe_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[38, 39] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 350, "Swedish Cup", options.start_year,
+                GameDate { year: options.start_year + 1, month: 5, day: 15 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "swe_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Turkey: tur_* block ----
+        // tur_prm (174, 18), tur_second (285, 20), tur_lower (167, 72 - flat).
+        // SEASON_STARTS: Jul 8 2001.
+        for &(comp_id, name) in &[
+            (174i32, "Turkish Premier Division"),
+            (285i32, "Turkish 2. Division Category A"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 8, day: 11 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "tur_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = arg_primera::clubs_in_division(&self.core.clubs, 174);
+            pool.extend(arg_primera::clubs_in_division(&self.core.clubs, 285));
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 173, "Turkish FA Cup", options.start_year,
+                GameDate { year: options.start_year, month: 10, day: 20 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "tur_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- USA: American Major League (31) ----
+        {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, 31);
+            let start = GameDate { year: options.start_year + 1, month: 3, day: 23 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, 31, "American Major League", options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "usa_mls.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+
+        // ---- Wales: wel_* block ----
+        // wel_first (186, 18), (implicit lower 187, 39). SEASON_STARTS: Jul 19.
+        {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, 186);
+            let start = GameDate { year: options.start_year, month: 8, day: 18 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, 186, "Welsh Premier Division", options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "wel_first.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        for &(comp_id, name, month, day) in &[
+            (188i32, "Welsh Cup",         10u8, 15u8),
+            (189i32, "Welsh League Cup",  9,    5),
+            (185i32, "Welsh Premier Cup", 11,   1),
+        ] {
+            let pool = arg_primera::clubs_in_division(&self.core.clubs, 186);
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, comp_id, name, options.start_year,
+                GameDate { year: options.start_year, month, day },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "wel_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Croatia: cro_* block ----
+        // cro_a1 (138, 16), cro_a2a/b (152/153 or 140), cro_cup (141), cro_super (197).
+        // SEASON_STARTS: Jun 24 2001.
+        for &(comp_id, name) in &[
+            (138i32, "Croatian First Division"),
+            (140i32, "Croatian Lower Division"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 7, day: 24 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "cro_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = arg_primera::clubs_in_division(&self.core.clubs, 138);
+            pool.extend(arg_primera::clubs_in_division(&self.core.clubs, 140));
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 141, "Croatian Cup", options.start_year,
+                GameDate { year: options.start_year, month: 8, day: 25 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "cro_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Croatian Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 197,
+            league_competition: "Croatian First Division".to_string(),
+            cup_competition: "Croatian Cup".to_string(),
+            champion_honour: 0x83c, created: false, announced: false,
+        });
+
+        // ---- Denmark: den_* block ----
+        // den_prm (4, 12), den_first (5, 16), den_second (6, 16), den_cup (334).
+        // SEASON_STARTS: Jun 27 2001.
+        for &(comp_id, name) in &[
+            (4i32, "Danish Premier Division"),
+            (5i32, "Danish First Division"),
+            (6i32, "Danish Second Division"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 7, day: 27 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams, comp_id, name, options.start_year, start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, 2, "den_*.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[4, 5, 6] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 334, "Danish Cup", options.start_year,
+                GameDate { year: options.start_year, month: 8, day: 30 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "den_cup.cpp",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Intertoto Cup (comp 330) ----
+        // European summer secondary tournament, 3 winners qualify for UEFA
+        // Cup. From intertoto_cup.cpp/FUN_0061cd40: participants are 60
+        // clubs whose `secondary_comp` (club record +0x1db) == INTER_TOTO_CUP
+        // = comp 330. Uses `clubs_in_any_competition` which walks all three
+        // per-club competition slots.
+        {
+            let pool = arg_primera::clubs_in_any_competition(&self.core.clubs, 330);
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool, 330, "Intertoto Cup", options.start_year,
+                GameDate { year: options.start_year, month: 6, day: 25 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR, "intertoto_cup.cpp 0x0061c690",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // ---- Inter-American Cup (comp 199) ----
+        // Single-tie between the year's Copa Libertadores winner (comp 58,
+        // South America) and CONCACAF Champions Cup winner (comp 343, North
+        // America). Ctor at 0x0061b760; FUN_0061bb60 filters clubs where
+        // nation.continent == NORTH_AMERICA (DAT_009bbec4) and reputation > 1000
+        // for the CONCACAF representative. FUN_0061ba20 sets up a single-round
+        // two-team bracket with round_code=3, tournament_type=7.
+        // NB: inert until feeder comps 58 and 343 are registered (sa_lib*.cpp
+        // and concacaf_*.cpp — both after us in the alphabetical walk).
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Inter-American Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 199,
+            league_competition: "South American Copa Libertadores".to_string(),
+            cup_competition: "CONCACAF Champions Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // Johan Cruyff Schaal — Eredivisie champion vs KNVB Beker winner
+        // (ported from hol_super.cpp, comp 102, ctor 0x005e22b0). Created by
+        // the tick once both holders are known.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Dutch Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 102,
+            league_competition: "Dutch Premier Division".to_string(),
+            cup_competition: "Dutch Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // ---- Finland ----
+        // fin_prm.cpp (Premier 114, 12 clubs) + fin_first.cpp (First 118, 12)
+        // via simple_league; fin_cup.cpp (Finnish Cup 113) via domestic_cup.
+        for &(comp_id, name, va) in &[
+            (114i32, "Finnish Premier Division", "fin_prm.cpp 0x0057f370"),
+            (118i32, "Finnish First Division", "fin_first.cpp 0x0057d0c0"),
+        ] {
+            let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+            let start = GameDate { year: options.start_year, month: 4, day: 20 };
+            if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                teams,
+                comp_id,
+                name,
+                options.start_year,
+                start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                2,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                save.simple_leagues.push(state);
+            }
+        }
+        {
+            let mut pool = Vec::new();
+            for &lg in &[114, 118] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, lg));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                113,
+                "Finnish Cup",
+                options.start_year,
+                // VERIFIED from FUN_0057c730 (fin_cup ROUND helper): R0 =
+                // 15 Apr 2001. Full 7-round schedule tracked in
+                // reports/cup_round_schedules_batch2.md.
+                GameDate { year: options.start_year, month: 4, day: 15 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                "fin_cup.cpp 0x0057c470",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season
+                    .fixtures
+                    .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+        }
+
+        // European Championship — port of euro_champ.cpp (nation base, vtable
+        // 0x958018, QUADRENNIAL year-snap 0x80000003 like the Asian Cup).
+        // National-team continental cup, reuses the ACN engine.
+        {
+            let year = african_nations::next_edition_year_period(options.start_year, 1996, 4);
+            let pool = african_nations::continental_national_teams(
+                &self.core.nat_clubs,
+                &self.core.nations,
+                2, // Europe
+            );
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) = self.build_cup_edition(
+                db_dir,
+                pool,
+                year,
+                406,
+                "European Football Championship",
+                "European champions",
+                GameDate { year, month: 6, day: 10 },
+                0x00E4u32.wrapping_mul(0x1_0001),
+                next_row,
+                format!(
+                    "European Football Championship {year}: 16 European national teams, quadrennial; ported from euro_champ.cpp (0x00564530), reusing the ACN engine.",
+                ),
+            ) {
+                save.season.fixtures.extend(fixtures);
+                save.notes
+                    .push(format!("European Championship {year} drawn (euro_champ.cpp)."));
+                save.european_championship = Some(state);
+            }
+        }
+
+        // European Super Cup — Champions Cup (326) winner vs UEFA Cup (328)
+        // winner. Same shape as the Asian Super Cup / Belgian Charity Shield.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "European Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 329,
+            league_competition: "European Champions Cup".to_string(),
+            cup_competition: "UEFA Cup".to_string(),
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // Draw the Asian Club Championship (reuses the ACN engine).
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) =
+                self.build_asia_club_champ(db_dir, options.start_year, next_row)
+            {
+                let team_count: usize = state.groups.iter().map(|g| g.len()).sum();
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Asian Club Championship {} drawn: {} clubs in {} groups (ported from asia_club_champ.cpp, reusing the ACN engine).",
+                    state.year, team_count, state.groups.len()
+                ));
+                save.asia_club_champ = Some(state);
+            }
+        }
+
+        // Asian Cup Winners' Cup (club cup) + Asian Cup of Nations (national
+        // teams, quadrennial) — both reuse the ACN engine.
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) =
+                self.build_asia_cup_winner(db_dir, options.start_year, next_row)
+            {
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Asian Cup Winners' Cup {} drawn (ported from asia_cup_winner.cpp, reusing the ACN engine).",
+                    state.year
+                ));
+                save.asia_cup_winner = Some(state);
+            }
+        }
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) =
+                self.build_asia_cup_of_nations(db_dir, options.start_year, next_row)
+            {
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Asian Cup of Nations {} drawn (ported from asia_nations.cpp, quadrennial, reusing the ACN engine).",
+                    state.year
+                ));
+                save.asia_cup_of_nations = Some(state);
+            }
+        }
+        // The Asian Super Cup ties the two Asian club cups' holders; its fixture
+        // is created by the tick once both finish (port of asia_super_cup.cpp).
+        if save.asia_club_champ.is_some() && save.asia_cup_winner.is_some() {
+            save.asia_super_cup = Some(asia_super_cup::AsiaSuperCupState::new(options.start_year));
+        }
+
+        // Australian NSL (double round-robin + finals series).
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) = self.build_aus_nsl(options.start_year, next_row) {
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Australian NSL {} built: {} clubs, double round-robin + finals series (ported from aus_nsl.cpp).",
+                    state.year,
+                    state.teams.len()
+                ));
+                save.aus_nsl = Some(state);
+                // Initialise the Australian salary cap alongside its league
+                // (port of australia_rules.cpp).
+                save.aus_salary_cap = Some(aus_rules::AusSalaryCap::default());
+            }
+        }
+
+        // Belgian First & Second Divisions — plain double round-robins via the
+        // shared simple-league engine (ported from bel_first.cpp/bel_second.cpp).
+        for (comp_id, name, va) in [
+            (0i32, "Belgian First Division", "bel_first.cpp 0x0041e890"),
+            (1i32, "Belgian Second Division", "bel_second.cpp 0x0041fb80"),
+            (2i32, "Belgian Third Division A", "bel_third.cpp 0x00422240"),
+            (3i32, "Belgian Third Division B", "bel_third.cpp 0x00422240"),
+        ] {
+            let start = GameDate { year: options.start_year, month: 8, day: 4 };
+            if let Some(state) = simple_league::SimpleLeagueState::build(
+                &self.core.clubs,
+                comp_id,
+                name,
+                options.start_year,
+                start,
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                va,
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                let fixtures = simple_league::generate(&state, next_row);
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "{} {} built: {} clubs double round-robin (ported from {}).",
+                    name, state.year, state.teams.len(), va
+                ));
+                save.simple_leagues.push(state);
+            }
+        }
+        // Belgian Cup — a single-elimination knockout of the Belgian league
+        // clubs (ported from bel_fa_cup.cpp, comp 332).
+        {
+            let mut pool = arg_primera::clubs_in_division(&self.core.clubs, 0);
+            for div in [1, 2, 3] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, div));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                332,
+                "Belgian Cup",
+                options.start_year,
+                // VERIFIED from FUN_0041de60 (bel_fa_cup ROUND helper): R0
+                // = 6 Aug 2001. Full 8-round schedule with two-legged ties
+                // tracked in reports/cup_round_schedules_batch2.md.
+                GameDate { year: options.start_year, month: 8, day: 6 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                "bel_fa_cup.cpp 0x0041dba0",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                let fixtures = domestic_cup::generate_first_round(&mut cup, next_row);
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Belgian Cup {} built: {}-team knockout (ported from bel_fa_cup.cpp).",
+                    cup.year,
+                    cup.teams.len()
+                ));
+                save.domestic_cups.push(cup);
+            }
+        }
+        // Belgian Super Cup — First Division champion vs Belgian Cup winner
+        // (ported from bel_super.cpp, comp 331). Its fixture is created by the
+        // tick once both holders are known.
+        save.super_cups.push(super_cup::SuperCupState {
+            year: options.start_year,
+            name: "Belgian Super Cup".to_string(),
+            runtime_comp_id: simple_league::RUNTIME_BASE + 331,
+            league_competition: "Belgian First Division".to_string(),
+            cup_competition: "Belgian Cup".to_string(),
+            // Provisional honour id (real id pending belgium_awards.cpp decode).
+            champion_honour: 0x83c,
+            created: false,
+            announced: false,
+        });
+
+        // ---- England ----
+        // Ported from eng_prm/first/second/third/conf.cpp (5 leagues) +
+        // eng_fa_cup/cc_cup/fa_trophy/auto_cup.cpp (knockouts) + eng_charity.cpp
+        // (super cup: Premier champion vs FA Cup winner).
+        {
+            // (comp_id, name, legs, va)
+            let leagues: &[(i32, &str, u8, &str)] = &[
+                (7, "English Premier Division", 2, "eng_prm.cpp 0x0055cf20"),
+                (8, "English First Division", 2, "eng_first.cpp 0x0055b340"),
+                (9, "English Second Division", 2, "eng_second.cpp 0x0055f040"),
+                (10, "English Third Division", 2, "eng_third.cpp 0x00560b40"),
+                (93, "English Conference", 2, "eng_conf.cpp 0x005577a0"),
+            ];
+            for &(comp_id, name, legs, va) in leagues {
+                let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
+                let start = GameDate { year: options.start_year, month: 8, day: 18 };
+                if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                    teams,
+                    comp_id,
+                    name,
+                    options.start_year,
+                    start,
+                    honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                    legs,
+                    va,
+                ) {
+                    let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                    save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                    save.simple_leagues.push(state);
+                }
+            }
+            // English knockout cups. (comp_id, name, entry-pool of league comp ids, month, day, va)
+            let cups: &[(i32, &str, &[i32], u8, u8, &str)] = &[
+                // FA Cup date VERIFIED from FUN_00558f60 round helper decode
+                // (reports/cup_round_schedules.md): round 0 leg A = 9 Oct 2001
+                // (month 0-indexed 9 → October, +1 for Rust). Round 0 is the
+                // 4th Qualifying Round Proper wave — the earliest fixture the
+                // exe plays. The FA Cup 1st Round Proper equivalent is round
+                // 2 (Nov 19). Full 9-round single-leg schedule tracked in the
+                // report.
+                (351, "English FA Cup", &[7, 8, 9, 10, 93, 358, 359, 360], 10, 9, "eng_fa_cup.cpp 0x00558c80"),
+                // League Cup date VERIFIED from FUN_00556150 round helper:
+                // round 0 leg A = 23 Jul 2001 (month 0-indexed 6 → July).
+                // Rounds 0-5 two-legged, round 6 (final) single-leg.
+                (352, "English League Cup", &[7, 8, 9, 10], 7, 23, "eng_cc_cup.cpp 0x00555e80"),
+                // FA Trophy date VERIFIED from FUN_0055abb0: R0 = 8 Nov 2001.
+                (94, "English FA Trophy", &[93, 358, 359, 360], 11, 8, "eng_fa_trophy.cpp 0x0055a8f0"),
+                // Vans Trophy date VERIFIED from FUN_005549b0 main-draw
+                // branch: R0 = 7 Nov 2001 (final branch has separate date).
+                (354, "English Vans Trophy", &[9, 10], 11, 7, "eng_auto_cup.cpp 0x00554600"),
+            ];
+            for &(comp_id, name, sources, m, d, va) in cups {
+                let mut pool = Vec::new();
+                for &src in sources {
+                    pool.extend(arg_primera::clubs_in_division(&self.core.clubs, src));
+                }
+                if let Some(mut cup) = domestic_cup::CupState::build(
+                    pool,
+                    comp_id,
+                    name,
+                    options.start_year,
+                    GameDate { year: options.start_year, month: m, day: d },
+                    honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                    va,
+                ) {
+                    let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                    save.season
+                        .fixtures
+                        .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                    save.domestic_cups.push(cup);
+                }
+            }
+            // Charity Shield — Premier champion vs FA Cup winner. Fixture created
+            // by the tick once both holders are known (via super_cup engine).
+            save.super_cups.push(super_cup::SuperCupState {
+                year: options.start_year,
+                name: "English Charity Shield".to_string(),
+                runtime_comp_id: simple_league::RUNTIME_BASE + 353,
+                league_competition: "English Premier Division".to_string(),
+                cup_competition: "English FA Cup".to_string(),
+                champion_honour: 0x83c,
+                created: false,
+                announced: false,
+            });
+        }
+
+        // ---- Brazil ----
+        // Brazilian football: state championships in the first half of the year,
+        // the national divisions in the second half. Ported from bra_reg_*.cpp
+        // (12 state championships) + bra_nat_first/second/third.cpp. Membership
+        // is `secondary`/`tertiary` for the state championships (the club's
+        // primary competition is its national division) and `primary` for the
+        // national divisions. The Brazilian *national title* is decided by the
+        // bra_champ_cup.cpp playoff off the Série A table — DEFERRED (a
+        // league->playoff dependency); the league here crowns its first-phase
+        // leader.
+        {
+            // (comp_id, name, tertiary_membership, legs, first_half, va)
+            let brazil: &[(i32, &str, bool, u8, bool, &str)] = &[
+                // State championships (secondary/tertiary membership, Jan–May).
+                (67, "Campeonato Paulista", true, 2, true, "bra_reg_sp.cpp"),
+                (66, "Campeonato Carioca", true, 2, true, "bra_reg_rio.cpp"),
+                (254, "Campeonato Gaúcho", true, 2, true, "bra_reg_gaucho.cpp"),
+                (262, "Campeonato Mineiro", true, 2, true, "bra_reg_minas_gerais.cpp"),
+                (258, "Campeonato Baiano", true, 2, true, "bra_reg_bahia.cpp"),
+                (266, "Campeonato Paranaense", true, 2, true, "bra_reg_parana.cpp"),
+                (260, "Campeonato Goiano", true, 2, true, "bra_reg_goias.cpp"),
+                (264, "Campeonato Pernambucano", true, 2, true, "bra_reg_pern.cpp"),
+                (268, "Campeonato Catarinense", true, 2, true, "bra_reg_santa.cpp"),
+                (73, "Brazilian North State Championship", true, 2, true, "bra_reg_north.cpp"),
+                (74, "Brazilian Central State Championship", true, 2, true, "bra_reg_central.cpp"),
+                (256, "Brazilian Northeast State Championship", true, 2, true, "bra_reg_northeast.cpp"),
+                // National divisions (primary membership, single round-robin, May–Dec).
+                (65, "Brazilian Série A (first phase)", false, 1, false, "bra_nat_first.cpp"),
+                (79, "Brazilian Série B", false, 1, false, "bra_nat_second.cpp"),
+                (80, "Brazilian Série C", false, 1, false, "bra_nat_third.cpp"),
+            ];
+            for &(comp_id, name, tertiary, legs, first_half, va) in brazil {
+                let teams = if tertiary {
+                    arg_primera::clubs_in_any_competition(&self.core.clubs, comp_id)
+                } else {
+                    arg_primera::clubs_in_division(&self.core.clubs, comp_id)
+                };
+                let start = if first_half {
+                    GameDate { year: options.start_year + 1, month: 1, day: 20 }
+                } else {
+                    GameDate { year: options.start_year, month: 5, day: 12 }
+                };
+                if let Some(state) = simple_league::SimpleLeagueState::from_teams(
+                    teams,
+                    comp_id,
+                    name,
+                    options.start_year,
+                    start,
+                    honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                    legs,
+                    va,
+                ) {
+                    let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                    save.season.fixtures.extend(simple_league::generate(&state, next_row));
+                    save.simple_leagues.push(state);
+                }
+            }
+            // Copa do Brasil — national knockout cup (bra_cup.cpp, comp 68).
+            let mut pool = arg_primera::clubs_in_division(&self.core.clubs, 65);
+            for div in [79, 80] {
+                pool.extend(arg_primera::clubs_in_division(&self.core.clubs, div));
+            }
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                68,
+                "Copa do Brasil",
+                options.start_year,
+                GameDate { year: options.start_year, month: 3, day: 7 },
+                honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                "bra_cup.cpp 0x00428070",
+            ) {
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                save.season.fixtures.extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                save.domestic_cups.push(cup);
+            }
+            // The Brazilian national title is a knockout playoff off the Série A
+            // table (bra_champ_cup.cpp, comp 270): the tick seeds it from the
+            // league's top 8 once the first phase finishes.
+            save.league_playoffs.push(simple_league::LeaguePlayoff {
+                year: options.start_year,
+                parent_league: "Brazilian Série A (first phase)".to_string(),
+                name: "Brazilian Championship".to_string(),
+                playoff_comp_id: 270,
+                top_n: 8,
+                champion_honour: honours::ARG_PRIMERA_CHAMPION_HONOUR,
+                start_date: GameDate { year: options.start_year, month: 12, day: 2 },
+                triggered: false,
+            });
+        }
+
+        // Build the Argentine Primera split season (Apertura + Clausura). Like
+        // the ACN it is a self-running competition with its own runtime comp
+        // ids, so it is built regardless of picker selection; its champions and
+        // promedios relegation are announced from the tick.
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) =
+                self.build_argentine_primera(options.start_year, next_row)
+            {
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Argentine Primera {} built: {} clubs, Apertura + Clausura single round-robins (ported from arg_prm.cpp).",
+                    state.year,
+                    state.teams.len()
+                ));
+                save.argentine_primera = Some(state);
+            }
+        }
+
+        // Build the Argentine Second Division (Primera B Nacional) — its
+        // champion promotes to the Primera; relegations by promedios.
+        {
+            let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            if let Some((state, fixtures)) =
+                self.build_argentine_second(options.start_year, next_row)
+            {
+                save.season.fixtures.extend(fixtures);
+                save.notes.push(format!(
+                    "Argentine Primera B Nacional {} built: {} clubs, single round-robin (ported from arg_second.cpp).",
+                    state.year,
+                    state.teams.len()
+                ));
+                save.argentine_second = Some(state);
+            }
+        }
+
+        // Argentine transfer-registration window rule (port of
+        // argentina_rules.cpp). The mid-season window opens in January (between
+        // Apertura and Clausura) with a February deadline; exact date pending
+        // the FUN_00533b50 date-builder decode.
+        if save.argentine_primera.is_some() {
+            save.argentine_transfer_rules = Some(arg_rules::ArgTransferRuleState::new(GameDate {
+                year: options.start_year + 1,
+                month: 1,
+                day: 1,
+            }));
+        }
+
         // Tag every nation with its league tier. This is the port of the
         // exe's `nation_record + 0x11c` bitfield assignment during init: the
         // whole world stays loaded (no record culling — matches FUN_005121a0
@@ -14203,6 +16390,12 @@ impl World {
         // condition=156, neutral morale). Stored as a summary; per-player state
         // is deterministic from the base and only diverges during play.
         save.player_init = Some(self.player_init_summary(&save.date));
+
+        // Seed FIFA rankings + year-rollover tracker so the tick sees a
+        // populated cache from day 0 (equivalent to `game_init` running
+        // `game_recompute_fifa_rankings` once at boot).
+        save.fifa_rankings = fifa_rankings::compute(&self.core.nations, &self.core.clubs);
+        save.last_year_rollover = save.date.year;
 
         save.new_game = Some(options.clone());
         let foreground = save
@@ -14222,7 +16415,7 @@ impl World {
             options.attribute_masking,
         ));
         save
-    }
+        }
 
     /// Assign a [`LeagueTier`] to every nation in the database from the picker
     /// selection. Foreground = `selected_nations`, Background =
@@ -14535,7 +16728,15 @@ impl World {
                 unread: true,
             });
         }
-        NewsView { title: format!("{manager} News"), items }
+        NewsView {
+            title: format!("{manager} News"),
+            items,
+            selected_tab: news_default_selected_tab(),
+            tab_count: news_default_tab_count(),
+            selected_item: 0,
+            nav_back_enabled: true,
+            nav_next_enabled: false,
+        }
     }
 
     /// A person's display name from the name pools (first + second name ids).
@@ -14655,6 +16856,13 @@ impl World {
             .iter()
             .filter(|c| comp_ids.contains(&c.id))
             .filter(|c| is_headless_league_like_competition(&c.long_name))
+            // The Argentine Primera/Second Division are handled by their own
+            // ported classes (arg_prm.cpp / arg_second.cpp) — skip them here so
+            // they are not also built as generic leagues (which would duplicate
+            // those clubs' seasons).
+            // Competitions handled by dedicated ported classes (leagues/cups)
+            // must not also be built by the generic double-round-robin path.
+            .filter(|c| !PORTED_COMPETITION_IDS.contains(&(c.id as i32)))
         {
             let mut members = self.club_members_of_competition(competition.id);
             if members.len() < 2 {
@@ -14705,6 +16913,275 @@ impl World {
             .map(|(id, name)| HeadlessSeasonStanding::new(id, name))
             .collect();
         (fixtures, proofs, standings)
+    }
+
+    /// Draw and seed the African Cup of Nations edition due for a game starting
+    /// in `base_year`, and generate its group-stage fixtures. Port of the
+    /// `african_nations.cpp` construct+draw+seed path (see
+    /// [`crate::african_nations`]). Returns `None` when there are fewer than 16
+    /// African national teams (the exe's `afrcup_draw_qualifiers` failure) or
+    /// the RNG table is unavailable.
+    ///
+    /// The draw uses the real game RNG (`cm_rng::MatchRng`), seeded
+    /// deterministically from the edition year so a given database + start year
+    /// always yields the same edition. (The exe seeds from live game RNG state,
+    /// which the headless model does not yet thread through — a documented
+    /// difference, not an invented rule.)
+    /// World-aware refresh for state the tick can't compute alone.
+    /// Currently: **recompute FIFA nation rankings** when the tick has marked
+    /// them dirty (`save.fifa_rankings.is_empty()`) — port of the year-rollover
+    /// call to `game_recompute_fifa_rankings` (`0x005c01d0`).
+    ///
+    /// Call after `tick_days`/`tick_to_date` to ensure derived state is current.
+    pub fn refresh_after_tick(&self, save: &mut RuntimeSaveGame) {
+        if save.fifa_rankings.is_empty() {
+            save.fifa_rankings = fifa_rankings::compute(&self.core.nations, &self.core.clubs);
+        }
+    }
+
+    fn build_african_nations_edition(
+        &self,
+        db_dir: &Path,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(african_nations::AcnState, Vec<HeadlessSeasonFixture>)> {
+        use african_nations as acn;
+        let year = acn::next_edition_year(base_year);
+        let pool = acn::african_national_teams(&self.core.nat_clubs, &self.core.nations);
+        if pool.len() < acn::ACN_TEAM_COUNT {
+            return None;
+        }
+        // Read the game's precomputed RNG table from the database directory
+        // (cm-db writes it to config/rng_table.bin). Read directly to avoid a
+        // dependency cycle (cm-db depends on cm-domain).
+        let table_bytes = std::fs::read(db_dir.join("config").join("rng_table.bin")).ok()?;
+        let table = cm_rng::table_from_le_bytes(&table_bytes).ok().filter(|t| !t.is_empty())?;
+        // Deterministic per-edition seed (see method docs).
+        let mut rng = cm_rng::MatchRng::new_seeded(table, 0x00ACu32.wrapping_mul(0x1_0001) ^ year as u32);
+        let drawn = acn::AcnDraw::draw(pool, &mut rng)?;
+        let groups = acn::AcnDraw::seed_into_groups(drawn);
+        let state = acn::AcnState {
+            year,
+            competition_id: acn::ACN_COMPETITION_ID,
+            competition_name: acn::ACN_COMPETITION_NAME.to_string(),
+            // ACN is played in January of the edition year (exact matchday dates
+            // come from the undecoded FUN_00533ad0 schedule function).
+            start_date: GameDate { year, month: 1, day: 10 },
+            groups,
+            stage: acn::AcnStage::Groups,
+            champion_noun: "African champions".to_string(),
+            provenance: format!(
+                "African Cup of Nations {year}: 16 African national teams (nation+0x71==0) drawn via cm_rng::MatchRng and seeded into 4 groups; ported from african_nations.cpp (0x00401000..0x00402ac5).",
+            ),
+        };
+        let fixtures = acn::generate_group_stage(&state, start_row);
+        Some((state, fixtures))
+    }
+
+    /// Draw and seed the Asian Club Championship for a game starting in
+    /// `base_year`, and generate its group-stage fixtures. Port of
+    /// `asia_club_champ.cpp`; reuses the ACN group+knockout engine. Returns
+    /// `None` when there are fewer than 16 candidate clubs or the RNG table is
+    /// unavailable.
+    fn build_asia_club_champ(
+        &self,
+        db_dir: &Path,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(african_nations::AcnState, Vec<HeadlessSeasonFixture>)> {
+        use african_nations as acn;
+        let pool = asia_club_champ::asian_national_champion_clubs(&self.core.clubs, &self.core.nations);
+        if pool.len() < acn::ACN_TEAM_COUNT {
+            return None;
+        }
+        let table_bytes = std::fs::read(db_dir.join("config").join("rng_table.bin")).ok()?;
+        let table = cm_rng::table_from_le_bytes(&table_bytes).ok().filter(|t| !t.is_empty())?;
+        let mut rng = cm_rng::MatchRng::new_seeded(table, 0x00A5u32.wrapping_mul(0x1_0001) ^ base_year as u32);
+        let drawn = acn::AcnDraw::draw(pool, &mut rng)?;
+        let groups = acn::AcnDraw::seed_into_groups(drawn);
+        let state = acn::AcnState {
+            year: base_year,
+            competition_id: asia_club_champ::ASIA_CLUB_CHAMP_COMP_ID,
+            competition_name: asia_club_champ::ASIA_CLUB_CHAMP_NAME.to_string(),
+            // The Asian Club Championship ran in the first half of the year.
+            start_date: GameDate { year: base_year + 1, month: 3, day: 1 },
+            groups,
+            stage: acn::AcnStage::Groups,
+            champion_noun: asia_club_champ::ASIA_CHAMPION_NOUN.to_string(),
+            provenance: format!(
+                "Asian Club Championship {base_year}: 16 Asian national champions (strongest club per Asian nation, continent==1) drawn via cm_rng and seeded into 4 groups; ported from asia_club_champ.cpp (0x0040ab40..0x0040cbdf), reusing the ACN engine.",
+            ),
+        };
+        let fixtures = acn::generate_group_stage(&state, start_row);
+        Some((state, fixtures))
+    }
+
+    /// Shared builder for a group+knockout continental cup on the ACN engine:
+    /// draw 16 from `pool`, seed 4 groups, generate the group stage. `seed_salt`
+    /// keeps each cup's RNG stream distinct. Used by the Asian cups.
+    fn build_cup_edition(
+        &self,
+        db_dir: &Path,
+        pool: Vec<african_nations::AcnTeam>,
+        year: u16,
+        competition_id: u32,
+        competition_name: &str,
+        champion_noun: &str,
+        start_date: GameDate,
+        seed_salt: u32,
+        start_row: u32,
+        provenance: String,
+    ) -> Option<(african_nations::AcnState, Vec<HeadlessSeasonFixture>)> {
+        use african_nations as acn;
+        if pool.len() < acn::ACN_TEAM_COUNT {
+            return None;
+        }
+        let table_bytes = std::fs::read(db_dir.join("config").join("rng_table.bin")).ok()?;
+        let table = cm_rng::table_from_le_bytes(&table_bytes).ok().filter(|t| !t.is_empty())?;
+        let mut rng = cm_rng::MatchRng::new_seeded(table, seed_salt ^ year as u32);
+        let drawn = acn::AcnDraw::draw(pool, &mut rng)?;
+        let groups = acn::AcnDraw::seed_into_groups(drawn);
+        let state = acn::AcnState {
+            year,
+            competition_id,
+            competition_name: competition_name.to_string(),
+            start_date,
+            groups,
+            stage: acn::AcnStage::Groups,
+            champion_noun: champion_noun.to_string(),
+            provenance,
+        };
+        let fixtures = acn::generate_group_stage(&state, start_row);
+        Some((state, fixtures))
+    }
+
+    /// Build the Asian Cup Winners' Cup (club cup). Port of `asia_cup_winner.cpp`.
+    fn build_asia_cup_winner(
+        &self,
+        db_dir: &Path,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(african_nations::AcnState, Vec<HeadlessSeasonFixture>)> {
+        let pool = asia_cup_winner::asian_cup_winner_clubs(&self.core.clubs, &self.core.nations);
+        self.build_cup_edition(
+            db_dir,
+            pool,
+            base_year,
+            asia_cup_winner::ASIA_CUP_WINNER_COMP_ID,
+            asia_cup_winner::ASIA_CUP_WINNER_NAME,
+            asia_cup_winner::ASIA_CUP_WINNER_CHAMPION_NOUN,
+            GameDate { year: base_year + 1, month: 3, day: 8 },
+            0x00A6u32.wrapping_mul(0x1_0001),
+            start_row,
+            format!("Asian Cup Winners' Cup {base_year}: 16 Asian cup-winner clubs (2nd-strongest per nation proxy) via the ACN engine; ported from asia_cup_winner.cpp (0x0040cbe0..0x0040e77f)."),
+        )
+    }
+
+    /// Build the Asian Cup of Nations (national teams, quadrennial). Port of
+    /// `asia_nations.cpp`.
+    fn build_asia_cup_of_nations(
+        &self,
+        db_dir: &Path,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(african_nations::AcnState, Vec<HeadlessSeasonFixture>)> {
+        let year = asia_nations::next_asian_cup_year(base_year);
+        let pool = asia_nations::asian_national_teams(&self.core.nat_clubs, &self.core.nations);
+        self.build_cup_edition(
+            db_dir,
+            pool,
+            year,
+            asia_nations::ASIA_CUP_COMP_ID,
+            asia_nations::ASIA_CUP_NAME,
+            asia_nations::ASIA_CUP_CHAMPION_NOUN,
+            GameDate { year, month: 1, day: 12 },
+            0x00A7u32.wrapping_mul(0x1_0001),
+            start_row,
+            format!("Asian Cup of Nations {year}: 16 Asian national teams (continent==1), quadrennial; ported from asia_nations.cpp (0x0040e780..0x0041056f), reusing the ACN engine."),
+        )
+    }
+
+    /// Build the Australian NSL regular season (double round-robin). Port of
+    /// `aus_nsl.cpp`; the finals series is drawn by the tick once the regular
+    /// season finishes.
+    fn build_aus_nsl(
+        &self,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(aus_nsl::AusNslState, Vec<HeadlessSeasonFixture>)> {
+        let teams = aus_nsl::nsl_clubs(&self.core.clubs);
+        if teams.len() < aus_nsl::AUS_NSL_TEAM_COUNT {
+            return None;
+        }
+        let state = aus_nsl::AusNslState {
+            year: base_year,
+            teams,
+            // The NSL season ran October–May (southern-hemisphere summer).
+            season_start: GameDate { year: base_year, month: 10, day: 6 },
+            stage: aus_nsl::AusNslStage::Regular,
+            provenance: format!(
+                "Australian NSL {base_year}: 14 clubs (club+0x57==151) double round-robin + finals series; ported from aus_nsl.cpp (0x00410d70..0x0041297f).",
+            ),
+        };
+        let fixtures = aus_nsl::generate_regular_season(&state, start_row);
+        Some((state, fixtures))
+    }
+
+    /// Build the Argentine Primera split season (Apertura + Clausura) for a game
+    /// starting in `base_year`, and generate both tournaments' fixtures. Port of
+    /// the `arg_prm.cpp` gather+build path (see [`crate::arg_primera`]). Returns
+    /// `None` when fewer than the full complement of clubs are present.
+    fn build_argentine_primera(
+        &self,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(arg_primera::ArgPrimeraState, Vec<HeadlessSeasonFixture>)> {
+        use arg_primera as arg;
+        let teams = arg::argentine_primera_clubs(&self.core.clubs);
+        if teams.len() < arg::ARG_PRIMERA_TEAM_COUNT {
+            return None;
+        }
+        let state = arg::ArgPrimeraState {
+            year: base_year,
+            teams,
+            // Apertura in the second half of the start year, Clausura in the
+            // first half of the next (the Argentine calendar-year split).
+            apertura_start: GameDate { year: base_year, month: 8, day: 10 },
+            clausura_start: GameDate { year: base_year + 1, month: 2, day: 10 },
+            phase: arg::ArgPhase::Apertura,
+            provenance: format!(
+                "Argentine Primera {base_year}: 20 clubs (club+0x57==63) in Apertura + Clausura single round-robins; ported from arg_prm.cpp (0x00404290..0x00406c2f).",
+            ),
+        };
+        let fixtures = arg::generate_season_fixtures(&state, start_row);
+        Some((state, fixtures))
+    }
+
+    /// Build the Argentine Second Division (Primera B Nacional) single-round-
+    /// robin season. Port of `arg_second.cpp`'s gather+build path (see
+    /// [`crate::arg_second`]). `None` when fewer than the full complement of
+    /// clubs are present.
+    fn build_argentine_second(
+        &self,
+        base_year: u16,
+        start_row: u32,
+    ) -> Option<(arg_second::ArgSecondState, Vec<HeadlessSeasonFixture>)> {
+        use arg_second as arg;
+        let teams = arg::argentine_second_clubs(&self.core.clubs);
+        if teams.len() < arg::ARG_SECOND_TEAM_COUNT {
+            return None;
+        }
+        let state = arg::ArgSecondState {
+            year: base_year,
+            teams,
+            start_date: GameDate { year: base_year, month: 8, day: 10 },
+            complete: false,
+            provenance: format!(
+                "Argentine Primera B Nacional {base_year}: 25 clubs (club+0x57==64) single round-robin; ported from arg_second.cpp (0x00406c30..0x0040a43f).",
+            ),
+        };
+        let fixtures = arg::generate_fixtures(&state, start_row);
+        Some((state, fixtures))
     }
 
     /// The competition ids that belong to the given nation ids, derived from
@@ -15177,10 +17654,104 @@ impl RuntimeSaveGame {
         let elapsed_days_before_phase = self.elapsed_days;
         let frontiers = runtime_phase_frontiers(phase_before);
         self.record_backend_frontier_attempts(phase_before, &date_before_phase);
+
+        // ==== Steps mirroring game.cpp's main-loop body per iteration ====
+        // See reports/game_cpp_analysis.md for the exhaustive audit. Each hook
+        // below corresponds to a decoded call in `game_init`'s forever loop.
+
+        // Step 1: year rollover (exe: FUN_00594950(DAT_00acde92) on year change).
+        self.hook_year_rollover(&date_before_phase);
+        // Step 2: per-human hotseat processing (exe: iterate DAT_00b5cff6[16] +
+        // FUN_00808a70 per active seat + FUN_007e4940).
+        self.hook_hotseat_per_human(&date_before_phase);
+
+        // Steps 3-5: build + play today's fixtures (only in phase 2 evening;
+        // exe: FUN_00699640 build -> FUN_00699cd0 pre-play -> FUN_00699d90 play).
         if phase_before == 2 {
             self.execute_due_fixture_batch(&date_before_phase);
+            // Step 6a: competition subsystem dispatch, arg 0 (post-match, for
+            // every registered competition). Our ported comps run their own
+            // advance_* below; the exe's iteration over unported comps is a
+            // documented no-op here.
+            self.hook_competition_dispatch_arg0(&date_before_phase);
+            // Step 6b: our ported per-comp advance methods.
+            self.advance_african_nations(&date_before_phase);
+            self.advance_asia_club_champ(&date_before_phase);
+            self.advance_asia_cup_winner(&date_before_phase);
+            self.advance_asia_cup_of_nations(&date_before_phase);
+            self.advance_european_championship(&date_before_phase);
+            self.advance_fifa_confederations_cup(&date_before_phase);
+            self.advance_concacaf_gold_cup(&date_before_phase);
+            self.advance_asia_super_cup(&date_before_phase);
+            self.advance_aus_nsl(&date_before_phase);
+            self.advance_simple_leagues(&date_before_phase);
+            self.advance_league_playoffs(&date_before_phase);
+            self.advance_domestic_cups(&date_before_phase);
+            self.advance_super_cups(&date_before_phase);
+            self.advance_argentine_primera(&date_before_phase);
+            self.advance_argentine_second(&date_before_phase);
+            self.advance_argentine_transfer_window(&date_before_phase);
+
+            // Step 7: post-comp dispatch hook (exe: FUN_00856d50, FUN_00699cd0).
+            self.hook_post_comp(&date_before_phase);
+
+            // Step 10: the giant evening daily-AI dispatcher (exe: FUN_005b85b0
+            // — 30 467 bytes / 395 RNG calls; staff_contracts + transfers +
+            // human_manager + player_stats + media). See daily_ai() docs.
+            self.hook_evening_daily_ai(&date_before_phase);
+
+            // Step 10b: background subsystems (exe: FUN_005b7f10, FUN_009123a0,
+            // FUN_00614e90, FUN_0053fe40, FUN_008f2900, FUN_00413980).
+            self.hook_evening_background_subsystems(&date_before_phase);
+
+            // Step 10c: fixture/news cleanup (exe: FUN_00595580).
+            self.hook_evening_fixture_news_cleanup(&date_before_phase);
+
+            // Step 10d: per-club training bump loop (RNG-gated).
+            self.hook_evening_per_club_training(&date_before_phase);
+
+            // Step 10e: host country date + housekeeping
+            // (FUN_005e4370, FUN_005bfd90). Mark FIFA rankings dirty; the
+            // world-aware `refresh_after_tick` recomputes them on next batch.
+            // (The exe calls FUN_005c01d0 unconditionally each evening; we do
+            // it opportunistically to avoid recomputing 200+ nations per day.)
+            self.simulation.provenance = format!(
+                "phase-2 evening step 10e (host-country date + FIFA rankings dirty on year rollover)"
+            );
+
+            // Step 10f: tie-participant notify (exe: FUN_00752d40).
+            self.hook_evening_tie_participant_notify(&date_before_phase);
+
+            // Step 10g: monthly hook (exe: `if date % 0x1e == 0 FUN_00823210(0)`).
+            if u32::from(date_before_phase.day) % 30 == 0 {
+                self.hook_monthly(&date_before_phase);
+            }
+
+            // Step 10h: further per-tick subsystems (exe: FUN_00823ad0,
+            // FUN_00585ae0, FUN_0078dd80, FUN_0078e970, FUN_0089de30 — media,
+            // scouting, board mood).
+            self.hook_evening_further_subsystems(&date_before_phase);
+
+            // Step 10i: manager-job lifecycle (exe: FUN_00674c10 + FUN_00844940
+            // + FUN_00419c30 + FUN_00553aa0 + FUN_0058fd80).
+            self.hook_manager_job_lifecycle(&date_before_phase);
+
+            // Step 10j: player rankings summary (exe: FUN_005c0f90, FUN_005c0d20).
+            self.hook_player_ranking_summary(&date_before_phase);
+
+            // Step 10k: weekly Wednesday event hook (exe: `if DAT_009b979c &&
+            // DAT_acde88==0`). Only fires on phase 0, not evening — see below.
+
+            // Step 11: event-drain (exe: `while FUN_005b8390 != 0`).
+            self.hook_event_drain(&date_before_phase);
         }
 
+        // Steps 13-14: news manager pacing + housekeeping run EVERY phase
+        // (exe: FUN_00535600 + FUN_007ead30 outside the phase-2 conditional).
+        self.hook_news_manager_pacing(&date_before_phase);
+
+        // Step 12/15: phase increment + optional day rollover (exe: after all
+        // work). This matches the exe's ordering.
         self.simulation.phase = self.simulation.phase.saturating_add(1);
         let mut advanced_day = false;
         if self.simulation.phase > 2 {
@@ -15189,6 +17760,19 @@ impl RuntimeSaveGame {
             self.date = self.simulation.cm_packed_date.to_game_date();
             self.elapsed_days = self.elapsed_days.saturating_add(1);
             advanced_day = true;
+
+            // Daily physio tick — recover injuries by one day (ported
+            // from physio.cpp's per-day loop, see crates/cm-domain/src/injury.rs).
+            self.injuries.advance_day();
+
+            // Step 13: weekly Wednesday injury/media pass. The exe gates this
+            // on phase == 0 (morning of the new day), so we run it here — after
+            // day rollover, the very next tick will be phase 0.
+            if self.date.day % 7 == 3 {
+                // Rough "every 7 days" trigger; exact "Wednesday" needs the
+                // day-of-week calendar port.
+                self.hook_weekly_wednesday();
+            }
         }
 
         self.phase_trace.push(RuntimePhaseTrace {
@@ -15203,6 +17787,162 @@ impl RuntimeSaveGame {
                 .to_string(),
             frontiers,
         });
+    }
+
+    /// Score a fixture through the exe-port match engine
+    /// (`match_engine_exe::simulate_one_fixture` = ported `FUN_0069D950`
+    /// + `FUN_0069F2F0` + `FUN_006BC8D0`). Returns `None` if we don't
+    /// have enough of a squad on either side to run the sim.
+    fn resolve_fixture_via_exe_port(
+        &self,
+        home_id: u32,
+        away_id: u32,
+        fixture_row: u32,
+    ) -> Option<(u8, u8)> {
+        let home = self.snapshot_team_for_engine(home_id)?;
+        let away = self.snapshot_team_for_engine(away_id)?;
+        // Seed = fixture row + elapsed days so replays reproduce yet each
+        // fixture gets its own RNG stream.
+        let seed = (fixture_row as u64).wrapping_mul(0x9E3779B97F4A7C15)
+                 ^ (self.elapsed_days as u64);
+        // Prefer the full token-model port (per-token decide→physics→resolve
+        // pipeline; see crates/cm-domain/src/match_engine_exe.rs
+        // `simulate_one_fixture_token_model`). Falls back to the condensed
+        // per-minute engine if the token version produces zero shots (guards
+        // against too-small squads).
+        //
+        // NOTE (follow-up): `snapshot_team_for_engine` returns `None` for a
+        // large fraction of real clubs when booted from rust-db (observed
+        // ~35 of ~93 sampled fixtures early in an England season) —
+        // whatever club/player linkage it relies on isn't populated for
+        // those clubs, so those fixtures never reach this engine at all and
+        // fall all the way back to `score_from_goal_events` in the caller,
+        // a separate legacy scoring path this port does not touch. That's
+        // the dominant remaining source of unrealistic season tables (0
+        // draws, blown-out GF/GA) and is out of scope for the FUN_006F99C0
+        // shot-gate port — needs its own investigation into
+        // `player_ratings`/club_id coverage.
+        let r = crate::match_engine_exe::simulate_one_fixture_token_model(
+            &home, &away, seed,
+        );
+        let (hs, aws) = if r.home_shots as u16 + r.away_shots as u16 > 0 {
+            (r.home_score, r.away_score)
+        } else {
+            let alt = crate::match_engine_exe::simulate_one_fixture(
+                &home, &away, seed, Some(6.8),
+            );
+            (alt.home_score, alt.away_score)
+        };
+        Some((hs, aws))
+    }
+
+    /// Build the exe-port engine's per-team snapshot from our world +
+    /// rating book. Needs at least 6 players on the club to be worth
+    /// simming; falls back to a synthetic roster (below) rather than
+    /// `None` when the club's real squad is too thin.
+    /// `pub` (not just `pub(crate)`) so debug binaries under `src/bin/` —
+    /// which Cargo compiles as separate crates depending on this lib — can
+    /// probe real per-club engine snapshots directly.
+    pub fn snapshot_team_for_engine(&self, club_id: u32)
+        -> Option<crate::match_engine_exe::EngineTeamSnapshot>
+    {
+        // Reputation lookup — the club table lives on the World, not on
+        // RuntimeSaveGame; approximate from average CA of this club's
+        // players (higher CA squad → higher reputation) for now.
+        let ratings_of_club: Vec<i16> = self.player_ratings.players.iter()
+            .filter(|p| p.club_id == Some(club_id as i32))
+            .map(|p| p.ca).collect();
+        let avg_ca = if ratings_of_club.is_empty() { 100 }
+                     else { ratings_of_club.iter().sum::<i16>() / ratings_of_club.len() as i16 };
+        let reputation = (avg_ca as u16 * 20).max(300);
+        let mut players: Vec<crate::match_engine_exe::EngineTeamPlayer> =
+            self.player_ratings.players.iter()
+            .filter(|p| p.club_id == Some(club_id as i32))
+            .take(20)
+            .map(|p| crate::match_engine_exe::EngineTeamPlayer {
+                player_id: p.staff_id,
+                is_not_injured: true,       // TODO consult self.injuries
+                position: p.position_ordinal,
+                jumping_heading: 10,
+                aggression: 8,
+                bravery: 10,
+                dirtiness: 5,
+                current_ability: p.ca.max(1) as u16 * 100, // scale to exe range
+                age: p.age_est,
+                injury_proneness: 8,
+                form: 12,
+                is_first_choice_gk: p.is_gk,
+                speciality_a: 0, speciality_b: 0,
+                position_natural: p.position_ordinal, position_learn: 0,
+            })
+            .collect();
+
+        // `RatedPlayer::is_gk` marks every player whose real attributes clear
+        // the goalkeeper threshold (`FUN_005a2030`) — a squad can genuinely
+        // have 2-3 keepers. But `is_first_choice_gk` assigns the actual
+        // goal-line pitch slot downstream, so exactly one player must carry
+        // it or multiple keepers collide into the same slot. Keep the first
+        // eligible keeper as first-choice; demote the rest to a regular
+        // squad member (still correctly flagged `position: 12`).
+        let mut picked_gk = false;
+        for p in players.iter_mut() {
+            if p.is_first_choice_gk {
+                if picked_gk {
+                    p.is_first_choice_gk = false;
+                } else {
+                    picked_gk = true;
+                }
+            }
+        }
+
+        // ROOT CAUSE (investigated): `player_ratings.players` only holds
+        // staff records that (a) have a paired type10 attribute record AND
+        // (b) that record's CA > 0. That join itself is correct — but the
+        // shipped rust-db data is genuinely sparse for lower "filler" /
+        // non-league divisions: e.g. England's catch-all comp 357 ("A Lower
+        // Division", 370 clubs) has a MEDIAN squad size of 1 real CA>0
+        // player, with 172 of 370 clubs having *zero* player records
+        // assigned to them at all. This mirrors the ~5,490-of-10,580 club
+        // "realistic squads" figure documented on `current_club_id()`
+        // above — roughly half the shipped club table are placeholder
+        // entries for regional/amateur leagues the original game never
+        // fully populated. It is not an id/club-key/nation-filter bug.
+        //
+        // Rather than let those fixtures fall through to the legacy
+        // `score_from_goal_events` scorer, synthesize a minimal but
+        // internally-consistent squad so every fixture — including ones
+        // between two paper-thin clubs — runs through the real engine.
+        // Strength is derived from `finance` (seeded for every club from
+        // its reputation at boot, so it has full coverage even where
+        // `player_ratings` doesn't) rather than a fixed constant, so
+        // synthetic clubs still differ from each other.
+        if players.len() < 6 {
+            // Prefer REAL free-agent redistribution (the exe's actual
+            // squad-fill mechanism, `player_regen.cpp` / FUN_0078E970 —
+            // see `crate::player_regen`) over inventing players. Only
+            // fall back to the synthetic placeholder when the real
+            // free-agent pool has literally nothing left to give this
+            // club (e.g. an exhausted/fully-employed rating book).
+            let existing_ids: std::collections::HashSet<u32> =
+                players.iter().map(|p| p.player_id).collect();
+            let mut real_fill =
+                real_free_agent_roster_for_engine(self, club_id, &existing_ids, 6usize.saturating_sub(players.len()));
+            if real_fill.is_empty() {
+                let mut synthetic = synthetic_roster_for_engine(self, club_id, &players);
+                players.append(&mut synthetic);
+            } else {
+                players.append(&mut real_fill);
+                if players.len() < 6 {
+                    let mut synthetic = synthetic_roster_for_engine(self, club_id, &players);
+                    players.append(&mut synthetic);
+                }
+            }
+        }
+
+        if players.len() < 6 { return None; }
+        Some(crate::match_engine_exe::EngineTeamSnapshot {
+            club_id, reputation, grudge_score: 0, players,
+        })
     }
 
     fn execute_due_fixture_batch(&mut self, date: &GameDate) {
@@ -15270,7 +18010,17 @@ impl RuntimeSaveGame {
                 &event_queue_outputs,
             );
             let goal_events = headless_goal_events_from_match_events(&match_events);
-            let (home_score, away_score) = score_from_goal_events(&goal_events);
+            // Score comes from the honest exe-port match engine (see
+            // crates/cm-domain/src/match_engine_exe.rs — ports of
+            // FUN_0069D950, FUN_0069F2F0, FUN_006BC8D0). The old
+            // headless-scenario pipeline above still runs so its
+            // runtime-store frontiers stay coherent, but the SCORE it
+            // produces (via `score_from_goal_events`) is discarded in
+            // favour of the real ported engine.
+            let (home_score, away_score) = self.resolve_fixture_via_exe_port(
+                home_id, away_id, *fixture_row,
+            ).unwrap_or_else(|| score_from_goal_events(&goal_events));
+            let fixture = &mut self.season.fixtures[fixture_index];
             scenario.home_score = home_score;
             scenario.away_score = away_score;
             fixture.status = HeadlessFixtureStatus::Played;
@@ -15334,6 +18084,632 @@ impl RuntimeSaveGame {
             news_events_created: self.pending_events.len().saturating_sub(news_before),
             provenance: "Phase-2 headless fixture batch executed from Rust save fixtures and reused the code-derived final-score bridge into fixture result bytes.".to_string(),
         });
+    }
+
+    /// Advance the stored African Cup of Nations edition by one knockout round
+    /// when the current round's fixtures are all played, appending the next
+    /// round's fixtures and any competition news. Idempotent — a no-op until a
+    /// round completes. Port of `afrcup_advance_stage` (`0x00401e50`) /
+    /// `afrcup_build_final` (`0x004020d0`); the round draw itself is in
+    /// [`crate::african_nations::advance`].
+    fn advance_african_nations(&mut self, date: &GameDate) {
+        let Some(state) = self.african_nations.as_ref() else {
+            return;
+        };
+        if matches!(state.stage, african_nations::AcnStage::Complete) {
+            return;
+        }
+        let next_row = self
+            .season
+            .fixtures
+            .iter()
+            .map(|f| f.row + 1)
+            .max()
+            .unwrap_or(0);
+        let adv = african_nations::advance(state, &self.season.fixtures, next_row);
+        if adv.new_stage.is_none() && adv.new_fixtures.is_empty() && adv.news.is_empty() {
+            return;
+        }
+        self.season.fixtures.extend(adv.new_fixtures);
+        for (kind, message) in adv.news {
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days,
+                date: date.clone(),
+                kind,
+                message,
+                phase: 2,
+            });
+        }
+        if let (Some(stage), Some(st)) = (adv.new_stage, self.african_nations.as_mut()) {
+            st.stage = stage;
+        }
+    }
+
+    /// Advance one continental-cup edition (shared ACN engine): appends the next
+    /// round's fixtures + news and steps the stage. Operates on an owned state so
+    /// the caller can take it out of any of the cup fields.
+    fn run_cup_advance(&mut self, date: &GameDate, state: &mut african_nations::AcnState) {
+        if matches!(state.stage, african_nations::AcnStage::Complete) {
+            return;
+        }
+        let next_row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+        let adv = african_nations::advance(state, &self.season.fixtures, next_row);
+        if adv.new_stage.is_none() && adv.new_fixtures.is_empty() && adv.news.is_empty() {
+            return;
+        }
+        self.season.fixtures.extend(adv.new_fixtures);
+        for (kind, message) in adv.news {
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days,
+                date: date.clone(),
+                kind,
+                message,
+                phase: 2,
+            });
+        }
+        if let Some(stage) = adv.new_stage {
+            state.stage = stage;
+        }
+    }
+
+    fn advance_asia_club_champ(&mut self, date: &GameDate) {
+        if let Some(mut state) = self.asia_club_champ.take() {
+            self.run_cup_advance(date, &mut state);
+            self.asia_club_champ = Some(state);
+        }
+    }
+
+    fn advance_asia_cup_winner(&mut self, date: &GameDate) {
+        if let Some(mut state) = self.asia_cup_winner.take() {
+            self.run_cup_advance(date, &mut state);
+            self.asia_cup_winner = Some(state);
+        }
+    }
+
+    fn advance_asia_cup_of_nations(&mut self, date: &GameDate) {
+        if let Some(mut state) = self.asia_cup_of_nations.take() {
+            self.run_cup_advance(date, &mut state);
+            self.asia_cup_of_nations = Some(state);
+        }
+    }
+
+    fn advance_european_championship(&mut self, date: &GameDate) {
+        if let Some(mut state) = self.european_championship.take() {
+            self.run_cup_advance(date, &mut state);
+            self.european_championship = Some(state);
+        }
+    }
+
+    fn advance_fifa_confederations_cup(&mut self, date: &GameDate) {
+        if let Some(mut state) = self.fifa_confederations_cup.take() {
+            self.run_cup_advance(date, &mut state);
+            self.fifa_confederations_cup = Some(state);
+        }
+    }
+
+    fn advance_concacaf_gold_cup(&mut self, date: &GameDate) {
+        if let Some(mut state) = self.concacaf_gold_cup.take() {
+            self.run_cup_advance(date, &mut state);
+            self.concacaf_gold_cup = Some(state);
+        }
+    }
+
+    /// The Asian Super Cup: create the tie once both Asian club cups finish, then
+    /// announce the winner + honour when it is played. Port of
+    /// `supercup_build_tie` (`0x00410970`) + `supercup_daily_update`
+    /// (`0x00410b30`).
+    fn advance_asia_super_cup(&mut self, date: &GameDate) {
+        let Some(mut sc) = self.asia_super_cup.take() else {
+            return;
+        };
+        if !sc.created {
+            // Both parent cups must be finished; take their champions.
+            let cc = self
+                .asia_club_champ
+                .as_ref()
+                .and_then(|s| african_nations::champion_of(s, &self.season.fixtures));
+            let cw = self
+                .asia_cup_winner
+                .as_ref()
+                .and_then(|s| african_nations::champion_of(s, &self.season.fixtures));
+            if let (Some(home), Some(away)) = (cc, cw) {
+                let row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                let tie_date = CmPackedDate::from_game_date(date.clone()).add_days(14).to_game_date();
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind: "competition".to_string(),
+                    message: format!(
+                        "Asian Super Cup - {} vs {} will contest the {} Super Cup",
+                        home.1, away.1, sc.year
+                    ),
+                    phase: 2,
+                });
+                self.season
+                    .fixtures
+                    .push(asia_super_cup::build_tie(sc.year, row, tie_date, home, away));
+                sc.created = true;
+            }
+        } else if !sc.announced {
+            if let Some((id, name)) = asia_super_cup::tie_fixture(&self.season.fixtures)
+                .filter(|f| f.status == HeadlessFixtureStatus::Played)
+                .and_then(asia_super_cup::winner)
+            {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind: "competition".to_string(),
+                    message: format!("{name} - won the Asian Super Cup {}", sc.year),
+                    phase: 2,
+                });
+                self.honours.push(honours::Honour::champion(
+                    sc.year,
+                    asia_super_cup::ASIA_SUPER_CUP_HONOUR,
+                    asia_super_cup::ASIA_SUPER_CUP_NAME,
+                    id,
+                    name,
+                ));
+                sc.announced = true;
+            }
+        }
+        self.asia_super_cup = Some(sc);
+    }
+
+    /// Advance the Australian NSL: regular season → finals series → champion.
+    /// Port of `ausnsl_advance_stage` (`0x004121f0`) + `ausnsl_build_finals_series`
+    /// (`0x004122a0`).
+    fn advance_aus_nsl(&mut self, date: &GameDate) {
+        let Some(mut state) = self.aus_nsl.take() else {
+            return;
+        };
+        if !matches!(state.stage, aus_nsl::AusNslStage::Complete) {
+            let next_row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            let adv = aus_nsl::advance(&state, &self.season.fixtures, next_row);
+            self.season.fixtures.extend(adv.new_fixtures);
+            for (kind, message) in adv.news {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind,
+                    message,
+                    phase: 2,
+                });
+            }
+            for (honour_id, club_id, club_name) in adv.honours {
+                self.honours.push(honours::Honour::champion(
+                    state.year,
+                    honour_id,
+                    "Australian NSL",
+                    club_id,
+                    club_name,
+                ));
+            }
+            if let Some(stage) = adv.new_stage {
+                state.stage = stage;
+            }
+        }
+        self.aus_nsl = Some(state);
+    }
+
+    /// Announce the champion of each plain double-round-robin league
+    /// ([`simple_league`]) as its season finishes.
+    fn advance_simple_leagues(&mut self, date: &GameDate) {
+        let mut leagues = std::mem::take(&mut self.simple_leagues);
+        for state in &mut leagues {
+            if state.complete {
+                continue;
+            }
+            let adv = simple_league::advance(state, &self.season.fixtures);
+            if !adv.completed && adv.news.is_empty() {
+                continue;
+            }
+            for (kind, message) in adv.news {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind,
+                    message,
+                    phase: 2,
+                });
+            }
+            self.honours.extend(adv.honours);
+            if adv.completed {
+                state.complete = true;
+            }
+        }
+        self.simple_leagues = leagues;
+    }
+
+    /// Advance each single-elimination domestic cup ([`domestic_cup`]) one round
+    /// as its ties resolve.
+    fn advance_domestic_cups(&mut self, date: &GameDate) {
+        let mut cups = std::mem::take(&mut self.domestic_cups);
+        for cup in &mut cups {
+            if cup.complete {
+                continue;
+            }
+            let next_row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            let adv = domestic_cup::advance(cup, &self.season.fixtures, next_row);
+            self.season.fixtures.extend(adv.new_fixtures);
+            for (kind, message) in adv.news {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind,
+                    message,
+                    phase: 2,
+                });
+            }
+            self.honours.extend(adv.honours);
+            if let Some(round) = adv.new_round {
+                cup.round = round;
+            }
+            if adv.completed {
+                cup.complete = true;
+            }
+        }
+        self.domestic_cups = cups;
+    }
+
+    /// Materialise each league playoff ([`simple_league::LeaguePlayoff`]) into a
+    /// knockout once its parent league's table is final — the port of the
+    /// Brazilian national-title playoff (`bra_champ_cup.cpp`). The knockout then
+    /// advances like any other [`domestic_cup`].
+    fn advance_league_playoffs(&mut self, date: &GameDate) {
+        let mut playoffs = std::mem::take(&mut self.league_playoffs);
+        for po in &mut playoffs {
+            if po.triggered {
+                continue;
+            }
+            // Find the parent league's final table.
+            let table = self
+                .simple_leagues
+                .iter()
+                .find(|l| l.name == po.parent_league)
+                .map(|l| simple_league::ranked_table(l, &self.season.fixtures))
+                .unwrap_or_default();
+            if table.len() < po.top_n {
+                continue; // league not finished yet
+            }
+            let pool: Vec<_> = table.into_iter().take(po.top_n).collect();
+            if let Some(mut cup) = domestic_cup::CupState::build(
+                pool,
+                po.playoff_comp_id,
+                &po.name,
+                po.year,
+                po.start_date.clone(),
+                po.champion_honour,
+                "bra_champ_cup.cpp 0x004265e0",
+            ) {
+                let next_row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                self.season
+                    .fixtures
+                    .extend(domestic_cup::generate_first_round(&mut cup, next_row));
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind: "competition".to_string(),
+                    message: format!(
+                        "{} - the {} title playoff begins ({} clubs from the Série A table)",
+                        po.name, po.year, cup.teams.len()
+                    ),
+                    phase: 2,
+                });
+                self.domestic_cups.push(cup);
+                po.triggered = true;
+            }
+        }
+        self.league_playoffs = playoffs;
+    }
+
+    /// Advance each domestic super cup ([`super_cup`]): create the tie when both
+    /// holders are known, then announce the winner when it is played.
+    fn advance_super_cups(&mut self, date: &GameDate) {
+        let mut cups = std::mem::take(&mut self.super_cups);
+        for sc in &mut cups {
+            if sc.announced {
+                continue;
+            }
+            let next_row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+            let adv = super_cup::advance(sc, &self.season.fixtures, &self.honours, date, next_row);
+            self.season.fixtures.extend(adv.new_fixtures);
+            for (kind, message) in adv.news {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: date.clone(),
+                    kind,
+                    message,
+                    phase: 2,
+                });
+            }
+            self.honours.extend(adv.honours);
+            if adv.created {
+                sc.created = true;
+            }
+            if adv.announced {
+                sc.announced = true;
+            }
+        }
+        self.super_cups = cups;
+    }
+
+    /// Advance the Argentine Primera split season: announce the Apertura
+    /// champion when it finishes, then the Clausura champion + promedios
+    /// relegation when that finishes. Port of `arg_prm.cpp`'s season-end path
+    /// (`argprm_finalize_promotion_relegation` 0x00405ce0 /
+    /// `argprm_compute_relegation_averages` 0x004065b0). Idempotent.
+    fn advance_argentine_primera(&mut self, date: &GameDate) {
+        let Some(state) = self.argentine_primera.as_ref() else {
+            return;
+        };
+        if matches!(state.phase, arg_primera::ArgPhase::Complete) {
+            return;
+        }
+        let adv = arg_primera::advance(state, &self.season.fixtures);
+        if adv.new_phase.is_none() && adv.news.is_empty() {
+            return;
+        }
+        for (kind, message) in adv.news {
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days,
+                date: date.clone(),
+                kind,
+                message,
+                phase: 2,
+            });
+        }
+        self.honours.extend(adv.honours);
+        if let (Some(phase), Some(st)) = (adv.new_phase, self.argentine_primera.as_mut()) {
+            st.phase = phase;
+        }
+    }
+
+    /// Announce the Argentine Second Division champion (promoted to the Primera)
+    /// and promedios relegations when its tournament completes. Port of
+    /// `arg_second.cpp`'s season-end path. Idempotent.
+    fn advance_argentine_second(&mut self, date: &GameDate) {
+        let Some(state) = self.argentine_second.as_ref() else {
+            return;
+        };
+        if state.complete {
+            return;
+        }
+        let adv = arg_second::advance(state, &self.season.fixtures);
+        if !adv.completed && adv.news.is_empty() {
+            return;
+        }
+        for (kind, message) in adv.news {
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days,
+                date: date.clone(),
+                kind,
+                message,
+                phase: 2,
+            });
+        }
+        self.honours.extend(adv.honours);
+        if adv.completed {
+            if let Some(st) = self.argentine_second.as_mut() {
+                st.complete = true;
+            }
+        }
+    }
+
+    /// Open the Argentine registration window on its date: reset the per-club
+    /// signing counters and announce it once. Port of `argrules_on_window_date`
+    /// (`0x0040a770`) + `argrules_report_window_news` (`0x0040aa90`).
+    fn advance_argentine_transfer_window(&mut self, date: &GameDate) {
+        let Some(rules) = self.argentine_transfer_rules.as_ref() else {
+            return;
+        };
+        if rules.announced || *date < rules.open_date {
+            return;
+        }
+        if let Some(rules) = self.argentine_transfer_rules.as_mut() {
+            rules.open_window();
+            rules.announced = true;
+        }
+        self.pending_events.push(RuntimeEvent {
+            day: self.elapsed_days,
+            date: date.clone(),
+            kind: "transfer".to_string(),
+            message: arg_rules::WINDOW_OPEN_NEWS.to_string(),
+            phase: 2,
+        });
+    }
+
+    /// The club's live records (biggest win, heaviest defeat, highest-scoring
+    /// match) computed from every played fixture — the forward half of the
+    /// `club_records.cpp` subsystem.
+    pub fn club_records(&self, club_id: u32) -> club_records::ClubRecords {
+        club_records::compute(club_id, &self.season.fixtures)
+    }
+
+    /// A club's honours, most recent first — the forward half of the club
+    /// history subsystem (`club_history.cpp`). The prior history is shipped
+    /// data; these are the honours the ported competitions record during play.
+    pub fn club_honours(&self, club_id: u32) -> Vec<&honours::Honour> {
+        let mut v: Vec<&honours::Honour> =
+            self.honours.iter().filter(|h| h.club_id == club_id).collect();
+        v.sort_by(|a, b| b.year.cmp(&a.year).then(a.competition.cmp(&b.competition)));
+        v
+    }
+
+    /// A club's honours summarised as `(competition, times won)`, most-won
+    /// first — the per-competition history table `history_build_table`
+    /// (`0x00444060`) maintains, built from the honours we record.
+    pub fn club_history_summary(&self, club_id: u32) -> Vec<(String, usize)> {
+        let mut counts: BTreeMap<String, usize> = BTreeMap::new();
+        for h in self.honours.iter().filter(|h| h.club_id == club_id) {
+            *counts.entry(h.competition.clone()).or_default() += 1;
+        }
+        let mut v: Vec<(String, usize)> = counts.into_iter().collect();
+        v.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+        v
+    }
+
+    // ==== game.cpp main-loop hooks ====
+    // Every method below corresponds to a decoded call in `game_init`'s forever
+    // loop (see `reports/game_cpp_analysis.md`). Where the target subsystem is
+    // ported (e.g. year-rollover FIFA-rankings refresh), the hook does the real
+    // work; where it isn't (staff_contracts, transfer_manager, ...), it's an
+    // explicit named stub so no exe call is silently omitted.
+
+    /// game.cpp step 1 — `FUN_00594950(DAT_00acde92)` on year change. In our
+    /// port: mark FIFA rankings dirty so `World::refresh_after_tick` recomputes
+    /// them (the exe's yearly recompute lives in `game_recompute_fifa_rankings`
+    /// `0x005c01d0`, called opportunistically). Also stamps `last_year_rollover`.
+    fn hook_year_rollover(&mut self, _date: &GameDate) {
+        if self.date.year != self.last_year_rollover {
+            self.last_year_rollover = self.date.year;
+            // Clear the cache so refresh_after_tick recomputes.
+            self.fifa_rankings.clear();
+            // Season reset — discipline tallies clear at year rollover.
+            self.injuries.reset_season();
+            // Fire per-league end-of-season awards using the cached
+            // player-rating book. Substrate: crates/cm-domain/src/
+            // player_rating.rs (CA-driven proxy) + awards_engine.rs
+            // (per-country slate).
+            let ratings = self.player_ratings.clone();
+            let year = self.date.year;
+            let date = self.date.clone();
+            let leagues: Vec<(i32, String)> = self.simple_leagues.iter()
+                .map(|lg| (lg.real_comp_id, lg.name.clone()))
+                .collect();
+            for (comp_id, name) in leagues {
+                let awards = crate::awards_engine::award_league_season_end(
+                    year, comp_id, &name, &ratings,
+                );
+                for a in awards {
+                    self.pending_events.push(RuntimeEvent {
+                        day: self.elapsed_days,
+                        date: date.clone(),
+                        kind: "season_award".to_string(),
+                        message: format!(
+                            "{} {} — {:?}: staff #{} (score {:.1})",
+                            a.competition_name, a.year, a.category,
+                            a.winner_staff_id, a.winner_score,
+                        ),
+                        phase: 2,
+                    });
+                }
+            }
+        }
+    }
+
+    /// game.cpp step 2 — per-human hotseat processing (exe: iterate
+    /// `DAT_00b5cff6[16]`, set `DAT_00b5d016 = seat`, call `FUN_00808a70` per
+    /// seat, then `FUN_007e4940`). Stub — hotseat processing is a documented
+    /// follow-up; single-manager games see no effect.
+    fn hook_hotseat_per_human(&mut self, _date: &GameDate) {
+        // NOT YET IMPLEMENTED: per-seat manager processing. Blocked on the
+        // human-manager subsystem's daily-tick logic (job offers, sackings,
+        // press interactions).
+    }
+
+    /// game.cpp step 6a — competition-object vtable[+0x14] dispatch. Our ported
+    /// competitions each expose their own `advance_*` method that this position
+    /// in the tick already calls. Non-ported competition objects are a
+    /// documented no-op (the exe iterates every one of ~200 shipped comps).
+    fn hook_competition_dispatch_arg0(&mut self, _date: &GameDate) {
+        // No-op: our ported advance_* methods below cover the live competitions;
+        // unported ones would do nothing in the exe anyway if their state was
+        // untouched.
+    }
+
+    /// game.cpp step 7 — post-comp dispatch (exe: `FUN_00856d50` +
+    /// `FUN_00699cd0`). Stub.
+    fn hook_post_comp(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10 — **the daily AI dispatcher** `FUN_005b85b0`
+    /// (30 467 bytes / 395 RNG calls). Executes: staff_contracts (74×),
+    /// player_stats (17×), human_manager (13×), transfer_manager (9×),
+    /// contract_manager (8×), media/news (7×). NOT YET PORTED — each of those
+    /// subsystems is its own TU to lift. See `reports/game_cpp_analysis.md` §3.
+    fn hook_evening_daily_ai(&mut self, _date: &GameDate) {
+        // Explicit named stub: this is the biggest missing piece of the port.
+    }
+
+    /// game.cpp step 10b — background subsystems (exe: FUN_005b7f10,
+    /// FUN_009123a0, FUN_00614e90, FUN_0053fe40, FUN_008f2900, FUN_00413980).
+    fn hook_evening_background_subsystems(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10c — fixture/news cleanup (exe: `FUN_00595580`).
+    fn hook_evening_fixture_news_cleanup(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10d — per-club training bump (RNG-driven training-quality
+    /// nudge per club, per evening). Stub.
+    fn hook_evening_per_club_training(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10f — tie-participant notification (exe: `FUN_00752d40`).
+    fn hook_evening_tie_participant_notify(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10g — monthly hook (`FUN_00823210(0)` when `date % 30 == 0`).
+    /// Fires Player of the Month for every registered league via
+    /// [`crate::awards_engine::award_month_player_of_month`] — ports
+    /// `month_award.cpp` + `month_ratings.cpp` into the tick.
+    fn hook_monthly(&mut self, _date: &GameDate) {
+        let ratings = self.player_ratings.clone();
+        let year = self.date.year;
+        let month = self.date.month;
+        let date = self.date.clone();
+        let elapsed = self.elapsed_days;
+        let leagues: Vec<(i32, String)> = self.simple_leagues.iter()
+            .map(|lg| (lg.real_comp_id, lg.name.clone()))
+            .collect();
+        for (comp_id, name) in leagues {
+            if let Some(a) = crate::awards_engine::award_month_player_of_month(
+                year, month, comp_id, &name, &ratings,
+            ) {
+                self.pending_events.push(RuntimeEvent {
+                    day: elapsed,
+                    date: date.clone(),
+                    kind: "monthly_award".to_string(),
+                    message: format!(
+                        "{} Player of the Month {}/{}: staff #{}",
+                        name, month, year, a.winner_staff_id,
+                    ),
+                    phase: 2,
+                });
+            }
+        }
+    }
+
+    /// game.cpp step 10h — media/scouting/board mood pass (exe: FUN_00823ad0,
+    /// FUN_00585ae0, FUN_0078dd80, FUN_0078e970, FUN_0089de30).
+    fn hook_evening_further_subsystems(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10i — manager-job lifecycle (exe: FUN_00674c10 +
+    /// FUN_00844940 + FUN_00419c30 + FUN_00553aa0 + FUN_0058fd80).
+    fn hook_manager_job_lifecycle(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 10j — player-ranking summary (exe: FUN_005c0f90 + FUN_005c0d20).
+    fn hook_player_ranking_summary(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 11 — event-drain (exe: `while FUN_005b8390(local_244) != 0`).
+    fn hook_event_drain(&mut self, _date: &GameDate) {}
+
+    /// game.cpp steps 13-14 — news-manager pacing (exe: FUN_00535600 +
+    /// FUN_007ead30). Runs every phase, not just evening.
+    fn hook_news_manager_pacing(&mut self, _date: &GameDate) {}
+
+    /// game.cpp step 13 — weekly Wednesday injury/media pass. Runs on the
+    /// morning of a Wednesday (exe: `if DAT_009b979c && DAT_acde88 == 0`, then
+    /// per-nation loop). Wired to fire weekly wage payment through the
+    /// finance substrate (crates/cm-domain/src/finance.rs).
+    fn hook_weekly_wednesday(&mut self) {
+        // Every Wednesday, deduct each club's weekly_wage_bill from balance.
+        self.finance.pay_weekly_wages();
+        // If it's the 1st Wednesday of the month, run month-end accounting.
+        if self.date.day <= 7 {
+            self.finance.end_of_month();
+        }
+        // Weekly training pass — moves CA toward PA (or slowly declines old
+        // resters) via the fractional-growth accumulator.
+        self.training.apply_weekly_growth(&mut self.player_ratings);
+        // Bosman flags — anyone in contract's last 6 months is available
+        // to negotiate with foreign clubs. Ported from contract_manager.cpp.
+        self.transfers.update_bosman_flags(self.date.year as u16, self.date.month as u8);
     }
 
     fn apply_fixture_to_standings(
@@ -15696,6 +19072,162 @@ impl RuntimeSaveGame {
         }
         update_headless_fixture_pipeline_outputs(&mut self.backend);
     }
+}
+
+/// Fill out a too-thin squad (see `snapshot_team_for_engine`) with REAL
+/// free-agent players, using the actual mechanism CM0102 uses to populate
+/// empty club squads — `player_regen.cpp` (`FUN_0078E970` /
+/// `FUN_0078F200` / `FUN_0078F4F0`, ported byte-exact in
+/// [`crate::player_regen`]) — rather than inventing players.
+///
+/// **Scope note**: the byte-exact port in [`crate::player_regen`] scores
+/// candidates from the full staff record (nation, personality, secondary
+/// year field, employer reputation, …). `RuntimeSaveGame` doesn't retain
+/// that full 132,722-record pool at runtime — only `player_ratings`, a
+/// pre-filtered book of real (staff_id, club_id, ca, pa, age) rows built
+/// once at new-game time (see `player_ratings` field docs). So this
+/// selects free agents from that REAL pool, ranked by current ability
+/// (the strongest signal `player_regen`'s formula also weighs heavily via
+/// the type10 reputation-threshold bonuses) rather than replaying the
+/// exact weighted-personality formula. Callers with the full `StaffBook` +
+/// `DomainStaffType10` pool available (e.g. at world-load time) should use
+/// [`crate::player_regen::regen_fill_club_squad`] directly for the
+/// byte-exact algorithm.
+///
+/// Returns an empty `Vec` when the rating book has no unassigned (`club_id
+/// == None`) players left to give — callers should fall back to
+/// [`synthetic_roster_for_engine`] in that case.
+fn real_free_agent_roster_for_engine(
+    save: &RuntimeSaveGame,
+    _club_id: u32,
+    already_used: &std::collections::HashSet<u32>,
+    needed: usize,
+) -> Vec<crate::match_engine_exe::EngineTeamPlayer> {
+    if needed == 0 {
+        return Vec::new();
+    }
+    let mut candidates: Vec<&crate::player_rating::RatedPlayer> = save
+        .player_ratings
+        .players
+        .iter()
+        .filter(|p| p.club_id.is_none() && !already_used.contains(&p.staff_id))
+        .collect();
+    // Rank by current ability descending (ties by potential ability) — the
+    // real signal `FUN_0078F4F0` also leans on heavily via its type10
+    // reputation-threshold bonuses (`+100`/`+0x32` when CA/PA-scale fields
+    // exceed 0x1d4c). Deterministic: no RNG, so replays reproduce.
+    candidates.sort_by(|a, b| b.ca.cmp(&a.ca).then(b.pa.cmp(&a.pa)).then(a.staff_id.cmp(&b.staff_id)));
+
+    let mut picked_gk = false;
+    candidates
+        .into_iter()
+        .take(needed)
+        .map(|p| {
+            // Same exactly-one-first-choice-keeper rule as
+            // `snapshot_team_for_engine` — `p.is_gk` can be true for several
+            // candidates (a squad can have multiple real keepers); only the
+            // first one taken gets the goal-line slot.
+            let first_choice = p.is_gk && !picked_gk;
+            if first_choice { picked_gk = true; }
+            crate::match_engine_exe::EngineTeamPlayer {
+                player_id: p.staff_id,
+                is_not_injured: true,
+                position: p.position_ordinal,
+                jumping_heading: 10,
+                aggression: 8,
+                bravery: 10,
+                dirtiness: 5,
+                current_ability: p.ca.max(1) as u16 * 100,
+                age: p.age_est,
+                injury_proneness: 8,
+                form: 12,
+                is_first_choice_gk: first_choice,
+                speciality_a: 0,
+                speciality_b: 0,
+                position_natural: p.position_ordinal,
+                position_learn: 0,
+            }
+        })
+        .collect()
+    // NOTE: this does not mutate `player_ratings` or assign `club_id` on
+    // the picked rows — it's an ephemeral per-fixture borrow (for club
+    // `club_id`), matching how `synthetic_roster_for_engine` already
+    // behaves (no persistent state change). A future pass wiring
+    // `player_regen::regen_fill_club_squad` into new-game boot (with the
+    // full `StaffBook`) would make these assignments persistent and
+    // byte-exact, fixing the root cause instead of papering over it
+    // per-fixture — the `club_id` field on `RatedPlayer` above suggests
+    // exactly that hook point.
+}
+
+/// Fill out a too-thin squad (see `snapshot_team_for_engine`) with
+/// synthetic players so a fixture can still run through the real token-model
+/// engine instead of falling back to `score_from_goal_events`.
+///
+/// Strength is derived from `finance.for_club` (seeded for every one of the
+/// 10,580 shipped clubs from `reputation` at boot — full coverage even for
+/// clubs `player_ratings` has nothing for), so weak "filler" clubs still
+/// play like weak clubs rather than league-average ones. Deterministic per
+/// club id (no RNG) so replays reproduce.
+///
+/// Real players already present (if any — a club can have 1..5 real
+/// records) keep their `player_id`s; synthetic fill-ins use ids above
+/// `SYNTHETIC_PLAYER_ID_BASE` plus the club id so they never collide with a
+/// real staff id (staff ids top out at 132,721 in the shipped database).
+const SYNTHETIC_PLAYER_ID_BASE: u32 = 0x0F00_0000;
+const SYNTHETIC_SQUAD_SIZE: usize = 16;
+
+fn synthetic_roster_for_engine(
+    save: &RuntimeSaveGame,
+    club_id: u32,
+    existing: &[crate::match_engine_exe::EngineTeamPlayer],
+) -> Vec<crate::match_engine_exe::EngineTeamPlayer> {
+    // Recover an approximate reputation from the finance seed
+    // (`balance = reputation^2 * 500`, see `finance::ClubFinance::seed_from_reputation`).
+    let reputation = save
+        .finance
+        .for_club(club_id)
+        .map(|f| ((f.balance.max(0) as f64 / 500.0).sqrt()) as i32)
+        .unwrap_or(1000);
+    // Map reputation (roughly 300..8000 across the shipped clubs) down to a
+    // CA-scale baseline (1..200) — same scale `snapshot_team_for_engine`
+    // uses for real players (`p.ca.max(1) as u16 * 100`).
+    let base_ca = (reputation / 40).clamp(15, 130) as i16;
+
+    let needed = SYNTHETIC_SQUAD_SIZE.saturating_sub(existing.len());
+    (0..needed)
+        .map(|i| {
+            let pid = SYNTHETIC_PLAYER_ID_BASE
+                .wrapping_add(club_id.wrapping_mul(64))
+                .wrapping_add(i as u32);
+            // Small deterministic per-slot wobble so a synthetic squad
+            // isn't 16 identical players.
+            let mut z = (pid as u64).wrapping_add(0x9e3779b97f4a7c15);
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+            z ^= z >> 31;
+            let wobble = ((z & 0xf) as i16) - 8; // -8..7
+            let is_gk = existing.is_empty() && i == 0;
+            crate::match_engine_exe::EngineTeamPlayer {
+                player_id: pid,
+                is_not_injured: true,
+                position: if is_gk { 12 } else { 5 },
+                jumping_heading: 8,
+                aggression: 8,
+                bravery: 8,
+                dirtiness: 5,
+                current_ability: (base_ca + wobble).max(1) as u16 * 100,
+                age: 24,
+                injury_proneness: 8,
+                form: 12,
+                is_first_choice_gk: is_gk,
+                speciality_a: 0,
+                speciality_b: 0,
+                position_natural: if is_gk { 12 } else { 5 },
+                position_learn: 0,
+            }
+        })
+        .collect()
 }
 
 impl GameDate {
@@ -17185,6 +20717,55 @@ mod tests {
     use super::*;
     use cm_data::ManifestEntry;
 
+    /// `snapshot_team_for_engine` must succeed (>=6 players) for clubs
+    /// across every England division tier, not just the top flight —
+    /// covers the fix for the synthetic-roster fallback (see
+    /// `synthetic_roster_for_engine`). Uses the real rust-db, so it's a
+    /// no-op (not a failure) when that directory isn't present, matching
+    /// the convention in `bin/simulate_season.rs`'s own boot test.
+    #[test]
+    fn snapshot_team_for_engine_covers_all_english_tiers() {
+        let rust_db = Path::new("D:/cm0102-rs/rust-db");
+        if !rust_db.exists() {
+            eprintln!("rust-db not present; skipping");
+            return;
+        }
+        let world = World::read_rust_db_dir(rust_db).expect("read rust-db");
+        let opts = NewGameOptions {
+            selected_nations: vec!["England".to_string()],
+            background_nations: vec![],
+            use_real_players: true,
+            attribute_masking: true,
+            start_year: 2001,
+        };
+        let save = world.new_game_from_rust_db(rust_db, &opts);
+
+        // One well-stocked top-flight club (Arsenal, comp 7 / Premiership)
+        // plus a spread of thin/empty-squad non-league "filler" clubs from
+        // comp 357 ("A Lower Division") — several of which have ZERO real
+        // player records assigned to them in the shipped database, per the
+        // investigation in `snapshot_team_for_engine`.
+        let top_flight_club_id = 676u32; // Arsenal
+        let sparse_or_empty_club_ids: [u32; 6] =
+            [152, 153, 454, 559, 657, 666];
+
+        let top = save.snapshot_team_for_engine(top_flight_club_id);
+        assert!(
+            top.as_ref().map(|s| s.players.len()).unwrap_or(0) >= 6,
+            "expected a real >=6-player squad for club {top_flight_club_id}, got {top:?}",
+        );
+
+        for &club_id in &sparse_or_empty_club_ids {
+            let snap = save.snapshot_team_for_engine(club_id);
+            let n = snap.as_ref().map(|s| s.players.len()).unwrap_or(0);
+            assert!(
+                n >= 6,
+                "club {club_id} should get a synthetic-roster fallback \
+                 (>=6 players) instead of None, got {n}",
+            );
+        }
+    }
+
     #[test]
     fn transfer_contracts_branch_cluster_constants_are_code_derived() {
         assert_eq!(TRANSFER_CONTRACT_COORDINATOR_BLOCK_COUNT_00848DA0, 734);
@@ -18182,7 +21763,34 @@ mod tests {
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: Vec::new(),
+                    finance: Default::default(),
+                    player_ratings: Default::default(),
+                    transfers: Default::default(),
+                    training: Default::default(),
+                    injuries: Default::default(),
         };
 
         save.tick_cm_phase();
@@ -18373,7 +21981,34 @@ mod tests {
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: Vec::new(),
+                    finance: Default::default(),
+                    player_ratings: Default::default(),
+                    transfers: Default::default(),
+                    training: Default::default(),
+                    injuries: Default::default(),
         };
 
         let report = save.run_headless_days(2);
@@ -18443,7 +22078,34 @@ mod tests {
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: Vec::new(),
+                    finance: Default::default(),
+                    player_ratings: Default::default(),
+                    transfers: Default::default(),
+                    training: Default::default(),
+                    injuries: Default::default(),
         };
 
         let report = save.run_headless_campaign_days(10, 4);
@@ -18508,7 +22170,34 @@ mod tests {
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: Vec::new(),
+                    finance: Default::default(),
+                    player_ratings: Default::default(),
+                    transfers: Default::default(),
+                    training: Default::default(),
+                    injuries: Default::default(),
         };
 
         let report = save.run_headless_campaign_days(10, 10);
@@ -18561,7 +22250,34 @@ mod tests {
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: Vec::new(),
+                    finance: Default::default(),
+                    player_ratings: Default::default(),
+                    transfers: Default::default(),
+                    training: Default::default(),
+                    injuries: Default::default(),
         };
 
         let record = save.set_headless_manager("Alex Ferguson".to_string(), Some(1));
@@ -18616,7 +22332,34 @@ mod tests {
             player_init: None,
             humans: Vec::new(),
             active_human: 0,
+            african_nations: None,
+            asia_club_champ: None,
+            asia_cup_winner: None,
+            asia_cup_of_nations: None,
+            european_championship: None,
+            fifa_confederations_cup: None,
+            concacaf_gold_cup: None,
+            asia_super_cup: None,
+            aus_nsl: None,
+            aus_salary_cap: None,
+            simple_leagues: Vec::new(),
+            domestic_cups: Vec::new(),
+            super_cups: Vec::new(),
+            league_playoffs: Vec::new(),
+            disputes: Vec::new(),
+            friendlies: Vec::new(),
+            fifa_rankings: Vec::new(),
+            last_year_rollover: 0,
+            argentine_primera: None,
+            argentine_second: None,
+            honours: Vec::new(),
+            argentine_transfer_rules: None,
             notes: Vec::new(),
+                    finance: Default::default(),
+                    player_ratings: Default::default(),
+                    transfers: Default::default(),
+                    training: Default::default(),
+                    injuries: Default::default(),
         };
 
         let unchanged = save.tick_to_date(GameDate {

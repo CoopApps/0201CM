@@ -304,8 +304,13 @@ const NEWS_LIST: (i32, i32, i32, i32) = (110, 125, 780, 215);
 const NEWS_FILTER: (i32, i32, i32, i32) = (405, 220, 655, 240);
 /// "Next Unread": item 0x770f7c, x 655..780.
 const NEWS_NEXT_UNREAD: (i32, i32, i32, i32) = (655, 220, 780, 245);
-/// Selected-item body: areas 0x770fb9/0x771067, x 110..780, below the filter row.
-const NEWS_BODY_TOP: i32 = 250;
+/// Selected-item headline strip: real capture (frida_capture_news_live.log,
+/// seq=224 AREA) reads 110,245-780,280.
+const NEWS_HEADLINE_STRIP: (i32, i32, i32, i32) = (110, 245, 780, 280);
+/// Selected-item story panel: real capture (seq=227 AREA) reads
+/// 110,285-780,500 -- both this and NEWS_HEADLINE_STRIP read flags=2
+/// (F_TRANSPARENT), not a solid fill.
+const NEWS_STORY_PANEL: (i32, i32, i32, i32) = (110, 285, 780, 500);
 /// Bottom Back/Next bar: `FUN_005d75b0` area (100,555,790,590), cols [3,1].
 const NEWS_NAV: (i32, i32, i32, i32) = (100, 555, 790, 590);
 
@@ -363,21 +368,34 @@ pub fn news(
     }
     // Sidebar column (menu bar overlays this in render()).
     s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
-    // Title banner — white bevel, dark-blue title text (area #1/#2).
+    // Title banner. Real capture (frida_capture_news_live.log, seq=1 AREA,
+    // colP=56295828): the low 16 bits unpack from RGB565 to exactly
+    // RGB(0,48,165) -- a blue fill with white text, not the light-grey
+    // fill / dark-navy text this used to have (backwards from the real
+    // banner, confirmed against the full-frame capture too).
     let (bl, bt, br, bb) = NEWS_BANNER;
-    s.draw_panel(bl, bt, br, bb, F_SOLID_FILL | F_BEVEL, (231, 227, 231));
+    s.draw_panel(bl, bt, br, bb, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
     {
         let f = fonts.slot(7);
-        s.draw_text_box(bl, bt + 15, br, bb - 15, 0, f, (0, 0, 90), &view.title);
+        s.draw_text_box(bl, bt + 15, br, bb - 15, 0, f, pal.near_white, &view.title);
     }
-    // Top filter-tab strip + bottom action-tab strip.
-    draw_tab_strip(s, fonts, &news_tab_rects(),
-        &NewsTab::ALL.iter().map(|t| t.label()).collect::<Vec<_>>(),
-        NewsTab::ALL.iter().position(|t| *t == tab), &pal);
-    draw_tab_strip(s, fonts, &news_bottom_tab_rects(), &NEWS_BOTTOM_TABS, None, &pal);
+    // Top filter-tab strip: 4 tabs, all in the same group (the filter set),
+    // matched by index-as-id against the current NewsTab.
+    let top_tabs: Vec<TabRecord> = NewsTab::ALL.iter().enumerate()
+        .map(|(i, t)| TabRecord::simple(i as i32, t.label()))
+        .collect();
+    let selected_top = NewsTab::ALL.iter().position(|t| *t == tab).unwrap_or(0) as i32;
+    let (mut lx, mut rx) = (NEWS_TOP_TABS.0, NEWS_TOP_TABS.2);
+    draw_tab_strip(s, fonts, NEWS_TOP_TABS, &top_tabs, selected_top, &mut lx, &mut rx, false, &pal);
+
+    // Bottom action-tab strip: 4 tabs, no selection (they navigate away).
+    let bot_tabs: Vec<TabRecord> = NEWS_BOTTOM_TABS.iter().enumerate()
+        .map(|(i, s)| TabRecord::simple(i as i32, s))
+        .collect();
+    let (mut lx2, mut rx2) = (NEWS_BOTTOM_TABS_RECT.0, NEWS_BOTTOM_TABS_RECT.2);
+    draw_tab_strip(s, fonts, NEWS_BOTTOM_TABS_RECT, &bot_tabs, -1, &mut lx2, &mut rx2, false, &pal);
 
     // News list.
-    let _ = F_TRANSPARENT;
     let _ = F_VGRADIENT;
     let visible = news_visible(view, tab);
     let lo = news_row_layout();
@@ -385,40 +403,92 @@ pub fn news(
         let Some(&item_ix) = visible.get(scroll + row) else { break };
         let item = &view.items[item_ix];
         let is_sel = item_ix == selected;
-        // Selected row: red highlight bar across both columns.
+        // Selected row: red highlight bar across both columns. Real capture
+        // (colP=14450688 on the selected headline widget, seq=21) decodes
+        // to (132,0,0) -- a dark/muted red, not pal.banner_red's pure
+        // (255,0,0). banner_red is a different, unrelated DAT_ (see its
+        // doc comment: "no single DAT_"); reusing it here was an assumption
+        // never checked against this widget's own captured color.
         if is_sel {
             s.draw_panel(
                 lo.col_left[0], lo.row_top[row], lo.col_right[1], lo.row_bottom[row],
-                F_SOLID_FILL, pal.banner_red,
+                F_SOLID_FILL, (132, 0, 0),
             );
+        } else {
+            // Re-examined the same real full-frame capture at full width
+            // (not just a single point sample): the unselected headline
+            // column isn't a flat grey slab -- the grey has visible photo
+            // texture bleeding through it, row to row. That's a dimmed
+            // overlay over the background image, the same F_TRANSPARENT
+            // pattern already confirmed for the filter bar/story panel/
+            // headline strip (their AREA flags=2) -- not a solid fill,
+            // which is what my first pass at this wrongly used.
+            s.draw_panel(lo.col_left[1], lo.row_top[row], lo.col_right[1], lo.row_bottom[row], F_TRANSPARENT, (0, 0, 0));
         }
         // Date cell (blue background) — narrow font so "Tue 7th Aug EVE" fits.
         s.draw_panel(lo.col_left[0], lo.row_top[row], lo.col_right[0], lo.row_bottom[row], F_SOLID_FILL, pal.btn_blue);
         let fd = fonts.slot(1);
         s.draw_text_box(lo.col_left[0] + 4, lo.row_top[row], lo.col_right[0], lo.row_bottom[row], 0x1, fd, pal.near_white, &item.date_label);
-        // Headline cell.
-        let f = fonts.slot(3);
-        let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
+        // Headline cell. Real capture log (frida_capture_news_live.log,
+        // seq=21/23): headline-column rflags carry font=2 (arial_narrow_11),
+        // not font 3 (arial_14) -- confirmed via the GUIO arg at index 11
+        // for both the selected (seq=21) and an unselected (seq=23) row.
+        let f = fonts.slot(2);
+        // Real capture log (seq=21, the selected row's headline widget):
+        // colP=14450688 decodes (as a packed pair of RGB565 halves, the
+        // same encoding the header's colP used) to (132,0,0) -- the known
+        // real red row fill -- and (0,24,231), a blue. Neither half is
+        // yellow, and the real screenshot shows plain light text on the
+        // red row, not yellow -- pal.highlight_fg here was wrong (most
+        // likely copied from the story panel's genuinely-yellow headline
+        // widget, a different real color captured separately).
+        let ink = pal.near_white;
         s.draw_text_box(lo.col_left[1] + 6, lo.row_top[row], lo.col_right[1], lo.row_bottom[row], 0x1, f, ink, &item.headline);
     }
     // Filter row (x 405..655) + Next Unread (x 655..780).
     {
-        let f = fonts.slot(3);
+        // Real capture: "Filter :" (seq=221) and "Next Unread" (seq=223)
+        // both read font=1 (arial_narrow_10) in news_rflags_detail.txt, not
+        // font 3.
+        let f = fonts.slot(1);
         s.draw_text_box(NEWS_FILTER.0, NEWS_FILTER.1, NEWS_FILTER.0 + 70, NEWS_FILTER.3, 0x1, f, pal.near_white, "Filter :");
-        s.draw_panel(NEWS_FILTER.0 + 74, NEWS_FILTER.1, NEWS_FILTER.2, NEWS_FILTER.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        // Real capture: the filter bar's own background AREA (seq=220,
+        // 405,220-655,240) reads flags=2 (F_TRANSPARENT) -- it dims
+        // whatever's already drawn there rather than painting a flat
+        // pal.grey slab. The "Next Unread" BUTTON is a separate widget
+        // (seq=223, rflags=48 = F_SOLID_FILL|F_BEVEL) and correctly stays
+        // solid -- only the wide backing strip behind "Filter :" changes.
+        s.draw_panel(NEWS_FILTER.0 + 74, NEWS_FILTER.1, NEWS_FILTER.2, NEWS_FILTER.3, F_TRANSPARENT, pal.grey);
         let (nl, nt, nr, nb) = NEWS_NEXT_UNREAD;
         s.draw_panel(nl, nt, nr, nb, F_SOLID_FILL | F_BEVEL, pal.grey);
         s.draw_text_box(nl, nt, nr, nb, 0, f, pal.near_white, "Next Unread");
     }
     // Selected item body.
     if let Some(item) = view.items.get(selected) {
-        let f6 = fonts.slot(6);
-        s.draw_text_box(110, NEWS_BODY_TOP, 780, NEWS_BODY_TOP + 34, 0, f6, pal.highlight_fg, &item.headline);
+        // Real capture: the story headline widget (seq=225, "Board reaction
+        // to Rhayader game") reads font=3 (arial_14), not font 6
+        // (trade_cond_24_bold) -- font 6 is a much bigger bold condensed
+        // face and was making this title render nothing like the real game.
+        let f6 = fonts.slot(3);
+        // Real capture: the headline strip's and story panel's own
+        // background AREAs (seq=224 and seq=227) both read flags=2
+        // (F_TRANSPARENT) -- they dim whatever's behind them (the screen's
+        // background image) so it shows through tinted, instead of
+        // covering it with a flat fill.
+        let (hl, ht, hr, hb) = NEWS_HEADLINE_STRIP;
+        s.draw_panel(hl, ht, hr, hb, F_TRANSPARENT, pal.grey);
+        s.draw_text_box(hl, ht, hr, hb, 0, f6, pal.highlight_fg, &item.headline);
+        let (sl, st, sr, sb) = NEWS_STORY_PANEL;
+        s.draw_panel(sl, st, sr, sb, F_TRANSPARENT, pal.grey);
+        // Body text font: found directly in news_guio_text.txt (a fuller
+        // capture than the live log I'd checked before) -- seq=228/229,
+        // the two body-line widgets right after the seq=225 headline, both
+        // read font=3. Same font as the headline, not a separate guess.
         let f3 = fonts.slot(3);
-        let lines = wrap_lines(f3, &item.body, 780 - 110 - 12);
-        let mut y = NEWS_BODY_TOP + 42;
+        let lines = wrap_lines(f3, &item.body, (sr - sl) - 12);
+        let mut y = st + 8;
         for line in lines.iter().take(9) {
-            s.draw_text_box(110, y, 780, y + 22, 0x1, f3, pal.near_white, line);
+            s.draw_text_box(sl, y, sr, y + 22, 0x1, f3, pal.near_white, line);
             y += 22;
         }
     }
@@ -432,36 +502,10 @@ pub fn news(
     }
 }
 
-/// Draw a horizontal tab strip: contiguous bevelled cells (`FUN_005d7070`'s
-/// 0x30 tabs). The selected tab (if any) takes the highlight ink; the rest read
-/// as inactive tabs. Not standalone buttons — a single connected strip.
-fn draw_tab_strip(
-    s: &mut Surface,
-    fonts: &mut Fonts,
-    cells: &[(i32, i32, i32, i32)],
-    labels: &[&str],
-    selected: Option<usize>,
-    pal: &cm_widget::Palette,
-) {
-    // Ported from FUN_005d7070's item emission (matching cm-widget's own tab
-    // rendering): each tab is a BLUE bevelled panel (flags 0x30, colP=btn_blue),
-    // NOT a grey button. The selected tab adds the 0x800 highlight — yellow text
-    // and a 1px yellow outline; the rest take white ink.
-    for (i, &(l, t, r, b)) in cells.iter().enumerate() {
-        let is_sel = selected == Some(i);
-        s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
-        let ink = if is_sel { pal.highlight_fg } else { pal.near_white };
-        if let Some(label) = labels.get(i) {
-            // Tabs use the narrow font (FUN_005d7070 font=1, arial_narrow_10) so
-            // long labels like "Contracts and Media" fit the cell.
-            let f = fonts.slot(1);
-            s.draw_text_box(l, t, r, b, 0, f, ink, label);
-        }
-        if is_sel {
-            s.draw_hollow_rect(l - 1, t - 1, r + 1, b + 1, pal.highlight_fg);
-        }
-    }
-}
+// Tab-strip port (TabRecord, draw_tab_strip) moved to cm-widget::tab_strip
+// so the generated-screen renderer shares the same code path.
+pub use cm_widget::tab_strip::{draw_tab_strip, TabRecord};
+
 
 /// Hit-test the News page.
 pub fn news_hit(x: i32, y: i32, view: &cm_domain::NewsView, scroll: usize, tab: NewsTab) -> Option<NewsClick> {
@@ -538,7 +582,14 @@ fn menu_nav_rects() -> [(i32, i32, i32, i32); 2] {
 /// `left`, else right-pointing. Built from stacked horizontal spans.
 fn draw_triangle(s: &mut Surface, rect: (i32, i32, i32, i32), left: bool, rgb: (u8, u8, u8)) {
     let (l, t, r, b) = rect;
-    let hh = (((b - t).min(r - l)) / 2 - 3).max(4); // half-height = half-width
+    // Real capture (frida_capture_full_frame.py's full-frame grab of the
+    // actual running exe): a yellow-pixel bounding-box scan of the left nav
+    // button (real cell (4,60,43,86), 39x26) found the triangle itself at
+    // x:20-28,y:72-79 -- only 8x7px, centered in the cell with generous
+    // padding on all sides. The old `(min_dim)/2-3` formula filled the
+    // cell edge-to-edge (a ~28px-tall triangle here), nowhere near that
+    // real size -- hh=4 reproduces the real ~8x7 footprint.
+    let hh = 4i32;
     let cx = (l + r) / 2;
     let cy = (t + b) / 2;
     for dy in -hh..=hh {
@@ -606,36 +657,115 @@ pub fn menu_sidebar(
     bar: &cm_domain::menu::MenuBar,
     open: Option<usize>,
     date: &cm_domain::GameDate,
+    phase: u8,
 ) {
     use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
     let pal = palette();
     // Sidebar column.
     s.draw_panel(SIDEBAR.0, SIDEBAR.1, SIDEBAR.2, SIDEBAR.3, F_VGRADIENT, pal.sidebar_blue);
-    // Date (two lines) at the very top.
+    // Date/ticker cell at the very top. Directly captured this time, not
+    // inferred: news_guio_text.txt seq=237 shows this exact widget --
+    // text='Wednesday\n10.10.01 EVE...', font=1, rflags=4193 (0x1061). This
+    // is the SAME row-0 widget FUN_00745540 builds at line 360 (mode 2) --
+    // it shows a live score ticker/"Updating x%"/"Continue Game" in other
+    // states, and the plain date here; text really is one string with an
+    // embedded '\n', matching the two-line draw below.
+    //
+    // rflags 0x1061 = 0x1021 | 0x40 -- the same base bits as the top-level
+    // entries (0x1021, confirmed bordered via pixel evidence above), plus
+    // one extra bit. A real full-width bevel edge exists at this cell's
+    // own top (y=10-11) and bottom (y=52-56) in the full-frame capture
+    // (dark-then-bright, consistent across x=10/20/80), so it gets the
+    // same bordered box.
+    //
+    // Font size independently verified (not nearest-slot-in-list): parsed
+    // arial_narrow_10/11/14's real glyph bitmaps and measured 'W's ink
+    // rows -- 10px/11px/14px respectively. The captured "Wednesday" ink
+    // span is y=22-31 (10px incl. the 'y' descender), matching slot 1's
+    // 10px 'W', confirming font=1 both by direct capture AND by this
+    // independent glyph measurement.
+    // F_BEVEL only, no F_SOLID_FILL: the pixel evidence above (0,0,123 /
+    // 0,0,115 / 0,0,107 on either side of the edges) is the sidebar's own
+    // continuing vertical gradient, not a flat shade -- a solid fill here
+    // paints a flat block over it instead of just framing it.
+    s.draw_panel(0, 10, SIDEBAR.2, 56, F_BEVEL, pal.sidebar_blue);
     {
-        let f = fonts.slot(3);
-        s.draw_text_box(2, 6, SIDEBAR.2 - 2, 26, 0, f, pal.highlight_fg, &format!("{} {}", date.day, month_name(date.month)));
-        s.draw_text_box(2, 26, SIDEBAR.2 - 2, 46, 0, f, pal.near_white, &format!("{}", date.year));
+        use cm_render::font::F_NOVCENTER;
+        let f = fonts.slot(1);
+        let (line1, line2) = cm_domain::sidebar_date_label(date, phase);
+        s.draw_text_box(2, 19, SIDEBAR.2 - 2, 34, F_NOVCENTER, f, pal.highlight_fg, &line1);
+        s.draw_text_box(2, 34, SIDEBAR.2 - 2, 49, F_NOVCENTER, f, pal.highlight_fg, &line2);
     }
-    // ◀ ▶ nav arrows — bevelled buttons with a filled triangle (the game.mbr
-    // sidebar chrome draws triangle glyphs, not the ASCII "<"/">").
+    // ◀ ▶ nav arrows. Real capture (same full-frame grab) shows NO grey
+    // button box here -- the cell behind each arrow is the same navy as
+    // the sidebar itself (just a thin bevel/border line in that navy
+    // family, not a distinct grey fill), and the triangle glyphs are
+    // yellow, not white.
     {
         let rects = menu_nav_rects();
         for (i, &(l, t, r, b)) in rects.iter().enumerate() {
-            s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
-            draw_triangle(s, (l, t, r, b), i == 0, pal.near_white);
+            // F_BEVEL only -- see the date cell's comment above; a flat
+            // F_SOLID_FILL here paints over the sidebar's own continuing
+            // gradient instead of just framing it.
+            s.draw_panel(l, t, r, b, F_BEVEL, pal.sidebar_blue);
+            draw_triangle(s, (l, t, r, b), i == 0, pal.highlight_fg);
         }
     }
-    // Top-level entries.
+    // Top-level entries. Per menu.rs's MenuBar::in_game, the push order is
+    // fixed regardless of roster state: index 0 = "Continue Game", index 1
+    // = the manager-identity entry (mgr_label — the manager's own name once
+    // appointed), then Competitions / Nations & Clubs / Find / optional
+    // Change Player, and "Game Options" is ALWAYS pushed last.
+    //
+    // Border box: decompile evidence (FUN_00745540, e.g. line 496) builds
+    // every one of these with widget type 0x82 -- the same code `widget_
+    // pool.rs` already calls KIND_HEADER elsewhere -- and rflags=0x1021,
+    // confirmed identical in the live capture log (seq=260: type=130=0x82,
+    // rflags=4129=0x1021). I couldn't find the actual paint dispatcher that
+    // interprets that type, so instead I went back to my own real
+    // full-frame capture (news_full_frame.png, x=0-90,y=90-470, already on
+    // disk from this session) and looked directly at the pixels: scanning
+    // a column through the boundary between two entries (x=10/20/80,
+    // y=186-190) shows a real dark-then-bright edge (~(0,0,33) then
+    // ~(0,0,148)) against the ~(0,0,90) fill either side -- a two-tone
+    // bevel of the SAME navy base color, not a flat line. That's exactly
+    // what this file's own already-verified draw_panel bevel (used for the
+    // header and nav buttons) produces for F_SOLID_FILL|F_BEVEL on
+    // pal.sidebar_blue, so it's reused here rather than inventing a new
+    // border style.
+    //
+    // Colors: "Christoph Olewicz" (manager identity) and "Game Options"
+    // were reported by the user as turquoise/yellow; I independently
+    // pixel-measured both from the same full-frame capture instead of
+    // taking the report on faith -- turquoise samples at RGB(132,255,255),
+    // yellow at RGB(255,255,0), which is exactly `pal.highlight_fg` (no
+    // change needed there, now confirmed rather than assumed).
+    let last_ix = bar.menus.len().saturating_sub(1);
     for (i, top) in bar.menus.iter().enumerate() {
         let rect = menu_top_rect(i);
         let (l, t, r, b) = rect;
         let is_open = open == Some(i);
-        // The open header (and direct-action Continue) get a highlighted panel.
-        if is_open {
-            s.draw_panel(l, t, r, b, F_SOLID_FILL | F_BEVEL, pal.grey);
-        }
-        let ink = if is_open { pal.highlight_fg } else { pal.near_white };
+        // F_BEVEL only (see the date cell's comment) -- keeps the sidebar's
+        // continuing gradient visible instead of a flat navy block.
+        s.draw_panel(l, t, r, b, F_BEVEL, pal.sidebar_blue);
+        // No open-state highlight panel here: checked FUN_00745540 directly
+        // and its `param_2` (the argument that would carry "which entry's
+        // dropdown is open") is read exactly twice in the whole function --
+        // stored into a state field once, and compared to 0 once in an
+        // unrelated branch. There's no grey-panel-on-open logic in this
+        // constructor at all. The `F_SOLID_FILL | F_BEVEL, pal.grey` that
+        // used to sit here was already in this file before this session
+        // touched it, and I carried it forward without checking it against
+        // the decompile -- retracted now that I have checked.
+        let ink = if is_open {
+            pal.highlight_fg
+        } else if i == 1 {
+            (132, 255, 255) // manager identity -- real measured turquoise
+        } else if i == last_ix && top.label == "Game Options" {
+            pal.highlight_fg // "Game Options" -- confirmed real yellow, RGB(255,255,0)
+        } else {
+            pal.near_white
+        };
         // Narrow font (arial_narrow_11) — the real sidebar font; fits
         // "Competitions" in the 89px column.
         let f = fonts.slot(2);
@@ -651,7 +781,21 @@ pub fn menu_sidebar(
                 let h = top.items.len() as i32 * MENU_ITEM_H;
                 let y0 = ty.min(SIDEBAR.3 - h - 4);
                 s.draw_panel(x0, y0, x1, y0 + h + 4, F_SOLID_FILL | F_BEVEL, pal.btn_blue);
-                let f = fonts.slot(3);
+                // Real dropdown items aren't built by the same code path as
+                // the tabs/menu headers -- FUN_00415c30 (the exe's actual
+                // per-item constructor, called for every submenu entry
+                // like "Awards"/"Save Game") is a thin wrapper around
+                // FUN_00549580 with font FIXED at 1 (arial_narrow_10):
+                //   FUN_00549580(2,0,0,0,0,0,0,0x10,DAT_00acdf9a,
+                //                DAT_00ad6bdc,1,1,DAT_00ad6bda,param_2,...)
+                // -- font argument is the literal `1`, not 3. No live
+                // capture exists for an open dropdown (none was open
+                // during any capture session this session), so the
+                // container fill (pal.btn_blue) and item height
+                // (MENU_ITEM_H) below remain unverified against real
+                // pixels -- flagging that rather than presenting them as
+                // confirmed.
+                let f = fonts.slot(1);
                 for (j, item) in top.items.iter().enumerate() {
                     let iy = y0 + 2 + j as i32 * MENU_ITEM_H;
                     if item.separator_before && j > 0 {
@@ -1382,6 +1526,92 @@ fn blank_with_warning(s: &mut Surface, msg: &str) {
     s.fill(20, 0, 0);
     let _ = msg; // Text render needs a font handle; log to stderr for now.
     eprintln!("[screens] {msg}");
+}
+
+// ============================================================================
+// Widget-pool debug renderer — visual confirmation that ported View structs
+// feed the layout pipeline correctly. Draws every widget from
+// `impl RenderableView::to_widget_pool()` as a coloured rectangle labelled
+// with its kind and grid position, on top of a dark surface.
+//
+// Wired to `CM_BOOT=news-widgets` and `CM_BOOT=dash-widgets` in main.rs so a
+// human can eyeball "yes, 11 widgets in the right positions" against the
+// News golden test (2 + 1 header + 8 tabs = 11 for tab_count=8).
+// ============================================================================
+
+/// Colour palette per widget kind — chosen so the four common kinds are
+/// visually distinct at a glance.
+fn kind_colour(kind: u16) -> (u8, u8, u8) {
+    use cm_render::widget_pool::*;
+    match kind {
+        KIND_HEADER => (60, 90, 180),      // navy
+        KIND_LABEL => (60, 130, 60),        // green
+        KIND_BUTTON => (170, 100, 40),      // amber
+        KIND_ROOT_HOLDER => (100, 40, 100), // purple
+        _ => (110, 110, 110),               // grey (unknown)
+    }
+}
+
+fn kind_name(kind: u16) -> &'static str {
+    use cm_render::widget_pool::*;
+    match kind {
+        KIND_HEADER => "HDR",
+        KIND_LABEL => "LBL",
+        KIND_BUTTON => "BTN",
+        KIND_ROOT_HOLDER => "ROOT",
+        _ => "??",
+    }
+}
+
+/// Render a `Vec<Widget>` produced by `impl RenderableView::to_widget_pool()`
+/// as coloured, labelled rectangles. Draws over a dark background with a
+/// caption strip at the top naming the source view and widget count.
+pub fn draw_widget_pool_debug(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    widgets: &[cm_render::widget_pool::Widget],
+    label: &str,
+) {
+    let pal = palette();
+    // Dark backdrop so the coloured rects stand out.
+    s.fill(24, 24, 32);
+    // Caption strip.
+    s.draw_panel(0, 0, 799, 30, F_SOLID_FILL, pal.banner_red);
+    let f_cap = fonts.slot(6);
+    let caption = format!("Widget pool debug — {} ({} widgets)", label, widgets.len());
+    s.draw_text_box(8, 0, 792, 30, 0x1, f_cap, pal.highlight_fg, &caption);
+
+    // Draw each widget as a bevelled, translucent-ish coloured rectangle.
+    let f_lbl = fonts.slot(1);
+    for (idx, w) in widgets.iter().enumerate() {
+        let (r, g, b) = kind_colour(w.descriptor.kind);
+        let l = w.left.max(0);
+        let t = w.top.max(30);
+        let rr = w.right.min(799);
+        let bb = w.bottom.min(599);
+        if rr <= l || bb <= t {
+            continue;
+        }
+        s.draw_panel(l, t, rr, bb, F_SOLID_FILL | F_BEVEL, (r, g, b));
+        // Label: "#idx KIND (x,y)-(x,y)".
+        let text = format!(
+            "#{idx} {} ({},{})-({},{})",
+            kind_name(w.descriptor.kind),
+            w.left, w.top, w.right, w.bottom,
+        );
+        s.draw_text_box(l + 4, t + 2, rr - 2, t + 20, 0x1, f_lbl, pal.near_white, &text);
+        // Second line: descriptor text (if any) or userdata id.
+        let extra = if !w.descriptor.text.is_empty() {
+            w.descriptor.text.clone()
+        } else if w.descriptor.userdata_id != 0 {
+            format!("uid={}", w.descriptor.userdata_id)
+        } else {
+            String::new()
+        };
+        if !extra.is_empty() && (bb - t) > 24 {
+            s.draw_text_box(l + 4, t + 20, rr - 2, t + 38, 0x1, f_lbl, pal.near_white, &extra);
+        }
+    }
 }
 
 #[cfg(test)]

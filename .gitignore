@@ -22,3 +22,9 @@ target*/
 # Scratch / temp
 *.ppm
 *.bak
+
+# Large regenerable data exports + session junk
+world.json
+world_viewer.json
+build.log
+bash.exe.stackdump

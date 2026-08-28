@@ -1,0 +1,2779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CM0102 Rust World Viewer</title>
+  <style>
+    :root {
+      --bg: #f3efe6;
+      --panel: rgba(255, 252, 247, 0.92);
+      --ink: #1f2a2e;
+      --muted: #66757d;
+      --accent: #0a7b83;
+      --accent-2: #d95d39;
+      --line: rgba(31, 42, 46, 0.12);
+      --shadow: 0 18px 40px rgba(31, 42, 46, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(10, 123, 131, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(217, 93, 57, 0.14), transparent 26%),
+        linear-gradient(180deg, #faf6ef 0%, var(--bg) 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 860px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .control-card {
+      grid-column: span 4;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .control-card strong,
+    .stats strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    label,
+    .hint {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    input[type="file"],
+    select,
+    input[type="search"],
+    input[type="number"] {
+      width: 100%;
+      margin-top: 8px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    button {
+      margin-top: 8px;
+      padding: 11px 14px;
+      border-radius: 999px;
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: var(--accent-2);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stats .panel {
+      padding: 16px 18px;
+    }
+
+    .stat-value {
+      font-size: clamp(1.4rem, 2vw, 2rem);
+      letter-spacing: -0.04em;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    .canonical-panel {
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .canonical-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .canonical-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.66);
+      padding: 12px;
+    }
+
+    .canonical-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .canonical-card b {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.3rem;
+    }
+
+    .canonical-blockers {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+      max-height: 190px;
+      overflow: auto;
+    }
+
+    .canonical-blocker {
+      border-left: 4px solid var(--accent-2);
+      background: rgba(217, 93, 57, 0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--muted);
+    }
+
+    .canonical-blocker strong {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .runtime-panel {
+      padding: 18px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .runtime-date {
+      font-size: clamp(1.5rem, 3vw, 2.4rem);
+      letter-spacing: -0.05em;
+      margin-top: 4px;
+    }
+
+    .runtime-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .runtime-target {
+      min-width: 150px;
+    }
+
+    .season-panel {
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .season-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .season-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.68);
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .season-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+
+    .season-list {
+      display: grid;
+      gap: 8px;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .report-card,
+    .standing-row,
+    .inbox-row {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: rgba(255, 252, 247, 0.84);
+      padding: 10px 12px;
+    }
+
+    .report-card strong,
+    .inbox-row strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .report-highlights {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .standing-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) repeat(4, auto);
+      gap: 10px;
+      align-items: center;
+      font-size: 0.92rem;
+    }
+
+    .season-kpis {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .season-kpi {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px;
+      background: rgba(10, 123, 131, 0.06);
+    }
+
+    .season-kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .season-kpi b {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.15rem;
+    }
+
+    .manager-panel {
+      padding: 18px;
+      margin-bottom: 20px;
+      border-color: rgba(217, 93, 57, 0.22);
+    }
+
+    .manager-controls {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(120px, 180px) auto auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 12px;
+    }
+
+    .manager-dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .squad-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    .squad-table th,
+    .squad-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 7px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .squad-table th {
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .accuracy-panel {
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .accuracy-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .accuracy-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.66);
+      padding: 12px;
+      color: var(--muted);
+    }
+
+    .accuracy-item strong {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .sidebar {
+      padding: 18px;
+    }
+
+    .dataset-list {
+      display: grid;
+      gap: 8px;
+      max-height: 70vh;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .dataset-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .dataset-item.active {
+      border-color: rgba(10, 123, 131, 0.55);
+      background: rgba(10, 123, 131, 0.08);
+    }
+
+    .dataset-item-name {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .dataset-item-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .table-panel {
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .table-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .table-title {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: -0.03em;
+    }
+
+    .table-meta {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .table-tools {
+      display: flex;
+      gap: 10px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .pager {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pager button {
+      margin-top: 0;
+      padding: 9px 12px;
+    }
+
+    .pager-status {
+      color: var(--muted);
+      font-size: 0.92rem;
+      min-width: 100px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.8);
+      max-height: 72vh;
+    }
+
+    .inspector {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 14px 16px;
+    }
+
+    .inspector strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .inspector pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    .edit-form {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .edit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .edit-field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .edit-field label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .edit-field input {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .edit-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .edit-status {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f9f5ee;
+      z-index: 1;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+    }
+
+    thead th.sort-active {
+      color: var(--accent);
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) td {
+      background: rgba(10, 123, 131, 0.03);
+    }
+
+    td:last-child,
+    th:last-child {
+      border-right: 0;
+    }
+
+    .mono {
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.9rem;
+    }
+
+    tr.is-selected td {
+      background: rgba(217, 93, 57, 0.12);
+    }
+
+    .empty {
+      padding: 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .control-card {
+        grid-column: span 6;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .shell {
+        padding-inline: 14px;
+      }
+
+      .control-card {
+        grid-column: span 12;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <h1>CM0102 Rust World Viewer</h1>
+      <p class="lede">
+        Load Rust-owned table files and browse the rows and columns of the tables we now own in Rust.
+        This viewer can load one table at a time from <span class="mono">viewer_tables</span>.
+      </p>
+
+      <div class="controls">
+        <div class="control-card">
+          <strong>Snapshot File</strong>
+          <label for="fileInput">Open a local snapshot</label>
+          <input id="fileInput" type="file" accept=".json,application/json">
+          <div class="hint">Use <span class="mono">world_viewer.json</span> for a single-file snapshot, or serve the repo for table-by-table loading.</div>
+        </div>
+        <div class="control-card">
+          <strong>Quick Load</strong>
+          <label for="defaultButton">Try the repo copy</label>
+          <button id="defaultButton" type="button">Load viewer tables</button>
+          <div class="hint">Uses the live Rust DB API when running, otherwise loads <span class="mono">./viewer_tables/index.json</span>.</div>
+        </div>
+        <div class="control-card">
+          <strong>Filter</strong>
+          <label for="searchInput">Search current dataset</label>
+          <input id="searchInput" type="search" placeholder="name, id, bytes, competition...">
+          <div class="hint">Filters rows by substring across visible values.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="panel">
+        <strong>Snapshot</strong>
+        <div id="snapshotName" class="stat-value">No file loaded</div>
+      </div>
+      <div class="panel">
+        <strong>Datasets</strong>
+        <div id="datasetCount" class="stat-value">0</div>
+      </div>
+      <div class="panel">
+        <strong>Rows In View</strong>
+        <div id="rowCount" class="stat-value">0</div>
+      </div>
+      <div class="panel">
+        <strong>Columns In View</strong>
+        <div id="columnCount" class="stat-value">0</div>
+      </div>
+    </section>
+
+    <section class="panel canonical-panel" id="canonicalPanel">
+      <strong>Canonical DB</strong>
+      <div id="canonicalSummary" class="hint">Load the live Rust DB API to show replacement readiness.</div>
+      <div class="canonical-grid">
+        <div class="canonical-card"><span>Verified Fields</span><b id="verifiedFieldCount">0</b></div>
+        <div class="canonical-card"><span>Inferred Fields</span><b id="inferredFieldCount">0</b></div>
+        <div class="canonical-card"><span>Projected Fields</span><b id="projectedFieldCount">0</b></div>
+        <div class="canonical-card"><span>Editable Tables</span><b id="editableTableCount">0</b></div>
+        <div class="canonical-card"><span>Validation</span><b id="validationStatus">Not loaded</b></div>
+      </div>
+      <div id="canonicalBlockers" class="canonical-blockers">
+        <div class="empty">No canonical report loaded yet.</div>
+      </div>
+    </section>
+
+    <section class="panel accuracy-panel" id="accuracyPanel">
+      <strong>Accuracy Gate</strong>
+      <div id="accuracySummary" class="hint">Load the live Rust DB API to show code-derived execution gates.</div>
+      <div id="accuracyList" class="accuracy-list">
+        <div class="empty">No execution model loaded yet.</div>
+      </div>
+    </section>
+
+    <section class="panel runtime-panel" id="runtimePanel">
+      <div>
+        <strong>Rust Runtime Save</strong>
+        <div id="runtimeMeta" class="hint">Load the live Rust DB API to attach the Rust-native save.</div>
+        <div id="runtimeDate" class="runtime-date">No save loaded</div>
+      </div>
+      <div class="runtime-actions">
+        <button id="refreshRuntimeButton" type="button">Refresh Save</button>
+        <button id="tickDayButton" type="button">Tick 1 Day</button>
+        <button id="tickWeekButton" type="button" class="secondary">Tick 7 Days</button>
+        <input id="tickTargetDateInput" class="runtime-target" type="date" value="2001-07-04">
+        <button id="tickToDateButton" type="button" class="secondary">Tick To Date</button>
+      </div>
+    </section>
+
+    <section class="panel manager-panel" id="managerPanel">
+      <strong>Manager Loop</strong>
+      <div id="managerSummary" class="hint">Select a club, then run to the next fixture and read the report.</div>
+      <div class="manager-controls">
+        <div>
+          <label for="managerNameInput" class="hint">Manager name</label>
+          <input id="managerNameInput" type="search" value="Headless Manager">
+        </div>
+        <div>
+          <label for="managerClubInput" class="hint">Club id</label>
+          <input id="managerClubInput" type="number" min="0" value="1">
+        </div>
+        <button id="selectManagerClubButton" type="button">Select Club</button>
+        <button id="runNextFixtureButton" type="button" class="secondary">Run Next Fixture</button>
+      </div>
+      <div class="manager-dashboard">
+        <div class="season-card">
+          <h3>Club Context</h3>
+          <div id="managerContext" class="season-list"><div class="empty">No manager club selected yet.</div></div>
+        </div>
+        <div class="season-card">
+          <h3>Squad / Team</h3>
+          <div id="managerSquadList" class="season-list"><div class="empty">No squad loaded yet.</div></div>
+        </div>
+        <div class="season-card">
+          <h3>Club Inbox</h3>
+          <div id="managerInboxList" class="season-list"><div class="empty">No club inbox loaded yet.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel season-panel" id="seasonPanel">
+      <strong>Headless Season Control Room</strong>
+      <div id="seasonSummary" class="hint">Run or refresh the Rust runtime save to browse fixtures, match reports, standings, and inbox items.</div>
+      <div class="season-kpis">
+        <div class="season-kpi"><span>Fixtures</span><b id="seasonFixtures">0</b></div>
+        <div class="season-kpi"><span>Played</span><b id="seasonPlayed">0</b></div>
+        <div class="season-kpi"><span>Reports</span><b id="seasonReports">0</b></div>
+        <div class="season-kpi"><span>Inbox</span><b id="seasonInbox">0</b></div>
+        <div class="season-kpi"><span>Tables</span><b id="seasonStandings">0</b></div>
+        <div class="season-kpi"><span>Batches</span><b id="seasonBatches">0</b></div>
+      </div>
+      <div class="season-grid">
+        <div class="season-card">
+          <h3>Latest Match Reports</h3>
+          <div id="matchReportList" class="season-list"><div class="empty">No match reports loaded yet.</div></div>
+        </div>
+        <div class="season-card">
+          <h3>Inbox / News</h3>
+          <div id="seasonInboxList" class="season-list"><div class="empty">No inbox items loaded yet.</div></div>
+        </div>
+        <div class="season-card">
+          <h3>Top Standings</h3>
+          <div id="seasonStandingsList" class="season-list"><div class="empty">No standings loaded yet.</div></div>
+        </div>
+        <div class="season-card">
+          <h3>Recent Batches</h3>
+          <div id="seasonBatchList" class="season-list"><div class="empty">No fixture batches loaded yet.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <aside class="panel sidebar">
+        <strong>Rust Tables</strong>
+        <div id="datasetList" class="dataset-list">
+          <div class="empty">Load a snapshot to list the owned Rust tables.</div>
+        </div>
+      </aside>
+
+      <main class="panel table-panel">
+        <div class="table-head">
+          <div>
+            <h2 id="tableTitle" class="table-title">No dataset selected</h2>
+            <div id="tableMeta" class="table-meta">Pick a dataset from the left after loading a snapshot.</div>
+          </div>
+          <div class="table-tools">
+            <div style="min-width: 200px;">
+              <label for="pageSizeInput" class="hint">Rows per page</label>
+              <input id="pageSizeInput" type="number" min="10" max="500" step="10" value="50">
+            </div>
+            <div style="min-width: 220px;">
+              <label for="columnPresetSelect" class="hint">Column preset</label>
+              <select id="columnPresetSelect">
+                <option value="smart">Smart</option>
+                <option value="all">All columns</option>
+                <option value="names">Names first</option>
+                <option value="numeric">Numeric scan</option>
+              </select>
+            </div>
+            <div class="pager">
+              <button id="exportCsvButton" type="button">Export CSV</button>
+              <button id="prevPageButton" type="button">Prev</button>
+              <div id="pageStatus" class="pager-status">Page 1 of 1</div>
+              <button id="nextPageButton" type="button">Next</button>
+            </div>
+          </div>
+        </div>
+        <div id="tableWrap" class="table-wrap">
+          <div class="empty">Nothing to render yet.</div>
+        </div>
+        <div class="inspector">
+          <strong>Row Inspector</strong>
+          <pre id="rowInspector">Select a row to inspect the full record.</pre>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const defaultButton = document.getElementById("defaultButton");
+    const searchInput = document.getElementById("searchInput");
+    const pageSizeInput = document.getElementById("pageSizeInput");
+    const columnPresetSelect = document.getElementById("columnPresetSelect");
+    const datasetList = document.getElementById("datasetList");
+    const tableWrap = document.getElementById("tableWrap");
+    const tableTitle = document.getElementById("tableTitle");
+    const tableMeta = document.getElementById("tableMeta");
+    const exportCsvButton = document.getElementById("exportCsvButton");
+    const prevPageButton = document.getElementById("prevPageButton");
+    const nextPageButton = document.getElementById("nextPageButton");
+    const pageStatus = document.getElementById("pageStatus");
+    const rowInspector = document.getElementById("rowInspector");
+    const snapshotName = document.getElementById("snapshotName");
+    const datasetCount = document.getElementById("datasetCount");
+    const rowCount = document.getElementById("rowCount");
+    const columnCount = document.getElementById("columnCount");
+    const canonicalSummary = document.getElementById("canonicalSummary");
+    const verifiedFieldCount = document.getElementById("verifiedFieldCount");
+    const inferredFieldCount = document.getElementById("inferredFieldCount");
+    const projectedFieldCount = document.getElementById("projectedFieldCount");
+    const editableTableCount = document.getElementById("editableTableCount");
+    const validationStatus = document.getElementById("validationStatus");
+    const canonicalBlockers = document.getElementById("canonicalBlockers");
+    const accuracySummary = document.getElementById("accuracySummary");
+    const accuracyList = document.getElementById("accuracyList");
+    const runtimeMeta = document.getElementById("runtimeMeta");
+    const runtimeDate = document.getElementById("runtimeDate");
+    const refreshRuntimeButton = document.getElementById("refreshRuntimeButton");
+    const tickDayButton = document.getElementById("tickDayButton");
+    const tickWeekButton = document.getElementById("tickWeekButton");
+    const tickTargetDateInput = document.getElementById("tickTargetDateInput");
+    const tickToDateButton = document.getElementById("tickToDateButton");
+    const managerSummary = document.getElementById("managerSummary");
+    const managerNameInput = document.getElementById("managerNameInput");
+    const managerClubInput = document.getElementById("managerClubInput");
+    const selectManagerClubButton = document.getElementById("selectManagerClubButton");
+    const runNextFixtureButton = document.getElementById("runNextFixtureButton");
+    const managerContext = document.getElementById("managerContext");
+    const managerSquadList = document.getElementById("managerSquadList");
+    const managerInboxList = document.getElementById("managerInboxList");
+    const seasonSummary = document.getElementById("seasonSummary");
+    const seasonFixtures = document.getElementById("seasonFixtures");
+    const seasonPlayed = document.getElementById("seasonPlayed");
+    const seasonReports = document.getElementById("seasonReports");
+    const seasonInbox = document.getElementById("seasonInbox");
+    const seasonStandings = document.getElementById("seasonStandings");
+    const seasonBatches = document.getElementById("seasonBatches");
+    const matchReportList = document.getElementById("matchReportList");
+    const seasonInboxList = document.getElementById("seasonInboxList");
+    const seasonStandingsList = document.getElementById("seasonStandingsList");
+    const seasonBatchList = document.getElementById("seasonBatchList");
+
+    let currentSnapshotName = "";
+    let datasets = [];
+    let currentDatasetIndex = -1;
+    let currentPage = 0;
+    let sortState = { column: "", direction: "asc" };
+    let selectedRowKey = "";
+    let lastRenderedContext = null;
+    const API_BASE = window.location.protocol.startsWith("http")
+      ? window.location.origin
+      : "http://127.0.0.1:8765";
+
+    fileInput.addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) {
+        return;
+      }
+      const text = await file.text();
+      loadSnapshot(text, file.name);
+    });
+
+    defaultButton.addEventListener("click", async () => {
+      try {
+        try {
+          const response = await fetch(`${API_BASE}/api/tables`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const index = await response.json();
+          loadViewerTableIndex(index, "live Rust DB API", `${API_BASE}/`);
+          await loadCanonicalReport();
+          await loadExecutionModel();
+          await loadExecutionValidation();
+          await loadSimulationFrontier();
+          await loadRuntimeSimulationValidation();
+          await loadBinaryValidation();
+          await loadRngValidation();
+          await loadRuntimeSave();
+          await loadHeadlessSeason();
+          await loadManagerDashboard();
+          await loadManagerSquad();
+          return;
+        } catch (apiError) {
+          const response = await fetch("./viewer_tables/index.json");
+          if (!response.ok) {
+            throw new Error(`API unavailable (${apiError.message}); viewer_tables unavailable (HTTP ${response.status})`);
+          }
+          const index = await response.json();
+          loadViewerTableIndex(index, "viewer_tables/index.json", "./viewer_tables/");
+          renderCanonicalReport(null, `Live API unavailable: ${apiError.message}`);
+          renderExecutionModel(null, "Live API unavailable for execution model.");
+          renderRuntimeSave(null, "Live API unavailable for runtime save.");
+          renderHeadlessSeason(null, "Live API unavailable for headless season.");
+          renderManagerDashboard(null, "Live API unavailable for manager dashboard.");
+          renderManagerSquad(null, "Live API unavailable for manager squad.");
+        }
+      } catch (error) {
+        setEmptyState(
+          `Could not load viewer tables: ${error.message}. Use the file picker, or serve this HTML from D:/cm0102-rs.`
+        );
+      }
+    });
+    refreshRuntimeButton.addEventListener("click", async () => {
+      await loadRuntimeSave();
+      await loadHeadlessSeason();
+      await loadManagerDashboard();
+      await loadManagerSquad();
+    });
+    tickDayButton.addEventListener("click", () => tickRuntimeSave(1));
+    tickWeekButton.addEventListener("click", () => tickRuntimeSave(7));
+    tickToDateButton.addEventListener("click", () => tickRuntimeSaveToDate());
+    selectManagerClubButton.addEventListener("click", () => selectManagerClub());
+    runNextFixtureButton.addEventListener("click", () => runManagerNextFixture());
+
+    async function loadCanonicalReport() {
+      try {
+        const response = await fetch(`${API_BASE}/api/canonical`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderCanonicalReport(await response.json());
+      } catch (error) {
+        renderCanonicalReport(null, `Could not load canonical report: ${error.message}`);
+      }
+    }
+
+    function renderCanonicalReport(report, message = "") {
+      if (!report) {
+        canonicalSummary.textContent = message || "No canonical report loaded.";
+        verifiedFieldCount.textContent = "0";
+        inferredFieldCount.textContent = "0";
+        projectedFieldCount.textContent = "0";
+        editableTableCount.textContent = "0";
+        validationStatus.textContent = "Not loaded";
+        canonicalBlockers.innerHTML = `<div class="empty">${escapeHtml(message || "No canonical report loaded yet.")}</div>`;
+        return;
+      }
+
+      const warnCount = (report.validation?.checks || []).filter((check) => check.status === "Warn").length;
+      const failCount = report.validation?.failures?.length || 0;
+      canonicalSummary.textContent = `${report.table_count} tables, ${report.field_count} fields. Runtime dependency on .dat: ${report.dat_runtime_dependency}.`;
+      verifiedFieldCount.textContent = report.verified_fields;
+      inferredFieldCount.textContent = report.inferred_fields;
+      projectedFieldCount.textContent = report.projected_fields;
+      editableTableCount.textContent = `${report.editable_tables}/${report.table_count}`;
+      validationStatus.textContent = failCount > 0 ? `${failCount} fail` : warnCount > 0 ? `${warnCount} warn` : "OK";
+
+      const blockers = (report.tables || [])
+        .filter((table) => Array.isArray(table.blockers) && table.blockers.length > 0)
+        .slice(0, 12);
+      if (blockers.length === 0) {
+        canonicalBlockers.innerHTML = `<div class="empty">No blockers. This DB is runtime-ready.</div>`;
+        return;
+      }
+      canonicalBlockers.innerHTML = blockers
+        .map((table) => `
+          <div class="canonical-blocker">
+            <strong>${escapeHtml(table.path)} · ${escapeHtml(table.dat_replacement_status)}</strong>
+            ${escapeHtml(table.blockers.slice(0, 2).join(" · "))}
+          </div>
+        `)
+        .join("");
+    }
+
+    async function loadExecutionModel() {
+      try {
+        const response = await fetch(`${API_BASE}/api/execution-model`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderExecutionModel(await response.json());
+      } catch (error) {
+        renderExecutionModel(null, `Could not load execution model: ${error.message}`);
+      }
+    }
+
+    function renderExecutionModel(report, message = "") {
+      if (!report) {
+        accuracySummary.textContent = message || "No execution model loaded.";
+        accuracyList.innerHTML = `<div class="empty">${escapeHtml(message || "No execution model loaded yet.")}</div>`;
+        return;
+      }
+
+      const model = report.verified_execution_model || {};
+      accuracySummary.textContent = report.policy || "Gameplay behavior must be code-derived before implementation.";
+      const verified = [
+        ["Entry", model.entry?.address, model.entry?.citation],
+        ["Init / DB load", `${model.init?.address || "unknown"} -> ${model.init?.loads_database_via || "unknown"}`, model.init?.citation],
+        ["Main tick", model.main_loop?.per_iteration_tick, model.main_loop?.citation],
+        ["Save game", model.save_game?.address, model.save_game?.citation],
+        ["Load game", model.load_game?.address, model.load_game?.citation],
+        ["RNG", model.rng?.match_random, model.rng?.citation]
+      ];
+      const gates = report.implementation_gates || [];
+      accuracyList.innerHTML = [
+        ...verified.map(([name, detail, cite]) => `
+          <div class="accuracy-item">
+            <strong>${escapeHtml(name)} - verified</strong>
+            ${escapeHtml(detail || "unknown")} - ${escapeHtml(cite || "no citation")}
+          </div>
+        `),
+        ...gates.slice(0, 5).map((gate) => `
+          <div class="accuracy-item">
+            <strong>${escapeHtml(gate.system)} - ${escapeHtml(gate.current_rust_status)}</strong>
+            Needs: ${escapeHtml((gate.required_before_rust || []).join("; "))}
+          </div>
+        `)
+      ].join("");
+    }
+
+    async function loadBinaryValidation() {
+      try {
+        const response = await fetch(`${API_BASE}/api/original-binary-validation`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderBinaryValidation(await response.json());
+      } catch (error) {
+        const item = document.createElement("div");
+        item.className = "accuracy-item";
+        item.innerHTML = `<strong>Original binary validation - unavailable</strong>${escapeHtml(error.message)}`;
+        accuracyList.appendChild(item);
+      }
+    }
+
+    function renderBinaryValidation(report) {
+      const summary = report.summary || {};
+      const binary = report.binary || {};
+      const item = document.createElement("div");
+      item.className = "accuracy-item";
+      item.innerHTML = `
+        <strong>Original binary validation - ${escapeHtml(summary.status || "unknown")}</strong>
+        ${escapeHtml(binary.path || "unknown")} - ${escapeHtml(String(summary.checks || 0))} checks, ${escapeHtml(String(summary.failures || 0))} failure(s)
+      `;
+      accuracyList.prepend(item);
+    }
+
+    async function loadExecutionValidation() {
+      try {
+        const response = await fetch(`${API_BASE}/api/execution-validation`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderExecutionValidation(await response.json());
+      } catch (error) {
+        const item = document.createElement("div");
+        item.className = "accuracy-item";
+        item.innerHTML = `<strong>Execution validation - unavailable</strong>${escapeHtml(error.message)}`;
+        accuracyList.appendChild(item);
+      }
+    }
+
+    function renderExecutionValidation(report) {
+      const summary = report.summary || {};
+      const execution = report.execution || {};
+      const messagePump = execution.message_pump_shell || {};
+      const setup = execution.setup_flow || {};
+      const item = document.createElement("div");
+      item.className = "accuracy-item";
+      item.innerHTML = `
+        <strong>Execution validation - ${escapeHtml(summary.status || "unknown")}</strong>
+        message pump ${escapeHtml(messagePump.address || "unknown")} setup ${escapeHtml(setup.address || "unknown")} - ${escapeHtml(String(summary.checks || 0))} checks, ${escapeHtml(String(summary.failures || 0))} failure(s)
+      `;
+      accuracyList.prepend(item);
+    }
+
+    async function loadSimulationFrontier() {
+      try {
+        const response = await fetch(`${API_BASE}/api/simulation-frontier`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderSimulationFrontier(await response.json());
+      } catch (error) {
+        const item = document.createElement("div");
+        item.className = "accuracy-item";
+        item.innerHTML = `<strong>Simulation frontier - unavailable</strong>${escapeHtml(error.message)}`;
+        accuracyList.appendChild(item);
+      }
+    }
+
+    function renderSimulationFrontier(report) {
+      const summary = report.summary || {};
+      const frontier = report.frontier || {};
+      const loop = frontier.simulation_loop_candidate || {};
+      const dateState = frontier.date_state || {};
+      const matchDay = frontier.match_day || {};
+      const phaseLoop = frontier.phase_loop || {};
+      const phaseCount = Array.isArray(phaseLoop.observed_values) ? phaseLoop.observed_values.length : "unknown";
+      const item = document.createElement("div");
+      item.className = "accuracy-item";
+      item.innerHTML = `
+        <strong>Simulation frontier - ${escapeHtml(summary.status || "unknown")}</strong>
+        loop ${escapeHtml(loop.address || "unknown")} phase ${escapeHtml(dateState.phase_global || "unknown")} (${escapeHtml(String(phaseCount))} observed) date_add ${escapeHtml(dateState.date_add_days || "unknown")} match_day ${escapeHtml(matchDay.builder || "unknown")} -> ${escapeHtml(matchDay.processor || "unknown")} - ${escapeHtml(String(summary.checks || 0))} checks, ${escapeHtml(String(summary.failures || 0))} failure(s)
+      `;
+      accuracyList.prepend(item);
+    }
+
+    async function loadRuntimeSimulationValidation() {
+      try {
+        const response = await fetch(`${API_BASE}/api/runtime-simulation-validation`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderRuntimeSimulationValidation(await response.json());
+      } catch (error) {
+        const item = document.createElement("div");
+        item.className = "accuracy-item";
+        item.innerHTML = `<strong>Runtime simulation validation - unavailable</strong>${escapeHtml(error.message)}`;
+        accuracyList.appendChild(item);
+      }
+    }
+
+    function renderRuntimeSimulationValidation(report) {
+      const summary = report.summary || {};
+      const runtime = report.runtime || {};
+      const after = runtime.after_one_day || {};
+      const item = document.createElement("div");
+      item.className = "accuracy-item";
+      item.innerHTML = `
+        <strong>Runtime simulation validation - ${escapeHtml(summary.status || "unknown")}</strong>
+        ${escapeHtml(runtime.implemented_scope || "unknown scope")} · after one day ${escapeHtml(after.date || "unknown")} phase ${escapeHtml(String(after.phase ?? "unknown"))}, trace ${escapeHtml(String(after.trace_entries ?? "unknown"))} - ${escapeHtml(String(summary.checks || 0))} checks, ${escapeHtml(String(summary.failures || 0))} failure(s)
+      `;
+      accuracyList.prepend(item);
+    }
+
+    async function loadRngValidation() {
+      try {
+        const response = await fetch(`${API_BASE}/api/rng-validation`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderRngValidation(await response.json());
+      } catch (error) {
+        const item = document.createElement("div");
+        item.className = "accuracy-item";
+        item.innerHTML = `<strong>RNG validation - unavailable</strong>${escapeHtml(error.message)}`;
+        accuracyList.appendChild(item);
+      }
+    }
+
+    function renderRngValidation(report) {
+      const summary = report.summary || {};
+      const rng = report.match_random || {};
+      const item = document.createElement("div");
+      item.className = "accuracy-item";
+      const initializer = rng.initializer || {};
+      item.innerHTML = `
+        <strong>RNG validation - ${escapeHtml(summary.status || "unknown")}</strong>
+        match_random ${escapeHtml(rng.address || "unknown")} init ${escapeHtml(initializer.address || "unknown")} table ${escapeHtml(rng.table_base || "unknown")}..${escapeHtml(rng.table_end_inclusive || "unknown")} (${escapeHtml(String(rng.table_entries || "unknown"))} entries) - ${escapeHtml(String(summary.checks || 0))} checks, ${escapeHtml(String(summary.failures || 0))} failure(s)
+      `;
+      accuracyList.prepend(item);
+    }
+
+    async function loadRuntimeSave() {
+      try {
+        const response = await fetch(`${API_BASE}/api/runtime-save`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderRuntimeSave(await response.json());
+      } catch (error) {
+        renderRuntimeSave(null, `Could not load Rust save: ${error.message}`);
+      }
+    }
+
+    async function tickRuntimeSave(days) {
+      runtimeMeta.textContent = `Ticking ${days} day(s)...`;
+      try {
+        const save = await postJson(`${API_BASE}/api/runtime-save/tick`, { days });
+        renderRuntimeSave(save);
+        await loadHeadlessSeason();
+        await loadManagerDashboard();
+        await loadManagerSquad();
+      } catch (error) {
+        renderRuntimeSave(null, `Tick failed: ${error.message}`);
+      }
+    }
+
+    async function tickRuntimeSaveToDate() {
+      const date = tickTargetDateInput.value;
+      if (!date) {
+        renderRuntimeSave(null, "Pick a target date before ticking.");
+        return;
+      }
+      runtimeMeta.textContent = `Ticking to ${date}...`;
+      try {
+        const result = await postJson(`${API_BASE}/api/runtime-save/tick-to-date`, { date });
+        renderRuntimeSave(result.save, `Advanced ${result.advanced_days || 0} day(s) to ${date}.`);
+        await loadHeadlessSeason();
+        await loadManagerDashboard();
+        await loadManagerSquad();
+      } catch (error) {
+        renderRuntimeSave(null, `Tick-to-date failed: ${error.message}`);
+      }
+    }
+
+    function renderRuntimeSaveLegacy(save, message = "") {
+      if (!save) {
+        runtimeMeta.textContent = message || "No Rust save loaded.";
+        runtimeDate.textContent = "No save loaded";
+        return;
+      }
+      const date = save.date || {};
+      const simulation = save.simulation || {};
+      const packed = simulation.cm_packed_date || {};
+      const trace = Array.isArray(save.phase_trace) ? save.phase_trace : [];
+      const lastTrace = trace.length ? trace[trace.length - 1] : null;
+      const padded = `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+      const latest = lastTrace
+        ? ` · last phase ${lastTrace.phase_before}->${lastTrace.phase_after}, ${lastTrace.frontiers?.length || 0} frontier(s)`
+        : "";
+      runtimeDate.textContent = padded;
+      runtimeMeta.textContent = `${save.format} · phase ${simulation.phase ?? "?"} · CM day ${packed.day_of_year ?? "?"}/${packed.year ?? "?"} · elapsed ${save.elapsed_days || 0} day(s) · trace ${trace.length}${latest} · ${save.pending_events?.length || 0} pending event(s)`;
+    }
+
+    function renderRuntimeSave(save, message = "") {
+      if (!save) {
+        runtimeMeta.textContent = message || "No Rust save loaded.";
+        runtimeDate.textContent = "No save loaded";
+        return;
+      }
+      const date = save.date || {};
+      const simulation = save.simulation || {};
+      const packed = simulation.cm_packed_date || {};
+      const trace = Array.isArray(save.phase_trace) ? save.phase_trace : [];
+      const lastTrace = trace.length ? trace[trace.length - 1] : null;
+      const padded = `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+      const latest = lastTrace
+        ? ` | last phase ${lastTrace.phase_before}->${lastTrace.phase_after}, ${lastTrace.frontiers?.length || 0} frontier(s)`
+        : "";
+      const prefix = message ? `${message} | ` : "";
+      runtimeDate.textContent = padded;
+      runtimeMeta.textContent = `${prefix}${save.format} | phase ${simulation.phase ?? "?"} | CM day ${packed.day_of_year ?? "?"}/${packed.year ?? "?"} | elapsed ${save.elapsed_days || 0} day(s) | trace ${trace.length}${latest} | ${save.pending_events?.length || 0} pending event(s)`;
+    }
+
+    async function loadHeadlessSeason() {
+      try {
+        const response = await fetch(`${API_BASE}/api/headless/season`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderHeadlessSeason(await response.json());
+      } catch (error) {
+        renderHeadlessSeason(null, `Could not load headless season: ${error.message}`);
+      }
+    }
+
+    function renderHeadlessSeason(data, message = "") {
+      if (!data) {
+        seasonSummary.textContent = message || "No headless season loaded.";
+        seasonFixtures.textContent = "0";
+        seasonPlayed.textContent = "0";
+        seasonReports.textContent = "0";
+        seasonInbox.textContent = "0";
+        seasonStandings.textContent = "0";
+        seasonBatches.textContent = "0";
+        matchReportList.innerHTML = `<div class="empty">${escapeHtml(message || "No match reports loaded yet.")}</div>`;
+        seasonInboxList.innerHTML = `<div class="empty">${escapeHtml(message || "No inbox items loaded yet.")}</div>`;
+        seasonStandingsList.innerHTML = `<div class="empty">${escapeHtml(message || "No standings loaded yet.")}</div>`;
+        seasonBatchList.innerHTML = `<div class="empty">${escapeHtml(message || "No fixture batches loaded yet.")}</div>`;
+        return;
+      }
+
+      const totals = data.totals || {};
+      const date = data.date || {};
+      const padded = `${String(date.year || "????").padStart(4, "0")}-${String(date.month || "?").padStart(2, "0")}-${String(date.day || "?").padStart(2, "0")}`;
+      seasonSummary.textContent = `${padded} | elapsed ${data.elapsed_days || 0} day(s) | phase ${data.phase ?? "?"} | ${totals.played_fixtures || 0}/${totals.fixtures || 0} fixtures played | ${totals.match_reports || 0} match-report inbox item(s)`;
+      seasonFixtures.textContent = totals.fixtures || 0;
+      seasonPlayed.textContent = totals.played_fixtures || 0;
+      seasonReports.textContent = totals.match_reports || 0;
+      seasonInbox.textContent = totals.pending_events || 0;
+      seasonStandings.textContent = totals.standings || 0;
+      seasonBatches.textContent = totals.batches || 0;
+
+      const reports = Array.isArray(data.reports) ? data.reports.slice(0, 16) : [];
+      matchReportList.innerHTML = reports.length
+        ? reports.map(renderMatchReportCard).join("")
+        : `<div class="empty">No played fixture reports yet. Tick the save to a fixture date.</div>`;
+
+      const inbox = Array.isArray(data.inbox) ? data.inbox.slice(0, 20) : [];
+      seasonInboxList.innerHTML = inbox.length
+        ? inbox.map((event) => `
+          <div class="inbox-row">
+            <strong>${escapeHtml(event.kind || "event")} | day ${escapeHtml(String(event.day ?? "?"))}</strong>
+            <div class="hint">${escapeHtml(event.message || "")}</div>
+          </div>
+        `).join("")
+        : `<div class="empty">No inbox items yet.</div>`;
+
+      const standings = Array.isArray(data.standings) ? data.standings.slice(0, 20) : [];
+      seasonStandingsList.innerHTML = standings.length
+        ? standings.map((row, index) => `
+          <div class="standing-row">
+            <b>${index + 1}. ${escapeHtml(row.club_name || `Club ${row.club_id}`)}</b>
+            <span>P ${escapeHtml(String(row.played ?? 0))}</span>
+            <span>GD ${escapeHtml(String(row.goal_difference ?? 0))}</span>
+            <span>GF ${escapeHtml(String(row.goals_for ?? 0))}</span>
+            <strong>${escapeHtml(String(row.points ?? 0))} pts</strong>
+          </div>
+        `).join("")
+        : `<div class="empty">No standings rows yet.</div>`;
+
+      const batches = Array.isArray(data.batches) ? data.batches : [];
+      seasonBatchList.innerHTML = batches.length
+        ? batches.map((batch) => `
+          <div class="inbox-row">
+            <strong>${escapeHtml(formatGameDate(batch.date))} | ${escapeHtml(String(batch.played_fixtures || 0))} played</strong>
+            <div class="hint">${escapeHtml((batch.result_summary || []).slice(0, 4).join(" | "))}</div>
+          </div>
+        `).join("")
+        : `<div class="empty">No fixture batches yet.</div>`;
+    }
+
+    async function loadManagerDashboard() {
+      try {
+        const response = await fetch(`${API_BASE}/api/headless/manager-dashboard`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderManagerDashboard(await response.json());
+      } catch (error) {
+        renderManagerDashboard(null, `Could not load manager dashboard: ${error.message}`);
+      }
+    }
+
+    async function selectManagerClub() {
+      const name = managerNameInput.value.trim() || "Headless Manager";
+      const clubId = Number(managerClubInput.value);
+      if (!Number.isFinite(clubId) || clubId < 0) {
+        renderManagerDashboard(null, "Enter a valid club id before selecting a club.");
+        return;
+      }
+      managerSummary.textContent = `Selecting club ${clubId} for ${name}...`;
+      try {
+        await postJson(`${API_BASE}/api/headless/manager`, {
+          name,
+          club_id: Math.trunc(clubId)
+        });
+        await loadRuntimeSave();
+        await loadHeadlessSeason();
+        await loadManagerDashboard();
+        await loadManagerSquad();
+      } catch (error) {
+        renderManagerDashboard(null, `Could not select manager club: ${error.message}`);
+      }
+    }
+
+    async function runManagerNextFixture() {
+      managerSummary.textContent = "Running to the selected club's next fixture...";
+      try {
+        const result = await postJson(`${API_BASE}/api/headless/manager/run-next-fixture`, {});
+        renderManagerDashboard(result.dashboard, result.message || "Manager fixture run complete.");
+        await loadRuntimeSave();
+        await loadHeadlessSeason();
+        await loadManagerSquad();
+      } catch (error) {
+        renderManagerDashboard(null, `Could not run next manager fixture: ${error.message}`);
+      }
+    }
+
+    function renderManagerDashboard(data, message = "") {
+      if (!data) {
+        managerSummary.textContent = message || "No manager dashboard loaded.";
+        managerContext.innerHTML = `<div class="empty">${escapeHtml(message || "Select a club to start the manager loop.")}</div>`;
+        managerInboxList.innerHTML = `<div class="empty">No club inbox loaded yet.</div>`;
+        return;
+      }
+
+      const club = data.selected_club || {};
+      const manager = data.manager || {};
+      const totals = data.totals || {};
+      const standing = data.standing?.row || null;
+      const nextFixture = data.next_fixture || null;
+      const dateText = formatGameDate(data.date);
+      const selectedName = club.name || (club.id !== undefined ? `Club ${club.id}` : "No club selected");
+      managerSummary.textContent = `${manager.name || "Manager"} at ${selectedName} | ${dateText} | ${totals.club_reports || 0} club report(s), ${totals.club_pending_fixtures || 0} pending fixture(s)`;
+
+      if (club.id !== undefined && club.id !== null) {
+        managerClubInput.value = club.id;
+      }
+      if (manager.name) {
+        managerNameInput.value = manager.name;
+      }
+
+      const nextFixtureHtml = nextFixture
+        ? `
+          <div class="report-card">
+            <strong>Next fixture</strong>
+            <div>${escapeHtml(nextFixture.home_club_name || `Club ${nextFixture.home_club_id}`)} vs ${escapeHtml(nextFixture.away_club_name || `Club ${nextFixture.away_club_id}`)}</div>
+            <div class="hint">${escapeHtml(nextFixture.competition_name || "Competition")} | ${escapeHtml(formatGameDate(nextFixture.date))} | fixture ${escapeHtml(String(nextFixture.id ?? "?"))}</div>
+          </div>
+        `
+        : `
+          <div class="report-card">
+            <strong>No pending fixture</strong>
+            <div class="hint">This club currently has no unplayed fixture in the generated season schedule.</div>
+          </div>
+        `;
+
+      const standingHtml = standing
+        ? `
+          <div class="report-card">
+            <strong>League position ${escapeHtml(String(data.standing.position || "?"))}</strong>
+            <div>P ${escapeHtml(String(standing.played ?? 0))} | W ${escapeHtml(String(standing.won ?? 0))} | D ${escapeHtml(String(standing.drawn ?? 0))} | L ${escapeHtml(String(standing.lost ?? 0))}</div>
+            <div class="hint">GF ${escapeHtml(String(standing.goals_for ?? 0))} | GA ${escapeHtml(String(standing.goals_against ?? 0))} | GD ${escapeHtml(String(standing.goal_difference ?? 0))} | ${escapeHtml(String(standing.points ?? 0))} pts</div>
+          </div>
+        `
+        : `
+          <div class="report-card">
+            <strong>No standings row yet</strong>
+            <div class="hint">The club has not appeared in a generated table row yet.</div>
+          </div>
+        `;
+
+      const recentReports = Array.isArray(data.recent_reports) ? data.recent_reports.slice(0, 6) : [];
+      const reportsHtml = recentReports.length
+        ? recentReports.map(renderMatchReportCard).join("")
+        : `<div class="empty">No reports for this club yet. Run the next fixture to create one.</div>`;
+
+      managerContext.innerHTML = `
+        <div class="report-card">
+          <strong>${escapeHtml(selectedName)}</strong>
+          <div class="hint">Manager ${escapeHtml(manager.name || "not selected")} | phase ${escapeHtml(String(data.phase ?? "?"))} | elapsed ${escapeHtml(String(data.elapsed_days || 0))} day(s)</div>
+          <div>All fixtures ${escapeHtml(String(totals.all_played || 0))}/${escapeHtml(String(totals.all_fixtures || 0))} played.</div>
+        </div>
+        ${standingHtml}
+        ${nextFixtureHtml}
+        ${reportsHtml}
+      `;
+
+      const inbox = Array.isArray(data.inbox) ? data.inbox.slice(0, 18) : [];
+      managerInboxList.innerHTML = inbox.length
+        ? inbox.map((event) => `
+          <div class="inbox-row">
+            <strong>${escapeHtml(event.kind || "event")} | day ${escapeHtml(String(event.day ?? "?"))}</strong>
+            <div>${escapeHtml(event.message || "")}</div>
+            <div class="hint">club ${escapeHtml(String(event.club_id ?? club.id ?? "?"))}</div>
+          </div>
+        `).join("")
+        : `<div class="empty">No club inbox items yet.</div>`;
+    }
+
+    async function loadManagerSquad() {
+      try {
+        const response = await fetch(`${API_BASE}/api/headless/manager-squad`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        renderManagerSquad(await response.json());
+      } catch (error) {
+        renderManagerSquad(null, `Could not load manager squad: ${error.message}`);
+      }
+    }
+
+    function renderManagerSquad(data, message = "") {
+      if (!data) {
+        managerSquadList.innerHTML = `<div class="empty">${escapeHtml(message || "Select a club to load its squad.")}</div>`;
+        return;
+      }
+      const club = data.club || {};
+      const summary = data.summary || {};
+      const tactics = data.tactics || {};
+      const slots = Array.isArray(data.slots) ? data.slots.slice(0, 30) : [];
+      if (!slots.length) {
+        managerSquadList.innerHTML = `
+          <div class="report-card">
+            <strong>${escapeHtml(club.name || "Selected club")}</strong>
+            <div class="hint">No squad slots resolved from ${escapeHtml(summary.source || "club slot storage")}.</div>
+          </div>
+        `;
+        return;
+      }
+      const rows = slots.map((slot) => `
+        <tr>
+          <td>${slot.suggested_selection ? "XI" : "SUB"}</td>
+          <td><strong>${escapeHtml(slot.suggested_role || "")}</strong><div class="hint">slot ${escapeHtml(String(slot.slot ?? "?"))}</div></td>
+          <td>Staff ${escapeHtml(String(slot.staff_id ?? "?"))}<div class="hint">${escapeHtml(slot.record_offset || "")}</div></td>
+          <td>${escapeHtml(String(slot.rating_short_0x05 ?? "-"))}</td>
+          <td>${escapeHtml(String(slot.rating_short_0x07 ?? "-"))}</td>
+          <td>${escapeHtml(String(slot.rating_short_0x0d ?? "-"))}</td>
+          <td>${escapeHtml(String(slot.attribute_average ?? "-"))}</td>
+          <td>${escapeHtml((slot.top_attributes || []).map((attr) => `${attr.field}:${attr.value}`).join(", "))}</td>
+        </tr>
+      `).join("");
+      managerSquadList.innerHTML = `
+        <div class="report-card">
+          <strong>${escapeHtml(club.name || "Selected club")} squad</strong>
+          <div class="hint">${escapeHtml(String(summary.resolved_staff || 0))}/${escapeHtml(String(summary.slot_count || 0))} staff resolved | ${escapeHtml(tactics.formation || "formation pending")} | ${escapeHtml(summary.source || "")}</div>
+          <div>${escapeHtml(tactics.selection_rule || "")}</div>
+        </div>
+        <table class="squad-table">
+          <thead>
+            <tr>
+              <th>Pick</th>
+              <th>Role</th>
+              <th>Staff</th>
+              <th>0x05</th>
+              <th>0x07</th>
+              <th>0x0d</th>
+              <th>Avg</th>
+              <th>Top Attrs</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function renderMatchReportCard(report) {
+      const highlights = Array.isArray(report.highlights) ? report.highlights.slice(0, 5) : [];
+      const kinds = Array.isArray(report.timeline_kinds)
+        ? [...new Set(report.timeline_kinds)].slice(0, 6).join(", ")
+        : "";
+      return `
+        <article class="report-card">
+          <strong>${escapeHtml(report.headline || report.scoreline || "Match report")}</strong>
+          <div class="hint">${escapeHtml(report.competition_name || "")} | ${escapeHtml(formatGameDate(report.date))} | events ${escapeHtml(String(report.event_count || 0))}, goals ${escapeHtml(String(report.goal_count || 0))}, non-score ${escapeHtml(String(report.non_scoring_event_count || 0))}</div>
+          <div>${escapeHtml(report.scoreline || "")}</div>
+          <div class="report-highlights">${escapeHtml(highlights.join(" | "))}</div>
+          <div class="hint">Kinds: ${escapeHtml(kinds)} | queue ${escapeHtml((report.queue_event_codes || []).join(", "))}</div>
+        </article>
+      `;
+    }
+
+    function formatGameDate(date) {
+      if (!date) {
+        return "unknown date";
+      }
+      return `${String(date.year || "????").padStart(4, "0")}-${String(date.month || "?").padStart(2, "0")}-${String(date.day || "?").padStart(2, "0")}`;
+    }
+
+    searchInput.addEventListener("input", () => {
+      currentPage = 0;
+      renderCurrentDataset();
+    });
+    pageSizeInput.addEventListener("input", () => {
+      currentPage = 0;
+      renderCurrentDataset();
+    });
+    columnPresetSelect.addEventListener("change", () => {
+      currentPage = 0;
+      renderCurrentDataset();
+    });
+    exportCsvButton.addEventListener("click", () => exportCurrentViewCsv());
+    prevPageButton.addEventListener("click", () => {
+      currentPage = Math.max(0, currentPage - 1);
+      renderCurrentDataset();
+    });
+    nextPageButton.addEventListener("click", () => {
+      currentPage += 1;
+      renderCurrentDataset();
+    });
+
+    function loadSnapshot(text, name) {
+      let snapshot;
+      try {
+        snapshot = JSON.parse(text);
+      } catch (error) {
+        setEmptyState(`Could not parse ${name}: ${error.message}`);
+        return;
+      }
+
+      currentSnapshotName = name;
+      datasets = collectDatasets(snapshot);
+      currentDatasetIndex = datasets.length > 0 ? 0 : -1;
+      currentPage = 0;
+      sortState = { column: "", direction: "asc" };
+      selectedRowKey = "";
+      lastRenderedContext = null;
+
+      snapshotName.textContent = name;
+      datasetCount.textContent = String(datasets.length);
+
+      renderDatasetList();
+      renderCurrentDataset();
+    }
+
+    function loadViewerTableIndex(index, name, baseUrl) {
+      if (!index || !Array.isArray(index.datasets)) {
+        setEmptyState("Viewer table index did not contain a datasets array.");
+        return;
+      }
+
+      currentSnapshotName = name;
+      datasets = index.datasets.map((entry) => ({
+        path: entry.path,
+        label: entry.label || entry.path,
+        url: new URL(entry.url || entry.api_url, new URL(baseUrl, window.location.href)).href,
+        rowCount: Number(entry.row_count) || 0,
+        rows: null,
+        columns: []
+      }));
+      currentDatasetIndex = datasets.length > 0 ? 0 : -1;
+      currentPage = 0;
+      sortState = { column: "", direction: "asc" };
+      selectedRowKey = "";
+      lastRenderedContext = null;
+
+      snapshotName.textContent = name;
+      datasetCount.textContent = String(datasets.length);
+
+      renderDatasetList();
+      if (currentDatasetIndex >= 0) {
+        openDataset(currentDatasetIndex);
+      } else {
+        renderCurrentDataset();
+      }
+    }
+
+    function collectDatasets(snapshot) {
+      const paths = [
+        ["base_data", "Base Data"],
+        ["save.sections", "Save Sections"],
+        ["core.clubs", "Core Clubs"],
+        ["core.nat_clubs", "Core National Clubs"],
+        ["core.colours", "Core Colours"],
+        ["core.continents", "Core Continents"],
+        ["core.nations", "Core Nations"],
+        ["schema.tables", "Schema Tables"],
+        ["staff.type6", "Staff Type 6"],
+        ["staff.type8", "Staff Type 8"],
+        ["staff.type9", "Staff Type 9"],
+        ["staff.type10", "Staff Type 10"],
+        ["references.cities", "Cities"],
+        ["references.officials", "Officials"],
+        ["references.first_names", "First Names"],
+        ["references.second_names", "Second Names"],
+        ["references.common_names", "Common Names"],
+        ["references.stadiums", "Stadiums"],
+        ["references.staff_competitions", "Staff Competitions"],
+        ["references.club_competitions", "Club Competitions"],
+        ["references.nation_competitions", "Nation Competitions"],
+        ["references.staff_history", "Staff History"],
+        ["references.staff_comp_history", "Staff Competition History"],
+        ["references.club_comp_history", "Club Competition History"],
+        ["references.nation_comp_history", "Nation Competition History"]
+      ];
+
+      return paths
+        .map(([path, label]) => {
+          const value = getPath(snapshot, path);
+          if (!Array.isArray(value)) {
+            return null;
+          }
+          const projectedRows = withRowIndexes(projectRows(path, value));
+          const columns = inferColumns(projectedRows);
+          return {
+            path,
+            label,
+            rows: projectedRows,
+            columns
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function renderDatasetList() {
+      if (datasets.length === 0) {
+        datasetList.innerHTML = '<div class="empty">No array-backed datasets were found in this snapshot.</div>';
+        return;
+      }
+
+      datasetList.innerHTML = "";
+      datasets.forEach((dataset, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "dataset-item" + (index === currentDatasetIndex ? " active" : "");
+        button.innerHTML = `
+          <span class="dataset-item-name">${escapeHtml(dataset.label)}</span>
+          <span class="dataset-item-meta mono">${escapeHtml(dataset.path)}</span>
+          <span class="dataset-item-meta">${datasetRowCount(dataset)} rows · ${dataset.columns.length || "?"} columns</span>
+        `;
+        button.addEventListener("click", () => openDataset(index));
+        datasetList.appendChild(button);
+      });
+    }
+
+    async function openDataset(index) {
+      currentDatasetIndex = index;
+      currentPage = 0;
+      sortState = { column: "", direction: "asc" };
+      selectedRowKey = "";
+      renderDatasetList();
+      renderCurrentDataset();
+      await ensureDatasetRowsLoaded(datasets[index]);
+      renderDatasetList();
+      renderCurrentDataset();
+    }
+
+    async function ensureDatasetRowsLoaded(dataset) {
+      if (!dataset || Array.isArray(dataset.rows) || !dataset.url) {
+        return;
+      }
+      tableMeta.textContent = `${dataset.path} | loading ${datasetRowCount(dataset)} rows`;
+      tableWrap.innerHTML = '<div class="empty">Loading table...</div>';
+      try {
+        const response = await fetch(dataset.url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const table = await response.json();
+        const rows = Array.isArray(table.rows) ? table.rows : [];
+        dataset.rows = withRowIndexes(projectRows(dataset.path, rows));
+        dataset.columns = inferColumns(dataset.rows);
+      } catch (error) {
+        dataset.rows = [];
+        dataset.columns = [];
+        tableWrap.innerHTML = `<div class="empty">Could not load ${escapeHtml(dataset.path)}: ${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function renderCurrentDataset() {
+      if (currentDatasetIndex < 0 || !datasets[currentDatasetIndex]) {
+        rowCount.textContent = "0";
+        columnCount.textContent = "0";
+        pageStatus.textContent = "Page 1 of 1";
+        prevPageButton.disabled = true;
+        nextPageButton.disabled = true;
+        exportCsvButton.disabled = true;
+        tableTitle.textContent = "No dataset selected";
+        tableMeta.textContent = "Pick a dataset from the left after loading a snapshot.";
+        tableWrap.innerHTML = '<div class="empty">Nothing to render yet.</div>';
+        rowInspector.textContent = "Select a row to inspect the full record.";
+        lastRenderedContext = null;
+        return;
+      }
+
+      const dataset = datasets[currentDatasetIndex];
+      if (!Array.isArray(dataset.rows)) {
+        rowCount.textContent = String(datasetRowCount(dataset));
+        columnCount.textContent = "0";
+        pageStatus.textContent = "Page 1 of 1";
+        prevPageButton.disabled = true;
+        nextPageButton.disabled = true;
+        exportCsvButton.disabled = true;
+        tableTitle.textContent = dataset.label;
+        tableMeta.textContent = `${dataset.path} | table file not loaded yet`;
+        tableWrap.innerHTML = '<div class="empty">Loading table...</div>';
+        rowInspector.textContent = "Select a row to inspect the full record.";
+        lastRenderedContext = null;
+        return;
+      }
+      const term = searchInput.value.trim().toLowerCase();
+      const pageSize = Math.max(10, Math.min(500, Number(pageSizeInput.value) || 50));
+      pageSizeInput.value = String(pageSize);
+
+      const filteredRows = dataset.rows.filter((row) => rowMatches(row, term));
+      const sortedRows = sortRows(filteredRows, sortState);
+      const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
+      currentPage = Math.min(currentPage, totalPages - 1);
+      const startIndex = currentPage * pageSize;
+      const endIndex = startIndex + pageSize;
+      const visibleRows = sortedRows.slice(startIndex, endIndex);
+      const visibleColumns = selectVisibleColumns(dataset.path, dataset.columns, columnPresetSelect.value);
+      const selectedRow =
+        visibleRows.find((row) => rowKey(row) === selectedRowKey) ||
+        sortedRows.find((row) => rowKey(row) === selectedRowKey) ||
+        null;
+
+      rowCount.textContent = String(filteredRows.length);
+      columnCount.textContent = String(visibleColumns.length);
+      pageStatus.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+      prevPageButton.disabled = currentPage === 0;
+      nextPageButton.disabled = currentPage >= totalPages - 1;
+      exportCsvButton.disabled = sortedRows.length === 0;
+      tableTitle.textContent = dataset.label;
+      tableMeta.textContent =
+        `${dataset.path} | rows ${sortedRows.length === 0 ? 0 : startIndex + 1}-${Math.min(endIndex, sortedRows.length)} of ${sortedRows.length}` +
+        (filteredRows.length !== dataset.rows.length ? ` | filtered from ${dataset.rows.length}` : "") +
+        (sortState.column ? ` | sorted by ${sortState.column} (${sortState.direction})` : "") +
+        ` | preset ${columnPresetSelect.value}`;
+
+      lastRenderedContext = {
+        dataset,
+        sortedRows,
+        visibleRows,
+        visibleColumns
+      };
+
+      if (visibleColumns.length === 0) {
+        tableWrap.innerHTML = '<div class="empty">This dataset has no visible columns for the current preset.</div>';
+        rowInspector.textContent = "No visible columns for the current preset.";
+        return;
+      }
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+      const headRow = document.createElement("tr");
+
+      visibleColumns.forEach((column) => {
+        const th = document.createElement("th");
+        th.textContent = column;
+        if (sortState.column === column) {
+          th.classList.add("sort-active");
+          th.textContent = `${column} [${sortState.direction.toUpperCase()}]`;
+        }
+        th.addEventListener("click", () => updateSort(column));
+        headRow.appendChild(th);
+      });
+
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      visibleRows.forEach((row) => {
+        const tr = document.createElement("tr");
+        const key = rowKey(row);
+        if (selectedRowKey && key === selectedRowKey) {
+          tr.classList.add("is-selected");
+        }
+        tr.addEventListener("click", () => {
+          selectedRowKey = key;
+          renderRowInspector(dataset, row);
+          renderCurrentDataset();
+        });
+
+        visibleColumns.forEach((column) => {
+          const td = document.createElement("td");
+          td.className = "mono";
+          td.textContent = formatCell(row[column]);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      if (visibleRows.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = visibleColumns.length;
+        td.className = "empty";
+        td.textContent = "No rows matched the current filter.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      tableWrap.innerHTML = "";
+      tableWrap.appendChild(table);
+      if (selectedRow) {
+        renderRowInspector(dataset, selectedRow);
+      } else {
+        rowInspector.textContent = "Select a row to inspect the full record.";
+      }
+    }
+
+    function renderRowInspector(dataset, row) {
+      const editableFields = editableFieldsForRow(dataset.path, row);
+      const json = escapeHtml(JSON.stringify(row, null, 2));
+      if (editableFields.length === 0) {
+        rowInspector.innerHTML = `<pre>${json}</pre>`;
+        return;
+      }
+
+      const liveApi = usesLiveApi(dataset);
+      const controls = editableFields
+        .map((field) => `
+          <div class="edit-field">
+            <label for="edit_${escapeHtml(field.key)}">${escapeHtml(field.label)}</label>
+            <input id="edit_${escapeHtml(field.key)}" name="${escapeHtml(field.key)}" value="${escapeHtml(String(field.value ?? ""))}" ${field.inputMode ? `inputmode="${field.inputMode}"` : ""} ${liveApi ? "" : "disabled"}>
+          </div>
+        `)
+        .join("");
+
+      rowInspector.innerHTML = `
+        <form class="edit-form" id="rowEditForm">
+          <div class="edit-grid">${controls}</div>
+          <div class="edit-actions">
+            <button type="submit" ${liveApi ? "" : "disabled"}>Save to Rust DB</button>
+            <span class="edit-status" id="editStatus">${liveApi ? "Live API connected." : "Editing requires serve-rust-db on the same localhost port as this viewer."}</span>
+          </div>
+        </form>
+        <pre>${json}</pre>
+      `;
+
+      document.getElementById("rowEditForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await saveEditableFields(dataset, row, editableFields, event.currentTarget);
+      });
+    }
+
+    function editableFieldsForRow(path, row) {
+      if (path.startsWith("core.")) {
+        return [
+          { kind: "text", key: "primary", label: "Primary", value: row.primary_name ?? row.name ?? "" },
+          { kind: "text", key: "secondary", label: "Secondary", value: row.secondary_name ?? "" },
+          { kind: "text", key: "short", label: "Short", value: row.short_name ?? "" }
+        ];
+      }
+      if (path === "references.cities" || path === "references.stadiums") {
+        return [{ kind: "text", key: "name", label: "Name", value: row.name ?? "" }];
+      }
+      if (
+        path === "references.staff_competitions" ||
+        path === "references.club_competitions" ||
+        path === "references.nation_competitions"
+      ) {
+        return [
+          { kind: "text", key: "long_name", label: "Long name", value: row.long_name ?? "" },
+          { kind: "text", key: "short_name", label: "Short name", value: row.short_name ?? "" }
+        ];
+      }
+      if (
+        path === "references.first_names" ||
+        path === "references.second_names" ||
+        path === "references.common_names"
+      ) {
+        return [{ kind: "text", key: "text", label: "Text", value: row.text ?? "" }];
+      }
+      if (path === "staff.type10") {
+        const fields = [
+          { kind: "staff-type10", key: "ca", label: "CA", value: row.probable_ca ?? 0, inputMode: "numeric" },
+          { kind: "staff-type10", key: "pa", label: "PA", value: row.probable_pa ?? 0, inputMode: "numeric" },
+          { kind: "staff-type10", key: "reputation", label: "Reputation", value: row.probable_reputation ?? 0, inputMode: "numeric" }
+        ];
+        for (let index = 0; index < 31; index += 1) {
+          fields.push({
+            kind: "staff-attribute",
+            key: `attr_${index}`,
+            label: `Attr ${index}`,
+            value: row[`attr_${index}`] ?? 0,
+            attrIndex: index,
+            inputMode: "numeric"
+          });
+        }
+        return fields;
+      }
+      return [];
+    }
+
+    async function saveEditableFields(dataset, row, fields, form) {
+      const status = document.getElementById("editStatus");
+      status.textContent = "Saving...";
+      const changed = fields
+        .map((field) => ({ field, value: form.elements[field.key].value }))
+        .filter(({ field, value }) => String(field.value ?? "") !== String(value));
+
+      if (changed.length === 0) {
+        status.textContent = "No changes to save.";
+        return;
+      }
+
+      try {
+        const result = await postJson(`${API_BASE}/api/edit/batch`, {
+          changes: changed.map((change) => editPayloadForField(dataset, row, change.field, change.value))
+        });
+        const rowKey = rowSelector(dataset.path, row);
+        dataset.rows = null;
+        dataset.columns = [];
+        await ensureDatasetRowsLoaded(dataset);
+        selectedRow = (dataset.rows || []).find((candidate) => rowSelector(dataset.path, candidate) === rowKey) || null;
+        renderDatasetList();
+        renderCurrentDataset();
+        const refreshedStatus = document.getElementById("editStatus");
+        const auditOk = result.audit && Array.isArray(result.audit.mismatches) && result.audit.mismatches.length === 0;
+        if (refreshedStatus) {
+          refreshedStatus.textContent = `${changed.length} change(s) saved, ${auditOk ? "audit OK" : "audit returned mismatches"}.`;
+        }
+      } catch (error) {
+        status.textContent = `Save failed: ${error.message}`;
+      }
+    }
+
+    function editPayloadForField(dataset, row, field, value) {
+      if (field.kind === "text") {
+        return {
+          kind: "text",
+          table: dataset.path,
+          row: rowSelector(dataset.path, row),
+          field: field.key,
+          text: value
+        };
+      }
+      if (field.kind === "staff-type10") {
+        return {
+          kind: "staff-type10",
+          id: Number(row.id),
+          field: field.key,
+          value: Number(value)
+        };
+      }
+      if (field.kind === "staff-attribute") {
+        return {
+          kind: "staff-attribute",
+          id: Number(row.id),
+          index: field.attrIndex,
+          value: Number(value)
+        };
+      }
+      throw new Error(`Unsupported field kind ${field.kind}`);
+    }
+
+    function rowSelector(path, row) {
+      if (path.startsWith("core.")) {
+        return String(row.ordinal);
+      }
+      if (
+        path === "references.first_names" ||
+        path === "references.second_names" ||
+        path === "references.common_names"
+      ) {
+        return String(row.__row_index);
+      }
+      return String(row.id);
+    }
+
+    async function postJson(url, body) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const text = await response.text();
+      let payload;
+      try {
+        payload = JSON.parse(text);
+      } catch (error) {
+        throw new Error(text || error.message);
+      }
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || `HTTP ${response.status}`);
+      }
+      return payload;
+    }
+
+    function usesLiveApi(dataset) {
+      return Boolean(dataset && dataset.url && dataset.url.startsWith(`${API_BASE}/api/`));
+    }
+
+    function inferColumns(rows) {
+      const columns = new Set();
+      rows.slice(0, 40).forEach((row) => {
+        if (row && typeof row === "object" && !Array.isArray(row)) {
+          Object.keys(row).forEach((key) => columns.add(key));
+        }
+      });
+      return Array.from(columns).sort(compareColumnNames);
+    }
+
+    function datasetRowCount(dataset) {
+      return Array.isArray(dataset.rows) ? dataset.rows.length : dataset.rowCount || 0;
+    }
+
+    function withRowIndexes(rows) {
+      return rows.map((row, index) => ({ __row_index: index, ...row }));
+    }
+
+    function projectRows(path, rows) {
+      if (path.startsWith("core.")) {
+        return rows.map((row) => projectOpaqueCoreRow(path, row));
+      }
+      if (path === "staff.type6" || path === "staff.type9") {
+        return rows.map((row) => projectStaffRawRow(path, row));
+      }
+      if (path === "staff.type8") {
+        return rows.map(projectStaffType8Row);
+      }
+      if (path === "staff.type10") {
+        return rows.map(projectStaffType10Row);
+      }
+      if (path === "schema.tables") {
+        return rows.map(projectSchemaTableRow);
+      }
+      if (path === "base_data") {
+        return rows.map(projectBaseDataRow);
+      }
+      if (path === "save.sections") {
+        return rows.map(projectSaveSectionRow);
+      }
+      if (path === "references.cities") {
+        return rows.map((row) => flattenObjectArrays(row, ["tail_u16", "tail_u32"]));
+      }
+      if (path === "references.officials") {
+        return rows.map((row) => flattenObjectArrays(row, ["u32_slots", "u16_slots"]));
+      }
+      if (
+        path === "references.first_names" ||
+        path === "references.second_names" ||
+        path === "references.common_names"
+      ) {
+        return rows.map((row) => flattenObjectArrays(row, ["footer"]));
+      }
+      if (
+        path === "references.stadiums" ||
+        path === "references.staff_competitions" ||
+        path === "references.club_competitions" ||
+        path === "references.nation_competitions"
+      ) {
+        return rows.map((row) => flattenObjectArrays(row, ["unknown_tail"]));
+      }
+      if (
+        path === "references.staff_history" ||
+        path === "references.staff_comp_history" ||
+        path === "references.club_comp_history" ||
+        path === "references.nation_comp_history"
+      ) {
+        return rows.map((row) => projectHistoryRow(path, row));
+      }
+      return rows;
+    }
+
+    function projectBaseDataRow(row) {
+      return {
+        filename: row.filename,
+        kind: row.kind,
+        count: row.count
+      };
+    }
+
+    function projectSaveSectionRow(row) {
+      return {
+        name: row.name,
+        size: row.size,
+        verified_record_size: row.verified_record_size,
+        verified_record_count: row.verified_record_count
+      };
+    }
+
+    function projectSchemaTableRow(row) {
+      const projected = {
+        path: row.path,
+        status: row.status,
+        field_count: Array.isArray(row.fields) ? row.fields.length : 0
+      };
+      if (Array.isArray(row.fields)) {
+        row.fields.forEach((field, index) => {
+          projected[`field_${index}`] = field.name;
+          projected[`field_${index}_status`] = field.status;
+        });
+      }
+      return projected;
+    }
+
+    function projectOpaqueCoreRow(path, row) {
+      const raw = Array.isArray(row.raw) ? row.raw : [];
+      const exportedTexts = Array.isArray(row.text_candidates)
+        ? row.text_candidates.map(cleanDisplayText).filter(Boolean)
+        : [];
+      const fallbackText = cleanDisplayText(extractBestLatin1Text(raw).text);
+      const primaryName = cleanDisplayText(row.primary_name || exportedTexts[0] || fallbackText);
+      const secondaryName = cleanDisplayText(row.secondary_name || exportedTexts[1] || "");
+      const shortName = cleanDisplayText(row.short_name || exportedTexts[2] || "");
+      const projected = {
+        ordinal: row.ordinal,
+        id: row.id ?? readLeU32(raw, 0),
+        name: primaryName,
+        primary_name: primaryName,
+        secondary_name: secondaryName,
+        short_name: shortName,
+        text_candidate_count: exportedTexts.length,
+        record_size: raw.length,
+        u32_0: readLeU32(raw, 0),
+        u32_1: readLeU32(raw, 4),
+        u32_2: readLeU32(raw, 8),
+        raw_preview: formatBytePreview(raw, 16)
+      };
+      exportedTexts.forEach((entry, index) => {
+        projected[`text_${index}`] = entry;
+      });
+      projectCoreNames(projected, path);
+      return projected;
+    }
+
+    function projectStaffRawRow(path, row) {
+      const body = Array.isArray(row.body) ? row.body : [];
+      const text = extractBestLatin1Text(body, 0);
+      const texts = extractLatin1Texts(body, 0, 4);
+      const projected = {
+        id: row.id,
+        text_preview: text.text,
+        text_offset: text.offset,
+        text_length: text.length,
+        body_size: body.length,
+        u32_0: readLeU32(body, 0),
+        u32_1: readLeU32(body, 4),
+        u32_2: readLeU32(body, 8),
+        body_preview: formatBytePreview(body, 16)
+      };
+      projected.staff_bucket = path === "staff.type6" ? 6 : 9;
+      projected.primary_text = texts[0] ? cleanDisplayText(texts[0].text) : "";
+      projected.secondary_text = texts[1] ? cleanDisplayText(texts[1].text) : "";
+      projected.tertiary_text = texts[2] ? cleanDisplayText(texts[2].text) : "";
+      appendTextColumns(projected, texts);
+      return projected;
+    }
+
+    function projectStaffType8Row(row) {
+      const body = Array.isArray(row.body) ? row.body : [];
+      return {
+        body_size: body.length,
+        body_preview: formatBytePreview(body, 16)
+      };
+    }
+
+    function projectStaffType10Row(row) {
+      const projected = {
+        id: row.id,
+        unknown_byte_4: row.unknown_byte_4,
+        probable_ca: row.probable_ca,
+        probable_pa: row.probable_pa,
+        probable_reputation: row.probable_reputation
+      };
+      appendArrayColumns(projected, "unknown_9_12", row.unknown_bytes_9_12);
+      appendArrayColumns(projected, "unknown_15_26", row.unknown_bytes_15_26);
+      appendArrayColumns(projected, "attr", row.attributes);
+      appendArrayColumns(projected, "unknown_58_64", row.unknown_bytes_58_64);
+      appendArrayColumns(projected, "tail", row.trailing_bytes);
+      return projected;
+    }
+
+    function projectHistoryRow(path, row) {
+      const slots = Array.isArray(row.u32_slots) ? row.u32_slots : [];
+      const projected = {
+        decode_status: row.decode_status || "packed numeric history",
+        record_id: row.record_id ?? row.id ?? slots[0] ?? "",
+        competition_id: row.competition_id ?? slots[1] ?? "",
+        competition_name: row.competition_name || "",
+        staff_id: row.staff_id ?? "",
+        trailing_u16: row.trailing_u16,
+        trailing_byte: row.trailing_byte
+      };
+
+      if (path === "references.staff_history") {
+        projected.competition_id = "";
+        projected.competition_name = "";
+      }
+
+      slots.forEach((value, index) => {
+        projected[`slot_${index}`] = value;
+        projected[`slot_${index}_hex`] = u32Hex(value);
+        projected[`slot_${index}_lo_u16`] = value & 0xffff;
+        projected[`slot_${index}_hi_u16`] = (value >>> 16) & 0xffff;
+        projected[`slot_${index}_signed`] = signed32(value);
+      });
+      return projected;
+    }
+
+    function flattenObjectArrays(row, arrayKeys, prefixes = {}) {
+      const projected = {};
+      Object.keys(row || {}).forEach((key) => {
+        if (arrayKeys.includes(key)) {
+          appendArrayColumns(projected, singularPrefix(key, prefixes), row[key]);
+        } else {
+          projected[key] = row[key];
+        }
+      });
+      return projected;
+    }
+
+    function appendArrayColumns(target, prefix, values) {
+      if (!Array.isArray(values)) {
+        target[prefix] = values;
+        return;
+      }
+      values.forEach((value, index) => {
+        target[`${prefix}_${index}`] = value;
+      });
+    }
+
+    function u32Hex(value) {
+      if (typeof value !== "number") {
+        return "";
+      }
+      return `0x${(value >>> 0).toString(16).padStart(8, "0")}`;
+    }
+
+    function signed32(value) {
+      if (typeof value !== "number") {
+        return "";
+      }
+      return value | 0;
+    }
+
+    function singularPrefix(key, prefixes = {}) {
+      if (prefixes[key]) {
+        return prefixes[key];
+      }
+      if (key === "tail_u16") {
+        return "u16";
+      }
+      if (key === "tail_u32") {
+        return "u32";
+      }
+      if (key === "u32_slots") {
+        return "u32";
+      }
+      if (key === "u16_slots") {
+        return "u16";
+      }
+      if (key === "unknown_tail") {
+        return "tail";
+      }
+      return key.replace(/s$/, "");
+    }
+
+    function projectCoreNames(target, path) {
+      if (path === "core.continents" || path === "core.colours" || path === "core.nations") {
+        target.name = target.primary_name || target.name || "";
+      } else if (path === "core.clubs" || path === "core.nat_clubs") {
+        target.name = target.primary_name || "";
+      }
+    }
+
+    function appendTextColumns(target, texts) {
+      texts.forEach((entry, index) => {
+        target[`text_${index}`] = cleanDisplayText(entry.text);
+        target[`text_${index}_offset`] = entry.offset;
+        target[`text_${index}_length`] = entry.length;
+      });
+    }
+
+    function readLeU32(bytes, offset) {
+      if (!Array.isArray(bytes) || bytes.length < offset + 4) {
+        return "";
+      }
+      return (
+        (bytes[offset] >>> 0) |
+        ((bytes[offset + 1] << 8) >>> 0) |
+        ((bytes[offset + 2] << 16) >>> 0) |
+        ((bytes[offset + 3] << 24) >>> 0)
+      ) >>> 0;
+    }
+
+    function extractBestLatin1Text(bytes, startOffset = 4) {
+      if (!Array.isArray(bytes) || bytes.length === 0) {
+        return { text: "", offset: "", length: 0 };
+      }
+
+      let best = { text: "", offset: "", length: 0 };
+      let start = -1;
+
+      for (let i = startOffset; i < bytes.length; i += 1) {
+        const value = bytes[i];
+        const printable =
+          (value >= 32 && value <= 126) ||
+          (value >= 160 && value <= 255);
+
+        if (printable) {
+          if (start === -1) {
+            start = i;
+          }
+          continue;
+        }
+
+        if (value === 0 && start !== -1) {
+          const length = i - start;
+          if (length > best.length) {
+            best = {
+              text: cleanDisplayText(latin1Slice(bytes, start, i)),
+              offset: start,
+              length
+            };
+          }
+        }
+        start = -1;
+      }
+
+      return best;
+    }
+
+    function extractLatin1Texts(bytes, startOffset = 0, minLength = 4) {
+      if (!Array.isArray(bytes) || bytes.length === 0) {
+        return [];
+      }
+
+      const texts = [];
+      let start = -1;
+
+      for (let i = startOffset; i < bytes.length; i += 1) {
+        const value = bytes[i];
+        const printable =
+          (value >= 32 && value <= 126) ||
+          (value >= 160 && value <= 255);
+
+        if (printable) {
+          if (start === -1) {
+            start = i;
+          }
+          continue;
+        }
+
+        if (value === 0 && start !== -1) {
+          const length = i - start;
+          if (length >= minLength) {
+            texts.push({
+              text: cleanDisplayText(latin1Slice(bytes, start, i)),
+              offset: start,
+              length
+            });
+          }
+        }
+        start = -1;
+      }
+
+      return texts.slice(0, 4);
+    }
+
+    function latin1Slice(bytes, start, end) {
+      let text = "";
+      for (let i = start; i < end; i += 1) {
+        text += String.fromCharCode(bytes[i]);
+      }
+      return text;
+    }
+
+    function formatBytePreview(bytes, maxCount) {
+      if (!Array.isArray(bytes) || bytes.length === 0) {
+        return "";
+      }
+      const preview = bytes.slice(0, maxCount).join(", ");
+      const suffix = bytes.length > maxCount ? ", ..." : "";
+      return `[${bytes.length}] ${preview}${suffix}`;
+    }
+
+    function updateSort(column) {
+      if (sortState.column === column) {
+        sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
+      } else {
+        sortState = { column, direction: "asc" };
+      }
+      currentPage = 0;
+      renderCurrentDataset();
+    }
+
+    function sortRows(rows, state) {
+      if (!state.column) {
+        return rows;
+      }
+      const direction = state.direction === "desc" ? -1 : 1;
+      return [...rows].sort((left, right) => {
+        const a = sortableValue(left[state.column]);
+        const b = sortableValue(right[state.column]);
+        if (a < b) {
+          return -1 * direction;
+        }
+        if (a > b) {
+          return 1 * direction;
+        }
+        return 0;
+      });
+    }
+
+    function selectVisibleColumns(path, columns, preset) {
+      if (preset === "all") {
+        return columns;
+      }
+
+      const namesFirst = columns.filter((column) =>
+        ["id", "name", "primary_name", "secondary_name", "short_name", "long_name", "primary_text", "secondary_text", "text_preview", "filename"].includes(column)
+      );
+      const numerics = columns.filter((column) =>
+        column.startsWith("u32_") ||
+        column.startsWith("u16_") ||
+        column.startsWith("slot_") ||
+        column.startsWith("attr_") ||
+        column.startsWith("unknown_") ||
+        column.startsWith("tail_") ||
+        column.endsWith("_count") ||
+        column.endsWith("_size")
+      );
+      const compact = preferredColumnsForPath(path, columns);
+
+      if (preset === "names") {
+        return dedupeColumns([...namesFirst, ...compact]).slice(0, Math.max(8, namesFirst.length + 6));
+      }
+      if (preset === "numeric") {
+        return dedupeColumns([...compact, ...numerics]).slice(0, 24);
+      }
+      return compact;
+    }
+
+    function preferredColumnsForPath(path, columns) {
+      const base = [
+        "ordinal",
+        "id",
+        "filename",
+        "kind",
+        "count",
+        "name",
+        "decode_status",
+        "record_id",
+        "competition_name",
+        "competition_id",
+        "staff_id",
+        "primary_name",
+        "secondary_name",
+        "short_name",
+        "text_candidate_count",
+        "long_name",
+        "primary_text",
+        "secondary_text",
+        "tertiary_text",
+        "staff_bucket",
+        "probable_ca",
+        "probable_pa",
+        "probable_reputation",
+        "unknown_byte_4",
+        "text_candidate_count",
+        "record_size",
+        "body_size",
+        "verified_record_size",
+        "verified_record_count",
+        "text_preview",
+        "text_offset",
+        "text_length",
+        "u32_0",
+        "u32_1",
+        "u32_2",
+        "slot_0",
+        "slot_0_hex",
+        "slot_0_lo_u16",
+        "slot_0_hi_u16",
+        "slot_1",
+        "slot_1_hex",
+        "slot_1_lo_u16",
+        "slot_1_hi_u16",
+        "slot_2",
+        "slot_2_hex",
+        "slot_2_lo_u16",
+        "slot_2_hi_u16",
+        "raw_preview",
+        "body_preview"
+      ];
+
+      if (path === "staff.type10") {
+        return dedupeColumns([...base, ...columns.filter((column) => column.startsWith("attr_")).slice(0, 10)]);
+      }
+
+      return dedupeColumns([...base, ...columns]).filter((column) => columns.includes(column)).slice(0, 18);
+    }
+
+    function dedupeColumns(columns) {
+      return [...new Set(columns)];
+    }
+
+    function sortableValue(value) {
+      if (value === null || value === undefined) {
+        return "";
+      }
+      if (typeof value === "number") {
+        return value;
+      }
+      return String(value).toLowerCase();
+    }
+
+    function rowKey(row) {
+      if (row && typeof row === "object") {
+        if (row.ordinal !== undefined) {
+          return `ordinal:${row.ordinal}`;
+        }
+        if (row.id !== undefined && row.staff_bucket !== undefined) {
+          return `staff:${row.staff_bucket}:${row.id}`;
+        }
+        if (row.id !== undefined) {
+          return `id:${row.id}`;
+        }
+        if (row.filename) {
+          return `file:${row.filename}:${row.kind ?? ""}`;
+        }
+        if (row.name) {
+          return `name:${row.name}`;
+        }
+      }
+      return JSON.stringify(row);
+    }
+
+    function exportCurrentViewCsv() {
+      if (!lastRenderedContext || lastRenderedContext.sortedRows.length === 0) {
+        return;
+      }
+
+      const rows = lastRenderedContext.sortedRows;
+      const columns = lastRenderedContext.visibleColumns;
+      const header = columns.map(csvEscape).join(",");
+      const body = rows
+        .map((row) => columns.map((column) => csvEscape(formatCell(row[column]))).join(","))
+        .join("\n");
+      const csv = `${header}\n${body}`;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = csvFilename(lastRenderedContext.dataset.label);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvFilename(label) {
+      const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      return `${slug || "dataset"}_${currentSnapshotName.replace(/\.json$/i, "") || "world"}.csv`;
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (!/[",\n]/.test(text)) {
+        return text;
+      }
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function rowMatches(row, term) {
+      if (!term) {
+        return true;
+      }
+      return JSON.stringify(row).toLowerCase().includes(term);
+    }
+
+    function formatCell(value) {
+      if (value === null || value === undefined) {
+        return "";
+      }
+      if (Array.isArray(value)) {
+        const preview = value.slice(0, 12).join(", ");
+        const suffix = value.length > 12 ? ", ..." : "";
+        return `[${value.length}] ${preview}${suffix}`;
+      }
+      if (typeof value === "object") {
+        return JSON.stringify(value);
+      }
+      return String(value);
+    }
+
+    function cleanDisplayText(value) {
+      return String(value ?? "").replace(/^\u00ff+/, "").trim();
+    }
+
+    function compareColumnNames(a, b) {
+      const scoreA = columnPriority(a);
+      const scoreB = columnPriority(b);
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB;
+      }
+      return a.localeCompare(b, undefined, { numeric: true });
+    }
+
+    function columnPriority(name) {
+      const fixed = [
+        "ordinal",
+        "id",
+        "name",
+        "decode_status",
+        "record_id",
+        "competition_name",
+        "competition_id",
+        "staff_id",
+        "primary_name",
+        "secondary_name",
+        "text",
+        "primary_text",
+        "secondary_text",
+        "tertiary_text",
+        "long_name",
+        "short_name",
+        "staff_bucket",
+        "text_preview",
+        "text_offset",
+        "text_length",
+        "record_size",
+        "body_size",
+        "probable_ca",
+        "probable_pa",
+        "probable_reputation",
+        "unknown_byte_4"
+      ];
+      const fixedIndex = fixed.indexOf(name);
+      if (fixedIndex !== -1) {
+        return fixedIndex;
+      }
+      if (name.startsWith("text_") && !name.includes("_offset") && !name.includes("_length")) {
+        return 20;
+      }
+      if (name.includes("_offset")) {
+        return 21;
+      }
+      if (name.includes("_length")) {
+        return 22;
+      }
+      if (name.startsWith("u32_")) {
+        return 30;
+      }
+      if (name.startsWith("u16_")) {
+        return 31;
+      }
+      if (name.startsWith("slot_")) {
+        return 32;
+      }
+      if (name.startsWith("attr_")) {
+        return 40;
+      }
+      if (name.startsWith("tail_")) {
+        return 50;
+      }
+      if (name.endsWith("_preview")) {
+        return 90;
+      }
+      return 60;
+    }
+
+    function getPath(source, path) {
+      return path.split(".").reduce((value, key) => (value ? value[key] : undefined), source);
+    }
+
+    function setEmptyState(message) {
+      snapshotName.textContent = "No file loaded";
+      datasetCount.textContent = "0";
+      rowCount.textContent = "0";
+      columnCount.textContent = "0";
+      pageStatus.textContent = "Page 1 of 1";
+      prevPageButton.disabled = true;
+      nextPageButton.disabled = true;
+      exportCsvButton.disabled = true;
+      datasetList.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+      tableTitle.textContent = "No dataset selected";
+      tableMeta.textContent = message;
+      tableWrap.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+      rowInspector.textContent = "Select a row to inspect the full record.";
+      lastRenderedContext = null;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+  </script>
+</body>
+</html>

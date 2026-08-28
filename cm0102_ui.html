@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CM0102 Rust Replica UI</title>
+  <style>
+    :root {
+      --cream: #eee6d4;
+      --panel: #d7d0bd;
+      --panel-dark: #aaa38f;
+      --line: #45483f;
+      --green: #214e3d;
+      --green-dark: #102a22;
+      --blue: #1e4058;
+      --ink: #121510;
+      --muted: #4f554f;
+      --button: #c7c0ad;
+      --button-hi: #f8f2df;
+      --button-lo: #6f6a5d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #121611;
+      color: var(--ink);
+      font-family: "Arial Narrow", "Arial", sans-serif;
+    }
+
+    .game-shell {
+      width: min(100vw, 960px);
+      aspect-ratio: 4 / 3;
+      max-height: 100vh;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #000;
+      background:
+        linear-gradient(rgba(16, 42, 34, .83), rgba(16, 42, 34, .83)),
+        url("/assets/cm0102/Pictures/team.png") center / cover no-repeat;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .62);
+    }
+
+    .topbar {
+      height: 58px;
+      display: grid;
+      grid-template-columns: 180px 1fr 140px;
+      align-items: center;
+      background: linear-gradient(#e7dfc9, #aaa28c);
+      border-bottom: 2px solid #1b1d19;
+      padding: 7px 10px;
+      gap: 10px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: Georgia, serif;
+      font-weight: 900;
+      letter-spacing: -1px;
+      font-size: 24px;
+    }
+
+    .logo img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      background: #111;
+      border: 1px solid #444;
+    }
+
+    .screen-title {
+      border: 1px solid #646050;
+      background: #efe8d6;
+      padding: 6px 10px;
+      font-weight: 700;
+      box-shadow: inset 1px 1px var(--button-hi), inset -1px -1px var(--button-lo);
+    }
+
+    .continue {
+      border: 1px solid #111;
+      background: linear-gradient(#f2ecd8, #bcb49e);
+      padding: 9px 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: inset 1px 1px white, inset -2px -2px #6b6558;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 156px 1fr;
+      height: calc(100% - 58px);
+    }
+
+    nav {
+      border-right: 2px solid #111;
+      background: rgba(222, 214, 192, .94);
+      padding: 10px 8px;
+    }
+
+    nav button {
+      width: 100%;
+      display: block;
+      margin-bottom: 6px;
+      padding: 8px 7px;
+      text-align: left;
+      border: 1px solid #20231e;
+      background: linear-gradient(#eee6d2, #b8af99);
+      box-shadow: inset 1px 1px white, inset -1px -1px #6f6858;
+      color: #111;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    nav button.active {
+      background: linear-gradient(#2b654e, #173529);
+      color: white;
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .status-box,
+    .panel {
+      border: 1px solid #222;
+      background: rgba(226, 219, 199, .96);
+      box-shadow: inset 1px 1px #fff8e4, inset -1px -1px #746d5e;
+    }
+
+    .status-box {
+      padding: 7px 9px;
+      min-height: 42px;
+      font-size: 13px;
+    }
+
+    .status-box strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .panel {
+      min-height: 0;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: 32px 1fr;
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 7px 10px;
+      background: linear-gradient(#2b5d49, #142f25);
+      color: white;
+      font-size: 16px;
+      border-bottom: 1px solid #111;
+    }
+
+    .panel-body {
+      padding: 10px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: #eee8d7;
+    }
+
+    th {
+      background: #bbb39d;
+      color: #10130f;
+      border: 1px solid #77705f;
+      padding: 5px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      border: 1px solid #c7bea9;
+      padding: 4px 5px;
+    }
+
+    tr:nth-child(even) td { background: #e0d8c3; }
+    tr.selected td { background: #244f3f; color: white; }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .news-item,
+    .fixture-card {
+      border: 1px solid #9b927f;
+      background: #f0ead9;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+
+    .hint { color: var(--muted); font-size: 12px; }
+    .mono { font-family: "Courier New", monospace; }
+
+    @media (max-width: 760px) {
+      .game-shell {
+        width: 100vw;
+        height: 100vh;
+        aspect-ratio: auto;
+      }
+      .topbar { grid-template-columns: 1fr; height: auto; }
+      .layout { grid-template-columns: 1fr; height: auto; }
+      nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; border-right: 0; }
+      nav button { margin: 0; text-align: center; }
+      .status-strip, .home-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div class="logo"><img src="/assets/cm0102/Data/logo.png" alt=""> CM 01/02</div>
+      <div class="screen-title" id="screenTitle">Manager Home</div>
+      <button class="continue" id="continueButton" type="button">Continue</button>
+    </header>
+    <section class="layout">
+      <nav aria-label="CM0102 replica navigation">
+        <button type="button" class="active" data-screen="home">Home</button>
+        <button type="button" data-screen="squad">Squad</button>
+        <button type="button" data-screen="fixtures">Fixtures</button>
+        <button type="button" data-screen="table">Table</button>
+        <button type="button" data-screen="inbox">News</button>
+        <button type="button" data-screen="tactics">Tactics</button>
+      </nav>
+      <section class="content">
+        <div class="status-strip">
+          <div class="status-box"><strong id="clubName">No club</strong><span id="managerLine">Select a club in the Rust viewer first.</span></div>
+          <div class="status-box"><strong id="dateLine">--</strong><span id="phaseLine">Runtime not loaded</span></div>
+          <div class="status-box"><strong id="recordLine">--</strong><span id="nextLine">No fixture loaded</span></div>
+        </div>
+        <div class="panel">
+          <h2 id="panelTitle">Manager Home</h2>
+          <div class="panel-body" id="panelBody">Loading Rust manager session...</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin || "http://127.0.0.1:8765";
+    const state = { screen: "home", dashboard: null, squad: null, season: null };
+    const panelTitle = document.getElementById("panelTitle");
+    const panelBody = document.getElementById("panelBody");
+    const screenTitle = document.getElementById("screenTitle");
+    const clubName = document.getElementById("clubName");
+    const managerLine = document.getElementById("managerLine");
+    const dateLine = document.getElementById("dateLine");
+    const phaseLine = document.getElementById("phaseLine");
+    const recordLine = document.getElementById("recordLine");
+    const nextLine = document.getElementById("nextLine");
+
+    document.querySelectorAll("nav button").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.screen = button.dataset.screen;
+        document.querySelectorAll("nav button").forEach((item) => item.classList.toggle("active", item === button));
+        render();
+      });
+    });
+
+    document.getElementById("continueButton").addEventListener("click", async () => {
+      panelBody.innerHTML = "Continuing to next fixture...";
+      const response = await fetch(`${API_BASE}/api/headless/manager/run-next-fixture`, { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } });
+      if (!response.ok) {
+        panelBody.innerHTML = `<div class="news-item">Continue failed: ${escapeHtml(await response.text())}</div>`;
+        return;
+      }
+      await loadAll();
+    });
+
+    async function loadJson(path) {
+      const response = await fetch(`${API_BASE}${path}`);
+      if (!response.ok) throw new Error(`${path} HTTP ${response.status}`);
+      return response.json();
+    }
+
+    async function loadAll() {
+      try {
+        state.dashboard = await loadJson("/api/headless/manager-dashboard");
+        state.squad = await loadJson("/api/headless/manager-squad");
+        state.season = await loadJson("/api/headless/season");
+        render();
+      } catch (error) {
+        panelBody.innerHTML = `<div class="news-item">Could not load replica UI data: ${escapeHtml(error.message)}. Select a manager club first in the diagnostic viewer.</div>`;
+      }
+    }
+
+    function renderChrome() {
+      const dashboard = state.dashboard || {};
+      const club = dashboard.selected_club || {};
+      const manager = dashboard.manager || {};
+      const totals = dashboard.totals || {};
+      clubName.textContent = club.name || "No club selected";
+      managerLine.textContent = manager.name ? `${manager.name} | ${manager.status || ""}` : "No manager profile";
+      dateLine.textContent = formatDate(dashboard.date);
+      phaseLine.textContent = `Phase ${dashboard.phase ?? "-"} | elapsed ${dashboard.elapsed_days || 0} day(s)`;
+      recordLine.textContent = `${totals.all_played || 0}/${totals.all_fixtures || 0} played`;
+      nextLine.textContent = dashboard.next_fixture
+        ? `${dashboard.next_fixture.home_club_name} v ${dashboard.next_fixture.away_club_name}`
+        : "No pending fixture";
+    }
+
+    function render() {
+      renderChrome();
+      const titles = { home: "Manager Home", squad: "Squad", fixtures: "Fixtures", table: "League Table", inbox: "News", tactics: "Tactics" };
+      panelTitle.textContent = titles[state.screen] || "Manager Home";
+      screenTitle.textContent = panelTitle.textContent;
+      if (state.screen === "squad") renderSquad();
+      else if (state.screen === "fixtures") renderFixtures();
+      else if (state.screen === "table") renderTable();
+      else if (state.screen === "inbox") renderInbox();
+      else if (state.screen === "tactics") renderTactics();
+      else renderHome();
+    }
+
+    function renderHome() {
+      const dashboard = state.dashboard || {};
+      const reports = dashboard.recent_reports || [];
+      const next = dashboard.next_fixture;
+      panelBody.innerHTML = `
+        <div class="home-grid">
+          <div>
+            <div class="fixture-card">
+              <strong>Next Match</strong>
+              ${next ? `<div>${escapeHtml(next.home_club_name)} v ${escapeHtml(next.away_club_name)}</div><div class="hint">${escapeHtml(next.competition_name)} | ${formatDate(next.date)}</div>` : `<div>No pending fixture.</div>`}
+            </div>
+            <div class="fixture-card">
+              <strong>Replica Status</strong>
+              <div>Rust-owned save, manager dashboard, squad, fixtures, table, and news are live.</div>
+              <div class="hint">UI coordinates/theme are first-pass replica shell; exact rectangles still need deeper render-function lift.</div>
+            </div>
+          </div>
+          <div>${reports.slice(0, 4).map(reportCard).join("") || "<div class='news-item'>No match reports yet.</div>"}</div>
+        </div>`;
+    }
+
+    function renderSquad() {
+      const slots = (state.squad?.slots || []).slice(0, 30);
+      panelBody.innerHTML = `<table><thead><tr><th>Pick</th><th>Role</th><th>Staff</th><th>0x05</th><th>0x07</th><th>Avg</th><th>Top Attrs</th></tr></thead><tbody>
+        ${slots.map((slot) => `<tr class="${slot.suggested_selection ? "selected" : ""}"><td>${slot.suggested_selection ? "XI" : "Sub"}</td><td>${escapeHtml(slot.suggested_role || "")}</td><td>${slot.staff_id}<div class="hint">${escapeHtml(slot.record_offset || "")}</div></td><td>${slot.rating_short_0x05 ?? "-"}</td><td>${slot.rating_short_0x07 ?? "-"}</td><td>${slot.attribute_average ?? "-"}</td><td>${escapeHtml((slot.top_attributes || []).map((attr) => `${attr.field}:${attr.value}`).join(", "))}</td></tr>`).join("")}
+      </tbody></table>`;
+    }
+
+    function renderFixtures() {
+      const clubId = state.dashboard?.selected_club?.id;
+      const fixtures = (state.season?.fixtures || state.dashboard?.recent_reports || [])
+        .filter((fixture) => !clubId || fixture.home_club_id === clubId || fixture.away_club_id === clubId)
+        .slice(0, 40);
+      panelBody.innerHTML = fixtures.map((fixture) => `
+        <div class="fixture-card">
+          <strong>${escapeHtml(fixture.home_club_name)} v ${escapeHtml(fixture.away_club_name)}</strong>
+          <div class="hint">${escapeHtml(fixture.competition_name || "")} | ${formatDate(fixture.date)} | ${escapeHtml(fixture.status || "")}</div>
+          <div>${fixture.scoreline ? escapeHtml(fixture.scoreline) : "Not played"}</div>
+        </div>`).join("") || "<div class='news-item'>No fixtures loaded.</div>";
+    }
+
+    function renderTable() {
+      const rows = state.season?.standings || [];
+      const clubId = state.dashboard?.selected_club?.id;
+      panelBody.innerHTML = `<table><thead><tr><th>Pos</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>
+        ${rows.slice(0, 40).map((row, index) => `<tr class="${row.club_id === clubId ? "selected" : ""}"><td>${index + 1}</td><td>${escapeHtml(row.club_name)}</td><td>${row.played}</td><td>${row.won}</td><td>${row.drawn}</td><td>${row.lost}</td><td>${row.goal_difference}</td><td><strong>${row.points}</strong></td></tr>`).join("")}
+      </tbody></table>`;
+    }
+
+    function renderInbox() {
+      const inbox = state.dashboard?.inbox || state.season?.inbox || [];
+      panelBody.innerHTML = inbox.slice(0, 30).map((item) => `<div class="news-item"><strong>${escapeHtml(item.kind || "News")}</strong><div>${escapeHtml(item.message || "")}</div><div class="hint">${formatDate(item.date)} | day ${item.day ?? "-"}</div></div>`).join("") || "<div class='news-item'>No news.</div>";
+    }
+
+    function renderTactics() {
+      const tactics = state.squad?.tactics || {};
+      panelBody.innerHTML = `
+        <div class="fixture-card"><strong>${escapeHtml(tactics.formation || "4-4-2")}</strong><div>${escapeHtml(tactics.selection_rule || "")}</div><div class="hint">${escapeHtml(tactics.provenance || "")}</div></div>
+        <p>This is the first UI contract for tactics. The next lift needs original tactic screen coordinates, persisted tactic blocks, and human team-pick mutation semantics.</p>`;
+    }
+
+    function reportCard(report) {
+      return `<div class="news-item"><strong>${escapeHtml(report.headline || "Match report")}</strong><div>${escapeHtml(report.summary || "")}</div></div>`;
+    }
+
+    function formatDate(date) {
+      if (!date) return "--";
+      return `${String(date.day).padStart(2, "0")}/${String(date.month).padStart(2, "0")}/${date.year}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>

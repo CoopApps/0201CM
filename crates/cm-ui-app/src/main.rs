@@ -51,6 +51,15 @@ enum Screen {
         view: cm_domain::DashboardView,
         squad_scroll: usize,
     },
+    /// Widget-pool debug view — draws the raw widget records produced by
+    /// `impl RenderableView::to_widget_pool()` as coloured rectangles labelled
+    /// by kind, for visual confirmation that a ported View lays out where the
+    /// exe capture said it should. Reached via `CM_BOOT=news-widgets` /
+    /// `CM_BOOT=dash-widgets` — no user path yet.
+    WidgetPoolDebug {
+        label: String,
+        widgets: Vec<cm_render::widget_pool::Widget>,
+    },
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -146,6 +155,11 @@ impl App {
                 screens::dashboard(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *squad_scroll);
                 self.overlay_menu_bar();
             }
+            Screen::WidgetPoolDebug { label, widgets } => {
+                screens::draw_widget_pool_debug(
+                    &mut self.frame, &mut self.fonts, widgets, label,
+                );
+            }
         }
     }
 
@@ -156,6 +170,7 @@ impl App {
             let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
             screens::menu_sidebar(
                 &mut self.frame, &mut self.fonts, &bar, self.menu_open, &game.save.date,
+                game.save.simulation.phase,
             );
         }
         if let Some(msg) = self.status.clone() {
@@ -188,7 +203,7 @@ impl App {
                     None => Pressed::None,
                 }
             }
-            Screen::Dashboard { .. } | Screen::News { .. } => Pressed::None,
+            Screen::Dashboard { .. } | Screen::News { .. } | Screen::WidgetPoolDebug { .. } => Pressed::None,
         }
     }
 
@@ -386,6 +401,9 @@ impl App {
             }
             Screen::Dashboard { .. } => {
                 // The squad/info screen has no non-menu controls wired yet.
+            }
+            Screen::WidgetPoolDebug { .. } => {
+                // Debug view — clicks are inert.
             }
         }
         if news_note {
@@ -592,6 +610,48 @@ impl App {
             dirty: false,
         });
         self.screen = Screen::EnterName;
+    }
+
+    /// Dev shortcut (CM_BOOT=news-widgets / dash-widgets): render the raw
+    /// widget-pool produced by a ported View's `to_widget_pool()` as coloured,
+    /// labelled rectangles. Lets a human eyeball "yes, N widgets in the right
+    /// positions" against the golden test (News = 11 for tab_count=8).
+    fn boot_widget_pool_debug(&mut self, which: &str) {
+        use cm_render::view_render::RenderableView;
+        let (label, widgets) = match which {
+            "news-widgets" => {
+                // Build a NewsView. If the world+game are present we use the
+                // real one (an already-installed manager); otherwise fall back
+                // to a hand-built sample so the debug view works standalone.
+                let view = if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                    world.news_for(&game.save, game.save.active_human)
+                } else {
+                    cm_domain::NewsView {
+                        title: "News".into(),
+                        items: vec![],
+                        selected_tab: 0,
+                        tab_count: 8,
+                        selected_item: 0,
+                        nav_back_enabled: true,
+                        nav_next_enabled: false,
+                    }
+                };
+                let widgets = view.to_widget_pool();
+                ("NewsView".to_string(), widgets)
+            }
+            "dash-widgets" => {
+                let view = cm_domain::screen_club_dashboard::ClubDashboardView::default();
+                let widgets = view.to_widget_pool();
+                ("ClubDashboardView".to_string(), widgets)
+            }
+            _ => return,
+        };
+        eprintln!(
+            "[boot] widget-pool debug: {} produced {} widgets",
+            label,
+            widgets.len()
+        );
+        self.screen = Screen::WidgetPoolDebug { label, widgets };
     }
 
     /// Dev shortcut (CM_BOOT=dashboard): skip the setup flow — build an England
@@ -998,7 +1058,7 @@ fn dump(path: &str, which: &str) {
                         let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
                         // Open a drop-down for the screenshot if CM_MENU_OPEN=N.
                         let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
-                        screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date);
+                        screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
                     }
                 }
             }
@@ -1025,7 +1085,7 @@ fn dump(path: &str, which: &str) {
                     screens::news(&mut frame, &mut fonts, bg.as_ref(), &view, 0, 0, tab);
                     let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
                     let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
-                    screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date);
+                    screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
                 }
             }
             _ => {
@@ -1117,9 +1177,14 @@ fn main() {
     let event_loop = EventLoop::new().unwrap();
     let mut app = App::default();
     app.world = world;
-    // Dev shortcut: CM_BOOT=dashboard jumps past the setup flow.
-    if std::env::var("CM_BOOT").as_deref() == Ok("dashboard") {
-        app.boot_dashboard();
+    // Dev shortcut: CM_BOOT selects a jump target past the setup flow.
+    //   dashboard      → News page for an England / Arsenal / Fergie test game
+    //   news-widgets   → raw NewsView widget-pool debug (colour-coded rects)
+    //   dash-widgets   → raw ClubDashboardView widget-pool debug
+    match std::env::var("CM_BOOT").ok().as_deref() {
+        Some("dashboard") => app.boot_dashboard(),
+        Some(v @ ("news-widgets" | "dash-widgets")) => app.boot_widget_pool_debug(v),
+        _ => {}
     }
     event_loop.run_app(&mut app).unwrap();
 }
