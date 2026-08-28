@@ -1,38 +1,36 @@
-"""Live screen capture from the REAL running cm0102.exe via Frida.
+"""Live screen capture from the REAL running cm0102.exe via Frida — v2.
 
-Replaces the Unicorn empty-state emulation as the capture source
-(DIRECTDRAW_CAPTURE_HANDOVER.md §11: the emulation route only ever sees
-the pre-loop chrome; the live game has real state, real text, real
-everything). Same 4 light hooks that ran crash-free in the News session:
+v1 hooked the 4 constructors and saved each screen build as a burst.
+v2 adds, at the end of every burst (the screen is finished drawing):
 
-    GUIO 0x549580   widget constructor   (18 args)
-    AREA 0x549790   area constructor     (11 args)
-    TABS 0x5D7070   tab-strip builder    (6 args)
-    NAV  0x5D75B0   bottom nav bar       (2 args)
+  1. WIDGET-POOL DUMP — raw bytes of the GUI record pool (base 0xB59FE8;
+     areas at +4 stride 0xBF1 count@+0x12E99E; widgets at +0xBA95E stride
+     0x18C count@+0x12E9A0 — reports/gui_layout_engine_decode.md). This
+     holds every widget's FINAL post-layout rect: table cells, pagers,
+     dropdowns — everything the pre-layout constructor args can't show.
+     Decoded offline; the capture stores raw slabs, zero interpretation.
+  2. FRAME GRAB — the full back buffer (DAT_00AD6BD4) via its own Lock
+     vtable method (idx 25, DDSURFACEDESC dwSize=0x6C, lpSurface@0x24,
+     lPitch@0x10, RGB565), the exact recipe validated in the News color
+     session (DIRECTDRAW_CAPTURE_HANDOVER.md §11). A true screenshot of
+     what the exe rendered — ground truth for colors and pixel diffs.
+  3. Constructor events are BATCHED (one send per ~150ms, not per call)
+     to keep long sessions light on the game process.
+  4. Text is captured as raw bytes (hex), decoded offline — v1's
+     readCString run mangled non-ASCII tails.
 
-Safety: before installing any hook, the first 8 bytes at every hook
-address in the LIVE process are compared against the same bytes in the
-decompiled reference exe (D:/cm0102/cm0102.exe). Any mismatch = wrong
-exe version (e.g. 3.9.68 vs 3.9.60) and the script aborts untouched.
-
-Text pointers are dereferenced AT CONSTRUCTION TIME inside the hook --
-many widgets share one scratch buffer that the next construction
-overwrites (§11), so reading later shows only the last string.
+Safety: before installing anything, the first 8 bytes at every hook
+address in the LIVE process are compared against the reference exe
+(D:/cm0102/cm0102.exe). Mismatch = wrong build; abort untouched.
 
 Usage:
-    1) Start the game normally, load a save / navigate anywhere.
-    2) D:/Python312/python.exe tools/frida_live_capture.py
-    3) Navigate to the screen you want. Every screen (re)build arrives
-       as a numbered burst: `burst 3: guio=617 area=65 tabs=2 nav=1`.
-    4) Type a name (e.g. `club_squad`) + Enter to save the LAST burst to
-       reports/screen_captures/live/<name>.json. Empty Enter re-prints
-       the last burst summary. `q` quits.
-
-Output schema matches tools/capture_all_screens.py (areas/objects/tabs/
-nav/slots field names) so the downstream pipeline (gen_screen_rs.py ->
-verify_screens.py) consumes it unchanged, with two live-only extras per
-record: "text_str" (dereferenced text) and "caller" (return address,
-for attributing sidebar/chrome noise to its builder).
+    1) Start the game, load a save.
+    2) D:/Python312/python.exe tools/frida_live_capture.py --auto
+    3) Play. Every screen build auto-saves:
+         reports/screen_captures/live/burst_NNN.json        constructor stream
+         reports/screen_captures/live/burst_NNN.pool.bin    raw pool slabs
+         reports/screen_captures/live/burst_NNN.frame.bin   RGB565 frame
+    4) Ctrl+C when done; the game keeps running.
 """
 import json
 import struct
@@ -56,18 +54,17 @@ HOOKS = {
     "nav":  (0x005D75B0, 2),
 }
 
-# Field names per capture_all_screens.py.
 AREA_FIELDS = ["L", "T", "R", "B", "cntA", "wA", "cntB", "wB", "flags", "a10", "parent"]
 GUIO_FIELDS = ["type", "L", "T", "R", "B", "a6", "a7", "rflags",
                "colP", "colS", "tflags", "font", "tmode", "text",
                "a15", "a16", "a17", "parent"]
 GUIO_TEXT_ARG = GUIO_FIELDS.index("text")
 
-BURST_GAP = 0.4  # seconds of silence that ends a screen-build burst
+BURST_GAP = 0.4   # seconds of silence that ends a screen-build burst
+FRAME_W, FRAME_H = 800, 600
 
 
 def ref_bytes_at(vaddrs, n=8):
-    """Read n bytes at each VA from the reference exe on disk."""
     exe = REF_EXE.read_bytes()
     pe = struct.unpack_from("<I", exe, 0x3C)[0]
     nsec = struct.unpack_from("<H", exe, pe + 6)[0]
@@ -83,8 +80,7 @@ def ref_bytes_at(vaddrs, n=8):
         rva = v - IB
         for va, vsz, rawsz, rawp in secs:
             if va <= rva < va + rawsz:
-                off = rawp + (rva - va)
-                out[v] = exe[off:off + n]
+                out[v] = exe[rawp + (rva - va):rawp + (rva - va) + n]
                 break
         else:
             sys.exit(f"reference exe: 0x{v:08x} not in any section")
@@ -96,20 +92,33 @@ JS = r"""
 const HOOKS = %HOOKS%;
 const GUIO_TEXT_ARG = %TEXT_ARG%;
 
-// Version guard: report live bytes at each hook address; Python compares
-// against the reference exe and only then sends {kind:'arm'}.
+// Pool globals (reports/gui_layout_engine_decode.md).
+const POOL_BASE   = ptr('0xB59FE8');
+const AREA_OFF    = 4,        AREA_STRIDE = 0xBF1, AREA_CNT_OFF = 0x12E99E, AREA_CAP = 0xF8;
+const WIDGET_OFF  = 0xBA95E,  WIDGET_STRIDE = 0x18C, WIDGET_CNT_OFF = 0x12E9A0, WIDGET_CAP = 0x4AF;
+// Back buffer (DIRECTDRAW_CAPTURE_HANDOVER.md §11).
+const BACK_SURF_PP = ptr('0xAD6BD4');
+const VTBL_LOCK = 25, VTBL_UNLOCK = 32;
+const W = 800, H = 600;
+
+// --- version guard ---------------------------------------------------------
 const probe = {};
-for (const k in HOOKS) {
-    const addr = ptr(HOOKS[k][0]);
-    probe[k] = addr.readByteArray(8);
-}
+for (const k in HOOKS) probe[k] = ptr(HOOKS[k][0]).readByteArray(8);
 send({ kind: 'probe' }, (function () {
-    // concat the 4 byte-arrays in hook-name order for the payload
     const names = Object.keys(HOOKS).sort();
-    let total = new Uint8Array(names.length * 8);
+    const total = new Uint8Array(names.length * 8);
     names.forEach((k, i) => total.set(new Uint8Array(probe[k]), i * 8));
     return total.buffer;
 })());
+
+// --- batched constructor events -------------------------------------------
+let queue = [];
+function flush() {
+    if (!queue.length) return;
+    const batch = queue; queue = [];
+    send({ kind: 'calls', events: batch });
+}
+setInterval(flush, 150);
 
 recv('arm', function () {
     let seq = 0;
@@ -121,10 +130,8 @@ recv('arm', function () {
                 for (let i = 0; i < nargs; i++) a.push(args[i].toInt32());
                 let text = null;
                 if (name === 'guio') {
-                    // Raw bytes, hex-encoded: the game's strings are
-                    // latin-1 with markup bytes; terminator semantics are
-                    // decided offline from the raw evidence, not guessed
-                    // here (readCString mangled them as UTF-8).
+                    // Raw hex bytes; terminator decoded offline (v1 lesson:
+                    // readCString's UTF-8 decode mangled latin-1 strings).
                     try {
                         const p = args[GUIO_TEXT_ARG];
                         if (!p.isNull()) {
@@ -137,71 +144,105 @@ recv('arm', function () {
                     } catch (e) {}
                 }
                 if (name === 'tabs') {
-                    // top_y/bot_y arrive as pointers (args 3,4) -- deref now,
-                    // keep raw pointers too (p4/p5), matching the emulator.
                     try { a.push(args[3].isNull() ? null : args[3].readS32()); } catch (e) { a.push(null); }
                     try { a.push(args[4].isNull() ? null : args[4].readS32()); } catch (e) { a.push(null); }
                 }
-                send({ kind: 'call', fn: name, seq: seq++, args: a, text: text,
-                       caller: this.returnAddress.toString() });
+                queue.push({ fn: name, seq: seq++, args: a, text: text,
+                             caller: this.returnAddress.toString() });
+                if (queue.length >= 500) flush();
             }
         });
     }
     send({ kind: 'armed' });
 });
+
+// --- burst-end dump: raw pool slabs + back-buffer frame --------------------
+recv('dump', function onDump(msg) {
+    const burst = msg.burst;
+    try {
+        let na = POOL_BASE.add(AREA_CNT_OFF).readS16();
+        let nw = POOL_BASE.add(WIDGET_CNT_OFF).readS16();
+        if (na < 0 || na > AREA_CAP) na = 0;
+        if (nw < 0 || nw > WIDGET_CAP) nw = 0;
+        const areas = na ? POOL_BASE.add(AREA_OFF).readByteArray(na * AREA_STRIDE) : new ArrayBuffer(0);
+        const widgets = nw ? POOL_BASE.add(WIDGET_OFF).readByteArray(nw * WIDGET_STRIDE) : new ArrayBuffer(0);
+        const total = new Uint8Array(areas.byteLength + widgets.byteLength);
+        total.set(new Uint8Array(areas), 0);
+        total.set(new Uint8Array(widgets), areas.byteLength);
+        send({ kind: 'pool', burst: burst, n_areas: na, n_widgets: nw,
+               area_stride: AREA_STRIDE, widget_stride: WIDGET_STRIDE }, total.buffer);
+    } catch (e) {
+        send({ kind: 'pool-error', burst: burst, error: '' + e });
+    }
+    try {
+        const surf = BACK_SURF_PP.readPointer();
+        const vtbl = surf.readPointer();
+        const Lock = new NativeFunction(vtbl.add(VTBL_LOCK * 4).readPointer(),
+            'int', ['pointer', 'pointer', 'pointer', 'uint', 'pointer'], 'stdcall');
+        const Unlock = new NativeFunction(vtbl.add(VTBL_UNLOCK * 4).readPointer(),
+            'int', ['pointer', 'pointer'], 'stdcall');
+        const desc = Memory.alloc(0x6C);
+        desc.writeU32(0x6C);
+        // DDLOCK_WAIT(1) | DDLOCK_READONLY(0x10)
+        const hr = Lock(surf, NULL, desc, 0x11, NULL);
+        if (hr === 0) {
+            const lp = desc.add(0x24).readPointer();
+            const pitch = desc.add(0x10).readS32();
+            const frame = new Uint8Array(W * H * 2);
+            for (let y = 0; y < H; y++) {
+                frame.set(new Uint8Array(lp.add(y * pitch).readByteArray(W * 2)), y * W * 2);
+            }
+            Unlock(surf, NULL);
+            send({ kind: 'frame', burst: burst, w: W, h: H }, frame.buffer);
+        } else {
+            send({ kind: 'frame-error', burst: burst, error: 'Lock hr=0x' + (hr >>> 0).toString(16) });
+        }
+    } catch (e) {
+        send({ kind: 'frame-error', burst: burst, error: '' + e });
+    }
+    recv('dump', onDump);   // re-arm for the next dump request
+});
 """
 
 
 class Collector:
-    def __init__(self, auto=False):
+    def __init__(self, script):
         self.lock = threading.Lock()
+        self.script = script
         self.current = []
-        self.last_burst = None
         self.last_t = 0.0
         self.burst_no = 0
-        self.auto = auto
 
-    def add(self, msg):
+    def add_batch(self, events):
         now = time.monotonic()
         with self.lock:
             if self.current and now - self.last_t > BURST_GAP:
                 self._close()
-            self.current.append(msg)
+            self.current.extend(events)
             self.last_t = now
 
     def _close(self):
         self.burst_no += 1
-        self.last_burst = self.current
-        n = {}
-        for m in self.current:
-            n[m["fn"]] = n.get(m["fn"], 0) + 1
-        summary = " ".join(f"{k}={v}" for k, v in sorted(n.items()))
-        if self.auto:
-            name = f"burst_{self.burst_no:03d}"
-            out = OUT_DIR / f"{name}.json"
-            out.write_text(
-                json.dumps(burst_to_json(name, self.last_burst), indent=1),
-                encoding="utf-8")
-            print(f"burst {self.burst_no}: {summary} -> saved {out.name}",
-                  flush=True)
-        else:
-            print(f"\nburst {self.burst_no}: {summary}"
-                  "   (type a name + Enter to save)", flush=True)
+        burst = self.current
         self.current = []
+        n = {}
+        for m in burst:
+            n[m["fn"]] = n.get(m["fn"], 0) + 1
+        name = f"burst_{self.burst_no:03d}"
+        out = OUT_DIR / f"{name}.json"
+        out.write_text(json.dumps(burst_to_json(name, burst), indent=1),
+                       encoding="utf-8")
+        summary = " ".join(f"{k}={v}" for k, v in sorted(n.items()))
+        print(f"burst {self.burst_no}: {summary} -> {out.name} (+pool +frame)",
+              flush=True)
+        # The screen has been idle >= BURST_GAP: layout has run and the back
+        # buffer holds the finished frame. Ask the agent for both dumps.
+        self.script.post({"type": "dump", "burst": name})
 
     def flush_if_idle(self):
         with self.lock:
             if self.current and time.monotonic() - self.last_t > BURST_GAP:
                 self._close()
-
-    def take_last(self):
-        with self.lock:
-            self.flush_if_idle_locked()
-            return self.last_burst
-
-    def flush_if_idle_locked(self):
-        if self.current and time.monotonic() - self.last_t > BURST_GAP:
-            self._close()
 
 
 def burst_to_json(name, burst):
@@ -218,9 +259,8 @@ def burst_to_json(name, burst):
             raw = m.get("text")
             rec["text_hex"] = raw
             if raw:
-                b = bytes.fromhex(raw)
-                cut = b.split(b"\x00", 1)[0]
-                rec["text_str"] = cut.decode("latin-1", "replace")
+                b = bytes.fromhex(raw).split(b"\x00", 1)[0]
+                rec["text_str"] = b.decode("latin-1", "replace")
             else:
                 rec["text_str"] = None
             rec["caller"] = m["caller"]
@@ -234,11 +274,10 @@ def burst_to_json(name, burst):
             nav.append({"back": a[0], "next": a[1], "caller": m["caller"]})
     return {"screen": name, "areas": areas, "objects": objects,
             "tabs": tabs, "nav": nav, "slots": [],
-            "source": "frida-live"}
+            "source": "frida-live-v2"}
 
 
 def main():
-    auto = "--auto" in sys.argv
     try:
         session = frida.attach(PROC)
     except frida.ProcessNotFoundError:
@@ -249,16 +288,17 @@ def main():
         "%TEXT_ARG%", str(GUIO_TEXT_ARG))
     script = session.create_script(js)
 
-    col = Collector(auto=auto)
     armed = threading.Event()
     expected = ref_bytes_at([v[0] for v in HOOKS.values()])
+    col = Collector(script)
 
     def on_message(msg, data):
         if msg["type"] == "error":
-            print("[js-error]", msg.get("stack", msg))
+            print("[js-error]", msg.get("stack", msg), flush=True)
             return
         p = msg["payload"]
-        if p["kind"] == "probe":
+        kind = p["kind"]
+        if kind == "probe":
             names = sorted(HOOKS)
             ok = True
             for i, k in enumerate(names):
@@ -269,70 +309,42 @@ def main():
                     print(f"VERSION MISMATCH at {k} 0x{HOOKS[k][0]:08x}: "
                           f"live={live.hex()} expected={want.hex()}")
             if not ok:
-                print("Running exe does not match the decompiled reference "
-                      "(D:/cm0102/cm0102.exe). NOT installing hooks.")
+                print("Running exe does not match the decompiled reference. "
+                      "NOT installing hooks.")
                 script.unload(); session.detach(); sys.exit(1)
             script.post({"type": "arm"})
-        elif p["kind"] == "armed":
+        elif kind == "armed":
             armed.set()
-        elif p["kind"] == "call":
-            col.add(p)
+        elif kind == "calls":
+            col.add_batch(p["events"])
+        elif kind == "pool":
+            meta = {k: p[k] for k in ("n_areas", "n_widgets", "area_stride",
+                                      "widget_stride")}
+            (OUT_DIR / f"{p['burst']}.pool.json").write_text(
+                json.dumps(meta), encoding="utf-8")
+            (OUT_DIR / f"{p['burst']}.pool.bin").write_bytes(bytes(data))
+        elif kind == "frame":
+            (OUT_DIR / f"{p['burst']}.frame.bin").write_bytes(bytes(data))
+        elif kind in ("pool-error", "frame-error"):
+            print(f"[{kind}] {p['burst']}: {p['error']}", flush=True)
 
     script.on("message", on_message)
     script.load()
     if not armed.wait(timeout=10):
-        sys.exit("hooks did not arm (no 'armed' message)")
+        sys.exit("hooks did not arm")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    print("Hooks armed and version-verified. Navigate the game; each screen "
-          "build shows up as a burst"
-          + (" and is saved automatically." if auto else "."), flush=True)
+    print("v2 armed and version-verified. Play the game; every screen build "
+          "saves constructor stream + post-layout pool dump + frame grab.",
+          flush=True)
 
-    idler = threading.Thread(target=lambda: _idle_loop(col), daemon=True)
-    idler.start()
-
-    if auto:
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
-        session.detach()
-        print("detached -- game keeps running.")
-        return
-
-    while True:
-        try:
-            line = input("> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            break
-        if line == "q":
-            break
-        with col.lock:
-            col.flush_if_idle_locked()
-            burst = col.last_burst
-        if not line:
-            if burst is None:
-                print("no burst captured yet")
-            else:
-                print(f"last burst: {len(burst)} calls")
-            continue
-        if burst is None:
-            print("no burst to save yet -- navigate to a screen first")
-            continue
-        out = OUT_DIR / f"{line}.json"
-        out.write_text(json.dumps(burst_to_json(line, burst), indent=1),
-                       encoding="utf-8")
-        print(f"saved {out.relative_to(REPO)} "
-              f"({len(burst)} calls)")
-
+    try:
+        while True:
+            time.sleep(0.2)
+            col.flush_if_idle()
+    except KeyboardInterrupt:
+        pass
     session.detach()
     print("detached -- game keeps running.")
-
-
-def _idle_loop(col):
-    while True:
-        time.sleep(0.2)
-        col.flush_if_idle()
 
 
 if __name__ == "__main__":
