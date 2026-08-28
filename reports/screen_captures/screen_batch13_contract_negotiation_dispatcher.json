@@ -1,0 +1,49 @@
+{
+  "screen": "screen_batch13_contract_negotiation_dispatcher",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 6,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 7,
+      "val": 0,
+      "kind": 0
+    }
+  ]
+}

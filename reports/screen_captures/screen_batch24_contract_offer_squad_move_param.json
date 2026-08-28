@@ -1,0 +1,19 @@
+{
+  "screen": "screen_batch24_contract_offer_squad_move_param",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 270499828,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 270499596,
+      "kind": 0
+    }
+  ]
+}

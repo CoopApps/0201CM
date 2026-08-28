@@ -1,0 +1,26 @@
+{
+  "screen": "screen_batch8_written_history_cmd_0x429_117_b",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 5, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Category" },
+    { "id": 6, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Reserved" },
+    { "id": 7, "type": 1, "L": 100, "T": 150, "R": 780, "B": 175, "rflags": 0, "font": 12, "text": "Reserved" },
+    { "id": 8, "type": 1, "L": 100, "T": 180, "R": 780, "B": 205, "rflags": 0, "font": 12, "text": "Reserved" },
+    { "id": 9, "type": 1, "L": 100, "T": 210, "R": 780, "B": 235, "rflags": 0, "font": 12, "text": "Reserved" }
+  ],
+  "tabs": [
+    { "id": 1, "L": 90, "T": 45, "R": 263, "B": 70, "label": "Overview", "highlighted": true },
+    { "id": 2, "L": 265, "T": 45, "R": 438, "B": 70, "label": "Champions", "highlighted": false },
+    { "id": 3, "L": 440, "T": 45, "R": 613, "B": 70, "label": "Records", "highlighted": false },
+    { "id": 4, "L": 615, "T": 45, "R": 788, "B": 70, "label": "Awards", "highlighted": false }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 },
+    { "idx": 1, "val": 0, "kind": 0 },
+    { "idx": 2, "val": 0, "kind": 0 },
+    { "idx": 3, "val": 0, "kind": 0 },
+    { "idx": 4, "val": 0, "kind": 0 }
+  ]
+}

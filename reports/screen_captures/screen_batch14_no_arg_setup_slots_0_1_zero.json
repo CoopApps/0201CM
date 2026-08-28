@@ -1,0 +1,19 @@
+{
+  "screen": "screen_batch14_no_arg_setup_slots_0_1_zero",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    }
+  ]
+}

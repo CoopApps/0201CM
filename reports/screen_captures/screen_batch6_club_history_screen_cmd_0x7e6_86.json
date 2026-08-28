@@ -1,0 +1,229 @@
+{
+  "screen": "screen_batch6_club_history_screen_cmd_0x7e6_86",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 3,
+      "kind": 0
+    },
+    {
+      "idx": 25,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 26,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 27,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 28,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 29,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 30,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 31,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 6,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 7,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 8,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 9,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 10,
+      "val": 3,
+      "kind": 0
+    },
+    {
+      "idx": 11,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 12,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 13,
+      "val": 7,
+      "kind": 0
+    },
+    {
+      "idx": 14,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 15,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 16,
+      "val": 12,
+      "kind": 0
+    },
+    {
+      "idx": 17,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 18,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 19,
+      "val": 16,
+      "kind": 0
+    },
+    {
+      "idx": 20,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 21,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 22,
+      "val": 28,
+      "kind": 0
+    },
+    {
+      "idx": 23,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 24,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 32,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 33,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 34,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 35,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 34,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 7,
+      "val": 34,
+      "kind": 0
+    },
+    {
+      "idx": 10,
+      "val": 34,
+      "kind": 0
+    },
+    {
+      "idx": 13,
+      "val": 34,
+      "kind": 0
+    },
+    {
+      "idx": 16,
+      "val": 34,
+      "kind": 0
+    },
+    {
+      "idx": 19,
+      "val": 34,
+      "kind": 0
+    },
+    {
+      "idx": 22,
+      "val": 34,
+      "kind": 0
+    }
+  ]
+}

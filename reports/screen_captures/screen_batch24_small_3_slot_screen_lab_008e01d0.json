@@ -1,0 +1,24 @@
+{
+  "screen": "screen_batch24_small_3_slot_screen_lab_008e01d0",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 270499596,
+      "kind": 0
+    }
+  ]
+}

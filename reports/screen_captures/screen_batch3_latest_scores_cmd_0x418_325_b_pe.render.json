@@ -1,0 +1,14 @@
+{
+  "screen": "screen_batch3_latest_scores_cmd_0x418_325_b_pe",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 1, "type": 130, "L": 90, "T": 10, "R": 790, "B": 40, "rflags": 0, "font": 12, "text": "Latest Scores" },
+    { "id": 2, "type": 1, "L": 90, "T": 45, "R": 790, "B": 550, "rflags": 0, "font": 12, "text": "" }
+  ],
+  "tabs": [
+  ],
+  "nav": [],
+  "slots": [
+  ]
+}

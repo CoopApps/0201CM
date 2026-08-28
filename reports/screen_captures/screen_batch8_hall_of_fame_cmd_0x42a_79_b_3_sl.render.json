@@ -1,0 +1,21 @@
+{
+  "screen": "screen_batch8_hall_of_fame_cmd_0x42a_79_b_3_sl",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 5, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Scroll offset" },
+    { "id": 6, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Filter" }
+  ],
+  "tabs": [
+    { "id": 1, "L": 90, "T": 45, "R": 263, "B": 70, "label": "Players", "highlighted": true },
+    { "id": 2, "L": 265, "T": 45, "R": 438, "B": 70, "label": "Managers", "highlighted": false },
+    { "id": 3, "L": 440, "T": 45, "R": 613, "B": 70, "label": "Clubs", "highlighted": false },
+    { "id": 4, "L": 615, "T": 45, "R": 788, "B": 70, "label": "Nations", "highlighted": false }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 },
+    { "idx": 1, "val": 0, "kind": 0 },
+    { "idx": 2, "val": 0, "kind": 0 }
+  ]
+}

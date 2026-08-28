@@ -1,0 +1,14 @@
+{
+ "screen": "club_history",
+ "areas": [
+ ],
+ "objects": [
+  { "id": 1, "type": 1, "L": 100, "T": 10, "R": 790, "B": 70, "a6": 0, "a7": 0, "rflags": 48, "colP": 9718863, "colS": 0, "tflags": 12, "font": 7, "tmode": -1010580541, "text": 14447164, "a15": 0, "a16": 0, "a17": 0, "parent": -1 }
+ ],
+ "tabs": [
+  { "count": 9, "sel": 44, "top_y_in": 80, "bot_y_in": 545, "split": 1, "p4": 270499736, "p5": 270499744 }
+ ],
+ "nav": [],
+ "slots": [
+ ]
+}

@@ -1,0 +1,24 @@
+{
+  "screen": "screen_batch22_training_panel_screen_setup_lab",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 276824064,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 276824073,
+      "kind": 1
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "screen": "screen_batch14_7_param_setup_slots_0_7_slots_1",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 6,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 7,
+      "val": 4,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    }
+  ]
+}

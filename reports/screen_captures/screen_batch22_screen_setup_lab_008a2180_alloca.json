@@ -1,0 +1,39 @@
+{
+  "screen": "screen_batch22_screen_setup_lab_008a2180_alloca",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 276824064,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": -1,
+      "kind": 0
+    }
+  ]
+}

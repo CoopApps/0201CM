@@ -1,0 +1,29 @@
+{
+  "screen": "screen_batch13_two_key_lookup_screen_param_1_pa",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 270499596,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 270499596,
+      "kind": 0
+    }
+  ]
+}

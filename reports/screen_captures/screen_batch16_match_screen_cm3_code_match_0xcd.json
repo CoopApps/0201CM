@@ -1,0 +1,29 @@
+{
+  "screen": "screen_batch16_match_screen_cm3_code_match_0xcd",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 1,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 1,
+      "kind": 0
+    }
+  ]
+}

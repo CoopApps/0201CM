@@ -1,0 +1,99 @@
+{
+  "screen": "screen_batch22_variant_profile_setup_gated_on",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 6,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 8,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 9,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 7,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 15,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 16,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 17,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 18,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 19,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 20,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 21,
+      "val": -1,
+      "kind": 0
+    },
+    {
+      "idx": 22,
+      "val": -1,
+      "kind": 0
+    }
+  ]
+}

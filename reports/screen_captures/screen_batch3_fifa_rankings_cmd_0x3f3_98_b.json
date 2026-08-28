@@ -1,0 +1,29 @@
+{
+  "screen": "screen_batch3_fifa_rankings_cmd_0x3f3_98_b",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 1,
+      "kind": 0
+    }
+  ]
+}

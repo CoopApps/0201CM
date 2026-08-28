@@ -1,0 +1,22 @@
+{
+  "screen": "screen_batch4_send_abuse_cmd_0x414_109_b",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 1, "type": 130, "L": 90, "T": 10, "R": 790, "B": 40, "rflags": 0, "font": 12, "text": "Send Abuse" },
+    { "id": 2, "type": 1, "L": 90, "T": 45, "R": 790, "B": 550, "rflags": 0, "font": 12, "text": "" },
+    { "id": 5, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Recipient" },
+    { "id": 6, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Body bytes" },
+    { "id": 7, "type": 1, "L": 100, "T": 150, "R": 780, "B": 175, "rflags": 0, "font": 12, "text": "Note" }
+  ],
+  "tabs": [
+    { "id": 3, "L": 90, "T": 45, "R": 438, "B": 70, "label": "All managers", "highlighted": true },
+    { "id": 4, "L": 440, "T": 45, "R": 788, "B": 70, "label": "Specific", "highlighted": false }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 },
+    { "idx": 1, "val": 0, "kind": 0 },
+    { "idx": 2, "val": 0, "kind": 0 }
+  ]
+}

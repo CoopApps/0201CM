@@ -1,0 +1,23 @@
+{
+ "screen": "competition_league",
+ "areas": [
+  { "id": 3, "L": 0, "T": 0, "R": 0, "B": 0, "cntA": 0, "wA": 0, "cntB": 0, "wB": 0, "flags": 304, "a10": 0, "parent": 2 }
+ ],
+ "objects": [
+  { "id": 1, "type": 1, "L": 100, "T": 10, "R": 790, "B": 70, "a6": 0, "a7": 0, "rflags": 48, "colP": 274726912, "colS": 0, "tflags": 12, "font": 7, "tmode": 274726912, "text": -1010580537, "a15": 0, "a16": 0, "a17": 0, "parent": -1 },
+  { "id": 2, "type": 2, "L": 710, "T": 15, "R": 785, "B": 35, "a6": 0, "a7": 0, "rflags": 48, "colP": 1, "colS": 1, "tflags": 12, "font": 1, "tmode": 0, "text": 14447164, "a15": 0, "a16": 0, "a17": 0, "parent": -1 },
+  { "id": 4, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 16, "colP": 0, "colS": 0, "tflags": 1, "font": 1, "tmode": 0, "text": 14447164, "a15": 0, "a16": 25, "a17": 1, "parent": 3 },
+  { "id": 5, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 16, "colP": 0, "colS": -1010630656, "tflags": 1, "font": 1, "tmode": 0, "text": 14447164, "a15": 0, "a16": 25, "a17": 2, "parent": 3 },
+  { "id": 6, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 16, "colP": -1010630656, "colS": 0, "tflags": 1, "font": 1, "tmode": 0, "text": 14447164, "a15": 0, "a16": 25, "a17": 4, "parent": 3 },
+  { "id": 7, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 16, "colP": 0, "colS": 0, "tflags": 1, "font": 1, "tmode": -1010630656, "text": 14447164, "a15": 0, "a16": 25, "a17": 8, "parent": 3 },
+  { "id": 8, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 16, "colP": 0, "colS": -1010630656, "tflags": 1, "font": 1, "tmode": 0, "text": 14447164, "a15": 0, "a16": 25, "a17": 16, "parent": 3 },
+  { "id": 9, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 16, "colP": -1010630656, "colS": 0, "tflags": 1, "font": 1, "tmode": 0, "text": 14447164, "a15": 0, "a16": 25, "a17": 31, "parent": 3 }
+ ],
+ "tabs": [
+  { "count": 10, "sel": 0, "top_y_in": 80, "bot_y_in": 545, "split": 0, "p4": 270499168, "p5": 270499164 }
+ ],
+ "nav": [],
+ "slots": [
+  { "idx": 52, "val": 0, "kind": 0 }
+ ]
+}

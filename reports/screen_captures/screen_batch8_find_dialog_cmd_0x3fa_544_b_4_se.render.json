@@ -1,0 +1,25 @@
+{
+  "screen": "screen_batch8_find_dialog_cmd_0x3fa_544_b_4_se",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 1, "type": 130, "L": 90, "T": 10, "R": 790, "B": 40, "rflags": 0, "font": 12, "text": "Find" },
+    { "id": 2, "type": 1, "L": 90, "T": 45, "R": 790, "B": 550, "rflags": 0, "font": 12, "text": "" },
+    { "id": 5, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Search field" },
+    { "id": 6, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Search field" },
+    { "id": 7, "type": 1, "L": 100, "T": 150, "R": 780, "B": 175, "rflags": 0, "font": 12, "text": "Search field" },
+    { "id": 8, "type": 1, "L": 100, "T": 180, "R": 780, "B": 205, "rflags": 0, "font": 12, "text": "Search field" }
+  ],
+  "tabs": [
+    { "id": 3, "L": 90, "T": 45, "R": 438, "B": 70, "label": "Default", "highlighted": true },
+    { "id": 4, "L": 440, "T": 45, "R": 788, "B": 70, "label": "Specific", "highlighted": false }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 },
+    { "idx": 1, "val": 0, "kind": 0 },
+    { "idx": 2, "val": 0, "kind": 0 },
+    { "idx": 3, "val": 0, "kind": 0 },
+    { "idx": 4, "val": 0, "kind": 0 }
+  ]
+}

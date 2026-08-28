@@ -1,0 +1,14 @@
+{
+  "screen": "club_squad",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 5,
+      "val": 208,
+      "kind": 0
+    }
+  ]
+}

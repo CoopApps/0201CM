@@ -1,0 +1,24 @@
+{
+  "screen": "screen_batch8_hall_of_fame_cmd_0x42a_79_b_3_sl",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    }
+  ]
+}

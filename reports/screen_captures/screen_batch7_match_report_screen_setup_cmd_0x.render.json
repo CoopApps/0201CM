@@ -1,0 +1,25 @@
+{
+  "screen": "screen_batch7_match_report_screen_setup_cmd_0x",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 8, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Fixture" },
+    { "id": 9, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Detail level" },
+    { "id": 10, "type": 1, "L": 100, "T": 210, "R": 780, "B": 235, "rflags": 0, "font": 12, "text": "Show summary" }
+  ],
+  "tabs": [
+    { "id": 1, "L": 90, "T": 45, "R": 188, "B": 70, "label": "Summary", "highlighted": false },
+    { "id": 2, "L": 190, "T": 45, "R": 288, "B": 70, "label": "Lineups", "highlighted": false },
+    { "id": 3, "L": 290, "T": 45, "R": 388, "B": 70, "label": "Substitutes", "highlighted": false },
+    { "id": 4, "L": 390, "T": 45, "R": 488, "B": 70, "label": "Stats", "highlighted": false },
+    { "id": 5, "L": 490, "T": 45, "R": 588, "B": 70, "label": "Timeline", "highlighted": false },
+    { "id": 6, "L": 590, "T": 45, "R": 688, "B": 70, "label": "Events", "highlighted": false },
+    { "id": 7, "L": 690, "T": 45, "R": 788, "B": 70, "label": "Goals", "highlighted": true }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 },
+    { "idx": 1, "val": 3, "kind": 0 },
+    { "idx": 2, "val": 6, "kind": 0 }
+  ]
+}

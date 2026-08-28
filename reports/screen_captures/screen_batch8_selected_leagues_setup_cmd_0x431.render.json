@@ -1,0 +1,19 @@
+{
+  "screen": "screen_batch8_selected_leagues_setup_cmd_0x431",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 1, "type": 130, "L": 90, "T": 10, "R": 790, "B": 40, "rflags": 0, "font": 12, "text": "Select Leagues" },
+    { "id": 2, "type": 1, "L": 90, "T": 45, "R": 790, "B": 550, "rflags": 0, "font": 12, "text": "" },
+    { "id": 5, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Cursor" },
+    { "id": 6, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Scroll offset" }
+  ],
+  "tabs": [
+    { "id": 3, "L": 90, "T": 45, "R": 438, "B": 70, "label": "Scrolled", "highlighted": false },
+    { "id": 4, "L": 440, "T": 45, "R": 788, "B": 70, "label": "Dirty", "highlighted": false }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 }
+  ]
+}

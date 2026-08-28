@@ -1,0 +1,28 @@
+{
+  "screen": "screen_batch8_entity_list_cmd_0x3f4_6_7_etc_48",
+  "areas": [
+  ],
+  "objects": [
+    { "id": 1, "type": 130, "L": 90, "T": 10, "R": 790, "B": 40, "rflags": 0, "font": 12, "text": "Entity List" },
+    { "id": 2, "type": 1, "L": 90, "T": 45, "R": 790, "B": 550, "rflags": 0, "font": 12, "text": "" },
+    { "id": 9, "type": 1, "L": 100, "T": 90, "R": 780, "B": 115, "rflags": 0, "font": 12, "text": "Focus" },
+    { "id": 10, "type": 1, "L": 100, "T": 120, "R": 780, "B": 145, "rflags": 0, "font": 12, "text": "Extra filter" },
+    { "id": 11, "type": 1, "L": 100, "T": 150, "R": 780, "B": 175, "rflags": 0, "font": 12, "text": "Filter byte" }
+  ],
+  "tabs": [
+    { "id": 3, "L": 90, "T": 45, "R": 204, "B": 70, "label": "Nations", "highlighted": false },
+    { "id": 4, "L": 206, "T": 45, "R": 320, "B": 70, "label": "Major Clubs", "highlighted": false },
+    { "id": 5, "L": 322, "T": 45, "R": 436, "B": 70, "label": "League", "highlighted": false },
+    { "id": 6, "L": 438, "T": 45, "R": 552, "B": 70, "label": "Non-League", "highlighted": false },
+    { "id": 7, "L": 554, "T": 45, "R": 668, "B": 70, "label": "Other Clubs", "highlighted": false },
+    { "id": 8, "L": 670, "T": 45, "R": 784, "B": 70, "label": "Under 21s", "highlighted": false }
+  ],
+  "nav": [],
+  "slots": [
+    { "idx": 0, "val": 0, "kind": 0 },
+    { "idx": 1, "val": 0, "kind": 0 },
+    { "idx": 4, "val": 0, "kind": 0 },
+    { "idx": 7, "val": 0, "kind": 0 },
+    { "idx": 16, "val": 0, "kind": 0 }
+  ]
+}

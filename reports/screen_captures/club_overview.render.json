@@ -1,0 +1,18 @@
+{
+ "screen": "club_overview",
+ "areas": [
+  { "id": 3, "L": 110, "T": 145, "R": 780, "B": 535, "cntA": 4, "wA": 270499664, "cntB": 17, "wB": 0, "flags": 2, "a10": 0, "parent": -1 },
+  { "id": 4, "L": 100, "T": 555, "R": 790, "B": 590, "cntA": 2, "wA": 270499618, "cntB": 1, "wB": 0, "flags": 1, "a10": 0, "parent": -1 }
+ ],
+ "objects": [
+  { "id": 1, "type": 1, "L": 100, "T": 10, "R": 790, "B": 70, "a6": 0, "a7": 0, "rflags": 48, "colP": 0, "colS": 0, "tflags": 12, "font": 7, "tmode": 0, "text": 49, "a15": 0, "a16": 0, "a17": 0, "parent": -1 },
+  { "id": 2, "type": 1, "L": 100, "T": 80, "R": 790, "B": 125, "a6": 0, "a7": 0, "rflags": 2, "colP": 0, "colS": 0, "tflags": 12, "font": 6, "tmode": 0, "text": 14447164, "a15": 0, "a16": 0, "a17": 0, "parent": -1 },
+  { "id": 5, "type": 2, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 0, "a7": 0, "rflags": 48, "colP": -65536, "colS": -65536, "tflags": 12, "font": 3, "tmode": 0, "text": 14447164, "a15": 0, "a16": 2, "a17": 0, "parent": 4 },
+  { "id": 6, "type": 1, "L": 0, "T": 0, "R": 0, "B": 0, "a6": 1, "a7": 0, "rflags": 48, "colP": 0, "colS": 0, "tflags": 44, "font": 3, "tmode": 0, "text": 14447164, "a15": 0, "a16": 0, "a17": 0, "parent": 4 }
+ ],
+ "tabs": [
+ ],
+ "nav": [],
+ "slots": [
+ ]
+}

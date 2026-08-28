@@ -1,0 +1,19 @@
+{
+  "screen": "screen_batch24_big_transfer_wage_offer_screen_f",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 270499084,
+      "kind": 0
+    }
+  ]
+}

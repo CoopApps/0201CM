@@ -1,0 +1,19 @@
+{
+ "screen": "news",
+ "areas": [
+  { "id": 1, "L": 100, "T": 10, "R": 790, "B": 70, "cntA": 1, "wA": 0, "cntB": 1, "wB": 0, "flags": 48, "a10": 1, "parent": -1 },
+  { "id": 2, "L": 100, "T": 25, "R": 790, "B": 55, "cntA": 1, "wA": 0, "cntB": 1, "wB": 0, "flags": 1, "a10": 0, "parent": -1 }
+ ],
+ "objects": [
+  { "id": 3, "type": 1, "L": 100, "T": 10, "R": 790, "B": 70, "a6": 0, "a7": 0, "rflags": 48, "colP": 1, "colS": 0, "tflags": 12, "font": 7, "tmode": 1, "text": 14447164, "a15": 0, "a16": 0, "a17": 0, "parent": -1 }
+ ],
+ "tabs": [
+  { "count": 8, "sel": 12, "top_y_in": 80, "bot_y_in": 545, "split": 1, "p4": 270499516, "p5": 270499596 }
+ ],
+ "nav": [],
+ "slots": [
+  { "idx": 0, "val": 0, "kind": 0 },
+  { "idx": 2, "val": 1, "kind": 0 },
+  { "idx": 3, "val": 3, "kind": 0 }
+ ]
+}

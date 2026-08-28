@@ -1,0 +1,24 @@
+{
+  "screen": "screen_batch19_search_result_detail_setup_3_slo",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 276824064,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 16,
+      "kind": 0
+    }
+  ]
+}

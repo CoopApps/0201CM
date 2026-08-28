@@ -1,0 +1,109 @@
+{
+  "screen": "screen_batch14_2_param_setup_with_a_15_field_de",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 126,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 59013,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 6,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 8,
+      "val": 32512,
+      "kind": 0
+    },
+    {
+      "idx": 9,
+      "val": 32513,
+      "kind": 0
+    },
+    {
+      "idx": 10,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 11,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 12,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 13,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 14,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 15,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 16,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 17,
+      "val": 1,
+      "kind": 0
+    },
+    {
+      "idx": 18,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 19,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 20,
+      "val": 16,
+      "kind": 0
+    }
+  ]
+}

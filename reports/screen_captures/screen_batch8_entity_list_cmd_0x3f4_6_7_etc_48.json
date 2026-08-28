@@ -1,0 +1,109 @@
+{
+  "screen": "screen_batch8_entity_list_cmd_0x3f4_6_7_etc_48",
+  "areas": [],
+  "objects": [],
+  "tabs": [],
+  "nav": [],
+  "slots": [
+    {
+      "idx": 0,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 1,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 2,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 3,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 4,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 5,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 6,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 7,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 8,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 9,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 10,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 11,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 12,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 13,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 14,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 15,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 16,
+      "val": 274726912,
+      "kind": 0
+    },
+    {
+      "idx": 17,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 18,
+      "val": 0,
+      "kind": 0
+    },
+    {
+      "idx": 19,
+      "val": 0,
+      "kind": 0
+    }
+  ]
+}
