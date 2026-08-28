@@ -47,10 +47,15 @@ IB = 0x400000
 # resolve color pointers + font, then call these). Capturing here gives clean
 # resolved colors and exact pixel ops; depth-gating drops nested calls
 # (e.g. glyph's own underline line).
+#   rect  005cd840(x0,y0,x1,y1, u8 flags, u16 color)
+#         flags&1 or &2 => 4-side OUTLINE (drawn via line); else SOLID FILL via
+#         a DirectDraw Blt COLORFILL (vtable +0x14) — the fill that leaf line/
+#         glyph/darken capture MISSES, leaving boxes hollow. Hook it here.
 #   line  005cd420(x0,y0,x1,y1, mode, u16 color)   -- Ghidra under-counted argc; real is 6
 #   glyph 005ced50(x, y, a3, u16 color, char* text, font_idx)
 #   darken 005cdfd0(x0,y0,x1,y1)
 PRIMS = {
+    "rect":   (0x005CD840, 6, None),
     "line":   (0x005CD420, 6, None),
     "glyph":  (0x005CED50, 6, 4),
     "darken": (0x005CDFD0, 4, None),

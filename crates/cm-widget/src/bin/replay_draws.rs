@@ -107,10 +107,22 @@ fn main() {
     );
     let mut fonts = Fonts::new(fonts_dir);
 
-    let (mut n_line, mut n_glyph, mut n_dark) = (0u32, 0u32, 0u32);
+    let (mut n_rect, mut n_line, mut n_glyph, mut n_dark) = (0u32, 0u32, 0u32, 0u32);
     for c in &draws.calls {
         let a = &c.args;
         match c.fname.as_str() {
+            "rect" if a.len() >= 6 => {
+                // FUN_005cd840: flags&1 or &2 = 4-side outline; else solid
+                // DirectDraw colorfill. Reproduce with fill_rect / hollow_rect.
+                let flags = a[4] as u32;
+                let rgb = unpack565((a[5] & 0xffff) as u16);
+                if flags & 0x3 != 0 {
+                    s.draw_hollow_rect(a[0] as i32, a[1] as i32, a[2] as i32, a[3] as i32, rgb);
+                } else {
+                    s.fill_rect(a[0] as i32, a[1] as i32, a[2] as i32, a[3] as i32, rgb);
+                }
+                n_rect += 1;
+            }
             "line" if a.len() >= 6 => {
                 draw_line(&mut s, a[0] as i32, a[1] as i32, a[2] as i32, a[3] as i32,
                           a[4] as u32, (a[5] & 0xffff) as u16);
@@ -121,13 +133,15 @@ fn main() {
                              F_TRANSPARENT, (0, 0, 0));
                 n_dark += 1;
             }
-            "glyph" if a.len() >= 4 => {
+            "glyph" if a.len() >= 5 => {
+                // FUN_005ced50: param_1=x, param_2=y, param_3=font (sVar16 =
+                // (short)param_3, its low 16 bits are the slot), param_4=color
+                // (param_4 & 0xffff RGB565), param_5=text. -1 slot = skip.
                 let text = c.text.as_ref().map(|h| hex_to_text(h)).unwrap_or_default();
-                if !text.is_empty() {
+                let slot = (a[2] & 0xffff) as i16;
+                if !text.is_empty() && slot >= 0 && slot <= 7 {
                     let rgb = unpack565((a[3] & 0xffff) as u16);
-                    // Font heuristic until the current-font global is captured:
-                    // the sidebar/most UI text is slot 1 (arial_narrow_10).
-                    let font = fonts.slot(1);
+                    let font = fonts.slot(slot as u8);
                     s.blit_string(a[0] as i32, a[1] as i32, font, rgb, &text);
                     n_glyph += 1;
                 }
@@ -140,6 +154,6 @@ fn main() {
     s.to_argb(&mut argb);
     let out = args.next().unwrap_or_else(|| format!("{name}_replay.bmp"));
     write_bmp(&out, Surface::W, Surface::H, &argb).expect("write bmp");
-    eprintln!("wrote {out}  ({n_line} lines, {n_glyph} glyphs, {n_dark} darken)");
+    eprintln!("wrote {out}  ({n_rect} rects, {n_line} lines, {n_glyph} glyphs, {n_dark} darken)");
 }
 
