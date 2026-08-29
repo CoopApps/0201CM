@@ -140,6 +140,54 @@ recv('arm', function () {
             onLeave() { depth--; }
         });
     }
+
+    // Image blits: hook the back-surface Blt (vtable +0x14). Blt does BOTH
+    // colorfills (src == null, already captured via rect) and image copies
+    // (src != null — the screen backgrounds/photos we were missing). For an
+    // image copy we record the dest rect and, in onLeave (source stable),
+    // Lock the SOURCE surface and read its pixels — the real bitmap.
+    // Blt(this, destRect*, srcSurf, srcRect*, flags, bltfx*)
+    try {
+        const backSurf = ptr('0xAD6BD4').readPointer();
+        const bltAddr = backSurf.readPointer().add(0x14).readPointer();
+        Interceptor.attach(bltAddr, {
+            onEnter(args) {
+                this.src = args[2];
+                if (this.src.isNull()) return;   // colorfill, skip
+                const dr = args[1];
+                this.dst = dr.isNull() ? null :
+                    [dr.readS32(), dr.add(4).readS32(), dr.add(8).readS32(), dr.add(12).readS32()];
+                const sr = args[3];
+                this.sr = sr.isNull() ? null :
+                    [sr.readS32(), sr.add(4).readS32(), sr.add(8).readS32(), sr.add(12).readS32()];
+            },
+            onLeave() {
+                if (!this.src || this.src.isNull() || !this.dst) return;
+                try {
+                    const dw = this.dst[2] - this.dst[0], dh = this.dst[3] - this.dst[1];
+                    if (dw <= 0 || dh <= 0 || dw > 800 || dh > 600) return;
+                    // source region: srcRect if given, else same size as dest.
+                    const sx = this.sr ? this.sr[0] : 0, sy = this.sr ? this.sr[1] : 0;
+                    const vtbl = this.src.readPointer();
+                    const Lock = new NativeFunction(vtbl.add(25 * 4).readPointer(),
+                        'int', ['pointer','pointer','pointer','uint','pointer'], 'stdcall');
+                    const Unlock = new NativeFunction(vtbl.add(32 * 4).readPointer(),
+                        'int', ['pointer','pointer'], 'stdcall');
+                    const desc = Memory.alloc(0x6C); desc.writeU32(0x6C);
+                    if (Lock(this.src, NULL, desc, 0x11, NULL) !== 0) return;
+                    const lp = desc.add(0x24).readPointer();
+                    const pitch = desc.add(0x10).readS32();
+                    const out = new Uint8Array(dw * dh * 2);
+                    for (let y = 0; y < dh; y++)
+                        out.set(new Uint8Array(lp.add((sy + y) * pitch + sx * 2).readByteArray(dw * 2)), y * dw * 2);
+                    Unlock(this.src, NULL);
+                    send({ kind: 'imgblit', dst: this.dst, w: dw, h: dh }, out.buffer);
+                } catch (e) {}
+            }
+        });
+        send({ kind: 'blt-hooked' });
+    } catch (e) { send({ kind: 'blt-error', error: '' + e }); }
+
     send({ kind: 'armed' });
 });
 """
@@ -149,6 +197,7 @@ class Collector:
     def __init__(self):
         self.lock = threading.Lock()
         self.current = []
+        self.images = []   # list of (dst_rect, pixels_bytes, w, h) this burst
         self.last_t = 0.0
         self.n = 0
 
@@ -160,18 +209,32 @@ class Collector:
             self.current.extend(events)
             self.last_t = now
 
+    def add_image(self, dst, w, h, pixels):
+        with self.lock:
+            self.images.append((dst, w, h, pixels))
+            self.last_t = time.monotonic()
+
     def _close(self):
         self.n += 1
         burst = sorted(self.current, key=lambda m: m["seq"])
+        images = self.images
         self.current = []
+        self.images = []
         counts = {}
         for m in burst:
             counts[m["fn"]] = counts.get(m["fn"], 0) + 1
         name = f"draws_{self.n:03d}"
+        img_meta = []
+        for i, (dst, w, h, px) in enumerate(images):
+            (OUT_DIR / f"{name}.img{i:02d}.bin").write_bytes(px)
+            img_meta.append({"file": f"{name}.img{i:02d}.bin",
+                             "dst": dst, "w": w, "h": h})
         (OUT_DIR / f"{name}.json").write_text(
-            json.dumps({"screen": name, "calls": burst}, indent=1),
+            json.dumps({"screen": name, "calls": burst, "images": img_meta}, indent=1),
             encoding="utf-8")
         summary = " ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+        if images:
+            summary += f" +{len(images)}img"
         print(f"draw-burst {self.n}: {summary} ({len(burst)} calls) -> {name}.json",
               flush=True)
 
@@ -211,8 +274,14 @@ def main():
             script.post({"type": "arm"})
         elif p["kind"] == "armed":
             armed.set()
+        elif p["kind"] == "blt-hooked":
+            print("image-blit (Blt) hook installed.", flush=True)
+        elif p["kind"] == "blt-error":
+            print(f"[blt-hook failed] {p['error']}", flush=True)
         elif p["kind"] == "calls":
             col.add(p["events"])
+        elif p["kind"] == "imgblit":
+            col.add_image(p["dst"], p["w"], p["h"], bytes(data))
 
     script.on("message", on_message)
     script.load()

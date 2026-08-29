@@ -25,6 +25,15 @@ use std::io::Write;
 #[derive(Deserialize)]
 struct Draws {
     calls: Vec<Call>,
+    #[serde(default)]
+    images: Vec<ImgBlit>,
+}
+#[derive(Deserialize)]
+struct ImgBlit {
+    file: String,
+    dst: [i32; 4],
+    w: i32,
+    h: i32,
 }
 #[derive(Deserialize)]
 struct Call {
@@ -65,6 +74,24 @@ fn write_bmp(path: &str, w: usize, h: usize, argb: &[u32]) -> std::io::Result<()
     Ok(())
 }
 
+/// Draw a filled nav-arrow triangle at the glyph origin (x,y is the top-left
+/// where the '(' / ')' glyph would sit). Left-pointing for '(', right for ')'.
+/// Sized to the ~10px arrow-font cell (matches menu_sidebar's arrows).
+fn fill_arrow(s: &mut Surface, x: i32, y: i32, left: bool, rgb: (u8, u8, u8)) {
+    // Clean isosceles triangle: at the vertical centre it spans the full
+    // width `w`; it tapers linearly to a point at top and bottom.
+    let (w, h): (i32, i32) = (9, 12);
+    let packed = cm_render::pack565(rgb.0, rgb.1, rgb.2);
+    for row in 0..h {
+        let d = (2 * row - (h - 1)).abs(); // 0 at centre .. (h-1) at edges
+        let span = (w * (h - 1 - d) / (h - 1)).max(0);
+        for col in 0..span {
+            let px = if left { x + col } else { x + (w - 1 - col) };
+            s.set(px, y + row, packed);
+        }
+    }
+}
+
 fn hex_to_text(h: &str) -> String {
     let mut bytes = Vec::with_capacity(h.len() / 2);
     let hb = h.as_bytes();
@@ -97,10 +124,59 @@ fn main() {
         eprintln!("cannot read {path}: {e}");
         std::process::exit(2);
     });
-    let draws: Draws = serde_json::from_str(&raw).expect("parse draws json");
+    let mut draws: Draws = serde_json::from_str(&raw).expect("parse draws json");
+
+    // A burst often captures the screen drawn 2+ times back-to-back (one
+    // redraw cycle each). Replaying every pass double-draws — and with darken
+    // calls interleaved, earlier passes show through as ghosts. Keep only the
+    // LAST full pass: find the last index where the very first call's
+    // signature recurs, and replay from there.
+    {
+        let calls = &draws.calls;
+        if calls.len() > 4 {
+            let first = (calls[0].fname.clone(), calls[0].args.clone());
+            let mut starts: Vec<usize> = (0..calls.len())
+                .filter(|&i| calls[i].fname == first.0 && calls[i].args == first.1)
+                .collect();
+            if starts.len() >= 2 {
+                let last_start = *starts.last().unwrap();
+                draws.calls = draws.calls.split_off(last_start);
+            }
+        }
+    }
 
     let mut s = Surface::new();
     s.fill(0, 0, 0);
+
+    // Image blits FIRST (backgrounds/photos), in the order captured, before
+    // the draw primitives paint over them — matching the exe's own order
+    // (the screen blits its backdrop, then draws widgets on top). Pixels are
+    // raw RGB565 saved by the capture's Blt hook.
+    let draws_dir = format!("{}/../../reports/screen_captures/draws", env!("CARGO_MANIFEST_DIR"));
+    // Image blit dst rects are in SCREEN coords (the game window is offset on
+    // screen); the draw primitives use surface coords (0-origin). Derive the
+    // window origin from the full-screen (800x600) backdrop blit and subtract
+    // it from every image's dst so they land in surface space.
+    let origin = draws.images.iter()
+        .find(|i| i.w == 800 && i.h == 600)
+        .map(|i| (i.dst[0], i.dst[1]))
+        .unwrap_or((0, 0));
+    for img in &draws.images {
+        let p = format!("{draws_dir}/{}", img.file);
+        let Ok(raw) = std::fs::read(&p) else { continue };
+        if raw.len() < (img.w * img.h * 2) as usize {
+            continue;
+        }
+        let (dx, dy) = (img.dst[0] - origin.0, img.dst[1] - origin.1);
+        for y in 0..img.h {
+            for x in 0..img.w {
+                let o = ((y * img.w + x) * 2) as usize;
+                let v = raw[o] as u16 | ((raw[o + 1] as u16) << 8);
+                s.set(dx + x, dy + y, v);
+            }
+        }
+    }
+
     let fonts_dir = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../assets/cm0102/original_files/Data"
@@ -141,8 +217,16 @@ fn main() {
                 let slot = (a[2] & 0xffff) as i16;
                 if !text.is_empty() && slot >= 0 && slot <= 7 {
                     let rgb = unpack565((a[3] & 0xffff) as u16);
-                    let font = fonts.slot(slot as u8);
-                    s.blit_string(a[0] as i32, a[1] as i32, font, rgb, &text);
+                    // Font 0 is the game's symbol font (not one of our 7 .fnt
+                    // atlases): its '(' / ')' glyphs are the nav arrows, drawn
+                    // as filled triangles (as the validated menu_sidebar port
+                    // does). Reproduce the glyph's actual shape.
+                    if slot == 0 && (text == "(" || text == ")") {
+                        fill_arrow(&mut s, a[0] as i32, a[1] as i32, text == "(", rgb);
+                    } else {
+                        let font = fonts.slot(slot as u8);
+                        s.blit_string(a[0] as i32, a[1] as i32, font, rgb, &text);
+                    }
                     n_glyph += 1;
                 }
             }
