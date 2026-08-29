@@ -1,0 +1,35 @@
+{
+  "_note": "Field->byte-offset map, VERIFIED against raw .dat via offset-scan + correlation. Names from editor_schema.json. This is the schema-driven resolver's table; the domain reads these offsets off the raw bytes already in rust-db (no re-import). Attribute BLOCK location is verified; per-attribute byte ORDER within the block needs the editor's binding code (editor display order != byte order, PROVEN: GK attrs fall at block idx 31/15/26/30, not the editor-order indices).",
+  "staff_pl_type10": {
+    "record_size": 70,
+    "verified": {
+      "id":                 {"off": 0, "width": 2, "kind": "u16"},
+      "current_ability":    {"off": 5, "width": 1, "kind": "u8"},
+      "potential_ability":  {"off": 7, "width": 1, "kind": "i8_flexible"},
+      "reputation":         {"off": 13, "width": 1, "kind": "u8", "note": "1 of 3 reputations; correlates with CA"}
+    },
+    "position_ratings": {
+      "off": 15, "count": 12, "width": 1,
+      "order": ["goalkeeper","sweeper","defender","def_midfielder","midfielder","att_midfielder","attacker","wing_back","right_side","left_side","central","free_role"],
+      "verified": "goalkeeper@block[0]=20 for keepers, attacker@block[6]=1 -> order confirmed"
+    },
+    "attribute_block": {
+      "off": 27, "count": 42, "width": 1,
+      "status": "BLOCK LOCATION VERIFIED (0x1b-0x44); per-index name PENDING editor binding code",
+      "known_by_correlation": {"31": "reflexes-or-GK", "15": "GK-attr", "26": "GK-attr", "30": "GK-attr"}
+    }
+  },
+  "staff_np_type9": {
+    "record_size": 68,
+    "coaching_block": {"off": 14, "count": 21, "width": 1, "status": "block verified (0x0e-0x22); names pending editor binding order"}
+  },
+  "stadium_type5": {
+    "record_size": 78,
+    "verified": {
+      "name":               {"off": 4, "kind": "cstr"},
+      "capacity":           {"off": 60, "width": 4, "kind": "u32"},
+      "seating_capacity":   {"off": 64, "width": 4, "kind": "u32"},
+      "expansion_capacity": {"off": 68, "width": 4, "kind": "u32"}
+    }
+  }
+}
