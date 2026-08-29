@@ -557,6 +557,47 @@ impl DomainStaffType10 {
         out
     }
 
+    /// The 42 player attribute names, in the exact record byte order
+    /// (0x1b..0x44). CONFIRMED: the editor displays attributes ALPHABETICALLY
+    /// and its panel grid reads them sequentially in record-byte order
+    /// (editor FUN_0048bd00), so byte[0x1b+n] = the nth alphabetical attribute.
+    /// Verified by GK/attacker discrimination over staff.dat: the GK-elevated
+    /// bytes are exactly Handling/Reflexes/OneOnOnes/Positioning and the
+    /// attacker-elevated ones Finishing/Dribbling/Pace/Flair — all at their
+    /// alphabetical indices.
+    pub const ATTRIBUTE_NAMES: [&'static str; 42] = [
+        "Acceleration", "Aggression", "Agility", "Anticipation", "Balance",
+        "Bravery", "Consistency", "Corners", "Crossing", "Decisions",
+        "Dirtiness", "Dribbling", "Finishing", "Flair", "Free Kicks",
+        "Handling", "Heading", "Important Matches", "Injury Proneness",
+        "Jumping", "Leadership", "Left Foot", "Long Shots", "Marking",
+        "Movement", "Natural Fitness", "One On Ones", "Pace", "Passing",
+        "Penalties", "Positioning", "Reflexes", "Right Foot", "Stamina",
+        "Strength", "Tackling", "Teamwork", "Technique", "Throw Ins",
+        "Versatility", "Vision", "Work Rate",
+    ];
+
+    /// The 42 attributes as (name, value) pairs, in record order. Values are
+    /// the shipped block; for players the base ships zero, the generated
+    /// values live in `PlayerInitState` (init seeding).
+    pub fn named_attributes(&self) -> Vec<(&'static str, u8)> {
+        let fa = self.full_attributes();
+        Self::ATTRIBUTE_NAMES
+            .iter()
+            .enumerate()
+            .map(|(i, &n)| (n, fa[12 + i]))
+            .collect()
+    }
+
+    /// One attribute by name (case-insensitive), or None if unknown.
+    pub fn attribute(&self, name: &str) -> Option<u8> {
+        let fa = self.full_attributes();
+        Self::ATTRIBUTE_NAMES
+            .iter()
+            .position(|n| n.eq_ignore_ascii_case(name))
+            .map(|i| fa[12 + i])
+    }
+
     /// Reputation (type10 +0x0d). CONFIRMED by correlation with CA over
     /// staff.dat: players with CA>=150 average ~119 here; players with CA
     /// 20-40 average ~1.4 — it tracks ability exactly as reputation does.
