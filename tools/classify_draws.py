@@ -92,32 +92,35 @@ def main():
     if not files:
         sys.exit("no draw captures found -- run tools/frida_draw_capture.py")
 
-    library = {}   # key -> (burst_name, ncalls, identity)
-    groups = {}    # identity -> set of burst names
+    # Per identity, collect every burst with its deduped call count.
+    groups = {}    # identity -> list of (name, ncalls)
     for f in files:
         d = json.load(open(f, encoding="utf-8"))
         calls = dedup(d["calls"])
         ident = identity(calls)
-        key = ident + " | " + str(geom_sig(calls))
         name = os.path.basename(f).replace(".json", "")
-        groups.setdefault(ident, set()).add(name)
-        prev = library.get(key)
-        if prev is None or len(calls) > prev[1]:
-            library[key] = (name, len(calls), ident)
+        groups.setdefault(ident, []).append((name, len(calls)))
 
-    # Emit library.json: identity -> best burst file
+    # Canonical burst = the MODE of the deduped call count (the stable state
+    # the screen was captured in repeatedly), not the max (which favours
+    # transitional captures — a screen caught mid menu-open has more calls and
+    # renders as an overlap/ghost). Ties break to the larger count.
     lib_out = {}
-    for key, (name, nc, ident) in library.items():
-        lib_out.setdefault(ident, {"burst": name, "calls": nc, "states": []})
-        if nc > lib_out[ident]["calls"]:
-            lib_out[ident] = {"burst": name, "calls": nc, "states": []}
+    for ident, entries in groups.items():
+        from collections import Counter
+        counts = Counter(nc for _, nc in entries)
+        # most common count; tie -> larger
+        best_count = sorted(counts.items(), key=lambda kv: (kv[1], kv[0]))[-1][0]
+        rep = next(n for n, nc in entries if nc == best_count)
+        lib_out[ident] = {"burst": rep, "calls": best_count,
+                          "captured": len(entries)}
     (DRAWS.parent / "library.json").write_text(
         json.dumps(lib_out, indent=1), encoding="utf-8")
 
     print(f"{len(files)} bursts -> {len(groups)} distinct screens\n")
-    for ident, names in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+    for ident, entries in sorted(groups.items(), key=lambda kv: -len(kv[1])):
         best = lib_out[ident]
-        print(f"  x{len(names):2}  {ident[:52]:52}  best={best['burst']} ({best['calls']} calls)")
+        print(f"  x{len(entries):2}  {ident[:52]:52}  canonical={best['burst']} ({best['calls']} calls)")
     print(f"\nlibrary.json written: {len(groups)} screens keyed by title.")
 
 
