@@ -161,7 +161,9 @@ fn main() {
         .find(|i| i.w == 800 && i.h == 600)
         .map(|i| (i.dst[0], i.dst[1]))
         .unwrap_or((0, 0));
+    let skip_bg = std::env::var("CM_NO_BG").is_ok();
     for img in &draws.images {
+        if skip_bg { break; }
         let p = format!("{draws_dir}/{}", img.file);
         let Ok(raw) = std::fs::read(&p) else { continue };
         if raw.len() < (img.w * img.h * 2) as usize {
