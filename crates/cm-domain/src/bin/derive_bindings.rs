@@ -73,11 +73,23 @@ fn main() {
                  dom, mon, dob.year % 100, nation);
         println!("    club (base)    = {club:?}   wage/value {}/{}",
                  pv.wage(), pv.value());
+        // Try the REAL link (player_data_id) as well as the id match.
+        let link = pv.player_data_id();
+        println!("    person id={} player_data_id={:?}", p.id, link);
+        let by_link = link.and_then(|l| world.staff.type10.iter().find(|a| a.id == l as u32));
+        if let Some(a) = by_link {
+            let fa = a.full_attributes();
+            let nz: u16 = fa.iter().map(|&v| v as u16).sum();
+            println!("    via player_data_id: CA={} attr_sum={}", a.current_ability(), nz);
+        }
         if let Some(a) = world.staff.type10.iter().find(|a| a.id == p.id) {
             println!("    CA / PA        = {} / {}",
                      a.current_ability(), a.resolved_potential_ability());
-            print!("    attributes[54] =");
-            for v in a.full_attributes().iter() { print!(" {v}"); }
+            let fa = a.full_attributes();
+            print!("    positions[12]  =");
+            for v in fa[0..12].iter() { print!(" {v}"); }
+            print!("\n    attributes[42] =");
+            for v in fa[12..54].iter() { print!(" {v}"); }
             println!();
         } else {
             println!("    (no type-10 attribute record linked)");
