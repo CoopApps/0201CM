@@ -72,15 +72,62 @@ def main():
         return m
 
     maps = [glyph_map(c) for c in caps]
+
+    # --- fixed-position dynamic slots: same (x,y), text varies ---------------
     common = set(maps[0])
     for m in maps[1:]:
         common &= set(m)
+    dynamic_pos = {p for p in common if len({m[p][2] for m in maps}) > 1}
 
-    dynamic_pos = {p for p in common
-                   if len({m[p][2] for m in maps}) > 1}  # text varies
+    # --- REGION (centered/variable-length) dynamic slots --------------------
+    # A glyph that only appears at ONE (x,y) in the base but matches, in the
+    # other captures, a glyph at the SAME row y (±2) and SAME font with a
+    # DIFFERENT x and DIFFERENT text, is centered/aligned dynamic text (a
+    # header name etc.). Bind it as a REGION (row + font) with an inferred
+    # alignment, so the renderer places the live value itself.
+    def approx_width(text, font):
+        # rough per-font average glyph advance (px); only used to infer align.
+        avg = {0: 5, 1: 5, 2: 6, 3: 8, 4: 9, 5: 10, 6: 15, 7: 17}
+        return len(text) * avg.get(font, 8)
+
+    base_glyphs = [c for c in base if c["fn"] == "glyph"]
+    region_slots = {}   # base (x,y) -> slot dict
+    for c in base_glyphs:
+        a = c["args"]
+        bx, by, bfont = a[0], a[1], a[2] & 0xffff
+        btext = txt(c.get("text"))
+        if (bx, by) in dynamic_pos or not btext.strip():
+            continue
+        # find, in each other capture, a same-row same-font DIFFERENT-x glyph
+        matches = []
+        for m in maps[1:]:
+            cand = [(x, y, f, col, t) for (x, y), (f, col, t) in m.items()
+                    if abs(y - by) <= 2 and f == bfont and x != bx and t != btext]
+            # nearest by x
+            if cand:
+                cand.sort(key=lambda e: abs(e[0] - bx))
+                matches.append(cand[0])
+        if len(matches) == len(maps) - 1 and matches:
+            # infer alignment from base + matches
+            xs = [bx] + [mm[0] for mm in matches]
+            texts = [btext] + [mm[4] for mm in matches]
+            centers = [x + approx_width(t, bfont) / 2 for x, t in zip(xs, texts)]
+            rights = [x + approx_width(t, bfont) for x, t in zip(xs, texts)]
+            if max(centers) - min(centers) <= 8:
+                align, anchor = "center", int(sum(centers) / len(centers))
+            elif max(rights) - min(rights) <= 8:
+                align, anchor = "right", int(sum(rights) / len(rights))
+            else:
+                align, anchor = "left", bx
+            region_slots[(bx, by)] = {
+                "y": by, "font": bfont, "color": a[3] & 0xffff,
+                "align": align, "anchor": anchor,
+                "samples": texts, "field": None,
+            }
 
     static_calls = []
     dynamic_slots = []
+    region_out = []
     seen_dyn = set()
     for c in base:
         if c["fn"] == "glyph":
@@ -93,24 +140,29 @@ def main():
                         "x": a[0], "y": a[1],
                         "font": a[2] & 0xffff, "color": a[3] & 0xffff,
                         "samples": [m[pos][2] for m in maps if pos in m],
-                        "field": None,   # bind to a sim field later
+                        "field": None,
                     })
-                continue  # dynamic glyphs are NOT static draws
+                continue
+            if pos in region_slots:
+                region_out.append(region_slots[pos])
+                continue  # region-dynamic glyph is not static
         static_calls.append(c)
 
     OUT.mkdir(parents=True, exist_ok=True)
     tmpl = {"name": slug,
             "sources": args,
             "static_calls": static_calls,
-            "dynamic_slots": dynamic_slots}
+            "dynamic_slots": dynamic_slots,
+            "region_slots": region_out}
     (OUT / f"{slug}.json").write_text(json.dumps(tmpl), encoding="utf-8")
 
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    print(f"template '{slug}': {len(static_calls)} static calls, "
-          f"{len(dynamic_slots)} dynamic slots")
+    print(f"template '{slug}': {len(static_calls)} static, "
+          f"{len(dynamic_slots)} fixed slots, {len(region_out)} region slots")
     for s in sorted(dynamic_slots, key=lambda s: (s["y"], s["x"])):
-        print(f"  slot ({s['x']:3},{s['y']:3}) font{s['font']} "
-              f"samples={s['samples']}")
+        print(f"  fixed  ({s['x']:3},{s['y']:3}) font{s['font']} samples={s['samples']}")
+    for s in sorted(region_out, key=lambda s: s["y"]):
+        print(f"  region y={s['y']:3} font{s['font']} {s['align']}@{s['anchor']} samples={s['samples']}")
     print(f"\n-> {(OUT / (slug + '.json')).relative_to(REPO)}")
 
 

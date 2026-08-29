@@ -35,6 +35,21 @@ struct Draws {
 struct Template {
     static_calls: Vec<Call>,
     dynamic_slots: Vec<Slot>,
+    #[serde(default)]
+    region_slots: Vec<RegionSlot>,
+}
+/// A dynamic slot for centered/aligned variable-length text (e.g. a header
+/// name). The renderer places the bound value itself using `align`/`anchor`.
+#[derive(Deserialize)]
+struct RegionSlot {
+    y: i32,
+    font: i64,
+    color: i64,
+    align: String,     // "center" | "right" | "left"
+    anchor: i32,
+    samples: Vec<String>,
+    #[serde(default)]
+    value: Option<String>,
 }
 #[derive(Deserialize)]
 struct Slot {
@@ -147,6 +162,7 @@ fn main() {
     // template:<slug>[:<idx>] — render a bindable template with dynamic slots
     // filled from each slot's live `value` (or samples[idx] to demonstrate the
     // same template driving different data). Static chrome replays verbatim.
+    let mut region_slots: Vec<RegionSlot> = Vec::new();
     let mut draws: Draws = if let Some(rest) = name.strip_prefix("template:") {
         let mut parts = rest.splitn(2, ':');
         let slug = parts.next().unwrap();
@@ -162,15 +178,26 @@ fn main() {
         });
         let t: Template = serde_json::from_str(&traw).expect("parse template");
         let mut calls = t.static_calls;
+        let pick = |samples: &Vec<String>, value: &Option<String>| -> String {
+            value.clone().unwrap_or_else(|| {
+                samples.get(idx).or_else(|| samples.last()).cloned().unwrap_or_default()
+            })
+        };
         for slot in &t.dynamic_slots {
-            let val = slot.value.clone().unwrap_or_else(|| {
-                slot.samples.get(idx).or_else(|| slot.samples.last())
-                    .cloned().unwrap_or_default()
-            });
+            let val = pick(&slot.samples, &slot.value);
             calls.push(Call {
                 fname: "glyph".into(),
                 args: vec![slot.x as i64, slot.y as i64, slot.font, slot.color, 0],
                 text: Some(text_to_hex(&val)),
+            });
+        }
+        // Region slots need font metrics to place by alignment — render them
+        // after the surface fonts exist (below). Carry the bound values here.
+        for s in &t.region_slots {
+            region_slots.push(RegionSlot {
+                y: s.y, font: s.font, color: s.color, align: s.align.clone(),
+                anchor: s.anchor, samples: s.samples.clone(),
+                value: Some(pick(&s.samples, &s.value)),
             });
         }
         Draws { calls, images: Vec::new() }
@@ -295,6 +322,29 @@ fn main() {
             }
             _ => {}
         }
+    }
+
+    // Region slots: place the bound value by its own measured width + the
+    // captured alignment (center/right/left about `anchor`). This is what
+    // fixes centered/variable-length dynamic text (header names).
+    for slot in &region_slots {
+        let val = slot.value.clone().unwrap_or_default();
+        if val.is_empty() {
+            continue;
+        }
+        let fid = (slot.font & 0xffff) as u8;
+        if fid > 7 {
+            continue;
+        }
+        let font = fonts.slot(fid);
+        let w = font.text_width(&val);
+        let x = match slot.align.as_str() {
+            "center" => slot.anchor - w / 2,
+            "right" => slot.anchor - w,
+            _ => slot.anchor,
+        };
+        let rgb = unpack565((slot.color & 0xffff) as u16);
+        s.blit_string(x, slot.y, font, rgb, &val);
     }
 
     let mut argb = vec![0u32; Surface::W * Surface::H];
