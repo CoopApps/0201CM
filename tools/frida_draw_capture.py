@@ -199,7 +199,12 @@ class Collector:
         self.current = []
         self.images = []   # list of (dst_rect, pixels_bytes, w, h) this burst
         self.last_t = 0.0
-        self.n = 0
+        # Resume numbering after any existing draws_NNN so a restart doesn't
+        # overwrite prior captures.
+        existing = [int(p.stem.split("_")[1])
+                    for p in OUT_DIR.glob("draws_*.json")
+                    if p.stem.split("_")[1].isdigit()]
+        self.n = max(existing) if existing else 0
 
     def add(self, events):
         now = time.monotonic()

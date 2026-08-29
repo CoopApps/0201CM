@@ -28,3 +28,5 @@ world.json
 world_viewer.json
 build.log
 bash.exe.stackdump
+__pycache__/
+*.pyc
