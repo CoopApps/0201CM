@@ -22,12 +22,24 @@ Legend: 🔴 heuristic (not faithful) · 🟡 partial port · 🟢 faithful & ve
 | 11 | **Player regen** | player_regen.rs (auditing) | real regen fn (finding) | 🟡 |
 | 12 | **Stub nations (30 Asia/Oceania)** | ASIA_OCEANIA_STUBS declared not-shipped | per-nation `.cpp` ports | 🔴 |
 
-## Method per kill
-1. Find the real decompiled function (address + .c file).
+## Method per kill — and what MUST be shown (accountability)
+Every kill is delivered with BOTH:
+- **THE WORKING** — how it was done: the real decompiled function (address +
+  the actual code), what it computes, and the line-by-line reasoning from that
+  to the Rust port. Not "it's faithful now" — the derivation, shown.
+- **THE COMPLETED SYSTEM** — the result, demonstrated: the ported logic run and
+  VERIFIED against ground truth (screenshot / known values / a captured trace),
+  and where it plugs into the running game.
+
+Steps:
+1. Find the real decompiled function (address + .c file). **Show it.**
 2. Port its logic + RNG use (`cm_rng::MatchRng`) + data reads, faithfully.
-3. Verify: deterministic output matches the game (ground-truth screenshot / trace
-   / known values), or bit-exact where a trace exists.
-4. Flip 🔴/🟡 → 🟢 with the verification evidence.
+   **Show the port and the mapping from the decompile.**
+3. Verify: deterministic output matches the game (ground-truth screenshot /
+   trace / known values), or bit-exact where a trace exists. **Show the match.**
+4. Flip 🔴/🟡 → 🟢 only WITH the verification evidence in hand.
+
+A kill that can't show all three is NOT done — it stays 🔴/🟡.
 
 ## Priority order (highest game-impact first)
 1. #1 Match squad feeding — makes tables realistic (the sim's core output)
