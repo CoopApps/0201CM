@@ -521,6 +521,25 @@ pub struct DomainStaffType10 {
 }
 
 impl DomainStaffType10 {
+    /// The full 54-byte player-attribute block at record offset 0x0f..0x44,
+    /// each value on the real 1..20 scale. VERIFIED against staff.dat: bytes
+    /// 0x0f..0x44 are the only region capped at 20 (a CA-165 player has rich
+    /// varied values here; the old struct split this block across four
+    /// "unknown"/attributes fields, exposing only the middle 31 and mislabeling
+    /// the rest). Reassembled from the existing rust-db fields (no re-import):
+    ///   unknown_bytes_15_26 (0x0f-0x1a) + attributes (0x1b-0x39)
+    ///   + unknown_bytes_58_64 (0x3a-0x40) + trailing_bytes[0..4] (0x41-0x44).
+    /// Naming each index (Passing/Tackling/…) comes from the editor's field
+    /// order — the authoritative layout reference.
+    pub fn full_attributes(&self) -> [u8; 54] {
+        let mut out = [0u8; 54];
+        out[0..12].copy_from_slice(&self.unknown_bytes_15_26);
+        out[12..43].copy_from_slice(&self.attributes);
+        out[43..50].copy_from_slice(&self.unknown_bytes_58_64);
+        out[50..54].copy_from_slice(&self.trailing_bytes[0..4]);
+        out
+    }
+
     /// Current Ability (0..200), from the outfield/attribute record +0x05.
     pub fn current_ability(&self) -> i16 {
         self.rating_short_0x05 as i16

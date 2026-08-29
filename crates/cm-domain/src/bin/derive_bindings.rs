@@ -76,8 +76,8 @@ fn main() {
         if let Some(a) = world.staff.type10.iter().find(|a| a.id == p.id) {
             println!("    CA / PA        = {} / {}",
                      a.current_ability(), a.resolved_potential_ability());
-            print!("    attributes[31] =");
-            for v in a.attributes.iter() { print!(" {v}"); }
+            print!("    attributes[54] =");
+            for v in a.full_attributes().iter() { print!(" {v}"); }
             println!();
         } else {
             println!("    (no type-10 attribute record linked)");
