@@ -16,8 +16,13 @@ Legend: 🔴 heuristic (not faithful) · 🟡 partial port · 🟢 faithful & ve
 | 5 | **Loans** | screens only (screen_batch26/27); NO engine mechanic | loan lifecycle fn (finding) | 🔴 |
 | 6 | **Attribute generation** | CA-anchored core only; missing position-weighting + Pass-2; and CA-gen for 24858 CA=0 players | `FUN_0051f5d0` (spec'd; partly ported) | 🟡 |
 | 7 | **Flexible-PA resolution** | band midpoint, not RNG-exact draw (type10) | `FUN_0051f5d0` PA-gen (lines 809-924) | 🟡 |
-| 8 | **Finance / wages** | (auditing) weekly wage / monthly finance | finance module (finding) | 🔴 |
-| 9 | **Morale / board confidence** | (auditing) | board/morale fns (finding) | 🔴 |
+| 8a | **Finance: balance/budget seed** | `finance.rs:96` rep²·500 (invented) | `FUN_005803d0` (005803d0.c:47-239); loader `FUN_005853c0`; ctor `FUN_00584530` | 🔴 |
+| 8b | **Finance: weekly wages** | `finance.rs:134` flat subtract | `FUN_00586ec0` tail (00586ec0.c:363-422) — rep-banded + rand | 🔴 |
+| 8c | **Finance: monthly rollover** | `finance.rs:144` red-counter | driver `FUN_00586cf0` + status classifier `FUN_00582870` | 🔴 |
+| 8d | **Finance: gate receipts** | ABSENT | `FUN_00584790` (post-match income) + helper `FUN_00585060` | 🔴 |
+| 9a | **Board confidence** | `screen_manager_batch.rs:126` view-only, no model | `FUN_00588c70` (confidence/budget at club +0x7f/+0x166) | 🔴 |
+| 9b | **Player morale** | `lib.rs:783` inert byte, static seed 11 | TBD — match-result/squad_manager.cpp (0x00842ce0+) | 🔴 |
+| ** | **DEP: finance record** | — | decode the 0x167-byte per-club finance record (bal@0, budget@+0x14, confidence@+0x7f/+0x166) + finance.dat | 🔴 |
 | 10 | **Player match ratings** | player_rating.rs formula (auditing) | real rating fn (finding) | 🔴 |
 | 11 | **Player regen** | player_regen.rs (auditing) | real regen fn (finding) | 🟡 |
 | 12 | **Stub nations (30 Asia/Oceania)** | ASIA_OCEANIA_STUBS declared not-shipped | per-nation `.cpp` ports | 🔴 |
