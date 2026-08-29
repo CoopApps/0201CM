@@ -28,6 +28,24 @@ struct Draws {
     #[serde(default)]
     images: Vec<ImgBlit>,
 }
+
+/// A bindable template (tools/extract_template.py): static chrome + the
+/// dynamic data slots whose text is supplied at render time (from the sim).
+#[derive(Deserialize)]
+struct Template {
+    static_calls: Vec<Call>,
+    dynamic_slots: Vec<Slot>,
+}
+#[derive(Deserialize)]
+struct Slot {
+    x: i32,
+    y: i32,
+    font: i64,
+    color: i64,
+    samples: Vec<String>,
+    #[serde(default)]
+    value: Option<String>, // live-bound override; falls back to samples[idx]
+}
 #[derive(Deserialize)]
 struct ImgBlit {
     file: String,
@@ -109,22 +127,65 @@ fn hex_to_text(h: &str) -> String {
     bytes.iter().map(|&b| b as char).collect()
 }
 
+fn text_to_hex(t: &str) -> String {
+    let mut h = String::new();
+    for b in t.bytes() {
+        h.push_str(&format!("{:02x}", b));
+    }
+    h.push_str("00");
+    h
+}
+
 fn main() {
     let mut args = std::env::args().skip(1);
     let name = args.next().unwrap_or_else(|| {
         eprintln!("usage: replay_draws <draws_name> [out.bmp]");
+        eprintln!("   or: replay_draws template:<slug>[:<sample_index>] [out.bmp]");
         std::process::exit(2);
     });
-    let path = format!(
-        "{}/../../reports/screen_captures/draws/{}.json",
-        env!("CARGO_MANIFEST_DIR"),
-        name
-    );
-    let raw = std::fs::read_to_string(&path).unwrap_or_else(|e| {
-        eprintln!("cannot read {path}: {e}");
-        std::process::exit(2);
-    });
-    let mut draws: Draws = serde_json::from_str(&raw).expect("parse draws json");
+
+    // template:<slug>[:<idx>] — render a bindable template with dynamic slots
+    // filled from each slot's live `value` (or samples[idx] to demonstrate the
+    // same template driving different data). Static chrome replays verbatim.
+    let mut draws: Draws = if let Some(rest) = name.strip_prefix("template:") {
+        let mut parts = rest.splitn(2, ':');
+        let slug = parts.next().unwrap();
+        let idx: usize = parts.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+        let tp = format!(
+            "{}/../../reports/screen_captures/templates/{}.json",
+            env!("CARGO_MANIFEST_DIR"),
+            slug
+        );
+        let traw = std::fs::read_to_string(&tp).unwrap_or_else(|e| {
+            eprintln!("cannot read {tp}: {e}");
+            std::process::exit(2);
+        });
+        let t: Template = serde_json::from_str(&traw).expect("parse template");
+        let mut calls = t.static_calls;
+        for slot in &t.dynamic_slots {
+            let val = slot.value.clone().unwrap_or_else(|| {
+                slot.samples.get(idx).or_else(|| slot.samples.last())
+                    .cloned().unwrap_or_default()
+            });
+            calls.push(Call {
+                fname: "glyph".into(),
+                args: vec![slot.x as i64, slot.y as i64, slot.font, slot.color, 0],
+                text: Some(text_to_hex(&val)),
+            });
+        }
+        Draws { calls, images: Vec::new() }
+    } else {
+        let path = format!(
+            "{}/../../reports/screen_captures/draws/{}.json",
+            env!("CARGO_MANIFEST_DIR"),
+            name
+        );
+        let raw = std::fs::read_to_string(&path).unwrap_or_else(|e| {
+            eprintln!("cannot read {path}: {e}");
+            std::process::exit(2);
+        });
+        serde_json::from_str(&raw).expect("parse draws json")
+    };
 
     // A burst often captures the screen drawn 2+ times back-to-back (one
     // redraw cycle each). Replaying every pass double-draws — and with darken
