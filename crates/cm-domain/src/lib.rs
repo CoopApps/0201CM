@@ -715,7 +715,7 @@ impl DomainStaffType10 {
 /// Only the fields the decode nails as deterministic are here. Age (needs the
 /// staff DISK-record layout for DOB), and the RNG-generated attribute fill for
 /// players lacking data, are separate follow-ups.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlayerInitState {
     pub player_id: u32,
     /// Current ability (from base type10 +0x05).
@@ -730,11 +730,45 @@ pub struct PlayerInitState {
     pub condition: u16,
     /// Morale/match-state flags, low nibble cleared at init (+0x0b) — neutral.
     pub morale: u8,
+    /// The 42 player attributes (type10 block 0x1b..0x44). Taken from the base
+    /// record when it ships them; GENERATED at init (this state) for the ~55%
+    /// of players the base ships as zero — Panzanaro et al. — via the
+    /// FUN_0051f5d0 seeding, so every player has real, CA-consistent, and
+    /// DETERMINISTIC attributes at game start.
+    #[serde(default)]
+    pub attributes: Vec<u8>,
 }
 
 impl PlayerInitState {
     /// The condition every player starts a new game on — FUN_0051f5d0 line 1014.
     pub const INITIAL_CONDITION: u16 = 156;
+
+    /// Generate the 42 attributes from CA — the CA-anchored roll of
+    /// FUN_0051f5d0 (mode A, lines 1484-1511, `00524160.c`/`00524560.c`):
+    ///   v = random(7) + CA/10 - 3;  if v<1 { v = random(8)+1 }  else min(v,20)
+    /// Each attribute centres on CA/10 (CA 1..200 -> 0..20) with a small roll,
+    /// clamped to [1,20]. Uses the ported ring-buffer RNG (`FUN_008fc4f0`).
+    ///
+    /// PORTED: the CA-anchoring core + clamp. NOT YET ported from the full
+    /// FUN_0051f5d0: (a) position weighting — the position profile pushes GK
+    /// attributes up for keepers / down for outfielders (§3, lines 1500-1618);
+    /// (b) similar-player template cloning (mode B); (c) the Pass-2 CA-rescale;
+    /// (d) the exact slot->byte order from FUN_00524560. So values are real and
+    /// CA-consistent but not yet position-shaped or bit-exact.
+    pub fn generate_attributes_core(ca: i16, rng: &mut cm_rng::MatchRng) -> Vec<u8> {
+        let mut out = vec![0u8; 42];
+        let ca10 = (ca as i32) / 10;
+        for a in out.iter_mut() {
+            let mut v = rng.random(7) + ca10 - 3;
+            if v < 1 {
+                v = rng.random(8) + 1;
+            } else if v >= 21 {
+                v = 20;
+            }
+            *a = v.clamp(1, 20) as u8;
+        }
+        out
+    }
 
     /// Seed a player's initial runtime state from their attribute record and
     /// (optionally) their person record + the game start date for age.
@@ -745,17 +779,35 @@ impl PlayerInitState {
         start_day: u16,
         rng: Option<&mut cm_rng::MatchRng>,
     ) -> Self {
+        let ca = attr.current_ability();
+
+        // Shipped attribute block (type10 0x1b..0x44). Ships zero for ~55%.
+        let fa = attr.full_attributes();
+        let mut attributes: Vec<u8> = fa[12..54].to_vec();
+        let needs_gen = attributes.iter().all(|&v| v == 0) && ca > 0;
+
         let potential_ability = match rng {
-            Some(r) => attr.resolved_potential_ability_rng(r),
+            Some(r) => {
+                let pa = attr.resolved_potential_ability_rng(r);
+                // Generate attributes from CA on the SAME init RNG stream — the
+                // exact-port design (the game seeds attributes right here in
+                // FUN_0051f5d0 off its running RNG).
+                if needs_gen {
+                    attributes = Self::generate_attributes_core(ca, r);
+                }
+                pa
+            }
             None => attr.resolved_potential_ability(),
         };
-        PlayerInitState {
+
+        Self {
             player_id: attr.id,
-            current_ability: attr.current_ability(),
+            current_ability: ca,
             potential_ability,
             age: person.and_then(|p| p.age_at(start_year, start_day)),
             condition: Self::INITIAL_CONDITION,
             morale: 0,
+            attributes,
         }
     }
 }
