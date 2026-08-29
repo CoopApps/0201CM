@@ -557,24 +557,35 @@ impl DomainStaffType10 {
         out
     }
 
-    /// The 42 player attribute names, in the exact record byte order
-    /// (0x1b..0x44). CONFIRMED: the editor displays attributes ALPHABETICALLY
-    /// and its panel grid reads them sequentially in record-byte order
-    /// (editor FUN_0048bd00), so byte[0x1b+n] = the nth alphabetical attribute.
-    /// Verified by GK/attacker discrimination over staff.dat: the GK-elevated
-    /// bytes are exactly Handling/Reflexes/OneOnOnes/Positioning and the
-    /// attacker-elevated ones Finishing/Dribbling/Pace/Flair — all at their
-    /// alphabetical indices.
+    /// The 42 player attribute names, in exact record byte order (0x1b..0x44).
+    /// TRIPLE-VERIFIED: (1) the editor panel grid reads bytes sequentially
+    /// (editor FUN_0048bd00) and displays attributes ALPHABETICALLY, so
+    /// byte[0x1b+n] = the nth alphabetical attribute; (2) the game's own
+    /// attribute-name function (FUN_0052c3f0) names the ~30 engine attributes
+    /// at exactly the offsets alphabetical order predicts (Handling@0x2a,
+    /// Reflexes@0x3a, Passing@0x37, Tackling@0x3e, …); (3) GK/attacker
+    /// discrimination over staff.dat elevates precisely the right bytes.
+    /// The 12 "hidden" attributes the engine doesn't name (Consistency,
+    /// Dirtiness, One On Ones, …) fall in its gaps — exactly their alphabetical
+    /// slots. So all 42 are alphabetical.
+    ///
+    /// NAMES use the GAME's display captions (what the profile screen shows).
+    /// Four differ from the editor's labels but are the SAME attribute at the
+    /// SAME byte: Set Pieces(editor "Free Kicks"), Influence("Leadership"),
+    /// Off The Ball("Movement"), Creativity("Vision"). The ALPHABETICAL ORDER
+    /// (hence byte order) follows the EDITOR labels — that's why "Set Pieces"
+    /// sits at the F-slot etc. Determination is NOT in this block (it lives at
+    /// the person record +0x58).
     pub const ATTRIBUTE_NAMES: [&'static str; 42] = [
         "Acceleration", "Aggression", "Agility", "Anticipation", "Balance",
         "Bravery", "Consistency", "Corners", "Crossing", "Decisions",
-        "Dirtiness", "Dribbling", "Finishing", "Flair", "Free Kicks",
+        "Dirtiness", "Dribbling", "Finishing", "Flair", "Set Pieces",
         "Handling", "Heading", "Important Matches", "Injury Proneness",
-        "Jumping", "Leadership", "Left Foot", "Long Shots", "Marking",
-        "Movement", "Natural Fitness", "One On Ones", "Pace", "Passing",
+        "Jumping", "Influence", "Left Foot", "Long Shots", "Marking",
+        "Off The Ball", "Natural Fitness", "One On Ones", "Pace", "Passing",
         "Penalties", "Positioning", "Reflexes", "Right Foot", "Stamina",
         "Strength", "Tackling", "Teamwork", "Technique", "Throw Ins",
-        "Versatility", "Vision", "Work Rate",
+        "Versatility", "Creativity", "Work Rate",
     ];
 
     /// The 42 attributes as (name, value) pairs, in record order. Values are
