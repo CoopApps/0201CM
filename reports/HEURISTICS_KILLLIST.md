@@ -52,12 +52,25 @@ Steps:
 
 A kill that can't show all three is NOT done — it stays 🔴/🟡.
 
-## Priority order (highest game-impact first)
-1. #1 Match squad feeding — makes tables realistic (the sim's core output)
-2. #6/#7 Attribute generation + PA — every player's real stats
-3. #2/#3/#4/#5 Transfers + loans — the market feels alive
-4. #8/#9/#10 Finance / morale / ratings
-5. #11/#12 Regen / stub nations
+## Dependency order (discovered)
+**Kill #1's root cause is `player_rating.rs:135` `if ca <= 0 { continue }`** — it
+drops every CA=0 player from the rating book, so sparse clubs have no squad → the
+reputation fallback. Those CA=0 players (Panzanaro et al.) need CA+attributes
+GENERATED first (kill #6). So **#6 is the prerequisite for #1**:
+```
+#6 CA + attribute generation (FUN_0051f5d0: PA→CA from reputation, then attrs)
+   └─► unblocks #1: include all players in the rating book with REAL/generated
+       data → snapshot_team_for_engine feeds full real squads → delete the
+       score_from_goal_events fallback (A6) entirely.
+```
+
+## Priority / kill order (highest game-impact first, respecting deps)
+1. **#6/#7 CA + attribute generation** — prerequisite for #1; every player gets real stats
+2. **#1 Match squad feeding** — rebuild snapshot off full StaffBook + real attrs + real club rep; delete fallback (needs #6)
+3. **#B Player ratings** — real match-rating buckets (needs #1 to fill them)
+4. **#2/#3/#4/#5 Transfers + loans** — real valuation, negotiation, AI bidding, loan lifecycle
+5. **#8/#9 Finance / morale / board** — needs the 0x167 finance record decoded
+6. **#C/#12 Regen wiring / stub nations**
 
 *Decompile targets are being filled in by the audit pass; update this table as
 each real function is located.*
