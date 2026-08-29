@@ -495,6 +495,23 @@ pub struct DomainStaffType9 {
     pub body: Vec<u8>,
 }
 
+impl DomainStaffType9 {
+    /// Non-player (coaching) attribute block — `staff.dat` type9 record bytes
+    /// 0x0e..0x22 (21 values, 0..20 scale). VERIFIED by the same offset scan
+    /// that found the type10 block: this is the only 0..20-capped region of
+    /// the 68-byte record (0x23.. is a 0xFF-filled reserved region). `body`
+    /// starts at record offset 0x04, so the block is `body[0x0a..0x1f]`.
+    /// Per-index naming (attacking/defending/tactics/GK-coaching/…) comes from
+    /// the editor's coaching-attribute order.
+    pub fn coaching_attributes(&self) -> [u8; 21] {
+        let mut out = [0u8; 21];
+        if self.body.len() >= 0x1f {
+            out.copy_from_slice(&self.body[0x0a..0x1f]);
+        }
+        out
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainStaffType8 {
     pub body: Vec<u8>,
@@ -538,6 +555,15 @@ impl DomainStaffType10 {
         out[43..50].copy_from_slice(&self.unknown_bytes_58_64);
         out[50..54].copy_from_slice(&self.trailing_bytes[0..4]);
         out
+    }
+
+    /// Reputation (type10 +0x0d). CONFIRMED by correlation with CA over
+    /// staff.dat: players with CA>=150 average ~119 here; players with CA
+    /// 20-40 average ~1.4 — it tracks ability exactly as reputation does.
+    /// Stored as the 0x0d byte (0..~200), widening to 0x0d..0x0e for the very
+    /// top of the world.
+    pub fn reputation(&self) -> u16 {
+        self.rating_short_0x0d
     }
 
     /// Current Ability (0..200), from the outfield/attribute record +0x05.
