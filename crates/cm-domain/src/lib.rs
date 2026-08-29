@@ -16740,7 +16740,7 @@ impl World {
     }
 
     /// A person's display name from the name pools (first + second name ids).
-    fn person_display_name(&self, person: &DomainStaffType6) -> String {
+    pub fn person_display_name(&self, person: &DomainStaffType6) -> String {
         let first = self
             .references
             .first_names
