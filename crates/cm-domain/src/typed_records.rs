@@ -58,6 +58,18 @@ fn u8_at(bytes: &[u8], off: usize) -> u8 {
     bytes.get(off).copied().unwrap_or(0)
 }
 
+fn le_i16(bytes: &[u8], off: usize) -> i16 {
+    let mut buf = [0u8; 2];
+    if let Some(chunk) = bytes.get(off..off + 2) { buf.copy_from_slice(chunk); }
+    i16::from_le_bytes(buf)
+}
+
+fn le_f64(bytes: &[u8], off: usize) -> f64 {
+    let mut buf = [0u8; 8];
+    if let Some(chunk) = bytes.get(off..off + 8) { buf.copy_from_slice(chunk); }
+    f64::from_le_bytes(buf)
+}
+
 /// Turn a "sentinel" `i32` (`-1` or `-2` in the exe's convention) into `None`.
 /// The exe uses `-1` for "unset/null" and `-2` for "extinct/placeholder"; both
 /// mean "no valid reference" so we collapse them.
@@ -232,6 +244,44 @@ impl<'a> ClubView<'a> {
     pub fn field_7b_mutable(&self) -> i32 {
         le_i32(self.raw, 0x7b)
     }
+
+    /// **`club_cash` (i32, £)** at record +0x65 — VERIFIED against the shipped
+    /// 2001-02 database: Real Madrid £100M, Man Utd £30M, Sheffield Wednesday
+    /// -£14M (bankrupt), Sheffield United -£8M. Distribution across all 10,580
+    /// clubs: p50=£0, p90=£260k, max=£102M, min=-£22.5M; 287 clubs (2.7%) ship
+    /// with negative balances — those are the "Bankrupt" ones the editor shows.
+    pub fn cash(&self) -> i32 { le_i32(self.raw, 0x65) }
+
+    // --- newly confirmed offsets (editor decode agent, 2026-08-30) ---
+    // The three fields at +0x73/+0x77/+0x7b were previously flagged as
+    // "probable finance" — cross-club sampling shows they scale exactly with
+    // stadium size (Old Trafford, Emirates, Hillsborough, Rushden). So they
+    // are attendance figures, not cash balances.
+
+    /// Average / expected attendance. Scaled from stadium capacity.
+    pub fn attendance_average(&self) -> i32 { le_i32(self.raw, 0x73) }
+    /// Minimum expected attendance (typical low-attendance fixture).
+    pub fn attendance_minimum(&self) -> i32 { le_i32(self.raw, 0x77) }
+    /// Maximum/capacity attendance for the club at its home stadium.
+    pub fn attendance_maximum(&self) -> i32 { le_i32(self.raw, 0x7b) }
+
+    /// Rival clubs — three staff/club id slots. Verified: Sheffield Wednesday's
+    /// `rival_1` = 8370 (Sheffield United — the cross-town derby).
+    pub fn rival_club_1(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xb3)) }
+    pub fn rival_club_2(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xb7)) }
+    pub fn rival_club_3(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xbb)) }
+
+    /// Manager (staff id). Very heavily used in the game (46 reads across 16
+    /// functions per the club record-offset corpus). Verified: SWFC = 58080
+    /// (Peter Shreeves).
+    pub fn manager_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xcf)) }
+    /// Assistant manager (staff id). Verified: SWFC = 59310 (Terry Yorath).
+    pub fn assistant_manager_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xd3)) }
+
+    /// Flag byte at +0x8b — unknown semantics but distinctive per-club. SWFC=0x11,
+    /// Arsenal=0x0d, Man Utd/Rushden=0x00. Candidate for `club_professional_status`
+    /// / financial state flag (the "Bankrupt" indicator the editor shows).
+    pub fn flag_byte_8b(&self) -> u8 { u8_at(self.raw, 0x8b) }
 }
 
 // ------ Player / staff-base (110 B, StaffType6, DAT_00acd5c4, stride 0x6e) ------
@@ -648,6 +698,70 @@ impl<'a> NationView<'a> {
     pub fn is_active_nation(&self) -> bool {
         self.selection_flags() & 4 != 0
     }
+
+    // ---- Nation record remainder (VERIFIED via value-pattern scan across
+    //      all 213 shipped nations, editor decode agent 2026-08-30) ----
+
+    /// 3-letter FIFA code ("ENG", "BRA", "FRO", "SMR"…).
+    pub fn three_letter_name(&self) -> String {
+        read_latin1_cstr(self.raw, 0x53, 4)
+    }
+    /// Nationality adjective ("English", "Brazilian"…).
+    pub fn nationality_name(&self) -> String {
+        read_latin1_cstr(self.raw, 0x57, 26)
+    }
+    /// Finer regional grouping (0..24).
+    pub fn region(&self) -> u8 { u8_at(self.raw, 0x75) }
+    /// Coarser continental region (0..14).
+    pub fn actual_region(&self) -> u8 { u8_at(self.raw, 0x76) }
+    /// Day-of-the-cycle when the nation's season updates (0..63).
+    pub fn season_update_day(&self) -> u8 { u8_at(self.raw, 0x77) }
+    /// Grammatical gender of full name (0..3).
+    pub fn name_gender(&self) -> u8 { u8_at(self.raw, 0x7e) }
+    /// Grammatical gender of short name (0..2).
+    pub fn short_name_gender(&self) -> u8 { u8_at(self.raw, 0x7f) }
+    /// Capital city id (into city.dat). None for -1/-2 sentinels.
+    pub fn capital_city_id(&self) -> Option<i32> {
+        let v = le_i32(self.raw, 0x80);
+        if v < 0 { None } else { Some(v) }
+    }
+    /// League-quality tier (0..4). Top-flight nations = 1; minnows = 4.
+    pub fn league_standard(&self) -> u8 { u8_at(self.raw, 0x84) }
+    /// State of development (0..20). Classic CM slider — Afg=1, Eng=19, Spa=20.
+    pub fn state_of_development(&self) -> u8 { u8_at(self.raw, 0x85) }
+    /// National stadium id (into stadium.dat). None when unset.
+    pub fn national_stadium_id(&self) -> Option<i32> {
+        let v = le_i16(self.raw, 0x86) as i32;
+        if v <= 0 { None } else { Some(v) }
+    }
+    /// Total affiliated clubs (Italy=13059, San Marino=4).
+    pub fn number_clubs(&self) -> i32 { le_i32(self.raw, 0x88) }
+    /// Total affiliated staff records (0 in shipped data; populated at runtime).
+    pub fn number_staff(&self) -> i16 { le_i16(self.raw, 0x8c) }
+    /// Reputation 0..9500 in 500-point steps. VERIFIED value pattern.
+    pub fn reputation(&self) -> u16 { le_u16(self.raw, 0x8e) }
+    /// Foreground colour ids 1..3 (into colour.dat).
+    pub fn foreground_colour_1(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x90)) }
+    pub fn foreground_colour_2(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x94)) }
+    pub fn foreground_colour_3(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x98)) }
+    /// Background colour ids 1..3 (into colour.dat).
+    pub fn background_colour_1(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x9c)) }
+    pub fn background_colour_2(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xa0)) }
+    pub fn background_colour_3(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xa4)) }
+    /// FIFA coefficient by year_index 0=1991..6=1997. Only slot 0 populated in shipped data.
+    pub fn fifa_coefficient(&self, year_index: usize) -> Option<f64> {
+        if year_index >= 7 { return None; }
+        Some(le_f64(self.raw, 0xa8 + year_index * 8))
+    }
+    /// UEFA coefficient by year_index 0=1991..5=1996. Non-UEFA nations read as 0.
+    pub fn uefa_coefficient(&self, year_index: usize) -> Option<f64> {
+        if year_index >= 6 { return None; }
+        Some(le_f64(self.raw, 0xe0 + year_index * 8))
+    }
+    /// Rival nation ids 1..3 (into nation.dat).
+    pub fn rival_nation_1(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x110)) }
+    pub fn rival_nation_2(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x114)) }
+    pub fn rival_nation_3(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x118)) }
 }
 
 // ------ Competition (107 B club_comp/nation_comp, 101 B staff_comp) ------
@@ -661,13 +775,13 @@ impl<'a> NationView<'a> {
 /// in place. Pool base `DAT_00acd5d8`, count `DAT_00acd580`. The loader also
 /// appends 127 empty slots for competitions created at runtime.
 ///
-/// **What is actually shipped**: in `club_comp.dat` the four link fields are
-/// empty (continent/nation/foreground = 0, background = `0xFF000000`) and
-/// `nation_comp.dat` is all-zero there. The comp↔nation wiring is established
-/// during "Initialising game data", reachable from clubs instead
-/// (`club+0x53` = nation, `club+0x57/0x5b/0x60` = comps). So only id, names,
-/// genders, abbreviation and reputation carry shipped information — do not
-/// trust the link fields straight out of an import.
+/// **What is actually shipped** (VERIFIED via byte scan across all 390 shipped
+/// club_comp records, 2026-08-30): `continent_id` is populated on 258/390
+/// records (usually `2` = Europe); `nation_id` is populated on 345/390.
+/// Foreground/background colour ids are still empty in `club_comp.dat` and
+/// `nation_comp.dat`, so those two links do get patched up at runtime through
+/// clubs (`club+0x53/0x57/0x5b/0x60`) — but continent/nation are real on disk
+/// and safe to trust straight out of the loader.
 pub struct CompetitionView<'a> {
     raw: &'a [u8],
 }
@@ -736,9 +850,46 @@ impl<'a> CompetitionView<'a> {
     /// Competition reputation, `0..=20`. VERIFIED — compared against the
     /// thresholds 5/8/11/16 and scaled by ×500 in transfer/ambition logic;
     /// the shipped data spans exactly 0–20 (World Cup = 20).
+    ///
+    /// This offset is ONLY valid for the 107-byte `club_comp.dat` /
+    /// `nation_comp.dat` layout. `staff_comp.dat` records are 101 bytes with no
+    /// abbreviation field — use [`StaffCompetitionView::reputation`] for those.
     pub fn reputation(&self) -> i16 {
         le_u16(self.raw, 0x69) as i16
     }
+}
+
+/// A read-only, typed view over a `staff_comp.dat` record (101 bytes).
+///
+/// Same field ordering as [`CompetitionView`] BUT with no abbreviation field:
+/// everything from `continent_id` onwards shifts down by 6 bytes.
+pub struct StaffCompetitionView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> StaffCompetitionView<'a> {
+    pub const RECORD_SIZE: usize = 0x65;
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self {
+        Self { raw: &record.raw }
+    }
+
+    pub fn from_bytes(raw: &'a [u8]) -> Self {
+        Self { raw }
+    }
+
+    pub fn id(&self) -> u32 { le_u32(self.raw, 0x00) }
+    pub fn long_name(&self) -> String { read_latin1_cstr(self.raw, 0x04, 51) }
+    pub fn long_name_gender(&self) -> i8 { i8_at(self.raw, 0x37) }
+    pub fn short_name(&self) -> String { read_latin1_cstr(self.raw, 0x38, 26) }
+    pub fn short_name_gender(&self) -> i8 { i8_at(self.raw, 0x52) }
+    // No abbreviation field. Tail from here is 6 bytes earlier than CompetitionView.
+    pub fn continent_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x53)) }
+    pub fn nation_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x57)) }
+    pub fn foreground_colour_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x5b)) }
+    pub fn background_colour_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x5f)) }
+    /// Competition reputation, 0..=20.
+    pub fn reputation(&self) -> i16 { le_u16(self.raw, 0x63) as i16 }
 }
 
 // ------ Colour (58 B, DAT_00acd5f4, stride 0x3a) ------
