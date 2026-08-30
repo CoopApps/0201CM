@@ -283,12 +283,18 @@ impl<'a> ClubView<'a> {
     /// / financial state flag (the "Bankrupt" indicator the editor shows).
     pub fn flag_byte_8b(&self) -> u8 { u8_at(self.raw, 0x8b) }
 
-    /// Chairman/owner group id (+0x69 in `FUN_00586ec0`). Clubs sharing this
-    /// value share a chairman → they are eligible for the £20M cross-club
-    /// rescue transfer. `None` when unset (0 sentinel).
-    pub fn chairman_group(&self) -> Option<u32> {
-        let v = le_u32(self.raw, 0x69);
-        if v == 0 { None } else { Some(v) }
+    /// Home stadium id (+0x69). Verified against stadium.dat: Bayern München
+    /// AND TSV 1860 München both read 710 = "Olympiastadion"; Alemannia
+    /// Aachen and their reserves both read 709 (their shared ground).
+    /// `-2` and `0` are unset sentinels.
+    ///
+    /// This is what `FUN_00586ec0`:56-114 keys off — the £20M event fires
+    /// between clubs that share a stadium, NOT between clubs under a shared
+    /// chairman (Bayern's chairman is Beckenbauer, 1860's is Wildmoser; the
+    /// only thing they share is the ground).
+    pub fn home_stadium_id(&self) -> Option<i32> {
+        let v = le_i32(self.raw, 0x69);
+        if v <= 0 { None } else { Some(v) }
     }
 }
 

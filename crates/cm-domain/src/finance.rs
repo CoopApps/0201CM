@@ -107,19 +107,19 @@ pub struct ClubFinance {
     pub month_gate: i64,
     #[serde(default)]
     pub month_tv_prize: i64,
-    /// Chairman/owner group id (club record +0x69 in the exe). Clubs sharing
-    /// the same group id share a chairman → the rich-sibling→broke-sibling
-    /// £20M rescue mechanism (`FUN_00586ec0`:56-114) fires between them.
-    /// `None` when unset — the mechanism no-ops for clubs without an owner
-    /// group. Populated at seed time from `ClubView::chairman_group()` if
-    /// non-zero, else `None`.
+    /// Home stadium id (club record +0x69 in the exe). Clubs that share a
+    /// stadium (Bayern & 1860 München at Olympiastadion; Alemannia Aachen &
+    /// its reserves; many reserve/first-team pairs worldwide) share this
+    /// value → they are the ones eligible for the £20M cross-club transfer
+    /// event in `FUN_00586ec0`:56-114. Populated at seed time from
+    /// `ClubView::home_stadium_id()`. `None` when unset.
     #[serde(default)]
-    pub chairman_group: Option<u32>,
-    /// Chairman handout already fired this year? (`param_2+0x6d` in the exe.)
-    /// Cleared once per game-year in `end_of_year_rollover`; set by
-    /// `chairman_handouts` when a £20M transfer completes.
+    pub home_stadium_id: Option<i32>,
+    /// Stadium-share transfer already fired this year? (`param_2+0x6d` in the
+    /// exe.) Cleared once per game-year in `reset_yearly_stadium_flags`; set
+    /// by `stadium_share_transfers` when a £20M transfer completes.
     #[serde(default)]
-    pub chairman_handout_used: bool,
+    pub stadium_share_used: bool,
 }
 
 /// Starting-cash lookup table extracted from the exe at VA 0x009b48e0
@@ -196,7 +196,7 @@ impl ClubFinance {
             board_confidence: initial_board_confidence(rep),
             in_administration: false,
             month_wages: 0, month_gate: 0, month_tv_prize: 0,
-            chairman_group: None, chairman_handout_used: false,
+            home_stadium_id: None, stadium_share_used: false,
         };
         let boots_in_admin = matches!(bootstrap.status(reputation), FinanceStatus::Admin);
         // Wage bill starts at 0 — the tick sums real contracts weekly. (The
@@ -213,8 +213,8 @@ impl ClubFinance {
             month_wages: 0,
             month_gate: 0,
             month_tv_prize: 0,
-            chairman_group: None,
-            chairman_handout_used: false,
+            home_stadium_id: None,
+            stadium_share_used: false,
         }
     }
 
@@ -274,7 +274,7 @@ impl FinanceBook {
             // is what makes SWFC boot as bankrupt (their shipped cash is
             // -£14M), same as the game itself.
             let mut cfinance = ClubFinance::seed_from(cv.id(), cv.reputation(), false, cv.cash());
-            cfinance.chairman_group = cv.chairman_group();
+            cfinance.home_stadium_id = cv.home_stadium_id();
             cf.push(cfinance);
             att.insert(cv.id(), (cv.attendance_average(), cv.attendance_minimum(), cv.attendance_maximum()));
             reps.insert(cv.id(), cv.reputation());
@@ -282,20 +282,21 @@ impl FinanceBook {
         Self { clubs: cf, rules: CountryFinanceRules::new(), club_reputation: reps, club_attendance: att }
     }
 
-    /// Chairman £20M handout — port of `FUN_00586ec0`:56-114.
+    /// Stadium-share £20M transfer — port of `FUN_00586ec0`:56-114.
     ///
     /// Fires at the start of the weekly-finance tick, BEFORE wages. When a
-    /// rich club (balance > £35M) has a chairman (`chairman_group.is_some()`)
-    /// and hasn't fired this handout yet (`!chairman_handout_used`):
+    /// rich club (balance > £35M) has a stadium (`home_stadium_id.is_some()`)
+    /// and hasn't fired this transfer yet (`!stadium_share_used`):
     ///
-    /// 1. Scan every other club in the SAME chairman group.
+    /// 1. Scan every other club that shares the SAME stadium.
     ///    - If a sibling club is `Admin` or `InTheRed` (its `+0x165` flag was
-    ///      1 or 2 in the exe) — transfer £20M from rich → poor. Mark rich as
-    ///      "used", clear sibling's used-bit (their turn's over). This is the
-    ///      "chairman rescues struggling sister club" event (news code 4/5).
-    ///    - If a sibling exists but has no finance record — chairman still
-    ///      takes £20M from the rich club (goes to "personal use"). News 4.
-    /// 2. If no sibling found — chairman still drains £20M from the rich club.
+    ///      1 or 2 in the exe) — transfer £20M from rich → struggling
+    ///      ground-share partner. Mark rich as "used", clear sibling's
+    ///      used-bit. (News codes 4 = rich club drained, 5 = partner rescued.)
+    ///    - If a sibling exists but has no finance record — rich club loses
+    ///      £20M anyway (news 4 only).
+    /// 2. If no ground-share partner found — rich club still drains £20M
+    ///    (the exe writes the same subtraction unconditionally).
     ///
     /// Reference (from Ghidra):
     /// ```text
@@ -308,39 +309,31 @@ impl FinanceBook {
     /// 0058_6fd1    sibling.balance += 20000000;
     /// ```
     /// Runs on caller's schedule — call from `pay_weekly_wages` prologue.
-    pub fn chairman_handouts(&mut self) {
-        const HANDOUT: i64 = 20_000_000;
+    pub fn stadium_share_transfers(&mut self) {
+        const AMOUNT: i64 = 20_000_000;
         const RICH_THRESHOLD: i64 = 35_000_000;
-        // Snapshot who is rich enough this tick.
-        let candidates: Vec<(u32, u32)> = self
+        let candidates: Vec<(u32, i32)> = self
             .clubs
             .iter()
-            .filter(|c| !c.chairman_handout_used
+            .filter(|c| !c.stadium_share_used
                 && c.balance > RICH_THRESHOLD
-                && c.chairman_group.is_some())
-            .map(|c| (c.club_id, c.chairman_group.unwrap()))
+                && c.home_stadium_id.is_some())
+            .map(|c| (c.club_id, c.home_stadium_id.unwrap()))
             .collect();
-        for (rich_id, group) in candidates {
-            // Find first sibling in the same group whose handout bit IS set
-            // (matches the exe's `piVar15 != param_2 && +0x6d != 0` filter,
-            // i.e. "someone who has already had their yearly turn"; per the
-            // ported decompile the game reads this as "eligible to receive").
+        for (rich_id, stadium) in candidates {
             let sibling: Option<u32> = self.clubs.iter()
                 .find(|c| c.club_id != rich_id
-                    && c.chairman_group == Some(group)
-                    && c.chairman_handout_used)
+                    && c.home_stadium_id == Some(stadium)
+                    && c.stadium_share_used)
                 .map(|c| c.club_id);
             match sibling {
                 None => {
-                    // No sibling found — chairman personal use (0058_6ff5).
                     if let Some(r) = self.clubs.iter_mut().find(|c| c.club_id == rich_id) {
-                        r.balance = r.balance.saturating_sub(HANDOUT);
-                        r.chairman_handout_used = true;
+                        r.balance = r.balance.saturating_sub(AMOUNT);
+                        r.stadium_share_used = true;
                     }
                 }
                 Some(sib_id) => {
-                    // Sibling in Admin or InTheRed → rescue. Otherwise still
-                    // drain the rich club (news code 4 only).
                     let sib_is_stressed = self.clubs.iter()
                         .find(|c| c.club_id == sib_id)
                         .map(|c| {
@@ -349,14 +342,13 @@ impl FinanceBook {
                         })
                         .unwrap_or(false);
                     if let Some(r) = self.clubs.iter_mut().find(|c| c.club_id == rich_id) {
-                        r.balance = r.balance.saturating_sub(HANDOUT);
-                        r.chairman_handout_used = true;
+                        r.balance = r.balance.saturating_sub(AMOUNT);
+                        r.stadium_share_used = true;
                     }
                     if sib_is_stressed {
                         if let Some(s) = self.clubs.iter_mut().find(|c| c.club_id == sib_id) {
-                            s.balance = s.balance.saturating_add(HANDOUT);
-                            s.chairman_handout_used = false;
-                            // Admin exit (if crossing threshold now):
+                            s.balance = s.balance.saturating_add(AMOUNT);
+                            s.stadium_share_used = false;
                             let rep = self.club_reputation.get(&sib_id).copied().unwrap_or(1000);
                             if s.in_administration
                                 && !matches!(s.status(rep), FinanceStatus::Admin)
@@ -370,11 +362,11 @@ impl FinanceBook {
         }
     }
 
-    /// Yearly rollover for the chairman-handout eligibility bit (clears the
-    /// exe's `param_2+0x6d` for every club so next season's handout can fire).
-    pub fn reset_yearly_chairman_flags(&mut self) {
+    /// Yearly rollover for the stadium-share eligibility bit
+    /// (clears the exe's `+0x6d` for every club).
+    pub fn reset_yearly_stadium_flags(&mut self) {
         for c in &mut self.clubs {
-            c.chairman_handout_used = false;
+            c.stadium_share_used = false;
         }
     }
 
@@ -384,9 +376,9 @@ impl FinanceBook {
     /// month_wages ledger. Skint clubs (balance < rep×3000) pay no wages that
     /// week (matches the exe's `return` at the bottom of the cascade).
     pub fn pay_weekly_wages(&mut self) {
-        // Chairman handout fires FIRST (FUN_00586ec0:56-114 sits above the
-        // wage cascade in the exe).
-        self.chairman_handouts();
+        // Stadium-share £20M transfer fires FIRST (FUN_00586ec0:56-114 sits
+        // above the wage cascade in the exe).
+        self.stadium_share_transfers();
         let mut rng = crate::match_engine_exe::MatchRng::new(0x0058_6ec0);
         for c in &mut self.clubs {
             let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(1000) as i64;
