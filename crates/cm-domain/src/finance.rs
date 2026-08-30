@@ -369,7 +369,7 @@ impl FinanceBook {
             let cap = if rep < 2000 {
                 rep2 + 1_500_000
             } else {
-                (rep2 / 1000) + 4_000_000                            // × 0.001
+                (rep2 / 4) + 4_000_000                                // × 0.25 (verified _DAT_009569e0=0.25)
             };
             if amount > cap { amount = cap; }
             if let Some(c) = self.clubs.iter_mut().find(|c| c.club_id == club_id) {

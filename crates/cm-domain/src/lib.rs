@@ -29,7 +29,10 @@ pub mod host_country;
 pub mod human_manager;
 pub mod manager_creation;
 pub mod index;
+pub mod player_development;
 pub mod player_rating;
+pub mod tactics;
+pub mod valuation;
 pub mod player_regen;
 pub mod awards_engine;
 pub mod finance;
@@ -208,20 +211,68 @@ pub struct SaveSummary {
     pub sections: Vec<SaveSectionSummary>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DomainCity {
     pub id: u32,
     pub name: String,
+    #[serde(default)]
     pub tail_u16: [u16; 13],
+    #[serde(default)]
     pub tail_u32: [u32; 6],
+    /// Nation id (+0x1f in the raw record). Verified: London=60 (England).
+    #[serde(default)]
+    pub nation_id: u8,
+    /// Latitude in degrees (+0x23 f64). Verified: London 51.519°N.
+    #[serde(default)]
+    pub latitude: f64,
+    /// Longitude in degrees (+0x2b f64). Verified: London -0.102°.
+    #[serde(default)]
+    pub longitude: f64,
+    /// Size / importance tier at +0x33 (0..20, label unverified).
+    #[serde(default)]
+    pub size_tier: u8,
+    /// Region / primary-club link at +0x34 (label unverified).
+    #[serde(default)]
+    pub region_or_primary_club: Option<i32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainOfficial {
     pub id: u32,
+    #[serde(default)]
     pub u32_slots: [u32; 10],
+    #[serde(default)]
     pub u16_slots: [u16; 21],
+    #[serde(default)]
     pub trailing_byte: u8,
+    /// First-name id (+0x04 → first-name pool).
+    #[serde(default)]
+    pub first_name_id: Option<i32>,
+    /// Second-name id (+0x08 → second-name pool).
+    #[serde(default)]
+    pub second_name_id: Option<i32>,
+    /// Date of birth day-of-year (0..364) at +0x0c.
+    #[serde(default)]
+    pub dob_day: u16,
+    /// Date of birth year at +0x0e.
+    #[serde(default)]
+    pub dob_year: u16,
+    /// Nation id at +0x16.
+    #[serde(default)]
+    pub nation_id: Option<i32>,
+    /// Home city id at +0x1a.
+    #[serde(default)]
+    pub home_city_id: Option<i32>,
+    /// Current-ability reputation at +0x1e (label unverified).
+    #[serde(default)]
+    pub reputation_ca: u32,
+    /// Potential-ability reputation at +0x22 (label unverified).
+    #[serde(default)]
+    pub reputation_pa: u16,
+    /// Seven per-attribute rating bytes at +0x24..+0x2a (individual meanings
+    /// unresolved — 0..20 histogram verified).
+    #[serde(default)]
+    pub rating_bytes: [u8; 7],
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -230,11 +281,30 @@ pub struct DomainName {
     pub footer: [u8; 12],
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainStadium {
     pub id: u32,
     pub name: String,
+    #[serde(default)]
     pub unknown_tail: Vec<u8>,
+    /// True when the name field carries a real name (+0x37 == 0xff sentinel).
+    #[serde(default)]
+    pub name_set: bool,
+    /// City id (+0x38 → city.dat). Verified: Old Trafford → Manchester.
+    #[serde(default)]
+    pub city_id: Option<i32>,
+    /// Base capacity (+0x3c). Verified: Old Trafford = 67800.
+    #[serde(default)]
+    pub capacity_total: u32,
+    /// Seated capacity (+0x40).
+    #[serde(default)]
+    pub capacity_seated: u32,
+    /// Post-expansion capacity target (+0x44). Verified: Old Trafford → 100000.
+    #[serde(default)]
+    pub capacity_expansion: u32,
+    /// Alternative-stadium link (+0x48 → stadium.dat, self-referential).
+    #[serde(default)]
+    pub alt_stadium_id: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -273,6 +343,7 @@ fn neg_one() -> i32 {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainOpaqueRecord {
+    #[serde(default)]
     pub ordinal: u32,
     #[serde(default)]
     pub id: u32,
@@ -329,7 +400,7 @@ pub struct DomainHistory58 {
     pub trailing_u16: u16,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceBook {
     pub cities: Vec<DomainCity>,
     pub officials: Vec<DomainOfficial>,
@@ -370,7 +441,7 @@ pub struct ReferenceSummary {
     pub sample_nation_competition: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct World {
     pub base_data: Vec<DataEntrySummary>,
     pub save: Option<SaveSummary>,
@@ -492,6 +563,7 @@ impl DomainStaffType6 {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainStaffType9 {
     pub id: u32,
+    #[serde(default)]
     pub body: Vec<u8>,
 }
 
@@ -517,25 +589,92 @@ pub struct DomainStaffType8 {
     pub body: Vec<u8>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Type-10 (player attribute) record, 70 bytes on disk. Every field named,
+/// verified against the editor's own load code (`FUN_0044773c`, `FUN_00414d5c`,
+/// DFM `tabsheet_staff_pl2`). Legacy raw-byte fields kept as `#[serde(skip)]`
+/// so existing JSON deserialises but no longer emits them; new JSON only
+/// carries named fields.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct DomainStaffType10 {
     pub id: u32,
-    pub unknown_byte_4: u8,
-    #[serde(alias = "probable_ca")]
-    pub rating_short_0x05: u16,
-    #[serde(alias = "probable_pa")]
-    pub rating_short_0x07: u16,
-    #[serde(default)]
-    pub unknown_bytes_9_12: [u8; 4],
-    #[serde(alias = "probable_reputation")]
-    pub rating_short_0x0d: u16,
-    #[serde(default)]
-    pub unknown_bytes_15_26: [u8; 12],
-    pub attributes: [u8; 31],
-    #[serde(default)]
-    pub unknown_bytes_58_64: [u8; 7],
-    pub trailing_bytes: [u8; 5],
+    #[serde(default, alias = "unknown_byte_4")]
+    pub flags_byte_04: u8,
+    // ---- Ratings (+0x05..+0x0e) ----
+    #[serde(default)] pub current_ability: i16,
+    #[serde(default)] pub potential_ability: i16,
+    #[serde(default)] pub home_reputation: i16,
+    #[serde(default)] pub current_reputation: i16,
+    #[serde(default)] pub world_reputation: i16,
+    // ---- Position aptitudes (+0x0f..+0x1a, i8 each) ----
+    #[serde(default)] pub apt_goalkeeper: i8,
+    #[serde(default)] pub apt_sweeper: i8,
+    #[serde(default)] pub apt_defender: i8,
+    #[serde(default)] pub apt_def_midfielder: i8,
+    #[serde(default)] pub apt_midfielder: i8,
+    #[serde(default)] pub apt_att_midfielder: i8,
+    #[serde(default)] pub apt_attacker: i8,
+    #[serde(default)] pub apt_wing_back: i8,
+    #[serde(default)] pub apt_right_side: i8,
+    #[serde(default)] pub apt_left_side: i8,
+    #[serde(default)] pub apt_central: i8,
+    #[serde(default)] pub apt_free_role: i8,
+    // ---- 42 attributes in DFM order (+0x1b..+0x44, i8 each) ----
+    #[serde(default)] pub acceleration: i8,
+    #[serde(default)] pub aggression: i8,
+    #[serde(default)] pub agility: i8,
+    #[serde(default)] pub anticipation: i8,
+    #[serde(default)] pub balance: i8,
+    #[serde(default)] pub bravery: i8,
+    #[serde(default)] pub consistency: i8,
+    #[serde(default)] pub corners: i8,
+    #[serde(default)] pub crossing: i8,
+    #[serde(default)] pub free_kicks: i8,
+    #[serde(default)] pub handling: i8,
+    #[serde(default)] pub heading: i8,
+    #[serde(default)] pub important_matches: i8,
+    #[serde(default)] pub injury_proneness: i8,
+    #[serde(default)] pub jumping: i8,
+    #[serde(default)] pub leadership: i8,
+    #[serde(default)] pub left_foot: i8,
+    #[serde(default)] pub long_shots: i8,
+    #[serde(default)] pub dirtiness: i8,
+    #[serde(default)] pub dribbling: i8,
+    #[serde(default)] pub finishing: i8,
+    #[serde(default)] pub flair: i8,
+    #[serde(default)] pub decisions: i8,
+    #[serde(default)] pub movement: i8,
+    #[serde(default)] pub natural_fitness: i8,
+    #[serde(default)] pub one_on_ones: i8,
+    #[serde(default)] pub marking: i8,
+    #[serde(default)] pub pace: i8,
+    #[serde(default)] pub passing: i8,
+    #[serde(default)] pub penalties: i8,
+    #[serde(default)] pub positioning: i8,
+    #[serde(default)] pub reflexes: i8,
+    #[serde(default)] pub right_foot: i8,
+    #[serde(default)] pub stamina: i8,
+    #[serde(default)] pub strength: i8,
+    #[serde(default)] pub tackling: i8,
+    #[serde(default)] pub teamwork: i8,
+    #[serde(default)] pub throw_ins: i8,
+    #[serde(default)] pub versatility: i8,
+    #[serde(default)] pub vision: i8,
+    #[serde(default)] pub work_rate: i8,
+    #[serde(default)] pub technique: i8,
+    // ---- Footer (+0x45) ----
+    #[serde(default)] pub squad_number: u8,
+    // ---- Legacy (raw byte accessors) — for backward-compat only. ----
+    #[serde(default, alias = "probable_ca")] pub rating_short_0x05: u16,
+    #[serde(default, alias = "probable_pa")] pub rating_short_0x07: u16,
+    #[serde(default)] pub unknown_bytes_9_12: [u8; 4],
+    #[serde(default, alias = "probable_reputation")] pub rating_short_0x0d: u16,
+    #[serde(default)] pub unknown_bytes_15_26: [u8; 12],
+    #[serde(default = "default_attrs_31")] pub attributes: [u8; 31],
+    #[serde(default)] pub unknown_bytes_58_64: [u8; 7],
+    #[serde(default)] pub trailing_bytes: [u8; 5],
 }
+
+fn default_attrs_31() -> [u8; 31] { [0; 31] }
 
 impl DomainStaffType10 {
     /// The full 54-byte player-attribute block at record offset 0x0f..0x44,
@@ -576,17 +715,76 @@ impl DomainStaffType10 {
     /// (hence byte order) follows the EDITOR labels — that's why "Set Pieces"
     /// sits at the F-slot etc. Determination is NOT in this block (it lives at
     /// the person record +0x58).
+    /// Attribute order — VERIFIED from the editor's DFM (`TFRM_PANELS`
+    /// tabsheet_staff_pl2), which declares TEdit controls in this exact order
+    /// and — per Delphi published-property convention — reads/writes them into
+    /// the record in the same order. **NOT alphabetical.** The alphabetical
+    /// guess we had before was wrong; every attribute-index lookup in the port
+    /// silently mis-targeted a different attribute. (Editor decode agent,
+    /// task ID a36368f35552eee91.)
     pub const ATTRIBUTE_NAMES: [&'static str; 42] = [
-        "Acceleration", "Aggression", "Agility", "Anticipation", "Balance",
-        "Bravery", "Consistency", "Corners", "Crossing", "Decisions",
-        "Dirtiness", "Dribbling", "Finishing", "Flair", "Set Pieces",
-        "Handling", "Heading", "Important Matches", "Injury Proneness",
-        "Jumping", "Influence", "Left Foot", "Long Shots", "Marking",
-        "Off The Ball", "Natural Fitness", "One On Ones", "Pace", "Passing",
-        "Penalties", "Positioning", "Reflexes", "Right Foot", "Stamina",
-        "Strength", "Tackling", "Teamwork", "Technique", "Throw Ins",
-        "Versatility", "Creativity", "Work Rate",
+        "Acceleration", "Aggression", "Agility", "Anticipation", "Balance",     // 0-4
+        "Bravery", "Consistency", "Corners", "Crossing", "Free Kicks",          // 5-9
+        "Handling", "Heading", "Important Matches", "Injury Proneness",         // 10-13
+        "Jumping", "Leadership", "Left Foot", "Long Shots",                     // 14-17
+        "Dirtiness", "Dribbling", "Finishing", "Flair",                         // 18-21
+        "Decisions", "Movement", "Natural Fitness", "One On Ones",              // 22-25
+        "Marking", "Pace", "Passing", "Penalties",                              // 26-29
+        "Positioning", "Reflexes", "Right Foot", "Stamina",                     // 30-33
+        "Strength", "Tackling", "Teamwork", "Throw Ins",                        // 34-37
+        "Versatility", "Vision", "Work Rate", "Technique",                      // 38-41
     ];
+
+    /// Attribute-name indices (DFM order). Use these constants rather than
+    /// magic numbers so the correct byte is always targeted.
+    pub const ATTR_IDX_ACCELERATION: usize = 0;
+    pub const ATTR_IDX_AGGRESSION:   usize = 1;
+    pub const ATTR_IDX_AGILITY:      usize = 2;
+    pub const ATTR_IDX_BRAVERY:      usize = 5;
+    pub const ATTR_IDX_INJURY_PRONE: usize = 13;
+    pub const ATTR_IDX_JUMPING:      usize = 14;
+    pub const ATTR_IDX_DIRTINESS:    usize = 18;
+    pub const ATTR_IDX_FINISHING:    usize = 20;
+    pub const ATTR_IDX_DECISIONS:    usize = 22;
+    pub const ATTR_IDX_NAT_FITNESS:  usize = 24;
+    pub const ATTR_IDX_MARKING:      usize = 26;
+    pub const ATTR_IDX_PACE:         usize = 27;
+    pub const ATTR_IDX_PASSING:      usize = 28;
+    pub const ATTR_IDX_STAMINA:      usize = 33;
+    pub const ATTR_IDX_STRENGTH:     usize = 34;
+    pub const ATTR_IDX_TACKLING:     usize = 35;
+    pub const ATTR_IDX_TECHNIQUE:    usize = 41;
+
+    /// Position aptitude names in +0x0f..+0x1a byte order — VERIFIED from
+    /// `FUN_00414d5c` (editor's Set-Position popup) and the DFM
+    /// `tabsheet_staff_pl1` control order. Stored as signed i8.
+    pub const APTITUDE_NAMES: [&'static str; 12] = [
+        "Goalkeeper",         // +0x0f
+        "Sweeper",            // +0x10
+        "Defender",           // +0x11
+        "Def Midfielder",     // +0x12
+        "Midfielder",         // +0x13
+        "Att Midfielder",     // +0x14
+        "Attacker",           // +0x15
+        "Wing Back",          // +0x16
+        "Right Side",         // +0x17
+        "Left Side",          // +0x18
+        "Central",            // +0x19
+        "Free Role",          // +0x1a
+    ];
+    // Named indices into `unknown_bytes_15_26` for the aptitude slots.
+    pub const APT_GK: usize = 0;
+    pub const APT_SW: usize = 1;
+    pub const APT_D:  usize = 2;
+    pub const APT_DM: usize = 3;
+    pub const APT_M:  usize = 4;
+    pub const APT_AM: usize = 5;
+    pub const APT_ST: usize = 6;
+    pub const APT_WB: usize = 7;
+    pub const APT_RS: usize = 8;
+    pub const APT_LS: usize = 9;
+    pub const APT_C:  usize = 10;
+    pub const APT_FR: usize = 11;
 
     /// The 42 attributes as (name, value) pairs, in record order. Values are
     /// the shipped block; for players the base ships zero, the generated
@@ -662,22 +860,78 @@ impl DomainStaffType10 {
     ///   -1 → 0x78 + rand(0x51)   (120..200)
     ///   -2 → 0xa0 + rand(0x29)   (160..200)
     ///   -3..-10 → 0x78 + rand(0x51), biased up by the sentinel depth
-    pub fn resolved_potential_ability_rng(&self, rng: &mut cm_rng::MatchRng) -> i16 {
-        let ca = self.current_ability();
-        let pa = self.potential_ability_raw();
-        let resolved: i32 = if pa >= 0 {
-            pa as i32
+    /// PA category → base-PA lookup (`DAT_009a2058`, 22 shorts) extracted from
+    /// the exe at VA 0x009a2058. Used by the PA=0/invalid resolution path.
+    pub const PA_TABLE: [i16; 22] = [
+        1, 5, 8, 10, 15, 20, 25, 33, 45, 65, 90, 110, 127, 135, 142, 149, 155,
+        161, 166, 171, 175, 0,
+    ];
+
+    /// Pick a PA category (1..20) via the exact rand-chain at FUN_0051f5d0
+    /// lines 885-910. The common `rand(7)+4` branch clusters at cat 4..10 →
+    /// realistic lower-league potential; rarer branches reach the extremes.
+    fn pick_pa_category(rng: &mut cm_rng::MatchRng) -> i32 {
+        let mut cat = if rng.random(100) == 0 {
+            rng.random(0x15) // 0..20
+        } else if rng.random(2) == 0 {
+            rng.random(6) + 6 // 6..11
+        } else if rng.random(2000) == 0 {
+            rng.random(0x14) + 1 // 1..20
         } else {
-            match pa {
-                -1 => 0x78 + rng.random(0x51),
-                -2 => 0xa0 + rng.random(0x29),
-                n => {
-                    let depth = (-(n as i32) - 2).clamp(0, 8);
-                    (0x78 + rng.random(0x51) + depth * 3).min(200)
-                }
-            }
+            rng.random(7) + 4 // 4..10 (the mass)
         };
-        (resolved.max(ca as i32)).clamp(1, 200) as i16
+        if cat < 1 || cat > 0x14 {
+            cat = rng.random(10) + 3; // 3..12
+        }
+        cat
+    }
+
+    pub fn resolved_potential_ability_rng(&self, rng: &mut cm_rng::MatchRng) -> i16 {
+        let ca = self.current_ability() as i32;
+        // Sentinel INJECTION (lines 506-521): a valid shipped PA is rarely
+        // rerolled to a sentinel. Replicated so the per-player RNG consumption
+        // tracks the game's (short-circuit else-if, like the exe).
+        let mut pa = self.potential_ability_raw() as i32;
+        if rng.random(2000) == 0 {
+            pa = -2;
+        } else if rng.random(750) == 0 {
+            pa = -1;
+        } else if rng.random(100) == 0 {
+            pa = 0;
+        }
+        // RESOLUTION (lines 809-923).
+        let resolved: i32 = if pa == -1 {
+            // "-1" band, lines 847-882.
+            let mut v = if rng.random(10) == 0 { rng.random(81) + 120 } else { rng.random(81) + 80 };
+            if rng.random(20) == 0 {
+                v -= rng.random(50);
+            } else if v > 140 {
+                v -= rng.random(30);
+            }
+            v.max(ca)
+        } else if pa < 0 {
+            // "-2" (super-potential) band, lines 810-845 (covers -2..-10).
+            let mut v = if rng.random(10) == 0 { rng.random(41) + 160 } else { rng.random(81) + 120 };
+            if rng.random(20) == 0 {
+                v -= rng.random(50);
+            } else if v > 165 {
+                v -= rng.random(30);
+            }
+            v.max(ca)
+        } else if !(1..=200).contains(&pa) {
+            // PA=0 / garbage: category-table draw, lines 883-923 (the ~28k
+            // data-less records land here — the fix for the CA=1 collapse).
+            let cat = Self::pick_pa_category(rng);
+            let mut v = rng.random(0x3c) + (Self::PA_TABLE[cat as usize] as i32 - 0x1e);
+            if v < ca {
+                v = ca;
+            }
+            v
+        } else {
+            // Fixed shipped PA in [1,200].
+            return (pa.max(ca)).clamp(1, 200) as i16;
+        };
+        resolved.clamp(10, 200) as i16
     }
 
     /// Direct port of `FUN_005a2030` (`format.cpp`) — CM0102's real position
@@ -789,6 +1043,12 @@ pub struct PlayerInitState {
     /// DETERMINISTIC attributes at game start.
     #[serde(default)]
     pub attributes: Vec<u8>,
+    /// The three reputation shorts (type10 +0x09/+0x0b/+0x0d, ×50) — shipped
+    /// when the record carries them, GENERATED for the CA=0 records via the
+    /// FUN_0051f5d0 blend (kill #6 completion), so valuation has CA/club-
+    /// consistent reputations instead of garbage shipped bytes.
+    #[serde(default)]
+    pub reputation: [u16; 3],
 }
 
 impl PlayerInitState {
@@ -822,45 +1082,155 @@ impl PlayerInitState {
         out
     }
 
+    /// Generate a Current Ability for a player whose base record ships CA=0
+    /// (the ~24.8k data-less players, Panzanaro et al.) — a direct port of
+    /// FUN_0051f5d0 lines 927-965 + the PA cap at 1001-1006. CA is driven by
+    /// the resolved PA, reduced by club reputation (`10000 - club_rep`) and by
+    /// how far the player's age is from a random "peak age" (~20), then capped
+    /// below PA. Uses the ported ring-buffer RNG (`FUN_008fc4f0`).
+    ///
+    /// Decompile → port map (agent trace of 0051f5d0.c, CA=0 branch):
+    ///   927 c   = rand(10)                       -> rng.random(10)
+    ///   929 r   = rand(PA)                        -> rng.random(pa)
+    ///   930 m   = max(r, 5)
+    ///   936 base= rand( (PA/4 * m) / 200 )        -> (pa/4*m)/200
+    ///   938 ageF= max(|(c+20) - age|, 3)
+    ///   944 red = (base + 3 + 2*((10000-clubRep)/200)) * ageF
+    ///   947 CA  = PA - red/5;  clamp [1,200]
+    ///   957 if CA==1 && rand(10)!=0: CA = rand(PA/5)+1
+    ///  1001 if PA<CA: CA = PA - rand(40); if <1: CA = rand(5)+1
+    /// `club_rep` is the loader's ×500 reputation (ClubView::reputation, 0..10000);
+    /// pass 0 for a player with no club (the game floors it to a tiny rand there).
+    pub fn generate_ca(pa: i16, club_rep: i32, age: i32, rng: &mut cm_rng::MatchRng) -> i16 {
+        let pa = pa as i32;
+        if pa <= 0 {
+            return 1;
+        }
+        let c = rng.random(10);
+        let r = rng.random(pa);
+        let m = r.max(5);
+        let base_n = (pa / 4 * m) / 200;
+        let base = if base_n > 0 { rng.random(base_n) } else { 0 };
+        let age_f = ((c + 20 - age).abs()).max(3);
+        let red = (base + 3 + 2 * ((10000 - club_rep) / 200)) * age_f;
+        let mut ca = pa - red / 5;
+        if ca >= 201 {
+            ca = 200;
+        } else if ca <= 0 {
+            ca = 1;
+        }
+        if ca == 1 && rng.random(10) != 0 {
+            let n = (pa / 5).max(1);
+            ca = rng.random(n) + 1;
+        }
+        if pa < ca {
+            ca = pa - rng.random(40);
+            if ca < 1 {
+                ca = rng.random(5) + 1;
+            }
+        }
+        ca.clamp(1, 200) as i16
+    }
+
     /// Seed a player's initial runtime state from their attribute record and
     /// (optionally) their person record + the game start date for age.
+    ///
+    /// `club_rep` is the reputation of the player's current club (ClubView::
+    /// reputation, 0..10000; 0 if unemployed) — needed to GENERATE CA for the
+    /// records that ship CA=0. When an `rng` is supplied the generation runs on
+    /// the same init RNG stream, in the game's order (PA → CA → attributes).
     pub fn seed(
         attr: &DomainStaffType10,
         person: Option<&DomainStaffType6>,
         start_year: u16,
         start_day: u16,
+        club_rep: i32,
         rng: Option<&mut cm_rng::MatchRng>,
     ) -> Self {
-        let ca = attr.current_ability();
+        let shipped_ca = attr.current_ability();
+        let age = person.and_then(|p| p.age_at(start_year, start_day));
 
         // Shipped attribute block (type10 0x1b..0x44). Ships zero for ~55%.
         let fa = attr.full_attributes();
         let mut attributes: Vec<u8> = fa[12..54].to_vec();
-        let needs_gen = attributes.iter().all(|&v| v == 0) && ca > 0;
 
-        let potential_ability = match rng {
+        // Shipped reputation shorts (type10 +0x09/+0x0b/+0x0d).
+        let shipped_rep = crate::valuation::reputations_of(attr);
+        let mut reputation = [shipped_rep.0, shipped_rep.1, shipped_rep.2];
+
+        let (current_ability, potential_ability) = match rng {
             Some(r) => {
+                // Game order (FUN_0051f5d0): resolve PA, then derive CA from it,
+                // then expand attributes off the finished CA — all on the one
+                // running RNG stream.
                 let pa = attr.resolved_potential_ability_rng(r);
-                // Generate attributes from CA on the SAME init RNG stream — the
-                // exact-port design (the game seeds attributes right here in
-                // FUN_0051f5d0 off its running RNG).
-                if needs_gen {
+                let generated = !(1..=200).contains(&shipped_ca);
+                let ca = if generated {
+                    Self::generate_ca(pa, club_rep, age.unwrap_or(20) as i32, r)
+                } else {
+                    shipped_ca
+                };
+                if attributes.iter().all(|&v| v == 0) {
                     attributes = Self::generate_attributes_core(ca, r);
                 }
-                pa
+                // Generate reputations for records whose shipped ones are absent
+                // or garbage (all the CA=0 generated players) — kill #6 tail.
+                let has_club = club_rep > 0;
+                if generated || reputation[2] == 0 || reputation[2] as i32 > ca as i32 * 80 {
+                    reputation = Self::generate_reputations(
+                        ca, pa, age.unwrap_or(20) as i32, club_rep, has_club, r);
+                }
+                (ca, pa)
             }
-            None => attr.resolved_potential_ability(),
+            // Deterministic path (no RNG): keep shipped values, no generation.
+            None => (shipped_ca, attr.resolved_potential_ability()),
         };
 
         Self {
             player_id: attr.id,
-            current_ability: ca,
+            current_ability,
             potential_ability,
-            age: person.and_then(|p| p.age_at(start_year, start_day)),
+            age,
             condition: Self::INITIAL_CONDITION,
             morale: 0,
             attributes,
+            reputation,
         }
+    }
+
+    /// Generate the three reputation shorts (×50) for a record whose shipped
+    /// reputations are absent/garbage — port of FUN_0051f5d0's reputation seed
+    /// (agent trace, lines 552-808). `blend` mixes club + nation reputation
+    /// (nation defaulted to a neutral 10); the three fields cross-fill from it.
+    /// Stored ×50 like the game (`*0x32`).
+    pub fn generate_reputations(
+        ca: i16, pa: i16, age: i32, club_rep: i32, has_club: bool,
+        rng: &mut cm_rng::MatchRng,
+    ) -> [u16; 3] {
+        // blend = min( ((3*clubByte + nationByte) >> 2) * 10, 80 )   (:552-555)
+        let club_byte = (club_rep / 500).clamp(0, 20);
+        let nation_byte = 10i32; // neutral (nation reputation not threaded here)
+        let blend = ((((3 * club_byte + nation_byte) >> 2) * 10).min(80)).max(1);
+        // e20 (REC+0xb): min(rand(blend)+1, 25)                       (:566-571)
+        let e20 = (rng.random(blend) + 1).min(25);
+        // e2c (REC+9): ~ e20 ± 10 (or rand(5)+1 if low); = e20 if no club (:654-740)
+        let mut e2c = if e20 < 10 {
+            rng.random(5) + 1
+        } else {
+            e20 - rng.random(10) + rng.random(10)
+        };
+        if !has_club {
+            e2c = e20;
+        }
+        e2c = e2c.clamp(1, 200);
+        // e34 (REC+0xd): min(blend/3, 5), forced to 1 for young low players (:685-808)
+        let mut e34 = (blend / 3).min(5);
+        if e20 < 120 && (ca as i32) < 100 && age < 21 && (pa as i32) < 140 {
+            e34 = 1;
+        }
+        e34 = e34.clamp(1, 200);
+        // Stored ×50 at REC+9 / REC+0xb / REC+0xd = (rep9, rep_b, rep_d).
+        [(e2c * 50) as u16, (e20 * 50) as u16, (e34 * 50) as u16]
     }
 }
 
@@ -1343,6 +1713,18 @@ pub struct RustDatabaseMetadata {
     pub version: u32,
     pub source: Option<String>,
     pub note: String,
+}
+
+/// One resolved fixture's result — score plus the real scorer ids the match
+/// engine produced, so `execute_due_fixture_batch` can accumulate real season
+/// goal tallies (kill #B). (Assists are not surfaced by `ExeMatchResult` yet —
+/// a follow-up once the engine exposes them.)
+#[derive(Debug, Clone)]
+struct FixtureOutcome {
+    home_score: u8,
+    away_score: u8,
+    home_scorers: Vec<u32>,
+    away_scorers: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -12169,15 +12551,32 @@ impl World {
         let day = day_of_year(start.year, start.month, start.day);
         let person_by_id: BTreeMap<u32, &DomainStaffType6> =
             self.staff.type6.iter().map(|p| (p.id, p)).collect();
+        // Club reputation (loader ×500 value, club+0x80) keyed by club id — the
+        // input the CA generator needs for the ~24.8k CA=0 records.
+        let club_rep: BTreeMap<u32, i32> = self
+            .core
+            .clubs
+            .iter()
+            .map(|c| {
+                let v = crate::typed_records::ClubView::new(c);
+                (v.id(), v.reputation() as i32)
+            })
+            .collect();
         self.staff
             .type10
             .iter()
             .map(|attr| {
+                let rep = person_by_id
+                    .get(&attr.id)
+                    .and_then(|p| p.current_club_id())
+                    .and_then(|cid| club_rep.get(&cid).copied())
+                    .unwrap_or(0);
                 PlayerInitState::seed(
                     attr,
                     person_by_id.get(&attr.id).copied(),
                     start.year,
                     day,
+                    rep,
                     rng.as_deref_mut(),
                 )
             })
@@ -12271,7 +12670,38 @@ impl World {
         m
     }
 
+    /// Boot the generated per-player init states with the game's real RNG
+    /// (ring-buffer over `config/rng_table.bin`), so CA=0 records receive real
+    /// CA/PA/attributes (kill #6). Falls back to the deterministic (no-RNG)
+    /// path if the table isn't present.
+    fn boot_player_init_states(&self, db_dir: &Path, start: &GameDate) -> Vec<PlayerInitState> {
+        match std::fs::read(db_dir.join("config").join("rng_table.bin"))
+            .ok()
+            .and_then(|b| cm_rng::table_from_le_bytes(&b).ok())
+            .filter(|t| !t.is_empty())
+        {
+            Some(table) => {
+                let mut rng = cm_rng::MatchRng::new_seeded(table, 0x0051_f5d0);
+                self.initialise_players(start, Some(&mut rng))
+            }
+            None => self.initialise_players(start, None),
+        }
+    }
+
     pub fn new_runtime_save_from_rust_db(&self, db_dir: &Path) -> RuntimeSaveGame {
+        // Generate every player's CA/PA/attributes ONCE (kill #6), then build
+        // the rating book from it so the whole squad-feeding chain (kill #1)
+        // sees real data. Reused for transfers + training below.
+        let boot_start = GameDate { year: 2001, month: 7, day: 1 };
+        let init_states = self.boot_player_init_states(db_dir, &boot_start);
+        let mut rating_book = crate::player_rating::PlayerRatingBook::build(
+            &self.core.clubs, &self.staff, &init_states,
+        );
+        // Kill #C boot-regen wiring — assign real free agents to too-thin clubs
+        // (up to 14 players; anything less than 8 counts as too thin) so the
+        // per-fixture synthetic-roster fallback rarely fires. Runtime version
+        // of `player_regen::regen_fill_club_squad`.
+        let _regen_assigned = rating_book.assign_free_agents_to_empty_clubs(8, 14);
         RuntimeSaveGame {
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -12376,10 +12806,7 @@ impl World {
             // once here and reused by every year-rollover — the underlying
             // CA doesn't change until the match engine's per-fixture stats
             // feed back into it, which is a follow-up.
-            player_ratings: crate::player_rating::PlayerRatingBook::build(
-                &self.core.clubs,
-                &self.staff,
-            ),
+            player_ratings: rating_book.clone(),
             // Seed per-club finance state from club reputation. Country
             // rules bundles get registered by the country-block loops below
             // (holland_rules, ireland_rules, italy_rules, japan_rules etc.).
@@ -12454,12 +12881,18 @@ impl World {
             // Seed transfer/training substrates from the freshly-built rating
             // book. Injuries start empty (nobody's hurt on day 0).
             transfers: crate::transfer::TransferMarket::seed_from_ratings(
-                &crate::player_rating::PlayerRatingBook::build(&self.core.clubs, &self.staff),
+                &rating_book,
                 2001,
             ),
-            training: crate::training::TrainingBook::seed_from_ratings(
-                &crate::player_rating::PlayerRatingBook::build(&self.core.clubs, &self.staff),
-            ),
+            training: {
+                let mut tb = crate::training::TrainingBook::seed_from_ratings(&rating_book);
+                // Faithful per-attribute development (kill #TR), built from the
+                // generated attributes + club coaching pools.
+                tb.development = crate::player_development::PlayerDevelopmentBook::build(
+                    &init_states, &self.staff,
+                );
+                tb
+            },
             injuries: crate::injury::InjuryBook::new(),
             player_init: None,
             humans: Vec::new(),
@@ -17947,9 +18380,17 @@ impl RuntimeSaveGame {
         home_id: u32,
         away_id: u32,
         fixture_row: u32,
-    ) -> Option<(u8, u8)> {
-        let home = self.snapshot_team_for_engine(home_id)?;
-        let away = self.snapshot_team_for_engine(away_id)?;
+    ) -> Option<FixtureOutcome> {
+        let mut home = self.snapshot_team_for_engine(home_id)?;
+        let mut away = self.snapshot_team_for_engine(away_id)?;
+        // Kill #T consumption: apply the tactics-fit delta as a modest
+        // reputation adjustment, so the engine (which reads `reputation` as
+        // its team-strength scalar) actually rewards a well-fitted XI.
+        // Delta = position_ratings_diff / 100 (a ±25 rep swing at most for a
+        // ±2500 sum diff — a modest bias, not a landslide).
+        let delta = (home.sum_position_ratings - away.sum_position_ratings) / 100;
+        home.reputation = home.reputation.saturating_add_signed(delta.clamp(-500, 500) as i16);
+        away.reputation = away.reputation.saturating_add_signed((-delta).clamp(-500, 500) as i16);
         // Seed = fixture row + elapsed days so replays reproduce yet each
         // fixture gets its own RNG stream.
         let seed = (fixture_row as u64).wrapping_mul(0x9E3779B97F4A7C15)
@@ -17974,15 +18415,19 @@ impl RuntimeSaveGame {
         let r = crate::match_engine_exe::simulate_one_fixture_token_model(
             &home, &away, seed,
         );
-        let (hs, aws) = if r.home_shots as u16 + r.away_shots as u16 > 0 {
-            (r.home_score, r.away_score)
+        // Use the SAME result for score and scorers (token model when it
+        // produced shots, else the condensed fallback engine).
+        let used = if r.home_shots as u16 + r.away_shots as u16 > 0 {
+            r
         } else {
-            let alt = crate::match_engine_exe::simulate_one_fixture(
-                &home, &away, seed, Some(6.8),
-            );
-            (alt.home_score, alt.away_score)
+            crate::match_engine_exe::simulate_one_fixture(&home, &away, seed, Some(6.8))
         };
-        Some((hs, aws))
+        Some(FixtureOutcome {
+            home_score: used.home_score,
+            away_score: used.away_score,
+            home_scorers: used.home_scorer_ids,
+            away_scorers: used.away_scorer_ids,
+        })
     }
 
     /// Build the exe-port engine's per-team snapshot from our world +
@@ -17998,28 +18443,41 @@ impl RuntimeSaveGame {
         // Reputation lookup — the club table lives on the World, not on
         // RuntimeSaveGame; approximate from average CA of this club's
         // players (higher CA squad → higher reputation) for now.
-        let ratings_of_club: Vec<i16> = self.player_ratings.players.iter()
-            .filter(|p| p.club_id == Some(club_id as i32))
-            .map(|p| p.ca).collect();
-        let avg_ca = if ratings_of_club.is_empty() { 100 }
-                     else { ratings_of_club.iter().sum::<i16>() / ratings_of_club.len() as i16 };
-        let reputation = (avg_ca as u16 * 20).max(300);
-        let mut players: Vec<crate::match_engine_exe::EngineTeamPlayer> =
+        // Real club reputation (ClubView::reputation, club +0x80) — recorded on
+        // the rating book at boot (kill #1b). Falls back to an avg-CA proxy only
+        // if a club id somehow isn't in the reputation map.
+        let reputation = self.player_ratings.club_reputation
+            .get(&(club_id as i32)).copied()
+            .unwrap_or_else(|| {
+                let r: Vec<i16> = self.player_ratings.players.iter()
+                    .filter(|p| p.club_id == Some(club_id as i32)).map(|p| p.ca).collect();
+                let avg = if r.is_empty() { 100 } else { r.iter().sum::<i16>() / r.len() as i16 };
+                (avg as u16 * 20).max(300)
+            });
+        // The club's squad, strongest first — so the engine's XI is the best 20
+        // rather than an arbitrary book-order slice (interim for kill #1d; the
+        // tactics-AI selection FUN_0087ea70 is the eventual faithful picker).
+        let mut squad: Vec<&crate::player_rating::RatedPlayer> =
             self.player_ratings.players.iter()
             .filter(|p| p.club_id == Some(club_id as i32))
+            .collect();
+        squad.sort_by(|a, b| b.ca.cmp(&a.ca));
+        let mut players: Vec<crate::match_engine_exe::EngineTeamPlayer> =
+            squad.iter()
             .take(20)
             .map(|p| crate::match_engine_exe::EngineTeamPlayer {
                 player_id: p.staff_id,
                 is_not_injured: true,       // TODO consult self.injuries
                 position: p.position_ordinal,
-                jumping_heading: 10,
-                aggression: 8,
-                bravery: 10,
-                dirtiness: 5,
+                // Real attributes from the shipped/generated block (kill #1a).
+                jumping_heading: p.jumping_heading,
+                aggression: p.aggression,
+                bravery: p.bravery,
+                dirtiness: p.dirtiness,
                 current_ability: p.ca.max(1) as u16 * 100, // scale to exe range
                 age: p.age_est,
-                injury_proneness: 8,
-                form: 12,
+                injury_proneness: p.injury_proneness,
+                form: 12,  // runtime match-form — seeded neutral; evolves in play (follow-up)
                 is_first_choice_gk: p.is_gk,
                 speciality_a: 0, speciality_b: 0,
                 position_natural: p.position_ordinal, position_learn: 0,
@@ -18089,8 +18547,33 @@ impl RuntimeSaveGame {
         }
 
         if players.len() < 6 { return None; }
+        // Sort the picked squad into a 4-4-2 shape by their engine position
+        // ordinal (12=GK, ≤4=DEF, ≤8=MID, else ATK) so the position-rating
+        // computation lands each player in a role he's actually eligible for
+        // — the intent of the exe's XI picker `FUN_006c1660` (7746 B, not yet
+        // decompiled), reduced here to a bucketed sort. Kill #T interim.
+        players.sort_by_key(|p| match p.position {
+            12 => 0,               // GK first
+            n if n <= 4 => 1,      // DEF
+            n if n <= 8 => 2,      // MID
+            _ => 3,                // ATK
+        });
+        // Compute the sum of position ratings for the selected XI (kill #T
+        // `FUN_006c8930`). Each player rated in FLAT_442_ROLES at his slot.
+        let rated_by_id: std::collections::HashMap<u32, &crate::player_rating::RatedPlayer> =
+            self.player_ratings.players.iter().map(|p| (p.staff_id, p)).collect();
+        let mut sum_position_ratings: i32 = 0;
+        for (i, ep) in players.iter().take(11).enumerate() {
+            let role = crate::tactics::FLAT_442_ROLES[i];
+            if let Some(rp) = rated_by_id.get(&ep.player_id) {
+                sum_position_ratings += crate::tactics::position_rating(
+                    &rp.position_aptitudes, role, 100,
+                );
+            }
+        }
         Some(crate::match_engine_exe::EngineTeamSnapshot {
             club_id, reputation, grudge_score: 0, players,
+            sum_position_ratings,
         })
     }
 
@@ -18166,9 +18649,61 @@ impl RuntimeSaveGame {
             // runtime-store frontiers stay coherent, but the SCORE it
             // produces (via `score_from_goal_events`) is discarded in
             // favour of the real ported engine.
-            let (home_score, away_score) = self.resolve_fixture_via_exe_port(
+            let (home_score, away_score) = match self.resolve_fixture_via_exe_port(
                 home_id, away_id, *fixture_row,
-            ).unwrap_or_else(|| score_from_goal_events(&goal_events));
+            ) {
+                Some(outcome) => {
+                    // Accumulate REAL season stats from the actual match events
+                    // (kill #B): every scored/assisted goal lands on its player.
+                    for id in outcome.home_scorers.iter().chain(outcome.away_scorers.iter()) {
+                        // Skip unattributed goals (0 = condensed fallback engine,
+                        // which has no per-player shooter).
+                        if *id != 0 {
+                            self.player_ratings.record_goal(*id);
+                        }
+                    }
+                    // Post-match gate + TV/prize income (kill #8d).
+                    self.finance.record_match_income(home_id, away_id, false);
+                    // Post-match morale wire (kill #9b): benched players get
+                    // ±3 per FUN_004d0b00. The "played XI" here is approximated
+                    // as the first 11 of each side's contracted squad; benched
+                    // = the rest with a contract at this club. Faithful to the
+                    // exe's shape (played/benched split) but not the exact
+                    // per-player played-flag from the match record — a
+                    // refinement for when we surface the real XI.
+                    let played_ids = |cid: u32| -> Vec<u32> {
+                        let mut ids: Vec<u32> = self.player_ratings.players.iter()
+                            .filter(|p| p.club_id == Some(cid as i32))
+                            .map(|p| p.staff_id).collect();
+                        ids.sort_by_key(|id| {
+                            std::cmp::Reverse(self.player_ratings.players.iter()
+                                .find(|p| p.staff_id == *id).map(|p| p.ca).unwrap_or(0))
+                        });
+                        ids.into_iter().take(11).collect()
+                    };
+                    let home_won = outcome.home_score.cmp(&outcome.away_score);
+                    let home_played: Vec<u32> = played_ids(home_id);
+                    let away_played: Vec<u32> = played_ids(away_id);
+                    let home_bench: Vec<u32> = self.transfers.contracts.iter()
+                        .filter(|c| c.club_id == home_id && !home_played.contains(&c.player_id))
+                        .map(|c| c.player_id).collect();
+                    let away_bench: Vec<u32> = self.transfers.contracts.iter()
+                        .filter(|c| c.club_id == away_id && !away_played.contains(&c.player_id))
+                        .map(|c| c.player_id).collect();
+                    self.transfers.apply_match_morale(home_id, match home_won {
+                        std::cmp::Ordering::Greater => Some(true),
+                        std::cmp::Ordering::Less => Some(false),
+                        std::cmp::Ordering::Equal => None,
+                    }, &home_bench);
+                    self.transfers.apply_match_morale(away_id, match home_won {
+                        std::cmp::Ordering::Less => Some(true),
+                        std::cmp::Ordering::Greater => Some(false),
+                        std::cmp::Ordering::Equal => None,
+                    }, &away_bench);
+                    (outcome.home_score, outcome.away_score)
+                }
+                None => score_from_goal_events(&goal_events),
+            };
             let fixture = &mut self.season.fixtures[fixture_index];
             scenario.home_score = home_score;
             scenario.away_score = away_score;
@@ -18743,6 +19278,9 @@ impl RuntimeSaveGame {
                     });
                 }
             }
+            // Season closed: the awards above consumed this season's real goal
+            // tallies — now reset them for the new season (kill #B).
+            self.player_ratings.reset_season_stats();
         }
     }
 
@@ -18854,11 +19392,27 @@ impl RuntimeSaveGame {
             self.finance.end_of_month();
         }
         // Weekly training pass — moves CA toward PA (or slowly declines old
-        // resters) via the fractional-growth accumulator.
+        // resters) via the fractional-growth accumulator (interim CA feed).
         self.training.apply_weekly_growth(&mut self.player_ratings);
+        // Faithful per-attribute development (kill #TR): real CM0102 training —
+        // each player's attributes grow/decline by category effectiveness
+        // (schedule intensity + club coach quality), one week per Wednesday.
+        {
+            let seed = 0x0089_de50u64 ^ (self.elapsed_days as u64).wrapping_mul(0x9E3779B97F4A7C15);
+            let mut rng = crate::match_engine_exe::MatchRng::new(seed);
+            self.training.development.weekly_tick(1, &mut rng);
+        }
         // Bosman flags — anyone in contract's last 6 months is available
         // to negotiate with foreign clubs. Ported from contract_manager.cpp.
         self.transfers.update_bosman_flags(self.date.year as u16, self.date.month as u8);
+        // AI-club transfer activity (kill #4): budget-holding clubs bid for
+        // affordable upgrades, priced at the real valuation. Bounded sample.
+        {
+            let seed = 0x008a_c0c0u64 ^ (self.elapsed_days as u64).wrapping_mul(0x9E3779B97F4A7C15);
+            self.transfers.run_ai_transfer_pass(
+                &mut self.player_ratings, &mut self.finance, self.date.year as u16, 40, seed,
+            );
+        }
     }
 
     fn apply_fixture_to_standings(
@@ -19788,6 +20342,7 @@ impl ReferenceBook {
                     name: city.name.clone(),
                     tail_u16: city.tail_u16,
                     tail_u32: city.tail_u32,
+                    ..Default::default()
                 })
                 .collect(),
             officials: data
@@ -19798,6 +20353,7 @@ impl ReferenceBook {
                     u32_slots: official.u32_slots,
                     u16_slots: official.u16_slots,
                     trailing_byte: official.trailing_byte,
+                    ..Default::default()
                 })
                 .collect(),
             first_names: data.first_names.iter().map(copy_name).collect(),
@@ -19810,6 +20366,7 @@ impl ReferenceBook {
                     id: stadium.id,
                     name: stadium.name.clone(),
                     unknown_tail: stadium.unknown_tail.clone(),
+                    ..Default::default()
                 })
                 .collect(),
             staff_competitions: data
@@ -19981,11 +20538,46 @@ impl StaffBook {
                 .iter()
                 .map(|entry| DomainStaffType10 {
                     id: entry.id,
-                    unknown_byte_4: entry.unknown_byte_4,
-                    rating_short_0x05: entry.rating_short_0x05,
-                    rating_short_0x07: entry.rating_short_0x07,
+                    flags_byte_04: entry.flags_byte_04,
+                    current_ability: entry.current_ability,
+                    potential_ability: entry.potential_ability,
+                    home_reputation: entry.home_reputation,
+                    current_reputation: entry.current_reputation,
+                    world_reputation: entry.world_reputation,
+                    apt_goalkeeper: entry.apt_goalkeeper, apt_sweeper: entry.apt_sweeper,
+                    apt_defender: entry.apt_defender, apt_def_midfielder: entry.apt_def_midfielder,
+                    apt_midfielder: entry.apt_midfielder, apt_att_midfielder: entry.apt_att_midfielder,
+                    apt_attacker: entry.apt_attacker, apt_wing_back: entry.apt_wing_back,
+                    apt_right_side: entry.apt_right_side, apt_left_side: entry.apt_left_side,
+                    apt_central: entry.apt_central, apt_free_role: entry.apt_free_role,
+                    acceleration: entry.acceleration, aggression: entry.aggression,
+                    agility: entry.agility, anticipation: entry.anticipation,
+                    balance: entry.balance, bravery: entry.bravery,
+                    consistency: entry.consistency, corners: entry.corners,
+                    crossing: entry.crossing, free_kicks: entry.free_kicks,
+                    handling: entry.handling, heading: entry.heading,
+                    important_matches: entry.important_matches,
+                    injury_proneness: entry.injury_proneness,
+                    jumping: entry.jumping, leadership: entry.leadership,
+                    left_foot: entry.left_foot, long_shots: entry.long_shots,
+                    dirtiness: entry.dirtiness, dribbling: entry.dribbling,
+                    finishing: entry.finishing, flair: entry.flair,
+                    decisions: entry.decisions, movement: entry.movement,
+                    natural_fitness: entry.natural_fitness, one_on_ones: entry.one_on_ones,
+                    marking: entry.marking, pace: entry.pace,
+                    passing: entry.passing, penalties: entry.penalties,
+                    positioning: entry.positioning, reflexes: entry.reflexes,
+                    right_foot: entry.right_foot, stamina: entry.stamina,
+                    strength: entry.strength, tackling: entry.tackling,
+                    teamwork: entry.teamwork, throw_ins: entry.throw_ins,
+                    versatility: entry.versatility, vision: entry.vision,
+                    work_rate: entry.work_rate, technique: entry.technique,
+                    squad_number: entry.squad_number,
+                    // Legacy fields (populated from named fields for compat)
+                    rating_short_0x05: entry.current_ability as u16,
+                    rating_short_0x07: entry.potential_ability as u16,
                     unknown_bytes_9_12: entry.unknown_bytes_9_12,
-                    rating_short_0x0d: entry.rating_short_0x0d,
+                    rating_short_0x0d: entry.world_reputation as u16,
                     unknown_bytes_15_26: entry.unknown_bytes_15_26,
                     attributes: entry.attributes,
                     unknown_bytes_58_64: entry.unknown_bytes_58_64,
@@ -20679,8 +21271,43 @@ fn to_cm_staff_data(staff: &StaffBook) -> cm_data::StaffData {
             .type10
             .iter()
             .map(|entry| cm_data::StaffType10Entry {
-                id: entry.id,
-                unknown_byte_4: entry.unknown_byte_4,
+                id: entry.id, flags_byte_04: entry.flags_byte_04,
+                current_ability: entry.current_ability,
+                potential_ability: entry.potential_ability,
+                home_reputation: entry.home_reputation,
+                current_reputation: entry.current_reputation,
+                world_reputation: entry.world_reputation,
+                apt_goalkeeper: entry.apt_goalkeeper, apt_sweeper: entry.apt_sweeper,
+                apt_defender: entry.apt_defender, apt_def_midfielder: entry.apt_def_midfielder,
+                apt_midfielder: entry.apt_midfielder, apt_att_midfielder: entry.apt_att_midfielder,
+                apt_attacker: entry.apt_attacker, apt_wing_back: entry.apt_wing_back,
+                apt_right_side: entry.apt_right_side, apt_left_side: entry.apt_left_side,
+                apt_central: entry.apt_central, apt_free_role: entry.apt_free_role,
+                acceleration: entry.acceleration, aggression: entry.aggression,
+                agility: entry.agility, anticipation: entry.anticipation,
+                balance: entry.balance, bravery: entry.bravery,
+                consistency: entry.consistency, corners: entry.corners,
+                crossing: entry.crossing, free_kicks: entry.free_kicks,
+                handling: entry.handling, heading: entry.heading,
+                important_matches: entry.important_matches,
+                injury_proneness: entry.injury_proneness,
+                jumping: entry.jumping, leadership: entry.leadership,
+                left_foot: entry.left_foot, long_shots: entry.long_shots,
+                dirtiness: entry.dirtiness, dribbling: entry.dribbling,
+                finishing: entry.finishing, flair: entry.flair,
+                decisions: entry.decisions, movement: entry.movement,
+                natural_fitness: entry.natural_fitness, one_on_ones: entry.one_on_ones,
+                marking: entry.marking, pace: entry.pace,
+                passing: entry.passing, penalties: entry.penalties,
+                positioning: entry.positioning, reflexes: entry.reflexes,
+                right_foot: entry.right_foot, stamina: entry.stamina,
+                strength: entry.strength, tackling: entry.tackling,
+                teamwork: entry.teamwork, throw_ins: entry.throw_ins,
+                versatility: entry.versatility, vision: entry.vision,
+                work_rate: entry.work_rate, technique: entry.technique,
+                squad_number: entry.squad_number,
+                // Legacy back-compat
+                unknown_byte_4: entry.flags_byte_04,
                 rating_short_0x05: entry.rating_short_0x05,
                 rating_short_0x07: entry.rating_short_0x07,
                 unknown_bytes_9_12: entry.unknown_bytes_9_12,
@@ -22648,15 +23275,13 @@ mod tests {
             }],
             type10: vec![cm_data::StaffType10Entry {
                 id: 3,
-                unknown_byte_4: 0,
+                current_ability: 150,
+                potential_ability: 175,
+                world_reputation: 44,
                 rating_short_0x05: 150,
                 rating_short_0x07: 175,
-                unknown_bytes_9_12: [0; 4],
                 rating_short_0x0d: 44,
-                unknown_bytes_15_26: [0; 12],
-                attributes: [0; 31],
-                unknown_bytes_58_64: [0; 7],
-                trailing_bytes: [0; 5],
+                ..Default::default()
             }],
         }
     }
