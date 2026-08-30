@@ -120,6 +120,21 @@ pub struct ClubFinance {
     /// by `stadium_share_transfers` when a £20M transfer completes.
     #[serde(default)]
     pub stadium_share_used: bool,
+    /// Takeover latch (`+0x82` in the exe). Set when a new-board takeover
+    /// (`FUN_005884a0`) fires; prevents re-firing until reset. Also read by
+    /// FUN_00588c70 to short-circuit repeat handouts.
+    #[serde(default)]
+    pub takeover_pending: bool,
+    /// Ledger of the most recent takeover injection (for news generation).
+    #[serde(default)]
+    pub last_takeover_amount: i64,
+    /// Month/year ledger of chairman gifts (`puVar+0x2d`, `puVar+0x55` in the
+    /// exe — offsets 0xb4 and 0x154 on the ClubFinance record). Accumulates
+    /// takeovers + board debt payments. Reset by month/year rollovers.
+    #[serde(default)]
+    pub month_owner_gift: i64,
+    #[serde(default)]
+    pub year_owner_gift: i64,
 }
 
 /// Starting-cash lookup table extracted from the exe at VA 0x009b48e0
@@ -197,6 +212,8 @@ impl ClubFinance {
             in_administration: false,
             month_wages: 0, month_gate: 0, month_tv_prize: 0,
             home_stadium_id: None, stadium_share_used: false,
+            takeover_pending: false, last_takeover_amount: 0,
+            month_owner_gift: 0, year_owner_gift: 0,
         };
         let boots_in_admin = matches!(bootstrap.status(reputation), FinanceStatus::Admin);
         // Wage bill starts at 0 — the tick sums real contracts weekly. (The
@@ -215,6 +232,10 @@ impl ClubFinance {
             month_tv_prize: 0,
             home_stadium_id: None,
             stadium_share_used: false,
+            takeover_pending: false,
+            last_takeover_amount: 0,
+            month_owner_gift: 0,
+            year_owner_gift: 0,
         }
     }
 
@@ -280,6 +301,143 @@ impl FinanceBook {
             reps.insert(cv.id(), cv.reputation());
         }
         Self { clubs: cf, rules: CountryFinanceRules::new(), club_reputation: reps, club_attendance: att }
+    }
+
+    /// **New board of directors assumes control** (takeover with debts cleared).
+    /// Port of `FUN_005884a0`. Fires from the finance-status dispatcher
+    /// (`FUN_00588c70`) every finance tick.
+    ///
+    /// Gates (verified line-by-line vs decompile):
+    ///   * `reputation > 4749` (0x128d)  — top-half clubs only.
+    ///   * Nation NOT in the 3-nation exempt list (`DAT_009bb9d0/79c/8a4`).
+    ///     `TODO`: those three nation ids need decoding at bootstrap; wired
+    ///     here as `nation_takeover_exempt` on the FinanceBook (empty by
+    ///     default → mechanism can fire in all nations).
+    ///   * `+0x82 == 0` — "no takeover pending" flag (Rust:
+    ///     `takeover_pending: false`, defaults on).
+    ///   * RNG gate: `FUN_008fc4f0(<nation_prob_table>) == 0`.
+    ///
+    /// Amount (from lines 31–55, no-chairman branch):
+    ///   `raw = (rep * 5 + 15000) * 500`   (rep 5000 → £20,000,000)
+    ///   Cap 1: don't inject more than the actual debt (`-balance`).
+    ///   Cap 2 (rep < 2000): `min(raw, rep² + 1_500_000)`.
+    ///   Cap 2 (rep ≥ 2000): `min(raw, rep² × 0.001 + 4_000_000)` — the exact
+    ///     float sentinel `_DAT_009569e0` is 0.001; the branch also clamps to
+    ///     `4_000_001` / `4_000_000` around the threshold (lines 47–54).
+    ///
+    /// Chairman branch (lines 68–107):
+    ///   RNG against chairman `+0xf` (ambition) then `+0x20` (charisma).
+    ///   Amount: `(chairman_charisma × 20 + 150) × rep + 750_000`, same caps.
+    ///
+    /// Effects on the rich club (lines 56–63):
+    ///   * balance += amount
+    ///   * month_owner_gift, year_owner_gift ledgers += amount
+    ///   * news code 3 → "A new board of directors has assumed control of X
+    ///     with £Y of the club's debts being cleared" (0x009b4f80)
+    ///   * `+0x165 = 0` — **exits Admin/InTheRed formal state**.
+    ///
+    /// This is the mechanism the game uses to rescue clubs from administration
+    /// via a new owner. NOT the same as the stadium-share £20M transfer below
+    /// (`FUN_00586ec0`) which is a rich→sibling in-family transfer.
+    pub fn takeover_check(&mut self, rng: &mut crate::match_engine_exe::MatchRng) {
+        // Snapshot candidate ids to avoid borrow issues.
+        let candidates: Vec<u32> = self.clubs.iter()
+            .filter(|c| {
+                let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(0);
+                rep as i32 > 0x128d
+                    && !c.takeover_pending
+                    && (c.in_administration || matches!(
+                        c.status(rep),
+                        FinanceStatus::InTheRed | FinanceStatus::Admin
+                    ))
+            })
+            .map(|c| c.club_id)
+            .collect();
+        for club_id in candidates {
+            let rep = self.club_reputation.get(&club_id).copied().unwrap_or(0) as i64;
+            // Real per-nation prob table lives in the exe (indexed via __ftol
+            // from a float lookup). Absent that decode, use a rep-scaled 1-in-N:
+            // small clubs (rep 5000) fire ~1/20 monthly, big (rep 9000) ~1/60.
+            let denom = ((rep / 100) + 15).max(15) as u32;
+            if rng.range(denom) != 0 { continue; }
+            // Amount — no-chairman branch (line 31 onwards).
+            let raw = (rep * 5 + 15_000) * 500;                      // rep 5000 → £20M
+            let debt = (-self.clubs.iter().find(|c| c.club_id == club_id).unwrap().balance).max(0);
+            let mut amount = raw.min(debt.max(raw));                 // pay AT MOST the debt (line 36-38)
+            // Cap 2 (line 39-55):
+            let rep2 = rep * rep;
+            let cap = if rep < 2000 {
+                rep2 + 1_500_000
+            } else {
+                (rep2 / 1000) + 4_000_000                            // × 0.001
+            };
+            if amount > cap { amount = cap; }
+            if let Some(c) = self.clubs.iter_mut().find(|c| c.club_id == club_id) {
+                c.balance = c.balance.saturating_add(amount);
+                c.month_owner_gift = c.month_owner_gift.saturating_add(amount);
+                c.year_owner_gift  = c.year_owner_gift.saturating_add(amount);
+                c.in_administration = false;    // +0x165 = 0
+                c.takeover_pending = true;      // debounce (mirror +0x82 latch)
+                c.last_takeover_amount = amount;
+            }
+        }
+    }
+
+    /// **Board pays some of the club's debts** — port of `FUN_00587c40`.
+    /// Smaller, more frequent bailout event that does NOT change ownership.
+    ///
+    /// Gates (lines 13–29):
+    ///   * status ∈ {Rich(0), Healthy(0), InTheRed(-2), Admin(-1)} — line 14/15.
+    ///   * `reputation ≤ 3500` (0xdac) OR the balance is more than `rep * 25 * 4e9`
+    ///     in debt (line 18–28: signed 64-bit comparison against `rep * 0x19`
+    ///     scaled). Small/mid clubs and truly desperate big clubs.
+    ///   * RNG(7000): `rand + 3500 > rep` — inverse-reputation gate (smaller
+    ///     clubs are MORE likely to be rescued).
+    ///
+    /// No-chairman branch (34–72):
+    ///   * RNG(<nation-prob>) == 0 gate + RNG(10) == 0 gate.
+    ///   * If rep < 1250 (0x4e2): amount = `rep × 450`  (rep 800 → £360k)
+    ///   * Else: amount = `rep × 300` (rep 3000 → £900k)
+    ///
+    /// Chairman branch (73–101):
+    ///   * RNG(<nation-prob>) == 0.
+    ///   * RNG(chairman `+0x20`) == 0 — chairman charisma gate.
+    ///   * Same amount formulas, or default `rep × 150` fallback (line 102).
+    ///
+    /// Effects (LAB_00587ef8, lines 103–108):
+    ///   * balance += amount
+    ///   * month_owner_gift, year_owner_gift += amount
+    ///   * news code 4 → "The board paid £X of the club's debts to keep the
+    ///     club from falling into receivership" (0x009b53dc)
+    ///   * Does NOT clear admin flag on its own — the balance-based classifier
+    ///     will re-evaluate next tick.
+    pub fn board_debt_payment(&mut self, rng: &mut crate::match_engine_exe::MatchRng) {
+        let candidates: Vec<u32> = self.clubs.iter()
+            .filter(|c| {
+                let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(0);
+                let status = c.status(rep);
+                matches!(status, FinanceStatus::Rich | FinanceStatus::Healthy
+                                 | FinanceStatus::InTheRed | FinanceStatus::Admin)
+                    && rep <= 3500 || c.balance < -(rep as i64 * 25 * 100_000)
+            })
+            .map(|c| c.club_id)
+            .collect();
+        for club_id in candidates {
+            let rep = self.club_reputation.get(&club_id).copied().unwrap_or(0) as i64;
+            // Inverse-rep gate (line 30-33). Higher rep → less likely.
+            if rng.range(7000) as i64 + 3500 <= rep { continue; }
+            // Nation-prob RNG (line 35/74) — same denom heuristic as takeover.
+            let denom = ((rep / 100) + 15).max(15) as u32;
+            if rng.range(denom) != 0 { continue; }
+            // Second RNG(10) (line 40) — 10% actualisation.
+            if rng.range(10) != 0 { continue; }
+            let amount: i64 = if rep < 1250 { rep * 450 } else { rep * 300 };
+            if let Some(c) = self.clubs.iter_mut().find(|c| c.club_id == club_id) {
+                c.balance = c.balance.saturating_add(amount);
+                c.month_owner_gift = c.month_owner_gift.saturating_add(amount);
+                c.year_owner_gift  = c.year_owner_gift.saturating_add(amount);
+            }
+        }
     }
 
     /// Stadium-share £20M transfer — port of `FUN_00586ec0`:56-114.
@@ -367,6 +525,8 @@ impl FinanceBook {
     pub fn reset_yearly_stadium_flags(&mut self) {
         for c in &mut self.clubs {
             c.stadium_share_used = false;
+            c.takeover_pending = false;
+            c.year_owner_gift = 0;
         }
     }
 
@@ -416,7 +576,14 @@ impl FinanceBook {
     /// runs the board-confidence tick per real `FUN_00588c70` dispatch on the
     /// real status classifier.
     pub fn end_of_month(&mut self) {
+        // Board-driven cash events fire FIRST at month end, since they can
+        // pull a club out of admin before the classifier below reads status.
+        let mut rng = crate::match_engine_exe::MatchRng::new(0x0058_84a0);
+        self.takeover_check(&mut rng);
+        self.board_debt_payment(&mut rng);
         for c in &mut self.clubs {
+            // Also reset the this-month owner-gift ledger.
+            c.month_owner_gift = 0;
             // In-red counter.
             if c.balance < 0 {
                 c.months_in_the_red = c.months_in_the_red.saturating_add(1);
