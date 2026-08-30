@@ -282,6 +282,14 @@ impl<'a> ClubView<'a> {
     /// Arsenal=0x0d, Man Utd/Rushden=0x00. Candidate for `club_professional_status`
     /// / financial state flag (the "Bankrupt" indicator the editor shows).
     pub fn flag_byte_8b(&self) -> u8 { u8_at(self.raw, 0x8b) }
+
+    /// Chairman/owner group id (+0x69 in `FUN_00586ec0`). Clubs sharing this
+    /// value share a chairman → they are eligible for the £20M cross-club
+    /// rescue transfer. `None` when unset (0 sentinel).
+    pub fn chairman_group(&self) -> Option<u32> {
+        let v = le_u32(self.raw, 0x69);
+        if v == 0 { None } else { Some(v) }
+    }
 }
 
 // ------ Player / staff-base (110 B, StaffType6, DAT_00acd5c4, stride 0x6e) ------
@@ -1008,6 +1016,118 @@ impl<'a> ContinentView<'a> {
         } else {
             0.0
         }
+    }
+}
+
+// ------ Stadium (78 B, DAT_00acd5b8, stride 0x4e) ------
+
+/// Typed view over a `stadium.dat` record (78 bytes).
+///
+/// Verified via loader `FUN_005121a0` case 5 + `FUN_0051b110` swizzle map.
+/// The on-disk bytes are raw pool bytes with no unpacking; the runtime maps
+/// `city_id`/`alt_stadium_id` into pool pointers, but the disk form is just IDs.
+///
+/// - `+0x00 u32` id
+/// - `+0x04..+0x36` name (51-char Latin-1)
+/// - `+0x37 u8` name_set_flag
+/// - `+0x38 i32` city_id (swizzled to city pool)
+/// - `+0x3c u32` capacity_total (verified: Old Trafford = 67800)
+/// - `+0x40 u32` capacity_seated
+/// - `+0x44 u32` capacity_expansion (verified: Old Trafford → 100000)
+/// - `+0x48 i32` alt_stadium_id (self-referential, "replacement stadium" slot)
+pub struct StadiumView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> StadiumView<'a> {
+    pub const RECORD_SIZE: usize = 0x4e;
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    pub fn id(&self) -> i32 { le_i32(self.raw, 0x00) }
+    pub fn name(&self) -> String { read_latin1_cstr(self.raw, 0x04, 0x33) }
+    pub fn name_set(&self) -> bool { u8_at(self.raw, 0x37) == 0xff }
+    pub fn city_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x38)) }
+    pub fn capacity_total(&self) -> u32 { le_u32(self.raw, 0x3c) }
+    pub fn capacity_seated(&self) -> u32 { le_u32(self.raw, 0x40) }
+    pub fn capacity_expansion(&self) -> u32 { le_u32(self.raw, 0x44) }
+    pub fn alt_stadium_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x48)) }
+}
+
+// ------ City (56 B, DAT_00acd5b4, stride 0x38) ------
+
+/// Typed view over a `city.dat` record (56 bytes). No swizzle points; all
+/// fields are already values on disk.
+///
+/// - `+0x00 u32` id
+/// - `+0x04..+0x1c` name (25-char Latin-1)
+/// - `+0x1e u8` name_set_flag
+/// - `+0x1f u8` nation_id (verified: London=60=England)
+/// - `+0x23 f64` latitude (unaligned; verified: London 51.519°N)
+/// - `+0x2b f64` longitude (unaligned; verified: London -0.102°E)
+/// - `+0x33 u8` size_tier (0..20, label unverified)
+/// - `+0x34 i32` region_or_primary_club (label unverified)
+pub struct CityView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> CityView<'a> {
+    pub const RECORD_SIZE: usize = 0x38;
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    pub fn id(&self) -> i32 { le_i32(self.raw, 0x00) }
+    pub fn name(&self) -> String { read_latin1_cstr(self.raw, 0x04, 0x1a) }
+    pub fn name_set(&self) -> bool { u8_at(self.raw, 0x1e) == 0xff }
+    pub fn nation_id(&self) -> u8 { u8_at(self.raw, 0x1f) }
+    pub fn latitude(&self) -> f64 { le_f64(self.raw, 0x23) }
+    pub fn longitude(&self) -> f64 { le_f64(self.raw, 0x2b) }
+    pub fn size_tier(&self) -> u8 { u8_at(self.raw, 0x33) }
+    pub fn region_or_primary_club(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x34)) }
+}
+
+// ------ Official (43 B, DAT_00acd5f0, stride 0x2b) ------
+
+/// Typed view over an `officials.dat` record (43 bytes) — a match referee.
+///
+/// - `+0x00 u32` id
+/// - `+0x04 i32` first_name_id  (swizzled to first-name pool)
+/// - `+0x08 i32` second_name_id (swizzled to second-name pool)
+/// - `+0x0c u16` dob_day (0..364)
+/// - `+0x0e u16` dob_year (verified vs `0068f0d0`: `year = current_year - age`)
+/// - `+0x10 u32` flags (=1 in shipped data)
+/// - `+0x16 i32` nation_id
+/// - `+0x1a i32` home_city_id
+/// - `+0x1e u32` reputation_ca (label unverified)
+/// - `+0x22 u16` reputation_pa (label unverified)
+/// - `+0x24..+0x2a` seven 0..20 rating bytes (individual meanings unresolved)
+pub struct OfficialView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> OfficialView<'a> {
+    pub const RECORD_SIZE: usize = 0x2b;
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    pub fn id(&self) -> i32 { le_i32(self.raw, 0x00) }
+    pub fn first_name_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x04)) }
+    pub fn second_name_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x08)) }
+    pub fn dob_day(&self) -> u16 { le_u16(self.raw, 0x0c) }
+    pub fn dob_year(&self) -> u16 { le_u16(self.raw, 0x0e) }
+    pub fn flags(&self) -> u32 { le_u32(self.raw, 0x10) }
+    pub fn nation_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x16)) }
+    pub fn home_city_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x1a)) }
+    pub fn reputation_ca(&self) -> u32 { le_u32(self.raw, 0x1e) }
+    pub fn reputation_pa(&self) -> u16 { le_u16(self.raw, 0x22) }
+    pub fn rating_bytes(&self) -> [u8; 7] {
+        let s = self.raw;
+        [u8_at(s, 0x24), u8_at(s, 0x25), u8_at(s, 0x26),
+         u8_at(s, 0x27), u8_at(s, 0x28), u8_at(s, 0x29),
+         u8_at(s, 0x2a)]
     }
 }
 
