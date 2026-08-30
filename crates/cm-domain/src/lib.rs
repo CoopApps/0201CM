@@ -19390,6 +19390,12 @@ impl RuntimeSaveGame {
         // If it's the 1st Wednesday of the month, run month-end accounting.
         if self.date.day <= 7 {
             self.finance.end_of_month();
+            // Yearly rollover for the stadium-share latch (+0x6d) and the
+            // takeover-pending latch (+0x82). Fires on the first month-end
+            // of each calendar year (i.e., the first Wednesday of January).
+            if self.date.month == 1 {
+                self.finance.reset_yearly_stadium_flags();
+            }
         }
         // Weekly training pass — moves CA toward PA (or slowly declines old
         // resters) via the fractional-growth accumulator (interim CA feed).

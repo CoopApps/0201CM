@@ -274,6 +274,11 @@ pub struct FinanceBook {
     /// 4k-capacity home; this replaces the pure-reputation gate proxy.
     #[serde(default)]
     pub club_attendance: std::collections::BTreeMap<u32, (i32, i32, i32)>,
+    /// club_id → nation_id (from `ClubView::nation_id`). Needed by the
+    /// takeover-check exempt-nation filter (Wales / ROI / NI are
+    /// hardcoded out of `FUN_005884a0`).
+    #[serde(default)]
+    pub club_nation: std::collections::BTreeMap<u32, i32>,
 }
 
 impl FinanceBook {
@@ -288,8 +293,10 @@ impl FinanceBook {
         let mut cf = Vec::with_capacity(clubs.len());
         let mut reps = std::collections::BTreeMap::new();
         let mut att = std::collections::BTreeMap::new();
+        let mut nats = std::collections::BTreeMap::new();
         for rec in clubs {
             let cv = crate::ClubView::new(rec);
+            if let Some(nid) = cv.nation_id() { nats.insert(cv.id(), nid); }
             // Use SHIPPED cash from the club record (+0x65) when non-zero —
             // otherwise fall back to the START_CASH-by-reputation table. This
             // is what makes SWFC boot as bankrupt (their shipped cash is
@@ -300,7 +307,8 @@ impl FinanceBook {
             att.insert(cv.id(), (cv.attendance_average(), cv.attendance_minimum(), cv.attendance_maximum()));
             reps.insert(cv.id(), cv.reputation());
         }
-        Self { clubs: cf, rules: CountryFinanceRules::new(), club_reputation: reps, club_attendance: att }
+        Self { clubs: cf, rules: CountryFinanceRules::new(),
+               club_reputation: reps, club_attendance: att, club_nation: nats }
     }
 
     /// **New board of directors assumes control** (takeover with debts cleared).
@@ -340,12 +348,16 @@ impl FinanceBook {
     /// via a new owner. NOT the same as the stadium-share £20M transfer below
     /// (`FUN_00586ec0`) which is a rich→sibling in-family transfer.
     pub fn takeover_check(&mut self, rng: &mut crate::match_engine_exe::MatchRng) {
-        // Snapshot candidate ids to avoid borrow issues.
+        // Exempt nations (verified — FUN_005f71d0 sets DAT_009bb79c/8a4/9d0 to
+        // Republic of Ireland, Northern Ireland, Wales respectively from a
+        // strcmpi ladder over nation names during startup):
+        const EXEMPT_NATIONS: &[i32] = &[92, 128, 207];
         let candidates: Vec<u32> = self.clubs.iter()
             .filter(|c| {
                 let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(0);
                 rep as i32 > 0x128d
                     && !c.takeover_pending
+                    && !EXEMPT_NATIONS.contains(&self.club_nation.get(&c.club_id).copied().unwrap_or(0))
                     && (c.in_administration || matches!(
                         c.status(rep),
                         FinanceStatus::InTheRed | FinanceStatus::Admin
@@ -355,10 +367,28 @@ impl FinanceBook {
             .collect();
         for club_id in candidates {
             let rep = self.club_reputation.get(&club_id).copied().unwrap_or(0) as i64;
-            // Real per-nation prob table lives in the exe (indexed via __ftol
-            // from a float lookup). Absent that decode, use a rep-scaled 1-in-N:
-            // small clubs (rep 5000) fire ~1/20 monthly, big (rep 9000) ~1/60.
-            let denom = ((rep / 100) + 15).max(15) as u32;
+            // Per-status probability denominators (VERIFIED from asm at
+            // 0x00588512..0x00588528 loading f64 constants at
+            //   0x00958348 = 0.001  (Rich/Healthy/Normal)
+            //   0x00955880 = 0.1    (Admin,     status 0xff)
+            //   0x009569e0 = 0.25   (InTheRed,  status 0xfe)
+            // then computing 4.0/const (no-chairman branch at 0x5886c7) or
+            // 30.0/const (chairman branch at 0x5884f). Table of takeover
+            // probability = 1/denom per tick:
+            //             Rich/Healthy   Admin   InTheRed
+            //   no-chair        4000       40         16
+            //   chair          30000      300        120
+            let status = self.clubs.iter().find(|c| c.club_id == club_id).unwrap()
+                .status(rep as u16);
+            let has_chairman = false; // TODO: source chairman flag from club record
+            let denom: u32 = match (has_chairman, status) {
+                (false, FinanceStatus::InTheRed) => 16,
+                (false, FinanceStatus::Admin)    => 40,
+                (false, _)                        => 4_000,
+                (true,  FinanceStatus::InTheRed) => 120,
+                (true,  FinanceStatus::Admin)    => 300,
+                (true,  _)                        => 30_000,
+            };
             if rng.range(denom) != 0 { continue; }
             // Amount — no-chairman branch (line 31 onwards).
             let raw = (rep * 5 + 15_000) * 500;                      // rep 5000 → £20M
@@ -382,6 +412,18 @@ impl FinanceBook {
             }
         }
     }
+
+    /// **Full chairman-reroll takeover (news case 2)** — port of `FUN_00588840`
+    /// is DEFERRED. That fn clears the whole debt AND randomizes the chairman
+    /// record (+0xf/+0x16/+0x1d/+0x20 all reroll to `rand(20)+1`; sometimes
+    /// reassigns nation). Requires a chairman-record model I haven't built yet
+    /// (would be a follow-up to add ChairmanView + a ChairmanBook keyed by
+    /// club_id). Cash arithmetic mirrors takeover_check; only the effect on
+    /// board_of_directors composition differs. News template:
+    ///   0x009b4ec4 = "A new board of directors has assumed control of X.
+    ///                 They have agreed a financial package with the creditors
+    ///                 to keep the club from falling into receivership."
+    /// (No £X debt figure — the "silent" takeover variant.)
 
     /// **Board pays some of the club's debts** — port of `FUN_00587c40`.
     /// Smaller, more frequent bailout event that does NOT change ownership.
