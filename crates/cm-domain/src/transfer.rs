@@ -941,6 +941,147 @@ fn wage_formula_by_role(role_byte: u8, ca: i16, pa: i16, years: u8,
     wage
 }
 
+/// Position-category cap table for the contract-cost aggregator
+/// `FUN_004d79c0`. Switch is on the high nibble of `[iVar12+0x4f]` (position
+/// category). Verified cases from decompile lines 122–148 (see
+/// `reports/transfer_deeper_decode.md` §3). Value = ceiling multiplier on
+/// the seniority/status delta the AI charges for granting a promotion.
+///
+/// | high-nibble | position         | cap |
+/// |-------------|------------------|-----|
+/// | 1           | GK               |  75 |
+/// | 2, 5        | DEF, WB          |  50 |
+/// | 3           | DM/MID           |  40 |
+/// | 4           | AM/FWD           |  25 |
+/// | 6           | STR              |   0 |
+/// | 7           | (deprecated)     | -100|
+fn position_cost_cap(pos_nibble: u8) -> i32 {
+    match pos_nibble {
+        1       => 75,
+        2 | 5   => 50,
+        3       => 40,
+        4       => 25,
+        6       => 0,
+        7       => -100,
+        _       => 25, // fall-through: same as AM/FWD, matches decompile default
+    }
+}
+
+/// Port of `FUN_004d79c0` — the **contract-cost readback**. Returns the extra
+/// weekly wage the AI would charge for the given squad-status vs the
+/// player's current on-record status. `mode == 1` includes the squad-status
+/// penalty (line 194–200 of the decompile); `mode == 0` returns the base
+/// asking cost without the promotion delta. See
+/// `reports/transfer_deeper_decode.md` §3 for the full field-by-field map.
+///
+/// This is the cost-side of the composer: `FUN_004d7090` is the *composer*,
+/// `FUN_004d79c0` is the *readback*. The exe uses mode-1 minus mode-0 as the
+/// "cost of granting a promotion in status" — that's the delta this fn
+/// exposes to the AI negotiation loop.
+///
+/// # Inputs
+/// - `player`: current player rating (drives the `[+0x7e]` loyalty term).
+/// - `club`: buyer club (rep + squad size).
+/// - `pos_nibble`: high nibble of `staff[+0x4f]` (position category).
+/// - `current_status`: the player's on-record squad status (`+0x19`).
+/// - `asking_status`: the status the buyer is offering / the player is asking for.
+/// - `weekly_wage`: composed base weekly wage (from `wage_formula_by_role`).
+/// - `mode`: 0 = base cost only, 1 = base + squad-status promotion delta.
+pub fn contract_cost_readback(
+    player: &ComposerPlayer,
+    club: &ComposerClub,
+    pos_nibble: u8,
+    current_status: SquadStatus,
+    asking_status: SquadStatus,
+    weekly_wage: u32,
+    mode: u8,
+) -> u32 {
+    // Base cost — the composed weekly, clamped by the position cap.
+    let cap = position_cost_cap(pos_nibble);
+    if cap <= 0 {
+        // STR / deprecated: no position premium at all in the readback.
+        return weekly_wage;
+    }
+    let base_cost = weekly_wage;
+    if mode == 0 {
+        return base_cost;
+    }
+    // Mode-1: additional penalty when the ASKING status is higher than the
+    // CURRENT status (i.e. player is being promoted). Delta scales by the
+    // position cap and the tier gap. `SquadStatus` enum is 1=KeyPlayer,
+    // 7=NotNeeded, so a LOWER u8 = HIGHER seniority.
+    let curr = current_status as u8 as i32;
+    let ask  = asking_status  as u8 as i32;
+    let promotion_tiers = (curr - ask).max(0); // e.g. FirstTeam→KeyPlayer = 1
+    if promotion_tiers == 0 {
+        return base_cost;
+    }
+    // Loyalty factor: mid-club rep dampens the ask; big clubs pay more.
+    // From decompile line 82: `[+0x7e]` (club rep byte) × `[+0x85]` (squad
+    // size) × status. Kept as a normalised rep_scale here — the raw byte
+    // reads aren't threaded through ComposerClub yet.
+    let rep_scale = (club.reputation as f64 / 10000.0).clamp(0.5, 1.1);
+    // Extra cost = base × (position_cap/100) × promotion_tiers × rep_scale.
+    let extra = (base_cost as f64 * (cap as f64 / 100.0)
+                                 * promotion_tiers as f64
+                                 * rep_scale) as u32;
+    // Suppress unused-warning on the age-taper term: the readback in the
+    // real decompile also touches `age` via +0x03 but only for GK vs non-GK
+    // bucketing — that's already applied by wage_formula_by_role upstream.
+    let _ = player.age;
+    base_cost + extra
+}
+
+/// Port of `FUN_006ce0e0` — the **wage-estimate helper** (~80 lines). Called
+/// twice from `FUN_008d4b10` (once with `mode=2` for current wage, once with
+/// `mode=1` for renewal ask). Not a loan-split (see
+/// `reports/transfer_deeper_decode.md` §5 — the loan split is composed in
+/// `FUN_00848da0`).
+///
+/// Verified formula from lines 74–78 of the decompile:
+///   `years_factor  = min(agent_quality/2 + 10, 20)`
+///   `years_penalty = 20 - years_factor`
+///   `mid_asking    = (contract_field + jitter) * years_factor
+///                     + years_penalty * rep_bucket`
+///   `weekly_ask    = mid_asking / 20`
+///
+/// where `rep_bucket = FUN_0052a330(...) / 50` (player rep bucket) and
+/// `jitter` is a deterministic per-day noise term seeded by player id.
+pub fn predict_wage(
+    contract_field: i32,   // mode 2 → contract+5 (current wage); mode 1 → contract+7 (renewal)
+    agent_quality: i32,    // FUN_0052df60 output (capped 20)
+    rep_bucket: i32,       // FUN_0052a330(...)/50 (player rep bucket)
+    age: u8,
+    is_goalkeeper: bool,
+    player_id: u32,
+    game_day: u32,
+    mode: u8,
+) -> i32 {
+    let years_factor  = (agent_quality / 2 + 10).min(20);
+    let years_penalty = 20 - years_factor;
+
+    // Deterministic per-day jitter — signed, in [-(0x15 - years_factor), 0x15 - years_factor].
+    // Seed = player_id XOR game_day, matching the "per player per day" property.
+    let span = (0x15 - years_factor).max(1) as u32;
+    let seed = player_id.wrapping_mul(2654435761).wrapping_add(game_day);
+    let jitter = (seed % (span * 2)) as i32 - (0x15 - years_factor);
+
+    // Mode-1 non-GK age penalty: `param_5 -= age_offset^2`, offset = age-23
+    // (non-GK) or age-26 (GK), capped ≥ 0. Applied ONLY on renewal ask.
+    let age_penalty: i32 = if mode == 1 {
+        let base = if is_goalkeeper { 26 } else { 23 };
+        let off = (age as i32 - base).max(0);
+        off * off
+    } else {
+        0
+    };
+
+    let mid = (contract_field + jitter) * years_factor
+            + years_penalty * rep_bucket
+            - age_penalty;
+    (mid / 20).max(0)
+}
+
 /// Club-side inputs for the composer.
 #[derive(Debug, Clone, Copy)]
 pub struct ComposerClub {
