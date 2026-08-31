@@ -518,6 +518,16 @@ pub struct EngineTeamPlayer {
     pub speciality_b: u8,
     pub position_natural: u8,
     pub position_learn: u8,
+    /// Type10 attribute source for the token f32 fields decoded in
+    /// reports/token_float_field_sources_decode.md — each populated at
+    /// kickoff by `FUN_006d1a20`. Type10 offsets:
+    /// heading +0x26, important_matches +0x27, dribbling +0x2E,
+    /// decisions +0x31, throw_ins +0x40.
+    #[serde(default)] pub heading: i8,
+    #[serde(default)] pub important_matches: i8,
+    #[serde(default)] pub dribbling: i8,
+    #[serde(default)] pub decisions: i8,
+    #[serde(default)] pub throw_ins: i8,
 }
 
 /// Grudge / recent-actions bitmask returned by `FUN_004D5A20(player, opp_team)`.
@@ -1912,6 +1922,8 @@ impl TokenEngine {
                     current_ability: 0, age: 25, injury_proneness: 0, form: 0,
                     is_first_choice_gk: false, speciality_a: 0, speciality_b: 0,
                     position_natural: 0, position_learn: 0,
+                    heading: 0, important_matches: 0, dribbling: 0,
+                    decisions: 0, throw_ins: 0,
                 });
                 // Zone assignment by position:
                 // GK=0 → (4, side==0 ? 0 : 11), DEF (1-4) → back third, MID (5-8) → mid, ATT (9-10) → front third.
@@ -1974,15 +1986,20 @@ impl TokenEngine {
                     formation_slot,
                     stamina_short: 10_000,
                     pass_bias: 0,
-                    // OPEN GAP: the exe reads +0xAD and +0xB1 as f32
-                    // physique thresholds in the pass-target scorer
-                    // (006a1940.c:173-183 / :401-408) but the SOURCE
-                    // stat (which player attribute populates these
-                    // floats at kickoff) is not yet decoded. Leaving
-                    // as 0.0 — pass-target physique-bonus branch will
-                    // never fire until this is lifted, matching
-                    // 'don't invent' rule.
-                    pass_marker_float: 0.0,
+                    // Kickoff-populated token f32 fields (VERIFIED per
+                    // reports/token_float_field_sources_decode.md;
+                    // writer FUN_006d1a20, .rdata constants read from
+                    // D:/cm0102/cm0102.exe).
+                    // +0xAD (dribbling — raw − fatigue*0.0333). Fatigue
+                    // scaler unknown at kickoff, defaults to 0 → raw dribbling.
+                    pass_marker_float: p.dribbling.max(0) as f32,
+                    // +0xB1 (decisions — composite (base16 + 2*attr − fat) * 0.1
+                    // per 006d1a20.c:536-538). Two of the three inputs
+                    // (base16 short[+0x3b], fatigue scalar local_50) are
+                    // computed elsewhere in FUN_006d1a20 and not yet
+                    // decoded — leaving as 0.0 rather than injecting a
+                    // partial-formula bias. Marker-branch consumer at
+                    // 006a1940.c:401-408 is not yet wired either.
                     carrier_marker_float: 0.0,
                     rating_milli: 6400,   // FUN_006d08b0:84 init (6.4)
                     rating_final: 6,

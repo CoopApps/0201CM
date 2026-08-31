@@ -89,6 +89,52 @@ pub struct RatedPlayer {
     pub position_ordinal: u8,
     /// Whether this player's real attributes clear the goalkeeper threshold.
     pub is_gk: bool,
+    /// The real match-engine attributes (1..20) this player carries — sourced
+    /// from the shipped-or-generated type10 attribute block (alphabetical), so
+    /// `snapshot_team_for_engine` no longer hardcodes them (kill #1a). Mapping:
+    /// aggression→attr 1, bravery→5, dirtiness→10, injury_proneness→18,
+    /// jumping_heading→Jumping (19).
+    #[serde(default)]
+    pub aggression: i8,
+    #[serde(default)]
+    pub bravery: i8,
+    #[serde(default)]
+    pub dirtiness: i8,
+    #[serde(default)]
+    pub injury_proneness: u8,
+    #[serde(default)]
+    pub jumping_heading: i8,
+    /// REAL accumulated season stats, fed from actual simulated match events
+    /// (`ExeMatchResult::home_scorer_ids`/`away_scorer_ids`/assist ids) — the
+    /// replacement for the CA-proxy `goals_est` in award selection (kill #B).
+    /// Reset to 0 at each year rollover (after awards fire for the closing
+    /// season).
+    #[serde(default)]
+    pub season_goals: u16,
+    #[serde(default)]
+    pub season_assists: u16,
+    /// Real transfer value + weekly wage from the ported `FUN_0084d5d0`
+    /// quality² formula (kill #2) — replaces the `CA²×100` / `CA×250`
+    /// heuristics. Computed at `build` from CA/PA + the three reputation shorts.
+    #[serde(default)]
+    pub market_value: i64,
+    #[serde(default)]
+    pub weekly_wage: u32,
+    /// The 12 position-aptitude bytes (type10 +0x0f..+0x1a) — carried on the
+    /// RatedPlayer so `snapshot_team_for_engine` can compute real position
+    /// ratings for the tactics core (kill #T `FUN_006c8930` position rating +
+    /// `FUN_006c5c40` team score).
+    #[serde(default)]
+    pub position_aptitudes: [u8; 12],
+    /// Extra type10 attributes needed by the match engine's token f32
+    /// fields (populated at kickoff — see reports/token_float_field_sources_decode.md):
+    /// heading +0x26, important_matches +0x27, dribbling +0x2E,
+    /// decisions +0x31, throw_ins +0x40.
+    #[serde(default)] pub heading: i8,
+    #[serde(default)] pub important_matches: i8,
+    #[serde(default)] pub dribbling: i8,
+    #[serde(default)] pub decisions: i8,
+    #[serde(default)] pub throw_ins: i8,
 }
 
 /// The book of player ratings — one entry per staff record with a valid
@@ -98,44 +144,148 @@ pub struct RatedPlayer {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlayerRatingBook {
     pub players: Vec<RatedPlayer>,
+    /// Real club reputation (`ClubView::reputation`, the loader's ×500 value)
+    /// keyed by club id — so `snapshot_team_for_engine` uses the actual club
+    /// reputation instead of `avg_ca*20` (kill #1b).
+    #[serde(default)]
+    pub club_reputation: std::collections::BTreeMap<i32, u16>,
+    /// staff_id → index into `players`, for O(1) stat updates. Not serialized
+    /// (rebuilt on demand); the players vector is stable after `build`. `pub`
+    /// only so cross-module `..Default::default()` literals compile — treat as
+    /// internal; use `record_goal`/`record_assist` rather than touching it.
+    #[serde(skip)]
+    pub id_index: std::collections::HashMap<u32, usize>,
 }
 
+/// DFM-order indices into the 42-attribute block (`ATTRIBUTE_NAMES`) for the
+/// five attributes the match engine consumes per player. CORRECTED from the
+/// prior alphabetical-guess values — every one of these was wrong before, the
+/// engine's per-player attribute reads were silently targeting the wrong bytes.
+/// (Editor decode agent verified against DFM tabsheet_staff_pl2.)
+const ATTR_AGGRESSION: usize        = crate::DomainStaffType10::ATTR_IDX_AGGRESSION;    // 1  (was 1, ✓)
+const ATTR_BRAVERY: usize           = crate::DomainStaffType10::ATTR_IDX_BRAVERY;       // 5  (was 5, ✓)
+const ATTR_DIRTINESS: usize         = crate::DomainStaffType10::ATTR_IDX_DIRTINESS;     // 18 (was 10, WRONG)
+const ATTR_INJURY_PRONENESS: usize  = crate::DomainStaffType10::ATTR_IDX_INJURY_PRONE;  // 13 (was 18, WRONG)
+const ATTR_JUMPING: usize           = crate::DomainStaffType10::ATTR_IDX_JUMPING;       // 14 (was 19, WRONG)
+// Attributes consumed by the match-engine token f32 fields. Type10 offsets
+// map to attr-array indices via `(offset - 0x1B)`. VERIFIED against the
+// existing ATTR_IDX_DECISIONS (= 22 = 0x31 - 0x1B).
+const ATTR_HEADING: usize           = 11; // type10 +0x26
+const ATTR_IMPORTANT_MATCHES: usize = 12; // type10 +0x27
+const ATTR_DRIBBLING: usize         = 19; // type10 +0x2E
+const ATTR_DECISIONS: usize         = crate::DomainStaffType10::ATTR_IDX_DECISIONS; // 22 = 0x31
+const ATTR_THROW_INS: usize         = 37; // type10 +0x40
+
 impl PlayerRatingBook {
-    /// Build a fresh rating book from the world's staff pool + clubs.
+    /// Build a fresh rating book from the world's staff pool + clubs + the
+    /// generated init states (kill #6 — CA/PA/attributes generated for the ~28k
+    /// records the base ships as CA=0). The state is the source of truth for
+    /// CA/PA/attributes so **every** player — including the previously-dropped
+    /// CA=0 ones — is included with real data. This is what fills club squads
+    /// so `snapshot_team_for_engine` stops falling back to the reputation
+    /// scorer (kill #1).
     ///
     /// Players are represented by paired staff records: type6 (person —
-    /// name, DOB, current club) + type10 (outfield attributes including CA/PA),
-    /// joined by their shared `id` field (memory [[player-init-decode]]:
-    /// "person N ↔ type10[N]").
+    /// name, DOB, current club) + type10 (outfield attributes), joined by their
+    /// shared `id` (memory [[player-init-decode]]: "person N ↔ type10[N]").
     pub fn build(
         clubs: &[DomainOpaqueRecord],
         staff: &StaffBook,
+        init: &[crate::PlayerInitState],
     ) -> Self {
-        // Index type10 by staff id.
+        // Generated per-player state (CA/PA/attributes) keyed by id.
+        let mut state_by_id =
+            std::collections::HashMap::with_capacity(init.len());
+        for s in init {
+            state_by_id.insert(s.player_id, s);
+        }
+        // Index type10 by staff id (for position eligibility from the raw bytes).
         let mut t10_by_id = std::collections::HashMap::with_capacity(staff.type10.len());
         for t in &staff.type10 {
             t10_by_id.insert(t.id, t);
         }
-        // Index club division by club id (as i32 for direct comparison with
-        // simple_league.real_comp_id at award-lookup time).
+        // Index club division + reputation by club id.
         let mut club_div = std::collections::HashMap::with_capacity(clubs.len());
+        let mut club_reputation = std::collections::BTreeMap::new();
         for rec in clubs {
             let cv = ClubView::new(rec);
             club_div.insert(cv.id() as i32, cv.division_id());
+            club_reputation.insert(cv.id() as i32, cv.reputation());
         }
+
+        let attr = |s: &crate::PlayerInitState, idx: usize| -> u8 {
+            s.attributes.get(idx).copied().unwrap_or(0)
+        };
 
         let mut rated = Vec::with_capacity(staff.type6.len());
         for p in &staff.type6 {
+            // CRITICAL FIX: join type6 → type10 via `player_data_id` (the
+            // foreign key stored on the type6 record), NOT by matching
+            // type6.id == type10.id. The two ID spaces overlap coincidentally
+            // but they are independent — matching by id gave every player a
+            // RANDOM other player's attributes. Verified against the SWFC
+            // squad: Kevin Pressman type6.id=57342 → player_data_id=47735 →
+            // type10 with GK aptitude=20 (correct), whereas type10.id=57342
+            // was some midfielder's record.
+            // The `PlayerView::player_data_id()` accessor handles the v1/v2
+            // disk-format offset difference (v1 at +0x91, v2 at +0x61).
+            let pv = crate::typed_records::PlayerView::from_split(p.id, &p.body);
+            let Some(pdi) = pv.player_data_id() else { continue };
+            let Some(t10) = t10_by_id.get(&(pdi as u32)) else { continue };
             let sid = p.id;
-            let Some(t10) = t10_by_id.get(&sid) else { continue };
-            let ca = t10.current_ability();
+
+            // Filter out non-player staff by `club_job` (record +0x3d).
+            // 5..10 are coach/scout/physio roles.
+            let club_job = pv.club_job();
+            if (5..=10).contains(&club_job) { continue; }
+
+            // Prefer the generated init state (keyed by TYPE-10 id, since the
+            // init states are seeded per attribute record). Fall back to raw.
+            let ca = state_by_id.get(&(pdi as u32)).map(|s| s.current_ability)
+                .unwrap_or_else(|| t10.current_ability());
             if ca <= 0 { continue }
-            let pa = t10.resolved_potential_ability();
+            let pa = state_by_id.get(&(pdi as u32)).map(|s| s.potential_ability)
+                .unwrap_or_else(|| t10.resolved_potential_ability());
             let club_id = p.current_club_id().map(|c| c as i32);
             let div_id = club_id.and_then(|c| club_div.get(&c).copied()).flatten();
             let goals = (ca as f32 * 0.06 + wobble(sid) * 0.2) as u16;
             let age = p.age_at(DEFAULT_RATING_YEAR, DEFAULT_RATING_DAY).unwrap_or(25);
             let (position_ordinal, is_gk) = t10.engine_position_ordinal();
+            // Real valuation + wage (kill #2, FUN_0084d5d0 quality²). Use the
+            // init state's reputations (generated/proper for CA=0 players).
+            let [rep9, rep_b, rep_d] = state_by_id.get(&(pdi as u32))
+                .map(|s| s.reputation)
+                .unwrap_or_else(|| {
+                    let r = crate::valuation::reputations_of(t10);
+                    [r.0, r.1, r.2]
+                });
+            let market_value = crate::valuation::market_value(ca, pa, rep9, rep_b, rep_d);
+            let weekly_wage = crate::valuation::weekly_wage(ca, pa, rep9, rep_b, rep_d);
+            // Real engine attributes from the shipped/generated block.
+            let (aggression, bravery, dirtiness, injury_proneness, jumping_heading) =
+                match state_by_id.get(&(pdi as u32)) {
+                    Some(s) => (
+                        attr(s, ATTR_AGGRESSION) as i8,
+                        attr(s, ATTR_BRAVERY) as i8,
+                        attr(s, ATTR_DIRTINESS) as i8,
+                        attr(s, ATTR_INJURY_PRONENESS),
+                        attr(s, ATTR_JUMPING) as i8,
+                    ),
+                    None => (8, 10, 5, 8, 10),
+                };
+            // Extras needed by the match engine's token f32 fields (item #5
+            // pass-target physique + item #8 pass-bias FP delta sources).
+            let (heading, important_matches, dribbling, decisions, throw_ins) =
+                match state_by_id.get(&(pdi as u32)) {
+                    Some(s) => (
+                        attr(s, ATTR_HEADING) as i8,
+                        attr(s, ATTR_IMPORTANT_MATCHES) as i8,
+                        attr(s, ATTR_DRIBBLING) as i8,
+                        attr(s, ATTR_DECISIONS) as i8,
+                        attr(s, ATTR_THROW_INS) as i8,
+                    ),
+                    None => (10, 10, 10, 10, 10),
+                };
             rated.push(RatedPlayer {
                 staff_id: sid,
                 club_id,
@@ -146,9 +296,104 @@ impl PlayerRatingBook {
                 age_est: age,
                 position_ordinal,
                 is_gk,
+                aggression,
+                bravery,
+                dirtiness,
+                injury_proneness,
+                jumping_heading,
+                season_goals: 0,
+                season_assists: 0,
+                market_value,
+                weekly_wage,
+                position_aptitudes: t10.unknown_bytes_15_26,
+                heading, important_matches, dribbling, decisions, throw_ins,
             });
         }
-        Self { players: rated }
+        let id_index = rated.iter().enumerate().map(|(i, p)| (p.staff_id, i)).collect();
+        Self { players: rated, club_reputation, id_index }
+    }
+
+    /// Boot-time regen pass (kill #C wiring) — the runtime equivalent of
+    /// `player_regen::regen_fill_club_squad` (byte-exact port of `FUN_0078E970`).
+    /// Walks clubs whose real squad is under `min_squad` and assigns the best
+    /// available free agents (unaffiliated players ranked by CA) to bring the
+    /// squad up to `target_squad`. Mutates each moved player's `club_id` in
+    /// place. Returns how many free agents were assigned.
+    ///
+    /// The byte-exact version (`crate::player_regen::regen_fill_club_squad`)
+    /// mutates the full StaffBook body bytes and applies the exe's weighted
+    /// candidate score. This runtime version works purely on the rating book
+    /// — the same signal (CA) drives selection, and empty clubs get real
+    /// players instead of the per-fixture synthetic-roster fallback.
+    pub fn assign_free_agents_to_empty_clubs(
+        &mut self,
+        min_squad: usize,
+        target_squad: usize,
+    ) -> usize {
+        use std::collections::HashMap;
+        // Snapshot per-club counts.
+        let mut counts: HashMap<i32, usize> = HashMap::new();
+        for p in &self.players {
+            if let Some(c) = p.club_id { *counts.entry(c).or_default() += 1; }
+        }
+        // Free-agent indices, ranked by CA desc.
+        let mut free: Vec<usize> = self.players.iter().enumerate()
+            .filter(|(_, p)| p.club_id.is_none())
+            .map(|(i, _)| i).collect();
+        free.sort_by(|&a, &b| self.players[b].ca.cmp(&self.players[a].ca));
+        let mut cursor = 0usize;
+        let mut assigned = 0usize;
+        // Empty clubs: those in `club_reputation` with < min_squad real players.
+        let mut empty: Vec<(i32, u16)> = self.club_reputation.iter()
+            .filter(|(cid, _)| counts.get(cid).copied().unwrap_or(0) < min_squad)
+            .map(|(&c, &r)| (c, r)).collect();
+        // Best free agents to highest-rep needy clubs first (deterministic).
+        empty.sort_by(|a, b| b.1.cmp(&a.1));
+        for (cid, _) in empty {
+            let need = target_squad.saturating_sub(counts.get(&cid).copied().unwrap_or(0));
+            for _ in 0..need {
+                if cursor >= free.len() { break; }
+                let idx = free[cursor]; cursor += 1;
+                self.players[idx].club_id = Some(cid);
+                *counts.entry(cid).or_default() += 1;
+                assigned += 1;
+            }
+            if cursor >= free.len() { break; }
+        }
+        assigned
+    }
+
+    /// Rebuild the staff_id → index map if it's empty (e.g. after deserialize).
+    fn ensure_index(&mut self) {
+        if self.id_index.is_empty() && !self.players.is_empty() {
+            self.id_index = self.players.iter().enumerate()
+                .map(|(i, p)| (p.staff_id, i)).collect();
+        }
+    }
+
+    /// Record a goal from a simulated match into the scorer's season tally —
+    /// the real feed that replaces `goals_est` for the top-scorer award (kill
+    /// #B). O(1) via the id index.
+    pub fn record_goal(&mut self, scorer_id: u32) {
+        self.ensure_index();
+        if let Some(&i) = self.id_index.get(&scorer_id) {
+            self.players[i].season_goals = self.players[i].season_goals.saturating_add(1);
+        }
+    }
+    pub fn record_assist(&mut self, assist_id: u32) {
+        self.ensure_index();
+        if let Some(&i) = self.id_index.get(&assist_id) {
+            self.players[i].season_assists = self.players[i].season_assists.saturating_add(1);
+        }
+    }
+
+    /// Reset every player's accumulated season stats — called at the year
+    /// rollover AFTER the closing season's awards have fired.
+    pub fn reset_season_stats(&mut self) {
+        for p in self.players.iter_mut() {
+            p.season_goals = 0;
+            p.season_assists = 0;
+        }
     }
 
     /// The score every award category uses as its base metric.
@@ -178,10 +423,13 @@ impl PlayerRatingBook {
                 .unwrap_or(std::cmp::Ordering::Equal))
     }
 
-    /// Top Scorer for a competition — same eligibility, different score.
+    /// Top Scorer for a competition. Ranks by REAL accumulated season goals
+    /// (kill #B — fed from actual simulated match events), with the old CA-proxy
+    /// `goals_est` only as a tiebreak / pre-simulation fallback.
     pub fn top_scorer(&self, division_id: i32) -> Option<&RatedPlayer> {
         self.eligible_for(division_id)
-            .max_by(|a, b| a.goals_est.cmp(&b.goals_est))
+            .max_by(|a, b| a.season_goals.cmp(&b.season_goals)
+                .then(a.goals_est.cmp(&b.goals_est)))
     }
 
     /// Young Player of the Season — eligible == age < 21.
@@ -227,7 +475,7 @@ mod tests {
 
     #[test]
     fn empty_book_yields_no_awards() {
-        let b = PlayerRatingBook { players: vec![] };
+        let b = PlayerRatingBook { players: vec![], ..Default::default() };
         assert!(b.player_of_the_season(7).is_none());
         assert!(b.top_scorer(7).is_none());
         assert!(b.young_player_of_the_season(7).is_none());
@@ -237,12 +485,12 @@ mod tests {
     #[test]
     fn poty_picks_highest_rated_in_division() {
         let a = RatedPlayer { staff_id: 1, club_id: Some(10), division_id: Some(7),
-                              ca: 150, pa: 160, goals_est: 10, age_est: 25 };
+                              ca: 150, pa: 160, goals_est: 10, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
         let b = RatedPlayer { staff_id: 2, club_id: Some(11), division_id: Some(7),
-                              ca: 180, pa: 190, goals_est: 15, age_est: 26 };
+                              ca: 180, pa: 190, goals_est: 15, age_est: 26, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
         let c = RatedPlayer { staff_id: 3, club_id: Some(20), division_id: Some(8),
-                              ca: 200, pa: 200, goals_est: 30, age_est: 27 };  // other division
-        let book = PlayerRatingBook { players: vec![a.clone(), b.clone(), c.clone()] };
+                              ca: 200, pa: 200, goals_est: 30, age_est: 27, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };  // other division
+        let book = PlayerRatingBook { players: vec![a.clone(), b.clone(), c.clone()], ..Default::default() };
         assert_eq!(book.player_of_the_season(7).unwrap().staff_id, 2);
         assert_eq!(book.player_of_the_season(8).unwrap().staff_id, 3);
     }
@@ -250,10 +498,10 @@ mod tests {
     #[test]
     fn cross_division_award_picks_best_across_set() {
         let a = RatedPlayer { staff_id: 1, club_id: Some(10), division_id: Some(24),
-                              ca: 170, pa: 180, goals_est: 12, age_est: 25 };
+                              ca: 170, pa: 180, goals_est: 12, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
         let b = RatedPlayer { staff_id: 2, club_id: Some(11), division_id: Some(25),
-                              ca: 195, pa: 195, goals_est: 25, age_est: 28 };
-        let book = PlayerRatingBook { players: vec![a, b] };
+                              ca: 195, pa: 195, goals_est: 25, age_est: 28, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
+        let book = PlayerRatingBook { players: vec![a, b], ..Default::default() };
         assert_eq!(book.player_of_the_season_across(&[24, 25]).unwrap().staff_id, 2);
     }
 }

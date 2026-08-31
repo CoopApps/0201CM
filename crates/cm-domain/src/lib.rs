@@ -18556,6 +18556,11 @@ impl RuntimeSaveGame {
                 is_first_choice_gk: p.is_gk,
                 speciality_a: 0, speciality_b: 0,
                 position_natural: p.position_ordinal, position_learn: 0,
+                heading: p.heading,
+                important_matches: p.important_matches,
+                dribbling: p.dribbling,
+                decisions: p.decisions,
+                throw_ins: p.throw_ins,
             })
             .collect();
 
@@ -19988,6 +19993,11 @@ fn real_free_agent_roster_for_engine(
                 speciality_b: 0,
                 position_natural: p.position_ordinal,
                 position_learn: 0,
+                heading: p.heading,
+                important_matches: p.important_matches,
+                dribbling: p.dribbling,
+                decisions: p.decisions,
+                throw_ins: p.throw_ins,
             }
         })
         .collect()
@@ -20067,6 +20077,8 @@ fn synthetic_roster_for_engine(
                 speciality_b: 0,
                 position_natural: if is_gk { 12 } else { 5 },
                 position_learn: 0,
+                heading: 8, important_matches: 8, dribbling: 8,
+                decisions: 8, throw_ins: 8,
             }
         })
         .collect()
