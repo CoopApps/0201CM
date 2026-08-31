@@ -1251,9 +1251,9 @@ pub fn match_tick(
                 continue;
             }
             // Shot-choice gate (port of FUN_006F99C0's `roll1 < shotThreshold`).
-            let shoot_attr = (ca.min(200) / 10).max(1) as u32;
             // exe uses rand(0x32) or rand(0x1E) depending on tactical bit;
             // we split the difference at rand(0x28) = 40.
+            let shoot_attr = (ca.min(200) / 10).max(1) as u32;
             if rng.range(0x28) < shoot_attr {
                 // Shot fires.
                 if side == 0 { ctx.shots_home = ctx.shots_home.saturating_add(1); }
