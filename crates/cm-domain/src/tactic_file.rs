@@ -68,6 +68,35 @@ pub struct TacticSlot {
     pub flag: u8,
 }
 
+impl Tactic {
+    /// Boot-time default 4-4-2 preset — plants a viable Tactic on every
+    /// club so `snapshot_team_for_engine` reads a real per-club Tactic
+    /// rather than the `FLAT_442_ROLES` fallback. Role masks come from
+    /// [`crate::tactics::FLAT_442_ROLES`], the same bit set the fallback
+    /// used. Team settings default to Unset (engine treats as "none set,
+    /// use exe defaults"). Overwritten per-club by [`RuntimeSaveGame::assign_tactic`]
+    /// when the human opens the tactics screen.
+    pub fn flat_442() -> Self {
+        let roles = crate::tactics::FLAT_442_ROLES;
+        let mut slots = [TacticSlot::default(); 11];
+        for (i, mask) in roles.iter().enumerate() {
+            slots[i].role_mask = *mask;
+            slots[i].flag = 0x11;
+            slots[i].movement_flag = 10; // legacy version constant
+        }
+        Tactic {
+            formation_name: "4-4-2 (Flat)".to_string(),
+            author: "cm0102-rs default".to_string(),
+            mentality: Mentality::Unset,
+            team_flags_2: 0,
+            team_flags_1: 0,
+            slots,
+            version: 0x0098EC5C, // v5C — legacy safe (any of 5C..5E works)
+            is_packaged: false,
+        }
+    }
+}
+
 /// Load a tactic file. Auto-detects `.pct` (packaged/preset) vs `.tct`
 /// (user-authored) from the extension.
 pub fn load_tactic(path: &std::path::Path) -> std::io::Result<Tactic> {

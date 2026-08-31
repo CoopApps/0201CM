@@ -17022,6 +17022,17 @@ impl World {
         // can be promoted to foreground mid-game as a pure flag flip.
         save.nation_tiers = self.build_nation_tiers(options);
 
+        // Seed every club with a default 4-4-2 tactic so the match-engine
+        // snapshotter reads a real per-club Tactic instead of the FLAT_442_ROLES
+        // fallback. Ports the exe's boot behaviour where each club has an
+        // active .pct default assigned; user changes overwrite the entry via
+        // `assign_tactic` when the human opens the tactics screen.
+        let default_tactic = crate::tactic_file::Tactic::flat_442();
+        let club_ids: Vec<u32> = self.core.clubs.iter()
+            .map(|c| crate::typed_records::ClubView::new(c).id())
+            .collect();
+        save.seed_default_tactics(default_tactic, club_ids);
+
         // Player initialisation — the deterministic core of FUN_0051f5d0:
         // seed each attribute-holder's initial runtime state (CA, resolved PA,
         // condition=156, neutral morale). Stored as a summary; per-player state
