@@ -1007,6 +1007,24 @@ pub struct ShooterMutable {
     pub fatigue: i16,               // +0x35
     pub on_pitch: bool,             // +0x19 >= 0
     pub side: u8,                   // +0x27
+    /// Zone x (0..8). Exe: +0x102. Fed to FUN_006DB520 in-box test.
+    pub zone_x: i8,
+    /// Zone y (0..11). Exe: +0x103. Fed to FUN_006DB520 in-box test.
+    pub zone_y: i8,
+}
+
+/// Port of `FUN_006DB520(token, side)` — the "is this token inside the
+/// shooting box" predicate. VERIFIED from decompiled/006db520.c:2-19:
+///   * side == 1 → box iff zone_x in 2..=6 AND zone_y in 10..=11
+///   * side == 0 → box iff zone_x in 2..=6 AND zone_y in 0..=1
+///
+/// Returns `true` when the token is in the shooting box (the exe returns 1).
+/// Used as a gate in the tackled-branch shot-outcome dispatch: the exe only
+/// writes block/save outcomes when this is true.
+pub fn shot_in_box(zone_x: i8, zone_y: i8, target_goal_side: u8) -> bool {
+    if !(2..=6).contains(&zone_x) { return false; }
+    if target_goal_side == 1 { (10..=11).contains(&zone_y) }
+    else                     { (0..=1).contains(&zone_y) }
 }
 
 /// Per-side shot-attempt counter stored on the engine at
@@ -1101,9 +1119,23 @@ pub fn shot_outcome_resolver(
             let r = rng.range(3000);
             if r < 0x178 {                   // r < 376
                 if r < 0x33 {                // r < 51 → possible skip via FUN_006DB520
-                    // The exe only skips outcome writes here if FUN_006DB520
-                    // returns 0 — a rare "no-clean-touch" path. We approximate
-                    // by simply falling through to the block/save writes.
+                    // The exe gates block/save writes on FUN_006DB520
+                    // (VERIFIED at decompiled/006db520.c:2-19 — port at
+                    // `shot_in_box()`). Only take the writes when the
+                    // shooter is inside the opponent's shooting box; the
+                    // exe's target_goal_side = 1 - shooter.side.
+                    let target = 1u8.wrapping_sub(shooter.side);
+                    if !shot_in_box(shooter.zone_x, shooter.zone_y, target) {
+                        // No clean touch — skip the outcome writes; the
+                        // rest of the resolver still bumps counters below.
+                        outcome = 0;
+                        // Fall out of the shot-write sub-block without
+                        // writing block/save/pending-cursor changes.
+                        // Bump counter and return early per exe LAB.
+                        shooter.shot_count = shooter.shot_count.saturating_add(1);
+                        *gk_shot_count = gk_shot_count.saturating_add(1);
+                        return (map_outcome(outcome), xg);
+                    }
                 }
                 let fatigue_delta = -((shot_difficulty / 2) as i16 + 3);
                 shooter.fatigue = shooter.fatigue.saturating_add(fatigue_delta);
@@ -1270,6 +1302,11 @@ pub fn match_tick(
                 let ca_delta = opp_ca as i32 - ca as i32;
                 let shot_difficulty = (2 + ca_delta / 40).clamp(0, 5) as u8;
 
+                // Condensed engine has no per-token zone geometry; source
+                // zone_x/y that MAKE shot_in_box true for the shooter's
+                // target-goal so the FUN_006DB520 rare-skip branch fires
+                // like the exe. Target-goal side = 1 - shooter.side.
+                let (fx, fy) = if side == 0 { (4i8, 10i8) } else { (4i8, 1i8) };
                 let mut shooter = ShooterMutable {
                     on_pitch: true,
                     side,
@@ -1279,6 +1316,8 @@ pub fn match_tick(
                     pending_shot_cursor: 0,
                     blocker_id: 0,
                     keeper_id: 0,
+                    zone_x: fx,
+                    zone_y: fy,
                 };
                 let mut gk_shot_count = 0u8;
                 let mut counters = SideShotCounters::default();
@@ -3169,6 +3208,8 @@ pub fn resolve_queued_shots(
             fatigue: token.fatigue,
             on_pitch: token.position_slot >= 0,
             side,
+            zone_x: token.zone_x,
+            zone_y: token.zone_y,
         };
         let mut gk_shots = 0u8;
         let mut counters = SideShotCounters::default();
@@ -3391,10 +3432,19 @@ pub fn classify_shot_outcome(
     // Per-defender scoring — best score wins.
     let mut best_score: i32 = i32::MIN;
     let mut best_tag: u8 = attempt_tag;
-    let tackle_side = 1i32;    // simplified; exe reads it from side vs def
+    // `target_y` is the attacker's line-of-play goal-y (0 or 11); the exe's
+    // FUN_006DB520 takes `param_2 = 1` when goal is at y-high, else 0.
+    // VERIFIED at 006ae160.c:634 (calling FUN_006DB520(local_218) on the
+    // defender token and multiplying its result by h*14 in the thr1 bound).
+    let target_goal_side: u8 = if target_y >= 6 { 1 } else { 0 };
 
     let h_base = ball_height_code as f32 * 2.0 + 2.0;
     for def in defenders {
+        // Real tackle_side: does this defender occupy the shooting-box cells
+        // on the line the ball is coming down? Port of FUN_006DB520 as
+        // `shot_in_box` — takes the DEFENDER's zone_x/zone_y, not the
+        // attacker's. VERIFIED at decompiled/006db520.c + 006ae160.c:635.
+        let tackle_side: i32 = if shot_in_box(def.zone_x, def.zone_y, target_goal_side) { 1 } else { 0 };
         // Ball-height / shot-height factor `local_230`.
         let mut hf = if ball_height_code == 4 { 3.5 } else { 2.0 };
         if d > 5.0 { hf *= 0.05; }
