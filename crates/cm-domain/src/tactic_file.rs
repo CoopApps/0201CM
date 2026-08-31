@@ -171,6 +171,97 @@ pub fn role_masks(t: &Tactic) -> [u16; 11] {
     r
 }
 
+// ---------------------------------------------------------------------------
+// Per-slot positional-play waypoints (24 pitch coordinates per slot).
+//
+// The 96-byte block at struct `+0x164` (file `0x0139 + slot*96`) is NOT
+// a bank of the named individual-instruction sliders — those live in
+// `slot_pair.movement_token` (nibble-packed) and `slot_flag` (mutually-
+// exclusive bit-set). This block holds 24 (x, y) pitch waypoints per
+// slot which the tactics screen renders as movement arrows on the pitch.
+//
+// Decoded from setter `FUN_0059d870` (writes at `+0x164 + slot*96 + …`,
+// with the value validated as `x ∈ 0..=26, y ∈ 0..=35` on line 73).
+// Verified against `442_default.pct`: slot 0 (GK) all x ≈ 13 (goal-mouth
+// centre), y ∈ 0..6 (six-yard box); slot 10 (ST) x ∈ 2..14, y ∈ 6..27
+// (attacking third).
+// ---------------------------------------------------------------------------
+
+/// One (x, y) pitch coordinate — the game's internal 0..=26 × 0..=35 grid.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct PitchXY {
+    pub x: u16,
+    pub y: u16,
+}
+
+/// Per-slot 24-waypoint positional-play grid.
+///
+/// Shape: `[side ∈ 0..2][row ∈ 0..3][col ∈ 0..4]` → one [`PitchXY`].
+/// `side` = home / away mentality mirror.
+/// `row` = lateral corridor (left / centre / right).
+/// `col` = depth waypoint (front → back).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SlotInstructions {
+    pub grid: [[[PitchXY; 4]; 3]; 2],
+}
+
+impl SlotInstructions {
+    /// Read one anchor point.
+    pub fn point(&self, side: usize, row: usize, col: usize) -> PitchXY {
+        self.grid[side][row][col]
+    }
+    /// Iterate every (side, row, col, xy) tuple in canonical order.
+    pub fn iter_points(&self) -> impl Iterator<Item = (usize, usize, usize, PitchXY)> + '_ {
+        (0..2).flat_map(move |side| {
+            (0..3).flat_map(move |row| {
+                (0..4).map(move |col| (side, row, col, self.grid[side][row][col]))
+            })
+        })
+    }
+}
+
+/// Decode one slot's 96-byte positional-play block from raw `.tct`/`.pct`
+/// body bytes (offset 0 = version tag). Slot index must be `0..=10`.
+pub fn slot_instructions_from_bytes(body: &[u8], slot: usize) -> SlotInstructions {
+    assert!(slot < 11, "slot index must be 0..=10");
+    let base = 0x0139 + slot * 96;
+    let mut out = SlotInstructions::default();
+    for side in 0..2 {
+        for row in 0..3 {
+            for col in 0..4 {
+                let dword = (side * 3 + row) * 4 + col; // 0..24
+                let off = base + dword * 4;
+                let x = u16::from_le_bytes(body[off..off + 2].try_into().unwrap());
+                let y = u16::from_le_bytes(body[off + 2..off + 4].try_into().unwrap());
+                out.grid[side][row][col] = PitchXY { x, y };
+            }
+        }
+    }
+    out
+}
+
+// ---------------------------------------------------------------------------
+// Nibble-packed individual-instruction sliders (in `slot_pair.movement_token`).
+//
+// The 8 named sliders per position (mentality-override, closing-down,
+// marking-tightness, distribution, forward-runs, hold-up-ball, passing-focus,
+// long-shots, plus flags for playmaker / target-man / free-role via
+// `slot_flag`) live in the low 32 bits of `movement_token`, packed 4 bits
+// per slider. Precise nibble→slider naming still TBD (agent flagged this as
+// a follow-up decode) — accessor returns the 8 raw nibble values so the
+// downstream code has SOMETHING to bind against once the mapping lands.
+// ---------------------------------------------------------------------------
+
+/// Extract the 8 nibbles from a slot's `movement_token` (LSB first).
+/// Names are placeholder ordinals until the setter cluster is decoded.
+pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
+    assert!(slot < 11);
+    let tok = t.slots[slot].movement_token;
+    let mut out = [0u8; 8];
+    for i in 0..8 { out[i] = ((tok >> (i * 4)) & 0xF) as u8; }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
