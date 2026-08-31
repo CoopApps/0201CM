@@ -185,6 +185,13 @@ pub struct TransferBid {
     pub player_wage_offer: u32,
     /// Contract length being offered in years.
     pub contract_years: u8,
+    /// Negotiation round counter — bid record `+0x2e round_counter` in the
+    /// exe, capped at `NEGOTIATION_ROUND_CAP` (3). A fresh bid is round 0;
+    /// each `resolve_bids` counter increments this by 1. Beyond the cap
+    /// the AI rejects rather than counter-offering. VERIFIED from
+    /// FUN_008ad0e0 and reports/transfer_ai_loans_decode.md.
+    #[serde(default)]
+    pub round: u8,
 }
 
 /// Result of the selling club's AI evaluation of a bid.
@@ -192,7 +199,21 @@ pub struct TransferBid {
 pub enum BidOutcome {
     Accepted,
     Rejected,
+    /// AI wants more money — carries the counter-offer amount the seller
+    /// will accept. Bidding club can re-submit with amount >= this to win
+    /// (up to `NEGOTIATION_ROUND_CAP` rounds).
     Countered,
+}
+
+/// Sidecar for a Countered outcome — the seller's asking price this round.
+/// Used by [`TransferMarket::counter_for`] so the bidder knows what to bid.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct CounterOffer {
+    pub target_player_id: u32,
+    pub bidding_club_id: u32,
+    pub selling_club_id: u32,
+    pub asking_amount: i64,
+    pub round: u8,
 }
 
 /// The transfer market state — indexed by club and player.
@@ -203,6 +224,12 @@ pub struct TransferMarket {
     pub pending_bids: Vec<TransferBid>,
     /// Bids that resolved in the last tick, kept for news generation.
     pub resolved_bids: Vec<(TransferBid, BidOutcome)>,
+    /// Active counter-offers keyed by (bidding_club, target_player). Set
+    /// when `resolve_bids` returns `Countered`; the bidder can re-submit
+    /// (round+1) with amount >= asking_amount to convert to Accepted.
+    /// Cleared on Accept/Reject or when round exceeds NEGOTIATION_ROUND_CAP.
+    #[serde(default)]
+    pub active_counters: Vec<CounterOffer>,
 }
 
 /// Nudge a mood accumulator by a signed delta, clamped [-100, +100] — the exe's
@@ -272,7 +299,8 @@ impl TransferMarket {
                 p.staff_id, c as u32, p.weekly_wage, current_year, p.age_est,
             )))
             .collect();
-        Self { contracts, pending_bids: Vec::new(), resolved_bids: Vec::new() }
+        Self { contracts, pending_bids: Vec::new(), resolved_bids: Vec::new(),
+               active_counters: Vec::new() }
     }
 
     /// Submit a bid. Bids are queued and resolved on the next daily tick.
@@ -309,6 +337,14 @@ impl TransferMarket {
                 .find(|c| c.player_id == bid.target_player_id)
                 .cloned();
 
+            // Beyond-cap check — verified NEGOTIATION_ROUND_CAP from
+            // FUN_008ad0e0 (see reports/transfer_ai_loans_decode.md). Once
+            // the round counter hits 3, the seller stops counter-offering.
+            if bid.round >= NEGOTIATION_ROUND_CAP {
+                self.resolved_bids.push((bid, BidOutcome::Rejected));
+                continue;
+            }
+
             // Administration override (kill #8/9 refinement, real port of
             // `FUN_00588c70`:158-217): a club in administration cannot refuse
             // any bid at or above 50% of value — the exe forces sales to
@@ -325,6 +361,34 @@ impl TransferMarket {
             } else {
                 BidOutcome::Rejected
             };
+
+            // Track / clear the counter-offer sidecar.
+            match outcome {
+                BidOutcome::Countered => {
+                    // Record the seller's ask so the bidder knows what to bid
+                    // on the next round. Ask = market_value (walk down toward
+                    // the bidder's offer at 5% per round, mirroring the exe's
+                    // FUN_008ad0e0 easing).
+                    let asking = ((market_value as f64)
+                        * (1.0 - 0.05 * bid.round as f64).max(0.85)) as i64;
+                    // Replace any existing counter for this (bidder, player).
+                    self.active_counters.retain(|c|
+                        !(c.bidding_club_id == bid.bidding_club_id
+                          && c.target_player_id == bid.target_player_id));
+                    self.active_counters.push(CounterOffer {
+                        target_player_id: bid.target_player_id,
+                        bidding_club_id: bid.bidding_club_id,
+                        selling_club_id: bid.selling_club_id,
+                        asking_amount: asking,
+                        round: bid.round.saturating_add(1),
+                    });
+                }
+                BidOutcome::Accepted | BidOutcome::Rejected => {
+                    self.active_counters.retain(|c|
+                        !(c.bidding_club_id == bid.bidding_club_id
+                          && c.target_player_id == bid.target_player_id));
+                }
+            }
 
             let mut outcome = outcome;
             if outcome == BidOutcome::Accepted {
@@ -626,6 +690,14 @@ impl TransferMarket {
 
     pub fn contract_for(&self, player_id: u32) -> Option<&Contract> {
         self.contracts.iter().find(|c| c.player_id == player_id)
+    }
+
+    /// Look up an active counter-offer for a (bidder, player) pair. Returns
+    /// the asking amount + current round so the bidder can decide whether
+    /// to re-bid at that price. See `NEGOTIATION_ROUND_CAP`.
+    pub fn counter_for(&self, bidder: u32, player_id: u32) -> Option<&CounterOffer> {
+        self.active_counters.iter().find(|c|
+            c.bidding_club_id == bidder && c.target_player_id == player_id)
     }
 }
 
@@ -1387,7 +1459,7 @@ mod tests {
         // Market value = 100^2 * 100 = 1,000,000. Bid 2M with matching wage.
         market.submit_bid(TransferBid {
             bidding_club_id: 20, target_player_id: 1, selling_club_id: 10,
-            amount: 2_000_000, player_wage_offer: 50_000, contract_years: 4,
+            amount: 2_000_000, player_wage_offer: 50_000, contract_years: 4, round: 0,
         });
         market.resolve_bids(2001, &ratings, &mut finance);
         assert_eq!(market.resolved_bids[0].1, BidOutcome::Accepted);
@@ -1404,7 +1476,7 @@ mod tests {
         let mut finance = FinanceBook::default();
         market.submit_bid(TransferBid {
             bidding_club_id: 20, target_player_id: 1, selling_club_id: 10,
-            amount: 100, player_wage_offer: 1000, contract_years: 3,
+            amount: 100, player_wage_offer: 1000, contract_years: 3, round: 0,
         });
         market.resolve_bids(2001, &ratings, &mut finance);
         assert_eq!(market.resolved_bids[0].1, BidOutcome::Rejected);
@@ -1420,7 +1492,7 @@ mod tests {
         // Market value 1M; bid 900k (90%) → counter.
         market.submit_bid(TransferBid {
             bidding_club_id: 20, target_player_id: 1, selling_club_id: 10,
-            amount: 900_000, player_wage_offer: 50_000, contract_years: 3,
+            amount: 900_000, player_wage_offer: 50_000, contract_years: 3, round: 0,
         });
         market.resolve_bids(2001, &ratings, &mut finance);
         assert_eq!(market.resolved_bids[0].1, BidOutcome::Countered);
