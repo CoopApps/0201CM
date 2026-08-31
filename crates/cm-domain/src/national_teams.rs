@@ -15,8 +15,10 @@
 //!      we take the top 22 without a per-position guarantee, matching
 //!      the exe's post-2001 relaxed selection).
 //!
-//! Injuries and suspensions are placeholders — no injury system yet;
-//! everyone is available.
+//! Injury availability is now honoured — [`select_squad_filtered`] takes
+//! an `is_available` callback that the caller wires to
+//! [`crate::injury::InjuryBook::is_available`]. Suspensions remain
+//! unmodelled; the exe's ban_manager cluster isn't yet decoded.
 
 use serde::{Deserialize, Serialize};
 
@@ -65,13 +67,31 @@ impl NationalSquad {
 pub fn select_squad<F>(
     nation_id: i32,
     ratings: &PlayerRatingBook,
-    mut nationality_lookup: F,
+    nationality_lookup: F,
 ) -> NationalSquad
 where
     F: FnMut(u32) -> Option<i32>,
 {
+    // Back-compat wrapper: no availability filter (all players eligible).
+    select_squad_filtered(nation_id, ratings, nationality_lookup, |_| true)
+}
+
+/// Full-fidelity variant of [`select_squad`] with an availability filter —
+/// pass `|id| injuries.is_available(id)` to exclude injured players from
+/// the national-team pool. Kills the "everyone is available" placeholder.
+pub fn select_squad_filtered<F, A>(
+    nation_id: i32,
+    ratings: &PlayerRatingBook,
+    mut nationality_lookup: F,
+    mut is_available: A,
+) -> NationalSquad
+where
+    F: FnMut(u32) -> Option<i32>,
+    A: FnMut(u32) -> bool,
+{
     let mut eligible: Vec<&RatedPlayer> = ratings.players.iter()
         .filter(|p| nationality_lookup(p.staff_id) == Some(nation_id))
+        .filter(|p| is_available(p.staff_id))
         .collect();
     // Rank by season rating descending.
     eligible.sort_by(|a, b| ratings.season_rating(b)

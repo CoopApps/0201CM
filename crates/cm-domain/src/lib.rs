@@ -1758,6 +1758,10 @@ struct FixtureOutcome {
     /// (`MOOD_OUT_OF_POSITION`).
     home_out_of_position: Vec<u32>,
     away_out_of_position: Vec<u32>,
+    /// Every XI player's finalized display rating (1..=10) from this match,
+    /// paired with their staff id. Feeds the season-rating accumulator port
+    /// (FUN_007a90b0 — see reports/rating_accumulator_writer.md).
+    per_player_ratings: Vec<(u32, i8)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -18520,6 +18524,7 @@ impl RuntimeSaveGame {
             away_scorers: used.away_scorer_ids,
             home_out_of_position: home.out_of_position_ids.clone(),
             away_out_of_position: away.out_of_position_ids.clone(),
+            per_player_ratings: used.per_player_ratings,
         })
     }
 
@@ -18817,6 +18822,18 @@ impl RuntimeSaveGame {
                         if *id != 0 {
                             self.player_ratings.record_goal(*id);
                         }
+                    }
+                    // Season rating accumulator — VERIFIED port of
+                    // FUN_007a90b0 (count += 1 at sub-block +0x00, sum += rating
+                    // at +0x0e). Kills the CA*0.8 + wobble*0.2 heuristic for
+                    // any player who's actually played this season; before this
+                    // wire, every player got the heuristic even after 30 games.
+                    // Only the token-model engine emits per-player ratings;
+                    // background-league fixtures (condensed engine) leave the
+                    // list empty and fall back to the heuristic — matches the
+                    // exe's own "Background Matches: Off" no-stats behaviour.
+                    for (pid, rating) in outcome.per_player_ratings.iter() {
+                        self.player_ratings.record_match_rating(*pid, *rating);
                     }
                     // Post-match gate + TV/prize income (kill #8d).
                     self.finance.record_match_income(home_id, away_id, false);

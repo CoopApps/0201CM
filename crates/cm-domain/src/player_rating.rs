@@ -172,6 +172,16 @@ pub struct PlayerRatingBook {
     /// internal; use `record_goal`/`record_assist` rather than touching it.
     #[serde(skip)]
     pub id_index: std::collections::HashMap<u32, usize>,
+    /// Per-player season rating accumulator — VERIFIED port of
+    /// `FUN_007a90b0`:132 (count++) + :154-155 (sum += display_rating).
+    /// Value: `(sum_of_finalized_ratings, appearances_count)`.
+    /// Consumed by [`PlayerRatingBook::season_avg_rating_of`], which uses
+    /// the verified `sum / count` formula from FUN_007aa490:73-77.
+    /// Populated by [`PlayerRatingBook::record_match_rating`] per XI player
+    /// per match. Kills the `CA*0.8 + wobble*0.2` heuristic in
+    /// [`PlayerRatingBook::season_rating`] once fed.
+    #[serde(default)]
+    pub season_rating_stats: std::collections::BTreeMap<u32, (u16, u8)>,
 }
 
 /// DFM-order indices into the 42-attribute block (`ATTRIBUTE_NAMES`) for the
@@ -327,7 +337,8 @@ impl PlayerRatingBook {
             });
         }
         let id_index = rated.iter().enumerate().map(|(i, p)| (p.staff_id, i)).collect();
-        Self { players: rated, club_reputation, id_index }
+        Self { players: rated, club_reputation, id_index,
+               season_rating_stats: std::collections::BTreeMap::new() }
     }
 
     /// Boot-time regen pass (kill #C wiring) — the runtime equivalent of
@@ -411,22 +422,51 @@ impl PlayerRatingBook {
             p.season_goals = 0;
             p.season_assists = 0;
         }
+        // Clear season rating accumulator so awards + display refresh.
+        self.season_rating_stats.clear();
     }
 
     /// The score every award category uses as its base metric.
     ///
-    /// NOTE — this is the current STUB. The verified formula from CM01/02
-    /// (FUN_007aa490:73-77 case 0x11) is `sum / count` from a per-competition
-    /// stats sub-block on the person: sum at `+0x0e` (i16), count at `+0x00`
-    /// (u8), fetched via `FUN_007abc60(person, competition_id)`. See
-    /// [`season_avg_rating`] for the verified formula and
-    /// `reports/season_avg_writer_hunt.md` for the full decode.
-    ///
-    /// This stub stays until the per-match `sum += rating` / `count += 1`
-    /// accumulator writer is located (OPEN GAP — expected in the same
-    /// post-match commit path that writes PersonRecord `+0x0b` short).
+    /// VERIFIED path — when the player has appeared in matches this season,
+    /// returns the real `sum / count` from the accumulator (VERIFIED port of
+    /// FUN_007aa490:73-77 case 0x11). Falls back to the CA×0.8 + wobble×0.2
+    /// heuristic only when no appearances have been recorded (pre-season /
+    /// haven't played yet). The heuristic path used to fire for everyone;
+    /// with the accumulator wired from [`record_match_rating`] it now only
+    /// fires for players who literally haven't played.
     pub fn season_rating(&self, p: &RatedPlayer) -> f32 {
+        if let Some((sum, count)) = self.season_rating_stats.get(&p.staff_id) {
+            if let Some(avg) = season_avg_rating(*count, *sum as i16) {
+                return avg;
+            }
+        }
+        // Fallback: no appearances yet.
         p.ca as f32 * 0.8 + wobble(p.staff_id) * 0.2
+    }
+
+    /// Fold one match's finalized display rating (1..=10) into the season
+    /// accumulator for `staff_id`. VERIFIED port of the write sequence in
+    /// FUN_007a90b0:132 (count += 1) + :154-155 (sum += rating). Call once
+    /// per XI player per match, AFTER `finalize_rating` produces the
+    /// display byte.
+    ///
+    /// Bucket selection (FUN_007a90b0:39-99) — the exe stores per-competition
+    /// buckets, but we currently keep a single per-season aggregate. Fine for
+    /// awards + season-average display; if per-competition breakdowns land as
+    /// a follow-up, promote this to a `BTreeMap<u32, BTreeMap<u16 comp, ..>>`.
+    pub fn record_match_rating(&mut self, staff_id: u32, display_rating: i8) {
+        if display_rating <= 0 { return; }
+        let entry = self.season_rating_stats.entry(staff_id).or_insert((0, 0));
+        entry.0 = entry.0.saturating_add(display_rating as u16);
+        entry.1 = entry.1.saturating_add(1);
+    }
+
+    /// Direct read of the season-average rating for a player. Returns
+    /// `None` when no appearances recorded.
+    pub fn season_avg_rating_of(&self, staff_id: u32) -> Option<f32> {
+        self.season_rating_stats.get(&staff_id)
+            .and_then(|(sum, count)| season_avg_rating(*count, *sum as i16))
     }
 
     /// Top-scorer specifically weights the wobble higher — a striker with

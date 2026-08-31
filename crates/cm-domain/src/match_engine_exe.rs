@@ -1450,6 +1450,14 @@ pub struct ExeMatchResult {
     /// engine; here we return it up through the fixture result.
     #[serde(default)]
     pub motm_player_id: Option<u32>,
+    /// Every XI player's finalized display rating (1..=10) paired with
+    /// their staff_id. Fed by [`finalize_rating`] on the pitch-token pool
+    /// at match end. Consumed downstream by
+    /// [`crate::player_rating::PlayerRatingBook::record_match_rating`] to
+    /// accumulate the season sum/count per the verified formula in
+    /// `reports/rating_accumulator_writer.md`.
+    #[serde(default)]
+    pub per_player_ratings: Vec<(u32, i8)>,
 }
 
 /// Simulate one fixture. This condenses the exe's match_day_play inner
@@ -1503,6 +1511,10 @@ pub fn simulate_one_fixture(
         motm_player_id: ctx.home_scorer_ids.iter()
             .chain(ctx.away_scorer_ids.iter())
             .next().copied(),
+        // Condensed engine has no per-player token pool → no per-player
+        // ratings to emit. Season accumulator only feeds from the
+        // token-model engine (foreground fixtures).
+        per_player_ratings: Vec::new(),
     }
 }
 
@@ -1840,14 +1852,21 @@ pub fn assist_bonus_milli(stamina: i16) -> i16 {
     (stamina / 3).saturating_add(0x113)
 }
 
-/// GK save reward — variable, based on shot damage. Partial port pending
-/// full decode of shot-damage subexpression at FUN_006D63F0:2246-2247;
-/// EXE outer form: `sVar25 = ftol(((10000-t)²/50000) + rating_bias)`.
-/// PLACEHOLDER (marked speculative until :2246-2247 decoded).
-pub fn save_bonus_milli(shot_power_milli: i16, gk_bias: i16) -> i16 {
-    let dmg = (10000i32 - shot_power_milli as i32).max(0);
-    let base = (dmg * dmg) / 50000;
-    (base as i16).saturating_add(gk_bias)
+/// GK "made-save" rating micro-boost — VERIFIED port of FUN_006D63F0
+/// lines 2245/2249. Exact for keepers (non-GK slots take an FP-unlifted
+/// branch at :2256 that Ghidra dropped, so this fn covers ONLY the GK
+/// path; that's the correct scope for a "save bonus").
+///
+/// See `reports/shot_damage_and_custom_formation_decode.md` §1. Corrects
+/// the earlier hallucinated `save_bonus_milli(shot_power_milli, gk_bias)`
+/// signature — the exe reads neither parameter.
+///
+/// `conceded` — set at 006d63f0.c:2131 when a low-quality shot penetrated
+/// the keeper's stat gate; `outcome_flags` — result of `FUN_006a91d0(token) & 0b110`.
+#[inline]
+pub fn gk_save_rating_delta_milli(conceded: bool, outcome_flags: u8) -> i16 {
+    let base: i16 = if conceded { 120 } else { 200 };
+    if (outcome_flags & 0b110) == 0 { base * 2 } else { base }
 }
 
 /// Pitch dimensions matching the exe's grid: 12 rows × 9 columns.
@@ -4284,6 +4303,20 @@ pub fn simulate_one_fixture_token_model(
         abandoned: ctx.abandoned,
         pre_match_events: ctx.event_queue.clone(),
         motm_player_id,
+        per_player_ratings: {
+            // Collect (player_id, finalized 1..=10 display rating) for every
+            // real XI player — feeds the season-rating accumulator per the
+            // verified port of FUN_007a90b0. Skip synthetic/empty slots.
+            let mut v = Vec::with_capacity(22);
+            for side in 0..2 {
+                for tok in engine.tokens[side].iter() {
+                    if tok.player_id != 0 && tok.rating_final > 0 {
+                        v.push((tok.player_id, tok.rating_final));
+                    }
+                }
+            }
+            v
+        },
     }
 }
 
