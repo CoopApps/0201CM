@@ -288,6 +288,114 @@ fn initial_board_confidence(has_chairman: bool, status: FinanceStatus) -> u8 {
     else { 15 }
 }
 
+/// Verified chairman-personality gates from
+/// [`reports/chairman_gates_decode.md`]. Each byte lives on the
+/// chairman-STAFF record at the cited offset; all four are `u8` in 0..=20
+/// (rerolled as `rand(20)+1` in `FUN_00588840`).
+///
+/// This is the state the AI transfer/finance path reads to decide whether
+/// the chairman approves a bid, injects funds, or sacks the manager.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ChairmanState {
+    /// `chairman.staff[+0x0f]` — AMBITION. Gates the wage-cap uplift
+    /// (00580a90.c:477) and cash-injection approval roll (00587f50.c:48).
+    pub ambition: u8,
+    /// `chairman.staff[+0x16]` — TAKEOVER patience. `rand(x)==0` fires
+    /// silent takeover reroll (00588840.c:51).
+    pub takeover_patience: u8,
+    /// `chairman.staff[+0x1d]` — MANAGER-SACK patience.
+    /// `rand(x) <= 4 && rand(20) != 0` fires sack msg (0067fdf0.c:243).
+    pub manager_patience: u8,
+    /// `chairman.staff[+0x20]` — GENEROSITY / wealth pool. Cap on injection
+    /// amount (× £1M), on transfer approval (× £500k). Decremented on use,
+    /// floor 5. Cites: 00583fc0.c:123; 00587f50.c:54,63,121.
+    pub generosity: u8,
+    /// `chairman[+0x57]` — wealth tier, `>15` unlocks wage-cap top branch
+    /// (00580a90.c:482). Not decremented.
+    pub wealth_tier: u8,
+}
+
+impl Default for ChairmanState {
+    /// Neutral default when no chairman record is loaded — matches the
+    /// `has_chairman=false` fallback used elsewhere in the finance path.
+    fn default() -> Self {
+        ChairmanState { ambition: 10, takeover_patience: 10,
+                        manager_patience: 10, generosity: 10, wealth_tier: 10 }
+    }
+}
+
+/// Verified port of `FUN_00583fc0`:122-127 — transfer-approval gate.
+/// Chairman REJECTS an overrun bid when `amount > generosity × £500,000`;
+/// on refusal, generosity is incremented (capped 20). Returns `true` iff
+/// the bid is approved.
+///
+/// `would_go_negative` mirrors the exe's finance-status check that gates
+/// the whole path; when the club can pay from cash on hand, no chairman
+/// approval is needed.
+pub fn chairman_approves_overrun(state: &mut ChairmanState,
+                                  amount_gbp: i64,
+                                  would_go_negative: bool) -> bool {
+    if !would_go_negative { return true; }
+    if (state.generosity as i64) * 500_000 <= amount_gbp {
+        if state.generosity < 20 { state.generosity += 1; }
+        return false;
+    }
+    true
+}
+
+/// Verified port of `FUN_00587f50`:54,63,121 — chairman cash-injection.
+/// Returns `Some(amount)` when the chairman injects, `None` when the
+/// date-gate blocks. Amount is `rand(generosity × £1_000_000)`. On success,
+/// generosity is decremented by 1, floor 5.
+///
+/// `rng_upto(n)` returns a value in `[0, n)`.
+pub fn chairman_cash_inject_cap(state: &mut ChairmanState,
+                                current_date_short: i16,
+                                rng_upto: impl FnOnce(i32) -> i32) -> Option<i32> {
+    // 00587f50.c:63 — `generosity*750 <= date` skips the injection.
+    if (state.generosity as i32) * 750 <= current_date_short as i32 {
+        return None;
+    }
+    let cap = (state.generosity as i32) * 1_000_000;
+    if cap <= 0 { return None; }
+    let amount = rng_upto(cap);
+    // 00587f50.c:121-123 — decrement post-inject, floor 5.
+    if state.generosity > 5 { state.generosity -= 1; }
+    Some(amount)
+}
+
+/// Verified port of `FUN_0067fdf0`:243 — chairman sack decision.
+/// Sack triggers when `rand(manager_patience) <= 4` AND the 1-in-20
+/// floor also fires. Both rolls come from the caller so the same RNG
+/// stream is preserved.
+pub fn chairman_will_sack(state: &ChairmanState,
+                          rand_mod_patience: i32,
+                          rand_mod_20: i32) -> bool {
+    let _ = state; // read for readability at call sites; roll pre-computed
+    rand_mod_patience <= 4 && rand_mod_20 != 0
+}
+
+/// Verified port of `FUN_00588840`:51 — silent takeover trigger.
+/// Fires when `rand(takeover_patience) == 0`.
+pub fn chairman_takeover_fires(state: &ChairmanState,
+                                rand_mod_patience: i32) -> bool {
+    let _ = state;
+    rand_mod_patience == 0
+}
+
+/// Verified port of `FUN_00588840`:83-93 — post-takeover chairman-stat
+/// reroll. All four bytes go to `rand(20)+1`, with generosity re-rolled
+/// once if it lands below 5. Mutates `state` in place.
+pub fn reroll_chairman_stats(state: &mut ChairmanState,
+                             mut rand20: impl FnMut() -> i32) {
+    state.manager_patience  = (rand20() + 1) as u8;
+    state.ambition          = (rand20() + 1) as u8;
+    state.takeover_patience = (rand20() + 1) as u8;
+    let mut ge = (rand20() + 1) as u8;
+    if ge < 5 { ge = (rand20() + 1) as u8; }
+    state.generosity = ge;
+}
+
 /// The finance book — indexed by club id.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FinanceBook {
