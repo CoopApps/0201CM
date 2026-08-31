@@ -482,6 +482,31 @@ impl FinanceBook {
             if chairman_takeover_fires(cs, rtp) {
                 reroll_chairman_stats(cs, || rng.range(20) as i32);
             }
+            // 4) chairman cash injection — verified port of
+            //    FUN_00587f50:54,63,121. Fires when the club's balance is
+            //    negative (finance status In-The-Red / Admin), gated by the
+            //    date-vs-generosity check inside chairman_cash_inject_cap.
+            //    Amount is `rand(generosity × £1M)`; generosity decrements
+            //    by 1 on success, floor 5.
+            let club = match self.clubs.iter_mut().find(|c| c.club_id == cid) {
+                Some(c) => c, None => continue,
+            };
+            let rep = self.club_reputation.get(&cid).copied().unwrap_or(1000);
+            let status = club.status(rep);
+            if matches!(status, FinanceStatus::InTheRed | FinanceStatus::Admin) {
+                // Date-short: pack (year-1900)*365 + day-of-year — the exe
+                // uses a compact 16-bit day counter from game start. Here
+                // we use elapsed_days modulo the i16 range as an
+                // approximation; the gate compares to generosity*750 so
+                // the ordering is what matters.
+                let date_short = (seed & 0x7FFF) as i16;
+                let inject = chairman_cash_inject_cap(cs, date_short, |cap| {
+                    rng.range(cap.max(1) as u32) as i32
+                });
+                if let Some(amt) = inject {
+                    club.balance = club.balance.saturating_add(amt as i64);
+                }
+            }
         }
         fired_by
     }

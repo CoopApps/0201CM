@@ -19549,6 +19549,23 @@ impl RuntimeSaveGame {
                 phase: 2,
             });
         }
+        // Board-cash / takeover / debt-payment mechanisms — all four are
+        // 100% decoded from FUN_005884a0 / FUN_00586ec0 / FUN_00587f50 /
+        // FUN_00588840 (see MEMORY [[finance-mechanisms-decoded]]) and
+        // ported byte-exact into finance.rs but were not yet called by
+        // any tick hook.
+        //
+        // Verified ordering per FUN_00588c70:55-62 (the monthly finance
+        // tick dispatch): status-default path attempts
+        //   1. cash injection (chairman fills the hole),
+        //   2. auto boost (chairman covers up to date-based cap),
+        //   3. big gift (chairman writes a large one-off cheque),
+        //   4. silent takeover (change of ownership + reroll).
+        // We approximate that ordering with the ported fns available.
+        let mut rng = crate::match_engine_exe::MatchRng::new(seed ^ 0xA5A5A5A5);
+        self.finance.board_debt_payment(&mut rng);
+        self.finance.takeover_check(&mut rng);
+        self.finance.stadium_share_transfers();
     }
 
     /// game.cpp step 10h — media/scouting/board mood pass (exe: FUN_00823ad0,

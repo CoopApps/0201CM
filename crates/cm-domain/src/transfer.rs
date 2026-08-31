@@ -326,6 +326,27 @@ impl TransferMarket {
                 BidOutcome::Rejected
             };
 
+            let mut outcome = outcome;
+            if outcome == BidOutcome::Accepted {
+                // Chairman-approval gate on the BIDDING club — verified port
+                // of FUN_00583fc0:122-127. When the bid would push the buyer
+                // into the red, the chairman refuses if the amount exceeds
+                // `generosity × £500,000`. On refusal, generosity++ (cap 20)
+                // and the deal collapses. See chairman_approves_overrun.
+                let (bidder_bal, bidder_has_chair) = finance.for_club(bid.bidding_club_id)
+                    .map(|c| (c.balance, true))
+                    .unwrap_or((0, false));
+                let would_go_negative = bidder_bal < bid.amount;
+                if bidder_has_chair {
+                    let cs = finance.chairman.entry(bid.bidding_club_id)
+                        .or_insert_with(crate::finance::ChairmanState::default);
+                    if !crate::finance::chairman_approves_overrun(
+                        cs, bid.amount, would_go_negative,
+                    ) {
+                        outcome = BidOutcome::Rejected;
+                    }
+                }
+            }
             if outcome == BidOutcome::Accepted {
                 // Debit bidding club, credit selling club.
                 if let Some(bidder) = finance.clubs.iter_mut().find(|c| c.club_id == bid.bidding_club_id) {
