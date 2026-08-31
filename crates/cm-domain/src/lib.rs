@@ -21,6 +21,7 @@ pub mod club_records;
 pub mod dispute;
 pub mod fifa_rankings;
 pub mod fog_of_war;
+pub mod scouting;
 pub mod friendly;
 pub mod game;
 pub mod hall_of_fame;

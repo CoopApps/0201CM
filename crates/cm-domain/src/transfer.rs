@@ -416,6 +416,145 @@ impl TransferMarket {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Transfer-AI + loan + wage-negotiation type foundations
+//
+// Types decoded from `FUN_00848da0` (composer, blocked from decompile but its
+// 7-arg signature is fully recovered from 13 caller sites), `FUN_004d3ea0`
+// (multi-round wage negotiator), `FUN_008d2d20` (offer composer), `FUN_008d48b0`
+// (bid record ctor), `FUN_004dfbd0` (squad-status ↔ loan-list news),
+// `FUN_00594220` (loan-recall date gate). Full report:
+// `reports/transfer_ai_loans_decode.md`.
+//
+// This block is TYPES + CONSTANTS ONLY — no behaviour is wired yet. Existing
+// `Contract` / `TransferBid` / `run_ai_transfer_pass` are unchanged. The
+// existing `Contract` will grow these fields in a follow-up commit once we
+// verify a cold rebuild survives the current addition.
+// ---------------------------------------------------------------------------
+
+/// Squad-status tier byte — contract `+0x35 & 0x3f` (also mirrored at `+0x4f`).
+/// Enum values match the exe's raw byte values (per `FUN_004dfbd0`'s 7 news
+/// branches).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum SquadStatus {
+    KeyPlayer      = 1,
+    FirstTeam      = 2,
+    FirstTeamSquad = 3,
+    DecentProspect = 4,
+    HotProspect    = 5,
+    SquadPlayer    = 6,
+    NotNeeded      = 7,
+}
+
+/// Loan state carried on a Contract or a WageOffer. When `Some`, the player is
+/// on loan (or being offered on loan). Bit `& 0x40` at Person `+0x35` is the
+/// exe's "on loan somewhere" flag; the parent-club pointer lives at Person
+/// `+0x39`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LoanState {
+    /// Parent club still owns the registration.
+    pub parent_club_id: u32,
+    pub loan_start: (u16, u8, u8),
+    pub loan_end:   (u16, u8, u8),
+    /// 0..=100 — percentage of weekly wage the borrower pays. Rest is on the
+    /// parent. From `FUN_006ce0e0` mode-1/2 wage-split.
+    pub wage_share_pct: u8,
+    /// Loan fee paid up-front by borrower to parent (£).
+    pub loan_fee: i64,
+    /// Earliest date the borrower can send the player back (pre-season) or the
+    /// parent can recall (mid-season). Verified from `FUN_00594220` — the exe
+    /// hard-codes 18-Jul and 15-Nov.
+    pub earliest_recall: (u16, u8, u8),
+    /// If `true`, the loan agreement includes a buy-back option for the parent.
+    /// Contract `+0x24 & 0x20` in the exe.
+    pub loan_back_option: bool,
+}
+
+/// A composed wage/contract offer — the exe's ~0x50-byte offer record built by
+/// `FUN_00848da0` (composer) and installed via `FUN_004d28c0`. Field offsets
+/// in comments are the recovered layout (see report §4).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WageOffer {
+    pub player_id: u32,
+    pub club_id: u32,
+    /// +0x08 (field id 3). Range 1..=5 in the exe.
+    pub contract_years: u8,
+    /// +0x10 (id 8). Year the contract starts.
+    pub start_year: u16,
+    /// +0x11 — 0x0b = full contract, 0xff = default probe. Fed as `mode_byte`
+    /// to the composer.
+    pub tier_byte: u8,
+    /// +0x18 (id 0x0d).
+    pub weekly_wage: u32,
+    /// +0x21 (id 0x15). Loader floors this at 50k, or 100k when player value > £1M.
+    pub signing_on_fee: u32,
+    /// (id 0x18).
+    pub appearance_fee: u32,
+    /// (id 0x19).
+    pub goal_bonus: u32,
+    /// (id 0x1a) — original float, scaled by `_DAT_009570b0`.
+    pub assist_bonus: u32,
+    /// (id 0x1b).
+    pub clean_sheet_bonus: u32,
+    /// (id 0x1c).
+    pub loyalty_bonus: u32,
+    /// +0x35 & 0x3f. Placement in the manager's squad.
+    pub squad_status: SquadStatus,
+    /// +0x4f & 0x02 — the "on the loan list" bit.
+    pub on_loan_list: bool,
+    /// Present when the offer includes loan terms (borrower side).
+    pub loan: Option<LoanState>,
+    /// Agent's cut on the deal (0..=100). From `FUN_004db1e0` news phrasing.
+    pub agent_fee_pct: u8,
+}
+
+/// A club's interest in a not-yet-bid-on player — the exe's shortlist row.
+/// Populated by `FUN_00833210` / `FUN_0082a0b0`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TransferInterest {
+    pub club_id: u32,
+    pub player_id: u32,
+    /// 0..=100. `FUN_0082a0b0` score of "how much does this player fill a gap
+    /// in the club's squad?" (position-need + CA-fit + wage-affordability +
+    /// division reputation).
+    pub need_score: u8,
+    pub tentative_offer: Option<WageOffer>,
+    /// Days since the interest opened — expires after ~30 game-days.
+    pub days_since_opened: u16,
+}
+
+// --- Constants extracted from the transfer-AI decode pass ------------------
+
+/// Club-reputation tier gates in `FUN_004d3ea0` (`prepare_contract_offer`) —
+/// used to reject "you're not big enough for us" applications.
+pub const REP_TIER_A: u16 = 0x128f; // 4751 — small club
+pub const REP_TIER_B: u16 = 0x186b; // 6251 — mid club
+pub const REP_TIER_C: u16 = 0x1c53; // 7251 — big club
+/// Signing-on floors from `FUN_004d3ea0` — 50k default, 100k when player
+/// value exceeds £1M.
+pub const SIGN_ON_FLOOR_LOW:  u32 =  50_000;
+pub const SIGN_ON_FLOOR_HIGH: u32 = 100_000;
+/// Weekly-wage clamps in `FUN_0084d5d0`. Values from `_DAT_0095dbe0` /
+/// `_DAT_0095dbe4`.
+pub const WAGE_FLOOR_WEEKLY: u32 =    750;
+pub const WAGE_CEIL_WEEKLY:  u32 = 150_000;
+/// Composer per-signing hard cap from `FUN_004d4880`'s min-clamp.
+pub const FEE_HARD_CAP: i64 = 10_000_000;
+/// Wage-bill rejection gate — `FUN_00618450 > 0x46` (70%).
+pub const WAGE_BILL_REFUSE_PCT: u8 = 70;
+/// Loan-recall date gates from `FUN_00594220`. Format (day, month).
+pub const RECALL_MID_SEASON_DAY: (u8, u8) = (15, 11);
+pub const RECALL_PRE_SEASON_DAY: (u8, u8) = (18,  7);
+/// Round cap on wage-negotiation counter-offers — from `FUN_008ad0e0` and
+/// the bid-record `+0x2e round_counter` (capped at 3).
+pub const NEGOTIATION_ROUND_CAP: u8 = 3;
+/// Bid arrival thresholds from `FUN_008ad0e0`:
+///   asking_price > base_value * 1.5 → reject (line 82)
+///   reputation-fit ratio >= 0.75    → accept (line 156)
+pub const ASKING_OVER_BASE_REJECT: f32 = 1.5;
+pub const REPUTATION_FIT_ACCEPT:   f32 = 0.75;
+
 #[cfg(test)]
 mod tests {
     use super::*;
