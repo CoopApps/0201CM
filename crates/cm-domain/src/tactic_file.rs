@@ -30,8 +30,11 @@ use serde::{Deserialize, Serialize};
 pub struct Tactic {
     pub formation_name: String,
     pub author: String,
-    /// 1..5 — Ultra-Defensive / Defensive / Normal / Attacking / All-Out-Attack.
-    pub mentality: u8,
+    /// Team-wide mentality. 3 states, NOT 5 (earlier assumption was wrong —
+    /// see `reports/team_flags_2_decode.md`). Bits 4..6 of `team_flags_2`,
+    /// one-hot. Use [`team_settings`] for a full typed decode of every
+    /// team-wide switch.
+    pub mentality: Mentality,
     /// Team-wide flag word #2 — mentality (bits 0..4) plus the other 10
     /// on/off team switches. Bit-level mapping TBD (see report §5); the
     /// XI picker doesn't need it yet, but downstream match-tick code will.
@@ -106,7 +109,12 @@ pub fn parse_tactic(bytes: &[u8], is_packaged: bool) -> Option<Tactic> {
 
     let team_flags_1 = u32::from_le_bytes(bytes[0x00FE..0x0102].try_into().ok()?);
     let team_flags_2 = u32::from_le_bytes(bytes[0x0559..0x055D].try_into().ok()?);
-    let mentality = (team_flags_2 & 0x1F) as u8;
+    let mentality = match team_flags_2 & 0x0000_0070 {
+        0x10 => Mentality::Normal,
+        0x20 => Mentality::Defensive,
+        0x40 => Mentality::Attacking,
+        _    => Mentality::Unset,
+    };
 
     let mut slots = [TacticSlot::default(); 11];
     for i in 0..11 {
@@ -251,6 +259,94 @@ pub fn slot_instructions_from_bytes(body: &[u8], slot: usize) -> SlotInstruction
 // a follow-up decode) — accessor returns the 8 raw nibble values so the
 // downstream code has SOMETHING to bind against once the mapping lands.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Team-wide settings (from tactic.team_flags_2).
+//
+// The team_flags_2 u32 at struct +0x584 / file 0x0559 is one-hot-packed
+// across seven groups (bits 0..17). Setter is FUN_0059F3E0 — verified via
+// grep as the only writer to +0x584. Marking group VERIFIED by loader
+// force-set of Zonal (bit 0x2000) when the group's bits are all zero.
+//
+// Field-by-field: reports/team_flags_2_decode.md §5.
+// ---------------------------------------------------------------------------
+
+/// Team-wide passing style. Group A, bits 0..3.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Passing { Short, Mixed, Direct, Long, Unset }
+
+/// Team-wide mentality. Group B, bits 4..6. Three states — NOT the five
+/// (Ultra-Def..All-Out-Att) that an earlier port assumed; the tactics
+/// screen has only three labels for the team-wide setting. The five-state
+/// slider IS a real thing but lives on `slot_pair` per-position, not here.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Mentality { Defensive, Normal, Attacking, Unset }
+
+/// Team-wide pressing intensity. Group E, bits 11..12.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Pressing { Normal, High, Unset }
+
+/// Team-wide marking scheme. Group F, bits 13..14. VERIFIED via loader
+/// force-set (Zonal is the force-default when group bits are all zero).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Marking { Zonal, ManToMan, Unset }
+
+/// Team-wide tackling firmness. Group G, bits 15..17. Normal is loader-forced
+/// as the default on legacy (v5C) files whose group bits are all zero.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Tackling { Easy, Hard, Normal, Unset }
+
+/// Decoded team-wide settings from `Tactic.team_flags_2`. See the bit table
+/// in `reports/team_flags_2_decode.md`. `Marking` is VERIFIED; the rest are
+/// INFERRED from group cardinality and shipped-preset value distribution.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TeamSettings {
+    pub passing: Passing,
+    pub mentality: Mentality,
+    pub counter_attack: bool,
+    pub offside_trap: bool,
+    pub pressing: Pressing,
+    pub marking: Marking,
+    pub tackling: Tackling,
+}
+
+/// Read the seven team switches out of a tactic's `team_flags_2` word.
+pub fn team_settings(t: &Tactic) -> TeamSettings {
+    let w = t.team_flags_2;
+    TeamSettings {
+        passing: match w & 0x0000_000F {
+            0x1 => Passing::Short,
+            0x2 => Passing::Mixed,
+            0x4 => Passing::Direct,
+            0x8 => Passing::Long,
+            _   => Passing::Unset,
+        },
+        mentality: match w & 0x0000_0070 {
+            0x10 => Mentality::Normal,
+            0x20 => Mentality::Defensive,
+            0x40 => Mentality::Attacking,
+            _    => Mentality::Unset,
+        },
+        counter_attack: (w & 0x0000_0180) == 0x100,
+        offside_trap:   (w & 0x0000_0600) == 0x400,
+        pressing: match w & 0x0000_1800 {
+            0x0800 => Pressing::Normal,
+            0x1000 => Pressing::High,
+            _      => Pressing::Unset,
+        },
+        marking: match w & 0x0000_6000 {
+            0x2000 => Marking::Zonal,
+            0x4000 => Marking::ManToMan,
+            _      => Marking::Unset,
+        },
+        tackling: match w & 0x0003_8000 {
+            0x08000 => Tackling::Easy,
+            0x10000 => Tackling::Hard,
+            0x20000 => Tackling::Normal,
+            _       => Tackling::Unset,
+        },
+    }
+}
 
 /// Extract the 8 nibbles from a slot's `movement_token` (LSB first).
 /// Names are placeholder ordinals until the setter cluster is decoded.
