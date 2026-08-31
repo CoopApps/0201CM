@@ -488,7 +488,47 @@ impl TransferMarket {
             let target = &ratings.players[ti];
             let seller = match target.club_id { Some(c) => c as u32, None => continue };
             let fee = target.market_value.max(1_000);
-            let wage = target.weekly_wage.max(175);
+
+            // Predicted seller-ask wage — verified port of FUN_006ce0e0
+            // (`predict_wage`), mode 1 = renewal ask. Inputs approximated from
+            // the RatedPlayer/finance we have on hand:
+            //   agent_quality ≈ target.ca clamped to 20 (matches the exe's
+            //     FUN_0052df60 cap; the true source is the agent-staff record).
+            //   rep_bucket    = seller_rep / 50 (real FUN_0052a330 output).
+            //   contract_field = current weekly_wage (renewal starts here).
+            //   game_day       = seed as u32 (deterministic per-pass).
+            let agent_q = (target.ca as i32).clamp(1, 20);
+            let seller_rep_now = finance.club_reputation.get(&seller).copied().unwrap_or(1000);
+            let rep_bucket = (seller_rep_now as i32) / 50;
+            let ask_wage = predict_wage(
+                target.weekly_wage as i32,
+                agent_q, rep_bucket,
+                target.age_est, target.is_gk,
+                target.staff_id, seed as u32,
+                /*mode=*/1,
+            ).max(175) as u32;
+            // Squad-status promotion delta — verified port of FUN_004d79c0.
+            // The AI offers KeyPlayer to signings that push the buyer squad
+            // avg CA; otherwise FirstTeamSquad. Position nibble derived from
+            // bucket_of() cascade (GK=1, DEF=2, MID=3, FWD=4, STR=6).
+            let (is_gk_t, is_d_t, is_m_t, _is_f_t) = bucket_of(target);
+            let pos_nibble = if is_gk_t { 1 } else if is_d_t { 2 }
+                             else if is_m_t { 3 } else { 4 };
+            let asking_status = if target.ca >= want + 5 { SquadStatus::KeyPlayer }
+                                else { SquadStatus::FirstTeamSquad };
+            let cp = ComposerPlayer {
+                player_id: target.staff_id,
+                ca: target.ca, pa: target.pa,
+                player_reputation: 0, market_value: target.market_value,
+                current_wage: target.weekly_wage, age: target.age_est,
+                international_caps: 0, role_byte: 5, has_agent: false,
+            };
+            let cc = ComposerClub { club_id: buyer, reputation: buyer_rep };
+            let wage = contract_cost_readback(
+                &cp, &cc, pos_nibble,
+                SquadStatus::FirstTeamSquad, // current-record placeholder
+                asking_status, ask_wage, /*mode=*/1,
+            );
             let years = (rng.range(4) + 2) as u16; // FUN_008ac0c0: rand%4+2
             // Accept band (kill #3): buyer offers full value → accepted.
             // Move money (budget + balance), player, contract.
