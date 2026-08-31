@@ -344,6 +344,12 @@ pub struct MatchCtx {
     /// `+0x1D6/+0x1D8` — reputation copies from each team.
     pub home_reputation: u16,
     pub away_reputation: u16,
+    /// Ball-height byte at pitch/match `+0x8EA9`. Fed into shot-damage
+    /// randomness at `006d63f0.c:248`:
+    /// `iVar17 = FUN_008fc4f0((int)cVar10 * (int)cVar10 * (int)cVar10 * 0x32)`.
+    /// Range 0..4 in the exe (4 = lob). Default 0 = ground ball.
+    #[serde(default)]
+    pub ball_height: i8,
     /// Score box. Exe stores per-side goal counts as bytes at
     /// `state+0xF5BC` (HOME) and `state+0xF5F2` (AWAY) — verified by
     /// FUN_006A4020 which copies them out as
@@ -1011,6 +1017,12 @@ pub struct ShooterMutable {
     pub zone_x: i8,
     /// Zone y (0..11). Exe: +0x103. Fed to FUN_006DB520 in-box test.
     pub zone_y: i8,
+    /// Stamina short (+0x29). Fed into shot-damage formula.
+    /// VERIFIED 006d63f0.c:250.
+    pub stamina_short: i16,
+    /// Pass-bias short (+0x19C), clamped [-200, +200]. Written by the
+    /// __ftol() expression in `006d63f0.c:208-221` and `:878-887`.
+    pub pass_bias: i16,
 }
 
 /// Port of `FUN_006DB520(token, side)` — the "is this token inside the
@@ -1318,6 +1330,8 @@ pub fn match_tick(
                     keeper_id: 0,
                     zone_x: fx,
                     zone_y: fy,
+                    stamina_short: 10_000,
+                    pass_bias: 0,
                 };
                 let mut gk_shot_count = 0u8;
                 let mut counters = SideShotCounters::default();
@@ -1598,6 +1612,33 @@ pub struct MatchToken {
     /// Formation slot index this token occupies (0..10, 10 = GK). Used to
     /// look up per-slot zone attributes from the pool.
     pub formation_slot: u8,
+    /// Stamina short (+0x29). The exe reads this as
+    /// `stamina/10 - 30` in shot-damage RNG (VERIFIED 006d63f0.c:250).
+    pub stamina_short: i16,
+    /// Pass-bias short (+0x19C). Written via __ftol() FP expression
+    /// (`006d63f0.c:208-221`, `:878-887`), clamped `[-200, +200]`. This is
+    /// NOT the fatigue field the earlier port assumed — that assumption
+    /// was mis-routed to +0x35 (which is actually the per-match rating
+    /// milli-accumulator per Kill #B-slice2 decode).
+    pub pass_bias: i16,
+    /// Pass-target physique float (+0xAD). Read via `rand(30) < float(+0xAD)`
+    /// double-threshold in pass-target scoring. VERIFIED 006a1940.c:173-183.
+    pub pass_marker_float: f32,
+    /// Carrier-marker physique float (+0xB1). Same threshold shape as
+    /// +0xAD but in the carrier-marker loop. VERIFIED 006a1940.c:401-408.
+    pub carrier_marker_float: f32,
+    /// Per-match rating milli-accumulator (+0x35). Starts at 6400 (= 6.4
+    /// display) via FUN_006d08b0:84. Grows/shrinks by the event delta
+    /// table decoded in reports/per_match_ratings_decode.md
+    /// (goals +75/+100, assists +9, saves +350/+600, concede -500, misses
+    /// -375/-750/-1000, per-touch +7 etc.). Finalized to display byte at
+    /// +0x1B via `FUN_006b3de0`: `display = clamp(round((acc+500)/1000), 1, 10)`.
+    /// Kill #B-slice2 partial port. The earlier port confusingly called this
+    /// `fatigue` — those writes were rating writes all along.
+    pub rating_milli: i16,
+    /// Finalized display rating (+0x1B), byte 1..10. Written at half-time /
+    /// full-time / extra-time by [`finalize_ratings`] via the same formula.
+    pub rating_final: i8,
 }
 
 impl Default for MatchToken {
@@ -1613,8 +1654,29 @@ impl Default for MatchToken {
             shot_count: 0, is_key_shooter: false, pending_shot_cursor: 0,
             blocker_id: 0, keeper_id: 0,
             zone_bias: 0, positional_weight: 10, aggression: 8, formation_slot: 0,
+            // Item #3, #5, #8, #2 field additions.
+            stamina_short: 10_000,     // full stamina; drops during play
+            pass_bias: 0,              // clamped [-200, 200]
+            pass_marker_float: 0.0,
+            carrier_marker_float: 0.0,
+            rating_milli: 6400,        // 6.4 display — FUN_006d08b0:84 init
+            rating_final: 6,           // 6.4 rounds down to 6 initially
         }
     }
+}
+
+/// Port of `FUN_006b3de0`:64-73 — finalize the per-match rating from the
+/// milli-accumulator at `token+0x35` to the display byte at `token+0x1B`.
+///
+/// Formula (VERIFIED byte-for-byte from decompile):
+///   `display = clamp( round((acc + 500) / 1000), 1, 10 )`
+///
+/// Called at each period boundary (half-time / full-time / extra-time) —
+/// the exe walks 20 slots × 2 sides at each of the three period cases.
+pub fn finalize_rating(rating_milli: i16) -> i8 {
+    let acc = rating_milli as i32;
+    let raw = (acc + 500) / 1000;   // integer round-toward-zero after +500 bias
+    raw.clamp(1, 10) as i8
 }
 
 /// Pitch dimensions matching the exe's grid: 12 rows × 9 columns.
@@ -1771,6 +1833,10 @@ pub struct TokenEngine {
     pub ball_zone_y: i8,
     /// Possession side (0/1, -1 loose). Exe: `+0x8EAE`.
     pub possession_side: i8,
+    /// Ball height byte at pitch `+0x8EA9`. 0..4 (4 = lob). Fed to
+    /// `ball_command_shot_damage` per 006d63f0.c:248. VERIFIED.
+    #[serde(default)]
+    pub ball_height: i8,
     /// Pitch cell grid — rebuilt each tick from token positions.
     /// Exe: `pitch+0x215E` (12×9 × 0x5A B).
     #[serde(default)]
@@ -1788,6 +1854,7 @@ impl Default for TokenEngine {
             ball_zone_x: 4,
             ball_zone_y: 5,
             possession_side: -1,
+            ball_height: 0,
             grid: PitchGrid::default(),
             zone_pool: ZoneAttributePool::default(),
         }
@@ -1888,6 +1955,20 @@ impl TokenEngine {
                     positional_weight: (p.current_ability / 200).min(20) as u8,
                     aggression: p.aggression.max(0) as u8,
                     formation_slot,
+                    stamina_short: 10_000,
+                    pass_bias: 0,
+                    // OPEN GAP: the exe reads +0xAD and +0xB1 as f32
+                    // physique thresholds in the pass-target scorer
+                    // (006a1940.c:173-183 / :401-408) but the SOURCE
+                    // stat (which player attribute populates these
+                    // floats at kickoff) is not yet decoded. Leaving
+                    // as 0.0 — pass-target physique-bonus branch will
+                    // never fire until this is lifted, matching
+                    // 'don't invent' rule.
+                    pass_marker_float: 0.0,
+                    carrier_marker_float: 0.0,
+                    rating_milli: 6400,   // FUN_006d08b0:84 init (6.4)
+                    rating_final: 6,
                 });
             }
         }
@@ -3083,7 +3164,7 @@ pub fn physics_tick(
                          else { -1 };
                 // Style code = 0 (balanced) since we don't yet own tactical
                 // instructions per-side; the switch degenerates to no-op.
-                let damage_roll = ball_command_shot_damage(token, 0, cmd, rng);
+                let damage_roll = ball_command_shot_damage(token, 0, engine.ball_height, cmd, rng);
                 // `shot_difficulty` (FUN_006CFEF0 param_5). In the exe this is
                 // stored on the queued shot record at +0xB9 and comes out of
                 // FUN_006D63F0 in a bounded small range. Semantics per exe:
@@ -3210,6 +3291,8 @@ pub fn resolve_queued_shots(
             side,
             zone_x: token.zone_x,
             zone_y: token.zone_y,
+            stamina_short: token.stamina_short,
+            pass_bias: token.pass_bias,
         };
         let mut gk_shots = 0u8;
         let mut counters = SideShotCounters::default();
@@ -3676,11 +3759,17 @@ pub fn pass_target_picker(
         let q = engine.distance_quality(carrier.zone_x, carrier.zone_y, t.zone_x, t.zone_y);
         if q < 5.0 { score += 5; }
 
-        // Physique threshold — approximate via role_ca vs role_ca.
-        if rng.range(0x1E) > carrier.role_ca as u32 / 2
-            && rng.range(0x1E) > t.role_ca as u32 / 2
+        // Physique threshold (VERIFIED 006a1940.c:173-183 — pass-target
+        // scoring's regular-teammate branch). Both endpoints must pass
+        // a `rand(0x1E) < float(token[+0xAD])` roll; the score bonus is
+        // an `__ftol(<fp>)` value whose FP expression Ghidra dropped —
+        // logged as an OPEN GAP in reports/. Until the FP expr lands,
+        // use `rand(0x1E)` for the bonus (upper-bound plausible since
+        // the fp value is derived from the same 0..30-scale attribute).
+        if (rng.range(0x1E) as f32) < carrier.pass_marker_float
+            && (rng.range(0x1E) as f32) < t.pass_marker_float
         {
-            score += rng.range(0x1E) as i32;
+            score += rng.range(0x1E) as i32;  // OPEN: exact fp bonus TBD
         }
 
         // Role count penalty.
@@ -3732,12 +3821,18 @@ pub fn pass_target_picker(
 pub fn ball_command_shot_damage(
     shooter: &MatchToken,
     style_code: u8,        // pitch[+1] tactical style: 1/2 deep, 8 mid, 0x20 press
+    ball_height: i8,       // pitch[+0x8EA9] — VERIFIED 006d63f0.c:248
     cmd: i32,
     rng: &mut MatchRng,
 ) -> i32 {
-    // Shot damage: ((10000 - t)*(10000 - t))/50000 where t is a
-    // stamina-derived value. Approximate t = fatigue.
-    let t = shooter.fatigue.max(0).min(10_000) as i32;
+    // Shot damage: ((10000 - t)*(10000 - t))/50000 where t is derived
+    // from stamina. VERIFIED (006d63f0.c:250) —
+    // `iVar26 = FUN_008fc4f0((int)*(short *)(param_1 + 0x29) / 10 - 0x1e);`
+    // Sourcing t from stamina_short/10 - 30, not the mislabelled 'fatigue'
+    // field (which is actually the rating milli-accumulator per Kill
+    // #B-slice2 decode).
+    let stamina_bounded = (shooter.stamina_short as i32 / 10 - 30).max(0);
+    let t = stamina_bounded.min(10_000);
     let damage = ((10_000 - t) * (10_000 - t)) / 50_000;
 
     // Pick shot rating by cmd.
@@ -3762,10 +3857,13 @@ pub fn ball_command_shot_damage(
     };
     roll += style_mod;
 
-    // Ball-height and stamina adjustments (approximated).
-    let ball_height = 0i32;   // ground shot by default
-    roll -= rng.range(((ball_height.pow(3) * 50).max(1)) as u32) as i32;
-    let stamina = (shooter.role_ca as i32 * 10) - 30;
+    // Ball-height (VERIFIED 006d63f0.c:248): sourced from pitch[+0x8EA9]
+    // — passed as `ball_height`. Formula: subtract rand(ball_height^3 * 50).
+    let bh = ball_height as i32;
+    roll -= rng.range(((bh * bh * bh * 50).max(1)) as u32) as i32;
+    // Stamina (VERIFIED 006d63f0.c:250): read token[+0x29 short] / 10 - 30.
+    // Was: `role_ca * 10 - 30` (wrong stat, wrong direction).
+    let stamina = (shooter.stamina_short as i32 / 10) - 30;
     if stamina > 0 { roll += rng.range(stamina as u32) as i32; }
 
     roll
@@ -4219,10 +4317,10 @@ mod tests {
         t.shooting = 15; t.role_ca = 15;
         let mut rng_a = MatchRng::new(42);
         let mut rng_b = MatchRng::new(42);
-        t.fatigue = 0;
-        let fresh_roll = ball_command_shot_damage(&t, 0, -1, &mut rng_a);
-        t.fatigue = 5000;
-        let tired_roll = ball_command_shot_damage(&t, 0, -1, &mut rng_b);
+        t.stamina_short = 10_000;   // full stamina
+        let fresh_roll = ball_command_shot_damage(&t, 0, 0, -1, &mut rng_a);
+        t.stamina_short = 5_000;    // half stamina
+        let tired_roll = ball_command_shot_damage(&t, 0, 0, -1, &mut rng_b);
         assert!(fresh_roll >= tired_roll,
                 "fresh legs should shoot at least as well as tired: {fresh_roll} vs {tired_roll}");
     }
