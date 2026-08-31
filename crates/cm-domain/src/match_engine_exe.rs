@@ -1106,9 +1106,10 @@ pub fn shot_outcome_resolver(
             if r1 + 7 < shot_difficulty as i32 {
                 // OFF-TARGET / WIDE branch (line 35-47).
                 shooter.fatigue = shooter.fatigue.saturating_sub(1000);
-                // Kill #B-slice2 rating delta: -1000 milli = -1.0 rating,
-                // 'miss (sitter)' per per_match_ratings_decode.md.
-                shooter.rating_milli = shooter.rating_milli.saturating_sub(1000);
+                // VERIFIED rating delta from FUN_006CFEF0:36 —
+                // 'miss (sitter)' — see rating_delta::SITTER_MISS.
+                shooter.rating_milli = shooter.rating_milli
+                    .saturating_add(rating_delta::SITTER_MISS);
                 outcome = 4;                  // WIDE
                 xg = 5.0;                     // 0x40A00000
                 if shooter.pending_shot_cursor == 0 {
@@ -1145,8 +1146,12 @@ pub fn shot_outcome_resolver(
                 } else {
                     // Line 68: outcome stays 1 = GOAL. Fatigue penalty -0x19 (25).
                     shooter.fatigue = shooter.fatigue.saturating_sub(0x19);
-                    // Kill #B-slice2 rating delta: -25 milli (‑0.025 rating).
-                    shooter.rating_milli = shooter.rating_milli.saturating_sub(0x19);
+                    // VERIFIED — small penalty on penalty/weak attempt AND
+                    // big goal bonus fires here (only path that stays outcome=1).
+                    // FUN_006CFEF0:68 (weak-attempt) + FUN_006D63F0:934 (goal +100).
+                    shooter.rating_milli = shooter.rating_milli
+                        .saturating_add(rating_delta::PENALTY_WEAK_ATTEMPT)
+                        .saturating_add(rating_delta::GOAL_SCORED);
                 }
             }
         } else {
@@ -1189,9 +1194,10 @@ pub fn shot_outcome_resolver(
             } else {
                 // Hard-miss branch (line 96-104).
                 shooter.fatigue = shooter.fatigue.saturating_sub(0x2EE);
-                // Kill #B-slice2 rating delta: -750 milli (‑0.75 rating,
-                // 'miss (bad chance)').
-                shooter.rating_milli = shooter.rating_milli.saturating_sub(0x2EE);
+                // VERIFIED rating delta from FUN_006CFEF0:96 —
+                // 'miss (bad chance)' — see rating_delta::BAD_CHANCE_TAKEN.
+                shooter.rating_milli = shooter.rating_milli
+                    .saturating_add(rating_delta::BAD_CHANCE_TAKEN);
                 outcome = 5;
                 xg = 5.0;
                 if shooter.pending_shot_cursor == 0 {
@@ -3330,8 +3336,11 @@ pub fn physics_tick(
             token.touched = true;
             token.kinetic_x += (rng.range(5) + 5) as f32;
             token.fatigue = token.fatigue.saturating_add(7);
-            // Kill #B-slice2 rating delta: +7 milli per pass/dribble/carry commit.
-            token.rating_milli = token.rating_milli.saturating_add(7);
+            // VERIFIED — pass/shot commit micro-boost from
+            // FUN_006F99C0:107,126,353,362,388,396 (6 sites collapse to one
+            // Rust call). See rating_delta::PASS_OR_SHOT_COMMIT.
+            token.rating_milli = token.rating_milli
+                .saturating_add(rating_delta::PASS_OR_SHOT_COMMIT);
         }
         return queued;
     }
