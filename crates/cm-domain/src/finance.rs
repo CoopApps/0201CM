@@ -74,7 +74,7 @@ impl CountryFinanceRules {
 }
 
 /// Per-club finance state, keyed by club id.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ClubFinance {
     pub club_id: u32,
     /// Cash in the bank. Can go negative — the tick tracks how many months
