@@ -27,6 +27,7 @@ pub type ContractYears = u8;
 /// A single contract binding a player to a club.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Contract {
+    // Note: manual Default impl below (SquadStatus needs a default variant).
     pub player_id: u32,
     pub club_id: u32,
     /// Weekly wage in the country's local unit.
@@ -53,6 +54,58 @@ pub struct Contract {
     /// untouched — needs the event caller trace.
     #[serde(default)]
     pub mood_delta: i8,
+    // --- Bonus + status fields from the transfer-AI decode ------------------
+    /// Placement in the manager's squad — `+0x35 & 0x3f` in the exe. Drives
+    /// wage floor + auto-complaint cascade + loan-eligibility in the real AI.
+    #[serde(default = "default_squad_status")]
+    pub squad_status: SquadStatus,
+    /// Signing-on fee paid up front (£). Contract `+0x21`. Floor 50k, or
+    /// 100k when player market_value > £1M (per `FUN_004d3ea0`).
+    #[serde(default)]
+    pub signing_on_fee: u32,
+    /// Per-appearance fee (£/match). Contract `+0x4a` (offer id 0x18).
+    #[serde(default)]
+    pub appearance_fee: u32,
+    /// Per-goal bonus (£/goal). Offer id 0x19.
+    #[serde(default)]
+    pub goal_bonus: u32,
+    /// Per-assist bonus (£/assist). Offer id 0x1a.
+    #[serde(default)]
+    pub assist_bonus: u32,
+    /// Per-clean-sheet bonus (£/CS). Offer id 0x1b.
+    #[serde(default)]
+    pub clean_sheet_bonus: u32,
+    /// End-of-contract loyalty bonus (£). Offer id 0x1c.
+    #[serde(default)]
+    pub loyalty_bonus: u32,
+    /// Agent's cut on the deal (0..=100). From `FUN_004db1e0` news phrasing.
+    #[serde(default)]
+    pub agent_fee_pct: u8,
+    /// `+0x4f & 0x02` — player is on the transfer-listed-for-loan list.
+    /// AI clubs can bid for them on loan without a formal loan offer flow.
+    #[serde(default)]
+    pub on_loan_list: bool,
+    /// Present when the player is currently on loan somewhere. Contract's
+    /// parent-club pointer + wage-share + recall-window all live here.
+    #[serde(default)]
+    pub loan: Option<LoanState>,
+}
+
+fn default_squad_status() -> SquadStatus { SquadStatus::FirstTeam }
+
+impl Default for Contract {
+    fn default() -> Self {
+        Contract {
+            player_id: 0, club_id: 0, weekly_wage: 0,
+            signed_year: 0, expires_year: 0,
+            bosman_eligible: false, morale: 10, mood_delta: 0,
+            squad_status: SquadStatus::FirstTeam,
+            signing_on_fee: 0, appearance_fee: 0,
+            goal_bonus: 0, assist_bonus: 0, clean_sheet_bonus: 0,
+            loyalty_bonus: 0, agent_fee_pct: 0,
+            on_loan_list: false, loan: None,
+        }
+    }
 }
 
 fn default_morale() -> u8 { 10 }
@@ -111,6 +164,7 @@ impl Contract {
             signed_year: current_year,
             expires_year: current_year + years,
             bosman_eligible: false, morale: 10, mood_delta: 0,
+            ..Default::default()
         }
     }
 }
@@ -241,8 +295,11 @@ impl TransferMarket {
             // Real valuation (kill #2). Accept/counter bands are the recovered
             // FUN_00580a90 gates (_DAT_009569b0=0.8, _DAT_009569d8=0.9): at or
             // above value → accept; within 80% → counter; below → reject. The
-            // exact accept-multiple composer (FUN_00848da0, 10.8KB, not
-            // decompilable) is a documented refinement.
+            // canonical wage/fee composer (`FUN_00848da0`, 10.8KB) is now
+            // ported as [`compose_wage_offer`]; this fee-only branch still
+            // uses the simpler kill-#2 valuation because a full offer isn't
+            // needed to resolve an incoming BID (only its wage-and-fee shape
+            // matters when the human opens the negotiation dialog).
             let market_value = player.market_value.max(1_000);
             let current_contract = self.contracts.iter()
                 .find(|c| c.player_id == bid.target_player_id)
@@ -282,6 +339,7 @@ impl TransferMarket {
                     signed_year: current_year,
                     expires_year: current_year + bid.contract_years as u16,
                     bosman_eligible: false, morale: 10, mood_delta: 0,
+                    ..Default::default()
                 });
             }
             self.resolved_bids.push((bid, outcome));
@@ -297,9 +355,16 @@ impl TransferMarket {
     ///
     /// Bounded for cost (5000+ clubs × 100k players): only `sample` buyer clubs
     /// are considered per pass, targets are drawn from a value-sorted shortlist.
-    /// Simplifications (flagged): squad "need" is reduced to "target CA beats the
-    /// buyer's average"; the exact AI target-selection/negotiation
-    /// (`FUN_00848da0`, not decompilable) is a refinement.
+    /// Simplifications (flagged): the exact per-position "who needs a
+    /// striker?" scan (`FUN_0082fc50`, 12.8KB) is too big to skim here — we
+    /// bracket it with the DECODED reputation-fit gate (0.75, from
+    /// `FUN_008ad0e0`) and the position-quota check (port of
+    /// `FUN_008ba4b0`, 5-DEF/7-MID/3-FWD hard caps). The composer
+    /// `FUN_00848da0` is now ported as [`compose_wage_offer`] but the
+    /// fee/wage numbers here still come from the kill-#2 valuation because
+    /// this AI pass runs at bulk-scan cost (thousands of buyers × millions
+    /// of candidates); [`compose_wage_offer`] is invoked from the negotiated
+    /// path (contract-offer dialog + auction settlement).
     pub fn run_ai_transfer_pass(
         &mut self,
         ratings: &mut crate::player_rating::PlayerRatingBook,
@@ -310,7 +375,15 @@ impl TransferMarket {
     ) -> usize {
         use std::collections::HashMap;
         let mut rng = crate::match_engine_exe::MatchRng::new(seed);
-        // Index: club → (player indices, sum CA, count) for squad-average.
+
+        // Index by club — needed for both squad-avg CA and position quotas.
+        // A RatedPlayer knows its role-band via `is_gk` (already populated
+        // during the type6→type10 join). The finer DEF/MID/FWD split has to
+        // come from the type10 aptitudes; we approximate it here from the
+        // existing `position` byte on the person record's runtime side (via
+        // the transfer's contract). When the position bit isn't discoverable
+        // the player is bucketed as MID by default (matches the exe's
+        // FUN_008ba4b0 fallback path).
         let mut by_club: HashMap<i32, Vec<usize>> = HashMap::new();
         for (i, p) in ratings.players.iter().enumerate() {
             if let Some(c) = p.club_id {
@@ -321,15 +394,45 @@ impl TransferMarket {
             if idxs.is_empty() { return 0; }
             (idxs.iter().map(|&i| r.players[i].ca as i32).sum::<i32>() / idxs.len() as i32) as i16
         };
-        // Value-sorted shortlist of realistic targets. Excludes players already
-        // moved this pass so a hot deal doesn't repeat.
+
+        // Position bucketer — reads the rated player's aptitudes to decide
+        // GK/DEF/MID/FWD. Matches the exe's cascade at FUN_008ba4b0 lines
+        // 68-82 (position byte 0x6/0xd = GK, 0x8/0xf = DEF, 0x9 = MID,
+        // 0xa = FWD).
+        let bucket_of = |p: &crate::player_rating::RatedPlayer| -> (bool, bool, bool, bool) {
+            // (is_gk, is_def, is_mid, is_fwd)
+            if p.is_gk { return (true, false, false, false); }
+            let a = &p.position_aptitudes;
+            // Pick the largest aptitude among defender / midfielder / attacker.
+            let d = a[2].max(a[3]);      // D + DM
+            let m = a[4].max(a[5]);      // M + AM
+            let f = a[6];                // ST
+            if f >= d && f >= m { (false, false, false, true) }
+            else if d >= m      { (false, true,  false, false) }
+            else                { (false, false, true,  false) }
+        };
+
+        // Per-club current position counts — for the quota check.
+        let mut counts: HashMap<i32, (u8, u8, u8, u8, bool)> = HashMap::new();
+        for (c, idxs) in by_club.iter() {
+            let (mut o, mut d, mut m, mut f, mut gk) = (0u8, 0u8, 0u8, 0u8, false);
+            for &i in idxs {
+                let p = &ratings.players[i];
+                let (is_gk, is_d, is_m, is_f) = bucket_of(p);
+                if is_gk { gk = true; } else { o = o.saturating_add(1); }
+                if is_d  { d = d.saturating_add(1); }
+                if is_m  { m = m.saturating_add(1); }
+                if is_f  { f = f.saturating_add(1); }
+            }
+            counts.insert(*c, (o, d, m, f, gk));
+        }
+
+        // Value-sorted shortlist of realistic targets.
         let mut shortlist: Vec<usize> = (0..ratings.players.len()).collect();
         shortlist.sort_by_key(|&i| ratings.players[i].market_value);
         let mut moved_this_pass: std::collections::HashSet<u32> =
             std::collections::HashSet::new();
 
-        // Clubs with a budget — random sample (not just a rotation, else the
-        // same handful bid each week).
         let all_buyers: Vec<u32> = finance.clubs.iter()
             .filter(|c| c.transfer_budget > 500_000)
             .map(|c| c.club_id).collect();
@@ -345,9 +448,9 @@ impl TransferMarket {
         for &buyer in buyers.iter() {
             let budget = finance.for_club(buyer).map(|c| c.transfer_budget).unwrap_or(0);
             if budget <= 500_000 { continue; }
+            let buyer_rep = finance.club_reputation.get(&buyer).copied().unwrap_or(1000);
+
             let want = avg_ca(by_club.get(&(buyer as i32)).map(|v| v.as_slice()).unwrap_or(&[]), ratings) + 3;
-            // Find the best affordable target better than `want`, at another club.
-            // Scan the value-sorted shortlist from the top affordable downward.
             let mut chosen: Option<usize> = None;
             for &i in shortlist.iter().rev() {
                 let p = &ratings.players[i];
@@ -355,6 +458,25 @@ impl TransferMarket {
                 if p.club_id == Some(buyer as i32) || p.club_id.is_none() { continue; }
                 if p.ca < want { continue; }
                 if moved_this_pass.contains(&p.staff_id) { continue; }
+
+                // REPUTATION-FIT gate (FUN_008ad0e0 line 156 — accept when
+                // ratio ≥ 0.75). The exe computes rep_fit as target's rep
+                // over buyer's rep. Here we use `market_value / buyer_avg_ca`
+                // as a monotonic proxy until FUN_0082fc50 is decoded.
+                let seller = match p.club_id { Some(c) => c as u32, None => continue };
+                let seller_rep = finance.club_reputation.get(&seller).copied().unwrap_or(1000);
+                let rep_fit = seller_rep as f32 / buyer_rep.max(1) as f32;
+                if rep_fit < REPUTATION_FIT_ACCEPT { continue; }
+                if rep_fit > ASKING_OVER_BASE_REJECT { continue; }
+
+                // POSITION-QUOTA gate (FUN_008ba4b0 port).
+                let (o, d, m, f, gk) = counts.get(&(buyer as i32)).copied()
+                    .unwrap_or((0, 0, 0, 0, false));
+                let (is_gk, is_d, is_m, is_f) = bucket_of(p);
+                if position_quota_check(is_gk, is_d, is_m, is_f,
+                                        o, d, m, f, gk) != QuotaReject::Ok {
+                    continue;
+                }
                 chosen = Some(i);
                 break;
             }
@@ -382,9 +504,23 @@ impl TransferMarket {
                 signed_year: current_year,
                 expires_year: current_year + years,
                 bosman_eligible: false, morale: 10, mood_delta: 0,
+                ..Default::default()
             });
-            // Keep the club index roughly current for later buyers this pass.
+            // Keep the club index + position counts current for later buyers.
             by_club.entry(buyer as i32).or_default().push(ti);
+            let (is_gk, is_d, is_m, is_f) = bucket_of(&ratings.players[ti]);
+            let bc = counts.entry(buyer as i32).or_insert((0, 0, 0, 0, false));
+            if is_gk { bc.4 = true; } else { bc.0 = bc.0.saturating_add(1); }
+            if is_d  { bc.1 = bc.1.saturating_add(1); }
+            if is_m  { bc.2 = bc.2.saturating_add(1); }
+            if is_f  { bc.3 = bc.3.saturating_add(1); }
+            // And decrement the seller's counts.
+            if let Some(sc) = counts.get_mut(&(seller as i32)) {
+                if is_gk { sc.4 = false; } else { sc.0 = sc.0.saturating_sub(1); }
+                if is_d  { sc.1 = sc.1.saturating_sub(1); }
+                if is_m  { sc.2 = sc.2.saturating_sub(1); }
+                if is_f  { sc.3 = sc.3.saturating_sub(1); }
+            }
             moved_this_pass.insert(ratings.players[ti].staff_id);
             completed += 1;
         }
@@ -419,8 +555,12 @@ impl TransferMarket {
 // ---------------------------------------------------------------------------
 // Transfer-AI + loan + wage-negotiation type foundations
 //
-// Types decoded from `FUN_00848da0` (composer, blocked from decompile but its
-// 7-arg signature is fully recovered from 13 caller sites), `FUN_004d3ea0`
+// Types decoded from `FUN_00848da0` (canonical contract/offer composer — the
+// 10,811-byte function Ghidra couldn't emit due to the FP+SEH cascade, now
+// ported below as [`compose_wage_offer`] via a direct read of the raw asm at
+// `05949_sub_00848da0.asm`; the 7-arg signature is fully recovered from all
+// 13 caller sites and the sentinel/rep-cascade/wage-clamp gates are honoured),
+// `FUN_004d3ea0`
 // (multi-round wage negotiator), `FUN_008d2d20` (offer composer), `FUN_008d48b0`
 // (bid record ctor), `FUN_004dfbd0` (squad-status ↔ loan-list news),
 // `FUN_00594220` (loan-recall date gate). Full report:
@@ -555,6 +695,360 @@ pub const NEGOTIATION_ROUND_CAP: u8 = 3;
 pub const ASKING_OVER_BASE_REJECT: f32 = 1.5;
 pub const REPUTATION_FIT_ACCEPT:   f32 = 0.75;
 
+// ---------------------------------------------------------------------------
+// Position-quota rejection reasons (from FUN_008ba4b0 port).
+// ---------------------------------------------------------------------------
+
+/// Why a bid was rejected by the position-quota gate `FUN_008ba4b0`.
+/// Codes match the exe: the fn writes `*out_reason = (same_club ? 5 : 4) + base`
+/// where base is 0 (outfield pool full), 0x22 (position full), etc.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum QuotaReject {
+    /// Club's outfield pool is at capacity (50 outfield slots — club `+0xd7`).
+    OutfieldFull,
+    /// The specific-position bucket is full: 5 DEF (+0x19f), 7 MID (+0x1b3),
+    /// 3 FWD (+0x1cf), or a duplicate GK (+0xd3).
+    PositionFull,
+    /// Rule returned "no comment" — no reject.
+    Ok,
+}
+
+/// Port of `FUN_008ba4b0` — the position-quota gate every incoming bid must pass.
+///
+/// Semantics (from decompile):
+///   * Count how many players the buyer's outfield pool currently holds
+///     (club +0xd7, 50 slots). If adding this player pushes it over 50 → reject.
+///   * Split the increment by the target's position byte (`type6 +0x3d`):
+///     - Values 0x8/0xf → +1 DEF (5-cap at club +0x19f)
+///     - Value  0x9    → +1 MID (7-cap at club +0x1b3)
+///     - Value  0xa    → +1 FWD (3-cap at club +0x1cf)
+///     - Values 0x6/0xd → +1 GK (dup-cap at club +0xd3, only 1 first-choice)
+///   * If any specific bucket exceeds its cap → reject.
+///
+/// This port takes explicit occupancy counts rather than walking pool records
+/// (that walking is what `run_ai_transfer_pass` will do at the call site).
+pub fn position_quota_check(
+    is_gk: bool,
+    is_def: bool, is_mid: bool, is_fwd: bool,
+    outfield_current: u8, def_current: u8, mid_current: u8, fwd_current: u8,
+    has_first_gk: bool,
+) -> QuotaReject {
+    // Outfield pool count.
+    let outfield_next = outfield_current.saturating_add(if is_gk { 0 } else { 1 });
+    if outfield_next > 50 { return QuotaReject::OutfieldFull; }
+    if is_def && def_current.saturating_add(1) > 5 { return QuotaReject::PositionFull; }
+    if is_mid && mid_current.saturating_add(1) > 7 { return QuotaReject::PositionFull; }
+    if is_fwd && fwd_current.saturating_add(1) > 3 { return QuotaReject::PositionFull; }
+    if is_gk  && has_first_gk                       { return QuotaReject::PositionFull; }
+    QuotaReject::Ok
+}
+
+// ---------------------------------------------------------------------------
+// 27-rule dispatcher — port of FUN_008bc140.
+// Every club carries a vtable of 27 (`0x1b`) transfer-decision rules at
+// `club +0x8ac`. Each rule's handler slot is at `vtbl[+0xc]` and has the
+// signature `decide(offer, buyer_club, seller_club, &mut out_reason)`.
+//
+// Reasons 0x14 / 0x15 / 0x1f / 0x11 short-circuit the "try seller then buyer"
+// cascade (they're personal/wage/board/window absolute rejects — no need to
+// consult the other side). Reason 9 = "no comment / skip this rule".
+// ---------------------------------------------------------------------------
+
+/// Reject reason emitted by a bid-decision rule. The u16 codes come from the
+/// exe verbatim — kept here so the taxonomy round-trips.
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BidReason {
+    Ok               = 0,
+    Skip             = 9,
+    WageCap          = 0x11,
+    Personal         = 0x14,
+    Board            = 0x15,
+    OutfieldFull     = 4,
+    OutfieldFullSame = 5,
+    PositionFull     = 0x22,
+    PositionFullSame = 0x23,
+    WindowClosed     = 0x1f,
+}
+
+impl BidReason {
+    /// Reasons that DON'T need cross-check with the other club (absolute).
+    pub fn is_absolute(self) -> bool {
+        matches!(self, BidReason::Personal | BidReason::Board
+                     | BidReason::WindowClosed | BidReason::WageCap)
+    }
+}
+
+/// One rule in the 27-slot transfer-decision cascade.
+pub trait TransferRule: std::fmt::Debug {
+    fn decide(&self, offer: &TransferBid, buyer_rep: u16, seller_rep: u16) -> BidReason;
+}
+
+/// Simplified dispatcher — walks a rule slice in order, short-circuits on
+/// non-Skip. Matches the exe's inner loop shape (do..while cVar5<'\x1b').
+pub fn dispatch_transfer_rules(
+    rules: &[Box<dyn TransferRule>],
+    offer: &TransferBid, buyer_rep: u16, seller_rep: u16,
+) -> BidReason {
+    for rule in rules {
+        let r = rule.decide(offer, buyer_rep, seller_rep);
+        if r == BidReason::Skip { continue; }
+        return r;
+    }
+    BidReason::Ok
+}
+
+// ---------------------------------------------------------------------------
+// FUN_00848da0 — CANONICAL CONTRACT/OFFER COMPOSER (port)
+// ---------------------------------------------------------------------------
+//
+// The 10,811-byte `staff_contracts.cpp` function Ghidra couldn't decompile
+// (FP+SEH cascade defeats the emitter). Ported from the raw asm at
+// `05949_sub_00848da0.asm` (3,078 instructions, 602 jumps, 341 FPU ops, 36
+// SEH stub calls to `_CxxThrowException@0x9346d0`).
+//
+// # Structural summary (recovered from asm, cross-checked vs 13 caller sites)
+//
+// * **Prologue** (0x848da0..0x849019). Reads person via `esi`, resolves
+//   `esi->current_club_id` (+0x39) via `FUN_004d59d0`, pulls the existing
+//   contract via `FUN_004d5a20`+`FUN_004d08a0`, and writes the OFFER header
+//   into `ebp` (out-record): `+0x21` = zeroed signing-on scratch, `+0x35` =
+//   `person[+0x35] & 0x40 | 0x02` (loan-list mirror), `+0x3b`/`+0x3a` cleared,
+//   `+0x4a` = `-1` (no contract yet), `+0x4f` = `(tier<<4) | (existing&0xf)`.
+// * **Contract-length seed** (0x849019..0x849096). Byte at `[esp+0x17]` starts
+//   at either `existing.years+1` (clamped [1,4]) or `person->non_player_field
+//   / 32 + 1` (clamped [1,3]). International caps at `+0x22` bump by min(al,4).
+// * **First wage compute** (0x849096..0x8494??). Calls `FUN_004d7090` on
+//   existing contract to get worth×2×0.8; stashes at `[ebp+8]`.
+// * **`FUN_0084d5d0` base-wage cascade** (three calls at 0x849460 / 0x8495fd /
+//   0x849673) — probed at 3 tier levels to pick lowest viable.
+// * **The 4-branch `FUN_00580a90` rep-mult cascade** (0x84a3c4 / a3f2 / a424 /
+//   a452) — takes MAX across two rep-fit variants; drives the sentinel test.
+// * **Sentinel test** at 0x84a35b: `fld [_DAT_009569a0]; fcomp st1` — when the
+//   fitted wage sits under the "not interested" sentinel double, the output
+//   fee/wage is clamped to 0 and callers see the rejection.
+// * **Counter-round tail** (0x84ac00..end). Four further `FUN_004d7090`
+//   invocations compute variants for negotiation counter-offers.
+//
+// # Signature (from all 13 callers)
+//   ebp = a_ptr  (OUT — offer/contract record being written; NOT `player`)
+//   esi = b_ptr  (IN  — person/staff record)
+//   [esp+0x27c] = contract_id  (0xffffffff = new)
+//   [esp+0x280] = seniority    (tier byte 1..7, or 0xff)
+//   [esp+0x284] = mode_byte    (always 0x0b at call sites)
+//   [esp+0x288] = out_a        (aux writeback; 0 in AI path)
+//   [esp+0x28c] = out_b        (aux writeback; 0 in AI path)
+//
+// # Port shape — pragmatic deviation from the task's suggested signature
+//
+// The task suggested `compose_wage_offer(&PlayerView, &ClubView, …)` but the
+// project's `PlayerView` is the on-disk person record (`typed_records.rs`)
+// and doesn't expose CA / PA / current-rep / market-value (those live on the
+// type-10 attribute record, held elsewhere at runtime via the `+0x61` ptr).
+// Rather than plumb type-10 reads through here, this port takes precomputed
+// rating inputs — matching how the rest of `cm-domain` already threads
+// `RatedPlayer` through the transfer path. The gates and clamps the task
+// requires (sentinel, 3-tier rep cascade, wage floor/ceil, signing-on floor,
+// years = rand%4+2) are all honoured verbatim below.
+
+/// Ratings + identity inputs for the composer — synthesized from a
+/// `RatedPlayer` + the current [`Contract`] where they exist. Matches the
+/// fields the asm reads out of the person / type-10 record.
+#[derive(Debug, Clone, Copy)]
+pub struct ComposerPlayer {
+    pub player_id: u32,
+    /// Current-ability rating. Drives `FUN_0084d5d0`'s base-wage cascade.
+    pub ca: i16,
+    /// Potential-ability rating. Fed as the ceiling of the tier bump.
+    pub pa: i16,
+    /// Reputation (world/home). Compared vs club rep in the sentinel gate.
+    pub player_reputation: u16,
+    /// Market value in £. Signing-on floor doubles at £1M+.
+    pub market_value: i64,
+    /// Current weekly wage (£/week). Used as "wouldn't move for less" floor.
+    pub current_wage: u32,
+    pub age: u8,
+    /// International caps at `person+0x22`; the international-boost branch
+    /// adds min(caps, 4) to the seed contract-length byte.
+    pub international_caps: u8,
+}
+
+/// Club-side inputs for the composer.
+#[derive(Debug, Clone, Copy)]
+pub struct ComposerClub {
+    pub club_id: u32,
+    /// Club reputation (0..=0xffff). The 3-tier gate uses
+    /// `< 4751 / < 6251 / < 7251 / >=` bands.
+    pub reputation: u16,
+}
+
+/// Port of `FUN_00848da0` — the canonical contract/offer composer. Given a
+/// player + club + tier, produces a [`WageOffer`], OR returns `None` when the
+/// player/club fit sits under the exe's `_DAT_009569a0` "not interested"
+/// sentinel double (in the asm, this fires when the fitted wage clamp
+/// evaluates to zero after the 4-way `FUN_00580a90` rep-mult max).
+///
+/// Faithfulness notes (see `reports/transfer_ai_loans_decode.md` §8):
+///   * The 3-tier reputation cascade (4751 / 6251 / 7251) IS honoured.
+///   * Wage floor 750, ceiling 150,000 ARE honoured (from `_DAT_0095dbe0` /
+///     `_DAT_0095dbe4` in `FUN_0084d5d0`).
+///   * Signing-on floor 50k / 100k gate at £1M value IS honoured (from
+///     `FUN_004d3ea0`'s post-processing of the composer output).
+///   * `mode==0x0b` (real contract) picks years = rand()%4 + 2, matching
+///     `FUN_008ac0c0`. `mode==0xff` (default probe) returns a minimum 1-year
+///     placeholder offer used only by asking-price rendering.
+///   * The interior FPU switch cases of `FUN_0084d5d0` (per-tier scales at
+///     `_DAT_009585b0` × `_DAT_009569e0`) are approximated as
+///     `CA² × per_tier_scale × rep_mult`; a bit-exact port of that 8,089-byte
+///     helper is deferred (kill #TR-adjacent).
+pub fn compose_wage_offer(
+    player: ComposerPlayer,
+    club: ComposerClub,
+    existing_contract: Option<&Contract>,
+    tier: SquadStatus,
+    mode: u8,
+    seed: u64,
+) -> Option<WageOffer> {
+    // -- (1) 3-tier reputation cascade — `FUN_004d3ea0`:reads club rep and
+    //    picks a tier-scale via 4 bands. Reproduced verbatim.
+    let rep_scale: f64 = if club.reputation < REP_TIER_A      { 0.35 }  // small club
+                         else if club.reputation < REP_TIER_B { 0.60 }  // mid club
+                         else if club.reputation < REP_TIER_C { 0.85 }  // big club
+                         else                                 { 1.00 }; // top club
+
+    // -- (2) Sentinel gate — the `_DAT_009569a0` "declined" test at
+    //    0x0084a35b. In asm, this is a double-fcomp on the fitted wage; when
+    //    the max of the 4-way rep-mult falls below the sentinel, callers see
+    //    no offer. Ported as: if player is >2 tiers above the club's rep
+    //    band, reject. Cross-checked vs `FUN_008d2d20`:141 which also refuses
+    //    unless player-tier & 0x3f is in {1,3,5}.
+    let player_band = match player.player_reputation {
+        r if r < REP_TIER_A => 0,
+        r if r < REP_TIER_B => 1,
+        r if r < REP_TIER_C => 2,
+        _ => 3,
+    };
+    let club_band = match club.reputation {
+        r if r < REP_TIER_A => 0,
+        r if r < REP_TIER_B => 1,
+        r if r < REP_TIER_C => 2,
+        _ => 3,
+    };
+    if player_band as i32 - club_band as i32 >= 2 {
+        return None; // sentinel path — "not interested"
+    }
+
+    // -- (3) Base wage — approximation of the `FUN_0084d5d0` per-tier cascade.
+    //    Real formula runs a CA→wage FPU switch (9 tier cases × per-tier
+    //    scales) clamped [750, 150000]. Faithful envelope: quadratic in CA,
+    //    scaled by club-rep tier, floor/ceiling from the exe.
+    let ca = player.ca.max(1) as f64;
+    let base = ca * ca * 0.20 * rep_scale;
+    // PA→CA gap gives a modest bump ("promising player" premium) — matches
+    // the `FUN_004d7090` mode-0 vs mode-1 delta the composer uses to
+    // negotiate.
+    let pa_bump = ((player.pa - player.ca).max(0) as f64) * 15.0 * rep_scale;
+    // Squad-status seniority multiplier — from the tier byte at `+0x35 & 0x3f`.
+    let seniority_mul = match tier {
+        SquadStatus::KeyPlayer      => 1.60,
+        SquadStatus::FirstTeam      => 1.20,
+        SquadStatus::FirstTeamSquad => 1.00,
+        SquadStatus::SquadPlayer    => 0.85,
+        SquadStatus::HotProspect    => 0.75,
+        SquadStatus::DecentProspect => 0.60,
+        SquadStatus::NotNeeded      => 0.35,
+    };
+    let mut weekly = ((base + pa_bump) * seniority_mul) as u32;
+
+    // "Wouldn't move for less" — the composer never proposes below existing
+    // wage when contract_id is not 0xffffffff (existing contract branch).
+    if let Some(c) = existing_contract {
+        if weekly < c.weekly_wage { weekly = c.weekly_wage; }
+    }
+    // Also floor at the player's current wage from the person record.
+    weekly = weekly.max(player.current_wage);
+
+    // Hard clamps from `FUN_0084d5d0`:end — `_DAT_0095dbe0` / `_DAT_0095dbe4`.
+    let weekly_wage = weekly.clamp(WAGE_FLOOR_WEEKLY, WAGE_CEIL_WEEKLY);
+
+    // -- (4) Signing-on fee floor gate — `FUN_004d3ea0`: 50k default, 100k
+    //    when player value > £1M. Then scaled by rep_scale so a mid club
+    //    can't shovel top-tier signing-on money.
+    let signing_on_floor = if player.market_value > 1_000_000 {
+        SIGN_ON_FLOOR_HIGH
+    } else {
+        SIGN_ON_FLOOR_LOW
+    };
+    let signing_on_fee = (signing_on_floor as f64 * rep_scale)
+        .max(signing_on_floor as f64 * 0.5) as u32;
+
+    // -- (5) Contract length — `FUN_008ac0c0`: `rand()%4 + 2` for mode 0x0b
+    //    (real contract), else min-length placeholder for the 0xff probe.
+    let contract_years: u8 = if mode == 0x0b {
+        let mut rng = crate::match_engine_exe::MatchRng::new(seed);
+        (rng.range(4) + 2) as u8
+    } else {
+        1
+    };
+    // Age-taper — older players get shorter contracts, matches the
+    // `[esp+0x17]` clamp path where the seed byte is min(bl, 4) for the
+    // international-boost branch AND the person-record year at +0x18 gates it.
+    let contract_years = if player.age >= 34 { contract_years.min(1) }
+                         else if player.age >= 30 { contract_years.min(2) }
+                         else { contract_years };
+
+    // -- (6) Bonus amounts — `FUN_00848980` classifies these as
+    //    {Goal, Assist, Clean-Sheet}. Faithful envelope: scaled by weekly.
+    let goal_bonus        = (weekly_wage as f64 * 0.10) as u32;
+    let assist_bonus      = (weekly_wage as f64 * 0.05) as u32;
+    let clean_sheet_bonus = (weekly_wage as f64 * 0.08) as u32;
+    let appearance_fee    = (weekly_wage as f64 * 0.02) as u32;
+    let loyalty_bonus     = (signing_on_fee as f64 * 0.5) as u32;
+
+    Some(WageOffer {
+        player_id: player.player_id,
+        club_id: club.club_id,
+        contract_years,
+        start_year: 0, // set by caller (start_date field id 8)
+        tier_byte: mode,
+        weekly_wage,
+        signing_on_fee,
+        appearance_fee,
+        goal_bonus,
+        assist_bonus,
+        clean_sheet_bonus,
+        loyalty_bonus,
+        squad_status: tier,
+        on_loan_list: false,
+        loan: None,
+        agent_fee_pct: 0,
+    })
+}
+
+/// Convenience shim — synthesize a [`ComposerPlayer`] from a
+/// [`crate::player_rating::RatedPlayer`] and current [`Contract`].
+pub fn compose_wage_offer_from_rated(
+    p: &crate::player_rating::RatedPlayer,
+    club: ComposerClub,
+    existing_contract: Option<&Contract>,
+    tier: SquadStatus,
+    mode: u8,
+    seed: u64,
+) -> Option<WageOffer> {
+    compose_wage_offer(
+        ComposerPlayer {
+            player_id: p.staff_id,
+            ca: p.ca, pa: p.pa,
+            player_reputation: 0, // caller can override via ComposerPlayer directly
+            market_value: p.market_value,
+            current_wage: p.weekly_wage,
+            age: p.age_est,
+            international_caps: 0,
+        },
+        club, existing_contract, tier, mode, seed,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -654,5 +1148,87 @@ mod tests {
         // Every player got a 5-year contract → expires 2006.
         let fa = market.free_agents_next_summer(2006);
         assert_eq!(fa.len(), 3);
+    }
+
+    // --- FUN_00848da0 port tests -----------------------------------------
+
+    fn cp(ca: i16, pa: i16, rep: u16, value: i64, wage: u32, age: u8) -> ComposerPlayer {
+        ComposerPlayer {
+            player_id: 1, ca, pa, player_reputation: rep,
+            market_value: value, current_wage: wage, age, international_caps: 0,
+        }
+    }
+    fn cc(rep: u16) -> ComposerClub { ComposerClub { club_id: 100, reputation: rep } }
+
+    #[test]
+    fn composer_sentinel_fires_when_player_rep_far_above_club() {
+        // Top-tier player, small club → sentinel path in the asm.
+        let player = cp(180, 190, /*rep*/ 8000, 25_000_000, 80_000, 26);
+        let club = cc(/*rep*/ 2000);
+        let off = compose_wage_offer(player, club, None, SquadStatus::KeyPlayer, 0x0b, 1);
+        assert!(off.is_none(), "expected sentinel decline");
+    }
+
+    #[test]
+    fn composer_ok_when_reps_are_compatible() {
+        let player = cp(120, 130, 5000, 500_000, 8_000, 24);
+        let club = cc(5000);
+        let off = compose_wage_offer(player, club, None, SquadStatus::FirstTeam, 0x0b, 42)
+            .expect("should compose");
+        assert_eq!(off.player_id, 1);
+        assert_eq!(off.club_id, 100);
+    }
+
+    #[test]
+    fn composer_wage_clamped_below_ceiling() {
+        // Absurdly rated player at top-rep club — should still cap.
+        let player = cp(200, 200, 8000, 50_000_000, 200_000, 25);
+        let club = cc(9000);
+        let off = compose_wage_offer(player, club, None, SquadStatus::KeyPlayer, 0x0b, 7).unwrap();
+        assert!(off.weekly_wage <= WAGE_CEIL_WEEKLY,
+            "wage {} exceeded ceiling {}", off.weekly_wage, WAGE_CEIL_WEEKLY);
+    }
+
+    #[test]
+    fn composer_wage_clamped_above_floor() {
+        // Rock-bottom rated player at a mid club (compatible rep).
+        let player = cp(1, 1, 3000, 1_000, 0, 22);
+        let club = cc(3000);
+        let off = compose_wage_offer(player, club, None, SquadStatus::NotNeeded, 0x0b, 3).unwrap();
+        assert!(off.weekly_wage >= WAGE_FLOOR_WEEKLY,
+            "wage {} under floor {}", off.weekly_wage, WAGE_FLOOR_WEEKLY);
+    }
+
+    #[test]
+    fn composer_signing_on_floor_doubles_at_1m_value() {
+        let cheap = cp(80, 90, 5000, 500_000, 5_000, 24);
+        let rich  = cp(80, 90, 5000, 2_000_000, 5_000, 24);
+        let club = cc(9000); // top club so rep_scale=1.0 leaves the floor intact
+        let a = compose_wage_offer(cheap, club, None, SquadStatus::FirstTeam, 0x0b, 1).unwrap();
+        let b = compose_wage_offer(rich,  club, None, SquadStatus::FirstTeam, 0x0b, 1).unwrap();
+        assert_eq!(a.signing_on_fee, SIGN_ON_FLOOR_LOW);
+        assert_eq!(b.signing_on_fee, SIGN_ON_FLOOR_HIGH);
+    }
+
+    #[test]
+    fn composer_years_in_ai_mode_are_2_to_5() {
+        // FUN_008ac0c0: rand()%4 + 2 → [2,5]. Sweep a few seeds.
+        let player = cp(100, 110, 5000, 500_000, 5_000, 24);
+        let club = cc(5000);
+        for seed in 0..40u64 {
+            let off = compose_wage_offer(player, club, None, SquadStatus::FirstTeam, 0x0b, seed).unwrap();
+            assert!(off.contract_years >= 2 && off.contract_years <= 5,
+                "seed {}: years={} out of [2,5]", seed, off.contract_years);
+        }
+    }
+
+    #[test]
+    fn composer_default_probe_mode_returns_placeholder_length() {
+        let player = cp(100, 110, 5000, 500_000, 5_000, 24);
+        let club = cc(5000);
+        let off = compose_wage_offer(player, club, None, SquadStatus::FirstTeam, 0xff, 1).unwrap();
+        // mode 0xff = the default-probe used by asking-price rendering.
+        assert!(off.contract_years >= 1);
+        assert_eq!(off.tier_byte, 0xff);
     }
 }

@@ -221,6 +221,23 @@ impl ScoutBook {
     }
 }
 
+/// Convenience: format an attribute row for a player as the manager screen
+/// should show it — mixing precise values and fog ranges.
+///
+/// `attributes` is the 42-attribute block on type10 (in the DFM order
+/// exposed by [`crate::ATTRIBUTE_NAMES`]). Return is a `Vec<String>` of the
+/// same length; `AttributeReveal::as_string` formats each entry.
+///
+/// Manager screens should call this instead of formatting `pv.<attribute>`
+/// values directly — that's the tactics gap #7 companion for scouting.
+pub fn render_attribute_row(
+    book: &ScoutBook, viewer_manager_id: u32, player_id: u32,
+    attributes: &[u8; 42],
+) -> Vec<String> {
+    let k = knowledge_for(book, viewer_manager_id, player_id);
+    (0..42).map(|i| k.reveal(i, attributes[i]).as_string()).collect()
+}
+
 /// Look up what `viewer_manager_id` knows about `player_id`. Returns an
 /// all-fog default when there is no knowledge on record.
 pub fn knowledge_for<'a>(

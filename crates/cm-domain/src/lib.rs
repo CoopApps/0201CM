@@ -1843,6 +1843,13 @@ pub struct RuntimeSaveGame {
     /// load, or per manager choice from the Tactics screen.
     #[serde(default)]
     pub club_tactics: std::collections::BTreeMap<u32, crate::tactic_file::Tactic>,
+    /// Per-manager scout knowledge (the exe's 16 mgrs × 10 slots
+    /// ScoutManager + fog_of_war cache). Weekly-ticked by
+    /// [`hook_weekly_wednesday`] via `ScoutBook::weekly_tick`. See
+    /// `crates/cm-domain/src/scouting.rs` and
+    /// `reports/scouting_decode.md`.
+    #[serde(default)]
+    pub scouts: crate::scouting::ScoutBook,
     /// The human managers in this game. Multiple are supported (hotseat); each
     /// holds their own club/nation appointment. Created at runtime via
     /// `add_manager` — the exe's "Add Manager" (command 0x3fb).
@@ -12745,6 +12752,7 @@ impl World {
         // of `player_regen::regen_fill_club_squad`.
         let _regen_assigned = rating_book.assign_free_agents_to_empty_clubs(8, 14);
         RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -19520,6 +19528,10 @@ impl RuntimeSaveGame {
         }
         // Weekly training pass — moves CA toward PA (or slowly declines old
         // resters) via the fractional-growth accumulator (interim CA feed).
+        // Scout knowledge tick (weekly): every active scout on every human's
+        // book grows coverage against its watch target, and per-attribute
+        // reveal bits flip at 25/50/75/100% checkpoints. See scouting.rs.
+        self.scouts.weekly_tick();
         self.training.apply_weekly_growth(&mut self.player_ratings);
         // Faithful per-attribute development (kill #TR): real CM0102 training —
         // each player's attributes grow/decline by category effectiveness
@@ -22634,6 +22646,7 @@ mod tests {
     #[test]
     fn runtime_tick_uses_three_cm_phases_per_day() {
         let mut save = RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -22853,6 +22866,7 @@ mod tests {
     #[test]
     fn headless_run_records_shell_progress_and_blockers() {
         let mut save = RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -22951,6 +22965,7 @@ mod tests {
     #[test]
     fn headless_campaign_records_checkpoints_and_backend_summary() {
         let mut save = RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -23041,6 +23056,7 @@ mod tests {
     #[test]
     fn headless_campaign_retains_recent_mutation_log_but_counts_all_entries() {
         let mut save = RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -23125,6 +23141,7 @@ mod tests {
     #[test]
     fn headless_manager_profile_records_session_command() {
         let mut save = RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
@@ -23208,6 +23225,7 @@ mod tests {
     #[test]
     fn runtime_tick_to_date_advances_by_cm_phase_rollovers() {
         let mut save = RuntimeSaveGame {
+            scouts: Default::default(),
             club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
