@@ -59,6 +59,23 @@ pub struct SeasonScore {
     pub ca: i16,
 }
 
+/// Per-competition season/career average rating — VERIFIED port of
+/// `FUN_007aa490:73-77` case 0x11. The exe's real rating-average formula
+/// is a straight arithmetic mean: `avg = rating_sum / appearances`, where
+/// the sum is an i16 at sub-block `+0x0e` and the count is a u8 at `+0x00`.
+/// Both are per-competition (fetched via `FUN_007abc60(person, comp_id)`).
+///
+/// Returns `None` when the player hasn't appeared in that competition yet
+/// (dividing 0/0 in the exe just falls through — L73 `if (*param_1 != 0)`).
+///
+/// Composite career variants (categories 'd'/'e'/'f') in `007aa170.c`
+/// blend blocks 2..5 with weights 6.5f; the primitive is still this
+/// `sum/count`. See `reports/season_avg_writer_hunt.md`.
+#[inline]
+pub fn season_avg_rating(appearances: u8, rating_sum: i16) -> Option<f32> {
+    if appearances == 0 { None } else { Some(rating_sum as f32 / appearances as f32) }
+}
+
 /// Deterministic per-id wobble in the range [0.0, 50.0). Seeded by the
 /// staff id so a player's score is stable across ticks + saves.
 fn wobble(staff_id: u32) -> f32 {
@@ -397,6 +414,17 @@ impl PlayerRatingBook {
     }
 
     /// The score every award category uses as its base metric.
+    ///
+    /// NOTE — this is the current STUB. The verified formula from CM01/02
+    /// (FUN_007aa490:73-77 case 0x11) is `sum / count` from a per-competition
+    /// stats sub-block on the person: sum at `+0x0e` (i16), count at `+0x00`
+    /// (u8), fetched via `FUN_007abc60(person, competition_id)`. See
+    /// [`season_avg_rating`] for the verified formula and
+    /// `reports/season_avg_writer_hunt.md` for the full decode.
+    ///
+    /// This stub stays until the per-match `sum += rating` / `count += 1`
+    /// accumulator writer is located (OPEN GAP — expected in the same
+    /// post-match commit path that writes PersonRecord `+0x0b` short).
     pub fn season_rating(&self, p: &RatedPlayer) -> f32 {
         p.ca as f32 * 0.8 + wobble(p.staff_id) * 0.2
     }

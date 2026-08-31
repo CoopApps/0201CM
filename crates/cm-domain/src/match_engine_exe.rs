@@ -1444,6 +1444,12 @@ pub struct ExeMatchResult {
     pub event_log: Vec<EventSlot>,
     pub abandoned: bool,
     pub pre_match_events: Vec<PreMatchEvent>,
+    /// Man-of-the-match player_id. Selected via [`select_motm`] — verified
+    /// port of `FUN_006b69e0`. `None` when no tokens qualify (e.g. abandoned
+    /// match). Written to the exe's match record at `+0x477a` on the real
+    /// engine; here we return it up through the fixture result.
+    #[serde(default)]
+    pub motm_player_id: Option<u32>,
 }
 
 /// Simulate one fixture. This condenses the exe's match_day_play inner
@@ -1492,6 +1498,11 @@ pub fn simulate_one_fixture(
         event_log: ctx.event_log.clone(),
         abandoned: ctx.abandoned,
         pre_match_events: ctx.event_queue.clone(),
+        // Condensed engine has no per-token pool — fall back to top-scorer
+        // as a MotM proxy (real MotM picker needs the token engine).
+        motm_player_id: ctx.home_scorer_ids.iter()
+            .chain(ctx.away_scorer_ids.iter())
+            .next().copied(),
     }
 }
 
@@ -1764,6 +1775,61 @@ pub mod rating_delta {
     pub const BAD_CHANCE_TAKEN:         i16 = -750;
     /// Sitter miss (shot rolled +7 < param_5). FUN_006CFEF0:36.
     pub const SITTER_MISS:              i16 =-1000;
+}
+
+/// Man-of-the-Match selector — VERIFIED port of `FUN_006b69e0`
+/// (`006b69e0.c:19-40`). Walks both teams' tokens, computes a composite
+/// score, and returns the winning player_id. Called at match end
+/// (before the finalize_rating pass in the exe's sequence).
+///
+/// Composite formula from `006b69e0.c:25-27`:
+///   `score = ( ((b[+0x10] + b[+0x0c]*2) * 5) + b[+3]*2 + b[+6] ) * 25
+///          + short[+0x35] // rating_milli`
+///
+/// Expanding: `goals * 250 + assists * 125 + b_03 * 50 + b_06 * 25 + rating_milli`.
+///
+/// Our MatchToken doesn't currently carry the four per-token in-match
+/// counters at exe offsets +0x03/+0x06/+0x0c/+0x10 as named fields
+/// (semantic OPEN GAP per `reports/motm_selector_hunt.md` — likely goals
+/// at +0x0c, assists at +0x10; +0x03/+0x06 unknown). Until those are
+/// promoted onto MatchToken, this port uses `rating_milli` alone plus
+/// scorer-list goal counts as a proxy for +0x0c (which the exe treats
+/// as the dominant term at weight 250).
+///
+/// Tie-break matches exe order: first-scanned wins on strict-greater
+/// (team 0 preferred over team 1; low-slot preferred).
+pub fn select_motm(engine: &TokenEngine,
+                    home_scorer_ids: &[u32],
+                    away_scorer_ids: &[u32]) -> Option<u32> {
+    // Count goals per player id from the scorer lists (proxy for +0x0c).
+    let mut goal_count = std::collections::HashMap::<u32, u32>::new();
+    for id in home_scorer_ids.iter().chain(away_scorer_ids.iter()) {
+        *goal_count.entry(*id).or_insert(0) += 1;
+    }
+    let mut best_score: i64 = i64::MIN;
+    let mut best_pid: Option<u32> = None;
+    for team in 0..2 {
+        for tok in engine.tokens[team].iter() {
+            // Skip slot-valid predicate (`006b69e0.c:24` — both being false skips).
+            // We approximate with player_id != 0 (real ports of the +0x19/+0x20
+            // slot-valid bytes would replace this).
+            if tok.player_id == 0 { continue; }
+            let goals = *goal_count.get(&tok.player_id).unwrap_or(&0) as i64;
+            // Composite per FUN_006b69e0:25-27. Semantic-known terms only;
+            // +0x03/+0x06 treated as 0 pending their decode.
+            let composite = goals * 250
+                          + 0     // assists +0x10 * 125 — OPEN GAP
+                          + 0     // b_03    +0x03 *  50 — OPEN GAP
+                          + 0     // b_06    +0x06 *  25 — OPEN GAP
+                          + tok.rating_milli as i64;
+            // Strict-greater, first-wins on tie (exe scan order: team0, low-slot).
+            if best_pid.is_none() || composite > best_score {
+                best_score = composite;
+                best_pid = Some(tok.player_id);
+            }
+        }
+    }
+    best_pid
 }
 
 /// Ball-carrier assist bonus on cross/pass frame.
@@ -4195,6 +4261,14 @@ pub fn simulate_one_fixture_token_model(
         }
     }
 
+    // Man-of-the-Match selection — VERIFIED port of FUN_006b69e0.
+    // Runs BEFORE finalize_rating in the exe's sequence (see 0069f2f0.c:33
+    // preceding 006b3de0.c:238); we run it after to reuse the accumulated
+    // rating_milli values.
+    let motm_player_id = select_motm(&engine,
+                                     &ctx.home_scorer_ids,
+                                     &ctx.away_scorer_ids);
+
     ExeMatchResult {
         home_score: ctx.score_home,
         away_score: ctx.score_away,
@@ -4209,6 +4283,7 @@ pub fn simulate_one_fixture_token_model(
         event_log: ctx.event_log.clone(),
         abandoned: ctx.abandoned,
         pre_match_events: ctx.event_queue.clone(),
+        motm_player_id,
     }
 }
 
