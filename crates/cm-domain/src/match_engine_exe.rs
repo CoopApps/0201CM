@@ -4126,6 +4126,8 @@ mod tests {
                 speciality_a: 0, speciality_b: 0,
                 position_natural: (2 + (i % 8)) as u8,
                 position_learn: 0,
+                heading: 10, important_matches: 10, dribbling: 10,
+                decisions: 10, throw_ins: 10,
             }).collect(),
         }
     }

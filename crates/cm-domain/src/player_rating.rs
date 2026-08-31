@@ -485,11 +485,11 @@ mod tests {
     #[test]
     fn poty_picks_highest_rated_in_division() {
         let a = RatedPlayer { staff_id: 1, club_id: Some(10), division_id: Some(7),
-                              ca: 150, pa: 160, goals_est: 10, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
+                              ca: 150, pa: 160, goals_est: 10, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let b = RatedPlayer { staff_id: 2, club_id: Some(11), division_id: Some(7),
-                              ca: 180, pa: 190, goals_est: 15, age_est: 26, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
+                              ca: 180, pa: 190, goals_est: 15, age_est: 26, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let c = RatedPlayer { staff_id: 3, club_id: Some(20), division_id: Some(8),
-                              ca: 200, pa: 200, goals_est: 30, age_est: 27, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };  // other division
+                              ca: 200, pa: 200, goals_est: 30, age_est: 27, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };  // other division
         let book = PlayerRatingBook { players: vec![a.clone(), b.clone(), c.clone()], ..Default::default() };
         assert_eq!(book.player_of_the_season(7).unwrap().staff_id, 2);
         assert_eq!(book.player_of_the_season(8).unwrap().staff_id, 3);
@@ -498,9 +498,9 @@ mod tests {
     #[test]
     fn cross_division_award_picks_best_across_set() {
         let a = RatedPlayer { staff_id: 1, club_id: Some(10), division_id: Some(24),
-                              ca: 170, pa: 180, goals_est: 12, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
+                              ca: 170, pa: 180, goals_est: 12, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let b = RatedPlayer { staff_id: 2, club_id: Some(11), division_id: Some(25),
-                              ca: 195, pa: 195, goals_est: 25, age_est: 28, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, position_aptitudes: [0;12] };
+                              ca: 195, pa: 195, goals_est: 25, age_est: 28, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let book = PlayerRatingBook { players: vec![a, b], ..Default::default() };
         assert_eq!(book.player_of_the_season_across(&[24, 25]).unwrap().staff_id, 2);
     }

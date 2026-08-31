@@ -77,6 +77,13 @@ pub struct TrainingBook {
     pub schedules: Vec<PlayerTraining>,
     #[serde(default)]
     pub accumulators: Vec<GrowthAccumulator>,
+    /// The faithful per-attribute development system (kill #TR) — real CM0102
+    /// training (coach-gated, schedule-driven per-attribute growth/decline).
+    /// The `apply_weekly_growth` CA-drift above is retained only as an interim
+    /// CA continuity feed for the awards book until CA is recomputed from these
+    /// attributes.
+    #[serde(default)]
+    pub development: crate::player_development::PlayerDevelopmentBook,
 }
 
 impl TrainingBook {
@@ -90,6 +97,7 @@ impl TrainingBook {
                                           schedule: TrainingSchedule::Balanced })
                 .collect(),
             accumulators: Vec::new(),
+            development: Default::default(),
         }
     }
 
@@ -165,7 +173,7 @@ mod tests {
 
     fn mk(id: u32, ca: i16, pa: i16, age: u8) -> RatedPlayer {
         RatedPlayer { staff_id: id, club_id: Some(10), division_id: Some(24),
-                      ca, pa, goals_est: 10, age_est: age }
+                      ca, pa, goals_est: 10, age_est: age, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] }
     }
 
     #[test]
@@ -173,7 +181,7 @@ mod tests {
         let mut ratings = PlayerRatingBook { players: vec![
             mk(1, 100, 180, 18),   // young, room to grow
             mk(2, 100, 180, 28),   // older, same room
-        ]};
+        ], ..Default::default()};
         let mut book = TrainingBook::seed_from_ratings(&ratings);
         for _ in 0..200 { book.apply_weekly_growth(&mut ratings); }
         assert!(ratings.players[0].ca > ratings.players[1].ca,
@@ -184,7 +192,7 @@ mod tests {
     fn ca_never_exceeds_pa() {
         let mut ratings = PlayerRatingBook { players: vec![
             mk(1, 195, 200, 20),
-        ]};
+        ], ..Default::default()};
         let mut book = TrainingBook::seed_from_ratings(&ratings);
         for _ in 0..1000 { book.apply_weekly_growth(&mut ratings); }
         assert!(ratings.players[0].ca <= 200);
@@ -192,7 +200,7 @@ mod tests {
 
     #[test]
     fn old_resting_player_declines() {
-        let mut ratings = PlayerRatingBook { players: vec![mk(1, 150, 180, 34)] };
+        let mut ratings = PlayerRatingBook { players: vec![mk(1, 150, 180, 34)], ..Default::default() };
         let mut book = TrainingBook::seed_from_ratings(&ratings);
         book.set_schedule(1, TrainingSchedule::Rest);
         let before = ratings.players[0].ca;

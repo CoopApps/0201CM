@@ -115,13 +115,13 @@ mod tests {
 
     fn mk(id: u32, ca: i16, club: i32) -> RatedPlayer {
         RatedPlayer { staff_id: id, club_id: Some(club), division_id: Some(24),
-                      ca, pa: ca, goals_est: 10, age_est: 25 }
+                      ca, pa: ca, goals_est: 10, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] }
     }
 
     #[test]
     fn squad_is_at_most_22() {
         let players: Vec<_> = (0..40).map(|i| mk(i, 100 + i as i16, 10)).collect();
-        let book = PlayerRatingBook { players };
+        let book = PlayerRatingBook { players, ..Default::default() };
         // Every player is nation 94
         let sq = select_squad(94, &book, |_| Some(94));
         assert_eq!(sq.squad.len(), 22);
@@ -131,7 +131,7 @@ mod tests {
     fn squad_takes_top_rated_first() {
         // Player 39 has highest CA (100+39=139), player 0 has lowest (100).
         let players: Vec<_> = (0..40).map(|i| mk(i, 100 + i as i16, 10)).collect();
-        let book = PlayerRatingBook { players };
+        let book = PlayerRatingBook { players, ..Default::default() };
         let sq = select_squad(94, &book, |_| Some(94));
         // Captain must be the highest-rated (staff_id 39).
         assert_eq!(sq.captain().unwrap().staff_id, 39);
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn only_own_nationality_selected() {
         let players: Vec<_> = (0..10).map(|i| mk(i, 150, 10)).collect();
-        let book = PlayerRatingBook { players };
+        let book = PlayerRatingBook { players, ..Default::default() };
         // Half are nation 94, half are nation 97.
         let sq = select_squad(94, &book, |id| Some(if id % 2 == 0 { 94 } else { 97 }));
         assert!(sq.squad.iter().all(|p| p.staff_id % 2 == 0));
@@ -151,14 +151,14 @@ mod tests {
     #[test]
     fn average_ca_reflects_squad_strength() {
         let players: Vec<_> = (0..22).map(|i| mk(i, 150, 10)).collect();
-        let book = PlayerRatingBook { players };
+        let book = PlayerRatingBook { players, ..Default::default() };
         let sq = select_squad(94, &book, |_| Some(94));
         assert_eq!(sq.average_ca(), 150);
     }
 
     #[test]
     fn empty_pool_yields_empty_squad() {
-        let book = PlayerRatingBook { players: vec![] };
+        let book = PlayerRatingBook { players: vec![], ..Default::default() };
         let sq = select_squad(94, &book, |_| Some(94));
         assert!(sq.squad.is_empty());
         assert!(sq.captain().is_none());

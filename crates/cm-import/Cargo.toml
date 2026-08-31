@@ -7,8 +7,10 @@ description = "One-time importer / verifier: reads an original CM01/02 install's
 
 [dependencies]
 cm-domain = { path = "../cm-domain" }
+cm-data = { path = "../cm-data" }
 cm-db = { path = "../cm-db" }
 cm-rng = { path = "../cm-rng" }
+serde_json = "1"
 
 [[bin]]
 name = "cm-import"
@@ -48,3 +50,23 @@ path = "src/bin/comp_counts.rs"
 [[bin]]
 name = "export-club-comp"
 path = "src/bin/export_club_comp.rs"
+
+[[bin]]
+name = "regen_type10"
+path = "src/bin/regen_type10.rs"
+
+[[bin]]
+name = "regen_type6"
+path = "src/bin/regen_type6.rs"
+
+[[bin]]
+name = "regen_type9"
+path = "src/bin/regen_type9.rs"
+
+[[bin]]
+name = "regen_clubs"
+path = "src/bin/regen_clubs.rs"
+
+[[bin]]
+name = "regen_simple"
+path = "src/bin/regen_simple.rs"

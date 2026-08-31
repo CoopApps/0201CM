@@ -512,74 +512,168 @@ impl<'a> StaffType9Record<'a> {
     }
 }
 
+/// The 70-byte type-10 (player attribute) record — every field named,
+/// verified against the editor's own load code (`FUN_0044773c` reads exactly
+/// 0x46 bytes per record; `FUN_00414d5c` proves the aptitude offset layout;
+/// DFM `tabsheet_staff_pl2` gives the 42-attribute declaration order which
+/// matches on-disk storage byte order).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StaffType10Record<'a> {
     pub bytes: &'a [u8],
 }
 
 impl<'a> StaffType10Record<'a> {
+    // ---- header (+0x00..+0x0f) ----
+    #[inline] fn le_i8(&self, o: usize) -> i8 { self.bytes[o] as i8 }
+    #[inline] fn le_i16(&self, o: usize) -> i16 {
+        i16::from_le_bytes([self.bytes[o], self.bytes[o+1]])
+    }
     pub fn id(&self) -> u32 {
         u32::from_le_bytes([self.bytes[0], self.bytes[1], self.bytes[2], self.bytes[3]])
     }
+    pub fn flags_byte_04(&self) -> u8 { self.bytes[4] }
+    pub fn current_ability(&self) -> i16     { self.le_i16(0x05) }
+    /// Signed — sentinels: -2 super-potential, -1 flexible, 0 category-picked.
+    pub fn potential_ability(&self) -> i16   { self.le_i16(0x07) }
+    pub fn home_reputation(&self) -> i16     { self.le_i16(0x09) }
+    pub fn current_reputation(&self) -> i16  { self.le_i16(0x0b) }
+    pub fn world_reputation(&self) -> i16    { self.le_i16(0x0d) }
+    // ---- position aptitudes (+0x0f..+0x1a, 12 × i8) ----
+    pub fn apt_goalkeeper(&self)     -> i8 { self.le_i8(0x0f) }
+    pub fn apt_sweeper(&self)        -> i8 { self.le_i8(0x10) }
+    pub fn apt_defender(&self)       -> i8 { self.le_i8(0x11) }
+    pub fn apt_def_midfielder(&self) -> i8 { self.le_i8(0x12) }
+    pub fn apt_midfielder(&self)     -> i8 { self.le_i8(0x13) }
+    pub fn apt_att_midfielder(&self) -> i8 { self.le_i8(0x14) }
+    pub fn apt_attacker(&self)       -> i8 { self.le_i8(0x15) }
+    pub fn apt_wing_back(&self)      -> i8 { self.le_i8(0x16) }
+    pub fn apt_right_side(&self)     -> i8 { self.le_i8(0x17) }
+    pub fn apt_left_side(&self)      -> i8 { self.le_i8(0x18) }
+    pub fn apt_central(&self)        -> i8 { self.le_i8(0x19) }
+    pub fn apt_free_role(&self)      -> i8 { self.le_i8(0x1a) }
+    // ---- 42 attributes in DFM order (+0x1b..+0x44) ----
+    pub fn acceleration(&self)       -> i8 { self.le_i8(0x1b) }
+    pub fn aggression(&self)         -> i8 { self.le_i8(0x1c) }
+    pub fn agility(&self)            -> i8 { self.le_i8(0x1d) }
+    pub fn anticipation(&self)       -> i8 { self.le_i8(0x1e) }
+    pub fn balance(&self)            -> i8 { self.le_i8(0x1f) }
+    pub fn bravery(&self)            -> i8 { self.le_i8(0x20) }
+    pub fn consistency(&self)        -> i8 { self.le_i8(0x21) }
+    pub fn corners(&self)            -> i8 { self.le_i8(0x22) }
+    pub fn crossing(&self)           -> i8 { self.le_i8(0x23) }
+    pub fn free_kicks(&self)         -> i8 { self.le_i8(0x24) }
+    pub fn handling(&self)           -> i8 { self.le_i8(0x25) }
+    pub fn heading(&self)            -> i8 { self.le_i8(0x26) }
+    pub fn important_matches(&self)  -> i8 { self.le_i8(0x27) }
+    pub fn injury_proneness(&self)   -> i8 { self.le_i8(0x28) }
+    pub fn jumping(&self)            -> i8 { self.le_i8(0x29) }
+    pub fn leadership(&self)         -> i8 { self.le_i8(0x2a) }
+    pub fn left_foot(&self)          -> i8 { self.le_i8(0x2b) }
+    pub fn long_shots(&self)         -> i8 { self.le_i8(0x2c) }
+    pub fn dirtiness(&self)          -> i8 { self.le_i8(0x2d) }
+    pub fn dribbling(&self)          -> i8 { self.le_i8(0x2e) }
+    pub fn finishing(&self)          -> i8 { self.le_i8(0x2f) }
+    pub fn flair(&self)              -> i8 { self.le_i8(0x30) }
+    pub fn decisions(&self)          -> i8 { self.le_i8(0x31) }
+    pub fn movement(&self)           -> i8 { self.le_i8(0x32) }
+    pub fn natural_fitness(&self)    -> i8 { self.le_i8(0x33) }
+    pub fn one_on_ones(&self)        -> i8 { self.le_i8(0x34) }
+    pub fn marking(&self)            -> i8 { self.le_i8(0x35) }
+    pub fn pace(&self)               -> i8 { self.le_i8(0x36) }
+    pub fn passing(&self)            -> i8 { self.le_i8(0x37) }
+    pub fn penalties(&self)          -> i8 { self.le_i8(0x38) }
+    pub fn positioning(&self)        -> i8 { self.le_i8(0x39) }
+    pub fn reflexes(&self)           -> i8 { self.le_i8(0x3a) }
+    pub fn right_foot(&self)         -> i8 { self.le_i8(0x3b) }
+    pub fn stamina(&self)            -> i8 { self.le_i8(0x3c) }
+    pub fn strength(&self)           -> i8 { self.le_i8(0x3d) }
+    pub fn tackling(&self)           -> i8 { self.le_i8(0x3e) }
+    pub fn teamwork(&self)           -> i8 { self.le_i8(0x3f) }
+    pub fn throw_ins(&self)          -> i8 { self.le_i8(0x40) }
+    pub fn versatility(&self)        -> i8 { self.le_i8(0x41) }
+    pub fn vision(&self)             -> i8 { self.le_i8(0x42) }
+    pub fn work_rate(&self)          -> i8 { self.le_i8(0x43) }
+    pub fn technique(&self)          -> i8 { self.le_i8(0x44) }
+    // ---- footer (+0x45) ----
+    pub fn squad_number(&self)       -> u8 { self.bytes[0x45] }
 
-    pub fn unknown_byte_4(&self) -> u8 {
-        self.bytes[4]
+    // ---- backward-compat: raw slices consumers still ask for ----
+    #[deprecated(note = "use named fields; kept for backward compat")]
+    pub fn unknown_byte_4(&self) -> u8 { self.flags_byte_04() }
+    #[deprecated] pub fn rating_short_0x05(&self) -> u16 { self.current_ability() as u16 }
+    #[deprecated] pub fn rating_short_0x07(&self) -> u16 { self.potential_ability() as u16 }
+    #[deprecated] pub fn rating_short_0x0d(&self) -> u16 { self.world_reputation() as u16 }
+    #[deprecated] pub fn unknown_bytes_9_12(&self) -> [u8; 4] {
+        [self.bytes[9], self.bytes[10], self.bytes[11], self.bytes[12]]
+    }
+    #[deprecated] pub fn unknown_bytes_15_26(&self) -> [u8; 12] {
+        let mut b = [0u8; 12]; b.copy_from_slice(&self.bytes[15..27]); b
+    }
+    #[deprecated] pub fn attributes(&self) -> [u8; 31] {
+        let mut a = [0u8; 31]; a.copy_from_slice(&self.bytes[0x1b..0x1b + 31]); a
+    }
+    #[deprecated] pub fn unknown_bytes_58_64(&self) -> [u8; 7] {
+        let mut b = [0u8; 7]; b.copy_from_slice(&self.bytes[58..65]); b
+    }
+    #[deprecated] pub fn trailing_bytes(&self) -> [u8; 5] {
+        let mut t = [0u8; 5]; t.copy_from_slice(&self.bytes[65..70]); t
     }
 
-    pub fn rating_short_0x05(&self) -> u16 {
-        u16::from_le_bytes([self.bytes[5], self.bytes[6]])
-    }
-
-    pub fn rating_short_0x07(&self) -> u16 {
-        u16::from_le_bytes([self.bytes[7], self.bytes[8]])
-    }
-
-    pub fn unknown_bytes_9_12(&self) -> [u8; 4] {
-        let mut bytes = [0u8; 4];
-        bytes.copy_from_slice(&self.bytes[9..13]);
-        bytes
-    }
-
-    pub fn rating_short_0x0d(&self) -> u16 {
-        u16::from_le_bytes([self.bytes[13], self.bytes[14]])
-    }
-
-    pub fn unknown_bytes_15_26(&self) -> [u8; 12] {
-        let mut bytes = [0u8; 12];
-        bytes.copy_from_slice(&self.bytes[15..27]);
-        bytes
-    }
-
-    pub fn attributes(&self) -> [u8; 31] {
-        let mut attrs = [0u8; 31];
-        attrs.copy_from_slice(&self.bytes[0x1b..0x1b + 31]);
-        attrs
-    }
-
-    pub fn unknown_bytes_58_64(&self) -> [u8; 7] {
-        let mut bytes = [0u8; 7];
-        bytes.copy_from_slice(&self.bytes[58..65]);
-        bytes
-    }
-
-    pub fn trailing_bytes(&self) -> [u8; 5] {
-        let mut tail = [0u8; 5];
-        tail.copy_from_slice(&self.bytes[65..70]);
-        tail
-    }
-
+    #[allow(deprecated)]
     pub fn to_entry(&self) -> StaffType10Entry {
         StaffType10Entry {
-            id: self.id(),
-            unknown_byte_4: self.unknown_byte_4(),
-            rating_short_0x05: self.rating_short_0x05(),
-            rating_short_0x07: self.rating_short_0x07(),
-            unknown_bytes_9_12: self.unknown_bytes_9_12(),
-            rating_short_0x0d: self.rating_short_0x0d(),
-            unknown_bytes_15_26: self.unknown_bytes_15_26(),
-            attributes: self.attributes(),
-            unknown_bytes_58_64: self.unknown_bytes_58_64(),
-            trailing_bytes: self.trailing_bytes(),
+            id: self.id(), flags_byte_04: self.flags_byte_04(),
+            current_ability: self.current_ability(),
+            potential_ability: self.potential_ability(),
+            home_reputation: self.home_reputation(),
+            current_reputation: self.current_reputation(),
+            world_reputation: self.world_reputation(),
+            apt_goalkeeper: self.apt_goalkeeper(), apt_sweeper: self.apt_sweeper(),
+            apt_defender: self.apt_defender(), apt_def_midfielder: self.apt_def_midfielder(),
+            apt_midfielder: self.apt_midfielder(), apt_att_midfielder: self.apt_att_midfielder(),
+            apt_attacker: self.apt_attacker(), apt_wing_back: self.apt_wing_back(),
+            apt_right_side: self.apt_right_side(), apt_left_side: self.apt_left_side(),
+            apt_central: self.apt_central(), apt_free_role: self.apt_free_role(),
+            acceleration: self.acceleration(), aggression: self.aggression(),
+            agility: self.agility(), anticipation: self.anticipation(),
+            balance: self.balance(), bravery: self.bravery(),
+            consistency: self.consistency(), corners: self.corners(),
+            crossing: self.crossing(), free_kicks: self.free_kicks(),
+            handling: self.handling(), heading: self.heading(),
+            important_matches: self.important_matches(), injury_proneness: self.injury_proneness(),
+            jumping: self.jumping(), leadership: self.leadership(),
+            left_foot: self.left_foot(), long_shots: self.long_shots(),
+            dirtiness: self.dirtiness(), dribbling: self.dribbling(),
+            finishing: self.finishing(), flair: self.flair(),
+            decisions: self.decisions(), movement: self.movement(),
+            natural_fitness: self.natural_fitness(), one_on_ones: self.one_on_ones(),
+            marking: self.marking(), pace: self.pace(),
+            passing: self.passing(), penalties: self.penalties(),
+            positioning: self.positioning(), reflexes: self.reflexes(),
+            right_foot: self.right_foot(), stamina: self.stamina(),
+            strength: self.strength(), tackling: self.tackling(),
+            teamwork: self.teamwork(), throw_ins: self.throw_ins(),
+            versatility: self.versatility(), vision: self.vision(),
+            work_rate: self.work_rate(), technique: self.technique(),
+            squad_number: self.squad_number(),
+            // Backward-compat fields, phased out.
+            unknown_byte_4: self.flags_byte_04(),
+            rating_short_0x05: self.current_ability() as u16,
+            rating_short_0x07: self.potential_ability() as u16,
+            unknown_bytes_9_12: [self.bytes[9], self.bytes[10], self.bytes[11], self.bytes[12]],
+            rating_short_0x0d: self.world_reputation() as u16,
+            unknown_bytes_15_26: {
+                let mut b = [0u8; 12]; b.copy_from_slice(&self.bytes[15..27]); b
+            },
+            attributes: {
+                let mut a = [0u8; 31]; a.copy_from_slice(&self.bytes[0x1b..0x1b + 31]); a
+            },
+            unknown_bytes_58_64: {
+                let mut b = [0u8; 7]; b.copy_from_slice(&self.bytes[58..65]); b
+            },
+            trailing_bytes: {
+                let mut t = [0u8; 5]; t.copy_from_slice(&self.bytes[65..70]); t
+            },
         }
     }
 }
@@ -996,9 +1090,37 @@ pub struct StaffType9Entry {
     pub body: Vec<u8>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct StaffType10Entry {
     pub id: u32,
+    pub flags_byte_04: u8,
+    // Ratings (+0x05..+0x0e) — 5 × i16
+    pub current_ability: i16,
+    pub potential_ability: i16,
+    pub home_reputation: i16,
+    pub current_reputation: i16,
+    pub world_reputation: i16,
+    // Position aptitudes (+0x0f..+0x1a) — 12 × i8
+    pub apt_goalkeeper: i8, pub apt_sweeper: i8, pub apt_defender: i8,
+    pub apt_def_midfielder: i8, pub apt_midfielder: i8, pub apt_att_midfielder: i8,
+    pub apt_attacker: i8, pub apt_wing_back: i8, pub apt_right_side: i8,
+    pub apt_left_side: i8, pub apt_central: i8, pub apt_free_role: i8,
+    // 42 attributes in DFM order (+0x1b..+0x44) — 42 × i8
+    pub acceleration: i8, pub aggression: i8, pub agility: i8, pub anticipation: i8,
+    pub balance: i8, pub bravery: i8, pub consistency: i8, pub corners: i8,
+    pub crossing: i8, pub free_kicks: i8, pub handling: i8, pub heading: i8,
+    pub important_matches: i8, pub injury_proneness: i8, pub jumping: i8,
+    pub leadership: i8, pub left_foot: i8, pub long_shots: i8, pub dirtiness: i8,
+    pub dribbling: i8, pub finishing: i8, pub flair: i8, pub decisions: i8,
+    pub movement: i8, pub natural_fitness: i8, pub one_on_ones: i8, pub marking: i8,
+    pub pace: i8, pub passing: i8, pub penalties: i8, pub positioning: i8,
+    pub reflexes: i8, pub right_foot: i8, pub stamina: i8, pub strength: i8,
+    pub tackling: i8, pub teamwork: i8, pub throw_ins: i8, pub versatility: i8,
+    pub vision: i8, pub work_rate: i8, pub technique: i8,
+    // Footer (+0x45)
+    pub squad_number: u8,
+    // --- backward-compat fields (raw byte slices) — will be removed once all
+    // downstream code migrates to the named fields above.
     pub unknown_byte_4: u8,
     pub rating_short_0x05: u16,
     pub rating_short_0x07: u16,

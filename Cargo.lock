@@ -247,9 +247,11 @@ dependencies = [
 name = "cm-import"
 version = "0.1.0"
 dependencies = [
+ "cm-data",
  "cm-db",
  "cm-domain",
  "cm-rng",
+ "serde_json",
 ]
 
 [[package]]

@@ -78,7 +78,11 @@ pub struct Contract {
     /// End-of-contract loyalty bonus (£). Offer id 0x1c.
     #[serde(default)]
     pub loyalty_bonus: u32,
-    /// Agent's cut on the deal (0..=100). From `FUN_004db1e0` news phrasing.
+    /// SPECULATIVE — no exe backing. `reports/transfer_deeper_decode.md` §7
+    /// verified that no multi-round agent-haggling engine exists in cm0102;
+    /// the `+0x69` "agent" pointer is a single-cut wage multiplier at compose
+    /// time, not a percentage fee. Kept as a passthrough field only; the
+    /// composer writes 0. Do not model haggling logic on top of this.
     #[serde(default)]
     pub agent_fee_pct: u8,
     /// `+0x4f & 0x02` — player is on the transfer-listed-for-loan list.
@@ -601,6 +605,11 @@ pub struct LoanState {
     /// parent. From `FUN_006ce0e0` mode-1/2 wage-split.
     pub wage_share_pct: u8,
     /// Loan fee paid up-front by borrower to parent (£).
+    ///
+    /// OPEN GAP: the actual per-week wage-share split on loan is composed by
+    /// `FUN_00848da0` (loan bid composer). `FUN_006ce0e0` was previously cited
+    /// as the source but is a wage-estimate helper (renewal ask vs current),
+    /// not the loan split — see `reports/transfer_deeper_decode.md` §5.
     pub loan_fee: i64,
     /// Earliest date the borrower can send the player back (pre-season) or the
     /// parent can recall (mid-season). Verified from `FUN_00594220` — the exe
@@ -645,7 +654,7 @@ pub struct WageOffer {
     pub on_loan_list: bool,
     /// Present when the offer includes loan terms (borrower side).
     pub loan: Option<LoanState>,
-    /// Agent's cut on the deal (0..=100). From `FUN_004db1e0` news phrasing.
+    /// SPECULATIVE — see [`Contract::agent_fee_pct`]. Composer always writes 0.
     pub agent_fee_pct: u8,
 }
 
@@ -871,6 +880,65 @@ pub struct ComposerPlayer {
     /// International caps at `person+0x22`; the international-boost branch
     /// adds min(caps, 4) to the seed contract-length byte.
     pub international_caps: u8,
+    /// Staff role byte at `[ebx+0x3d]` (offer/contract record) — drives the
+    /// per-tier wage cascade in `FUN_0084d5d0`. Verified cases:
+    ///   5,6,7,8,9,10 → per-tier scale/floor/agent-mult table below.
+    ///   11..15       → fall-through to STAFF_CONTRACT default path.
+    /// Set by the caller from the composed offer record; defaults to 5.
+    pub role_byte: u8,
+    /// Present agent pointer (`person+0x69`) — when non-null, wage uses
+    /// `ability^3 * AGENT_MULT`; else `(PA_norm*4+1) * NO_AGENT_SCALE * 1e-4`.
+    /// Verified from FUN_0084d5d0 case bodies (see report §1/§7).
+    pub has_agent: bool,
+}
+
+/// Per-role wage scale table lifted verbatim from `FUN_0084d5d0`'s x87 switch
+/// (`.rdata` constants resolved via pefile — see
+/// `reports/transfer_deeper_decode.md` §1). Role byte is the staff role at
+/// `[ebx+0x3d]`; cases 5..=10 are the numeric branches.
+#[derive(Debug, Clone, Copy)]
+struct WageTier { no_agent_scale: f64, agent_mult: f64, floor: f64 }
+const WAGE_TIER_BY_ROLE_BYTE: [(u8, WageTier); 6] = [
+    ( 5, WageTier { no_agent_scale: 25000.0, agent_mult: 2.5e-8, floor:  750.0 }),
+    ( 6, WageTier { no_agent_scale: 10000.0, agent_mult: 1.0e-8, floor:  500.0 }),
+    ( 7, WageTier { no_agent_scale: 10000.0, agent_mult: 1.0e-8, floor:  500.0 }),
+    ( 8, WageTier { no_agent_scale:  5000.0, agent_mult: 5.0e-9, floor:  275.0 }),
+    ( 9, WageTier { no_agent_scale:  1000.0, agent_mult: 1.0e-9, floor:  250.0 }),
+    (10, WageTier { no_agent_scale:  1000.0, agent_mult: 1.0e-9, floor:  200.0 }),
+];
+/// Verified constants used in the FLD/FMUL chain before floor compare:
+/// `_DAT_00acd56c` (PA normaliser) is 200 in the shipped exe.
+const PA_NORM_DIVISOR: f64 = 200.0;
+/// `_DAT_009569e0` — the outer `* 0.25` seniority scale.
+const WAGE_YEARS_SCALE: f64 = 0.25;
+/// Hard cap seen in cases 5..=8: `if wage > 2500 { wage = 150000 }` — the
+/// upper trigger is only checked on tiers 0..=3 in the asm.
+const WAGE_HARD_CAP_TRIGGER: f64 = 2500.0;
+const WAGE_HARD_CAP: f64 = 150000.0;
+
+/// Compute the raw pre-floor weekly wage from the verified x87 formula,
+/// per-role case. `ability` = `*(short*)(agent+0x0a)` = agent-record ability;
+/// falls back to CA when no agent record is present.
+fn wage_formula_by_role(role_byte: u8, ca: i16, pa: i16, years: u8,
+                        has_agent: bool) -> f64 {
+    let tier = WAGE_TIER_BY_ROLE_BYTE.iter()
+        .find(|(rb, _)| *rb == role_byte)
+        .map(|(_, t)| *t)
+        .unwrap_or(WAGE_TIER_BY_ROLE_BYTE[0].1); // fall-through: use case 5
+    let base = if has_agent {
+        // agent-branch: (ability)^3 * AGENT_MULT
+        let ability = ca.max(1) as f64;
+        ability * ability * ability * tier.agent_mult
+    } else {
+        // no-agent branch: (PA_norm*4 + 1) * NO_AGENT_SCALE * 1e-4
+        let pa_norm = (pa.max(0) as f64) / PA_NORM_DIVISOR;
+        (pa_norm * 4.0 + 1.0) * tier.no_agent_scale * 1e-4
+    };
+    // outer: * years * 0.25 ; then floor / hard-cap gates
+    let mut wage = years as f64 * base * WAGE_YEARS_SCALE;
+    if wage < tier.floor { wage = tier.floor; }
+    if role_byte <= 8 && wage > WAGE_HARD_CAP_TRIGGER { wage = WAGE_HARD_CAP; }
+    wage
 }
 
 /// Club-side inputs for the composer.
@@ -938,27 +1006,38 @@ pub fn compose_wage_offer(
         return None; // sentinel path — "not interested"
     }
 
-    // -- (3) Base wage — approximation of the `FUN_0084d5d0` per-tier cascade.
-    //    Real formula runs a CA→wage FPU switch (9 tier cases × per-tier
-    //    scales) clamped [750, 150000]. Faithful envelope: quadratic in CA,
-    //    scaled by club-rep tier, floor/ceiling from the exe.
-    let ca = player.ca.max(1) as f64;
-    let base = ca * ca * 0.20 * rep_scale;
-    // PA→CA gap gives a modest bump ("promising player" premium) — matches
-    // the `FUN_004d7090` mode-0 vs mode-1 delta the composer uses to
-    // negotiate.
-    let pa_bump = ((player.pa - player.ca).max(0) as f64) * 15.0 * rep_scale;
-    // Squad-status seniority multiplier — from the tier byte at `+0x35 & 0x3f`.
-    let seniority_mul = match tier {
-        SquadStatus::KeyPlayer      => 1.60,
-        SquadStatus::FirstTeam      => 1.20,
+    // -- (3) Base wage — VERIFIED per-role x87 cascade from `FUN_0084d5d0`
+    //    (see `reports/transfer_deeper_decode.md` §1). Formula is:
+    //      base = has_agent ? ability^3 * AGENT_MULT
+    //                       : (PA/200 * 4 + 1) * NO_AGENT_SCALE * 1e-4
+    //      wage = years * base * 0.25
+    //      wage = max(wage, FLOOR)
+    //      if role in 5..=8 && wage > 2500: wage = 150_000
+    //    The per-role table (5..=10) contains the exact constants
+    //    (25000/10000/5000/1000 no-agent scales; 2.5e-8..1e-9 agent mults).
+    //    `years` here is a probe value of 3 (the average of rand()%4+2 = 2..=5);
+    //    caller then multiplies by actual `contract_years` computed below.
+    let mut weekly = wage_formula_by_role(
+        player.role_byte, player.ca, player.pa, 3, player.has_agent
+    ) as u32;
+    // Club-rep tier delta layered on top — the real exe reaches the same
+    // effect via `FUN_00580a90` (affordable-wage cap) applied AFTER the
+    // formula. Kept as a MIN clamp so a mid-club can't out-bid its band.
+    let cap = ((weekly as f64) * rep_scale) as u32;
+    if cap < weekly { weekly = cap; }
+    // Squad-status delta (from `FUN_004d79c0` mode-1 vs mode-0 gap): asking
+    // for KeyPlayer status costs ~20% more than SquadPlayer. Verified only as
+    // an ordering (not exact %s), so kept as a modest additive tier bump.
+    let tier_bump = match tier {
+        SquadStatus::KeyPlayer      => 1.15,
+        SquadStatus::FirstTeam      => 1.05,
         SquadStatus::FirstTeamSquad => 1.00,
-        SquadStatus::SquadPlayer    => 0.85,
-        SquadStatus::HotProspect    => 0.75,
-        SquadStatus::DecentProspect => 0.60,
-        SquadStatus::NotNeeded      => 0.35,
+        SquadStatus::SquadPlayer    => 0.95,
+        SquadStatus::HotProspect    => 0.95,
+        SquadStatus::DecentProspect => 0.90,
+        SquadStatus::NotNeeded      => 0.85,
     };
-    let mut weekly = ((base + pa_bump) * seniority_mul) as u32;
+    weekly = ((weekly as f64) * tier_bump) as u32;
 
     // "Wouldn't move for less" — the composer never proposes below existing
     // wage when contract_id is not 0xffffffff (existing contract branch).
@@ -1044,6 +1123,14 @@ pub fn compose_wage_offer_from_rated(
             current_wage: p.weekly_wage,
             age: p.age_est,
             international_caps: 0,
+            // Default staff role byte = 5 (case-0 top-tier player scale).
+            // Real value lives at `[offer+0x3d]`; caller passes via
+            // `compose_wage_offer` directly when it needs a lower tier.
+            role_byte: 5,
+            // Agent presence unknown at this shim — default false uses the
+            // no-agent branch (`(PA_norm*4+1)*NO_AGENT_SCALE*1e-4`), which is
+            // the exe's fall-through when `[person+0x69] == 0`.
+            has_agent: false,
         },
         club, existing_contract, tier, mode, seed,
     )
@@ -1057,7 +1144,7 @@ mod tests {
 
     fn mk_player(id: u32, ca: i16, club: u32) -> RatedPlayer {
         RatedPlayer { staff_id: id, club_id: Some(club as i32), division_id: Some(24),
-                      ca, pa: ca, goals_est: 10, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 1_000_000, weekly_wage: 25_000, position_aptitudes: [0;12] }
+                      ca, pa: ca, goals_est: 10, age_est: 25, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 1_000_000, weekly_wage: 25_000, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] }
     }
 
     #[test]
@@ -1156,6 +1243,7 @@ mod tests {
         ComposerPlayer {
             player_id: 1, ca, pa, player_reputation: rep,
             market_value: value, current_wage: wage, age, international_caps: 0,
+            role_byte: 5, has_agent: false,
         }
     }
     fn cc(rep: u16) -> ComposerClub { ComposerClub { club_id: 100, reputation: rep } }

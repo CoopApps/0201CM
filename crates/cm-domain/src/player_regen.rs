@@ -338,15 +338,12 @@ mod tests {
         unknown_bytes_9_12[2..4].copy_from_slice(&field_0xb.to_le_bytes());
         DomainStaffType10 {
             id,
-            unknown_byte_4: 0,
+            current_ability: ca as i16,
+            world_reputation: reputation_0xd as i16,
             rating_short_0x05: ca,
-            rating_short_0x07: 0,
-            unknown_bytes_9_12,
             rating_short_0x0d: reputation_0xd,
-            unknown_bytes_15_26: [0; 12],
-            attributes: [0; 31],
-            unknown_bytes_58_64: [0; 7],
-            trailing_bytes: [0; 5],
+            unknown_bytes_9_12,
+            ..Default::default()
         }
     }
 

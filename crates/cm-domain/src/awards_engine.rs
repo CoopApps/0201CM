@@ -189,7 +189,7 @@ mod tests {
     use crate::player_rating::{PlayerRatingBook, RatedPlayer};
 
     fn book(players: Vec<RatedPlayer>) -> PlayerRatingBook {
-        PlayerRatingBook { players }
+        PlayerRatingBook { players, ..Default::default() }
     }
 
     #[test]
@@ -207,11 +207,11 @@ mod tests {
     #[test]
     fn league_season_end_emits_one_award_per_category() {
         let a = RatedPlayer { staff_id: 1, club_id: Some(10), division_id: Some(24),
-                              ca: 195, pa: 198, goals_est: 25, age_est: 27 };
+                              ca: 195, pa: 198, goals_est: 25, age_est: 27, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let b = RatedPlayer { staff_id: 2, club_id: Some(11), division_id: Some(24),
-                              ca: 175, pa: 190, goals_est: 20, age_est: 19 };
+                              ca: 175, pa: 190, goals_est: 20, age_est: 19, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let c = RatedPlayer { staff_id: 3, club_id: Some(12), division_id: Some(24),
-                              ca: 190, pa: 195, goals_est: 30, age_est: 30 };
+                              ca: 190, pa: 195, goals_est: 30, age_est: 30, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let bk = book(vec![a, b, c]);
         let awards = award_league_season_end(2001, 24, "Italian Serie A", &bk);
         assert_eq!(awards.len(), 4); // full slate
@@ -228,9 +228,9 @@ mod tests {
     #[test]
     fn international_award_picks_best_across_leagues() {
         let a = RatedPlayer { staff_id: 100, club_id: None, division_id: Some(24),
-                              ca: 180, pa: 195, goals_est: 15, age_est: 27 };
+                              ca: 180, pa: 195, goals_est: 15, age_est: 27, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let b = RatedPlayer { staff_id: 200, club_id: None, division_id: Some(7),
-                              ca: 199, pa: 200, goals_est: 22, age_est: 24 };
+                              ca: 199, pa: 200, goals_est: 22, age_est: 24, position_ordinal: 0, is_gk: false, aggression: 0, bravery: 0, dirtiness: 0, injury_proneness: 0, jumping_heading: 0, season_goals: 0, season_assists: 0, market_value: 0, weekly_wage: 0, heading: 0, important_matches: 0, dribbling: 0, decisions: 0, throw_ins: 0, position_aptitudes: [0;12] };
         let bk = book(vec![a, b]);
         let w = award_international_season_end(
             2001, "European Footballer", &[24, 7, 11, 16, 52], &bk,
