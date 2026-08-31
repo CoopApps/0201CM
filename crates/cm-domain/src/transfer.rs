@@ -75,6 +75,11 @@ pub const MOOD_TRANSFER_GRANTED: i8 = 15;
 pub const MOOD_TRANSFER_REFUSED: i8 = -15;
 pub const MOOD_SQUAD_DEMOTED: i8 = -25;
 pub const MOOD_TRAINING_COMPLAINT: i8 = -5;
+/// Playing out of position, per match. Tactics gap #7 — real CM01/02 penalty
+/// per player-comment string ("<player> is unhappy about being played out of
+/// position") gated on the `position_rating` for the slot he actually
+/// occupied being negative (the ATTR_CURVE-derived out-of-position drag).
+pub const MOOD_OUT_OF_POSITION: i8 = -2;
 
 /// Real exe display thresholds for player morale — `FUN_004d2710`:7-29.
 /// Verbatim: 0-3 Very Low, 4-7 Low, 8-11 Ok, 12-14 Good, 15-17 Very Good, 18+ Superb.
@@ -169,14 +174,31 @@ impl TransferMarket {
         won: Option<bool>,          // Some(true)=win Some(false)=loss None=draw
         benched_players: &[u32],
     ) {
+        self.apply_match_morale_full(club_id, won, benched_players, &[]);
+    }
+
+    /// Extended version — additionally applies MOOD_OUT_OF_POSITION to each
+    /// player id in `out_of_position_players`. Tactics gap #7 wire. The
+    /// caller decides who counts as out-of-position from the sign of
+    /// `tactics::position_rating` on the slot the player was picked for.
+    pub fn apply_match_morale_full(
+        &mut self,
+        club_id: u32,
+        won: Option<bool>,
+        benched_players: &[u32],
+        out_of_position_players: &[u32],
+    ) {
         let benched_delta = match won {
-            Some(true) => MOOD_BENCHED_WIN,   // +3
-            _ => MOOD_BENCHED_LOSS,           // −3 (loss or draw)
+            Some(true) => MOOD_BENCHED_WIN,
+            _ => MOOD_BENCHED_LOSS,
         };
         for c in self.contracts.iter_mut() {
             if c.club_id != club_id { continue; }
             if benched_players.contains(&c.player_id) {
                 apply_mood_delta(c, benched_delta);
+            }
+            if out_of_position_players.contains(&c.player_id) {
+                apply_mood_delta(c, MOOD_OUT_OF_POSITION);
             }
         }
     }

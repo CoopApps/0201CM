@@ -1750,6 +1750,11 @@ struct FixtureOutcome {
     away_score: u8,
     home_scorers: Vec<u32>,
     away_scorers: Vec<u32>,
+    /// XI members whose per-slot `position_rating` came out negative — used
+    /// out of position. Feeds the tactics gap #7 morale penalty
+    /// (`MOOD_OUT_OF_POSITION`).
+    home_out_of_position: Vec<u32>,
+    away_out_of_position: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -18452,6 +18457,8 @@ impl RuntimeSaveGame {
             away_score: used.away_score,
             home_scorers: used.home_scorer_ids,
             away_scorers: used.away_scorer_ids,
+            home_out_of_position: home.out_of_position_ids.clone(),
+            away_out_of_position: away.out_of_position_ids.clone(),
         })
     }
 
@@ -18572,33 +18579,65 @@ impl RuntimeSaveGame {
         }
 
         if players.len() < 6 { return None; }
-        // Sort the picked squad into a 4-4-2 shape by their engine position
-        // ordinal (12=GK, ≤4=DEF, ≤8=MID, else ATK) so the position-rating
-        // computation lands each player in a role he's actually eligible for
-        // — the intent of the exe's XI picker `FUN_006c1660` (7746 B, not yet
-        // decompiled), reduced here to a bucketed sort. Kill #T interim.
-        players.sort_by_key(|p| match p.position {
-            12 => 0,               // GK first
-            n if n <= 4 => 1,      // DEF
-            n if n <= 8 => 2,      // MID
-            _ => 3,                // ATK
-        });
-        // Compute the sum of position ratings for the selected XI (kill #T
-        // `FUN_006c8930`). Each player rated in FLAT_442_ROLES at his slot.
+        // Position-aware XI picker (tactics gap #3): for each of the 11
+        // FLAT_442_ROLES slots, pick the unassigned player whose
+        // `tactics::position_rating` for that specific role is highest —
+        // rather than the old bucketed sort which threw players into slots
+        // by band and produced strikers-at-LB when the outfield/attack
+        // ordinals didn't line up.
+        //
+        // This is a per-slot best-fit greedy assignment. GK slot goes first
+        // (position==12 gets +50 preference on top of aptitude so a real
+        // goalkeeper always claims it over a striker with legs). The
+        // remaining outfield slots take whoever rates highest, no repeat.
         let rated_by_id: std::collections::HashMap<u32, &crate::player_rating::RatedPlayer> =
             self.player_ratings.players.iter().map(|p| (p.staff_id, p)).collect();
+        let mut chosen: Vec<usize> = Vec::with_capacity(11);
+        let mut picked = vec![false; players.len()];
+        for slot in 0..11.min(players.len()) {
+            let role = crate::tactics::FLAT_442_ROLES[slot];
+            let mut best_idx: Option<usize> = None;
+            let mut best_score: i32 = i32::MIN;
+            for (idx, ep) in players.iter().enumerate() {
+                if picked[idx] { continue; }
+                let base = if let Some(rp) = rated_by_id.get(&ep.player_id) {
+                    crate::tactics::position_rating(&rp.position_aptitudes, role, 100)
+                } else { 0 };
+                // GK-slot preference: real goalkeepers (engine position==12)
+                // dominate this slot even if their attribute score is thin.
+                let bonus = if role == 0x001 && ep.position == 12 { 50 } else { 0 };
+                let score = base + bonus;
+                if score > best_score {
+                    best_score = score;
+                    best_idx = Some(idx);
+                }
+            }
+            if let Some(i) = best_idx { picked[i] = true; chosen.push(i); }
+        }
+        // Reorder `players` so the chosen 11 occupy slots 0..11 in role order,
+        // with the rest (bench) appended.
+        let mut reordered: Vec<_> = chosen.iter().map(|&i| players[i].clone()).collect();
+        for (idx, ep) in players.iter().enumerate() {
+            if !picked[idx] { reordered.push(ep.clone()); }
+        }
+        let players = reordered;
+        // Now sum the position ratings for the picked XI, in the role each
+        // was picked for. (Kill #T `FUN_006c8930`.)
         let mut sum_position_ratings: i32 = 0;
+        let mut out_of_position_ids: Vec<u32> = Vec::new();
         for (i, ep) in players.iter().take(11).enumerate() {
             let role = crate::tactics::FLAT_442_ROLES[i];
             if let Some(rp) = rated_by_id.get(&ep.player_id) {
-                sum_position_ratings += crate::tactics::position_rating(
-                    &rp.position_aptitudes, role, 100,
-                );
+                let r = crate::tactics::position_rating(&rp.position_aptitudes, role, 100);
+                sum_position_ratings += r;
+                // Out-of-position: aptitude for this slot below 10 (neutral)
+                // → ATTR_CURVE returns a negative rating (down to -150).
+                if r < 0 { out_of_position_ids.push(ep.player_id); }
             }
         }
         Some(crate::match_engine_exe::EngineTeamSnapshot {
             club_id, reputation, grudge_score: 0, players,
-            sum_position_ratings,
+            sum_position_ratings, out_of_position_ids,
         })
     }
 
@@ -18715,16 +18754,16 @@ impl RuntimeSaveGame {
                     let away_bench: Vec<u32> = self.transfers.contracts.iter()
                         .filter(|c| c.club_id == away_id && !away_played.contains(&c.player_id))
                         .map(|c| c.player_id).collect();
-                    self.transfers.apply_match_morale(home_id, match home_won {
+                    self.transfers.apply_match_morale_full(home_id, match home_won {
                         std::cmp::Ordering::Greater => Some(true),
                         std::cmp::Ordering::Less => Some(false),
                         std::cmp::Ordering::Equal => None,
-                    }, &home_bench);
-                    self.transfers.apply_match_morale(away_id, match home_won {
+                    }, &home_bench, &outcome.home_out_of_position);
+                    self.transfers.apply_match_morale_full(away_id, match home_won {
                         std::cmp::Ordering::Less => Some(true),
                         std::cmp::Ordering::Greater => Some(false),
                         std::cmp::Ordering::Equal => None,
-                    }, &away_bench);
+                    }, &away_bench, &outcome.away_out_of_position);
                     (outcome.home_score, outcome.away_score)
                 }
                 None => score_from_goal_events(&goal_events),

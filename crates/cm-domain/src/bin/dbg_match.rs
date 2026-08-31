@@ -3,6 +3,7 @@ use cm_domain::match_engine_exe::{simulate_one_fixture_token_model, EngineTeamSn
 fn mk(id: u32, ca: u16) -> EngineTeamSnapshot {
     EngineTeamSnapshot {
         club_id: id, reputation: 1200, grudge_score: 0,
+        sum_position_ratings: 0, out_of_position_ids: Vec::new(),
         players: (0..16).map(|i| EngineTeamPlayer {
             player_id: id*100+i, is_not_injured: true, position: (2+(i%8)) as u8,
             jumping_heading: 10, aggression: 8, bravery: 10, dirtiness: 5,

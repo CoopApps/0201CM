@@ -64,7 +64,7 @@ impl HistoryCategory {
     }
 }
 
-/// One `section { <name> <rows...> }` block.
+/// One `section { <name> <rows...> }` block (legacy CM3 brace-block format).
 #[derive(Debug, Clone, Default)]
 pub struct HistorySection {
     pub name: String,
@@ -74,20 +74,108 @@ pub struct HistorySection {
 /// A parsed `.his` file.
 #[derive(Debug, Clone, Default)]
 pub struct HistoryFile {
-    /// From `category { <int> }`.
+    /// From `{CATEGORY: <string>}` (CM01/02) or `category { <int> }` (legacy CM3).
     pub category: Option<HistoryCategory>,
-    /// From `title { <display title> }`.
+    /// Original category string as it appears in the file
+    /// ("CLUB", "PLAYER", "Nation", "Competition", "League").
+    pub category_raw: String,
+    /// From `{Title: <display>}` / `{TITLE: <display>}`.
     pub title: String,
-    /// Ordered list of `section { ... }` blocks.
+    /// From `{Section: <string>}` — the single section name in the CM01/02 format.
+    pub section: String,
+    /// From `{pic: <filename.hsr>}` — associated bitmap.
+    pub pic: String,
+    /// Trailing narrative body (paragraphs after the header block).
+    /// Preserves original line breaks / tab indents.
+    pub body: String,
+    /// Ordered list of `section { ... }` blocks (only populated for
+    /// legacy CM3 brace-block format; CM01/02 `.his` files leave this empty).
     pub sections: Vec<HistorySection>,
 }
 
-/// Parse the text of a `.his` file. Ports the keyword-driven state machine at
-/// [`history_open_selected`] (FUN_005db8b0) — recognises `category`, `title`,
-/// and `section` blocks delimited by `{` (0x7b) / `}` (0x7d), skipping any
-/// other whitespace and unknown keywords (matching the exe: `iVar16 != -1`
-/// consumes bytes until `}` on an unknown key).
+/// Categorise a raw string ("CLUB", "PLAYER", "Nation", …) to the enum.
+fn category_from_raw(raw: &str) -> Option<HistoryCategory> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "club"        | "clubs"        | "0" => Some(HistoryCategory::Clubs),
+        "nation"      | "nations"      | "1" => Some(HistoryCategory::Nations),
+        "competition" | "competitions" | "2" => Some(HistoryCategory::Competitions),
+        "league"      | "leagues"      | "3" => Some(HistoryCategory::Leagues),
+        "player"      | "players"      | "4" => Some(HistoryCategory::Players),
+        _ => None,
+    }
+}
+
+/// Parse the text of a `.his` file.
+///
+/// Handles both the shipped CM01/02 format —
+///   ```text
+///   {CATEGORY: CLUB}
+///   {Title: Arsenal}
+///   {Section: Arsenal}
+///   {pic: cs_Arsenal1.hsr}
+///
+///       Formed in 1886, the London club became…
+///   ```
+/// and the legacy CM3 brace-block format —
+///   ```text
+///   category { 0 }
+///   title { Arsenal }
+///   section { Honours
+///   1930-31 Champions
+///   }
+///   ```
+///
+/// Detection: if the first non-whitespace byte is `{`, it's the CM01/02
+/// header-per-line form (and everything after the last `}\n` on a header
+/// line is the narrative body). Otherwise fall back to the CM3 parser.
 pub fn parse_his(text: &str) -> HistoryFile {
+    let stripped = text.trim_start();
+    if stripped.starts_with('{') {
+        return parse_his_cm0102(text);
+    }
+    parse_his_cm3(text)
+}
+
+/// CM01/02 `.his`: `{KEY: VALUE}` per line + narrative body.
+fn parse_his_cm0102(text: &str) -> HistoryFile {
+    let mut out = HistoryFile::default();
+    let mut cursor = 0usize;
+    for line in text.split_inclusive('\n') {
+        let this_start = cursor;
+        cursor += line.len();
+        let l = line.trim_matches(|c: char| c == '\r' || c.is_whitespace());
+        if l.is_empty() { continue; }
+        if l.starts_with('{') && l.ends_with('}') {
+            let inner = &l[1..l.len()-1];
+            if let Some((k, v)) = inner.split_once(':') {
+                let key = k.trim().to_ascii_lowercase();
+                let val = v.trim().to_string();
+                match key.as_str() {
+                    "category" => {
+                        out.category = category_from_raw(&val);
+                        out.category_raw = val;
+                    }
+                    "title"   => out.title   = val,
+                    "section" => out.section = val,
+                    "pic"     => out.pic     = val,
+                    _         => {}
+                }
+            }
+            continue;
+        }
+        // First non-header, non-blank line ⇒ start of the narrative body.
+        out.body = text[this_start..]
+            .trim_end_matches('\0')
+            .trim_end()
+            .to_string();
+        break;
+    }
+    out
+}
+
+/// Legacy CM3 `.his`: `keyword { body }` blocks. Ported from history.cpp
+/// (FUN_005db8b0's keyword-driven state machine).
+fn parse_his_cm3(text: &str) -> HistoryFile {
     let mut out = HistoryFile::default();
     let bytes = text.as_bytes();
     let mut i = 0usize;
@@ -119,9 +207,9 @@ pub fn parse_his(text: &str) -> HistoryFile {
                 out.title = body.trim().to_string();
             }
             "category" => {
-                if let Ok(n) = body.trim().parse::<u8>() {
-                    out.category = HistoryCategory::from_u8(n);
-                }
+                let raw = body.trim();
+                out.category = category_from_raw(raw);
+                out.category_raw = raw.to_string();
             }
             "section" => {
                 let mut lines = body.lines();

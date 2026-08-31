@@ -451,6 +451,18 @@ pub struct EngineTeamSnapshot {
     pub reputation: u16,       // from `team+0x80`
     pub grudge_score: u8,      // computed by FUN_006BA1E0 (derby / grudge)
     pub players: Vec<EngineTeamPlayer>,
+    /// Sum of position ratings for the 11 selected XI (`FUN_006c8930` per
+    /// player). Populated by `snapshot_team_for_engine` when it picks the XI;
+    /// consumed as the team-strength driver via `tactics::team_score` — the
+    /// real formula-derived strength, replacing avg-CA. (kill #T)
+    #[serde(default)]
+    pub sum_position_ratings: i32,
+    /// Player ids in the picked XI whose per-slot `position_rating` came out
+    /// negative — i.e. their aptitude for the role they were forced into was
+    /// below the 10-neutral point on `ATTR_CURVE`. Feeds the tactics gap #7
+    /// per-player morale penalty (`MOOD_OUT_OF_POSITION`).
+    #[serde(default)]
+    pub out_of_position_ids: Vec<u32>,
 }
 
 /// Per-player snapshot the exe reads inside the pre-match injury pass
@@ -837,6 +849,11 @@ pub fn match_events_generate(
     player_id: u8,
     extra: u8,
     payload: u32,
+    // The scorer's REAL staff id (0 when not applicable). The exe's own event
+    // record keeps only the u8 lineup slot (`player_id`); we additionally carry
+    // the resolved staff id so goals attribute to the actual player, not a slot
+    // index — the fix for kill #B's goal accumulation.
+    real_scorer_id: u32,
 ) {
     if event_code < 0x1F40 { return; }   // exe rejects below range
     let etype = event_type_byte(event_code);
@@ -868,10 +885,10 @@ pub fn match_events_generate(
         let minute = (minute_hi as u16) * 10 + ctx.minute % 10;
         if side == 0 {
             ctx.home_goal_minutes.push(minute);
-            ctx.home_scorer_ids.push(player_id as u32);
+            ctx.home_scorer_ids.push(real_scorer_id);
         } else {
             ctx.away_goal_minutes.push(minute);
-            ctx.away_scorer_ids.push(player_id as u32);
+            ctx.away_scorer_ids.push(real_scorer_id);
         }
     }
     if etype == 1 {
@@ -889,10 +906,10 @@ pub fn match_events_generate(
     match event_code {
         0x2153 => {
             // (Exe checks FUN_006A88F0/006FCE70 anim lookup; we always fire the celebration.)
-            match_events_generate(ctx, 0x219F, minute_hi, side, player_id, 0, 0);
+            match_events_generate(ctx, 0x219F, minute_hi, side, player_id, 0, 0, real_scorer_id);
         }
         0x1F46 | 0x1F47 => {
-            match_events_generate(ctx, 0x21C0, minute_hi, side, player_id, 0, 0);
+            match_events_generate(ctx, 0x21C0, minute_hi, side, player_id, 0, 0, real_scorer_id);
         }
         _ => {}
     }
@@ -1146,7 +1163,7 @@ pub fn match_tick(
                 // Cases 3,4,5 → half-time worker.
                 4..=6 if ctx.minute >= 45 => {
                     // Reached HT. Fire HT event and drop into second half.
-                    match_events_generate(ctx, 0x2002, (ctx.minute / 10) as u8, 0, 0, 0, 0);
+                    match_events_generate(ctx, 0x2002, (ctx.minute / 10) as u8, 0, 0, 0, 0, 0);
                     ctx.phase = 3;
                     // Snap minute back to segment boundary (exe: sVar6/0x1E*0x1E).
                     ctx.minute = (ctx.minute / 30) * 30 + 45;
@@ -1160,7 +1177,7 @@ pub fn match_tick(
                     {
                         // Enter ET.
                     } else {
-                        match_events_generate(ctx, 0x2003, (ctx.minute / 10) as u8, 0, 0, 0, 0);
+                        match_events_generate(ctx, 0x2003, (ctx.minute / 10) as u8, 0, 0, 0, 0, 0);
                         ctx.phase = 0;
                         return TickResult::Ended;
                     }
@@ -1177,7 +1194,7 @@ pub fn match_tick(
         {
             ctx.reds_home = 0;  // exe sets M[0xF5BD]=-3 — force-abort marker.
             ctx.reds_away = 0;
-            match_events_generate(ctx, 0x217B, (ctx.minute / 10) as u8, 0, 0, 0, 0);
+            match_events_generate(ctx, 0x217B, (ctx.minute / 10) as u8, 0, 0, 0, 0, 0);
             return TickResult::Aborted;
         }
 
@@ -1262,9 +1279,14 @@ pub fn match_tick(
                     ShotOutcome::SetPiece=> (0x2004, false),
                 };
                 let _ = is_on_target; // shots-on tracked inside emitter
+                // This condensed fallback models teams by average CA and has no
+                // per-token shooter, so it cannot attribute the goal to a real
+                // player — credit 0 (accumulation skips unattributed goals). The
+                // token model (primary path) carries real scorer ids. (kill #B)
                 match_events_generate(
                     ctx, evt_code, (ctx.minute / 10) as u8, side,
                     (rng.range(10) + 1) as u8, 0, 0,
+                    0,
                 );
             }
         }
@@ -1276,6 +1298,7 @@ pub fn match_tick(
             match_events_generate(
                 ctx, 0x1F74, (ctx.minute / 10) as u8, side,
                 (rng.range(10) + 1) as u8, 0, 0,
+                0,   // foul commentary — no scorer
             );
         }
     }
@@ -3103,6 +3126,7 @@ pub fn resolve_queued_shots(
             match_events_generate(
                 ctx, evt, (ctx.minute / 10) as u8, side,
                 shot.shooter_slot, 0, 0,
+                0,   // not a goal (blocked/deflected) — no scorer
             );
             continue;
         }
@@ -3149,6 +3173,7 @@ pub fn resolve_queued_shots(
         match_events_generate(
             ctx, evt, (ctx.minute / 10) as u8, side,
             shot.shooter_slot, 0, 0,
+            token.player_id,   // real staff id of the shooter (used iff GOAL)
         );
     }
     token.shot_queue_count = 0;
@@ -3849,6 +3874,7 @@ mod tests {
             club_id: id,
             reputation: 1200,
             grudge_score: 0,
+            sum_position_ratings: 0, out_of_position_ids: Vec::new(),
             players: (0..n).map(|i| EngineTeamPlayer {
                 player_id: id * 100 + i as u32,
                 is_not_injured: true,
