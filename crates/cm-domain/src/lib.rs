@@ -18676,9 +18676,24 @@ impl RuntimeSaveGame {
                 if r < 0 { out_of_position_ids.push(ep.player_id); }
             }
         }
+        // Tactics gap #6: pipe the club's team-wide settings into the snapshot
+        // so per-tick engine code can read mentality / passing / marking /
+        // tackling / counter / offside / pressing without a re-lookup.
+        let team_settings = self.club_tactics.get(&club_id)
+            .map(crate::tactic_file::team_settings)
+            .unwrap_or_else(|| crate::tactic_file::TeamSettings {
+                passing:        crate::tactic_file::Passing::Unset,
+                mentality:      crate::tactic_file::Mentality::Unset,
+                counter_attack: false,
+                offside_trap:   false,
+                pressing:       crate::tactic_file::Pressing::Unset,
+                marking:        crate::tactic_file::Marking::Unset,
+                tackling:       crate::tactic_file::Tackling::Unset,
+            });
         Some(crate::match_engine_exe::EngineTeamSnapshot {
             club_id, reputation, grudge_score: 0, players,
             sum_position_ratings, out_of_position_ids,
+            team_settings,
         })
     }
 

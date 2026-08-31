@@ -4,6 +4,14 @@ fn mk(id: u32, ca: u16) -> EngineTeamSnapshot {
     EngineTeamSnapshot {
         club_id: id, reputation: 1200, grudge_score: 0,
         sum_position_ratings: 0, out_of_position_ids: Vec::new(),
+        team_settings: cm_domain::tactic_file::TeamSettings {
+            passing:        cm_domain::tactic_file::Passing::Unset,
+            mentality:      cm_domain::tactic_file::Mentality::Unset,
+            counter_attack: false, offside_trap: false,
+            pressing:       cm_domain::tactic_file::Pressing::Unset,
+            marking:        cm_domain::tactic_file::Marking::Unset,
+            tackling:       cm_domain::tactic_file::Tackling::Unset,
+        },
         players: (0..16).map(|i| EngineTeamPlayer {
             player_id: id*100+i, is_not_injured: true, position: (2+(i%8)) as u8,
             jumping_heading: 10, aggression: 8, bravery: 10, dirtiness: 5,

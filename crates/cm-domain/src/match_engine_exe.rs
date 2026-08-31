@@ -463,6 +463,32 @@ pub struct EngineTeamSnapshot {
     /// per-player morale penalty (`MOOD_OUT_OF_POSITION`).
     #[serde(default)]
     pub out_of_position_ids: Vec<u32>,
+    /// Team-wide tactic settings for THIS team in this fixture — the decoded
+    /// [`crate::tactic_file::TeamSettings`] from the club's assigned tactic.
+    /// Populated by `snapshot_team_for_engine` if the club has a tactic set
+    /// in `club_tactics`; empty (all `Unset`) if not.
+    ///
+    /// Tactics gap #6 wire: the pre-match snapshot now carries the
+    /// mentality / passing / marking / tackling / counter / offside /
+    /// pressing settings into the engine. The per-tick decision code
+    /// inside the token model can read these directly; the current
+    /// shot-gate + possession engine still reads only the `sum_position_
+    /// ratings` delta, but each new engine sub-step now has a place to
+    /// look for these values instead of hardcoding neutrality.
+    #[serde(default = "default_team_settings")]
+    pub team_settings: crate::tactic_file::TeamSettings,
+}
+
+fn default_team_settings() -> crate::tactic_file::TeamSettings {
+    crate::tactic_file::TeamSettings {
+        passing:        crate::tactic_file::Passing::Unset,
+        mentality:      crate::tactic_file::Mentality::Unset,
+        counter_attack: false,
+        offside_trap:   false,
+        pressing:       crate::tactic_file::Pressing::Unset,
+        marking:        crate::tactic_file::Marking::Unset,
+        tackling:       crate::tactic_file::Tackling::Unset,
+    }
 }
 
 /// Per-player snapshot the exe reads inside the pre-match injury pass
@@ -3875,6 +3901,7 @@ mod tests {
             reputation: 1200,
             grudge_score: 0,
             sum_position_ratings: 0, out_of_position_ids: Vec::new(),
+            team_settings: default_team_settings(),
             players: (0..n).map(|i| EngineTeamPlayer {
                 player_id: id * 100 + i as u32,
                 is_not_injured: true,
