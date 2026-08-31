@@ -1304,6 +1304,49 @@ impl<'a> CityView<'a> {
     pub fn region_or_primary_club(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x34)) }
 }
 
+// ------ Chairman attributes subrecord (at chairman_staff[+0x69]) ------
+
+/// Read-only view over the chairman-attribute subrecord.
+///
+/// The chairman itself is a staff pointer at `ClubView::chairman_id`
+/// (club record `+0xBF`). The exe stores the chairman's personality bytes
+/// on a subrecord at `staff[+0x69]`, and rerolls them in the silent-
+/// takeover event (`FUN_00588840`:82-95) as `rand(20)+1` (uniform 1..20).
+/// Every byte is `i8` in the 1..=20 range.
+///
+/// Semantics decoded from reads elsewhere in the finance cluster
+/// (`reports/finance_chairman_decode.md` §4):
+/// - `+0x0f` = ambition. VERIFIED (`FUN_005884a0`:0058856d gates
+///   whether the chairman initiates a takeover-of-another-club).
+/// - `+0x20` = charisma / persuasion. VERIFIED (`FUN_005884a0`:0058858b
+///   `FUN_008fc4f0(5) + 10 <= chairman[+0x20]` — negotiation gate; also
+///   `FUN_00587c40`:0x00587d33 board-debt-payment gate; also
+///   `FUN_00586ec0`:0x00587375 wage-cap decisions).
+/// - `+0x16` = OPEN GAP — not read by any decoded finance fn. Rerolled
+///   1..20. Speculative: cash-consciousness / patience.
+/// - `+0x1d` = OPEN GAP — not read by any decoded finance fn. Rerolled
+///   1..20. Speculative: resolve / loyalty.
+///
+/// Post-reroll charisma (`+0x20`) has an implicit floor: if it lands
+/// 1..4 the reroll fires once more, biasing upward but still allowing
+/// low values with p = (4/20)² = 4%.
+pub struct ChairmanAttrsView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> ChairmanAttrsView<'a> {
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    /// `+0x0f` — ambition (1..=20). VERIFIED.
+    pub fn ambition(&self) -> i8 { i8_at(self.raw, 0x0f) }
+    /// `+0x16` — OPEN GAP (no decoded consumer). Rerolled 1..=20.
+    pub fn attr_16(&self)  -> i8 { i8_at(self.raw, 0x16) }
+    /// `+0x1d` — OPEN GAP (no decoded consumer). Rerolled 1..=20.
+    pub fn attr_1d(&self)  -> i8 { i8_at(self.raw, 0x1d) }
+    /// `+0x20` — charisma / persuasion (1..=20). VERIFIED.
+    pub fn charisma(&self) -> i8 { i8_at(self.raw, 0x20) }
+}
+
 // ------ Official (43 B, DAT_00acd5f0, stride 0x2b) ------
 
 /// Typed view over an `officials.dat` record (43 bytes) — a match referee.
