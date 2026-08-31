@@ -18485,13 +18485,31 @@ impl RuntimeSaveGame {
         // draws, blown-out GF/GA) and is out of scope for the FUN_006F99C0
         // shot-gate port — needs its own investigation into
         // `player_ratings`/club_id coverage.
-        let r = crate::match_engine_exe::simulate_one_fixture_token_model(
-            &home, &away, seed,
-        );
-        // Use the SAME result for score and scorers (token model when it
-        // produced shots, else the condensed fallback engine).
-        let used = if r.home_shots as u16 + r.away_shots as u16 > 0 {
-            r
+        // Background-league fidelity fork — the exe's per-fixture
+        // detail flag lives on the nation record at +0x11c bit 2 and is
+        // mirrored onto NationTierAssignment.detailed_matches. Fixtures
+        // between two non-detailed nations skip the expensive token
+        // model and go straight to the condensed engine (this is the
+        // "Background Matches: Off" path in the shipped exe).
+        let home_nation = self.finance.club_nation.get(&home_id).copied().unwrap_or(0);
+        let away_nation = self.finance.club_nation.get(&away_id).copied().unwrap_or(0);
+        let detailed = |nid: i32| -> bool {
+            if nid == 0 { return true; } // unknown nation: default detailed
+            self.nation_tiers.iter()
+                .find(|t| t.nation_id as i32 == nid)
+                .map(|t| t.detailed_matches)
+                .unwrap_or(true)
+        };
+        let want_detailed = detailed(home_nation) || detailed(away_nation);
+        let used = if want_detailed {
+            let r = crate::match_engine_exe::simulate_one_fixture_token_model(
+                &home, &away, seed,
+            );
+            if r.home_shots as u16 + r.away_shots as u16 > 0 {
+                r
+            } else {
+                crate::match_engine_exe::simulate_one_fixture(&home, &away, seed, Some(6.8))
+            }
         } else {
             crate::match_engine_exe::simulate_one_fixture(&home, &away, seed, Some(6.8))
         };
@@ -18542,7 +18560,11 @@ impl RuntimeSaveGame {
             .take(20)
             .map(|p| crate::match_engine_exe::EngineTeamPlayer {
                 player_id: p.staff_id,
-                is_not_injured: true,       // TODO consult self.injuries
+                // Real injury gate — consults InjuryBook (physio.cpp port).
+                // An injured player is dropped from the pickable pool by the
+                // engine's XI selector; before this fix every player was
+                // always available even mid-injury.
+                is_not_injured: self.injuries.is_available(p.staff_id),
                 position: p.position_ordinal,
                 // Real attributes from the shipped/generated block (kill #1a).
                 jumping_heading: p.jumping_heading,

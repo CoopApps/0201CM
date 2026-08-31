@@ -617,7 +617,9 @@ impl FinanceBook {
             //   chair          30000      300        120
             let status = self.clubs.iter().find(|c| c.club_id == club_id).unwrap()
                 .status(rep as u16);
-            let has_chairman = false; // TODO: source chairman flag from club record
+            // Real chairman flag from club record +0x6d (populated in
+            // FinanceBook::seed_from_clubs via ClubView::flag_6d()).
+            let has_chairman = self.club_has_chairman.get(&club_id).copied().unwrap_or(false);
             let denom: u32 = match (has_chairman, status) {
                 (false, FinanceStatus::InTheRed) => 16,
                 (false, FinanceStatus::Admin)    => 40,

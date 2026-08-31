@@ -555,6 +555,18 @@ impl TransferMarket {
             // Move money (budget + balance), player, contract.
             let can_afford = finance.for_club(buyer).map(|c| c.balance >= fee).unwrap_or(false);
             if !can_afford { continue; }
+            // Wage-bill refuse gate — verified port of `FUN_00618450 > 0x46`
+            // (70%). If adding this signing pushes wage_bill past 70% of
+            // last month's income the board refuses the deal. Income proxy
+            // = balance / 12 (annual → monthly) since gate_receipts /
+            // TV-prize aren't stitched onto the tick income yet.
+            let (bal, wage_bill) = finance.for_club(buyer)
+                .map(|c| (c.balance, c.weekly_wage_bill)).unwrap_or((0, 0));
+            let monthly_income = (bal / 12).max(1) as u32;
+            let new_wage_bill = wage_bill.saturating_add(wage);
+            if new_wage_bill as u64 * 100 > monthly_income as u64 * WAGE_BILL_REFUSE_PCT as u64 {
+                continue;
+            }
             if let Some(b) = finance.clubs.iter_mut().find(|c| c.club_id == buyer) {
                 b.balance -= fee; b.transfer_budget -= fee;
             }
