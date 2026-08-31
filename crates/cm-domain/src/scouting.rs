@@ -185,13 +185,29 @@ impl ScoutBook {
             .unwrap_or_default()
     }
 
-    /// Weekly tick — advances knowledge on every observed player. Placeholder
-    /// pending the exact formula decode; grows coverage by a constant per
-    /// week per active scout and per-attribute-reveal bit-flip at 25 / 50 /
-    /// 75% coverage checkpoints.
+    /// Weekly tick — advances knowledge on every observed player.
     ///
-    /// TODO: replace with the real per-scout-ability × weeks-watched formula
-    /// once `reports/scouting_decode.md §7` open items land.
+    /// **HONEST WARNING (2026-09): this is MODELLED BEHAVIOUR with NO EXE
+    /// COUNTERPART.** A dedicated decode agent walked the write-side
+    /// (FUN_00799190), the consumer (FUN_007974b0), and the weekly-tick
+    /// (FUN_007df1b0) and confirmed:
+    ///
+    ///   1. There is NO per-scout-ability × weeks-watched formula in
+    ///      CM01/02. The scout subsystem is snapshot-based, not integrative.
+    ///   2. The 0x2d "45-byte record" prior notes flagged as a knowledge
+    ///      carrier is actually a transient player-search row, torn down
+    ///      and rebuilt on every call (FUN_00799190 zero-inits every field).
+    ///   3. There are NO 25/50/75/100 threshold constants in the exe scout
+    ///      cluster — grep for those literals returns zero hits.
+    ///   4. The only persistent per-(manager,player) byte the scout cluster
+    ///      touches is staff-record `+0x113` (read via FUN_0077d770), but
+    ///      its semantics are undecoded.
+    ///
+    /// This tick therefore exists so the ScoutBook UI has *something* to
+    /// display; it is NOT a faithful port. See
+    /// `reports/scout_knowledge_formula_decode.md` for the full audit and
+    /// follow-up decode targets (FUN_00489790 staff→scalar, staff+0x113
+    /// semantics, the profile-screen attribute-fog formatter).
     pub fn weekly_tick(&mut self) {
         for book in self.managers.values_mut() {
             for slot in book.slots.iter().flatten() {

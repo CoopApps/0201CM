@@ -1706,6 +1706,78 @@ pub fn finalize_rating(rating_milli: i16) -> i8 {
     raw.clamp(1, 10) as i8
 }
 
+/// Per-match rating deltas — the full verified table from
+/// `reports/per_match_rating_events_port_plan.md`. All values in
+/// "milli-rating"; MatchToken.rating_milli starts at 6400 = 6.4 display.
+/// Every constant is cited to a single cm0102.exe decompile site.
+///
+/// Prior partial port applied 4 sites inline (see individual usages in
+/// this file). These constants unify all 25 verified per-event sites so
+/// the event-dispatch code can apply them uniformly.
+pub mod rating_delta {
+    // ---- Positive events ----------------------------------------------
+    /// Pass or shot commit. FUN_006F99C0:107,126,353,362,388,396 (6 sites).
+    pub const PASS_OR_SHOT_COMMIT:      i16 =    7;
+    /// Interior short pass / GK distribute / carrier micro-move.
+    /// FUN_006FA740:426,537; FUN_006D63F0:1797.
+    pub const INTERIOR_SHORT_PASS:      i16 =    4;
+    /// Clean receive unopposed. FUN_006D63F0:901.
+    pub const CLEAN_RECEIVE_UNOPPOSED:  i16 =    9;
+    /// Shot-on-target animation fired. FUN_006F63F0:1421,1567.
+    pub const SHOT_ON_TARGET_ANIM:      i16 =   25;
+    /// Cross to different-side receiver completed. FUN_006D63F0:1803.
+    pub const CROSS_TO_OTHER_SIDE:      i16 =   28;
+    /// Notable long-range effort (sVar25 == 0xf branch). FUN_006D63F0:909.
+    pub const NOTABLE_LONG_RANGE:       i16 =   75;
+    /// Goal scored — big flat delta on the scorer. FUN_006D63F0:934.
+    pub const GOAL_SCORED:              i16 =  100;
+
+    // ---- Negative events ----------------------------------------------
+    /// Ball lost to opponent challenge. FUN_006F5DE0:123.
+    pub const CHALLENGE_LOST:           i16 =  -15;
+    /// Weak hold in mid. FUN_006D63F0:2072.
+    pub const WEAK_HOLD:                i16 =  -20;
+    /// Receiver miscontrol. FUN_006D63F0:787.
+    pub const RECEIVER_MISCONTROL:      i16 =  -25;
+    /// Penalty / weak attempt. FUN_006CFEF0:68.
+    pub const PENALTY_WEAK_ATTEMPT:     i16 =  -25;
+    /// Unreachable target in current zone. FUN_006D63F0:803.
+    pub const UNREACHABLE_IN_ZONE:      i16 =  -59;
+    /// Unreachable in final third. FUN_006D63F0:800.
+    pub const UNREACHABLE_FINAL_THIRD:  i16 =  -70;
+    /// Own-half bad hold in wrong cell. FUN_006D63F0:2069.
+    pub const OWN_HALF_BAD_HOLD:        i16 = -100;
+    /// Panic clearance (+0x198 = 0x1f42 animation). FUN_006D63F0:816.
+    pub const PANIC_CLEARANCE:          i16 = -150;
+    /// Giveaway at LAB_006d7cdc. FUN_006D63F0:2079.
+    pub const GIVEAWAY:                 i16 = -250;
+    /// Block victim on cross intercept (3 sites).
+    /// FUN_006D63F0:572; FUN_006A0550:107,357.
+    pub const BLOCK_VICTIM:             i16 = -500;
+    /// Bad chance taken (poor decision + outcome 5). FUN_006CFEF0:96.
+    pub const BAD_CHANCE_TAKEN:         i16 = -750;
+    /// Sitter miss (shot rolled +7 < param_5). FUN_006CFEF0:36.
+    pub const SITTER_MISS:              i16 =-1000;
+}
+
+/// Ball-carrier assist bonus on cross/pass frame.
+/// EXE: `*(short*)(carrier+0x35) += (short)((stamina*0x55555556)>>32) + 0x113 - sign`,
+/// which is `stamina/3 + 275` for `stamina >= 0`. FUN_006F63F0:1581-1583.
+#[inline]
+pub fn assist_bonus_milli(stamina: i16) -> i16 {
+    (stamina / 3).saturating_add(0x113)
+}
+
+/// GK save reward — variable, based on shot damage. Partial port pending
+/// full decode of shot-damage subexpression at FUN_006D63F0:2246-2247;
+/// EXE outer form: `sVar25 = ftol(((10000-t)²/50000) + rating_bias)`.
+/// PLACEHOLDER (marked speculative until :2246-2247 decoded).
+pub fn save_bonus_milli(shot_power_milli: i16, gk_bias: i16) -> i16 {
+    let dmg = (10000i32 - shot_power_milli as i32).max(0);
+    let base = (dmg * dmg) / 50000;
+    (base as i16).saturating_add(gk_bias)
+}
+
 /// Pitch dimensions matching the exe's grid: 12 rows × 9 columns.
 pub const PITCH_ROWS: usize = 12;
 pub const PITCH_COLS: usize = 9;
@@ -1871,6 +1943,16 @@ pub struct TokenEngine {
     /// Per-side per-slot zone attribute pool. Exe: `pitch+0x8EBC+side*4`.
     #[serde(default)]
     pub zone_pool: ZoneAttributePool,
+    /// Per-side team-tactic settings. Exe: `pitch + 0x9766 + side*0x18E3`
+    /// — the copied tactic word the token engine reads on every tick
+    /// (see `reports/match_engine_tactic_reads_decode.md` for the verified
+    /// consumption sites). Populated from EngineTeamSnapshot at build time.
+    #[serde(default = "default_engine_team_settings")]
+    pub team_settings: [crate::tactic_file::TeamSettings; 2],
+}
+
+fn default_engine_team_settings() -> [crate::tactic_file::TeamSettings; 2] {
+    [default_team_settings(), default_team_settings()]
 }
 
 impl Default for TokenEngine {
@@ -1884,6 +1966,7 @@ impl Default for TokenEngine {
             ball_height: 0,
             grid: PitchGrid::default(),
             zone_pool: ZoneAttributePool::default(),
+            team_settings: default_engine_team_settings(),
         }
     }
 }
@@ -3662,6 +3745,15 @@ pub fn target_picker(
             if token.shooting < 2 {
                 d = d - rng.range(3) as i32 + rng.range(3) as i32;
             }
+            // VERIFIED offside-trap tightening (FUN_006A2790:98-104 — see
+            // reports/match_engine_tactic_reads_decode.md §3). When the
+            // OPPOSING side has offside_trap set, the shot-cell picker
+            // reads `pitch + 0x18E3 + 0x9766` and adds 1 to dx_goal —
+            // shrinking the viable-cell set and firing fewer shots.
+            let opp_side = 1 - side as usize;
+            if engine.team_settings[opp_side].offside_trap {
+                d += 1;
+            }
             d
         } else { 0 };
 
@@ -3773,6 +3865,15 @@ fn defenders_at_cell(engine: &TokenEngine, x: i8, y: i8, side: u8) -> u8 {
 /// on-pitch teammate within the 3×4 lattice around the carrier and
 /// returns the best slot index (this-side). Ports the exe's full
 /// weighted formula.
+///
+/// NOTE — the Passing style (Long/Direct/Mixed/Short) shift lives in a
+/// DIFFERENT function (`FUN_006AC3B0:352-362`, the pass-execution
+/// dispatcher, not this picker). That fn shifts the pass-target
+/// coordinates by (dx, dy) = (-1000, 1000) / (-750, 500) / (-250, 250) / 0
+/// AFTER the target is picked, but ONLY for a token whose role bit 1
+/// (playmaker) is set. Our token model doesn't currently port the
+/// role-bit shift stage; the picker's dzy filter (-2..=1) covers the
+/// short-pass case. See reports/match_engine_tactic_reads_decode.md §5.
 pub fn pass_target_picker(
     carrier: &MatchToken,
     engine: &TokenEngine,
@@ -4047,6 +4148,13 @@ pub fn simulate_one_fixture_token_model(
         crate::formation::FormationCode::F442,
         crate::formation::FormationCode::F442,
     );
+    // Wire per-side team-tactic settings so the token engine reads
+    // (offside_trap, passing, mentality, etc.) mirror what the exe reads
+    // from `pitch + 0x9766 + side*0x18E3`. Consumed by the tactic-aware
+    // shot picker (offside_trap dx tightening — FUN_006A2790:98-104) and
+    // the playmaker pass-target shift (FUN_006AC3B0:352-362). See
+    // reports/match_engine_tactic_reads_decode.md.
+    engine.team_settings = [home.team_settings.clone(), away.team_settings.clone()];
     // Kick-off — coin toss for opening possession.
     engine.possession_side = rng.range(2) as i8;
     ctx.setup_done = true;
