@@ -452,6 +452,8 @@ mod tests {
             nation_tiers: Vec::new(),
             world: SaveWorldOverlay::default(),
             player_init: None,
+            club_tactics: Default::default(),
+            scouts: Default::default(),
             humans: Vec::new(),
             active_human: 0,
             african_nations: None,
