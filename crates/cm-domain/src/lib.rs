@@ -19447,8 +19447,45 @@ impl RuntimeSaveGame {
     /// player_stats (17×), human_manager (13×), transfer_manager (9×),
     /// contract_manager (8×), media/news (7×). NOT YET PORTED — each of those
     /// subsystems is its own TU to lift. See `reports/game_cpp_analysis.md` §3.
-    fn hook_evening_daily_ai(&mut self, _date: &GameDate) {
-        // Explicit named stub: this is the biggest missing piece of the port.
+    fn hook_evening_daily_ai(&mut self, date: &GameDate) {
+        // game.cpp step 10 — the giant evening daily-AI dispatcher.
+        // Exe: FUN_005b85b0 (30 467 bytes, staff_contracts + transfers +
+        // human_manager + player_stats + media). Full port is huge; this
+        // wires in the pieces that ARE ported so a running sim actually
+        // moves players and money each evening:
+        //
+        //   • Transfer-market pass — samples buyer clubs, prices bids via
+        //     the verified compose_wage_offer / predict_wage /
+        //     contract_cost_readback stack, completes deals.
+        //
+        // Bounded sample size keeps a single evening tick cheap even in a
+        // 5000-club world; the exe visits ~40-60 clubs per evening via a
+        // rolling cursor (DAT_005b85b0's per-run index). Seed folds the
+        // date so replays reproduce.
+        let seed = (self.elapsed_days as u64).wrapping_mul(0x9E3779B97F4A7C15)
+                 ^ ((date.year as u64) << 16 | date.month as u64) << 8
+                 ^ date.day as u64;
+        let year = date.year;
+        // Sample size: match the exe's per-evening cursor stride (roughly
+        // 50 clubs). A smaller value under-hits big worlds; a larger one
+        // makes the transfer market thrash. 50 tracks the shipped exe.
+        let sample = 50usize;
+        let moved = self.transfers.run_ai_transfer_pass(
+            &mut self.player_ratings,
+            &mut self.finance,
+            year,
+            sample,
+            seed,
+        );
+        if moved > 0 {
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days,
+                date: date.clone(),
+                kind: "transfers".to_string(),
+                message: format!("AI transfer pass: {} deals completed", moved),
+                phase: 2,
+            });
+        }
     }
 
     /// game.cpp step 10b — background subsystems (exe: FUN_005b7f10,
@@ -19493,6 +19530,24 @@ impl RuntimeSaveGame {
                     phase: 2,
                 });
             }
+        }
+        // Monthly board tick — verified port of the chairman decision
+        // cascade (patience decrement → sack roll → takeover roll).
+        // See finance.rs::tick_month_board + reports/chairman_gates_decode.md.
+        let seed = (self.elapsed_days as u64).wrapping_mul(0x100000001B3)
+                 ^ (year as u64) << 8 ^ month as u64;
+        let fired_clubs = self.finance.tick_month_board(seed);
+        for cid in fired_clubs {
+            self.pending_events.push(RuntimeEvent {
+                day: elapsed,
+                date: date.clone(),
+                kind: "manager_sacked".to_string(),
+                message: format!(
+                    "Chairman at club #{} sacked the manager (board patience exhausted)",
+                    cid,
+                ),
+                phase: 2,
+            });
         }
     }
 

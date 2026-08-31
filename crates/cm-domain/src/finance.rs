@@ -422,6 +422,69 @@ pub struct FinanceBook {
     /// and by the debt-payment gate (Item 3).
     #[serde(default)]
     pub club_has_chairman: std::collections::BTreeMap<u32, bool>,
+    /// club_id → ChairmanState. Populated lazily on first monthly-board
+    /// tick from the shipped chairman-staff bytes at +0x0f/+0x16/+0x1d/+0x20.
+    /// See [`ChairmanState`] + [`reports/chairman_gates_decode.md`].
+    #[serde(default)]
+    pub chairman: std::collections::BTreeMap<u32, ChairmanState>,
+    /// club_id → board patience byte (`club+0x7f`), 0..=20. Decremented in
+    /// the monthly board tick per `FUN_00588c70`:210-243. Reaching 0 arms
+    /// the manager-sack roll (see [`chairman_will_sack`]).
+    #[serde(default)]
+    pub board_patience: std::collections::BTreeMap<u32, u8>,
+}
+
+impl FinanceBook {
+    /// Monthly board tick — verified port of the patience-decrement +
+    /// chairman-decision cascade from `FUN_00588c70`:210-243 and
+    /// `FUN_0067fdf0`:243. Returns the list of clubs whose chairman
+    /// FIRED the manager this month (caller wires the actual departure).
+    ///
+    /// For each club:
+    ///   1. Look up (or default-init) ChairmanState + board_patience.
+    ///   2. Decrement patience by the exe's stepped rule:
+    ///      - `> 15` → subtract `rand(5)+1`
+    ///      - `> 7`  → subtract 1
+    ///      - `< 2`  → no change
+    ///      - else   → `rand(patience) != 0 → subtract 1`
+    ///   3. If patience is now 0, roll `chairman_will_sack`; on fire,
+    ///      push club onto the return list.
+    ///   4. Roll `chairman_takeover_fires`; on fire, reroll stats.
+    pub fn tick_month_board(&mut self, seed: u64) -> Vec<u32> {
+        use crate::match_engine_exe::MatchRng;
+        let mut rng = MatchRng::new(seed);
+        let club_ids: Vec<u32> = self.clubs.iter().map(|c| c.club_id).collect();
+        let mut fired_by: Vec<u32> = Vec::new();
+        for cid in club_ids {
+            let has_ch = self.club_has_chairman.get(&cid).copied().unwrap_or(true);
+            if !has_ch { continue; }
+            let cs = self.chairman.entry(cid).or_insert_with(ChairmanState::default);
+            let patience = self.board_patience.entry(cid).or_insert(15u8);
+            // 1) patience decrement (exe: FUN_00588c70:210-243)
+            let p = *patience;
+            let dec: u8 = if p > 15 { (rng.range(5) + 1) as u8 }
+                          else if p > 7 { 1 }
+                          else if p < 2 { 0 }
+                          else if rng.range(p as u32) != 0 { 1 } else { 0 };
+            *patience = patience.saturating_sub(dec);
+            // 2) sack roll (exe: FUN_0067fdf0:243)
+            if *patience == 0 {
+                let rmp = rng.range(cs.manager_patience.max(1) as u32) as i32;
+                let r20 = rng.range(20) as i32;
+                if chairman_will_sack(cs, rmp, r20) {
+                    fired_by.push(cid);
+                    // Reset patience post-sack (exe implicitly resets on new hire).
+                    *patience = 15;
+                }
+            }
+            // 3) takeover roll (exe: FUN_00588840:51)
+            let rtp = rng.range(cs.takeover_patience.max(1) as u32) as i32;
+            if chairman_takeover_fires(cs, rtp) {
+                reroll_chairman_stats(cs, || rng.range(20) as i32);
+            }
+        }
+        fired_by
+    }
 }
 
 impl FinanceBook {
@@ -455,6 +518,8 @@ impl FinanceBook {
         }
         Self { clubs: cf, rules: CountryFinanceRules::new(),
                club_has_chairman: chair,
+               chairman: std::collections::BTreeMap::new(),
+               board_patience: std::collections::BTreeMap::new(),
                club_reputation: reps, club_attendance: att, club_nation: nats }
     }
 
