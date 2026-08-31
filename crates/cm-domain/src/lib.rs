@@ -20072,7 +20072,10 @@ fn real_free_agent_roster_for_engine(
             if first_choice { picked_gk = true; }
             crate::match_engine_exe::EngineTeamPlayer {
                 player_id: p.staff_id,
-                is_not_injured: true,
+                // Free-agent roster path — consult the InjuryBook so injured
+                // free agents aren't pushed onto the pitch as emergency
+                // signings.
+                is_not_injured: save.injuries.is_available(p.staff_id),
                 position: p.position_ordinal,
                 jumping_heading: 10,
                 aggression: 8,
