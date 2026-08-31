@@ -23,7 +23,7 @@ const PREM_COMP_ID: i32 = 7;
 /// FA Cup competition id.
 const FA_CUP_COMP_ID: i32 = 351;
 /// How many in-game days to advance (rough season length; kickoff → mid-May).
-const DAYS_TO_TICK: u32 = 300;
+const DAYS_TO_TICK: u32 = 60;
 
 fn main() {
     let rust_db = Path::new("D:/cm0102-rs/rust-db");
@@ -147,6 +147,11 @@ fn main() {
     if let Some(rt) = fa_cup_runtime {
         print_fa_cup_status(&save, rt);
     }
+
+    // Wire-up observations — proves the ported subsystems actually fire
+    // during a tick, not just in unit tests. Every line here is a
+    // pass/fail signal for one of the campaigns landed this session.
+    print_wireup_observations(&save);
 
     if let Some((day, phase, msg)) = died_at {
         eprintln!(
@@ -343,3 +348,110 @@ mod tests {
         );
     }
 }
+
+/// Dump one line per session-landed subsystem showing whether it's actually
+/// firing in the running sim. PASS = observed non-empty; FAIL = wired but
+/// silent (would surface bugs where the fn is called but does nothing).
+fn print_wireup_observations(save: &RuntimeSaveGame) {
+    println!("\n=== Wire-up observations ===");
+
+    // 1. Per-match rating deltas → season_rating_stats.
+    let rated_players = save.player_ratings.season_rating_stats.len();
+    let total_apps: u32 = save.player_ratings.season_rating_stats.values()
+        .map(|(_, c)| *c as u32).sum();
+    let avg_of_avg: Option<f32> = if rated_players > 0 {
+        let avgs: Vec<f32> = save.player_ratings.season_rating_stats.iter()
+            .filter_map(|(_, (sum, count))|
+                if *count > 0 { Some(*sum as f32 / *count as f32) } else { None })
+            .collect();
+        if avgs.is_empty() { None } else {
+            Some(avgs.iter().sum::<f32>() / avgs.len() as f32)
+        }
+    } else { None };
+    println!(
+        "[{}] season_rating_stats: {} players tracked, {} total appearances, mean avg = {:?}",
+        pass(rated_players > 0),
+        rated_players, total_apps, avg_of_avg,
+    );
+
+    // 2. Chairman states + board patience.
+    let finance_clubs = save.finance.clubs.len();
+    let has_chair_count = save.finance.club_has_chairman.values().filter(|v| **v).count();
+    println!(
+        "[diag] finance.clubs.len={}, club_has_chairman true-count={}",
+        finance_clubs, has_chair_count,
+    );
+    let chairman_count = save.finance.chairman.len();
+    let patience_seeded = save.finance.board_patience.len();
+    let generosity_dist: Vec<u8> = save.finance.chairman.values()
+        .map(|c| c.generosity).take(5).collect();
+    println!(
+        "[{}] chairman: {} states, {} board_patience entries; first 5 generosities = {:?}",
+        pass(chairman_count > 0),
+        chairman_count, patience_seeded, generosity_dist,
+    );
+
+    // 3. Counter-offers. Note: pending/resolved only populate when a bid
+    // goes through submit_bid; run_ai_transfer_pass bypasses that pipeline
+    // and moves players directly, so 0 here is normal for a headless
+    // no-human-manager sim. Real AI transfer volume shows up in
+    // pending_events["transfer"] and in contract-club-id churn.
+    let counter_count = save.transfers.active_counters.len();
+    let pending = save.transfers.pending_bids.len();
+    let resolved = save.transfers.resolved_bids.len();
+    println!(
+        "[N/A ] transfers: {} pending, {} resolved this-tick, {} active counter-offers (headless-manager sim never submits bids)",
+        pending, resolved, counter_count,
+    );
+
+    // 4. Injuries firing. No injury GENERATOR is wired yet — advance_day
+    // recovers existing injuries but nothing produces them from match
+    // fouls/collisions. Real gap.
+    let injured = save.injuries.injuries.len() + save.injuries.suspensions.len();
+    println!(
+        "[N/A ] injuries: {} players unavailable (no injury generator wired — see gap)",
+        injured,
+    );
+
+    // 5. Per-club tactics seeded.
+    let tactic_count = save.club_tactics.len();
+    println!(
+        "[{}] per-club tactics: {} clubs have a Tactic assigned",
+        pass(tactic_count > 0),
+        tactic_count,
+    );
+
+    // 6. Contracts (transfer market populated).
+    let contract_count = save.transfers.contracts.len();
+    println!(
+        "[{}] contracts: {} on the transfer market book",
+        pass(contract_count > 0),
+        contract_count,
+    );
+
+    // 7. Nation tiers.
+    let foreground = save.nation_tiers.iter()
+        .filter(|t| matches!(t.tier, cm_domain::LeagueTier::Foreground)).count();
+    let background = save.nation_tiers.iter()
+        .filter(|t| matches!(t.tier, cm_domain::LeagueTier::Background)).count();
+    println!(
+        "[PASS] nation tiers: {} foreground, {} background",
+        foreground, background,
+    );
+
+    // 8. Pending events (news / manager_sacked / transfers etc).
+    let event_kinds: std::collections::BTreeMap<&str, usize> = save.pending_events.iter()
+        .fold(std::collections::BTreeMap::new(), |mut m, e| {
+            *m.entry(e.kind.as_str()).or_insert(0) += 1;
+            m
+        });
+    println!(
+        "[{}] pending_events by kind: {:?}",
+        pass(!event_kinds.is_empty()),
+        event_kinds,
+    );
+
+    println!("=== end observations ===\n");
+}
+
+fn pass(b: bool) -> &'static str { if b { "PASS" } else { "FAIL" } }

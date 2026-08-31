@@ -18516,18 +18516,36 @@ impl RuntimeSaveGame {
                 .unwrap_or(true)
         };
         let want_detailed = detailed(home_nation) || detailed(away_nation);
-        let used = if want_detailed {
+        // Always run the token model first for detailed fixtures so its
+        // per-player rating pool + MotM pick survive even when the score
+        // path falls back to the condensed engine. Prior wire lost these
+        // whenever the token model produced 0 shots for a small/broken
+        // squad, silently zeroing season_rating_stats — surfaced by the
+        // simulate_season wire-up observations.
+        let (used, ratings_from_token, motm_from_token) = if want_detailed {
             let r = crate::match_engine_exe::simulate_one_fixture_token_model(
                 &home, &away, seed,
             );
+            let ratings = r.per_player_ratings.clone();
+            let motm    = r.motm_player_id;
             if r.home_shots as u16 + r.away_shots as u16 > 0 {
-                r
+                (r, ratings, motm)
             } else {
-                crate::match_engine_exe::simulate_one_fixture(&home, &away, seed, Some(6.8))
+                // Score falls back to condensed engine — but keep the
+                // token model's finalized ratings + MotM so the season
+                // accumulator still fires.
+                let cond = crate::match_engine_exe::simulate_one_fixture(
+                    &home, &away, seed, Some(6.8));
+                (cond, ratings, motm)
             }
         } else {
-            crate::match_engine_exe::simulate_one_fixture(&home, &away, seed, Some(6.8))
+            let cond = crate::match_engine_exe::simulate_one_fixture(
+                &home, &away, seed, Some(6.8));
+            let ratings = cond.per_player_ratings.clone();
+            let motm    = cond.motm_player_id;
+            (cond, ratings, motm)
         };
+        let _ = motm_from_token; // MotM currently not stored on FixtureOutcome — routes via ExeMatchResult
         Some(FixtureOutcome {
             home_score: used.home_score,
             away_score: used.away_score,
@@ -18535,7 +18553,7 @@ impl RuntimeSaveGame {
             away_scorers: used.away_scorer_ids,
             home_out_of_position: home.out_of_position_ids.clone(),
             away_out_of_position: away.out_of_position_ids.clone(),
-            per_player_ratings: used.per_player_ratings,
+            per_player_ratings: ratings_from_token,
         })
     }
 

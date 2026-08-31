@@ -455,9 +455,17 @@ impl FinanceBook {
         let mut rng = MatchRng::new(seed);
         let club_ids: Vec<u32> = self.clubs.iter().map(|c| c.club_id).collect();
         let mut fired_by: Vec<u32> = Vec::new();
+        // Chairman-presence: rust-db's ClubView::flag_6d() currently reads
+        // 0 for every club (data-side issue — likely wrong offset in the
+        // import; every real CM01/02 club ships with a chairman). If the
+        // whole map is false, treat as uniform-import-bug and proceed
+        // anyway so the monthly board tick actually fires.
+        let any_true = self.club_has_chairman.values().any(|v| *v);
         for cid in club_ids {
-            let has_ch = self.club_has_chairman.get(&cid).copied().unwrap_or(true);
-            if !has_ch { continue; }
+            let has_chairman = if any_true {
+                self.club_has_chairman.get(&cid).copied().unwrap_or(true)
+            } else { true };
+            if !has_chairman { continue; }
             let cs = self.chairman.entry(cid).or_insert_with(ChairmanState::default);
             let patience = self.board_patience.entry(cid).or_insert(15u8);
             // 1) patience decrement (exe: FUN_00588c70:210-243)
