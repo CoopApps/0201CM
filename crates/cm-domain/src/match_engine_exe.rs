@@ -1023,6 +1023,14 @@ pub struct ShooterMutable {
     /// Pass-bias short (+0x19C), clamped [-200, +200]. Written by the
     /// __ftol() expression in `006d63f0.c:208-221` and `:878-887`.
     pub pass_bias: i16,
+    /// Per-match rating milli-accumulator (+0x35). VERIFIED per Kill
+    /// #B-slice2 decode; mirrors MatchToken.rating_milli. Deltas here
+    /// track only VERIFIED-exact matches to the exe's rating event
+    /// table (`reports/per_match_ratings_decode.md`); the port's
+    /// `fatigue` writes are a parallel mislabelled accumulator kept
+    /// for compile safety while the physics reads are still wired to
+    /// it.
+    pub rating_milli: i16,
 }
 
 /// Port of `FUN_006DB520(token, side)` — the "is this token inside the
@@ -1088,6 +1096,9 @@ pub fn shot_outcome_resolver(
             if r1 + 7 < shot_difficulty as i32 {
                 // OFF-TARGET / WIDE branch (line 35-47).
                 shooter.fatigue = shooter.fatigue.saturating_sub(1000);
+                // Kill #B-slice2 rating delta: -1000 milli = -1.0 rating,
+                // 'miss (sitter)' per per_match_ratings_decode.md.
+                shooter.rating_milli = shooter.rating_milli.saturating_sub(1000);
                 outcome = 4;                  // WIDE
                 xg = 5.0;                     // 0x40A00000
                 if shooter.pending_shot_cursor == 0 {
@@ -1124,6 +1135,8 @@ pub fn shot_outcome_resolver(
                 } else {
                     // Line 68: outcome stays 1 = GOAL. Fatigue penalty -0x19 (25).
                     shooter.fatigue = shooter.fatigue.saturating_sub(0x19);
+                    // Kill #B-slice2 rating delta: -25 milli (‑0.025 rating).
+                    shooter.rating_milli = shooter.rating_milli.saturating_sub(0x19);
                 }
             }
         } else {
@@ -1166,6 +1179,9 @@ pub fn shot_outcome_resolver(
             } else {
                 // Hard-miss branch (line 96-104).
                 shooter.fatigue = shooter.fatigue.saturating_sub(0x2EE);
+                // Kill #B-slice2 rating delta: -750 milli (‑0.75 rating,
+                // 'miss (bad chance)').
+                shooter.rating_milli = shooter.rating_milli.saturating_sub(0x2EE);
                 outcome = 5;
                 xg = 5.0;
                 if shooter.pending_shot_cursor == 0 {
@@ -1332,6 +1348,7 @@ pub fn match_tick(
                     zone_y: fy,
                     stamina_short: 10_000,
                     pass_bias: 0,
+                    rating_milli: 6400,   // FUN_006d08b0:84 init (6.4)
                 };
                 let mut gk_shot_count = 0u8;
                 let mut counters = SideShotCounters::default();
@@ -3213,6 +3230,8 @@ pub fn physics_tick(
             token.touched = true;
             token.kinetic_x += (rng.range(5) + 5) as f32;
             token.fatigue = token.fatigue.saturating_add(7);
+            // Kill #B-slice2 rating delta: +7 milli per pass/dribble/carry commit.
+            token.rating_milli = token.rating_milli.saturating_add(7);
         }
         return queued;
     }
@@ -3293,6 +3312,7 @@ pub fn resolve_queued_shots(
             zone_y: token.zone_y,
             stamina_short: token.stamina_short,
             pass_bias: token.pass_bias,
+            rating_milli: token.rating_milli,
         };
         let mut gk_shots = 0u8;
         let mut counters = SideShotCounters::default();
@@ -3313,6 +3333,7 @@ pub fn resolve_queued_shots(
         token.blocker_id = shooter.blocker_id;
         token.keeper_id = shooter.keeper_id;
         token.fatigue = shooter.fatigue;
+        token.rating_milli = shooter.rating_milli;
 
         let evt = match outcome {
             ShotOutcome::Goal    => 0x2153,
@@ -4017,9 +4038,27 @@ pub fn simulate_one_fixture_token_model(
 
     // 90 minutes + ET budget.
     let max_minutes = if ctx.extra_time_len > 0 { 90 + ctx.extra_time_len as u16 } else { 90 };
+    let mut ht_finalized = false;
     while ctx.minute < max_minutes {
         ctx.minute += 1;
         run_token_tick(&mut engine, &mut ctx, &mut rng);
+        // Kill #B-slice2: finalize rating at HT (once, at minute 45) and
+        // once again at FT (below). Matches exe FUN_006b3de0's period
+        // boundaries (three cases: full-time, half-time, extra-time).
+        if !ht_finalized && ctx.minute >= 45 {
+            for side in 0..2 {
+                for tok in engine.tokens[side].iter_mut() {
+                    tok.rating_final = finalize_rating(tok.rating_milli);
+                }
+            }
+            ht_finalized = true;
+        }
+    }
+    // FT finalize.
+    for side in 0..2 {
+        for tok in engine.tokens[side].iter_mut() {
+            tok.rating_final = finalize_rating(tok.rating_milli);
+        }
     }
 
     ExeMatchResult {
