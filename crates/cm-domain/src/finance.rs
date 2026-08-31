@@ -158,6 +158,21 @@ pub enum FinanceStatus {
     Rich,        // 2: balance ≥ (25·rep + 50000)·100
 }
 
+impl FinanceStatus {
+    /// Signed byte the exe's `FUN_00582870` classifier returns
+    /// (-2..=2). Used by the initial-board-confidence cascade at
+    /// `FUN_005803d0`:101-110.
+    pub fn to_signed_byte(self) -> i8 {
+        match self {
+            FinanceStatus::Admin    => -2,
+            FinanceStatus::InTheRed => -1,
+            FinanceStatus::Normal   =>  0,
+            FinanceStatus::Healthy  =>  1,
+            FinanceStatus::Rich     =>  2,
+        }
+    }
+}
+
 impl ClubFinance {
     /// Seed a new club's finance. The REAL data uses the SHIPPED `club_cash`
     /// value at club record +0x65 when it's non-zero (287 clubs of 10,580 ship
@@ -171,14 +186,16 @@ impl ClubFinance {
     /// (`005803d0.c`:195-238) since the shipped value overlay isn't at a
     /// decoded offset yet.
     pub fn seed_faithful(club_id: u32, reputation: u16, stadium_flag: bool) -> Self {
-        Self::seed_from(club_id, reputation, stadium_flag, 0)
+        // Assumes has_chairman=true — matches the shipped data where every
+        // real club carries a chairman staff record. Test-only convenience.
+        Self::seed_from(club_id, reputation, stadium_flag, 0, true)
     }
 
     /// Seed variant that takes the CLUB-SPECIFIC shipped cash from club.dat's
     /// `+0x65` field. If non-zero, that value wins; otherwise the reputation
     /// table is used as fallback (matches the exe's own behaviour for clubs
     /// with no pre-set finance state).
-    pub fn seed_from(club_id: u32, reputation: u16, stadium_flag: bool, shipped_cash: i32) -> Self {
+    pub fn seed_from(club_id: u32, reputation: u16, stadium_flag: bool, shipped_cash: i32, has_chairman: bool) -> Self {
         let rep = reputation as i64;
         let band = ((rep / 500).saturating_sub(1)).clamp(0, 15) as usize;
         let balance: i64 = if shipped_cash != 0 {
@@ -203,19 +220,19 @@ impl ClubFinance {
             }.max(0)
         };
 
-        // Determine if this club boots in administration (SWFC ships with
-        // -£14M cash and rep 6000 → threshold -£11.5M → immediate admin).
-        let bootstrap = ClubFinance {
-            club_id, balance, weekly_wage_bill: 0, transfer_budget,
-            months_in_the_red: 0,
-            board_confidence: initial_board_confidence(rep),
-            in_administration: false,
-            month_wages: 0, month_gate: 0, month_tv_prize: 0,
-            home_stadium_id: None, stadium_share_used: false,
-            takeover_pending: false, last_takeover_amount: 0,
-            month_owner_gift: 0, year_owner_gift: 0,
+        // Compute status once against the seed balance so board_confidence
+        // and boots_in_admin agree with FUN_00582870.
+        let status_at_seed = {
+            let r = reputation as i64;
+            let bal = balance;
+            if bal >= (25 * r + 50_000) * 100 { FinanceStatus::Rich }
+            else if bal >= (25 * r + 87_500) * 40 { FinanceStatus::Healthy }
+            else if bal <= -(1500 * r + 2_500_000) { FinanceStatus::Admin }
+            else if r < 5000 && bal <= -250 * r { FinanceStatus::InTheRed }
+            else if r >= 5000 && bal <= (3750 - r) * 1000 { FinanceStatus::InTheRed }
+            else { FinanceStatus::Normal }
         };
-        let boots_in_admin = matches!(bootstrap.status(reputation), FinanceStatus::Admin);
+        let boots_in_admin = matches!(status_at_seed, FinanceStatus::Admin);
         // Wage bill starts at 0 — the tick sums real contracts weekly. (The
         // old rep²/5 heuristic invented a wage bill uncorrelated with the
         // actual signed players.)
@@ -226,7 +243,7 @@ impl ClubFinance {
             transfer_budget,
             in_administration: boots_in_admin,
             months_in_the_red: 0,
-            board_confidence: initial_board_confidence(rep),
+            board_confidence: initial_board_confidence(has_chairman, status_at_seed),
             month_wages: 0,
             month_gate: 0,
             month_tv_prize: 0,
@@ -252,11 +269,23 @@ impl ClubFinance {
     }
 }
 
-/// Real `FUN_005803d0`:102-110 seed for board confidence at finance+0x166.
-fn initial_board_confidence(rep: i64) -> u8 {
-    // The `cVar3` there is a chairman-existence byte; without a chairman it's
-    // 10. `status ∈ {1,2}` → 5, else 15. We approximate at boot: rep tiers.
-    if rep < 2000 { 15 } else if rep < 5000 { 10 } else { 5 }
+/// Real `FUN_005803d0`:101-110 seed for board confidence at finance+0x166.
+/// `has_chairman` comes from club-record +0x6d; `status` is the signed byte
+/// returned by `FUN_00582870`. VERIFIED via decode agent 2026-08-31.
+///
+/// Cascade (exact):
+///   no chairman OR status == Normal (0)  → 10
+///   status ∈ {Healthy=1, Rich=2}          → 5
+///   else (InTheRed=-1, Admin=-2)          → 15
+///
+/// The old rep-tier heuristic was backwards — the exe rewards *good*
+/// status (Healthy/Rich) with LOW confidence numbers (5) and penalises
+/// *very bad or very good* with 15. Reputation is not read.
+fn initial_board_confidence(has_chairman: bool, status: FinanceStatus) -> u8 {
+    let s = status.to_signed_byte();
+    if !has_chairman || s == 0 { 10 }
+    else if (1..=2).contains(&s) { 5 }
+    else { 15 }
 }
 
 /// The finance book — indexed by club id.
@@ -279,6 +308,12 @@ pub struct FinanceBook {
     /// hardcoded out of `FUN_005884a0`).
     #[serde(default)]
     pub club_nation: std::collections::BTreeMap<u32, i32>,
+    /// club_id → has-chairman flag (ClubView::flag_6d() != 0). Item 1
+    /// VERIFIED — the exe reads this byte at `005803d0.c:102`,
+    /// `00586ec0.c:59/117/118`. Consumed by initial_board_confidence
+    /// and by the debt-payment gate (Item 3).
+    #[serde(default)]
+    pub club_has_chairman: std::collections::BTreeMap<u32, bool>,
 }
 
 impl FinanceBook {
@@ -294,6 +329,7 @@ impl FinanceBook {
         let mut reps = std::collections::BTreeMap::new();
         let mut att = std::collections::BTreeMap::new();
         let mut nats = std::collections::BTreeMap::new();
+        let mut chair = std::collections::BTreeMap::new();
         for rec in clubs {
             let cv = crate::ClubView::new(rec);
             if let Some(nid) = cv.nation_id() { nats.insert(cv.id(), nid); }
@@ -301,13 +337,16 @@ impl FinanceBook {
             // otherwise fall back to the START_CASH-by-reputation table. This
             // is what makes SWFC boot as bankrupt (their shipped cash is
             // -£14M), same as the game itself.
-            let mut cfinance = ClubFinance::seed_from(cv.id(), cv.reputation(), false, cv.cash());
+            let has_chair = cv.flag_6d() != 0; // Item 1 — VERIFIED (005803d0.c:102)
+            let mut cfinance = ClubFinance::seed_from(cv.id(), cv.reputation(), false, cv.cash(), has_chair);
             cfinance.home_stadium_id = cv.home_stadium_id();
             cf.push(cfinance);
             att.insert(cv.id(), (cv.attendance_average(), cv.attendance_minimum(), cv.attendance_maximum()));
             reps.insert(cv.id(), cv.reputation());
+            chair.insert(cv.id(), has_chair);
         }
         Self { clubs: cf, rules: CountryFinanceRules::new(),
+               club_has_chairman: chair,
                club_reputation: reps, club_attendance: att, club_nation: nats }
     }
 
@@ -468,11 +507,24 @@ impl FinanceBook {
             let rep = self.club_reputation.get(&club_id).copied().unwrap_or(0) as i64;
             // Inverse-rep gate (line 30-33). Higher rep → less likely.
             if rng.range(7000) as i64 + 3500 <= rep { continue; }
-            // Nation-prob RNG (line 35/74) — same denom heuristic as takeover.
-            let denom = ((rep / 100) + 15).max(15) as u32;
+            // Item 3 VERIFIED — per-status RNG denom is `6.0 / status_divisor`
+            // via asm 0x00587c9f..0x00587dd8 (no per-nation table exists).
+            // Effective denoms: {InTheRed, Admin & rep<3500} → 3; else → 15.
+            let status = self.clubs.iter().find(|c| c.club_id == club_id).unwrap()
+                .status(rep as u16);
+            let denom: u32 = match status {
+                FinanceStatus::InTheRed                             => 3,
+                FinanceStatus::Admin  if rep < 3500                 => 3,
+                _                                                    => 15,
+            };
             if rng.range(denom) != 0 { continue; }
-            // Second RNG(10) (line 40) — 10% actualisation.
-            if rng.range(10) != 0 { continue; }
+            // Second gate: no-chairman path uses RNG(10) — exe SKIPS when
+            // RNG returns 0 (`je 0x587f40` at 0x00587def). The previous
+            // port had `!= 0` which was inverted; now matches the exe.
+            // TODO chairman branch consults chairman.charisma; wire when
+            // ChairmanAttrs lands in the state.
+            let has_chairman = self.club_has_chairman.get(&club_id).copied().unwrap_or(false);
+            if !has_chairman && rng.range(10) == 0 { continue; }
             let amount: i64 = if rep < 1250 { rep * 450 } else { rep * 300 };
             if let Some(c) = self.clubs.iter_mut().find(|c| c.club_id == club_id) {
                 c.balance = c.balance.saturating_add(amount);
