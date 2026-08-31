@@ -22,6 +22,7 @@ pub mod font_loader;
 pub mod gen_screen_types;
 pub mod gen_screens;
 pub mod glyph_blit;
+pub mod hsr;
 pub mod image;
 pub mod inflection;
 pub mod l10n;

@@ -1142,6 +1142,99 @@ impl<'a> ContinentView<'a> {
     }
 }
 
+// ------ Tactic file (.tct / .pct, 1428/1476 B) ------
+
+/// Zero-copy view over a memory-mapped `.tct` or `.pct` tactic file.
+/// Assumes the file has already been version-normalised to canonical v5E
+/// (1472/1476 B). Full format decode in `reports/tactic_file_decode.md`.
+pub struct TacticView<'a> {
+    bytes: &'a [u8],
+    is_packaged: bool,      // .pct = true, .tct = false
+}
+
+impl<'a> TacticView<'a> {
+    pub const VERSION_TAG_V5E: u32 = 0x0098EC5E;
+    pub const OBFUSCATE_MASK: u32 = 0x075BCD15;
+
+    /// Wrap bytes assumed to be canonical v5E layout.
+    /// `is_packaged` = true for `.pct`, false for `.tct` — controls whether
+    /// the version tag is XOR-obfuscated (a `.pct` marker only).
+    pub fn from_bytes(bytes: &'a [u8], is_packaged: bool) -> Self {
+        Self { bytes, is_packaged }
+    }
+
+    pub fn version(&self) -> u32 {
+        let raw = le_u32(self.bytes, 0);
+        if self.is_packaged { raw.wrapping_sub(Self::OBFUSCATE_MASK) } else { raw }
+    }
+
+    /// Formation display name ("3-5-2", "4-4-2"…). Stored bit-inverted on
+    /// disk; runtime memory holds it plain — this accessor undoes the
+    /// inversion.
+    pub fn formation_name(&self) -> String {
+        let raw = &self.bytes[0x04..0x36];
+        raw.iter()
+            .map(|&b| if b == 0xff { 0xff } else { !b })
+            .take_while(|&b| b != 0)
+            .map(|b| b as char)
+            .collect()
+    }
+
+    /// Author ASCII string embedded at file `+0x39` inside "area A".
+    /// Stock presets are "Marc Vaughan" or "Paul Collyer".
+    pub fn author(&self) -> String {
+        let raw = &self.bytes[0x39..0x39 + 0x40];
+        let n = raw.iter().position(|&b| b == 0).unwrap_or(raw.len());
+        String::from_utf8_lossy(&raw[..n]).to_string()
+    }
+
+    // --- Team-wide flag words ---
+    pub fn team_flags_1(&self) -> u32 { le_u32(self.bytes, 0x00FE) }
+    pub fn team_flags_2(&self) -> u32 { le_u32(self.bytes, 0x0559) }
+
+    /// Team mentality 1..5 (Ultra-Def / Def / Normal / Att / All-Out-Att) —
+    /// bits 0..4 of `team_flags_2`, verified from the loader's force-set code.
+    pub fn mentality(&self) -> u8 { (self.team_flags_2() & 0x1F) as u8 }
+
+    // --- Per-position accessors (11 slots) ---
+
+    /// Position/role bitmask for slot `i` (one-hot over 12 roles GK/SW/D/DM/
+    /// M/AM/ST/WB/RS/LS/C/FR). Matches `crate::tactics::position_rating`'s
+    /// `position_mask` parameter.
+    pub fn slot_role_mask(&self, i: usize) -> u16 {
+        assert!(i < 11);
+        le_u16(self.bytes, 0x0102 + i * 2)
+    }
+    pub fn slot_aux_role(&self, i: usize) -> u8 {
+        assert!(i < 11);
+        u8_at(self.bytes, 0x0118 + i)
+    }
+    pub fn slot_depth(&self, i: usize) -> u16 {
+        assert!(i < 11);
+        le_u16(self.bytes, 0x0123 + i * 2)
+    }
+    /// 96-byte per-slot instructions block (48 u16s: run-from-position,
+    /// closing-down, marking-tightness, distribution, free-role, playmaker,
+    /// target-man, forward-runs, hold-up-ball, passing-focus, cross-from,
+    /// cross-target, long-shots — exact per-field u16 index still TBD).
+    pub fn slot_body(&self, i: usize) -> &'a [u8] {
+        assert!(i < 11);
+        &self.bytes[0x0139 + i * 96 .. 0x0139 + (i + 1) * 96]
+    }
+    /// 8-byte per-slot pair — (u32 movement token, u32 flag=10 on legacy).
+    pub fn slot_pair(&self, i: usize) -> (u32, u32) {
+        assert!(i < 11);
+        let o = 0x055D + i * 8;
+        (le_u32(self.bytes, o), le_u32(self.bytes, o + 4))
+    }
+    /// Per-slot flag byte at `+0x5B5`. `0x11` = normal; higher bits toggled
+    /// for free-role / attacking-fullback (verified on `3-5-2 AWE.tct`).
+    pub fn slot_flag(&self, i: usize) -> u8 {
+        assert!(i < 11);
+        u8_at(self.bytes, 0x05B5 + i)
+    }
+}
+
 // ------ Stadium (78 B, DAT_00acd5b8, stride 0x4e) ------
 
 /// Typed view over a `stadium.dat` record (78 bytes).

@@ -32,6 +32,7 @@ pub mod index;
 pub mod player_development;
 pub mod player_rating;
 pub mod tactics;
+pub mod tactic_file;
 pub mod valuation;
 pub mod player_regen;
 pub mod awards_engine;
@@ -66,6 +67,7 @@ pub mod screen_batch25;
 pub mod screen_batch26;
 pub mod screen_batch27;
 pub mod sidebar_dispatcher;
+pub mod tactic_dispatcher;
 pub mod world_facade;
 pub mod world_pools;
 pub mod screen_manager_batch;
@@ -1831,6 +1833,15 @@ pub struct RuntimeSaveGame {
     /// FUN_0051f5d0 per-person seeding). `None` on the parameterless builder.
     #[serde(default)]
     pub player_init: Option<PlayerInitSummary>,
+    /// Per-club chosen tactic (kill #T gap #2). `club_id → Tactic` decoded
+    /// from a shipped `.pct` preset (e.g. AI clubs pick a preset matching
+    /// their nation's stock formation) or a user-authored `.tct`. The XI
+    /// picker in `snapshot_team_for_engine` reads this to derive the 11
+    /// role masks per club instead of falling back to `FLAT_442_ROLES`.
+    /// Empty at boot — populated by `seed_default_tactics` after clubs
+    /// load, or per manager choice from the Tactics screen.
+    #[serde(default)]
+    pub club_tactics: std::collections::BTreeMap<u32, crate::tactic_file::Tactic>,
     /// The human managers in this game. Multiple are supported (hotseat); each
     /// holds their own club/nation appointment. Created at runtime via
     /// `add_manager` — the exe's "Add Manager" (command 0x3fb).
@@ -12733,6 +12744,7 @@ impl World {
         // of `player_regen::regen_fill_club_squad`.
         let _regen_assigned = rating_book.assign_free_agents_to_empty_clubs(8, 14);
         RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
@@ -17889,6 +17901,28 @@ fn competition_name_matches_nation(competition: &str, nation: &str) -> bool {
 }
 
 impl RuntimeSaveGame {
+    /// Assign the given tactic to every club in the world. Convenience for
+    /// boot-time: load `442_default.pct` via `crate::tactic_file::load_tactic`
+    /// and pass the result here so every club fights matches under a real
+    /// per-club [`crate::tactic_file::Tactic`] instead of the hardcoded
+    /// `FLAT_442_ROLES` fallback in `snapshot_team_for_engine`.
+    pub fn seed_default_tactics(
+        &mut self,
+        preset: crate::tactic_file::Tactic,
+        club_ids: impl IntoIterator<Item = u32>,
+    ) {
+        self.club_tactics.clear();
+        for id in club_ids {
+            self.club_tactics.insert(id, preset.clone());
+        }
+    }
+
+    /// Assign a tactic to a single club (e.g. Bayern picks 3-5-2 while the
+    /// rest of the league sits on the default 4-4-2).
+    pub fn assign_tactic(&mut self, club_id: u32, tactic: crate::tactic_file::Tactic) {
+        self.club_tactics.insert(club_id, tactic);
+    }
+
     pub fn read_json_file(path: &Path) -> io::Result<Self> {
         read_json(path)
     }
@@ -18580,11 +18614,18 @@ impl RuntimeSaveGame {
 
         if players.len() < 6 { return None; }
         // Position-aware XI picker (tactics gap #3): for each of the 11
-        // FLAT_442_ROLES slots, pick the unassigned player whose
+        // role-mask slots, pick the unassigned player whose
         // `tactics::position_rating` for that specific role is highest —
         // rather than the old bucketed sort which threw players into slots
         // by band and produced strikers-at-LB when the outfield/attack
         // ordinals didn't line up.
+        //
+        // Per-club tactic (gap #2): if the club has a tactic loaded in
+        // `club_tactics`, use its 11 role masks; otherwise fall back to
+        // hardcoded FLAT_442_ROLES.
+        let role_masks: [u16; 11] = self.club_tactics.get(&club_id)
+            .map(crate::tactic_file::role_masks)
+            .unwrap_or(crate::tactics::FLAT_442_ROLES);
         //
         // This is a per-slot best-fit greedy assignment. GK slot goes first
         // (position==12 gets +50 preference on top of aptitude so a real
@@ -18595,7 +18636,7 @@ impl RuntimeSaveGame {
         let mut chosen: Vec<usize> = Vec::with_capacity(11);
         let mut picked = vec![false; players.len()];
         for slot in 0..11.min(players.len()) {
-            let role = crate::tactics::FLAT_442_ROLES[slot];
+            let role = role_masks[slot];
             let mut best_idx: Option<usize> = None;
             let mut best_score: i32 = i32::MIN;
             for (idx, ep) in players.iter().enumerate() {
@@ -18626,7 +18667,7 @@ impl RuntimeSaveGame {
         let mut sum_position_ratings: i32 = 0;
         let mut out_of_position_ids: Vec<u32> = Vec::new();
         for (i, ep) in players.iter().take(11).enumerate() {
-            let role = crate::tactics::FLAT_442_ROLES[i];
+            let role = role_masks[i];
             if let Some(rp) = rated_by_id.get(&ep.player_id) {
                 let r = crate::tactics::position_rating(&rp.position_aptitudes, role, 100);
                 sum_position_ratings += r;
@@ -22577,6 +22618,7 @@ mod tests {
     #[test]
     fn runtime_tick_uses_three_cm_phases_per_day() {
         let mut save = RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
@@ -22795,6 +22837,7 @@ mod tests {
     #[test]
     fn headless_run_records_shell_progress_and_blockers() {
         let mut save = RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
@@ -22892,6 +22935,7 @@ mod tests {
     #[test]
     fn headless_campaign_records_checkpoints_and_backend_summary() {
         let mut save = RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
@@ -22981,6 +23025,7 @@ mod tests {
     #[test]
     fn headless_campaign_retains_recent_mutation_log_but_counts_all_entries() {
         let mut save = RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
@@ -23064,6 +23109,7 @@ mod tests {
     #[test]
     fn headless_manager_profile_records_session_command() {
         let mut save = RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
@@ -23146,6 +23192,7 @@ mod tests {
     #[test]
     fn runtime_tick_to_date_advances_by_cm_phase_rollovers() {
         let mut save = RuntimeSaveGame {
+            club_tactics: Default::default(),
             format: "cm0102-rs-save".to_string(),
             version: 1,
             source: RuntimeSource {
