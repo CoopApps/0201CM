@@ -296,6 +296,123 @@ impl<'a> ClubView<'a> {
         let v = le_i32(self.raw, 0x69);
         if v <= 0 { None } else { Some(v) }
     }
+
+    // --- Kit colours (VERIFIED via FUN_00525190 & FUN_006ba1e0) ---
+    // Each field is a colour-record id (i32); the render code resolves it to
+    // the colour pool and reads (r, g, b) at +0x37/+0x38/+0x39 on the pointed
+    // record. Kit 1 = home, kit 2 = away, kit 3 = third. `-2` = unused;
+    // when either kit-2 slot is 0/unset the match-kit picker falls back to
+    // REVERSED kit 1 (bg swapped with fg).
+    pub fn kit1_fg_color_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x83)) }
+    pub fn kit1_bg_color_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x87)) }
+    pub fn kit2_fg_color_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x8b)) }
+    pub fn kit2_bg_color_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x8f)) }
+    pub fn kit3_fg_color_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x93)) }
+    pub fn kit3_bg_color_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x97)) }
+
+    // --- People: chairman + 3 board members (loader loop at 0xc3, size 3) ---
+
+    /// Chairman (staff id). VERIFIED via FUN_00583fc0 (gate-receipts rent),
+    /// which dereferences the pointed record at +0x69. Sample: Man Utd = 180,
+    /// Bayern = 67647, Sheff Wed = 54811, PSG = 66210. -1 in ~85% of clubs
+    /// (small clubs with no named chairman).
+    pub fn chairman_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xbf)) }
+
+    /// Board members — a fixed 3-slot array at +0xc3 read in a loop by the
+    /// loader (`00537870.c` lines 349-362). Slot semantics (director /
+    /// vice-chair / treasurer) best-guess.
+    pub fn board_member(&self, i: usize) -> Option<i32> {
+        if i >= 3 { return None; }
+        id_opt(le_i32(self.raw, 0xc3 + i * 4))
+    }
+
+    // --- Roster arrays (loader loops at 0xd7 / 0x19f / 0x1b3 / 0x1cf) ---
+    // Sizes 50 / 5 / 7 / 3 are LOADER-VERIFIED (`00537870.c` lines 381-440).
+    // Slot semantics (players / coaches / scouts / physios) are best-guess
+    // from typical CM roster hierarchies; the loader does not distinguish
+    // roles, it just reads back-to-back i32 arrays.
+
+    pub const SQUAD_SLOTS: usize = 50;
+    pub const COACH_SLOTS: usize = 5;
+    pub const SCOUT_SLOTS: usize = 7;
+    pub const PHYSIO_SLOTS: usize = 3;
+
+    pub fn squad_slot(&self, i: usize) -> Option<i32> {
+        if i >= Self::SQUAD_SLOTS { return None; }
+        id_opt(le_i32(self.raw, 0xd7 + i * 4))
+    }
+    pub fn coach_slot(&self, i: usize) -> Option<i32> {
+        if i >= Self::COACH_SLOTS { return None; }
+        id_opt(le_i32(self.raw, 0x19f + i * 4))
+    }
+    pub fn scout_slot(&self, i: usize) -> Option<i32> {
+        if i >= Self::SCOUT_SLOTS { return None; }
+        id_opt(le_i32(self.raw, 0x1b3 + i * 4))
+    }
+    pub fn physio_slot(&self, i: usize) -> Option<i32> {
+        if i >= Self::PHYSIO_SLOTS { return None; }
+        id_opt(le_i32(self.raw, 0x1cf + i * 4))
+    }
+
+    /// All squad-array staff ids, in loader order, skipping -1 sentinels.
+    pub fn squad_ids(&self) -> impl Iterator<Item = i32> + '_ {
+        (0..Self::SQUAD_SLOTS).filter_map(move |i| self.squad_slot(i))
+    }
+
+    // --- Six loader-confirmed staff-refs at 0x9b..0xaf (semantics TBD) ---
+    // Values are in the staff-id range (0..132,714). Almost every shipped
+    // record has -1 in most of these slots; big clubs populate a few.
+    // Candidates: club legends / notable ex-managers / historical
+    // player-of-the-year references — not yet cross-referenced.
+    pub fn staff_ref_9b(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x9b)) }
+    pub fn staff_ref_9f(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x9f)) }
+    pub fn staff_ref_a3(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xa3)) }
+    pub fn staff_ref_a7(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xa7)) }
+    pub fn staff_ref_ab(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xab)) }
+    pub fn staff_ref_af(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0xaf)) }
+
+    // --- Small-enum bytes / flags (loader-confirmed as u8 fields) ---
+
+    /// Three-value enum {1, 2, 3} across the whole DB (5287 / 1705 / 3588
+    /// records respectively). Best-guess: 1 = professional, 2 = semi-pro,
+    /// 3 = amateur / reserve. Man Utd / Bayern / PSG / Sheff Wed = 1;
+    /// "1.FC Synot B" (reserve) and "SV Arminia Hannover" = 3.
+    pub fn club_status(&self) -> u8 { u8_at(self.raw, 0x64) }
+
+    /// Rare-set flag byte at +0x82 — 0xff on ~128 clubs (Ajax, Aston Villa,
+    /// Kashima Antlers, Alania Vladikavkaz, Antalyaspor, ...). Semantics TBD.
+    pub fn flag_82(&self) -> u8 { u8_at(self.raw, 0x82) }
+
+    pub fn flag_5f(&self) -> u8 { u8_at(self.raw, 0x5f) }
+    pub fn flag_6d(&self) -> u8 { u8_at(self.raw, 0x6d) }
+    pub fn flag_72(&self) -> u8 { u8_at(self.raw, 0x72) }
+    pub fn flag_7f(&self) -> u8 { u8_at(self.raw, 0x7f) }
+
+    // --- Runtime state (all -1 / 0 in shipped clubs; kept for save-file
+    //     round-trip and for later runtime read/write). ---
+
+    /// Paired (ref, type) — set together by the pending-event code path.
+    /// Both slots are -1 in every shipped record; heavy runtime reads/writes.
+    pub fn pending_ref(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x1db)) }
+    pub fn pending_ref_type(&self) -> u8 { u8_at(self.raw, 0x1df) }
+
+    /// Runtime transfer-target watchlist. 20-slot array of player pointers.
+    /// VERIFIED via FUN_00546e70 which walks it capped at index 0x13.
+    /// All -1 in the shipped database.
+    pub const TRANSFER_TARGET_SLOTS: usize = 20;
+    pub fn transfer_target(&self, i: usize) -> Option<i32> {
+        if i >= Self::TRANSFER_TARGET_SLOTS { return None; }
+        id_opt(le_i32(self.raw, 0x1e0 + i * 4))
+    }
+
+    /// Runtime 4-slot pending-bid / negotiation array. Semantics best-guess.
+    pub fn pending_bid(&self, i: usize) -> Option<i32> {
+        if i >= 4 { return None; }
+        id_opt(le_i32(self.raw, 0x230 + i * 4))
+    }
+
+    /// Runtime misc-pending single ref. -1 in every shipped record.
+    pub fn misc_pending(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x240)) }
 }
 
 // ------ Player / staff-base (110 B, StaffType6, DAT_00acd5c4, stride 0x6e) ------
@@ -1134,6 +1251,156 @@ impl<'a> OfficialView<'a> {
         [u8_at(s, 0x24), u8_at(s, 0x25), u8_at(s, 0x26),
          u8_at(s, 0x27), u8_at(s, 0x28), u8_at(s, 0x29),
          u8_at(s, 0x2a)]
+    }
+}
+
+// ------ History records (staff_history, club_comp_history, nation_comp_history, staff_comp_history) ------
+//
+// Full decode evidence in `reports/history_records_decode.md`. Loader: the
+// four adjacent sections in `FUN_005176c0` around lines 1660–2530 that call
+// per-record readers `FUN_00539a30` (0x11), `FUN_00539f00` (0x1a) and
+// `FUN_0053a1a0` (0x3a). Type ids in `index.dat` are 0x11 (staff_history),
+// 0x12 (staff_comp_history), 0x13 (club_comp_history), 0x14 (nation_comp_history).
+
+/// A read-only, typed view over a `staff_history.dat` record (17 bytes).
+///
+/// One row per (person, competition, season). Semantics VERIFIED from the
+/// consumer at `FUN_007a8090` around lines 260–360: the sort key is `+4`
+/// (person), then short `+8` (season year), then `+0` (record id); the
+/// per-record totals `local_830 += *(byte*)(+0xf)` and
+/// `local_82c += *(byte*)(+0x10)` group into `FUN_00449590(person, comp,
+/// apps_sum, goals_sum)`. The "Too many goals for goalkeeper" guard
+/// (`5 < *(byte*)(+0x10)`) fixes `+0x10 = goals`, so `+0xf = apps` and
+/// `+0xe` is the substitute-appearance / unused byte.
+pub struct StaffHistoryView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> StaffHistoryView<'a> {
+    pub const RECORD_SIZE: usize = 0x11; // 17
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    /// Row id, unique per file (0..N-1 in shipped data).
+    pub fn id(&self) -> u32 { le_u32(self.raw, 0x00) }
+    /// `person.dat` / `staff.dat` id (game code resolves this to a person
+    /// pointer, then reads `+0x61` for the club that season).
+    pub fn person_id(&self) -> u32 { le_u32(self.raw, 0x04) }
+    /// Season start year (e.g. 1984 = 0x07C0).
+    pub fn year(&self) -> u16 { le_u16(self.raw, 0x08) }
+    /// `club_comp.dat` id (competition).
+    pub fn competition_id(&self) -> u32 { le_u32(self.raw, 0x0a) }
+    /// Byte at `+0xe`. Substitute-appearances is the strong guess (byte-wide
+    /// counter beside apps and goals); UNVERIFIED.
+    pub fn subs(&self) -> u8 { u8_at(self.raw, 0x0e) }
+    /// Appearances. VERIFIED (sanity clamp at consumer: apps==0 forces goals=0).
+    pub fn apps(&self) -> u8 { u8_at(self.raw, 0x0f) }
+    /// Goals. VERIFIED (goalkeeper cap: `5 < goals` triggers a data-error).
+    pub fn goals(&self) -> u8 { u8_at(self.raw, 0x10) }
+}
+
+/// A read-only, typed view over a `club_comp_history.dat` record (26 bytes).
+///
+/// One row per (competition, season) with the top-4 finishers. Semantics
+/// VERIFIED from the honours screen `FUN_0049eb30`: it sorts by
+/// `**(int**)(+4)` (competition pointer) then short at `+8` (year), then
+/// prints `local_10 + 10 → Winners`, `+ 0xe → Runners-up`,
+/// `+ 0x12 → Third Place` / "Minor Premiers" (Australian domestic), and
+/// `+ 0x16 → Hosts` — each field is a club pointer, `-1` = "unused".
+///
+/// SPOT CHECK (verified): row 0 = comp 7 (English Premier Division), year
+/// 0x0761 = 1889, winner club 7269 = Preston North End, runner-up club
+/// 730 = Aston Villa. Matches the historical 1888-89 Football League: Preston
+/// "The Invincibles" won it, Aston Villa were runners-up.
+pub struct ClubCompHistoryView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> ClubCompHistoryView<'a> {
+    pub const RECORD_SIZE: usize = 0x1a; // 26
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    pub fn id(&self) -> u32 { le_u32(self.raw, 0x00) }
+    pub fn competition_id(&self) -> u32 { le_u32(self.raw, 0x04) }
+    pub fn year(&self) -> u16 { le_u16(self.raw, 0x08) }
+    pub fn winner_club_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x0a)) }
+    pub fn runner_up_club_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x0e)) }
+    /// Third place, or "Minor Premiers" for competitions that use that
+    /// concept (Australian A-League etc.).
+    pub fn third_place_club_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x12)) }
+    pub fn hosts_club_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x16)) }
+}
+
+/// A read-only, typed view over a `nation_comp_history.dat` record (26 bytes).
+///
+/// Identical byte layout to [`ClubCompHistoryView`] — the same 26-byte reader
+/// (`FUN_00539f00`, stride `0x1a`) and the same honours screen
+/// `FUN_0049eb30` consume both. The only difference is that the pointer
+/// fields refer to national-team entities rather than clubs. In the shipped
+/// data those winner values (e.g. row 0 = comp 408 African Cup of Nations,
+/// year 0x07A5 = 1957, winner id 10638) are neither `nation.dat` ids nor
+/// `club.dat` ids (max club id = 10579), so the referenced pool is the
+/// runtime national-teams table built on top of the base data.
+pub struct NationCompHistoryView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> NationCompHistoryView<'a> {
+    pub const RECORD_SIZE: usize = 0x1a; // 26
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    pub fn id(&self) -> u32 { le_u32(self.raw, 0x00) }
+    pub fn competition_id(&self) -> u32 { le_u32(self.raw, 0x04) }
+    pub fn year(&self) -> u16 { le_u16(self.raw, 0x08) }
+    pub fn winner_team_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x0a)) }
+    pub fn runner_up_team_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x0e)) }
+    pub fn third_place_team_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x12)) }
+    pub fn hosts_team_id(&self) -> Option<i32> { id_opt(le_i32(self.raw, 0x16)) }
+}
+
+/// A read-only, typed view over a `staff_comp_history.dat` record (58 bytes).
+///
+/// Loader: `FUN_0053a1a0` bulk-reads `0x3a` bytes; base pointer
+/// `DAT_00acd5ec`, count `DAT_00acd594`. The header (`+0x00..+0x0a`) is
+/// verified from the same file family (id / person / year) and matches the
+/// on-disk pattern of the shipped rows (record ids sequential 0..N-1, the
+/// second u32 groups adjacent rows by person, the u16 at `+8` is a plausible
+/// year, e.g. `0x07A4 = 1956`).
+///
+/// The 48-byte tail is a bank of twelve u32s that in the shipped data mixes
+/// counters and `0xFFFF_FFFF` "empty" sentinels — very likely a
+/// per-season managerial stats block (played / won / drawn / lost / for /
+/// against split by home / away or by league / cup / continental). We did
+/// not find a consumer site of `DAT_00acd5ec` in the decompile that pins
+/// individual byte offsets, so the twelve u32s are exposed as an array and
+/// left named `slot_N` until a downstream screen (Manager history) is
+/// decoded to bind them.
+pub struct StaffCompHistoryView<'a> {
+    raw: &'a [u8],
+}
+
+impl<'a> StaffCompHistoryView<'a> {
+    pub const RECORD_SIZE: usize = 0x3a; // 58
+
+    pub fn new(record: &'a DomainOpaqueRecord) -> Self { Self { raw: &record.raw } }
+    pub fn from_bytes(raw: &'a [u8]) -> Self { Self { raw } }
+
+    /// Row id, sequential in the shipped file.
+    pub fn id(&self) -> u32 { le_u32(self.raw, 0x00) }
+    /// `person.dat` / `staff.dat` id (rows are grouped by this in the shipped file).
+    pub fn person_id(&self) -> u32 { le_u32(self.raw, 0x04) }
+    /// Season start year.
+    pub fn year(&self) -> u16 { le_u16(self.raw, 0x08) }
+    /// Read one of the twelve trailing u32 slots at `+0x0a + i*4`.
+    /// Sentinel `0xFFFFFFFF` means "empty" for the id-shaped slots.
+    pub fn slot(&self, i: usize) -> u32 {
+        assert!(i < 12);
+        le_u32(self.raw, 0x0a + i * 4)
     }
 }
 

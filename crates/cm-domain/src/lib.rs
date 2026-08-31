@@ -381,23 +381,48 @@ pub struct CoreSummary {
     pub sample_nation_record_size: Option<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainHistory17 {
-    pub id: u32,
-    pub u32_slots: [u32; 4],
-    pub trailing_byte: u8,
+    #[serde(default)] pub id: u32,
+    #[serde(default)] pub u32_slots: [u32; 4],
+    #[serde(default)] pub trailing_byte: u8,
+    // Named fields (populated by regen_histories via StaffHistoryView).
+    #[serde(default)] pub person_id: u32,
+    #[serde(default)] pub year: u16,
+    #[serde(default)] pub competition_id: u32,
+    #[serde(default)] pub subs: u8,
+    #[serde(default)] pub apps: u8,
+    #[serde(default)] pub goals: u8,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainHistory26 {
-    pub u32_slots: [u32; 6],
-    pub trailing_u16: u16,
+    #[serde(default)] pub id: u32,
+    #[serde(default)] pub u32_slots: [u32; 6],
+    #[serde(default)] pub trailing_u16: u16,
+    // Named fields (populated by regen_histories via ClubCompHistoryView or NationCompHistoryView).
+    #[serde(default)] pub competition_id: u32,
+    #[serde(default)] pub year: u16,
+    #[serde(default)] pub winner_club_id:     Option<i32>,
+    #[serde(default)] pub runner_up_club_id:  Option<i32>,
+    #[serde(default)] pub third_place_club_id: Option<i32>,
+    #[serde(default)] pub hosts_club_id:      Option<i32>,
+    // (Nation variant reuses the same struct — reader interprets by pool.)
+    #[serde(default)] pub winner_team_id:     Option<i32>,
+    #[serde(default)] pub runner_up_team_id:  Option<i32>,
+    #[serde(default)] pub third_place_team_id: Option<i32>,
+    #[serde(default)] pub hosts_team_id:      Option<i32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DomainHistory58 {
-    pub u32_slots: [u32; 14],
-    pub trailing_u16: u16,
+    #[serde(default)] pub id: u32,
+    #[serde(default)] pub u32_slots: [u32; 14],
+    #[serde(default)] pub trailing_u16: u16,
+    // Named fields (populated by regen_histories via StaffCompHistoryView).
+    #[serde(default)] pub person_id: u32,
+    #[serde(default)] pub year: u16,
+    #[serde(default)] pub slots: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -20397,6 +20422,7 @@ impl ReferenceBook {
                     id: entry.id,
                     u32_slots: entry.u32_slots,
                     trailing_byte: entry.trailing_byte,
+                    ..Default::default()
                 })
                 .collect(),
             staff_comp_history: data
@@ -20405,6 +20431,7 @@ impl ReferenceBook {
                 .map(|entry| DomainHistory58 {
                     u32_slots: entry.u32_slots,
                     trailing_u16: entry.trailing_u16,
+                    ..Default::default()
                 })
                 .collect(),
             club_comp_history: data
@@ -20413,6 +20440,7 @@ impl ReferenceBook {
                 .map(|entry| DomainHistory26 {
                     u32_slots: entry.u32_slots,
                     trailing_u16: entry.trailing_u16,
+                    ..Default::default()
                 })
                 .collect(),
             nation_comp_history: data
@@ -20421,6 +20449,7 @@ impl ReferenceBook {
                 .map(|entry| DomainHistory26 {
                     u32_slots: entry.u32_slots,
                     trailing_u16: entry.trailing_u16,
+                    ..Default::default()
                 })
                 .collect(),
         }
