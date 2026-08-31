@@ -2728,9 +2728,11 @@ pub struct AtmosphereAttach {
 }
 
 /// Direct port of `FUN_006CEE80(flag, atmosphere_row)`. `venue_quality`
-/// = the short at `atmosphere_row + 0x1E`. When `row_present` is
-/// false → returns the default factor 5000; otherwise runs the
-/// cascading RNG-vs-quality gate:
+/// = the short at `atmosphere_row + 0x1E`. `atmosphere_row_handle` is
+/// the caller-side identifier the exe stores at `param_1[1]` for later
+/// re-dereference (see decompiled `006cee80.c:8`, `param_1[1] = param_3`).
+/// `None` when no row is present → returns the default factor 5000;
+/// `Some(h)` runs the cascading RNG-vs-quality gate:
 ///
 /// ```pseudo
 /// if rand(0x15E=350) < quality → 7750 (very loud)
@@ -2742,15 +2744,15 @@ pub struct AtmosphereAttach {
 /// ```
 pub fn compute_atmosphere(
     flag: u32,
-    row_present: bool,
+    atmosphere_row_handle: Option<u32>,
     venue_quality: i16,
     rng: &mut MatchRng,
 ) -> AtmosphereAttach {
     let mut out = AtmosphereAttach { flag, row_ptr: 0, factor: ATMOSPHERE_DEFAULT };
-    if !row_present {
-        return out;
-    }
-    out.row_ptr = 1;   // non-zero placeholder — real port would store the row id
+    let Some(handle) = atmosphere_row_handle else { return out; };
+    // Exe: `param_1[1] = param_3` (006cee80.c:8) — the atmosphere_row pointer
+    // itself is cached at output+4 for later re-dereference at +0x1E.
+    out.row_ptr = handle;
     let q = venue_quality as i32;
     out.factor = if (rng.range(0x15E) as i32) < q {
         ATMOSPHERE_VERY_LOUD
@@ -3483,8 +3485,10 @@ pub fn target_picker(
         // Shot-mode goal-distance gate.
         let mut dx_goal = if is_shot {
             let mut d = (own_x - attacker_goal_x).unsigned_abs() as i32;
-            // exe: "weak with ball" (+0x107 < 2) — approximate as low CA.
-            if token.role_ca < 2 {
+            // exe: "weak with ball" is `token[+0x107] < 2` (FUN_006a2790.c
+            // line 51/71 — VERIFIED). `MatchToken.shooting` is the +0x107
+            // field per its own docstring — direct read, no CA proxy.
+            if token.shooting < 2 {
                 d = d - rng.range(3) as i32 + rng.range(3) as i32;
             }
             d
@@ -4635,9 +4639,10 @@ mod tests {
     #[test]
     fn atmosphere_null_row_returns_default_5000() {
         let mut rng = MatchRng::new(1);
-        let a = compute_atmosphere(0, false, 999, &mut rng);
+        let a = compute_atmosphere(0, None, 999, &mut rng);
         assert_eq!(a.factor, ATMOSPHERE_DEFAULT);
         assert_eq!(a.factor, 5000);
+        assert_eq!(a.row_ptr, 0);
     }
 
     #[test]
@@ -4659,7 +4664,8 @@ mod tests {
         let mut loud_hits = 0;
         for seed in 0..100 {
             let mut rng = MatchRng::new(seed);
-            let a = compute_atmosphere(0, true, 400, &mut rng);
+            let a = compute_atmosphere(0, Some(0xDEAD_BEEF), 400, &mut rng);
+            assert_eq!(a.row_ptr, 0xDEAD_BEEF);
             if a.factor >= ATMOSPHERE_LOUD { loud_hits += 1; }
         }
         assert!(loud_hits > 80, "high-quality venue should be loud ≥80/100: got {loud_hits}");
@@ -4670,7 +4676,7 @@ mod tests {
         // Quality 0 < all thresholds (rand always ≥ 0) → very-quiet.
         for seed in 0..20 {
             let mut rng = MatchRng::new(seed);
-            let a = compute_atmosphere(0, true, 0, &mut rng);
+            let a = compute_atmosphere(0, Some(0x1234), 0, &mut rng);
             assert_eq!(a.factor, ATMOSPHERE_VERY_QUIET);
         }
     }
@@ -4681,7 +4687,7 @@ mod tests {
         let mut buckets = [0usize; 6];
         for seed in 0..500 {
             let mut rng = MatchRng::new(seed);
-            let a = compute_atmosphere(0, true, 200, &mut rng);
+            let a = compute_atmosphere(0, Some(0x1000), 200, &mut rng);
             let idx = match a.factor {
                 ATMOSPHERE_VERY_LOUD => 0,
                 ATMOSPHERE_LOUD => 1,
