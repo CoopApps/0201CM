@@ -781,7 +781,12 @@ pub struct LoanState {
     pub loan_fee: i64,
     /// Earliest date the borrower can send the player back (pre-season) or the
     /// parent can recall (mid-season). Verified from `FUN_00594220` — the exe
-    /// hard-codes 18-Jul and 15-Nov.
+    /// hard-codes **18-Aug** and **15-Nov** (the user-visible refusal string at
+    /// .rdata 0x009b87ac reads "This player cannot be recalled until 15th
+    /// November"; `FUN_00533b50` validates month∈0..=11 confirming the exe
+    /// stores months 0-indexed, so `FUN_00533b50(0x12, 7, ...)` builds
+    /// day=18, month_0idx=7 = **August 18** in the cm-domain 1-indexed
+    /// convention (previously mislabeled as 18-Jul).
     pub earliest_recall: (u16, u8, u8),
     /// If `true`, the loan agreement includes a buy-back option for the parent.
     /// Contract `+0x24 & 0x20` in the exe.
@@ -860,12 +865,67 @@ pub const WAGE_CEIL_WEEKLY:  u32 = 150_000;
 pub const FEE_HARD_CAP: i64 = 10_000_000;
 /// Wage-bill rejection gate — `FUN_00618450 > 0x46` (70%).
 pub const WAGE_BILL_REFUSE_PCT: u8 = 70;
-/// Loan-recall date gates from `FUN_00594220`. Format (day, month).
+/// Loan-recall date gates from `FUN_00594220`. Format (day, month) with
+/// **1-indexed months** (cm-domain convention — see [`crate::GameDate`]).
+///
+/// VERIFIED: the exe stores months 0-indexed and calls
+/// `FUN_00533b50(0x12, 7, year)` = (day=18, month_0idx=7) = **18-Aug** and
+/// `FUN_00533b50(0x0f, 10, year)` = (day=15, month_0idx=10) = **15-Nov**.
+/// Cross-checked against the user-visible refusal string at .rdata
+/// 0x009b87ac: "This player cannot be recalled until 15th November".
 pub const RECALL_MID_SEASON_DAY: (u8, u8) = (15, 11);
-pub const RECALL_PRE_SEASON_DAY: (u8, u8) = (18,  7);
+pub const RECALL_PRE_SEASON_DAY: (u8, u8) = (18,  8);
 /// Round cap on wage-negotiation counter-offers — from `FUN_008ad0e0` and
 /// the bid-record `+0x2e round_counter` (capped at 3).
 pub const NEGOTIATION_ROUND_CAP: u8 = 3;
+
+/// Verdict from the loan-recall gate ([`can_recall_loan`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecallVerdict {
+    /// The recall/send-back proceeds.
+    Allowed,
+    /// Blocked — user sees "This player cannot be recalled/sent back until
+    /// 15th November".
+    BlockedUntil15Nov,
+}
+
+/// Compare a `GameDate` triple to a `(day, month_1idx)` cutoff. Returns
+/// `true` when `today` is BEFORE the cutoff within the current year.
+#[inline]
+fn before_cutoff_in_year(today: (u16, u8, u8), cutoff_day: u8, cutoff_month: u8) -> bool {
+    let (_y, m, d) = today;
+    if m < cutoff_month { return true; }
+    if m > cutoff_month { return false; }
+    d < cutoff_day
+}
+
+/// Port of `FUN_00594220` — the loan recall / send-back date gate. Given
+/// today's date, returns whether the recall (or send-back) proceeds or is
+/// blocked with the user-visible "until 15th November" refusal.
+///
+/// Faithfulness: two-stage gate matches the asm at 0x00594220:
+///   1. If today is **on or after** the 18-Aug preseason cutoff AND
+///   2. today is **before** the 15-Nov mid-season cutoff → blocked.
+///   Otherwise → allowed.
+///
+/// The exe builds both dates via `FUN_00533b50` with the year taken from
+/// the input date (loan_end year in the original signature; today's year
+/// works for the gate because both cutoffs sit in the same calendar year).
+///
+/// Cross-check: the user-visible refusal string at .rdata 0x009b87ac reads
+/// "This player cannot be recalled until 15th November" — same message
+/// for both the recall and send-back branches. VERIFIED via strings dump.
+pub fn can_recall_loan(today: (u16, u8, u8)) -> RecallVerdict {
+    let past_preseason = !before_cutoff_in_year(
+        today, RECALL_PRE_SEASON_DAY.0, RECALL_PRE_SEASON_DAY.1);
+    let before_mid_season = before_cutoff_in_year(
+        today, RECALL_MID_SEASON_DAY.0, RECALL_MID_SEASON_DAY.1);
+    if past_preseason && before_mid_season {
+        RecallVerdict::BlockedUntil15Nov
+    } else {
+        RecallVerdict::Allowed
+    }
+}
 
 /// Weekly scout throttle — VERIFIED port of FUN_008286f0:121-161 + :435
 /// (see reports/transfer_cluster_giants.md). Governs how many transfer
@@ -1592,7 +1652,7 @@ mod tests {
     #[test]
     fn accepted_bid_moves_money_and_contract() {
         let players = vec![mk_player(1, 100, 10)];
-        let ratings = PlayerRatingBook { players, ..Default::default() };
+        let mut ratings = PlayerRatingBook { players, ..Default::default() };
         let mut market = TransferMarket::seed_from_ratings(&ratings, 2001);
         let mut finance = FinanceBook::default();
         finance.clubs.push(ClubFinance { club_id: 10, balance: 0, weekly_wage_bill: 0, transfer_budget: 0, months_in_the_red: 0, board_confidence: 10, month_wages: 0, month_gate: 0, month_tv_prize: 0, in_administration: false, ..Default::default() });
@@ -1603,7 +1663,7 @@ mod tests {
             bidding_club_id: 20, target_player_id: 1, selling_club_id: 10,
             amount: 2_000_000, player_wage_offer: 50_000, contract_years: 4, round: 0,
         });
-        market.resolve_bids(2001, &ratings, &mut finance);
+        market.resolve_bids(2001, &mut ratings, &mut finance);
         assert_eq!(market.resolved_bids[0].1, BidOutcome::Accepted);
         assert_eq!(finance.for_club(20).unwrap().balance, 8_000_000);
         assert_eq!(finance.for_club(10).unwrap().balance, 2_000_000);
@@ -1613,14 +1673,14 @@ mod tests {
     #[test]
     fn low_bid_gets_rejected() {
         let players = vec![mk_player(1, 100, 10)];
-        let ratings = PlayerRatingBook { players, ..Default::default() };
+        let mut ratings = PlayerRatingBook { players, ..Default::default() };
         let mut market = TransferMarket::seed_from_ratings(&ratings, 2001);
         let mut finance = FinanceBook::default();
         market.submit_bid(TransferBid {
             bidding_club_id: 20, target_player_id: 1, selling_club_id: 10,
             amount: 100, player_wage_offer: 1000, contract_years: 3, round: 0,
         });
-        market.resolve_bids(2001, &ratings, &mut finance);
+        market.resolve_bids(2001, &mut ratings, &mut finance);
         assert_eq!(market.resolved_bids[0].1, BidOutcome::Rejected);
         assert_eq!(market.contract_for(1).unwrap().club_id, 10);
     }
@@ -1628,7 +1688,7 @@ mod tests {
     #[test]
     fn near_market_bid_gets_countered() {
         let players = vec![mk_player(1, 100, 10)];
-        let ratings = PlayerRatingBook { players, ..Default::default() };
+        let mut ratings = PlayerRatingBook { players, ..Default::default() };
         let mut market = TransferMarket::seed_from_ratings(&ratings, 2001);
         let mut finance = FinanceBook::default();
         // Market value 1M; bid 900k (90%) → counter.
@@ -1636,14 +1696,14 @@ mod tests {
             bidding_club_id: 20, target_player_id: 1, selling_club_id: 10,
             amount: 900_000, player_wage_offer: 50_000, contract_years: 3, round: 0,
         });
-        market.resolve_bids(2001, &ratings, &mut finance);
+        market.resolve_bids(2001, &mut ratings, &mut finance);
         assert_eq!(market.resolved_bids[0].1, BidOutcome::Countered);
     }
 
     #[test]
     fn bosman_flag_triggers_when_close_to_expiry() {
         let players = vec![mk_player(1, 100, 10)];
-        let ratings = PlayerRatingBook { players, ..Default::default() };
+        let mut ratings = PlayerRatingBook { players, ..Default::default() };
         let mut market = TransferMarket::seed_from_ratings(&ratings, 2001);
         // Standard offer for age 25 = 5-year contract expiring 2006.
         // In Jan 2006, months_left = 0*12 - 1 = -1 → Bosman-eligible.
@@ -1658,7 +1718,7 @@ mod tests {
     fn free_agents_at_year_end_lists_expiring_contracts() {
         let players = vec![mk_player(1, 100, 10), mk_player(2, 120, 10),
                            mk_player(3, 140, 20)];
-        let ratings = PlayerRatingBook { players, ..Default::default() };
+        let mut ratings = PlayerRatingBook { players, ..Default::default() };
         let market = TransferMarket::seed_from_ratings(&ratings, 2001);
         // Every player got a 5-year contract → expires 2006.
         let fa = market.free_agents_next_summer(2006);
@@ -1736,6 +1796,25 @@ mod tests {
             assert!(off.contract_years >= 2 && off.contract_years <= 5,
                 "seed {}: years={} out of [2,5]", seed, off.contract_years);
         }
+    }
+
+    #[test]
+    fn recall_gate_blocks_between_18aug_and_15nov() {
+        // Before pre-season cutoff (July, early August) → allowed
+        assert_eq!(can_recall_loan((2001, 7, 30)),  RecallVerdict::Allowed);
+        assert_eq!(can_recall_loan((2001, 8, 17)),  RecallVerdict::Allowed);
+        // On/after 18-Aug and before 15-Nov → blocked
+        assert_eq!(can_recall_loan((2001, 8, 18)),  RecallVerdict::BlockedUntil15Nov);
+        assert_eq!(can_recall_loan((2001, 9, 15)),  RecallVerdict::BlockedUntil15Nov);
+        assert_eq!(can_recall_loan((2001, 10, 31)), RecallVerdict::BlockedUntil15Nov);
+        assert_eq!(can_recall_loan((2001, 11, 14)), RecallVerdict::BlockedUntil15Nov);
+        // On/after 15-Nov → allowed
+        assert_eq!(can_recall_loan((2001, 11, 15)), RecallVerdict::Allowed);
+        assert_eq!(can_recall_loan((2001, 12, 25)), RecallVerdict::Allowed);
+        assert_eq!(can_recall_loan((2002, 1, 5)),   RecallVerdict::Allowed);
+        // Constants reflect the corrected 18-Aug (was mistakenly 18-Jul).
+        assert_eq!(RECALL_PRE_SEASON_DAY, (18, 8));
+        assert_eq!(RECALL_MID_SEASON_DAY, (15, 11));
     }
 
     #[test]
