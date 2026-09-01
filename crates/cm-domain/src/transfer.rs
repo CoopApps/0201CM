@@ -245,6 +245,83 @@ pub fn apply_mood_delta(contract: &mut Contract, delta: i8) {
     contract.morale = display.clamp(0, 20) as u8;
 }
 
+/// Per-week morale drift toward baseline. **ENVELOPE port** — the exact
+/// per-tick decay coefficient wasn't isolated in the decompile (FUN_00842f40
+/// is the weekly driver, but its per-slot effect flows through
+/// FUN_00843590 → FUN_00843970 → contract+0x3a byte writes, not through
+/// an obvious "drift" instruction).
+///
+/// This applies the football-domain convention that unattended morale
+/// gradually returns to neutral: nudge `mood_delta` one step toward zero
+/// each week. Small correction that keeps the accumulator from getting
+/// stuck at extremes when nothing has happened.
+///
+/// # Params
+/// - `contract`: player's contract (mutates mood_delta + morale)
+///
+/// Returns whether a step was applied (true when mood_delta != 0).
+pub fn apply_weekly_morale_decay(contract: &mut Contract) -> bool {
+    if contract.mood_delta == 0 { return false; }
+    let step: i8 = if contract.mood_delta > 0 { -1 } else { 1 };
+    apply_mood_delta(contract, step);
+    true
+}
+
+/// Squad-rank distribution — the "team-wide morale wave" driven by
+/// FUN_00843100 (weekly, via FUN_00842f40).
+///
+/// The exe walks the club's 50-player roster, ranks by squad-status
+/// slot, and calls FUN_00843970(person, club, delta) where delta is
+/// derived from the rank (top slot gets small positive, bottom slots
+/// get progressively negative). The **exact** ranking uses FUN_005ea590
+/// (unported — squad-slot-open gate) and reads type10 aptitudes at
+/// offsets +0x0f..+0x18 to derive position-tier.
+///
+/// **ENVELOPE port**: this port ranks the club's contracts by CA
+/// (highest first) and applies a linear mood_delta from +2 (top of
+/// squad) down through 0 (mid) to -2 (bottom of 25+). Callers who
+/// have the real squad-status byte should use it in place of CA ranking.
+///
+/// # Params
+/// - `market`: mutable transfer market (contracts to walk)
+/// - `club_id`: club whose roster to distribute over
+/// - `ca_lookup`: closure returning each player's CA
+pub fn apply_team_morale_wave(
+    market: &mut TransferMarket,
+    club_id: u32,
+    ca_lookup: impl Fn(u32) -> i16,
+) -> usize {
+    // Gather this club's contracts + CAs.
+    let mut roster: Vec<(u32, i16)> = market.contracts.iter()
+        .filter(|c| c.club_id == club_id)
+        .map(|c| (c.player_id, ca_lookup(c.player_id)))
+        .collect();
+    if roster.is_empty() { return 0; }
+    // Rank by CA descending (top players first).
+    roster.sort_by_key(|&(_, ca)| -ca);
+    let n = roster.len() as i32;
+    // Rank → delta: linear from +2 at rank 0 down to -2 at rank n-1.
+    // For rosters < 5 players, cap at +/- 1.
+    let mut applied = 0usize;
+    for (rank, (pid, _)) in roster.iter().enumerate() {
+        let delta_i32 = if n < 5 {
+            if (rank as i32) == 0 { 1 } else { -1 }
+        } else {
+            let mid = (n - 1) / 2;
+            let raw = mid - (rank as i32);   // +mid at top, -mid at bottom
+            (raw * 4 / (n - 1)).clamp(-2, 2) as i32
+        };
+        let delta = delta_i32 as i8;
+        if delta == 0 { continue; }
+        if let Some(c) = market.contracts.iter_mut()
+            .find(|c| c.player_id == *pid && c.club_id == club_id) {
+            apply_mood_delta(c, delta);
+            applied += 1;
+        }
+    }
+    applied
+}
+
 impl TransferMarket {
     pub fn new() -> Self { Self::default() }
 
@@ -3830,6 +3907,88 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    fn make_contract(pid: u32, cid: u32, mood: i8) -> Contract {
+        Contract {
+            player_id: pid, club_id: cid, weekly_wage: 5000,
+            signed_year: 2001, expires_year: 2004,
+            bosman_eligible: false, morale: 10, mood_delta: mood,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn weekly_decay_drifts_positive_mood_down() {
+        let mut c = make_contract(1, 100, 20);
+        assert!(apply_weekly_morale_decay(&mut c));
+        assert_eq!(c.mood_delta, 19);
+        assert!(apply_weekly_morale_decay(&mut c));
+        assert_eq!(c.mood_delta, 18);
+    }
+
+    #[test]
+    fn weekly_decay_drifts_negative_mood_up() {
+        let mut c = make_contract(1, 100, -15);
+        assert!(apply_weekly_morale_decay(&mut c));
+        assert_eq!(c.mood_delta, -14);
+    }
+
+    #[test]
+    fn weekly_decay_no_op_at_zero() {
+        let mut c = make_contract(1, 100, 0);
+        assert!(!apply_weekly_morale_decay(&mut c));
+        assert_eq!(c.mood_delta, 0);
+    }
+
+    #[test]
+    fn team_wave_boosts_top_penalises_bottom() {
+        let mut m = TransferMarket::default();
+        // Roster of 5 players, CAs 100/90/80/70/60
+        for (i, ca) in [100i16, 90, 80, 70, 60].iter().enumerate() {
+            m.contracts.push(make_contract((i + 1) as u32, 100, 0));
+            let _ = ca; // avoid unused var
+        }
+        let cas = std::collections::HashMap::from([
+            (1u32, 100i16), (2, 90), (3, 80), (4, 70), (5, 60),
+        ]);
+        let applied = apply_team_morale_wave(&mut m, 100,
+            |pid| *cas.get(&pid).unwrap_or(&0));
+        assert!(applied > 0, "should apply to some players");
+        // Top player (id 1, CA 100) should have positive mood_delta
+        let top = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        assert!(top.mood_delta > 0, "top mood_delta: {}", top.mood_delta);
+        // Bottom player (id 5, CA 60) should have negative
+        let bottom = m.contracts.iter().find(|c| c.player_id == 5).unwrap();
+        assert!(bottom.mood_delta < 0, "bottom mood_delta: {}", bottom.mood_delta);
+    }
+
+    #[test]
+    fn team_wave_small_roster_uses_binary_split() {
+        let mut m = TransferMarket::default();
+        // Only 3 players → uses the "n<5" branch: top gets +1, rest -1
+        for i in 1..=3 {
+            m.contracts.push(make_contract(i, 100, 0));
+        }
+        let cas = std::collections::HashMap::from([
+            (1u32, 100i16), (2, 90), (3, 80),
+        ]);
+        apply_team_morale_wave(&mut m, 100, |pid| *cas.get(&pid).unwrap_or(&0));
+        let top = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        assert_eq!(top.mood_delta, 1);
+        let mid = m.contracts.iter().find(|c| c.player_id == 2).unwrap();
+        assert_eq!(mid.mood_delta, -1);
+    }
+
+    #[test]
+    fn team_wave_ignores_other_clubs() {
+        let mut m = TransferMarket::default();
+        m.contracts.push(make_contract(1, 100, 0));  // in club
+        m.contracts.push(make_contract(2, 200, 0));  // different club
+        apply_team_morale_wave(&mut m, 100, |_| 50);
+        let other = m.contracts.iter().find(|c| c.player_id == 2).unwrap();
+        // Different club — untouched
+        assert_eq!(other.mood_delta, 0);
     }
 
     #[test]
