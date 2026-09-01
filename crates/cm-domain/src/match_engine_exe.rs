@@ -1978,6 +1978,25 @@ pub fn assist_bonus_milli(stamina: i16) -> i16 {
     (stamina / 3).saturating_add(0x113)
 }
 
+/// Compute the address of a pitch-token slot — VERIFIED byte-exact
+/// port of `FUN_006A88F0` (`006a88f0.c:5`).
+///
+///   token_addr = pitch + 0x4796 + (side * 0x14 + slot) * 0x1BE
+///
+/// where pitch is the base pointer of the match-engine 63KB buffer,
+/// side is 0 (home) or 1 (away), slot is 0..19. Stride 0x1BE bytes,
+/// per-side offset 0x14 * 0x1BE = 5580 bytes. Base 0x4796 is the
+/// first-team pool origin.
+///
+/// Pure arithmetic — no memory access. Used across the match engine
+/// for token slot addressing.
+#[inline]
+pub fn token_addr(pitch_base: u32, side: i8, slot: i8) -> u32 {
+    pitch_base
+        .wrapping_add(0x4796)
+        .wrapping_add(((side as i32) * 0x14 + (slot as i32)) as u32 * 0x1BE)
+}
+
 /// Sentinel value used to mark "no best-average-rating yet" on the
 /// per-team match-report record's +0x1f1 float. VERIFIED f64/f32
 /// from `_DAT_00956948` (see `reports/season_avg_writer_hunt.md`).

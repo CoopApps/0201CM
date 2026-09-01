@@ -191,6 +191,25 @@ DEFAULT_PROBES: list[Probe] = [
           rust_bin="shot_in_box", rust_args=(0, 0, 1),
           label="shot_in_box: token{corner} side=1 -> NOT in box"),
 
+    # FUN_006a88f0 token_addr — pure arithmetic thiscall(pitch_base, side, slot).
+    # Returns pitch_base + 0x4796 + (side*0x14 + slot) * 0x1BE.
+    # No struct setup needed — all args are integers.
+    # Home slot 0: 0 + 0x4796 + 0*0x1BE = 0x4796
+    # Home slot 1: 0 + 0x4796 + 1*0x1BE = 0x4954
+    # Away slot 0: 0 + 0x4796 + 20*0x1BE = 0x4796 + 0x2378 = 0x6B0E
+    Probe(fn_va=0x006A88F0, args=(0, 0, 0), thiscall=True,
+          rust_bin="token_addr", rust_args=(0, 0, 0),
+          label="token_addr(0, home, slot=0) == 0x4796"),
+    Probe(fn_va=0x006A88F0, args=(0, 0, 1), thiscall=True,
+          rust_bin="token_addr", rust_args=(0, 0, 1),
+          label="token_addr(0, home, slot=1) == 0x4954"),
+    Probe(fn_va=0x006A88F0, args=(0, 1, 0), thiscall=True,
+          rust_bin="token_addr", rust_args=(0, 1, 0),
+          label="token_addr(0, away, slot=0) == 0x6B0E"),
+    Probe(fn_va=0x006A88F0, args=(0x1000, 1, 19), thiscall=True,
+          rust_bin="token_addr", rust_args=(0x1000, 1, 19),
+          label="token_addr(0x1000, away, slot=19) largest"),
+
     # FUN_00618410 club_status_byte — __thiscall(status_table_ptr, record_ptr)
     # Reads *(int*)(record+0x61) — must be non-null.
     # Reads *record — id, bounds-checked against DAT_00acd56c.

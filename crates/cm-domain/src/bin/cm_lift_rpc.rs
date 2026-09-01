@@ -182,6 +182,10 @@ fn dispatch(name: &str, args: &[i64]) -> Result<i64, String> {
             // Return the constant as milli-i64.
             Ok((match_engine_exe::RATING_SCALE_FROM_RAW * 100_000.0) as i64)
         }
+        "token_addr" => {
+            if args.len() < 3 { return Err("need 3 args (pitch_base, side, slot)".into()); }
+            Ok(match_engine_exe::token_addr(args[0] as u32, args[1] as i8, args[2] as i8) as i64)
+        }
         "mentality_outcome_scaler" => {
             if args.len() < 1 { return Err("need 1 arg (tactic_word)".into()); }
             // return milli-scaled i64 to preserve fractional value
