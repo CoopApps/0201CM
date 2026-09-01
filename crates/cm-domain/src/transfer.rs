@@ -1128,6 +1128,68 @@ pub fn agent_wage_multiplier(
     local_8
 }
 
+/// Minimum wage floor when the club (200) — the initial value of `local_18`
+/// at FUN_00580a90:31. Bumped by [`sibling_club_wage_floor`] when the club
+/// has a sibling / linked parent record.
+pub const WAGE_FLOOR_BASE: i32 = 100;
+/// Hard minimum floor after any sibling-club adjustment. FUN_00580a90:197.
+pub const WAGE_FLOOR_MIN_AFTER_SIBLING: i32 = 200;
+
+/// Port of FUN_00580a90 lines 186-200 — the **sibling-club wage floor
+/// bump**. When the club record has a sibling (`+0x57 != 0`) — the exe's
+/// reserve-team / feeder-club link — the floor is recomputed from the
+/// sibling's reputation (cubed) times the agent-multiplier scale.
+///
+/// Two paths, recovered from raw asm at 0x005810e3..0x005811a1
+/// (verified constants at `.rdata:9585b8=-1.25`, `956928=1.25`,
+/// `956e18=2.5` — extracted via pefile):
+///
+///   base-only: `sibling_rep³ × local_8 × 2.5`
+///     (fires when there's no parent OR parent_rep <= sibling_rep)
+///
+///   two-side:  `(sibling_rep³ × 1.25 - parent_rep³ × (-1.25)) × local_8`
+///           =  `(sibling_rep³ + parent_rep³) × local_8 × 1.25`
+///     (fires when parent_rep > sibling_rep — the feeder-club has a
+///      wealthier parent that bumps its own floor)
+///
+/// Both paths pass through `__ftol` (Ghidra dropped these from decompile
+/// output but visible in the raw asm at 0x00581120 / 0x00581143 /
+/// 0x0058116c) and then clamp to a minimum of 200.
+///
+/// # Params
+/// - `sibling_rep`: `sibling_ptr[+0x69]` — reputation of the sibling club
+/// - `parent_rep`: `Some(rep)` iff parent (linked) club exists with
+///   `parent_rep > sibling_rep`; `None` triggers the base-only branch
+/// - `local_8`: the agent-multiplier scale from [`agent_wage_multiplier`]
+///
+/// # Returns
+/// The `local_18` wage floor after the sibling-club adjustment. Guaranteed
+/// to be `>= 200`.
+pub fn sibling_club_wage_floor(
+    sibling_rep: i16,
+    parent_rep: Option<i16>,
+    local_8: f64,
+) -> i32 {
+    let s = sibling_rep as f64;
+    let s3 = s * s * s;
+    let raw = match parent_rep {
+        Some(p_rep) if p_rep > sibling_rep => {
+            let p = p_rep as f64;
+            let p3 = p * p * p;
+            // Two-side path — 0x005810f5..0x0058114e
+            // parent goes through *(-1.25) then subtracted → +1.25 contribution
+            let sibling_wage = (s3 * local_8 * 1.25) as i32;
+            let parent_wage  = (p3 * local_8 * -1.25) as i32;
+            sibling_wage - parent_wage
+        }
+        _ => {
+            // Base-only path — 0x00581150..0x0058116c
+            (s3 * local_8 * 2.5) as i32
+        }
+    };
+    raw.max(WAGE_FLOOR_MIN_AFTER_SIBLING)
+}
+
 /// Verdict from the loan-recall gate ([`can_recall_loan`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RecallVerdict {
@@ -2124,6 +2186,41 @@ mod tests {
 
         // ---- 0xd2 = 210 hard cap
         assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
+    }
+
+    #[test]
+    fn sibling_floor_base_only_uses_2_5_multiplier() {
+        // sibling_rep=100, local_8=1.0 → 100³ × 1.0 × 2.5 = 2_500_000
+        let floor = sibling_club_wage_floor(100, None, 1.0);
+        assert_eq!(floor, 2_500_000);
+
+        // With smaller local_8 scaling
+        let floor2 = sibling_club_wage_floor(100, None, 0.1);
+        assert_eq!(floor2, 250_000);
+
+        // Parent exists but rep <= sibling → falls through to base-only
+        let floor3 = sibling_club_wage_floor(100, Some(80), 1.0);
+        assert_eq!(floor3, 2_500_000);
+    }
+
+    #[test]
+    fn sibling_floor_two_side_sums_1_25_contributions() {
+        // sibling=100, parent=200 (parent > sibling), local_8=1.0
+        // sibling_wage = 100³ × 1.0 × 1.25 = 1_250_000
+        // parent_wage  = 200³ × 1.0 × -1.25 = -10_000_000 (as i32)
+        // floor = 1_250_000 - (-10_000_000) = 11_250_000
+        let floor = sibling_club_wage_floor(100, Some(200), 1.0);
+        assert_eq!(floor, 11_250_000);
+    }
+
+    #[test]
+    fn sibling_floor_clamps_to_200() {
+        // Tiny inputs → floor at 200
+        let floor = sibling_club_wage_floor(1, None, 0.0001);
+        assert_eq!(floor, 200);
+        // Even negative garbage → 200
+        let floor2 = sibling_club_wage_floor(0, None, -1.0);
+        assert_eq!(floor2, 200);
     }
 
     #[test]
