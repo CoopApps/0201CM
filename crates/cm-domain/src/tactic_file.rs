@@ -44,10 +44,24 @@ pub struct Tactic {
     /// 11 per-position slot rows, in role order (GK first, then defenders,
     /// midfielders, attackers).
     pub slots: [TacticSlot; 11],
+    /// Per-slot 96-byte positional-play grid — the 2×3×4 waypoints each
+    /// slot's player targets during possession vs defence, decoded from
+    /// file offset 0x0139 + slot*96. Populated at parse time so callers
+    /// don't need to keep the raw bytes around.
+    ///
+    /// Tactics gap #5 wire — the match engine can index into this to
+    /// bias per-tick token movement (`token.target = grid[side][row][col]`)
+    /// instead of using role-mask fallbacks.
+    #[serde(default = "default_slot_instructions_array")]
+    pub slot_instructions: [SlotInstructions; 11],
     /// File version tag (canonical form, obfuscation removed).
     pub version: u32,
     /// True if loaded from a `.pct` (packaged preset), false for `.tct`.
     pub is_packaged: bool,
+}
+
+fn default_slot_instructions_array() -> [SlotInstructions; 11] {
+    [SlotInstructions::default(); 11]
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -123,6 +137,7 @@ impl Tactic {
             team_flags_2: 0,
             team_flags_1: 0,
             slots,
+            slot_instructions: [SlotInstructions::default(); 11],
             version: 0x0098EC5C, // v5C — legacy safe (any of 5C..5E works)
             is_packaged: false,
         }
@@ -203,9 +218,16 @@ pub fn parse_tactic(bytes: &[u8], is_packaged: bool) -> Option<Tactic> {
         slots[i].flag = bytes[flag_base + i];
     }
 
+    // Positional-play waypoint grid — populate all 11 slots from the
+    // 96-byte per-slot blocks at file offset 0x0139 + slot*96.
+    let mut slot_instructions = [SlotInstructions::default(); 11];
+    for i in 0..11 {
+        slot_instructions[i] = slot_instructions_from_bytes(bytes, i);
+    }
+
     Some(Tactic {
         formation_name, author, mentality,
-        team_flags_1, team_flags_2, slots,
+        team_flags_1, team_flags_2, slots, slot_instructions,
         version, is_packaged,
     })
 }
@@ -469,9 +491,111 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
     out
 }
 
+/// The 8 per-slot slider names — VERIFIED via exe .rdata tactics-editor
+/// label cluster at 0x006779ed (in order):
+///
+///   Marker | Marking | Cross Ball | Try Through Balls | Long Shots |
+///   Hold Up Ball | Run With Ball | Forward Runs | Free Role |
+///   Set Pieces (D) | Set Pieces (A) | Pass To
+///
+/// Not all 12 UI labels are 8-nibble sliders — some are boolean flags
+/// (Free Role, Cross Ball, Try Through Balls, Run With Ball, Set Pieces)
+/// that live on [`TacticSlot::flag`], not in the 8 nibbles.
+///
+/// The 8 nibbles most likely encode the sliders that have MULTI-STATE
+/// values: mentality, closing-down, marking, distribution, forward-runs
+/// (frequency), hold-up-ball, long-shots, pass-focus. This mirrors the
+/// standard CM01/02 per-position instruction set.
+///
+/// **ORDERING DISCLAIMER**: The exact nibble→slider mapping requires
+/// exe callsite evidence (e.g. `movement_token & 0xF` reads on a
+/// specific runtime tactic pointer). No decoded setter fn is available;
+/// this enum captures the SET of sliders but not their bit positions.
+/// Callers that need to READ a specific slider by name must use
+/// [`slot_slider_nibbles`] and interpret positions carefully — until
+/// the setter cluster is decoded, treat the ordering as **unstable**.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SlotSlider {
+    /// Player's individual mentality override (Ultra-Defensive to All-Out
+    /// Attack — the 5-state per-position slider mentioned at tactic_file
+    /// line 343).
+    Mentality,
+    /// Closing-down intensity (Rarely / Sometimes / Often / Always).
+    ClosingDown,
+    /// Marking tightness (Loose / Normal / Tight).
+    Marking,
+    /// Distribution (Short / Mixed / Long).
+    Distribution,
+    /// Forward-runs frequency (Rarely / Mixed / Often).
+    ForwardRuns,
+    /// Hold-up ball behavior.
+    HoldUpBall,
+    /// Long shots preference.
+    LongShots,
+    /// Pass-to specific player slot.
+    PassTo,
+}
+
+/// Boolean flags in [`TacticSlot::flag`] — VERIFIED from exe .rdata
+/// tactics-editor labels at 0x006779ed. These are TRUE/FALSE toggles,
+/// unlike the multi-state sliders in [`SlotSlider`].
+///
+/// The bit assignments within `slot.flag` are envelope — no decoded
+/// setter fn found. Callers reading a specific flag should mask
+/// carefully.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SlotFlag {
+    Playmaker,
+    TargetMan,
+    FreeRole,
+    CrossBall,
+    TryThroughBalls,
+    RunWithBall,
+    SetPiecesDef,
+    SetPiecesAtt,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn flat_442_carries_empty_slot_instructions() {
+        let t = Tactic::flat_442();
+        // 11 slots, each with default (0,0) waypoints — the default
+        // constructor doesn't seed positional data.
+        assert_eq!(t.slot_instructions.len(), 11);
+        for slot in 0..11 {
+            for side in 0..2 {
+                for row in 0..3 {
+                    for col in 0..4 {
+                        let p = t.slot_instructions[slot].point(side, row, col);
+                        assert_eq!(p.x, 0);
+                        assert_eq!(p.y, 0);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn slot_slider_and_flag_enums_cover_verified_ui_labels() {
+        // Not a behavioral test — just confirms the two enums exist and
+        // cover the 8+8 labels found at exe .rdata 0x006779ed.
+        let sliders = [
+            SlotSlider::Mentality, SlotSlider::ClosingDown,
+            SlotSlider::Marking, SlotSlider::Distribution,
+            SlotSlider::ForwardRuns, SlotSlider::HoldUpBall,
+            SlotSlider::LongShots, SlotSlider::PassTo,
+        ];
+        assert_eq!(sliders.len(), 8);
+        let flags = [
+            SlotFlag::Playmaker, SlotFlag::TargetMan, SlotFlag::FreeRole,
+            SlotFlag::CrossBall, SlotFlag::TryThroughBalls,
+            SlotFlag::RunWithBall, SlotFlag::SetPiecesDef, SlotFlag::SetPiecesAtt,
+        ];
+        assert_eq!(flags.len(), 8);
+    }
 
     #[test]
     fn version_tag_bounds() {
