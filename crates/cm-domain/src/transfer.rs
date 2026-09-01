@@ -1315,6 +1315,129 @@ pub fn cp_tail_no_counter_party(
     wage
 }
 
+/// The quadratic wage base — VERIFIED port of the FPU chain at
+/// FUN_00580a90:335 (raw asm 0x005817ec..0x005817fe). Given:
+///
+///   base = rep² × local_8 × 0.0001 + club_wage_field
+///
+/// Where:
+/// - `rep` is club reputation (from `iVar1[+0x80]`)
+/// - `local_8` is the [`agent_wage_multiplier`] scale
+/// - `_DAT_009585b0 = 0.0001` (VERIFIED via pefile, already in
+///   [`exe_constants::DAT_009585B0`])
+/// - `club_wage_field` is `param_1[+0x10]` (an int)
+///
+/// Result is truncated to i32 via `__ftol` (fistp with round-to-zero).
+pub fn quadratic_wage_base(
+    club_reputation: i16,
+    local_8: f64,
+    club_wage_field: i32,
+) -> i32 {
+    let r = club_reputation as f64;
+    let raw = r * r * local_8 * crate::exe_constants::DAT_009585B0;
+    (raw + club_wage_field as f64) as i32
+}
+
+/// Rebase constants for the counter-party param_3 seniority tier
+/// negotiation (asm 0x00581986..0x005819a5). VERIFIED via pefile.
+///
+/// - `KeyPlayer` (`param_3 == 3`): threshold `local_24 × 0.8` triggers
+///   the FUN_005ea590 gate + FPU rebase.
+/// - `FirstTeam` (`param_3 == 2`): threshold `local_24 × 0.9`.
+/// - `FirstTeamSquad` (`param_3 == 1`): raw `local_24` floor.
+pub const KEY_PLAYER_REBASE_FACTOR:  f64 = crate::exe_constants::DAT_009569B0;  // 0.8
+pub const FIRST_TEAM_REBASE_FACTOR:  f64 = crate::exe_constants::DAT_009569D8;  // 0.9
+
+/// Rep gates on the type10 record used by the counter-party sentinel
+/// (lines 343, 350, 360-361 in decompile). All extracted as hex literals.
+pub const PLAYER_REP_GATE_MID:   i16 = 0x1482; // 5250 — mid tier
+pub const PLAYER_REP_GATE_TOP:   i16 = 0x1c52; // 7250 — top tier
+pub const PLAYER_REP_GATE_ELITE: i16 = 0x1e46; // 7750 — elite marker
+pub const PLAYER_AGE_YOUNG_MAX:  u8  = 0x20;   //   32 — 'young' cutoff
+
+/// Inputs snapshot for [`counter_party_seniority_rebase`].
+#[derive(Debug, Clone, Copy)]
+pub struct CpSeniorityRebase {
+    /// `person[+0x61] != 0` — person has type-10 record (player).
+    pub has_type10: bool,
+    /// `type10[+0x0b]` — player reputation (only meaningful when has_type10).
+    pub player_reputation: i16,
+    /// `person[+0x18]` — age. Gate: `< 0x20` (32).
+    pub age: u8,
+}
+
+/// Which sub-branch of the counter-party seniority rebase fires. Callers
+/// resolve the FPU-derived new wage themselves; this fn returns only the
+/// decision (which is fully verified from decompile branches).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CpRebaseVerdict {
+    /// Guards not met — no rebase.
+    NoRebase,
+    /// `param_3 == 1` (SquadPlayer) + wage below sibling_adjust floor:
+    /// bump wage to sibling_adjust exactly.
+    SetToSiblingAdjust,
+    /// `param_3 == 2` (FirstTeam), threshold `local_24 × 0.9` and gate:
+    /// FUN_005ea590 gate decides between two FPU-derived values.
+    /// Caller must resolve.
+    FirstTeamGate { threshold: f64 },
+    /// `param_3 == 3` (KeyPlayer), threshold `local_24 × 0.8` and gate:
+    /// FUN_005ea590 gate + type10 rep>7250 branch decides.
+    /// Caller must resolve.
+    KeyPlayerGate { threshold: f64 },
+}
+
+/// Port of FUN_00580a90 lines 343-368 — the counter-party seniority
+/// rebase decision. Applies only when the person is a player with rep
+/// >5250, age <32, and squad_status tier in {1,2,3}.
+///
+/// Direct branches from decompile lines 343-368; VERIFIED constants and
+/// thresholds. FPU-derived new-wage values inside the KeyPlayer /
+/// FirstTeam branches are left as gate verdicts for the caller —
+/// resolving them needs FUN_005ea590 (unported) plus a paragraph of
+/// FPU stack tracing.
+pub fn counter_party_seniority_rebase(
+    view: CpSeniorityRebase,
+    squad_status_tier: u8,
+    current_wage: i32,
+    sibling_adjust: i32,
+) -> CpRebaseVerdict {
+    // Outer guard: has_type10 && player_reputation > 5250 && tier in {1,2,3} && age < 32
+    if !view.has_type10 { return CpRebaseVerdict::NoRebase; }
+    if view.player_reputation <= PLAYER_REP_GATE_MID { return CpRebaseVerdict::NoRebase; }
+    if !matches!(squad_status_tier, 1 | 2 | 3) { return CpRebaseVerdict::NoRebase; }
+    if view.age >= PLAYER_AGE_YOUNG_MAX { return CpRebaseVerdict::NoRebase; }
+
+    match squad_status_tier {
+        3 => {
+            // KeyPlayer: gate = local_2c < local_24 × 0.8
+            let threshold = sibling_adjust as f64 * KEY_PLAYER_REBASE_FACTOR;
+            if (current_wage as f64) < threshold {
+                CpRebaseVerdict::KeyPlayerGate { threshold }
+            } else {
+                CpRebaseVerdict::NoRebase
+            }
+        }
+        2 => {
+            // FirstTeam: gate = local_2c < local_24 × 0.9
+            let threshold = sibling_adjust as f64 * FIRST_TEAM_REBASE_FACTOR;
+            if (current_wage as f64) < threshold {
+                CpRebaseVerdict::FirstTeamGate { threshold }
+            } else {
+                CpRebaseVerdict::NoRebase
+            }
+        }
+        1 => {
+            // FirstTeamSquad: if wage < sibling_adjust: wage = sibling_adjust
+            if current_wage < sibling_adjust {
+                CpRebaseVerdict::SetToSiblingAdjust
+            } else {
+                CpRebaseVerdict::NoRebase
+            }
+        }
+        _ => CpRebaseVerdict::NoRebase,
+    }
+}
+
 /// Snapshot of the exact person + type-10 fields FUN_00580a90's
 /// player-rating cap decision tree reads (lines 371-420 in the decompile).
 ///
@@ -2826,6 +2949,95 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    #[test]
+    fn quadratic_wage_base_matches_verified_formula() {
+        // rep=1000, local_8=1.0, club_wage=500
+        //   1_000_000 * 1.0 * 0.0001 + 500 = 100 + 500 = 600
+        assert_eq!(quadratic_wage_base(1000, 1.0, 500), 600);
+        // rep=5000, local_8=0.5, club_wage=0
+        //   25_000_000 * 0.5 * 0.0001 = 1250
+        assert_eq!(quadratic_wage_base(5000, 0.5, 0), 1250);
+        // rep=0 → base 0 + club_wage
+        assert_eq!(quadratic_wage_base(0, 1.0, 100), 100);
+    }
+
+    fn crv(has_type10: bool, rep: i16, age: u8) -> CpSeniorityRebase {
+        CpSeniorityRebase { has_type10, player_reputation: rep, age }
+    }
+
+    #[test]
+    fn cp_rebase_no_type10_no_rebase() {
+        let v = crv(false, 6000, 25);
+        assert_eq!(counter_party_seniority_rebase(v, 3, 0, 100_000),
+                   CpRebaseVerdict::NoRebase);
+    }
+
+    #[test]
+    fn cp_rebase_low_player_rep_no_rebase() {
+        // rep=5250 is exactly the gate — NOT strict greater, so no rebase
+        let v = crv(true, 5250, 25);
+        assert_eq!(counter_party_seniority_rebase(v, 3, 0, 100_000),
+                   CpRebaseVerdict::NoRebase);
+    }
+
+    #[test]
+    fn cp_rebase_high_age_no_rebase() {
+        // age=32 is exactly at cutoff — NOT less than, no rebase
+        let v = crv(true, 6000, 32);
+        assert_eq!(counter_party_seniority_rebase(v, 3, 0, 100_000),
+                   CpRebaseVerdict::NoRebase);
+    }
+
+    #[test]
+    fn cp_rebase_key_player_below_threshold() {
+        // KeyPlayer: threshold = sibling_adjust × 0.8 = 100_000 × 0.8 = 80_000
+        // current_wage=50_000 < 80_000 → KeyPlayerGate
+        let v = crv(true, 6000, 25);
+        let verdict = counter_party_seniority_rebase(v, 3, 50_000, 100_000);
+        match verdict {
+            CpRebaseVerdict::KeyPlayerGate { threshold } => {
+                assert!((threshold - 80_000.0).abs() < 1e-9);
+            }
+            other => panic!("expected KeyPlayerGate, got {:?}", other),
+        }
+        // Above threshold: no rebase
+        let above = counter_party_seniority_rebase(v, 3, 90_000, 100_000);
+        assert_eq!(above, CpRebaseVerdict::NoRebase);
+    }
+
+    #[test]
+    fn cp_rebase_first_team_below_threshold() {
+        // FirstTeam: threshold = sibling_adjust × 0.9 = 100_000 × 0.9 = 90_000
+        let v = crv(true, 6000, 25);
+        let verdict = counter_party_seniority_rebase(v, 2, 80_000, 100_000);
+        match verdict {
+            CpRebaseVerdict::FirstTeamGate { threshold } => {
+                assert!((threshold - 90_000.0).abs() < 1e-9);
+            }
+            other => panic!("expected FirstTeamGate, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn cp_rebase_squad_player_snaps_to_sibling_adjust() {
+        let v = crv(true, 6000, 25);
+        // wage < sibling_adjust → SetToSiblingAdjust
+        assert_eq!(counter_party_seniority_rebase(v, 1, 50_000, 100_000),
+                   CpRebaseVerdict::SetToSiblingAdjust);
+        // wage >= sibling_adjust → no rebase
+        assert_eq!(counter_party_seniority_rebase(v, 1, 100_000, 100_000),
+                   CpRebaseVerdict::NoRebase);
+    }
+
+    #[test]
+    fn cp_rebase_squad_status_outside_1_2_3_no_rebase() {
+        let v = crv(true, 6000, 25);
+        for tier in [0u8, 4, 5, 6, 7] {
+            assert_eq!(counter_party_seniority_rebase(v, tier, 0, 100_000),
+                       CpRebaseVerdict::NoRebase, "tier={}", tier);
+        }
     }
 
     #[test]
