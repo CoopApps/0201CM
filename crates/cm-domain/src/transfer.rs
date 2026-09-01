@@ -1315,6 +1315,78 @@ pub fn cp_tail_no_counter_party(
     wage
 }
 
+/// Inputs for [`seniority_gate_resolves`] — the specific fields needed
+/// to resolve the FUN_005ea590 gate + rep-check branches inside
+/// param_3 seniority switch cases 2 and 3.
+#[derive(Debug, Clone, Copy)]
+pub struct SeniorityGateView {
+    /// Result of `FUN_005ea590(iVar1, 1, 1, 0, 0)` — whether the club has
+    /// an open first-team squad slot for this player role.
+    pub squad_slot_open: bool,
+    /// `person[+0x61]` != 0 — player has type-10 record.
+    pub has_type10: bool,
+    /// `type10[+0x0b]` — player reputation.
+    pub player_reputation: i16,
+}
+
+/// Port of FUN_00580a90 lines 490-511 — the seniority tier 2/3 gate
+/// resolution that was left as `NeedsGate` in [`seniority_hard_cap_for`].
+///
+/// Given the FUN_005ea590 gate result + player rep, decides:
+/// - Tier 2 (FirstTeam): whether the 85000 hard cap applies
+/// - Tier 3 (FirstTeamSquad): whether the 55000 hard cap applies
+///
+/// Both tiers fall through to Case 1 (no cap) when the gate doesn't fire
+/// AND player rep is high enough (>= 6751).
+///
+/// # Verified branches (line-referenced)
+///
+/// Tier 2 (case 2, line 490-501):
+///   if squad_slot_open || player_rep < 6751:                 (line 492)
+///     estimate = <FPU-derived>  (partial, deferred)
+///     if (gate2 || (has_type10 && player_rep < 7750))
+///        && estimate > 85000:                                (line 495-497)
+///       estimate = 85000
+///     return estimate
+///   goto caseD_1 (no cap)
+///
+/// Tier 3 (case 3, line 503-514):
+///   if squad_slot_open || player_rep < 6751:                 (line 505)
+///     estimate = <FPU-derived>
+///     estimate = min(estimate, 55000)                         (line 507-509)
+///   goto caseD_1 (no cap)
+///
+/// Returns `Some(cap)` when the tier's hard cap applies, `None` when
+/// the fn should fall through to Case 1 semantics (no cap applied).
+pub fn seniority_gate_resolves(
+    tier: u8,
+    view: SeniorityGateView,
+    current_estimate: i32,
+) -> Option<i32> {
+    let gate_fires = view.squad_slot_open
+                     || (view.has_type10 && view.player_reputation < TOP5_REP_TOP);
+    if !gate_fires {
+        return None; // falls through to Case 1
+    }
+    match tier {
+        3 => {
+            // Hard cap at 55000
+            Some(current_estimate.min(SENIORITY_CAP_TIER_3))
+        }
+        2 => {
+            // Line 495: (squad_slot_open || (has_type10 && rep < 7750)) && estimate > 85000
+            let secondary_gate = view.squad_slot_open
+                || (view.has_type10 && view.player_reputation < PLAYER_REP_GATE_ELITE);
+            if secondary_gate && current_estimate > SENIORITY_CAP_TIER_2 {
+                Some(SENIORITY_CAP_TIER_2)
+            } else {
+                Some(current_estimate)
+            }
+        }
+        _ => None,
+    }
+}
+
 /// Verified integer gates for the LAB_00581b17 manager-bonus branch
 /// (decompile lines 466-484).
 pub const MANAGER_BONUS_REP_MARGIN:  i16 = 0x4e2;  // 1250 — bonus fires when
@@ -3180,6 +3252,47 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    fn sgate(open: bool, has_t10: bool, prep: i16) -> SeniorityGateView {
+        SeniorityGateView { squad_slot_open: open, has_type10: has_t10,
+                            player_reputation: prep }
+    }
+
+    #[test]
+    fn seniority_gate_tier_3_caps_at_55000() {
+        // gate fires → cap at 55000
+        let v = sgate(true, true, 5000);
+        assert_eq!(seniority_gate_resolves(3, v, 100_000), Some(55_000));
+        // estimate under cap → unchanged
+        assert_eq!(seniority_gate_resolves(3, v, 40_000),  Some(40_000));
+    }
+
+    #[test]
+    fn seniority_gate_tier_2_conditional_85000_cap() {
+        // squad_slot_open triggers secondary gate → 85000 cap
+        let v = sgate(true, true, 5000);
+        assert_eq!(seniority_gate_resolves(2, v, 100_000), Some(85_000));
+        // rep < 7750 also triggers secondary gate
+        let v2 = sgate(false, true, 5000);
+        // But wait — outer gate needs squad_slot_open || rep < 6751
+        // rep=5000 < 6751 → outer gate fires; then secondary: rep<7750 → 85000 cap
+        assert_eq!(seniority_gate_resolves(2, v2, 100_000), Some(85_000));
+    }
+
+    #[test]
+    fn seniority_gate_falls_through_when_no_gate_fires() {
+        // No squad slot open, player rep >= 6751 → gate doesn't fire → None
+        let v = sgate(false, true, 7000);
+        assert_eq!(seniority_gate_resolves(3, v, 100_000), None);
+        assert_eq!(seniority_gate_resolves(2, v, 100_000), None);
+    }
+
+    #[test]
+    fn seniority_gate_no_type10_no_rep_check() {
+        // No type10 record + squad slot closed → outer gate false → None
+        let v = sgate(false, false, 0);
+        assert_eq!(seniority_gate_resolves(3, v, 100_000), None);
     }
 
     fn mgr_view(has_mgr: bool, has_person: bool, club_rep: i16,
