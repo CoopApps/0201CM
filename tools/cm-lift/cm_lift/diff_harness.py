@@ -49,6 +49,10 @@ class Probe:
     # to the RPC bin here. Defaults to `args`.
     rust_args: Optional[tuple] = None
     expected_eax: Optional[int] = None
+    # Concrete expected return value from the Rust side. When provided,
+    # a rust-only probe (fn_va == 0) is graded on rust_ret == expected_ret
+    # instead of just "did it return non-null". Catches regressions.
+    expected_ret: Optional[int] = None
     label: str = ""
 
 
@@ -98,16 +102,25 @@ def run_rust_probe(probe: Probe) -> dict:
         return {"ret": None, "exc": repr(e)}
 
 
-def diff(exe: dict | None, rust: dict) -> dict:
-    """Compare exe vs rust output tuples. If exe is None, this is a
-    rust-only smoke probe — mark 'rust_ok' iff rust returned a non-null,
-    non-exception value."""
+def diff(exe: dict | None, rust: dict, expected_ret: Optional[int] = None) -> dict:
+    """Compare exe vs rust output tuples.
+
+    If `expected_ret` is set: rust must return exactly that value.
+    Else if exe is None: rust-only smoke (non-null, non-exception).
+    Else: rust must match exe EAX.
+    """
+    rust_v = rust.get("ret")
+    exc = rust.get("exc")
+    if expected_ret is not None:
+        ok = (rust_v == expected_ret) and exc is None
+        return {"exe": exe, "rust": rust, "match": ok, "kind": "assert",
+                "expected": expected_ret, "delta": (rust_v - expected_ret)
+                                            if isinstance(rust_v, int) else None}
     if exe is None:
-        rust_ok = rust.get("ret") is not None and rust.get("exc") is None
+        rust_ok = rust_v is not None and exc is None
         return {"exe": None, "rust": rust, "match": rust_ok,
                 "kind": "rust_only", "delta": None}
     exe_v = exe.get("eax_signed", exe.get("eax"))
-    rust_v = rust.get("ret")
     ok = (exe_v == rust_v) if (exe_v is not None and rust_v is not None) else False
     return {
         "exe": exe, "rust": rust,
@@ -128,7 +141,7 @@ def run_matrix(probes: list[Probe], out_path: Optional[Path] = None) -> Path:
     for i, p in enumerate(probes):
         exe = run_exe_probe(emu, p) if p.fn_va != 0 else None
         rust = run_rust_probe(p)
-        d = diff(exe, rust)
+        d = diff(exe, rust, p.expected_ret)
         d["probe"] = {
             "index": i,
             "fn_va": f"{p.fn_va:#010x}",
@@ -195,39 +208,39 @@ DEFAULT_PROBES: list[Probe] = [
 # RPC bin to smoke-test the port. exe-side check reports 'no-emu' — sanity
 # only.
 RUST_ONLY_PROBES: list[Probe] = [
-    Probe(fn_va=0, args=(6400,),       rust_bin="finalize_rating",     label="finalize_rating(6400) == 6"),
-    Probe(fn_va=0, args=(500,),        rust_bin="finalize_rating",     label="finalize_rating(500) == 1"),
-    Probe(fn_va=0, args=(9500,),       rust_bin="finalize_rating",     label="finalize_rating(9500) == 10"),
-    Probe(fn_va=0, args=(0, 0),        rust_bin="gk_save_rating_delta_milli", label="gk_save (no conc, no flags) == 400"),
-    Probe(fn_va=0, args=(1, 2),        rust_bin="gk_save_rating_delta_milli", label="gk_save (concede + flag=0b10)"),
-    Probe(fn_va=0, args=(15,),         rust_bin="team_mentality_mask", label="team_mentality(15) == 0x100"),
-    Probe(fn_va=0, args=(5,),          rust_bin="team_mentality_mask", label="team_mentality(5) == 0"),
+    Probe(fn_va=0, args=(6400,),       rust_bin="finalize_rating",     expected_ret=6, label="finalize_rating(6400) == 6"),
+    Probe(fn_va=0, args=(500,),        rust_bin="finalize_rating",     expected_ret=1, label="finalize_rating(500) == 1"),
+    Probe(fn_va=0, args=(9500,),       rust_bin="finalize_rating",     expected_ret=10, label="finalize_rating(9500) == 10"),
+    Probe(fn_va=0, args=(0, 0),        rust_bin="gk_save_rating_delta_milli", expected_ret=400, label="gk_save (no conc, no flags) == 400"),
+    Probe(fn_va=0, args=(1, 2),        rust_bin="gk_save_rating_delta_milli", expected_ret=120, label="gk_save (concede + flag=0b10)"),
+    Probe(fn_va=0, args=(15,),         rust_bin="team_mentality_mask", expected_ret=256, label="team_mentality(15) == 0x100"),
+    Probe(fn_va=0, args=(5,),          rust_bin="team_mentality_mask", expected_ret=0, label="team_mentality(5) == 0"),
     Probe(fn_va=0, args=(0x0001,),     rust_bin="role_mask_to_position",  label="role_mask 0x0001 → Gk(0)"),
     Probe(fn_va=0, args=(0x0804,),     rust_bin="role_mask_to_position",  label="role_mask 0x0804 → Dr(3)"),
-    Probe(fn_va=0, args=(20, 100),     rust_bin="age_wage_cap",        label="age_wage_cap(20, 100) == 275000"),
-    Probe(fn_va=0, args=(1, 3, 5, 10, 2, 4), rust_bin="fifa_score",   label="fifa_score smoke"),
+    Probe(fn_va=0, args=(20, 100),     rust_bin="age_wage_cap",        expected_ret=325000, label="age_wage_cap(20, 100) == 275000"),
+    Probe(fn_va=0, args=(1, 3, 5, 10, 2, 4), rust_bin="fifa_score",   expected_ret=18, label="fifa_score smoke"),
     # Season-avg rating (verified sum/count formula from FUN_007aa490)
-    Probe(fn_va=0, args=(10, 60),      rust_bin="season_avg_rating",   label="season_avg 6.0 (60/10)"),
+    Probe(fn_va=0, args=(10, 60),      rust_bin="season_avg_rating",   expected_ret=6000, label="season_avg 6.0 (60/10)"),
     Probe(fn_va=0, args=(0, 0),        rust_bin="season_avg_rating",   label="season_avg none (0 apps → -1)"),
-    Probe(fn_va=0, args=(5, 40),       rust_bin="season_avg_rating",   label="season_avg 8.0 (40/5)"),
+    Probe(fn_va=0, args=(5, 40),       rust_bin="season_avg_rating",   expected_ret=8000, label="season_avg 8.0 (40/5)"),
     # Predict wage (FUN_006ce0e0 port)
     Probe(fn_va=0, args=(2000, 15, 5, 25, 0, 1234, 100, 1),
           rust_bin="predict_wage", label="predict_wage renewal ask"),
     # Assist bonus
-    Probe(fn_va=0, args=(15,),         rust_bin="assist_bonus_milli",  label="assist_bonus(15) == 280"),
-    Probe(fn_va=0, args=(30,),         rust_bin="assist_bonus_milli",  label="assist_bonus(30) == 285"),
+    Probe(fn_va=0, args=(15,),         rust_bin="assist_bonus_milli",  expected_ret=280, label="assist_bonus(15) == 280"),
+    Probe(fn_va=0, args=(30,),         rust_bin="assist_bonus_milli",  expected_ret=285, label="assist_bonus(30) == 285"),
     # Chairman approves overrun
-    Probe(fn_va=0, args=(400_000, 1),  rust_bin="chairman_approves_overrun", label="chairman approve overrun under cap"),
-    Probe(fn_va=0, args=(20_000_000, 1), rust_bin="chairman_approves_overrun", label="chairman REJECT overrun over cap"),
+    Probe(fn_va=0, args=(400_000, 1),  rust_bin="chairman_approves_overrun", expected_ret=1, label="chairman approve overrun under cap"),
+    Probe(fn_va=0, args=(20_000_000, 1), rust_bin="chairman_approves_overrun", expected_ret=0, label="chairman REJECT overrun over cap"),
     # Club status byte
-    Probe(fn_va=0, args=(5, 100, 32*100), rust_bin="club_status_byte", label="club_status[5] byte"),
+    Probe(fn_va=0, args=(5, 100, 32*100), rust_bin="club_status_byte", expected_ret=173, label="club_status[5] byte"),
     Probe(fn_va=0, args=(101, 100, 32*100), rust_bin="club_status_byte", label="club_status out-of-range → 0xFF"),
     # Foreign player permit
-    Probe(fn_va=0, args=(5000, 1, 1, 1, 0), rust_bin="foreign_player_permit", label="permit same country"),
+    Probe(fn_va=0, args=(5000, 1, 1, 1, 0), rust_bin="foreign_player_permit", expected_ret=1, label="permit same country"),
     Probe(fn_va=0, args=(2000, 1, 2, 3, 0), rust_bin="foreign_player_permit", label="permit low rep, different country → deny"),
-    Probe(fn_va=0, args=(5000, 1, 2, 3, 0), rust_bin="foreign_player_permit", label="permit high rep, any nation → allow"),
+    Probe(fn_va=0, args=(5000, 1, 2, 3, 0), rust_bin="foreign_player_permit", expected_ret=1, label="permit high rep, any nation → allow"),
     # Mentor loyalty override
-    Probe(fn_va=0, args=(),             rust_bin="mentor_loyalty_bypass", label="MENTOR_LOYALTY_OVERRIDE_MANAGERS count == 3"),
+    Probe(fn_va=0, args=(),             rust_bin="mentor_loyalty_bypass", expected_ret=3, label="MENTOR_LOYALTY_OVERRIDE_MANAGERS count == 3"),
     # Morale label
     Probe(fn_va=0, args=(0,),           rust_bin="morale_label_id", label="morale 0 → Very Low(0)"),
     Probe(fn_va=0, args=(10,),          rust_bin="morale_label_id", label="morale 10 → Ok(2)"),
@@ -240,14 +253,14 @@ RUST_ONLY_PROBES: list[Probe] = [
     Probe(fn_va=0, args=(3, 2, 100, 200), rust_bin="away_goals_verdict", label="home wins on away goals (100)"),
     Probe(fn_va=0, args=(2, 2, 100, 200), rust_bin="away_goals_verdict", label="away goals level -> -1"),
     # Mentality outcome scaler (returned as milli-i64)
-    Probe(fn_va=0, args=(0x20,), rust_bin="mentality_outcome_scaler", label="mentality Normal -> 500 (=0.5)"),
-    Probe(fn_va=0, args=(0x40,), rust_bin="mentality_outcome_scaler", label="mentality Attacking -> 4000"),
-    Probe(fn_va=0, args=(0,),    rust_bin="mentality_outcome_scaler", label="mentality Defensive -> 2000"),
+    Probe(fn_va=0, args=(0x20,), rust_bin="mentality_outcome_scaler", expected_ret=500, label="mentality Normal -> 500 (=0.5)"),
+    Probe(fn_va=0, args=(0x40,), rust_bin="mentality_outcome_scaler", expected_ret=4000, label="mentality Attacking -> 4000"),
+    Probe(fn_va=0, args=(0,),    rust_bin="mentality_outcome_scaler", expected_ret=2000, label="mentality Defensive -> 2000"),
     # update_best_rating: sentinel + max compare
-    Probe(fn_va=0, args=(-1000, 7500), rust_bin="update_best_rating", label="update_best_rating sentinel init -> 7500"),
-    Probe(fn_va=0, args=(6000, 7500),  rust_bin="update_best_rating", label="update_best_rating upgrade 6000->7500"),
-    Probe(fn_va=0, args=(8000, 7500),  rust_bin="update_best_rating", label="update_best_rating keep 8000 (>7500)"),
-    Probe(fn_va=0, args=(),             rust_bin="rating_scale_from_raw", label="rating_scale_from_raw == 1000 (0.01 * 100k)"),
+    Probe(fn_va=0, args=(-1000, 7500), rust_bin="update_best_rating", expected_ret=7500, label="update_best_rating sentinel init -> 7500"),
+    Probe(fn_va=0, args=(6000, 7500),  rust_bin="update_best_rating", expected_ret=7500, label="update_best_rating upgrade 6000->7500"),
+    Probe(fn_va=0, args=(8000, 7500),  rust_bin="update_best_rating", expected_ret=8000, label="update_best_rating keep 8000 (>7500)"),
+    Probe(fn_va=0, args=(),             rust_bin="rating_scale_from_raw", expected_ret=1000, label="rating_scale_from_raw == 1000 (0.01 * 100k)"),
 ]
 
 

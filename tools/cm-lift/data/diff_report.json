@@ -106,8 +106,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 6,
+      "delta": 0,
       "probe": {
         "index": 4,
         "fn_va": "0x00000000",
@@ -124,8 +125,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
       "probe": {
         "index": 5,
         "fn_va": "0x00000000",
@@ -142,8 +144,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 10,
+      "delta": 0,
       "probe": {
         "index": 6,
         "fn_va": "0x00000000",
@@ -160,8 +163,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 400,
+      "delta": 0,
       "probe": {
         "index": 7,
         "fn_va": "0x00000000",
@@ -179,8 +183,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 120,
+      "delta": 0,
       "probe": {
         "index": 8,
         "fn_va": "0x00000000",
@@ -198,8 +203,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 256,
+      "delta": 0,
       "probe": {
         "index": 9,
         "fn_va": "0x00000000",
@@ -216,8 +222,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 0,
+      "delta": 0,
       "probe": {
         "index": 10,
         "fn_va": "0x00000000",
@@ -270,8 +277,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 325000,
+      "delta": 0,
       "probe": {
         "index": 13,
         "fn_va": "0x00000000",
@@ -289,8 +297,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 18,
+      "delta": 0,
       "probe": {
         "index": 14,
         "fn_va": "0x00000000",
@@ -312,8 +321,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 6000,
+      "delta": 0,
       "probe": {
         "index": 15,
         "fn_va": "0x00000000",
@@ -350,8 +360,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 8000,
+      "delta": 0,
       "probe": {
         "index": 17,
         "fn_va": "0x00000000",
@@ -394,8 +405,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 280,
+      "delta": 0,
       "probe": {
         "index": 19,
         "fn_va": "0x00000000",
@@ -412,8 +424,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 285,
+      "delta": 0,
       "probe": {
         "index": 20,
         "fn_va": "0x00000000",
@@ -430,8 +443,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
       "probe": {
         "index": 21,
         "fn_va": "0x00000000",
@@ -449,8 +463,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 0,
+      "delta": 0,
       "probe": {
         "index": 22,
         "fn_va": "0x00000000",
@@ -468,8 +483,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 173,
+      "delta": 0,
       "probe": {
         "index": 23,
         "fn_va": "0x00000000",
@@ -508,8 +524,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
       "probe": {
         "index": 25,
         "fn_va": "0x00000000",
@@ -552,8 +569,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
       "probe": {
         "index": 27,
         "fn_va": "0x00000000",
@@ -574,8 +592,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 3,
+      "delta": 0,
       "probe": {
         "index": 28,
         "fn_va": "0x00000000",
@@ -743,8 +762,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 500,
+      "delta": 0,
       "probe": {
         "index": 37,
         "fn_va": "0x00000000",
@@ -761,8 +781,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 4000,
+      "delta": 0,
       "probe": {
         "index": 38,
         "fn_va": "0x00000000",
@@ -779,8 +800,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 2000,
+      "delta": 0,
       "probe": {
         "index": 39,
         "fn_va": "0x00000000",
@@ -797,8 +819,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 7500,
+      "delta": 0,
       "probe": {
         "index": 40,
         "fn_va": "0x00000000",
@@ -816,8 +839,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 7500,
+      "delta": 0,
       "probe": {
         "index": 41,
         "fn_va": "0x00000000",
@@ -835,8 +859,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 8000,
+      "delta": 0,
       "probe": {
         "index": 42,
         "fn_va": "0x00000000",
@@ -854,8 +879,9 @@
         "exc": null
       },
       "match": true,
-      "kind": "rust_only",
-      "delta": null,
+      "kind": "assert",
+      "expected": 1000,
+      "delta": 0,
       "probe": {
         "index": 43,
         "fn_va": "0x00000000",
