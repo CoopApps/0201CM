@@ -578,8 +578,9 @@ impl FinanceBook {
     ///   `raw = (rep * 5 + 15000) * 500`   (rep 5000 → £20,000,000)
     ///   Cap 1: don't inject more than the actual debt (`-balance`).
     ///   Cap 2 (rep < 2000): `min(raw, rep² + 1_500_000)`.
-    ///   Cap 2 (rep ≥ 2000): `min(raw, rep² × 0.001 + 4_000_000)` — the exact
-    ///     float sentinel `_DAT_009569e0` is 0.001; the branch also clamps to
+    ///   Cap 2 (rep ≥ 2000): `min(raw, rep² × 0.25 + 4_000_000)` — the exact
+    ///     float multiplier `_DAT_009569e0` = 0.25 (VERIFIED via cm-lift from
+    ///     shipped exe .rdata); the branch also clamps to
     ///     `4_000_001` / `4_000_000` around the threshold (lines 47–54).
     ///
     /// Chairman branch (lines 68–107):

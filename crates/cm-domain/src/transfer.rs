@@ -1195,7 +1195,9 @@ const WAGE_TIER_BY_ROLE_BYTE: [(u8, WageTier); 6] = [
 /// `_DAT_00acd56c` (PA normaliser) is 200 in the shipped exe.
 const PA_NORM_DIVISOR: f64 = 200.0;
 /// `_DAT_009569e0` — the outer `* 0.25` seniority scale.
-const WAGE_YEARS_SCALE: f64 = 0.25;
+/// `_DAT_009569E0` from the shipped exe — the outer `× 0.25` seniority
+/// scale in the FUN_0084d5d0 wage cascade. VERIFIED via cm-lift.
+const WAGE_YEARS_SCALE: f64 = crate::exe_constants::DAT_009569E0;
 /// Hard cap seen in cases 5..=8: `if wage > 2500 { wage = 150000 }` — the
 /// upper trigger is only checked on tiers 0..=3 in the asm.
 const WAGE_HARD_CAP_TRIGGER: f64 = 2500.0;
