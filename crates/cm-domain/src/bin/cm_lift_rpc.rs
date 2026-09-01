@@ -169,6 +169,12 @@ fn dispatch(name: &str, args: &[i64]) -> Result<i64, String> {
             Ok(match_engine_exe::shot_in_box(
                 args[0] as i8, args[1] as i8, args[2] as u8) as i64)
         }
+        "mentality_outcome_scaler" => {
+            if args.len() < 1 { return Err("need 1 arg (tactic_word)".into()); }
+            // return milli-scaled i64 to preserve fractional value
+            let v = match_engine_exe::mentality_outcome_scaler(args[0] as u32);
+            Ok((v * 1000.0) as i64)
+        }
         "morale_label_id" => {
             if args.len() < 1 { return Err("need 1 arg (morale)".into()); }
             // Returns the ordinal of the label bucket

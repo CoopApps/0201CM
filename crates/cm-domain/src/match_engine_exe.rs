@@ -1978,6 +1978,32 @@ pub fn assist_bonus_milli(stamina: i16) -> i16 {
     (stamina / 3).saturating_add(0x113)
 }
 
+/// Mentality-driven shot-outcome value scaler — VERIFIED port of
+/// FUN_006AE160:107-129 (was OPEN GAP in
+/// `reports/match_engine_tactic_reads_decode.md` — three `_DAT_*` FP
+/// constants now lifted via cm-lift).
+///
+/// Applies ONLY when the attacker's role bit 0x200 is set. Reads
+/// `pitch+0x9766+side*0x18E3` bits 0x20 (Normal) / 0x40 (Attacking).
+/// Returns the multiplier fed into the shot-outcome value calculation:
+///
+///   bit 0x20 set (Normal)      → 0.5
+///   bit 0x40 set, 0x20 clear (Attacking) → 4.0
+///   neither (Defensive)        → 2.0
+///
+/// Attacking mentality yields 8× the outcome value of Normal — the
+/// "counter-attack shot is worth more" bias explicitly encoded.
+#[inline]
+pub fn mentality_outcome_scaler(team_tactic_word: u32) -> f32 {
+    if team_tactic_word & 0x20 != 0 {
+        crate::exe_constants::DAT_00956F10_F32 // 0.5 — Normal
+    } else if team_tactic_word & 0x40 != 0 {
+        crate::exe_constants::DAT_0095AEF0_F32 // 4.0 — Attacking
+    } else {
+        crate::exe_constants::DAT_009569A8_F32 // 2.0 — Defensive
+    }
+}
+
 /// GK "made-save" rating micro-boost — VERIFIED port of FUN_006D63F0
 /// lines 2245/2249. Exact for keepers (non-GK slots take an FP-unlifted
 /// branch at :2256 that Ghidra dropped, so this fn covers ONLY the GK

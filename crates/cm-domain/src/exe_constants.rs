@@ -5,789 +5,1066 @@
 //! Use these to replace the hundreds of prior 'FP-elided constant'
 //! OPEN GAPs across the port.
 //!
+//! When a value is representable as BOTH f32 and f64 (different reads
+//! of the same 4/8-byte window), we emit both with `_F32` / `_F64`
+//! suffixes. When only one interpretation makes sense (garbage f64
+//! from a 4-byte f32 store, or garbage f32 from an 8-byte f64 store),
+//! only the plausible one is emitted with the bare name.
+//!
 //! Source: `tools/cm-lift/data/dat_constants.json` (regenerate via
 //! `python -m cm_lift snipe-fp scan-refs`).
 
 #![allow(clippy::approx_constant, non_upper_case_globals, dead_code)]
 
-/// 7 refs (f64)
+/// 7 refs (both f32/f64 plausible)
 pub const DAT_00955878: f64 = 0.025;
-/// 38 refs (f64)
+pub const DAT_00955878_F32: f32 = -1.588187e-23_f32;
+/// 38 refs (both f32/f64 plausible)
 pub const DAT_00955880: f64 = 0.1;
-/// 20 refs (f64)
+pub const DAT_00955880_F32: f32 = -1.588187e-23_f32;
+/// 20 refs (both f32/f64 plausible)
 pub const DAT_00955888: f64 = 0.05;
-/// 56 refs (f64)
+pub const DAT_00955888_F32: f32 = -1.588187e-23_f32;
+/// 56 refs (both f32/f64 plausible)
 pub const DAT_00955890: f64 = 1.0;
-/// 8 refs (f64)
+pub const DAT_00955890_F32: f32 = 0.000000e+00_f32;
+/// 8 refs (both f32/f64 plausible)
 pub const DAT_00955898: f64 = 0.01;
-/// 2 refs (f64)
+pub const DAT_00955898_F32: f32 = 8.912896e+04_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956870: f64 = 500000.0;
-/// 7 refs (f64)
+pub const DAT_00956870_F32: f32 = 0.000000e+00_f32;
+/// 7 refs (both f32/f64 plausible)
 pub const DAT_00956878: f64 = 500.0;
-/// 2 refs (f64)
+pub const DAT_00956878_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956880: f64 = 50000.0;
-/// 4 refs (f64)
+pub const DAT_00956880_F32: f32 = 0.000000e+00_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_00956888: f64 = 20000.0;
-/// 4 refs (f64)
+pub const DAT_00956888_F32: f32 = 0.000000e+00_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_00956890: f64 = 25.0;
-/// 5 refs (f64)
+pub const DAT_00956890_F32: f32 = 0.000000e+00_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956898: f64 = 250.0;
-/// 18 refs (f64)
+pub const DAT_00956898_F32: f32 = 0.000000e+00_f32;
+/// 18 refs (both f32/f64 plausible)
 pub const DAT_009568A0: f64 = 5.0;
-/// 15 refs (f64)
+pub const DAT_009568A0_F32: f32 = 0.000000e+00_f32;
+/// 15 refs (both f32/f64 plausible)
 pub const DAT_009568A8: f64 = 100.0;
-/// 14 refs (f64)
+pub const DAT_009568A8_F32: f32 = 0.000000e+00_f32;
+/// 14 refs (both f32/f64 plausible)
 pub const DAT_009568B0: f64 = 10.0;
-/// 1 refs (f64)
+pub const DAT_009568B0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009568B8: f64 = 50000000.0;
-/// 1 refs (f64)
+pub const DAT_009568B8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009568C0: f64 = 20000000.0;
-/// 2 refs (f64)
+pub const DAT_009568C0_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_009568C8: f64 = 5000000.0;
-/// 3 refs (f64)
+pub const DAT_009568C8_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_009568D0: f64 = 25000.0;
-/// 2 refs (f64)
+pub const DAT_009568D0_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_009568D8: f64 = 1000000.0;
-/// 1 refs (f64)
+pub const DAT_009568D8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009568E0: f64 = 250000.0;
-/// 2 refs (f64)
+pub const DAT_009568E0_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_009568E8: f64 = 5000.0;
-/// 1 refs (f64)
+pub const DAT_009568E8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009568F0: f64 = 100000.0;
-/// 1 refs (f64)
+pub const DAT_009568F0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009568F8: f64 = 2000.0;
-/// 1 refs (f64)
+pub const DAT_009568F8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956900: f64 = 30000.0;
-/// 2 refs (f64)
+pub const DAT_00956900_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956908: f64 = 1000.0;
-/// 6 refs (f64)
+pub const DAT_00956908_F32: f32 = 0.000000e+00_f32;
+/// 6 refs (both f32/f64 plausible)
 pub const DAT_00956910: f64 = 10000.0;
-/// 29 refs (f64)
+pub const DAT_00956910_F32: f32 = 0.000000e+00_f32;
+/// 29 refs (both f32/f64 plausible)
 pub const DAT_00956918: f64 = 0.2;
-/// 1 refs (f64)
+pub const DAT_00956918_F32: f32 = -1.588187e-23_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956920: f64 = 0.08;
-/// 15 refs (f64)
+pub const DAT_00956920_F32: f32 = 8.912896e+04_f32;
+/// 15 refs (both f32/f64 plausible)
 pub const DAT_00956928: f64 = 1.25;
-/// 17 refs (f64)
+pub const DAT_00956928_F32: f32 = 0.000000e+00_f32;
+/// 17 refs (both f32/f64 plausible)
 pub const DAT_00956930: f64 = 3.0;
-/// 7 refs (f64)
+pub const DAT_00956930_F32: f32 = 0.000000e+00_f32;
+/// 7 refs (both f32/f64 plausible)
 pub const DAT_00956938: f64 = 4.0;
-/// 38 refs (f64)
+pub const DAT_00956938_F32: f32 = 0.000000e+00_f32;
+/// 38 refs (both f32/f64 plausible)
 pub const DAT_00956940: f64 = 1.5;
-/// 11 refs (f64)
+pub const DAT_00956940_F32: f32 = 0.000000e+00_f32;
+/// 11 refs (both f32/f64 plausible)
 pub const DAT_00956948: f64 = -1.0;
-/// 22 refs (f64)
+pub const DAT_00956948_F32: f32 = 0.000000e+00_f32;
+/// 22 refs (both f32/f64 plausible)
 pub const DAT_00956950: f64 = 2.0;
-/// 3 refs (f64)
+pub const DAT_00956950_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00956958: f64 = 0.016666666666666666;
-/// 5 refs (f64)
-pub const DAT_00956960: f64 = 5.53552857e-315;
-/// 43 refs (f64)
+pub const DAT_00956958_F32: f32 = 1.144374e-28_f32;
+/// 5 refs (f32)
+pub const DAT_00956960_F32: f32 = 1.000000e+02_f32;
+/// 43 refs (both f32/f64 plausible)
 pub const DAT_00956968: f64 = 0.5;
+pub const DAT_00956968_F32: f32 = 0.000000e+00_f32;
 /// 33 refs (f32)
-pub const DAT_00956970: f32 = 0.000000e+00_f32;
-/// 17 refs (f64)
+pub const DAT_00956970_F32: f32 = 0.000000e+00_f32;
+/// 17 refs (both f32/f64 plausible)
 pub const DAT_00956978: f64 = 1.2;
+pub const DAT_00956978_F32: f32 = 4.172325e-08_f32;
 /// 6 refs (f64)
 pub const DAT_00956980: f64 = 1.15;
-/// 7 refs (f64)
+/// 7 refs (both f32/f64 plausible)
 pub const DAT_00956988: f64 = 7.0;
-/// 9 refs (f64)
-pub const DAT_00956990: f64 = 5.356796015e-315;
-/// 13 refs (f64)
+pub const DAT_00956988_F32: f32 = 0.000000e+00_f32;
+/// 9 refs (f32)
+pub const DAT_00956990_F32: f32 = 5.000000e+00_f32;
+/// 13 refs (both f32/f64 plausible)
 pub const DAT_00956998: f64 = 6.8;
-/// 51 refs (f64)
+pub const DAT_00956998_F32: f32 = 4.172325e-08_f32;
+/// 51 refs (both f32/f64 plausible)
 pub const DAT_009569A0: f64 = 0.0;
-/// 10 refs (f64)
-pub const DAT_009569A8: f64 = 5.304989477e-315;
-/// 19 refs (f64)
+pub const DAT_009569A0_F32: f32 = 0.000000e+00_f32;
+/// 10 refs (f32)
+pub const DAT_009569A8_F32: f32 = 2.000000e+00_f32;
+/// 19 refs (both f32/f64 plausible)
 pub const DAT_009569B0: f64 = 0.8;
-/// 8 refs (f64)
+pub const DAT_009569B0_F32: f32 = -1.588187e-23_f32;
+/// 8 refs (both f32/f64 plausible)
 pub const DAT_009569B8: f64 = 1.05;
-/// 13 refs (f64)
+pub const DAT_009569B8_F32: f32 = -1.073742e+08_f32;
+/// 13 refs (both f32/f64 plausible)
 pub const DAT_009569C0: f64 = 1.1;
+pub const DAT_009569C0_F32: f32 = -1.588187e-23_f32;
 /// 1 refs (f64)
 pub const DAT_009569D0: f64 = 0.95;
-/// 18 refs (f64)
+/// 18 refs (both f32/f64 plausible)
 pub const DAT_009569D8: f64 = 0.9;
-/// 19 refs (f64)
+pub const DAT_009569D8_F32: f32 = -1.073742e+08_f32;
+/// 19 refs (both f32/f64 plausible)
 pub const DAT_009569E0: f64 = 0.25;
-/// 6 refs (f64)
+pub const DAT_009569E0_F32: f32 = 0.000000e+00_f32;
+/// 6 refs (both f32/f64 plausible)
 pub const DAT_00956A78: f64 = 15032387620.0;
+pub const DAT_00956A78_F32: f32 = 1.000000e+01_f32;
 /// 2 refs (f32)
-pub const DAT_00956A7C: f32 = 3.500000e+01_f32;
+pub const DAT_00956A7C_F32: f32 = 3.500000e+01_f32;
 /// 5 refs (f64)
 pub const DAT_00956A80: f64 = 0.3333333333333333;
 /// 1 refs (f64)
 pub const DAT_00956A88: f64 = 0.12004801920768307;
-/// 5 refs (f64)
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956A90: f64 = 0.04;
-/// 7 refs (f64)
+pub const DAT_00956A90_F32: f32 = 8.912896e+04_f32;
+/// 7 refs (both f32/f64 plausible)
 pub const DAT_00956A98: f64 = 0.02;
-/// 1 refs (f64)
+pub const DAT_00956A98_F32: f32 = 8.912896e+04_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956D60: f64 = 0.004;
-/// 2 refs (f64)
+pub const DAT_00956D60_F32: f32 = -5.189695e+11_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956D68: f64 = 45.0;
-/// 1 refs (f64)
+pub const DAT_00956D68_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956D70: f64 = 0.30303030303030304;
-/// 2 refs (f64)
+pub const DAT_00956D70_F32: f32 = 3.063318e-06_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956D78: f64 = 6.666666666666667e-05;
+pub const DAT_00956D78_F32: f32 = -1.254061e-21_f32;
 /// 2 refs (f32)
-pub const DAT_00956DAC: f32 = 2.500000e+03_f32;
-/// 4 refs (f64)
-pub const DAT_00956DB0: f64 = 5.7700341e-315;
+pub const DAT_00956DAC_F32: f32 = 2.500000e+03_f32;
+/// 4 refs (f32)
+pub const DAT_00956DB0_F32: f32 = 5.000000e+03_f32;
 /// 10 refs (f64)
 pub const DAT_00956DC0: f64 = 1.4;
-/// 5 refs (f64)
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956DD8: f64 = 30.0;
-/// 1 refs (f64)
+pub const DAT_00956DD8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956DE0: f64 = 29.0;
-/// 8 refs (f64)
+pub const DAT_00956DE0_F32: f32 = 0.000000e+00_f32;
+/// 8 refs (both f32/f64 plausible)
 pub const DAT_00956DE8: f64 = 1.3;
-/// 2 refs (f64)
+pub const DAT_00956DE8_F32: f32 = -1.073742e+08_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956DF0: f64 = 31.0;
-/// 2 refs (f64)
+pub const DAT_00956DF0_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956DF8: f64 = 34.0;
-/// 7 refs (f64)
+pub const DAT_00956DF8_F32: f32 = 0.000000e+00_f32;
+/// 7 refs (both f32/f64 plausible)
 pub const DAT_00956E00: f64 = 0.4;
-/// 5 refs (f64)
+pub const DAT_00956E00_F32: f32 = -1.588187e-23_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956E08: f64 = 15.0;
-/// 3 refs (f64)
+pub const DAT_00956E08_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00956E10: f64 = 0.0027397260273972603;
-/// 17 refs (f64)
+pub const DAT_00956E10_F32: f32 = 1.928251e-06_f32;
+/// 17 refs (both f32/f64 plausible)
 pub const DAT_00956E18: f64 = 2.5;
-/// 2 refs (f64)
+pub const DAT_00956E18_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956E30: f64 = 40.0;
-/// 16 refs (f64)
+pub const DAT_00956E30_F32: f32 = 0.000000e+00_f32;
+/// 16 refs (both f32/f64 plausible)
 pub const DAT_00956E38: f64 = 3.5;
+pub const DAT_00956E38_F32: f32 = 0.000000e+00_f32;
 /// 11 refs (f64)
 pub const DAT_00956E40: f64 = 0.7;
-/// 15 refs (f64)
+/// 15 refs (both f32/f64 plausible)
 pub const DAT_00956E48: f64 = 0.6;
+pub const DAT_00956E48_F32: f32 = 4.172325e-08_f32;
 /// 1 refs (f64)
 pub const DAT_00956E50: f64 = 0.99;
-/// 10 refs (f64)
+/// 10 refs (both f32/f64 plausible)
 pub const DAT_00956E58: f64 = 3.15;
-/// 2 refs (f64)
+pub const DAT_00956E58_F32: f32 = 4.172325e-08_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956E60: f64 = 0.0033333333333333335;
-/// 7 refs (f64)
-pub const DAT_00956E68: f64 = 5.263544247e-315;
-/// 11 refs (f64)
+pub const DAT_00956E60_F32: f32 = -4.323324e-07_f32;
+/// 7 refs (f32)
+pub const DAT_00956E68_F32: f32 = 1.000000e+00_f32;
+/// 11 refs (both f32/f64 plausible)
 pub const DAT_00956E78: f64 = 0.3;
+pub const DAT_00956E78_F32: f32 = 4.172325e-08_f32;
 /// 1 refs (f64)
 pub const DAT_00956E80: f64 = 1.6666666666666668e-07;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956E88: f64 = 6000000.0;
-/// 8 refs (f64)
+pub const DAT_00956E88_F32: f32 = 0.000000e+00_f32;
+/// 8 refs (both f32/f64 plausible)
 pub const DAT_00956EA0: f64 = 20.0;
-/// 9 refs (f64)
+pub const DAT_00956EA0_F32: f32 = 0.000000e+00_f32;
+/// 9 refs (both f32/f64 plausible)
 pub const DAT_00956EA8: f64 = 7.5;
+pub const DAT_00956EA8_F32: f32 = 0.000000e+00_f32;
 /// 4 refs (f64)
 pub const DAT_00956EB0: f64 = 1e-08;
-/// 2 refs (f64)
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956EC0: f64 = 2.25;
-/// 1 refs (f64)
+pub const DAT_00956EC0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956ED8: f64 = 1.33;
-/// 6 refs (f64)
+pub const DAT_00956ED8_F32: f32 = 1.266620e-26_f32;
+/// 6 refs (both f32/f64 plausible)
 pub const DAT_00956EE8: f64 = 0.005;
-/// 1 refs (f64)
+pub const DAT_00956EE8_F32: f32 = 8.912896e+04_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956EF0: f64 = 0.013333333333333334;
+pub const DAT_00956EF0_F32: f32 = -4.323324e-07_f32;
 /// 2 refs (f64)
 pub const DAT_00956EF8: f64 = 0.08333333333333333;
-/// 1 refs (f64)
-pub const DAT_00956F00: f64 = 5.194468865e-315;
-/// 5 refs (f64)
+/// 1 refs (f32)
+pub const DAT_00956F00_F32: f32 = 3.333333e-01_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956F08: f64 = 8.0;
-/// 15 refs (f64)
-pub const DAT_00956F10: f64 = 5.222099017e-315;
-/// 1 refs (f64)
+pub const DAT_00956F08_F32: f32 = 0.000000e+00_f32;
+/// 15 refs (f32)
+pub const DAT_00956F10_F32: f32 = 5.000000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956F38: f64 = 220.0;
-/// 4 refs (f64)
+pub const DAT_00956F38_F32: f32 = 0.000000e+00_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_00956F40: f64 = 150.0;
-/// 1 refs (f64)
+pub const DAT_00956F40_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956F50: f64 = 2.6;
-/// 2 refs (f64)
+pub const DAT_00956F50_F32: f32 = -1.073742e+08_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956F58: f64 = 0.07;
-/// 2 refs (f64)
+pub const DAT_00956F58_F32: f32 = 1.951564e-20_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00956F68: f64 = 0.33;
+pub const DAT_00956F68_F32: f32 = 1.264438e+11_f32;
 /// 5 refs (f64)
 pub const DAT_00956F70: f64 = 0.67;
 /// 1 refs (f64)
 pub const DAT_00956F78: f64 = 1.02;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956F80: f64 = 1.075;
-/// 4 refs (f64)
+pub const DAT_00956F80_F32: f32 = 4.172325e-08_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_00956F88: f64 = 1.75;
+pub const DAT_00956F88_F32: f32 = 0.000000e+00_f32;
 /// 3 refs (f64)
 pub const DAT_00956F90: f64 = 1.025;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956FA0: f64 = 0.375;
-/// 5 refs (f64)
+pub const DAT_00956FA0_F32: f32 = 0.000000e+00_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956FC0: f64 = 0.125;
-/// 1 refs (f64)
+pub const DAT_00956FC0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956FD0: f64 = 0.625;
-/// 1 refs (f64)
+pub const DAT_00956FD0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956FD8: f64 = -0.4;
-/// 1 refs (f64)
+pub const DAT_00956FD8_F32: f32 = -1.588187e-23_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956FE0: f64 = 5e-08;
-/// 5 refs (f64)
+pub const DAT_00956FE0_F32: f32 = -7.803816e-23_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956FE8: f64 = 50.0;
-/// 5 refs (f64)
+pub const DAT_00956FE8_F32: f32 = 0.000000e+00_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00956FF0: f64 = 6.0;
-/// 1 refs (f64)
+pub const DAT_00956FF0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00956FF8: f64 = 4.25;
+pub const DAT_00956FF8_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_00957000: f64 = 2.3;
-/// 4 refs (f64)
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_00957008: f64 = 1.6;
-/// 4 refs (f64)
+pub const DAT_00957008_F32: f32 = -1.588187e-23_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_00957010: f64 = 0.03333333333333333;
-/// 5 refs (f64)
+pub const DAT_00957010_F32: f32 = 1.144374e-28_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00957018: f64 = 0.0025;
-/// 1 refs (f64)
+pub const DAT_00957018_F32: f32 = 8.912896e+04_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957020: f64 = 0.7875;
-/// 1 refs (f64)
+pub const DAT_00957020_F32: f32 = 4.172325e-08_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957028: f64 = 0.2125;
-/// 24 refs (f64)
+pub const DAT_00957028_F32: f32 = 4.172325e-08_f32;
+/// 24 refs (both f32/f64 plausible)
 pub const DAT_00957030: f64 = 0.75;
-/// 3 refs (f64)
+pub const DAT_00957030_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00957038: f64 = 0.002;
+pub const DAT_00957038_F32: f32 = -5.189695e+11_f32;
 /// 1 refs (f64)
 pub const DAT_00957040: f64 = 1.25e-06;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957048: f64 = 0.006;
+pub const DAT_00957048_F32: f32 = -1.431250e-02_f32;
 /// 1 refs (f64)
 pub const DAT_00957050: f64 = 1.4165;
 /// 1 refs (f64)
 pub const DAT_00957058: f64 = 0.01167;
-/// 3 refs (f64)
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00957060: f64 = 365.0;
-/// 2 refs (f64)
+pub const DAT_00957060_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00957068: f64 = 4096.000990867615;
-/// 1 refs (f64)
+pub const DAT_00957068_F32: f32 = 7.500000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095706C: f64 = 128.00003084540367;
-/// 2 refs (f64)
+pub const DAT_0095706C_F32: f32 = 5.500000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00957070: f64 = 8192.001964569092;
-/// 3 refs (f64)
-pub const DAT_00957074: f64 = -3.720663329139188e-103;
-/// 1 refs (f64)
+pub const DAT_00957070_F32: f32 = 3.500000e+00_f32;
+/// 3 refs (f32)
+pub const DAT_00957074_F32: f32 = 6.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957078: f64 = 0.8333333333333334;
-/// 1 refs (f64)
+pub const DAT_00957078_F32: f32 = -3.031649e-13_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957080: f64 = 0.007462686567164179;
-/// 1 refs (f64)
+pub const DAT_00957080_F32: f32 = -1.710393e-12_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957088: f64 = 1.03;
+pub const DAT_00957088_F32: f32 = 8.912896e+04_f32;
 /// 1 refs (f64)
 pub const DAT_00957090: f64 = 0.97;
-/// 6 refs (f64)
+/// 6 refs (both f32/f64 plausible)
 pub const DAT_00957098: f64 = 2.75;
-/// 1 refs (f64)
+pub const DAT_00957098_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009570A0: f64 = 2500.0;
-/// 4 refs (f64)
+pub const DAT_009570A0_F32: f32 = 0.000000e+00_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_009570A8: f64 = 7500.0;
-/// 2 refs (f64)
-pub const DAT_009570B0: f64 = 3.5448809342426893e-307;
-/// 3 refs (f64)
+pub const DAT_009570A8_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (f32)
+pub const DAT_009570B0_F32: f32 = 1.000000e-03_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_009574F8: f64 = 16.0;
+pub const DAT_009574F8_F32: f32 = 0.000000e+00_f32;
 /// 7 refs (f64)
 pub const DAT_00957500: f64 = 0.35;
-/// 10 refs (f64)
+/// 10 refs (both f32/f64 plausible)
 pub const DAT_00957510: f64 = 0.85;
-/// 5 refs (f64)
+pub const DAT_00957510_F32: f32 = 4.172325e-08_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00957518: f64 = 0.15;
-/// 3 refs (f64)
+pub const DAT_00957518_F32: f32 = 4.172325e-08_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00957548: f64 = 18.0;
-/// 3 refs (f64)
+pub const DAT_00957548_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00957550: f64 = 14.0;
-/// 3 refs (f64)
-pub const DAT_00957558: f64 = 5.49408334e-315;
-/// 2 refs (f64)
-pub const DAT_00957568: f64 = 5.570497984e-315;
-/// 1 refs (f64)
+pub const DAT_00957550_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (f32)
+pub const DAT_00957558_F32: f32 = 5.000000e+01_f32;
+/// 2 refs (f32)
+pub const DAT_00957568_F32: f32 = 1.800000e+02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00957570: f64 = 0.28;
-/// 5 refs (f64)
-pub const DAT_0095757C: f64 = -2.3534382814271053e-185;
-/// 3 refs (f64)
+pub const DAT_00957570_F32: f32 = 1.951564e-20_f32;
+/// 5 refs (f32)
+pub const DAT_0095757C_F32: f32 = 3.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00957580: f64 = 1.35;
-/// 3 refs (f64)
+pub const DAT_00957580_F32: f32 = -1.588187e-23_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958324: f64 = 1.2000000454485416;
-/// 5 refs (f64)
+pub const DAT_00958324_F32: f32 = 9.000000e-01_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_00958334: f64 = 5.23869072633406e-11;
-/// 1 refs (f64)
-pub const DAT_00958338: f64 = 5.122630465e-315;
-/// 3 refs (f64)
+pub const DAT_00958334_F32: f32 = 1.100000e+00_f32;
+/// 1 refs (f32)
+pub const DAT_00958338_F32: f32 = 1.000000e-01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958348: f64 = 0.001;
+pub const DAT_00958348_F32: f32 = -5.189695e+11_f32;
 /// 1 refs (f64)
 pub const DAT_009584A8: f64 = 61.08;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958568: f64 = 0.05263157894736842;
-/// 1 refs (f64)
+pub const DAT_00958568_F32: f32 = -1.973684e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958598: f64 = 1.125;
+pub const DAT_00958598_F32: f32 = 0.000000e+00_f32;
 /// 5 refs (f64)
 pub const DAT_009585B0: f64 = 0.0001;
-/// 8 refs (f64)
+/// 8 refs (both f32/f64 plausible)
 pub const DAT_009585C0: f64 = 0.65;
-/// 4 refs (f64)
+pub const DAT_009585C0_F32: f32 = -1.073742e+08_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_009585C8: f64 = 0.55;
-/// 3 refs (f64)
+pub const DAT_009585C8_F32: f32 = -1.588187e-23_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_009585D8: f64 = 1250.0;
+pub const DAT_009585D8_F32: f32 = 0.000000e+00_f32;
 /// 4 refs (f64)
 pub const DAT_009585F0: f64 = 0.0002;
 /// 1 refs (f64)
 pub const DAT_009585F8: f64 = 0.0004;
 /// 2 refs (f64)
 pub const DAT_00958608: f64 = 0.0008;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958620: f64 = 15000000.0;
-/// 6 refs (f64)
+pub const DAT_00958620_F32: f32 = 0.000000e+00_f32;
+/// 6 refs (both f32/f64 plausible)
 pub const DAT_00958638: f64 = 200.0;
-/// 2 refs (f64)
+pub const DAT_00958638_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958640: f64 = 2500000.0;
+pub const DAT_00958640_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_00958660: f64 = 0.6666666666666666;
-/// 3 refs (f64)
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958668: f64 = 0.875;
-/// 2 refs (f64)
+pub const DAT_00958668_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958670: f64 = 0.00025;
-/// 2 refs (f64)
+pub const DAT_00958670_F32: f32 = -5.189695e+11_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958680: f64 = 600.0;
-/// 2 refs (f64)
+pub const DAT_00958680_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958690: f64 = 0.000125;
-/// 4 refs (f64)
+pub const DAT_00958690_F32: f32 = -5.189695e+11_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_009586B0: f64 = 0.45;
-/// 5 refs (f64)
+pub const DAT_009586B0_F32: f32 = -1.073742e+08_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_009586B8: f64 = 0.725;
+pub const DAT_009586B8_F32: f32 = 4.172325e-08_f32;
 /// 2 refs (f64)
 pub const DAT_009586D0: f64 = 0.92;
-/// 2 refs (f64)
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_009586D8: f64 = 15000.0;
-/// 1 refs (f64)
+pub const DAT_009586D8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_009586E0: f64 = 0.075;
-/// 3 refs (f64)
+pub const DAT_009586E0_F32: f32 = 4.172325e-08_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958740: f64 = 8.5;
+pub const DAT_00958740_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_00958748: f64 = 3.141592653589793;
 /// 8 refs (f64)
 pub const DAT_00958758: f64 = 0.16666666666666666;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958EC0: f64 = 60000.0;
-/// 1 refs (f64)
+pub const DAT_00958EC0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958EC8: f64 = 1.5262499999999999;
+pub const DAT_00958EC8_F32: f32 = 1.951564e-20_f32;
 /// 2 refs (f64)
 pub const DAT_00958ED0: f64 = 1.65;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958ED8: f64 = 40000.0;
-/// 2 refs (f64)
+pub const DAT_00958ED8_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958EE0: f64 = 0.925;
-/// 1 refs (f64)
+pub const DAT_00958EE0_F32: f32 = -1.588187e-23_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958EE8: f64 = 1.32;
-/// 2 refs (f64)
+pub const DAT_00958EE8_F32: f32 = 1.264438e+11_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958EF8: f64 = 22.0;
-/// 2 refs (f64)
-pub const DAT_00958F38: f64 = 5.45263811e-315;
-/// 3 refs (f64)
+pub const DAT_00958EF8_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (f32)
+pub const DAT_00958F38_F32: f32 = 2.500000e+01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958F50: f64 = 4.5;
-/// 3 refs (f64)
+pub const DAT_00958F50_F32: f32 = 0.000000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958F58: f64 = 1.01;
-/// 2 refs (f64)
-pub const DAT_00958F60: f64 = 5.439686476e-315;
-/// 1 refs (f64)
+pub const DAT_00958F58_F32: f32 = -7.168000e+01_f32;
+/// 2 refs (f32)
+pub const DAT_00958F60_F32: f32 = 2.000000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958F68: f64 = 0.975;
+pub const DAT_00958F68_F32: f32 = 4.172325e-08_f32;
 /// 2 refs (f64)
 pub const DAT_00958F70: f64 = 0.825;
-/// 3 refs (f64)
-pub const DAT_00958F7C: f64 = 5.122630465e-315;
-/// 1 refs (f64)
+/// 3 refs (f32)
+pub const DAT_00958F7C_F32: f32 = 1.000000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958F80: f64 = 12.5;
+pub const DAT_00958F80_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_00958F90: f64 = 0.5555555555555556;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_00958F98: f64 = 0.13333333333333333;
-/// 2 refs (f64)
+pub const DAT_00958F98_F32: f32 = 1.144374e-28_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958FBC: f64 = 8.000001899898052;
-/// 3 refs (f64)
+pub const DAT_00958FBC_F32: f32 = 1.500000e+00_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958FC0: f64 = 0.5000001194421202;
-/// 2 refs (f64)
+pub const DAT_00958FC0_F32: f32 = 2.500000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_00958FC8: f64 = 0.004687500180807547;
-/// 3 refs (f64)
-pub const DAT_00958FCC: f64 = -1.8369640715894255e-292;
-/// 3 refs (f64)
+pub const DAT_00958FC8_F32: f32 = 1.250000e+00_f32;
+/// 3 refs (f32)
+pub const DAT_00958FCC_F32: f32 = 9.500000e-01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_00958FD8: f64 = -1.3411048311803841e-08;
-/// 3 refs (f64)
-pub const DAT_00958FE0: f64 = 5.164075695e-315;
-/// 1 refs (f64)
-pub const DAT_00958FF8: f64 = 6.2672560803913655e-307;
+pub const DAT_00958FD8_F32: f32 = 1.500000e+01_f32;
+/// 3 refs (f32)
+pub const DAT_00958FE0_F32: f32 = 2.000000e-01_f32;
+/// 1 refs (f32)
+pub const DAT_00958FF8_F32: f32 = 7.750000e+03_f32;
 /// 1 refs (f64)
 pub const DAT_00959150: f64 = 0.278;
 /// 1 refs (f64)
 pub const DAT_00959158: f64 = 47.55;
 /// 1 refs (f64)
 pub const DAT_00959160: f64 = 54.321;
-/// 1 refs (f64)
-pub const DAT_00959A80: f64 = 4.9850323e-315;
-/// 6 refs (f64)
-pub const DAT_0095ADB0: f64 = 0.83;
 /// 1 refs (f32)
-pub const DAT_0095AE6C: f32 = 7.500000e+03_f32;
+pub const DAT_00959A80_F32: f32 = 1.000000e-02_f32;
+/// 6 refs (both f32/f64 plausible)
+pub const DAT_0095ADB0: f64 = 0.83;
+pub const DAT_0095ADB0_F32: f32 = 2.728484e-14_f32;
+/// 1 refs (f32)
+pub const DAT_0095AE6C_F32: f32 = 7.500000e+03_f32;
 /// 5 refs (f32)
-pub const DAT_0095AE70: f32 = 5.000000e+02_f32;
-/// 3 refs (f64)
-pub const DAT_0095AE78: f64 = 5.811479333e-315;
-/// 3 refs (f64)
+pub const DAT_0095AE70_F32: f32 = 5.000000e+02_f32;
+/// 3 refs (f32)
+pub const DAT_0095AE78_F32: f32 = 1.000000e+04_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095AE80: f64 = 55.0;
-/// 1 refs (f64)
+pub const DAT_0095AE80_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AE98: f64 = 0.006666666666666667;
+pub const DAT_0095AE98_F32: f32 = -4.323324e-07_f32;
 /// 2 refs (f64)
 pub const DAT_0095AEA8: f64 = 0.06;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AEB0: f64 = 0.275;
-/// 1 refs (f64)
+pub const DAT_0095AEB0_F32: f32 = -1.588187e-23_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AEC8: f64 = 3000.0;
-/// 2 refs (f64)
-pub const DAT_0095AED8: f64 = 5.593163344e-315;
-/// 1 refs (f64)
+pub const DAT_0095AEC8_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (f32)
+pub const DAT_0095AED8_F32: f32 = 2.500000e+02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AEE8: f64 = -4.0;
-/// 5 refs (f64)
+pub const DAT_0095AEE8_F32: f32 = 0.000000e+00_f32;
+/// 5 refs (both f32/f64 plausible)
 pub const DAT_0095AEF0: f64 = 1.1920931819453529e-07;
-/// 4 refs (f64)
-pub const DAT_0095AEF4: f64 = 5.180653787e-315;
-/// 3 refs (f64)
+pub const DAT_0095AEF0_F32: f32 = 4.000000e+00_f32;
+/// 4 refs (f32)
+pub const DAT_0095AEF4_F32: f32 = 2.500000e-01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095AEF8: f64 = 9.0;
-/// 5 refs (f64)
-pub const DAT_0095AF10: f64 = 5.24282163e-315;
-/// 1 refs (f64)
+pub const DAT_0095AEF8_F32: f32 = 0.000000e+00_f32;
+/// 5 refs (f32)
+pub const DAT_0095AF10_F32: f32 = 7.500000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AF28: f64 = 0.008;
-/// 1 refs (f64)
+pub const DAT_0095AF28_F32: f32 = -5.189695e+11_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AF58: f64 = 7500000.0;
-/// 4 refs (f64)
+pub const DAT_0095AF58_F32: f32 = 0.000000e+00_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_0095AF60: f64 = 5.5;
-/// 1 refs (f64)
+pub const DAT_0095AF60_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AF68: f64 = 0.024;
-/// 1 refs (f64)
+pub const DAT_0095AF68_F32: f32 = -1.431250e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095AF80: f64 = 90.0;
+pub const DAT_0095AF80_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_0095AF98: f64 = 0.03;
-/// 11 refs (f64)
-pub const DAT_0095AFAC: f64 = 4.667261708717465e-62;
+/// 11 refs (f32)
+pub const DAT_0095AFAC_F32: f32 = 1.000000e+03_f32;
 /// 1 refs (f64)
 pub const DAT_0095AFB8: f64 = 6.67;
-/// 2 refs (f64)
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095AFD0: f64 = 6000.0;
+pub const DAT_0095AFD0_F32: f32 = 0.000000e+00_f32;
 /// 2 refs (f32)
-pub const DAT_0095AFD8: f32 = 8.000000e+03_f32;
+pub const DAT_0095AFD8_F32: f32 = 8.000000e+03_f32;
 /// 2 refs (f32)
-pub const DAT_0095AFDC: f32 = 6.750000e+03_f32;
+pub const DAT_0095AFDC_F32: f32 = 6.750000e+03_f32;
 /// 1 refs (f64)
 pub const DAT_0095AFE0: f64 = 6.1;
-/// 1 refs (f64)
-pub const DAT_0095AFF0: f64 = 5.234532584e-315;
-/// 1 refs (f64)
+/// 1 refs (f32)
+pub const DAT_0095AFF0_F32: f32 = 6.500000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B000: f64 = 0.16;
+pub const DAT_0095B000_F32: f32 = 8.912896e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095B018: f32 = 7.590000e+03_f32;
+pub const DAT_0095B018_F32: f32 = 7.590000e+03_f32;
 /// 1 refs (f32)
-pub const DAT_0095B01C: f32 = 6.930000e+03_f32;
+pub const DAT_0095B01C_F32: f32 = 6.930000e+03_f32;
 /// 1 refs (f32)
-pub const DAT_0095B020: f32 = 6.270000e+03_f32;
+pub const DAT_0095B020_F32: f32 = 6.270000e+03_f32;
 /// 1 refs (f32)
-pub const DAT_0095B024: f32 = 5.610000e+03_f32;
+pub const DAT_0095B024_F32: f32 = 5.610000e+03_f32;
 /// 1 refs (f32)
-pub const DAT_0095B028: f32 = 5.940000e+03_f32;
-/// 1 refs (f64)
+pub const DAT_0095B028_F32: f32 = 5.940000e+03_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B02C: f64 = 0.005937502806290241;
-/// 4 refs (f64)
+pub const DAT_0095B02C_F32: f32 = 7.920000e+03_f32;
+/// 4 refs (both f32/f64 plausible)
 pub const DAT_0095B034: f64 = 0.010312499459541869;
+pub const DAT_0095B034_F32: f32 = 8.500000e-01_f32;
 /// 2 refs (f64)
 pub const DAT_0095B040: f64 = 0.015;
-/// 3 refs (f64)
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095B05C: f64 = 0.018750000704312698;
-/// 2 refs (f64)
+pub const DAT_0095B05C_F32: f32 = 8.000000e-01_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B060: f64 = 0.003359375984109647;
-/// 1 refs (f64)
+pub const DAT_0095B060_F32: f32 = 1.150000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B078: f64 = 57.0;
-/// 8 refs (f64)
-pub const DAT_0095B088: f64 = 5.265616507e-315;
-/// 1 refs (f64)
+pub const DAT_0095B078_F32: f32 = 0.000000e+00_f32;
+/// 8 refs (f32)
+pub const DAT_0095B088_F32: f32 = 1.050000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B09C: f64 = 9.765628765308065e-05;
-/// 2 refs (f64)
+pub const DAT_0095B09C_F32: f32 = 7.000000e-01_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B0A0: f64 = 0.07500000277068467;
-/// 3 refs (f64)
-pub const DAT_0095B0A4: f64 = 1.150058363195134e-171;
-/// 1 refs (f64)
+pub const DAT_0095B0A0_F32: f32 = 6.000000e-01_f32;
+/// 3 refs (f32)
+pub const DAT_0095B0A4_F32: f32 = 1.400000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B0A8: f64 = 0.1111111111111111;
+pub const DAT_0095B0A8_F32: f32 = 7.999755e-22_f32;
 /// 1 refs (f32)
-pub const DAT_0095B0B0: f32 = 2.100000e+01_f32;
-/// 3 refs (f64)
+pub const DAT_0095B0B0_F32: f32 = 2.100000e+01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095B0B8: f64 = 3.1;
-/// 1 refs (f64)
-pub const DAT_0095B0DC: f64 = 5.758944265e-315;
-/// 2 refs (f64)
+pub const DAT_0095B0B8_F32: f32 = -1.073742e+08_f32;
+/// 1 refs (f32)
+pub const DAT_0095B0DC_F32: f32 = 4.000000e+03_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B0E8: f64 = 10.5;
-/// 1 refs (f64)
+pub const DAT_0095B0E8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B0F0: f64 = 2.046363567144764e-13;
+pub const DAT_0095B0F0_F32: f32 = 2.250000e+00_f32;
 /// 2 refs (f32)
-pub const DAT_0095B0F4: f32 = 5.000000e-02_f32;
+pub const DAT_0095B0F4_F32: f32 = 5.000000e-02_f32;
 /// 1 refs (f64)
 pub const DAT_0095B0F8: f64 = 4.1;
 /// 1 refs (f64)
 pub const DAT_0095B100: f64 = 0.09090909090909091;
-/// 2 refs (f64)
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B108: f64 = 0.06666666666666667;
-/// 1 refs (f64)
+pub const DAT_0095B108_F32: f32 = 1.144374e-28_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B110: f64 = 0.03571428571428571;
-/// 1 refs (f64)
+pub const DAT_0095B110_F32: f32 = -6.346949e-28_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B118: f64 = 0.0625;
-/// 1 refs (f64)
+pub const DAT_0095B118_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B120: f64 = 0.47619047619047616;
-/// 1 refs (f64)
+pub const DAT_0095B120_F32: f32 = -1.322985e-20_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B128: f64 = 7100.0;
-/// 1 refs (f64)
+pub const DAT_0095B128_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B158: f64 = 0.0030184653547794807;
-/// 1 refs (f64)
+pub const DAT_0095B158_F32: f32 = 9.523810e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B15C: f64 = 0.043749995460860766;
-/// 1 refs (f64)
-pub const DAT_0095B160: f64 = 5.275977814e-315;
-/// 1 refs (f64)
+pub const DAT_0095B15C_F32: f32 = 9.090909e-01_f32;
+/// 1 refs (f32)
+pub const DAT_0095B160_F32: f32 = 1.300000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B198: f64 = 27.0;
-/// 1 refs (f64)
+pub const DAT_0095B198_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1A0: f64 = 23.0;
-/// 2 refs (f64)
+pub const DAT_0095B1A0_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B1A8: f64 = 13.0;
+pub const DAT_0095B1A8_F32: f32 = 0.000000e+00_f32;
 /// 2 refs (f32)
-pub const DAT_0095B1B0: f32 = 8.500000e+03_f32;
-/// 1 refs (f64)
-pub const DAT_0095B1B4: f64 = 5.802625676e-315;
-/// 3 refs (f64)
+pub const DAT_0095B1B0_F32: f32 = 8.500000e+03_f32;
+/// 1 refs (f32)
+pub const DAT_0095B1B4_F32: f32 = 8.250000e+03_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095B1B8: f64 = 17.0;
-/// 1 refs (f64)
+pub const DAT_0095B1B8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1C0: f64 = 19.0;
-/// 1 refs (f64)
+pub const DAT_0095B1C0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1C8: f64 = 0.0003;
-/// 1 refs (f64)
+pub const DAT_0095B1C8_F32: f32 = 7.756054e-10_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1D0: f64 = 5.882352941176471e-05;
-/// 1 refs (f64)
+pub const DAT_0095B1D0_F32: f32 = 1.552180e-26_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1D8: f64 = 82.0;
-/// 1 refs (f64)
+pub const DAT_0095B1D8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1E0: f64 = 85.0;
-/// 1 refs (f64)
+pub const DAT_0095B1E0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1E8: f64 = 0.02857142857142857;
-/// 1 refs (f64)
+pub const DAT_0095B1E8_F32: f32 = 2.565300e-21_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B1F0: f64 = 75.0;
+pub const DAT_0095B1F0_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_0095B1F8: f64 = 0.967;
 /// 1 refs (f64)
 pub const DAT_0095B200: f64 = 0.067;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B208: f64 = 0.014925373134328358;
-/// 1 refs (f64)
+pub const DAT_0095B208_F32: f32 = -1.710393e-12_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B210: f64 = 0.29;
+pub const DAT_0095B210_F32: f32 = 2.728484e-14_f32;
 /// 1 refs (f64)
 pub const DAT_0095B218: f64 = 1.29;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B220: f64 = 44.0;
-/// 1 refs (f64)
+pub const DAT_0095B220_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B228: f64 = 32.0;
-/// 1 refs (f64)
+pub const DAT_0095B228_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B230: f64 = 3.75;
-/// 1 refs (f64)
+pub const DAT_0095B230_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B238: f64 = 100000000.0;
-/// 2 refs (f64)
+pub const DAT_0095B238_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B2A0: f64 = 26.0;
-/// 1 refs (f64)
+pub const DAT_0095B2A0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B2C0: f64 = 60.0;
-/// 2 refs (f64)
+pub const DAT_0095B2C0_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B2E0: f64 = 7.3;
-/// 2 refs (f64)
+pub const DAT_0095B2E0_F32: f32 = 4.172325e-08_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B2E8: f64 = 2.0463635704799563e-13;
-/// 4 refs (f64)
-pub const DAT_0095B2EC: f64 = 5.081185235e-315;
-/// 1 refs (f64)
+pub const DAT_0095B2E8_F32: f32 = 6.800000e+00_f32;
+/// 4 refs (f32)
+pub const DAT_0095B2EC_F32: f32 = 5.000000e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B310: f64 = 1.8;
-/// 1 refs (f64)
+pub const DAT_0095B310_F32: f32 = -1.073742e+08_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B330: f64 = 34359746308.26667;
-/// 1 refs (f64)
+pub const DAT_0095B330_F32: f32 = 1.333333e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B334: f64 = 1.34110483308858e-08;
-/// 3 refs (f64)
+pub const DAT_0095B334_F32: f32 = 4.000000e+01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095B338: f64 = 0.0035156258258211893;
-/// 1 refs (f64)
-pub const DAT_0095B33C: f64 = 5.257327464e-315;
-/// 1 refs (f64)
+pub const DAT_0095B338_F32: f32 = 2.000000e-01_f32;
+/// 1 refs (f32)
+pub const DAT_0095B33C_F32: f32 = 9.250000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B340: f64 = 7.25;
-/// 1 refs (f64)
+pub const DAT_0095B340_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B348: f64 = 6.75;
-/// 1 refs (f64)
+pub const DAT_0095B348_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B350: f64 = 5.75;
-/// 1 refs (f64)
+pub const DAT_0095B350_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B358: f64 = 4.75;
-/// 2 refs (f64)
+pub const DAT_0095B358_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B360: f64 = 1.0894993504397658e-14;
-/// 1 refs (f64)
-pub const DAT_0095B364: f64 = -1.3911302752872148e-220;
-/// 1 refs (f64)
+pub const DAT_0095B360_F32: f32 = 1.200000e+01_f32;
+/// 1 refs (f32)
+pub const DAT_0095B364_F32: f32 = 3.333334e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B368: f64 = 0.5714285714285714;
-/// 3 refs (f64)
+pub const DAT_0095B368_F32: f32 = -6.346949e-28_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095B370: f64 = 12.0;
-/// 1 refs (f64)
+pub const DAT_0095B370_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B378: f64 = 0.20000000298023224;
-/// 1 refs (f64)
+pub const DAT_0095B378_F32: f32 = -1.084202e-19_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B380: f64 = 1.0325;
-/// 1 refs (f64)
+pub const DAT_0095B380_F32: f32 = -5.004883e-05_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B388: f64 = 1.0125;
-/// 1 refs (f64)
+pub const DAT_0095B388_F32: f32 = 4.172325e-08_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B390: f64 = 1.3766765647420211e-16;
-/// 1 refs (f64)
-pub const DAT_0095B394: f64 = 2.3934350206508082e-259;
+pub const DAT_0095B390_F32: f32 = 7.000000e+00_f32;
+/// 1 refs (f32)
+pub const DAT_0095B394_F32: f32 = 2.000000e-02_f32;
 /// 1 refs (f64)
 pub const DAT_0095B398: f64 = 1.04;
-/// 2 refs (f64)
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B3A8: f64 = 0.225;
-/// 1 refs (f64)
+pub const DAT_0095B3A8_F32: f32 = -1.073742e+08_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B3B0: f64 = 80.0;
-/// 1 refs (f64)
+pub const DAT_0095B3B0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B3B8: f64 = 4.336710064232345e-05;
-/// 1 refs (f64)
+pub const DAT_0095B3B8_F32: f32 = 3.333333e-03_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B3BC: f64 = 4.736953142552887e-14;
-/// 1 refs (f64)
+pub const DAT_0095B3BC_F32: f32 = 5.263158e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B3C0: f64 = 0.056250013081201665;
-/// 1 refs (f64)
-pub const DAT_0095B3C4: f64 = 4.047311741235461e-47;
-/// 1 refs (f64)
+pub const DAT_0095B3C0_F32: f32 = 4.166667e-02_f32;
+/// 1 refs (f32)
+pub const DAT_0095B3C4_F32: f32 = 1.350000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B3C8: f64 = 0.6060606060606061;
-/// 3 refs (f64)
+pub const DAT_0095B3C8_F32: f32 = 3.063318e-06_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095B3D0: f64 = 2.1;
-/// 1 refs (f64)
+pub const DAT_0095B3D0_F32: f32 = -1.073742e+08_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B418: f64 = 1.55;
-/// 2 refs (f64)
+pub const DAT_0095B418_F32: f32 = -1.073742e+08_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B420: f64 = 262144.0650253296;
-/// 1 refs (f64)
-pub const DAT_0095B42C: f64 = 5.778634797e-315;
-/// 1 refs (f64)
+pub const DAT_0095B420_F32: f32 = 7.500000e+01_f32;
+/// 1 refs (f32)
+pub const DAT_0095B42C_F32: f32 = 5.850000e+03_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B438: f64 = 0.16363636363636364;
+pub const DAT_0095B438_F32: f32 = 2.694116e+09_f32;
 /// 1 refs (f64)
 pub const DAT_0095B440: f64 = 0.3818181818181818;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B448: f64 = 0.5454545454545454;
-/// 1 refs (f64)
+pub const DAT_0095B448_F32: f32 = 6.391850e-25_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B450: f64 = 131072.0301402699;
+pub const DAT_0095B450_F32: f32 = 9.090909e-02_f32;
 /// 1 refs (f32)
-pub const DAT_0095B454: f32 = 8.000000e+00_f32;
+pub const DAT_0095B454_F32: f32 = 8.000000e+00_f32;
 /// 1 refs (f32)
-pub const DAT_0095B458: f32 = 8.750000e+03_f32;
+pub const DAT_0095B458_F32: f32 = 8.750000e+03_f32;
 /// 1 refs (f32)
-pub const DAT_0095B45C: f32 = 9.500000e+03_f32;
+pub const DAT_0095B45C_F32: f32 = 9.500000e+03_f32;
 /// 1 refs (f64)
 pub const DAT_0095B460: f64 = 255.76;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B468: f64 = 5.56;
-/// 2 refs (f64)
+pub const DAT_0095B468_F32: f32 = -2.331468e-17_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B478: f64 = 1.41;
-/// 2 refs (f64)
+pub const DAT_0095B478_F32: f32 = 2.728484e-14_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B480: f64 = 0.6999999330146238;
-/// 1 refs (f64)
+pub const DAT_0095B480_F32: f32 = 6.000000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B484: f64 = 0.22500005359761416;
-/// 1 refs (f64)
+pub const DAT_0095B484_F32: f32 = 1.800000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B488: f64 = 0.025000009674113245;
-/// 1 refs (f64)
-pub const DAT_0095B48C: f64 = 457396903844249.6;
-/// 2 refs (f64)
+pub const DAT_0095B488_F32: f32 = 1.600000e+00_f32;
+/// 1 refs (f32)
+pub const DAT_0095B48C_F32: f32 = 1.200000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095B4A0: f64 = 2.2;
-/// 1 refs (f64)
-pub const DAT_0095B4B4: f64 = 1374389806272.0;
-/// 1 refs (f64)
-pub const DAT_0095B4B8: f64 = 5.50833014e-315;
-/// 1 refs (f64)
+pub const DAT_0095B4A0_F32: f32 = -1.588187e-23_f32;
+/// 1 refs (f32)
+pub const DAT_0095B4B4_F32: f32 = 5.100000e+01_f32;
+/// 1 refs (f32)
+pub const DAT_0095B4B8_F32: f32 = 6.100000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B4C0: f64 = 1080.0;
-/// 1 refs (f64)
-pub const DAT_0095B4D8: f64 = 3298535428544.0;
-/// 1 refs (f64)
-pub const DAT_0095B4DC: f64 = 5.514805956e-315;
-/// 1 refs (f64)
+pub const DAT_0095B4C0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (f32)
+pub const DAT_0095B4D8_F32: f32 = 7.100000e+01_f32;
+/// 1 refs (f32)
+pub const DAT_0095B4DC_F32: f32 = 6.800000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B4E0: f64 = 1680.0;
-/// 1 refs (f64)
+pub const DAT_0095B4E0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B4E8: f64 = 0.0078125;
-/// 2 refs (f64)
-pub const DAT_0095B504: f64 = 5.5769738e-315;
-/// 1 refs (f64)
+pub const DAT_0095B4E8_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (f32)
+pub const DAT_0095B504_F32: f32 = 2.000000e+02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B518: f64 = 67108880.67578125;
-/// 1 refs (f64)
+pub const DAT_0095B518_F32: f32 = 9.000000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B520: f64 = 8000000.0;
-/// 1 refs (f64)
+pub const DAT_0095B520_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B540: f64 = 3.433228348370676e-06;
-/// 1 refs (f64)
+pub const DAT_0095B540_F32: f32 = 3.500000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B544: f64 = 1.2126600038801089e-11;
-/// 1 refs (f64)
+pub const DAT_0095B544_F32: f32 = 4.000000e-01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B548: f64 = 4.255856800604537e-17;
-/// 1 refs (f64)
+pub const DAT_0095B548_F32: f32 = 8.333334e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B54C: f64 = 4294968264.533334;
-/// 1 refs (f64)
+pub const DAT_0095B54C_F32: f32 = 1.666667e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B550: f64 = 2.240685270758843e-20;
-/// 1 refs (f64)
+pub const DAT_0095B550_F32: f32 = 3.000000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095B554: f64 = 2.789118300556565e-12;
-/// 1 refs (f64)
-pub const DAT_0095B558: f64 = 5.100526344e-315;
-/// 1 refs (f64)
+pub const DAT_0095B554_F32: f32 = 6.666667e-03_f32;
+/// 1 refs (f32)
+pub const DAT_0095B558_F32: f32 = 6.666667e-02_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095BF58: f64 = 4500.0;
-/// 1 refs (f64)
+pub const DAT_0095BF58_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095BF60: f64 = 3750.0;
-/// 1 refs (f64)
+pub const DAT_0095BF60_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095BF68: f64 = 5750.0;
-/// 1 refs (f64)
+pub const DAT_0095BF68_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095BF88: f64 = 4.656613997395045e-10;
-/// 1 refs (f64)
-pub const DAT_0095BF8C: f64 = 2.4042534748896973e-306;
-/// 3 refs (f64)
+pub const DAT_0095BF88_F32: f32 = 6.500000e+00_f32;
+/// 1 refs (f32)
+pub const DAT_0095BF8C_F32: f32 = 1.250000e-01_f32;
+/// 3 refs (both f32/f64 plausible)
 pub const DAT_0095D520: f64 = 350.0;
+pub const DAT_0095D520_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_0095D548: f64 = 4e-09;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D558: f64 = 0.000851063829787234;
+pub const DAT_0095D558_F32: f32 = -1.300747e-14_f32;
 /// 1 refs (f64)
 pub const DAT_0095D560: f64 = 0.0008888888888888889;
 /// 1 refs (f64)
 pub const DAT_0095D568: f64 = 0.0009523809523809524;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D570: f64 = 2.625;
-/// 1 refs (f64)
+pub const DAT_0095D570_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D578: f64 = 145.0;
-/// 1 refs (f64)
+pub const DAT_0095D578_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D580: f64 = 1500000.0;
-/// 1 refs (f64)
+pub const DAT_0095D580_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D588: f64 = 4500000.0;
-/// 1 refs (f64)
+pub const DAT_0095D588_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D590: f64 = 12000000.0;
-/// 1 refs (f64)
+pub const DAT_0095D590_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D598: f64 = 750000.0;
-/// 1 refs (f64)
+pub const DAT_0095D598_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D5A0: f64 = 45000000.0;
-/// 1 refs (f64)
+pub const DAT_0095D5A0_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D5A8: f64 = 1650000.0;
-/// 1 refs (f64)
+pub const DAT_0095D5A8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D5B0: f64 = 1666.67;
-/// 1 refs (f64)
+pub const DAT_0095D5B0_F32: f32 = 1.266620e-26_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D5B8: f64 = 10000000.0;
-/// 1 refs (f64)
+pub const DAT_0095D5B8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D5C0: f64 = 0.010000000000000002;
+pub const DAT_0095D5C0_F32: f32 = 8.912897e+04_f32;
 /// 1 refs (f64)
 pub const DAT_0095D5D8: f64 = 0.00022222222222222223;
-/// 2 refs (f64)
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095D5E0: f64 = 0.08771929824561403;
-/// 2 refs (f64)
+pub const DAT_0095D5E0_F32: f32 = -2.347916e-21_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095D5E8: f64 = 12000.0;
+pub const DAT_0095D5E8_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f64)
 pub const DAT_0095D5F8: f64 = 2.2222222222222223;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D600: f64 = 1.1764705882352942;
-/// 1 refs (f64)
+pub const DAT_0095D600_F32: f32 = -4.527401e+11_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D608: f64 = 900.0;
-/// 1 refs (f64)
+pub const DAT_0095D608_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D610: f64 = 0.00016129032258064516;
-/// 1 refs (f64)
-pub const DAT_0095D618: f64 = 4.751214887e-315;
+pub const DAT_0095D610_F32: f32 = 2.062471e+11_f32;
+/// 1 refs (f32)
+pub const DAT_0095D618_F32: f32 = 2.000000e-04_f32;
 /// 1 refs (f64)
 pub const DAT_0095D620: f64 = -0.0002;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D628: f64 = 2.9;
-/// 1 refs (f64)
-pub const DAT_0095D630: f64 = 5.236190397e-315;
+pub const DAT_0095D628_F32: f32 = 4.172325e-08_f32;
+/// 1 refs (f32)
+pub const DAT_0095D630_F32: f32 = 6.700000e-01_f32;
 /// 1 refs (f64)
 pub const DAT_0095D638: f64 = 2.6666666666666665;
 /// 1 refs (f64)
@@ -796,115 +1073,138 @@ pub const DAT_0095D640: f64 = 0.175;
 pub const DAT_0095D648: f64 = 1.1111111111111112;
 /// 1 refs (f64)
 pub const DAT_0095D650: f64 = 1.3333333333333333;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D658: f64 = 1.6666666666666667;
+pub const DAT_0095D658_F32: f32 = -3.031649e-13_f32;
 /// 1 refs (f64)
 pub const DAT_0095D660: f64 = 1.5384615384615383;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D668: f64 = 0.675;
+pub const DAT_0095D668_F32: f32 = -1.588187e-23_f32;
 /// 1 refs (f64)
 pub const DAT_0095D670: f64 = 0.0011111111111111111;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095D678: f64 = 0.7142857142857143;
-/// 1 refs (f64)
+pub const DAT_0095D678_F32: f32 = -6.539481e-06_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DAD8: f64 = 3.25;
-/// 1 refs (f64)
+pub const DAT_0095DAD8_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DAE0: f64 = -6.0;
+pub const DAT_0095DAE0_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f32)
-pub const DAT_0095DB18: f32 = 2.125000e+04_f32;
-/// 1 refs (f64)
+pub const DAT_0095DB18_F32: f32 = 2.125000e+04_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DB1C: f64 = 5.7361543584682096e-18;
+pub const DAT_0095DB1C_F32: f32 = 3.250000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DB4C: f32 = 7.500000e+04_f32;
+pub const DAT_0095DB4C_F32: f32 = 7.500000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DB64: f32 = 1.050000e+05_f32;
-/// 1 refs (f64)
-pub const DAT_0095DB68: f64 = 5.938977044e-315;
-/// 2 refs (f64)
+pub const DAT_0095DB64_F32: f32 = 1.050000e+05_f32;
+/// 1 refs (f32)
+pub const DAT_0095DB68_F32: f32 = 8.500000e+04_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095DB70: f64 = 3250.0;
-/// 2 refs (f64)
+pub const DAT_0095DB70_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095DB78: f64 = 2750.0;
-/// 2 refs (f64)
+pub const DAT_0095DB78_F32: f32 = 0.000000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095DB88: f64 = 0.06250001584112397;
-/// 2 refs (f64)
+pub const DAT_0095DB88_F32: f32 = 5.500000e+02_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095DB8C: f64 = 3.12250299920132e-18;
-/// 2 refs (f64)
+pub const DAT_0095DB8C_F32: f32 = 1.375000e+00_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095DB90: f64 = 3.493706841048916e-30;
+pub const DAT_0095DB90_F32: f32 = 1.250000e-02_f32;
 /// 2 refs (f32)
-pub const DAT_0095DB94: f32 = 4.000000e-04_f32;
+pub const DAT_0095DB94_F32: f32 = 4.000000e-04_f32;
 /// 2 refs (f32)
-pub const DAT_0095DB98: f32 = 1.750000e+02_f32;
+pub const DAT_0095DB98_F32: f32 = 1.750000e+02_f32;
 /// 2 refs (f32)
-pub const DAT_0095DB9C: f32 = 1.100000e+04_f32;
+pub const DAT_0095DB9C_F32: f32 = 1.100000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBA0: f32 = 4.000000e+04_f32;
+pub const DAT_0095DBA0_F32: f32 = 4.000000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBA4: f32 = 4.500000e+04_f32;
+pub const DAT_0095DBA4_F32: f32 = 4.500000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBA8: f32 = 5.250000e+04_f32;
+pub const DAT_0095DBA8_F32: f32 = 5.250000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBAC: f32 = 3.000000e+04_f32;
+pub const DAT_0095DBAC_F32: f32 = 3.000000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBB0: f32 = 2.000000e+04_f32;
+pub const DAT_0095DBB0_F32: f32 = 2.000000e+04_f32;
 /// 2 refs (f32)
-pub const DAT_0095DBB4: f32 = 5.000000e+04_f32;
+pub const DAT_0095DBB4_F32: f32 = 5.000000e+04_f32;
 /// 2 refs (f32)
-pub const DAT_0095DBB8: f32 = 5.500000e+04_f32;
+pub const DAT_0095DBB8_F32: f32 = 5.500000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBBC: f32 = 6.500000e+04_f32;
+pub const DAT_0095DBBC_F32: f32 = 6.500000e+04_f32;
 /// 2 refs (f64)
 pub const DAT_0095DBC8: f64 = 1e-09;
-/// 2 refs (f64)
-pub const DAT_0095DBD0: f64 = 5.598182103e-315;
+/// 2 refs (f32)
+pub const DAT_0095DBD0_F32: f32 = 2.750000e+02_f32;
 /// 2 refs (f64)
 pub const DAT_0095DBD8: f64 = 5e-09;
 /// 2 refs (f32)
-pub const DAT_0095DBE0: f32 = 7.500000e+02_f32;
-/// 2 refs (f64)
-pub const DAT_0095DBE4: f64 = -6.912782016226492e-180;
-/// 2 refs (f64)
+pub const DAT_0095DBE0_F32: f32 = 7.500000e+02_f32;
+/// 2 refs (f32)
+pub const DAT_0095DBE4_F32: f32 = 2.500000e+04_f32;
+/// 2 refs (both f32/f64 plausible)
 pub const DAT_0095DBE8: f64 = 2.5e-08;
-/// 1 refs (f64)
+pub const DAT_0095DBE8_F32: f32 = -7.803816e-23_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DBF0: f64 = 7250.0;
+pub const DAT_0095DBF0_F32: f32 = 0.000000e+00_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBF8: f32 = 4.400000e+04_f32;
+pub const DAT_0095DBF8_F32: f32 = 4.400000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DBFC: f32 = 6.000000e+04_f32;
+pub const DAT_0095DBFC_F32: f32 = 6.000000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC00: f32 = 6.775000e+04_f32;
+pub const DAT_0095DC00_F32: f32 = 6.775000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC04: f32 = 2.750000e+04_f32;
+pub const DAT_0095DC04_F32: f32 = 2.750000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC08: f32 = 2.200000e+04_f32;
+pub const DAT_0095DC08_F32: f32 = 2.200000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC0C: f32 = 3.750000e+04_f32;
+pub const DAT_0095DC0C_F32: f32 = 3.750000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC10: f32 = 7.000000e+04_f32;
+pub const DAT_0095DC10_F32: f32 = 7.000000e+04_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC14: f32 = 9.350000e+03_f32;
+pub const DAT_0095DC14_F32: f32 = 9.350000e+03_f32;
 /// 1 refs (f32)
-pub const DAT_0095DC18: f32 = 8.250000e+04_f32;
-/// 1 refs (f64)
-pub const DAT_0095DC1C: f64 = 8796095371861.0;
-/// 1 refs (f64)
+pub const DAT_0095DC18_F32: f32 = 8.250000e+04_f32;
+/// 1 refs (f32)
+pub const DAT_0095DC1C_F32: f32 = 9.250000e+04_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DC20: f64 = 0.10000003935419954;
-/// 1 refs (f64)
+pub const DAT_0095DC20_F32: f32 = 8.000000e+01_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF00: f64 = 59.7;
+pub const DAT_0095DF00_F32: f32 = -1.588187e-23_f32;
 /// 1 refs (f64)
 pub const DAT_0095DF08: f64 = 59.3;
-/// 1 refs (f64)
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF10: f64 = 57.5;
-/// 1 refs (f64)
+pub const DAT_0095DF10_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF18: f64 = 58.5;
-/// 1 refs (f64)
+pub const DAT_0095DF18_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF20: f64 = 58.0;
-/// 1 refs (f64)
+pub const DAT_0095DF20_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF28: f64 = 61.0;
-/// 1 refs (f64)
+pub const DAT_0095DF28_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF30: f64 = 62.0;
-/// 1 refs (f64)
+pub const DAT_0095DF30_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF38: f64 = 59.0;
-/// 1 refs (f64)
+pub const DAT_0095DF38_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF40: f64 = 56.0;
-/// 1 refs (f64)
+pub const DAT_0095DF40_F32: f32 = 0.000000e+00_f32;
+/// 1 refs (both f32/f64 plausible)
 pub const DAT_0095DF48: f64 = 54.0;
+pub const DAT_0095DF48_F32: f32 = 0.000000e+00_f32;

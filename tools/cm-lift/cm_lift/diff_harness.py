@@ -177,6 +177,17 @@ DEFAULT_PROBES: list[Probe] = [
           thiscall=True,
           rust_bin="shot_in_box", rust_args=(0, 0, 1),
           label="shot_in_box: token{corner} side=1 -> NOT in box"),
+
+    # FUN_00618410 club_status_byte — __thiscall(status_table_ptr, record_ptr)
+    # Reads *(int*)(record+0x61) — must be non-null.
+    # Reads *record — id, bounds-checked against DAT_00acd56c.
+    # Returns status_table[id*0x1f + 0x12].
+    # Rust port uses a synthesized table (byte i = i & 0xff), so exe-side
+    # needs the same table populated. Also DAT_00acd56c must be non-zero.
+    # Skipping full exe probe: our Rust port is a straight reimplementation,
+    # not a lift-from-exe, so the diff would require synchronizing the
+    # emu's DAT_00acd56c + populating a 100+ club status table in emu heap.
+    # Marked as future work.
 ]
 
 # --- Direct Rust-only probes (no exe emulation needed) --------------------
@@ -227,7 +238,11 @@ RUST_ONLY_PROBES: list[Probe] = [
     # Away goals verdict
     Probe(fn_va=0, args=(2, 3, 100, 200), rust_bin="away_goals_verdict", label="away goals win (200)"),
     Probe(fn_va=0, args=(3, 2, 100, 200), rust_bin="away_goals_verdict", label="home wins on away goals (100)"),
-    Probe(fn_va=0, args=(2, 2, 100, 200), rust_bin="away_goals_verdict", label="away goals level → -1"),
+    Probe(fn_va=0, args=(2, 2, 100, 200), rust_bin="away_goals_verdict", label="away goals level -> -1"),
+    # Mentality outcome scaler (returned as milli-i64)
+    Probe(fn_va=0, args=(0x20,), rust_bin="mentality_outcome_scaler", label="mentality Normal -> 500 (=0.5)"),
+    Probe(fn_va=0, args=(0x40,), rust_bin="mentality_outcome_scaler", label="mentality Attacking -> 4000"),
+    Probe(fn_va=0, args=(0,),    rust_bin="mentality_outcome_scaler", label="mentality Defensive -> 2000"),
 ]
 
 
