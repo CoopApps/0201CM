@@ -170,6 +170,7 @@ pub const PORTED_COMPETITION_IDS: &[i32] = &[
     69, 100, 82, 70, 71, 81,
 ];
 pub mod league_calendar;
+pub mod manager_actions;
 pub mod menu;
 pub mod stadium;
 pub mod typed_records;
