@@ -192,6 +192,20 @@ fn dispatch(name: &str, args: &[i64]) -> Result<i64, String> {
             let v = match_engine_exe::mentality_outcome_scaler(args[0] as u32);
             Ok((v * 1000.0) as i64)
         }
+        "reputation_to_stars" => {
+            if args.len() < 1 { return Err("need 1 arg (rep)".into()); }
+            Ok(match_engine_exe::reputation_to_stars(args[0] as i16) as i64)
+        }
+        "clamp_attendance_home" => {
+            if args.len() < 1 { return Err("need 1 arg (home)".into()); }
+            let (h, _) = match_engine_exe::clamp_attendance_components(args[0] as i32, 0);
+            Ok(h as i64)
+        }
+        "clamp_attendance_away" => {
+            if args.len() < 1 { return Err("need 1 arg (away)".into()); }
+            let (_, a) = match_engine_exe::clamp_attendance_components(0, args[0] as i32);
+            Ok(a as i64)
+        }
         "morale_label_id" => {
             if args.len() < 1 { return Err("need 1 arg (morale)".into()); }
             // Returns the ordinal of the label bucket

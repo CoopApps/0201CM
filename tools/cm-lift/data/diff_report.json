@@ -1,6 +1,6 @@
 {
-  "count": 48,
-  "passed": 48,
+  "count": 57,
+  "passed": 57,
   "failed": 0,
   "results": [
     {
@@ -987,6 +987,177 @@
         "fn_va": "0x00000000",
         "args": [],
         "label": "rating_scale_from_raw == 1000 (0.01 * 100k)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
+      "probe": {
+        "index": 48,
+        "fn_va": "0x00000000",
+        "args": [
+          0
+        ],
+        "label": "rep 0 -> 1 star (floor)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
+      "probe": {
+        "index": 49,
+        "fn_va": "0x00000000",
+        "args": [
+          499
+        ],
+        "label": "rep 499 -> 1 star (still floor)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 1,
+      "delta": 0,
+      "probe": {
+        "index": 50,
+        "fn_va": "0x00000000",
+        "args": [
+          500
+        ],
+        "label": "rep 500 -> 1 star (boundary)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 5,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 5,
+      "delta": 0,
+      "probe": {
+        "index": 51,
+        "fn_va": "0x00000000",
+        "args": [
+          2500
+        ],
+        "label": "rep 2500 -> 5 stars"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 19,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 19,
+      "delta": 0,
+      "probe": {
+        "index": 52,
+        "fn_va": "0x00000000",
+        "args": [
+          9999
+        ],
+        "label": "rep 9999 -> 19 stars"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 40000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 40000,
+      "delta": 0,
+      "probe": {
+        "index": 53,
+        "fn_va": "0x00000000",
+        "args": [
+          50000
+        ],
+        "label": "home clamp at 40000"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 30000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 30000,
+      "delta": 0,
+      "probe": {
+        "index": 54,
+        "fn_va": "0x00000000",
+        "args": [
+          30000
+        ],
+        "label": "home 30000 passes through"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 25000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 25000,
+      "delta": 0,
+      "probe": {
+        "index": 55,
+        "fn_va": "0x00000000",
+        "args": [
+          30000
+        ],
+        "label": "away clamp at 25000"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 20000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "assert",
+      "expected": 20000,
+      "delta": 0,
+      "probe": {
+        "index": 56,
+        "fn_va": "0x00000000",
+        "args": [
+          20000
+        ],
+        "label": "away 20000 passes through"
       }
     }
   ]

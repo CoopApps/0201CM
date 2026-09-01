@@ -280,6 +280,17 @@ RUST_ONLY_PROBES: list[Probe] = [
     Probe(fn_va=0, args=(6000, 7500),  rust_bin="update_best_rating", expected_ret=7500, label="update_best_rating upgrade 6000->7500"),
     Probe(fn_va=0, args=(8000, 7500),  rust_bin="update_best_rating", expected_ret=8000, label="update_best_rating keep 8000 (>7500)"),
     Probe(fn_va=0, args=(),             rust_bin="rating_scale_from_raw", expected_ret=1000, label="rating_scale_from_raw == 1000 (0.01 * 100k)"),
+    # reputation_to_stars — floor at 1, linear /500 above
+    Probe(fn_va=0, args=(0,),      rust_bin="reputation_to_stars", expected_ret=1, label="rep 0 -> 1 star (floor)"),
+    Probe(fn_va=0, args=(499,),    rust_bin="reputation_to_stars", expected_ret=1, label="rep 499 -> 1 star (still floor)"),
+    Probe(fn_va=0, args=(500,),    rust_bin="reputation_to_stars", expected_ret=1, label="rep 500 -> 1 star (boundary)"),
+    Probe(fn_va=0, args=(2500,),   rust_bin="reputation_to_stars", expected_ret=5, label="rep 2500 -> 5 stars"),
+    Probe(fn_va=0, args=(9999,),   rust_bin="reputation_to_stars", expected_ret=19, label="rep 9999 -> 19 stars"),
+    # clamp_attendance_components — cap at 40000/25000
+    Probe(fn_va=0, args=(50_000,), rust_bin="clamp_attendance_home", expected_ret=40_000, label="home clamp at 40000"),
+    Probe(fn_va=0, args=(30_000,), rust_bin="clamp_attendance_home", expected_ret=30_000, label="home 30000 passes through"),
+    Probe(fn_va=0, args=(30_000,), rust_bin="clamp_attendance_away", expected_ret=25_000, label="away clamp at 25000"),
+    Probe(fn_va=0, args=(20_000,), rust_bin="clamp_attendance_away", expected_ret=20_000, label="away 20000 passes through"),
 ]
 
 
