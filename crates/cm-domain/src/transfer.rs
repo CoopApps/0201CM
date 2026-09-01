@@ -3278,6 +3278,35 @@ pub fn compose_wage_offer_from_rated(
     )
 }
 
+/// Maximum loan length in days.
+///
+/// **INFERRED from surrounding evidence, not a literal exe constant.**
+/// The exe strings survey turned up no "Length of loan" dropdown or
+/// numeric ceiling — loans are just a variable date ("on loan until
+/// [date]") the user picks. But the recall gates in [`FUN_00594220`]
+/// only cover a single-season window (18-Aug → 15-Nov cutoffs), and no
+/// exe string mentions loans crossing multiple seasons.
+///
+/// Typical loan lengths in play: 1 month (~30d), 3 months (~90d),
+/// 6 months (~180d), end-of-season (~300d). Anything > 365 days is
+/// rejected as out-of-window; the exact ceiling is not decoded.
+///
+/// If future evidence surfaces a different cap, update this constant.
+pub const MAX_LOAN_DAYS: i32 = 365;
+
+/// Naive days-between calculator (Julian-day approximation, sufficient
+/// for loan-length validation within the exe's single-season window).
+///
+/// Uses 30-day months as a Julian approximation, matching the exe's
+/// coarse date-diff semantics in FUN_00536990 (which is used for
+/// contract-age gates, not display).
+pub fn days_between_dates(from: (u16, u8, u8), to: (u16, u8, u8)) -> i32 {
+    fn to_days(d: (u16, u8, u8)) -> i32 {
+        (d.0 as i32) * 365 + (d.1 as i32) * 30 + (d.2 as i32)
+    }
+    to_days(to) - to_days(from)
+}
+
 /// Inputs for [`compose_loan_offer`] — the loan-flavor sibling of
 /// [`compose_wage_offer_with_cap`]. Everything the wage composer needs
 /// plus the parent-club identity, today's date, and the loan-length
@@ -3407,6 +3436,13 @@ pub fn compute_earliest_recall(today: (u16, u8, u8)) -> (u16, u8, u8) {
 /// / [`derive_loan_fee`] envelopes as starting points, or supply real
 /// values once the exact FUN_00848da0 loan sub-branch is decoded.
 pub fn compose_loan_offer(inputs: &LoanOfferInputs) -> Option<WageOffer> {
+    // Validate loan length — must be >= 1 day, <= MAX_LOAN_DAYS (365).
+    // Loans in cm0102 can be as short as a few weeks and no longer than
+    // one calendar season.
+    let duration_days = days_between_dates(inputs.today, inputs.loan_end);
+    if duration_days < 1 || duration_days > MAX_LOAN_DAYS {
+        return None;
+    }
     // Start from the standard wage offer composed with the verified cap.
     let mut offer = compose_wage_offer_with_cap(
         inputs.player,
@@ -3417,7 +3453,9 @@ pub fn compose_loan_offer(inputs: &LoanOfferInputs) -> Option<WageOffer> {
         inputs.seed,
         Some(inputs.resolved_wage_cap),
     )?;
-    // Loan spells are always 1 year in the exe (season contracts).
+    // Loan spells are always <= 1 year (validated above), so a 1-year
+    // contract slot suffices. The actual duration lives on LoanState
+    // as loan_start / loan_end and can be as short as ~1 week.
     offer.contract_years = 1;
     // Set the on-loan-list flag (offer +0x4f & 0x02) mirroring
     // FUN_00848da0's prologue write at 0x00848e8b (documented in the
@@ -3860,6 +3898,102 @@ mod tests {
         // Loan flags
         assert!(offer.on_loan_list);
         assert_eq!(offer.contract_years, 1);
+    }
+
+    #[test]
+    fn compose_loan_offer_accepts_shorter_durations() {
+        let p = cp(100, 110, 5000, 500_000, 800, 24);
+        let c = cc(5000);
+        let base = LoanOfferInputs {
+            player: p, club: c, parent_club_id: 200,
+            existing_contract: None,
+            tier: SquadStatus::FirstTeam, mode: 0x0b, seed: 42,
+            resolved_wage_cap: 15_000,
+            today: (2001, 9, 1),
+            loan_end: (2001, 9, 1),  // placeholder; each test overrides
+            wage_share_pct: 50, loan_fee: 25_000, loan_back_option: false,
+        };
+
+        // 2-week loan (~14 days)
+        let two_week = LoanOfferInputs { loan_end: (2001, 9, 15), ..base.clone() };
+        let out = compose_loan_offer(&two_week).expect("2-week loan should compose");
+        assert_eq!(out.loan.as_ref().unwrap().loan_end, (2001, 9, 15));
+
+        // 1-month loan
+        let one_month = LoanOfferInputs { loan_end: (2001, 10, 1), ..base.clone() };
+        assert!(compose_loan_offer(&one_month).is_some());
+
+        // 3-month loan
+        let three_month = LoanOfferInputs { loan_end: (2001, 12, 1), ..base.clone() };
+        assert!(compose_loan_offer(&three_month).is_some());
+
+        // 6-month loan
+        let six_month = LoanOfferInputs { loan_end: (2002, 3, 1), ..base.clone() };
+        assert!(compose_loan_offer(&six_month).is_some());
+
+        // End-of-season loan (~9 months forward)
+        let eos = LoanOfferInputs { loan_end: (2002, 5, 31), ..base.clone() };
+        assert!(compose_loan_offer(&eos).is_some());
+    }
+
+    #[test]
+    fn compose_loan_offer_rejects_over_one_season() {
+        let p = cp(100, 110, 5000, 500_000, 800, 24);
+        let c = cc(5000);
+        let base = LoanOfferInputs {
+            player: p, club: c, parent_club_id: 200,
+            existing_contract: None,
+            tier: SquadStatus::FirstTeam, mode: 0x0b, seed: 42,
+            resolved_wage_cap: 15_000,
+            today: (2001, 9, 1),
+            loan_end: (2003, 1, 1),  // > 365 days
+            wage_share_pct: 50, loan_fee: 25_000, loan_back_option: false,
+        };
+        assert!(compose_loan_offer(&base).is_none(),
+                "over-1-season loan should reject");
+
+        // 366-day loan (just over cap) — reject
+        let jitter = LoanOfferInputs {
+            loan_end: (2002, 9, 3),  // ~367 days by naive calc
+            ..base.clone()
+        };
+        assert!(compose_loan_offer(&jitter).is_none());
+    }
+
+    #[test]
+    fn compose_loan_offer_rejects_zero_or_negative_duration() {
+        let p = cp(100, 110, 5000, 500_000, 800, 24);
+        let c = cc(5000);
+        let same_day = LoanOfferInputs {
+            player: p, club: c, parent_club_id: 200,
+            existing_contract: None,
+            tier: SquadStatus::FirstTeam, mode: 0x0b, seed: 42,
+            resolved_wage_cap: 15_000,
+            today: (2001, 9, 1),
+            loan_end: (2001, 9, 1),   // 0 days
+            wage_share_pct: 50, loan_fee: 25_000, loan_back_option: false,
+        };
+        assert!(compose_loan_offer(&same_day).is_none());
+
+        let past = LoanOfferInputs {
+            loan_end: (2001, 8, 1),   // before today
+            ..same_day.clone()
+        };
+        assert!(compose_loan_offer(&past).is_none());
+    }
+
+    #[test]
+    fn days_between_dates_smoke() {
+        // Same day
+        assert_eq!(days_between_dates((2001, 6, 15), (2001, 6, 15)), 0);
+        // Same month, 10 days
+        assert_eq!(days_between_dates((2001, 6, 5), (2001, 6, 15)), 10);
+        // 1 month = 30 days (naive)
+        assert_eq!(days_between_dates((2001, 6, 1), (2001, 7, 1)), 30);
+        // 1 year = 365 days
+        assert_eq!(days_between_dates((2001, 6, 1), (2002, 6, 1)), 365);
+        // Negative direction
+        assert!(days_between_dates((2001, 6, 15), (2001, 6, 5)) < 0);
     }
 
     #[test]
