@@ -1128,6 +1128,95 @@ pub fn agent_wage_multiplier(
     local_8
 }
 
+/// Direct-lifted hard caps from the FUN_00580a90 param_3 switch (lines
+/// 515-532 in the decompile). `param_3` is the offer's "seniority tier"
+/// byte from the composer — a small integer 0..=7. Cases 4-6 apply pure
+/// max-cap ceilings on the wage estimate; cases 1-3 involve FUN_005ea590
+/// (an unported sub-fn) and are captured as [`RoleSeniorityCapKind::NeedsGate`].
+///
+/// | seniority | cap    | exe branch                              |
+/// |----------:|-------:|-----------------------------------------|
+/// | 1         | pass   | goto switchD_00581c9e_caseD_1 (no cap)  |
+/// | 2         | 85_000 | FUN_005ea590 gate + rep check + __ftol  |
+/// | 3         | 55_000 | FUN_005ea590 gate + rep check + __ftol  |
+/// | 4         | 37_500 | 0x927c hard cap                         |
+/// | 5         | 12_500 | 0x30d4 hard cap                         |
+/// | 6         |  8_250 | 0x203a hard cap                         |
+/// | >6 / <0   | pass   | default (no cap)                        |
+pub const SENIORITY_CAP_TIER_2: i32 = 85_000;
+pub const SENIORITY_CAP_TIER_3: i32 = 55_000;
+pub const SENIORITY_CAP_TIER_4: i32 = 37_500;
+pub const SENIORITY_CAP_TIER_5: i32 = 12_500;
+pub const SENIORITY_CAP_TIER_6: i32 =  8_250;
+
+/// Result of [`seniority_hard_cap_for`] — either an applicable ceiling or
+/// a marker that the tier needs the FUN_005ea590 sub-fn to gate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoleSeniorityCapKind {
+    /// No cap applied (cases 1, negative, > 6).
+    Pass,
+    /// Ceiling to apply as `estimate = min(estimate, cap)`.
+    HardCap(i32),
+    /// Gate-dependent — needs the unported FUN_005ea590 result (a
+    /// transfer-listed / clause gate) to pick between multiple ceilings.
+    /// Caller must resolve.
+    NeedsGate { fallback_cap: i32 },
+}
+
+/// Pick the seniority cap for a `param_3` seniority byte (line 486-533).
+/// Returns [`RoleSeniorityCapKind::HardCap`] for tiers 4/5/6 (fully
+/// verified), [`RoleSeniorityCapKind::NeedsGate`] for tiers 2/3 (need
+/// `FUN_005ea590` — currently unported), or [`RoleSeniorityCapKind::Pass`]
+/// for tier 1, negative bytes, or out-of-range values.
+#[inline]
+pub fn seniority_hard_cap_for(seniority: u8) -> RoleSeniorityCapKind {
+    // Sign-bit check (line 486): negative i8 → default (pass)
+    if (seniority as i8) < 0 { return RoleSeniorityCapKind::Pass; }
+    match seniority {
+        1 => RoleSeniorityCapKind::Pass,
+        2 => RoleSeniorityCapKind::NeedsGate { fallback_cap: SENIORITY_CAP_TIER_2 },
+        3 => RoleSeniorityCapKind::NeedsGate { fallback_cap: SENIORITY_CAP_TIER_3 },
+        4 => RoleSeniorityCapKind::HardCap(SENIORITY_CAP_TIER_4),
+        5 => RoleSeniorityCapKind::HardCap(SENIORITY_CAP_TIER_5),
+        6 => RoleSeniorityCapKind::HardCap(SENIORITY_CAP_TIER_6),
+        _ => RoleSeniorityCapKind::Pass, // case 0, 7+ → default
+    }
+}
+
+/// Port of FUN_00580a90 lines 552-561 — the **final clamp assembly**
+/// that runs after every switch and gate. Combines the running caps
+/// (`iVar10`, `local_2c`, `local_18`) into the final returned value.
+///
+/// Faithful semantics from decompile:
+///   if iVar10 < local_18 + 100:            (line 552-554)
+///       iVar10 = local_18 + 100
+///   if local_2c < local_18:                (line 555-557)
+///       return local_18                    // takeover — floor overrides
+///   if iVar10 < local_2c:                  (line 558-560)
+///       local_2c = iVar10
+///   return local_2c                        (line 561)
+///
+/// # Params
+/// - `estimate` (\`iVar10\`): the working wage estimate from all upstream
+///    branches; gets bumped to at least `wage_floor + 100`
+/// - `counter_party_wage` (\`local_2c\`): the counter-party base wage from
+///    [`counter_party_base_wage`] (or 0 on the no-counter-party path)
+/// - `wage_floor` (\`local_18\`): the sibling-club wage floor from
+///    [`sibling_club_wage_floor`] (or 100 default)
+///
+/// Returns the final wage cap.
+pub fn final_wage_clamp_assembly(
+    estimate: i32,
+    counter_party_wage: i32,
+    wage_floor: i32,
+) -> i32 {
+    let estimate = estimate.max(wage_floor + 100);
+    if counter_party_wage < wage_floor {
+        return wage_floor;
+    }
+    counter_party_wage.min(estimate)
+}
+
 /// The three "big-3" nation record addresses (`DAT_009bb7a4`,
 /// `DAT_009bb820`, `DAT_009bb948`) that gate the LAB_00580dd1
 /// sibling-adjustment branch in FUN_00580a90 lines 274-277. Note this is
@@ -2432,6 +2521,69 @@ mod tests {
 
         // ---- 0xd2 = 210 hard cap
         assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
+    }
+
+    #[test]
+    fn seniority_cap_dispatch_matches_exe_switch() {
+        // Tier 1 and out-of-range → Pass
+        assert_eq!(seniority_hard_cap_for(0), RoleSeniorityCapKind::Pass);
+        assert_eq!(seniority_hard_cap_for(1), RoleSeniorityCapKind::Pass);
+        assert_eq!(seniority_hard_cap_for(7), RoleSeniorityCapKind::Pass);
+        assert_eq!(seniority_hard_cap_for(100), RoleSeniorityCapKind::Pass);
+        // Negative i8 (0x80..0xff) → Pass
+        assert_eq!(seniority_hard_cap_for(255), RoleSeniorityCapKind::Pass);
+        assert_eq!(seniority_hard_cap_for(128), RoleSeniorityCapKind::Pass);
+
+        // Tiers 2,3 need FUN_005ea590 gate
+        assert_eq!(seniority_hard_cap_for(2),
+            RoleSeniorityCapKind::NeedsGate { fallback_cap: 85_000 });
+        assert_eq!(seniority_hard_cap_for(3),
+            RoleSeniorityCapKind::NeedsGate { fallback_cap: 55_000 });
+
+        // Tiers 4/5/6 are fully verified
+        assert_eq!(seniority_hard_cap_for(4), RoleSeniorityCapKind::HardCap(37_500));
+        assert_eq!(seniority_hard_cap_for(5), RoleSeniorityCapKind::HardCap(12_500));
+        assert_eq!(seniority_hard_cap_for(6), RoleSeniorityCapKind::HardCap( 8_250));
+    }
+
+    #[test]
+    fn seniority_cap_constants_match_exact_hex_from_exe() {
+        // These are the exact 0x927c / 0x30d4 / 0x203a literals from the exe.
+        assert_eq!(SENIORITY_CAP_TIER_4, 0x927c);
+        assert_eq!(SENIORITY_CAP_TIER_5, 0x30d4);
+        assert_eq!(SENIORITY_CAP_TIER_6, 0x203a);
+    }
+
+    #[test]
+    fn final_clamp_bumps_estimate_to_floor_plus_100() {
+        // estimate is small; wage_floor=200 → estimate lifted to 300
+        // counter_party=10000 >= floor 200, and 10000 > 300 → return 300
+        let out = final_wage_clamp_assembly(50, 10_000, 200);
+        assert_eq!(out, 300);
+    }
+
+    #[test]
+    fn final_clamp_returns_floor_when_counter_party_below_floor() {
+        // counter_party_wage < wage_floor → return wage_floor unmodified
+        let out = final_wage_clamp_assembly(50_000, 150, 200);
+        assert_eq!(out, 200);
+    }
+
+    #[test]
+    fn final_clamp_returns_min_of_estimate_and_counterparty() {
+        // Both non-degenerate: estimate=5000, counter_party=12000, floor=200
+        // estimate stays 5000 (>200+100=300), counter_party=12000 > floor
+        // → return min(12000, 5000) = 5000
+        let out = final_wage_clamp_assembly(5_000, 12_000, 200);
+        assert_eq!(out, 5_000);
+    }
+
+    #[test]
+    fn final_clamp_estimate_binds_when_lower_than_counterparty() {
+        // The bumped estimate becomes the min when it's smaller
+        let out = final_wage_clamp_assembly(800, 5_000, 500);
+        // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
+        assert_eq!(out, 800);
     }
 
     #[test]
