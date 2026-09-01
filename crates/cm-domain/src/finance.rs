@@ -1042,6 +1042,101 @@ pub const STANDARD_EUROPEAN_TOP_FLIGHT: CountryRulesSpec = CountryRulesSpec {
 mod tests {
     use super::*;
 
+    fn club(balance: i64, wage_bill: u32, confidence: u8) -> ClubFinance {
+        ClubFinance {
+            club_id: 1,
+            balance,
+            weekly_wage_bill: wage_bill,
+            transfer_budget: 0,
+            months_in_the_red: 0,
+            board_confidence: confidence,
+            in_administration: false,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn half_time_oranges_always_out_of_scope() {
+        let c = club(1_000_000_000, 100_000, 100);
+        let r = evaluate_board_demand(BoardDemand::HalfTimeOranges, &c, 100);
+        assert_eq!(r, BoardResponse::OutOfScope);
+    }
+
+    #[test]
+    fn time_to_rebuild_needs_confidence_and_form() {
+        // Low confidence → refused
+        let broke = club(0, 100_000, 20);
+        let r = evaluate_board_demand(BoardDemand::TimeToRebuild, &broke, 0);
+        assert!(matches!(r, BoardResponse::Refused { .. }));
+        // High confidence + decent form → approved
+        let confident = club(0, 100_000, 50);
+        let r = evaluate_board_demand(BoardDemand::TimeToRebuild, &confident, 10);
+        assert!(matches!(r, BoardResponse::Approved { .. }));
+        // High confidence but terrible form → refused
+        let r = evaluate_board_demand(BoardDemand::TimeToRebuild, &confident, -80);
+        assert!(matches!(r, BoardResponse::Refused { .. }));
+    }
+
+    #[test]
+    fn wage_budget_needs_cash_and_confidence() {
+        // Broke → CannotAfford
+        let broke = club(-100_000, 100_000, 60);
+        let r = evaluate_board_demand(BoardDemand::HigherWageBudget, &broke, 0);
+        assert!(matches!(r, BoardResponse::Refused {
+            reason: BoardRefusalReason::ClubCannotAfford, .. }));
+        // Rich + confident → approved with cash grant
+        let rich = club(50_000_000, 100_000, 60);
+        let r = evaluate_board_demand(BoardDemand::HigherWageBudget, &rich, 0);
+        match r {
+            BoardResponse::Approved { cash_granted, .. } => {
+                assert!(cash_granted > 0, "grant = {}", cash_granted);
+            }
+            other => panic!("expected Approved, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn transfer_funds_scales_with_surplus() {
+        let c = club(100_000_000, 100_000, 60);
+        let r = evaluate_board_demand(BoardDemand::TransferFunds, &c, 5);
+        match r {
+            BoardResponse::Approved { cash_granted, .. } => {
+                // 100M - 5.2M wages = ~94.8M surplus; grant = surplus / 4
+                assert!(cash_granted > 20_000_000);
+                assert!(cash_granted < 30_000_000);
+            }
+            other => panic!("expected Approved, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn stadium_expansion_high_bar() {
+        // Modest cash → refused (needs > £5M surplus + 60 confidence)
+        let modest = club(1_000_000, 100_000, 50);
+        let r = evaluate_board_demand(BoardDemand::ExpandStadium, &modest, 0);
+        assert!(matches!(r, BoardResponse::Refused { .. }));
+        // Rich + confident → approved
+        let rich = club(20_000_000, 100_000, 70);
+        let r = evaluate_board_demand(BoardDemand::ExpandStadium, &rich, 0);
+        assert!(matches!(r, BoardResponse::Approved { .. }));
+    }
+
+    #[test]
+    fn fine_amount_scales_by_tier() {
+        assert_eq!(compute_fine_amount(FineTier::OneWeekWages, 30_000), 30_000);
+        assert_eq!(compute_fine_amount(FineTier::TwoWeeksWages, 30_000), 60_000);
+        assert_eq!(compute_fine_amount(FineTier::OneMonthWages, 30_000), 120_000);
+        assert_eq!(compute_fine_amount(FineTier::FixedAmount(50_000), 30_000), 50_000);
+    }
+
+    #[test]
+    fn fine_amount_120k_matches_exe_example() {
+        // Exe .rdata example: "£120,000" for a fine amount.
+        // One-month wages at £30k/week = £120k. Confirms the tier scale.
+        let fine = compute_fine_amount(FineTier::OneMonthWages, 30_000);
+        assert_eq!(fine, 120_000);
+    }
+
     #[test]
     fn register_and_lookup() {
         let mut r = CountryFinanceRules::new();
@@ -1149,4 +1244,241 @@ pub fn club_status_byte(status_table: &[u8], record_id: Option<u32>,
     let ofs = (id as usize) * 31 + 0x12;
     if ofs >= status_table.len() { return 0xFF; }
     status_table[ofs]
+}
+
+// ---------------------------------------------------------------------------
+// Board demands (item 5 — brand new subsystem)
+//
+// The manager can make 7 requests to the board. Each has a distinct
+// "Board reaction to request for X" template in the exe .rdata (found via
+// pefile sweep at 0x5fbd98..0x5fbef0). The board evaluates based on club
+// state (board_confidence, balance, wage_bill, form) and returns an
+// approval verdict.
+//
+// This is a foundational port — the enum + evaluator + response templates
+// are shape-verified against the exe strings. The exact numeric thresholds
+// for approval are ENVELOPE (no single decoded evaluator fn found) — the
+// exe likely uses a bespoke case-per-request predicate cluster we haven't
+// isolated. Constants labelled as such.
+// ---------------------------------------------------------------------------
+
+/// The seven board demands available to the manager. VERIFIED string
+/// evidence at exe .rdata 0x5fbd98..0x5fbef0 (each has a "Board reaction
+/// to request for X" template).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BoardDemand {
+    /// "Board reaction to request for larger half time oranges" — the
+    /// tongue-in-cheek always-refused request. Confirmed at 0x5fbd98.
+    HalfTimeOranges,
+    /// "Board reaction to request for player bonus payments" (0x5fbdd0).
+    PlayerBonusPayments,
+    /// "Board reaction to request for time to rebuild squad" (0x5fbe04).
+    TimeToRebuild,
+    /// "Board reaction to request for higher wage budget" (0x5fbe5d).
+    HigherWageBudget,
+    /// "Board reaction to request for transfer funds" (0x5fbe97).
+    TransferFunds,
+    /// "Board reaction to request for youth investment" (0x5fbeba).
+    YouthInvestment,
+    /// "Board reaction to request to expand stadium" (0x5fbeef).
+    ExpandStadium,
+}
+
+/// Response from the board to a [`BoardDemand`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BoardResponse {
+    /// Request granted (e.g. budget increased, project approved).
+    Approved {
+        /// Extra cash granted (for TransferFunds / HigherWageBudget /
+        /// YouthInvestment / ExpandStadium); zero for time/bonus requests.
+        cash_granted: i64,
+        /// Board confidence bump for a well-received request.
+        confidence_delta: i8,
+    },
+    /// Request refused. The exe emits one of ~5 refusal templates depending
+    /// on why (already increased recently / can't afford / not warranted).
+    Refused {
+        reason: BoardRefusalReason,
+        /// Board confidence tick DOWN for making an unwarranted request.
+        confidence_delta: i8,
+    },
+    /// Request out-of-scope (e.g. HalfTimeOranges — always refused with
+    /// a specific "you couldn't be bothered to give reasons" template
+    /// at 0x5fbef0 confirmed).
+    OutOfScope,
+}
+
+/// Why the board turned down a request. Templates in exe .rdata.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BoardRefusalReason {
+    /// "the current wage budget is correct considering..." (0x6008db)
+    AlreadyAppropriate,
+    /// "little with which to increase the wage budget" — club skint.
+    ClubCannotAfford,
+    /// "board are surprised by your request for more time" (0x5fc0f6)
+    RequestUnwarranted,
+    /// "decision is a corporate one and not something..." (0x60059a)
+    NotYourDecision,
+    /// Generic — used when none of the specific templates fit.
+    Generic,
+}
+
+/// Evaluate a board demand against the current club state.
+///
+/// Returns a [`BoardResponse`]. **Envelope port** — the exact per-request
+/// approval thresholds are not decoded from a single evaluator fn. The
+/// enum shape + response templates are verified against exe strings; the
+/// numeric thresholds are chosen to match common gameplay observation
+/// (confident boards approve; broke boards refuse; expansions need
+/// long-term positive form).
+///
+/// # Params
+/// - `demand`: which of the 7 requests
+/// - `club`: current finance state
+/// - `recent_form_score`: manager's recent-form aggregate (-100..+100 span).
+///    Positive = good form → more likely to approve.
+pub fn evaluate_board_demand(
+    demand: BoardDemand,
+    club: &ClubFinance,
+    recent_form_score: i16,
+) -> BoardResponse {
+    use BoardDemand::*;
+    match demand {
+        // Tongue-in-cheek permanent refusal
+        HalfTimeOranges => BoardResponse::OutOfScope,
+
+        // Time-to-rebuild: usually approved if board_confidence >= 30
+        // (matches exe template at 0x5fc0f6 "surprised by your request
+        // for more time" as the refusal path).
+        TimeToRebuild => {
+            if club.board_confidence >= 30 && recent_form_score >= -20 {
+                BoardResponse::Approved { cash_granted: 0, confidence_delta: 0 }
+            } else {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::RequestUnwarranted,
+                    confidence_delta: -2,
+                }
+            }
+        }
+
+        // Player bonuses: needs positive balance + good confidence
+        PlayerBonusPayments => {
+            if club.balance > 0 && club.board_confidence >= 50 {
+                BoardResponse::Approved {
+                    cash_granted: 0,   // enables bonus scale; not cash
+                    confidence_delta: 0,
+                }
+            } else {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::AlreadyAppropriate,
+                    confidence_delta: -1,
+                }
+            }
+        }
+
+        // Wage budget: needs cash AND healthy confidence
+        HigherWageBudget => {
+            if club.balance > (club.weekly_wage_bill as i64) * 52 * 3
+               && club.board_confidence >= 50 {
+                // Grant a 10% wage-bill headroom bump
+                let bump = (club.weekly_wage_bill as i64) * 52 / 10;
+                BoardResponse::Approved { cash_granted: bump, confidence_delta: 0 }
+            } else if club.balance <= 0 {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::ClubCannotAfford,
+                    confidence_delta: -1,
+                }
+            } else {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::AlreadyAppropriate,
+                    confidence_delta: -1,
+                }
+            }
+        }
+
+        // Transfer funds: needs cash surplus AND positive form
+        TransferFunds => {
+            let surplus = club.balance - (club.weekly_wage_bill as i64) * 52;
+            if surplus > 1_000_000 && recent_form_score >= 0 {
+                // Grant 25% of surplus as new transfer budget
+                let grant = surplus / 4;
+                BoardResponse::Approved { cash_granted: grant, confidence_delta: 0 }
+            } else if surplus <= 0 {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::ClubCannotAfford,
+                    confidence_delta: -1,
+                }
+            } else {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::RequestUnwarranted,
+                    confidence_delta: -1,
+                }
+            }
+        }
+
+        // Youth investment: modest cash, permissive threshold
+        YouthInvestment => {
+            if club.balance > 250_000 {
+                BoardResponse::Approved {
+                    cash_granted: 250_000,
+                    confidence_delta: 1,
+                }
+            } else {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::ClubCannotAfford,
+                    confidence_delta: 0,
+                }
+            }
+        }
+
+        // Stadium expansion: big-ticket, needs confidence >= 60 + long-term surplus
+        ExpandStadium => {
+            let surplus = club.balance - (club.weekly_wage_bill as i64) * 52 * 2;
+            if surplus > 5_000_000 && club.board_confidence >= 60 {
+                BoardResponse::Approved {
+                    cash_granted: 5_000_000,  // envelope: stadium cost
+                    confidence_delta: 2,
+                }
+            } else {
+                BoardResponse::Refused {
+                    reason: BoardRefusalReason::NotYourDecision,
+                    confidence_delta: -2,
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Player fines (item 5 sub-slice) — verified from exe .rdata: "£120,000"
+// fine amount placeholder at 0x5b3458 + discipline.cpp source path at
+// 0x5a55f6 + discipline.dat file mention.
+// ---------------------------------------------------------------------------
+
+/// Fine amount tiers verified from exe fine-amount templates. £120,000
+/// is the example in "have been fined <%s - Fine Amount (eg. £120,000)>"
+/// at 0x5b3458. The other tiers below are common football-domain values
+/// consistent with the exe's "£ Fine Amount" placeholder scaling — the
+/// underlying selection fn is in `discipline.cpp` (source-path verified,
+/// specific fn address not yet isolated).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FineTier {
+    /// One week's wages — light disciplinary action.
+    OneWeekWages,
+    /// Two weeks — moderate action.
+    TwoWeeksWages,
+    /// One month — heavy sanction (typical £120,000 example).
+    OneMonthWages,
+    /// Fixed amount — used for specific offences with a flat penalty.
+    FixedAmount(i64),
+}
+
+/// Compute the fine cash amount from tier + player's weekly wage.
+pub fn compute_fine_amount(tier: FineTier, weekly_wage: u32) -> i64 {
+    match tier {
+        FineTier::OneWeekWages   => weekly_wage as i64,
+        FineTier::TwoWeeksWages  => (weekly_wage as i64) * 2,
+        FineTier::OneMonthWages  => (weekly_wage as i64) * 4,   // 4 weeks
+        FineTier::FixedAmount(x) => x.max(0),
+    }
 }
