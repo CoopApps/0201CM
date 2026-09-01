@@ -68,6 +68,38 @@ pub struct TacticSlot {
     pub flag: u8,
 }
 
+/// Team-level tempo bitmask — VERIFIED port of FUN_006c34c0:63-83.
+/// Applied via FUN_0059f3e0(mask) at the top of the per-team tactic
+/// decision pass. Reads manager's +0x13 attribute.
+///
+///   attr < 9  → 0x02 (slow)
+///   attr < 15 → 0x01 (normal)
+///   attr < 19 → 0x04 (quick)
+///   attr < 21 → 0x08 (very quick)
+///   else      → None (unset, uses default)
+///
+/// See reports/contract_tactic_comp_giants.md §FUN_006c34c0.
+pub fn team_tempo_mask(mgr_attr_0x13: i8) -> Option<u32> {
+    match mgr_attr_0x13 {
+        i8::MIN..=8 => Some(0x02),
+        9..=14      => Some(0x01),
+        15..=18     => Some(0x04),
+        19..=20     => Some(0x08),
+        _           => None,
+    }
+}
+
+/// Team-level mentality bitmask — VERIFIED port of FUN_006c34c0:84-91.
+/// Reads manager's +0x1f attribute:
+///   attr < 6  → 0     (unset)
+///   attr < 15 → 0x80  (defensive)
+///   else      → 0x100 (attacking)
+pub fn team_mentality_mask(mgr_attr_0x1f: i8) -> u32 {
+    if mgr_attr_0x1f < 6 { 0 }
+    else if mgr_attr_0x1f < 15 { 0x80 }
+    else { 0x100 }
+}
+
 impl Tactic {
     /// Boot-time default 4-4-2 preset — plants a viable Tactic on every
     /// club so `snapshot_team_for_engine` reads a real per-club Tactic

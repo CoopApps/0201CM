@@ -1870,6 +1870,45 @@ pub fn roll_injuries(home: &EngineTeamSnapshot, away: &EngineTeamSnapshot,
     out
 }
 
+/// Shot tier bucket — VERIFIED port of `FUN_006f0320:79-115` and
+/// `FUN_006f1a50:83-119` (both branches identical). Given the RNG-driven
+/// shot-quality delta and a difficulty flag, returns a 1..=13 tier code:
+///
+///   1     — goal-worthy shot (top tier)
+///   2, 4-5 — early miss / poor chance
+///   7-8    — set-piece / header
+///   8-11   — misses at various bands (bucket dispatch in home only)
+///   12-13  — close chance (late clock-kill bracket)
+///
+/// See reports/away_shot_and_618410_decode.md.
+pub fn shot_tier_bucket(rng_delta: i16, flag: i8, rng: &mut MatchRng) -> i8 {
+    if rng_delta >= 0xf1 { return 1; }
+    if rng_delta < 10 {
+        return if flag == 0 { 2 } else { 4 - (rng.range(4) != 0) as i8 };
+    }
+    let d = 0xf0 - rng_delta;
+    if d < 0x33 {
+        let bonus = (flag != 0) as i8;
+        if d < 0xb {
+            if d < 7 { bonus + 12 } else { bonus + 10 }
+        } else { bonus + 8 }
+    } else if flag == 0 { 5 } else { 7 - (rng.range(4) != 0) as i8 }
+}
+
+/// Goal-scored rating + fatigue bump on the scorer. VERIFIED port
+/// (both FUN_006f0320:466-468 AND FUN_006f1a50:434-436 identical):
+///   rating_milli += 140 (0x8c)
+///   fatigue      += rand(3) + 1
+///
+/// This is the SCORER's bump; separate from the +100 GOAL_SCORED delta
+/// in `rating_delta` (that constant is the FUN_006d63f0:934 fire, this
+/// is FUN_006f0320:466 in the goal-branch tail).
+pub fn apply_scorer_goal_bump(rating_milli: &mut i16, fatigue: &mut i16,
+                              rng: &mut MatchRng) {
+    *rating_milli = rating_milli.wrapping_add(0x8c);
+    *fatigue      = fatigue.wrapping_add(rng.range(3) as i16 + 1);
+}
+
 /// Man-of-the-Match selector — VERIFIED port of `FUN_006b69e0`
 /// (`006b69e0.c:19-40`). Walks both teams' tokens, computes a composite
 /// score, and returns the winning player_id. Called at match end

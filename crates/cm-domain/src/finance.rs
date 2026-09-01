@@ -1095,3 +1095,57 @@ mod tests {
         assert_eq!(c.status(1000), FinanceStatus::Admin);
     }
 }
+
+/// Staff contract base floor per role code (job_type - 5 selects the slot).
+/// VERIFIED port of FUN_0084b870 switch case body — see
+/// reports/contract_tactic_comp_giants.md §FUN_0084b870.
+///
+/// 6 staff role classes with their weekly-wage floor (in currency-minor).
+/// Job types 11..=15 fall through to the STAFF_CONTRACT default path
+/// (200.0 fallback, not indexed here).
+pub const STAFF_BASE_FLOOR: [f32; 6] = [750.0, 500.0, 500.0, 275.0, 250.0, 200.0];
+
+/// Age-tier × wage-band cap multiplier — VERIFIED port of
+/// FUN_0084b870:458-488. Returns the ceiling multiplier the negotiator
+/// applies to the raw wage against the current wage band `band`.
+///
+///   age <= 9  → band × 0x9c4 (2500)
+///   age <= 14 → band × 0xabe (2750)
+///   else      → band × 0xcb2 (3250)
+pub fn age_wage_cap(age_years: i32, band: i32) -> f32 {
+    match age_years {
+        ..=9  => (band * 0x9c4) as f32,
+        ..=14 => (band * 0xabe) as f32,
+        _     => (band * 0xcb2) as f32,
+    }
+}
+
+/// Star-attribute floor — VERIFIED port of FUN_0084b870:489-503.
+/// Maps the top slot-index (0x11..=0x15 range) of the coach's peak
+/// attribute to a weekly-wage minimum. The exe reads slots 0x11..0x15
+/// of the coach attribute struct at +0x61 and returns the highest.
+pub fn star_floor(top_slot_idx: usize) -> f32 {
+    match top_slot_idx {
+        0x15        => 85_000.,
+        0x14 | 0x13 => 75_000.,
+        0x12        => 65_000.,
+        0x11        => 50_000.,
+        _           => 40_000.,
+    }
+}
+
+/// Club-status byte lookup — VERIFIED port of FUN_00618410
+/// (00618410.c:2-9). Returns a sentinel `0xFF` when record is null / id
+/// out of range / owner_ptr at record+0x61 is zero. Otherwise returns
+/// the byte at `status_table[id * 31 + 0x12]`. Pure query, no writes.
+///
+/// Consumed downstream as a club-status enum (news commentary, club-list
+/// classification). See reports/away_shot_and_618410_decode.md.
+pub fn club_status_byte(status_table: &[u8], record_id: Option<u32>,
+                        num_clubs: u32) -> u8 {
+    let Some(id) = record_id else { return 0xFF; };
+    if id >= num_clubs { return 0xFF; }
+    let ofs = (id as usize) * 31 + 0x12;
+    if ofs >= status_table.len() { return 0xFF; }
+    status_table[ofs]
+}
