@@ -1315,6 +1315,143 @@ pub fn cp_tail_no_counter_party(
     wage
 }
 
+/// The five "big-nation" addresses that gate the FUN_00527340 marquee
+/// bonus branch (asm 0x00581763..0x0058178b). Superset of both Big3 and
+/// SecondTier — includes both.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Top5Nation {
+    /// Country ptr matches one of `.rdata` {009bb820, 7a4, 7d4, 7c0, 948}.
+    Yes,
+    /// Any other nation.
+    No,
+}
+
+/// Verified integer gates for the 5-nation branch (decompile lines 437-461).
+pub const TOP5_REP_MID_UPPER: i16 = 0x186b; // 6251 — high/low rep split
+pub const TOP5_REP_LOW_GATE:  i16 = 0x109b; // 4251 — hard reject below
+pub const TOP5_REP_ELITE:     i16 = 0x1e47; // 7751 — player rep gate (high rep, no contract)
+pub const TOP5_REP_TOP:       i16 = 0x1a5f; // 6751 — player rep gate (low rep, own club)
+pub const TOP5_POTENTIAL_GATE:i16 = 0x1483; // 5251 — potential gate (high rep)
+pub const TOP5_REP_HIGH_TOP:  i16 = 0x1c53; // 7251 — player rep gate (high rep, own club)
+pub const TOP5_DAYS_SINCE_CONTRACT_START_GATE: i32 = 199;
+
+/// Squad-status nibble bits used at 0x00581ade..0x00581ae4 to gate the
+/// bonus. Read from `local_14[+0x4f] & 0xf0`.
+pub const SQUAD_STATUS_NIBBLE_KEY:    u8 = 0x10;
+pub const SQUAD_STATUS_NIBBLE_FIRST:  u8 = 0x20;
+pub const SQUAD_STATUS_NIBBLE_ROTATE: u8 = 0x30;
+
+/// Inputs for [`top5_nation_bonus_fires`] — snapshot of the exact fields
+/// the exe reads in the decompile 5-nation branch.
+#[derive(Debug, Clone, Copy)]
+pub struct Top5BonusView {
+    /// Country classification (5-way membership).
+    pub nation: Top5Nation,
+    /// Club reputation (`iVar1[+0x80]`).
+    pub club_reputation: i16,
+    /// `person[+0x61] != 0`.
+    pub has_type10: bool,
+    /// Player reputation `type10[+0x0b]`.
+    pub player_reputation: i16,
+    /// Player potential `type10[+0x0d]`.
+    pub player_potential: i16,
+    /// `local_14 != 0` — the AI has a resolved offer record for this person.
+    pub has_local_14: bool,
+    /// Squad-status byte at `local_14[+0x4f]`. High nibble & 0xf0 is
+    /// tested against the SQUAD_STATUS_NIBBLE_* constants.
+    pub local_14_squad_status_byte: u8,
+    /// `person[+0x39] == this_club` — is this the person's current club?
+    pub is_at_this_club: bool,
+    /// Result of `FUN_00536990(_DAT_00acde90, DAT_00acde94)` — days since
+    /// the person's contract start date. The gate is `> 199`.
+    pub days_since_contract_start: i32,
+}
+
+/// Port of the 5-nation FUN_00527340 branch decision tree (decompile
+/// lines 437-465). Returns whether the final `__ftol` at line 464 fires
+/// (applies the bonus).
+///
+/// This is a PREDICATE port — the actual bonus amount is caller-supplied
+/// since it depends on FPU state Ghidra dropped. All the branch gates
+/// and constants are fully verified.
+///
+/// # Branch structure
+///
+///   if !nation.is_yes: return false
+///   if club_rep < 4251: return false (LAB_00581b17 hard skip)
+///   if club_rep < 6251:                                          // LOW rep band
+///     if !has_local_14 || !is_at_this_club
+///          || days_since_contract_start > 199:
+///       return player_reputation >= 7751 (line 441)
+///     else:
+///       if player_reputation < 6751:                             // young player, own club
+///         return squad_status_gate(...)
+///       else:
+///         return true
+///   else:                                                        // HIGH rep band
+///     if !has_local_14 || !is_at_this_club
+///          || days_since_contract_start > 199:
+///       return player_potential >= 5251 || player_reputation >= 6751
+///     else if player_potential < 5251 && player_reputation < 7251:
+///       return squad_status_gate(...)
+///     else:
+///       return true
+///
+/// Where squad_status_gate examines the high nibble of `local_14[+0x4f]`:
+///   nibble = byte & 0xf0
+///   fires = (nibble == 0x30 && player_rep >= 5251)
+///        || nibble == 0x10 || nibble == 0x20
+pub fn top5_nation_bonus_fires(view: Top5BonusView) -> bool {
+    if view.nation != Top5Nation::Yes { return false; }
+    if view.club_reputation < TOP5_REP_LOW_GATE { return false; }
+
+    // Squad-status nibble gate at line 461
+    let squad_status_gate = || {
+        let n = view.local_14_squad_status_byte & 0xf0;
+        let hit_rotate = n == SQUAD_STATUS_NIBBLE_ROTATE
+                         && view.player_reputation >= TOP5_POTENTIAL_GATE;
+        let hit_key    = n == SQUAD_STATUS_NIBBLE_KEY;
+        let hit_first  = n == SQUAD_STATUS_NIBBLE_FIRST;
+        hit_rotate || hit_key || hit_first
+    };
+
+    // The "no local_14 || not at this club || days > 199" gate — the exe
+    // repeats this test in both the low-rep and high-rep branches.
+    let no_active_offer_at_club = !view.has_local_14
+        || !view.is_at_this_club
+        || view.days_since_contract_start > TOP5_DAYS_SINCE_CONTRACT_START_GATE;
+
+    if view.club_reputation < TOP5_REP_MID_UPPER {
+        // LOW rep band (4251..6250)
+        if no_active_offer_at_club {
+            // Line 441: return type10.rep >= 7751
+            return view.has_type10 && view.player_reputation >= TOP5_REP_ELITE;
+        }
+        // Own club + active offer: player's own rep gates
+        if view.has_type10 && view.player_reputation < TOP5_REP_TOP {
+            squad_status_gate()
+        } else {
+            true
+        }
+    } else {
+        // HIGH rep band (>= 6251)
+        if no_active_offer_at_club {
+            // Line 453-454: return potential >= 5251 OR rep >= 6751
+            if !view.has_type10 { return false; }
+            return view.player_potential >= TOP5_POTENTIAL_GATE
+                || view.player_reputation >= TOP5_REP_TOP;
+        }
+        // Own club + active offer
+        if !view.has_type10 { return true; }
+        if view.player_potential < TOP5_POTENTIAL_GATE
+           && view.player_reputation < TOP5_REP_HIGH_TOP {
+            squad_status_gate()
+        } else {
+            true
+        }
+    }
+}
+
 /// The quadratic wage base — VERIFIED port of the FPU chain at
 /// FUN_00580a90:335 (raw asm 0x005817ec..0x005817fe). Given:
 ///
@@ -2949,6 +3086,91 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    fn top5(nation: Top5Nation, club_rep: i16, has_t10: bool, prep: i16,
+            ppot: i16, hl14: bool, ss: u8, at_club: bool, days: i32)
+            -> Top5BonusView {
+        Top5BonusView {
+            nation, club_reputation: club_rep, has_type10: has_t10,
+            player_reputation: prep, player_potential: ppot,
+            has_local_14: hl14, local_14_squad_status_byte: ss,
+            is_at_this_club: at_club, days_since_contract_start: days,
+        }
+    }
+
+    #[test]
+    fn top5_no_nation_short_circuits() {
+        let v = top5(Top5Nation::No, 8000, true, 7000, 6000, true, 0x10, true, 50);
+        assert!(!top5_nation_bonus_fires(v));
+    }
+
+    #[test]
+    fn top5_low_club_rep_hard_reject() {
+        let v = top5(Top5Nation::Yes, 4250, true, 8000, 8000, true, 0x10, true, 50);
+        assert!(!top5_nation_bonus_fires(v));
+    }
+
+    #[test]
+    fn top5_low_rep_band_no_active_offer_needs_elite_player() {
+        // club_rep = 5000 (in low band 4251..6250), no active offer.
+        // Fires iff player_rep >= 7751
+        let v_elite = top5(Top5Nation::Yes, 5000, true, 7751, 5000, false, 0, false, 0);
+        assert!(top5_nation_bonus_fires(v_elite));
+        let v_low = top5(Top5Nation::Yes, 5000, true, 7750, 5000, false, 0, false, 0);
+        assert!(!top5_nation_bonus_fires(v_low));
+    }
+
+    #[test]
+    fn top5_low_rep_band_own_club_high_player_rep_always_fires() {
+        // club_rep=5000, own club, active offer, player rep >= 6751
+        let v = top5(Top5Nation::Yes, 5000, true, 6751, 5000, true, 0, true, 50);
+        assert!(top5_nation_bonus_fires(v));
+    }
+
+    #[test]
+    fn top5_low_rep_band_own_club_young_player_needs_squad_status() {
+        // player_rep < 6751 → squad status gate fires
+        // nibble 0x10 (KEY) → fires
+        let v = top5(Top5Nation::Yes, 5000, true, 6000, 5000, true, 0x10, true, 50);
+        assert!(top5_nation_bonus_fires(v));
+        // nibble 0x00 → doesn't fire
+        let v0 = top5(Top5Nation::Yes, 5000, true, 6000, 5000, true, 0x00, true, 50);
+        assert!(!top5_nation_bonus_fires(v0));
+    }
+
+    #[test]
+    fn top5_high_rep_band_no_active_offer_needs_pot_or_rep() {
+        // club_rep=7000, no active offer. Fires iff potential>=5251 OR rep>=6751
+        let v_pot = top5(Top5Nation::Yes, 7000, true, 5000, 5251, false, 0, false, 0);
+        assert!(top5_nation_bonus_fires(v_pot));
+        let v_rep = top5(Top5Nation::Yes, 7000, true, 6751, 4000, false, 0, false, 0);
+        assert!(top5_nation_bonus_fires(v_rep));
+        let v_neither = top5(Top5Nation::Yes, 7000, true, 6000, 4000, false, 0, false, 0);
+        assert!(!top5_nation_bonus_fires(v_neither));
+    }
+
+    #[test]
+    fn top5_squad_status_rotate_nibble_needs_min_rep() {
+        // nibble 0x30 needs player_rep >= 5251
+        let v_pass = top5(Top5Nation::Yes, 5000, true, 5251, 4000, true, 0x30, true, 50);
+        // Wait: player_rep 5251 makes it hit >=TOP5_REP_TOP (6751)? No, 5251 < 6751, so young.
+        // Then squad_status_gate: nibble 0x30 && 5251 >= 5251 → true
+        assert!(top5_nation_bonus_fires(v_pass));
+
+        let v_fail = top5(Top5Nation::Yes, 5000, true, 5250, 4000, true, 0x30, true, 50);
+        assert!(!top5_nation_bonus_fires(v_fail));
+    }
+
+    #[test]
+    fn top5_stale_offer_treated_as_no_offer() {
+        // has_local_14=true, at_this_club=true, but days>199
+        // → uses the no-active-offer path
+        // club_rep=5000 → low band → needs rep>=7751
+        let v = top5(Top5Nation::Yes, 5000, true, 7000, 8000, true, 0x10, true, 200);
+        assert!(!top5_nation_bonus_fires(v));  // rep 7000 < 7751
+        let v_ok = top5(Top5Nation::Yes, 5000, true, 7751, 8000, true, 0x10, true, 200);
+        assert!(top5_nation_bonus_fires(v_ok));
     }
 
     #[test]
