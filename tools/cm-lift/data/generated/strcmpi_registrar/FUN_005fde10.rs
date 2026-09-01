@@ -1,0 +1,135 @@
+// AUTO-GENERATED from FUN_005fde10.c by cm-lift codegen
+// Pattern: strcmpi_registrar — 121 name->VA entries
+//
+// This is a shipped-data name->pointer registrar. The Rust port
+// reads the .dat pools directly so this table is provided as a
+// lookup helper rather than being called into.
+
+use std::collections::HashMap;
+
+/// Name -> global-variable VA map lifted from FUN_005fde10.
+pub fn shipped_names() -> HashMap<&'static str, u32> {
+    let mut m = HashMap::new();
+    m.insert("MLS All Stars East", 0x009bc534);
+    m.insert("MLS All Stars West", 0x009bc538);
+    m.insert("River Plate", 0x009bc53c);
+    m.insert("Independiente", 0x009bc544);
+    m.insert("Independiente Rivadavia de Mendo", 0x009bc548);
+    m.insert("Argentino de Rosario", 0x009bc554);
+    m.insert("Temperley", 0x009bc558);
+    m.insert("Boca Juniors", 0x009bc560);
+    m.insert("Gimnasia y Esgrima de La Plata", 0x009bc564);
+    m.insert("San Lorenzo de Almagro", 0x009bc568);
+    m.insert("Argentinos Juniors", 0x009bc56c);
+    m.insert("Rosario Central", 0x009bc570);
+    m.insert("Newell s Old Boys", 0x009bc574);
+    m.insert("Racing Club", 0x009bc578);
+    m.insert("Platense", 0x009bc580);
+    m.insert("Ferro Carril Oeste", 0x009bc584);
+    m.insert("Banfield", 0x009bc674);
+    m.insert("All Boys", 0x009bc688);
+    m.insert("Almagro", 0x009bc6ac);
+    m.insert("Atlanta", 0x009bc6b0);
+    m.insert("Tigre", 0x009bc6bc);
+    m.insert("Sunderland", 0x009bc6c8);
+    m.insert("Liverpool", 0x009bc6d4);
+    m.insert("Everton", 0x009bc6d8);
+    m.insert("Tottenham Hotspur", 0x009bc6dc);
+    m.insert("Chelsea", 0x009bc6e0);
+    m.insert("Valencia C F", 0x009bc6e4);
+    m.insert("Valencia C F  B", 0x009bc6e8);
+    m.insert("Southampton", 0x009bc6f0);
+    m.insert("Brighton and Hove Albion", 0x009bc6ec);
+    m.insert("AS Monaco", 0x009bc6f4);
+    m.insert("FC Metz", 0x009bc6f8);
+    m.insert("Cruzeiro Esporte Clube", 0x009bc6fc);
+    m.insert("Sociedade Esportiva Palmeiras", 0x009bc704);
+    m.insert("Sport Club Corinthians Paulista", 0x009bc708);
+    m.insert("Gremio Foot Ball Porto Alegre", 0x009bc70c);
+    m.insert("Clube de Regatas Vasco da Gama", 0x009bc7e4);
+    m.insert("Univ  de Chile", 0x009bc714);
+    m.insert("Universidad Catolica", 0x009bc718);
+    m.insert("Nacional Montevideo", 0x009bc71c);
+    m.insert("Olimpia", 0x009bc720);
+    m.insert("Club Olimpia", 0x009bc720);
+    m.insert("Penarol", 0x009bc728);
+    m.insert("Elgin City", 0x009bc72c);
+    m.insert("Peterhead", 0x009bc730);
+    m.insert("FC St  Pauli", 0x00b4bbc4);
+    m.insert("FC St  Pauli Amateure", 0x00b4bbc0);
+    m.insert("FC St  Pauli  A", 0x00b4bbc0);
+    m.insert("Hamburger SV", 0x00b4bbe4);
+    m.insert("Hamburger SV Amateure", 0x00b4bbb8);
+    m.insert("Hamburger SV  A", 0x00b4bbb8);
+    m.insert("Hertha BSC Berlin", 0x00b4bbf4);
+    m.insert("Hertha BSC Amateure", 0x00b4bbfc);
+    m.insert("Hertha BSC  A", 0x00b4bbfc);
+    m.insert("Karlsruher SC", 0x00b4bc00);
+    m.insert("Karlsruher SC Amateure", 0x00b4bc08);
+    m.insert("Karlsruher SC  A", 0x00b4bc08);
+    m.insert("Karlsruher SC II", 0x00b4bc08);
+    m.insert("SV Werder Bremen", 0x00b4bbd0);
+    m.insert("SV Werder Bremen Amateure", 0x00b4bc10);
+    m.insert("SV Werder Bremen  A", 0x00b4bc10);
+    m.insert("Tennis Borussia Berlin", 0x00b4bbf0);
+    m.insert("Tennis Borussia  A", 0x00b4bbc8);
+    m.insert("Tennis Borussia Berlin II", 0x00b4bbc8);
+    m.insert("VfB Stuttgart", 0x00b4bbd4);
+    m.insert("VfB Stuttgart Amateure", 0x00b4bc04);
+    m.insert("VfB Stuttgart  A", 0x00b4bc04);
+    m.insert("VfL Bochum", 0x00b4bc0c);
+    m.insert("VfL Bochum Amateure", 0x00b4bbb4);
+    m.insert("VfL Bochum  A", 0x00b4bbb4);
+    m.insert("Eintracht Frankfurt", 0x009bc734);
+    m.insert("FC Hansa Rostock", 0x009bc73c);
+    m.insert("FC Schalke 04", 0x009bc744);
+    m.insert("Zalla U C", 0x009bc7a0);
+    m.insert("Wrexham", 0x009bc8cc);
+    m.insert("Arminia Bielefeld", 0x009bc8d8);
+    m.insert("Arminia Bielefeld Amateure", 0x009bc8dc);
+    m.insert("Arminia Bielefeld II", 0x009bc8dc);
+    m.insert("FC Energie Cottbus", 0x009bc8e0);
+    m.insert("FC Energie Cottbus Amateure", 0x009bc8e4);
+    m.insert("FC Energie Cottbus II", 0x009bc8e4);
+    m.insert("MSV Duisburg", 0x009bc8e8);
+    m.insert("MSV Duisburg Amateure", 0x009bc8ec);
+    m.insert("Hannover 96", 0x009bc8f0);
+    m.insert("Hannover 96 Amateure", 0x009bc8f4);
+    m.insert("Borussia M gladbach", 0x009bc900);
+    m.insert("Borussia Mgladbach", 0x009bc900);
+    m.insert("Bor  M gladbach Amateure", 0x009bc904);
+    m.insert("Rot Weiss Oberhausen", 0x009bc910);
+    m.insert("RW Oberhausen Amateure", 0x009bc914);
+    m.insert("SC Freiburg", 0x009bc918);
+    m.insert("SC Freiburg Amateure", 0x009bc91c);
+    m.insert("SSV Ulm 1846", 0x009bc928);
+    m.insert("SSV Ulm 1846 Amateure", 0x009bc92c);
+    m.insert("SSV Ulm 1846 II", 0x009bc92c);
+    m.insert("SpVgg Unterhaching", 0x009bc930);
+    m.insert("SpVgg Unterhaching Amateure", 0x009bc934);
+    m.insert("SpVgg Unterhaching II", 0x009bc934);
+    m.insert("VfB Leipzig", 0x009bc938);
+    m.insert("VfB Leipzig Amateure", 0x009bc93c);
+    m.insert("VfB Leipzig II", 0x009bc93c);
+    m.insert("VfL Wolfsburg", 0x009bc940);
+    m.insert("VfL Wolfsburg Amateure", 0x009bc944);
+    m.insert("C D  Badajoz", 0x009bc950);
+    m.insert("C D  Badajoz B", 0x009bc954);
+    m.insert("C D  Ourense", 0x009bc960);
+    m.insert("C D  Ourense B", 0x009bc964);
+    m.insert("Cultural Leonesa", 0x009bc970);
+    m.insert("Cultural Leonesa B", 0x009bc974);
+    m.insert("Elche C F", 0x009bc978);
+    m.insert("Elche C F  B", 0x009bc97c);
+    m.insert("Levante U D", 0x009bc980);
+    m.insert("Levante U D  B", 0x009bc984);
+    m.insert("Recreativo de Huelva", 0x009bc990);
+    m.insert("Recreativo de Huelva B", 0x009bc994);
+    m.insert("sg hoechst", 0x009bc9a0);
+    m.insert("sg hoechst ii", 0x009bc9a4);
+    m.insert("fsv mainz 05", 0x009bc9a8);
+    m.insert("fsv mainz 05 ii", 0x009bc9ac);
+    m.insert("stuttgarter kickers", 0x009bc9b0);
+    m.insert("stuttgarter kickers ii", 0x009bc9b4);
+    m
+}

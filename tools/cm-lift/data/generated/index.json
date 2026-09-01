@@ -1,0 +1,138 @@
+{
+  "count": 32,
+  "by_kind": {
+    "constant_return": 23,
+    "strcmpi_registrar": 4,
+    "field_getter": 5
+  },
+  "entries": [
+    {
+      "kind": "constant_return",
+      "fn": "0046a670"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00476dc0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "004ae9e0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00525170"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00527320"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00536bc0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "0059a460"
+    },
+    {
+      "kind": "strcmpi_registrar",
+      "fn": "005f71d0"
+    },
+    {
+      "kind": "strcmpi_registrar",
+      "fn": "005f8970"
+    },
+    {
+      "kind": "strcmpi_registrar",
+      "fn": "005fae70"
+    },
+    {
+      "kind": "strcmpi_registrar",
+      "fn": "005fde10"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00615ab0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00618410"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006494a0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00672530"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006933f0"
+    },
+    {
+      "kind": "field_getter",
+      "fn": "006b1040"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006b1290"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006b9c50"
+    },
+    {
+      "kind": "field_getter",
+      "fn": "006da000"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006f3930"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006f3950"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006f3980"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "006f39b0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00822580"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "00850b00"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "0086fa20"
+    },
+    {
+      "kind": "field_getter",
+      "fn": "008b3260"
+    },
+    {
+      "kind": "field_getter",
+      "fn": "008f28f0"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "009396ca"
+    },
+    {
+      "kind": "field_getter",
+      "fn": "0093ac35"
+    },
+    {
+      "kind": "constant_return",
+      "fn": "0093dba9"
+    }
+  ]
+}

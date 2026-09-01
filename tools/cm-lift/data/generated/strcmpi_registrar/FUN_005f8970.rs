@@ -1,0 +1,136 @@
+// AUTO-GENERATED from FUN_005f8970.c by cm-lift codegen
+// Pattern: strcmpi_registrar — 122 name->VA entries
+//
+// This is a shipped-data name->pointer registrar. The Rust port
+// reads the .dat pools directly so this table is provided as a
+// lookup helper rather than being called into.
+
+use std::collections::HashMap;
+
+/// Name -> global-variable VA map lifted from FUN_005f8970.
+pub fn shipped_names() -> HashMap<&'static str, u32> {
+    let mut m = HashMap::new();
+    m.insert("French Lower Division", 0x009bba08);
+    m.insert("German First Division", 0x009bba0c);
+    m.insert("German Second Division", 0x009bba10);
+    m.insert("German Regional Division West So", 0x009bba14);
+    m.insert("German Regional Division East", 0x009bba18);
+    m.insert("German Regional Division North", 0x009bba1c);
+    m.insert("German Regional Division South", 0x009bba20);
+    m.insert("German Regional", 0x009bba24);
+    m.insert("Dutch KPN Telecompetition", 0x009bba28);
+    m.insert("Dutch KPN Eredivisie", 0x009bba28);
+    m.insert("Dutch Premier Division", 0x009bba28);
+    m.insert("Dutch Toto Division", 0x009bba2c);
+    m.insert("Dutch First Division", 0x009bba2c);
+    m.insert("Italian Serie A", 0x009bba30);
+    m.insert("Italian Serie B", 0x009bba34);
+    m.insert("Italian Serie C1 A", 0x009bba38);
+    m.insert("Italian Serie C1 B", 0x009bba3c);
+    m.insert("Italian Serie C2 A", 0x009bba40);
+    m.insert("Italian Serie C2 B", 0x009bba44);
+    m.insert("Italian Serie C2 C", 0x009bba48);
+    m.insert("Italian Serie D", 0x009bba4c);
+    m.insert("American Major League", 0x009bba50);
+    m.insert("American A League", 0x009bba54);
+    m.insert("American USISL", 0x009bba58);
+    m.insert("French CFA", 0x009bba98);
+    m.insert("Friendly", 0x009bbb28);
+    m.insert("Reserve", 0x009bbb44);
+    m.insert("World Club Cup", 0x009bbba4);
+    m.insert("Intercontinental Cup", 0x009bbba4);
+    m.insert("UEFA European Champions League", 0x009bbba8);
+    m.insert("UEFA Champions League", 0x009bbba8);
+    m.insert("European Champions Cup", 0x009bbba8);
+    m.insert("European Cup Winners Cup", 0x009bbbac);
+    m.insert("UEFA Cup", 0x009bbbb0);
+    m.insert("European Super Cup", 0x009bbbb4);
+    m.insert("Inter toto Cup", 0x009bbbb8);
+    m.insert("Belgian Super Cup", 0x009bbbbc);
+    m.insert("Belgian Cup", 0x009bbbc0);
+    m.insert("Belgian League Cup", 0x009bbbc4);
+    m.insert("Danish Cup", 0x009bbbc8);
+    m.insert("Dong Cup", 0x009bbbc8);
+    m.insert("French Cup", 0x009bbbcc);
+    m.insert("French League Cup", 0x009bbbd0);
+    m.insert("German Cup", 0x009bbbd4);
+    m.insert("Dutch Amstel Cup", 0x009bbbd8);
+    m.insert("Dutch Cup", 0x009bbbd8);
+    m.insert("Italian Cup", 0x009bbbdc);
+    m.insert("Italian T I M  Cup", 0x009bbbdc);
+    m.insert("Italian Serie C Cup", 0x009bbbe0);
+    m.insert("Italian Super Cup", 0x009bbbe4);
+    m.insert("US Open Cup", 0x009bbbe8);
+    m.insert("CONCACAF Champions Cup", 0x009bbbec);
+    m.insert("Norwegian Cup", 0x009bbbf4);
+    m.insert("Portuguese Cup", 0x009bbbfc);
+    m.insert("Spanish Cup", 0x009bbc00);
+    m.insert("Asian Cup", 0x009bbc50);
+    m.insert("greek cup", 0x009bbd38);
+    m.insert("turkish lower division", 0x009bbd8c);
+    m.insert("turkish premier division", 0x009bbd98);
+    m.insert("turkish 2  division category a", 0x009bbd9c);
+    m.insert("turkish 2  division category b", 0x009bbda0);
+    m.insert("turkish 2  division category b g", 0x009bbda4);
+    m.insert("turkish 2  division category b g", 0x009bbda8);
+    m.insert("turkish 2  division category b g", 0x009bbdac);
+    m.insert("turkish 2  division category b g", 0x009bbdb0);
+    m.insert("turkish 2  division category b g", 0x009bbdb4);
+    m.insert("turkish fa cup", 0x009bbdb8);
+    m.insert("turkish football writers  associ", 0x009bbdbc);
+    m.insert("turkish sports writers  associat", 0x009bbdbc);
+    m.insert("turkish 2  division group 1", 0x009bbdc0);
+    m.insert("turkish 2  division group 2", 0x009bbdc4);
+    m.insert("turkish 2  division group 3", 0x009bbdc8);
+    m.insert("turkish 2  division group 4", 0x009bbdcc);
+    m.insert("turkish 2  division group 5", 0x009bbdd0);
+    m.insert("russian second division   west", 0x009bbdd4);
+    m.insert("russian second division   centra", 0x009bbdd8);
+    m.insert("russian second division   south", 0x009bbddc);
+    m.insert("russian second division   volga", 0x009bbde0);
+    m.insert("russian second division   ural", 0x009bbde4);
+    m.insert("russian second division   east", 0x009bbde8);
+    m.insert("russian first division", 0x009bbdec);
+    m.insert("russian premier division", 0x009bbdf0);
+    m.insert("russian cup", 0x009bbdf4);
+    m.insert("italian c1 super cup", 0x009bbdf8);
+    m.insert("greek super cup", 0x009bbdfc);
+    m.insert("croatian super cup", 0x009bbe00);
+    m.insert("polish super cup", 0x009bbe04);
+    m.insert("irish presidents cup", 0x009bbe08);
+    m.insert("welsh premier division", 0x009bbe0c);
+    m.insert("welsh league cup", 0x009bbe10);
+    m.insert("welsh cup", 0x009bbe14);
+    m.insert("welsh premier cup", 0x009bbe18);
+    m.insert("inter american cup", 0x009bbe1c);
+    m.insert("welsh lower division", 0x009bbe20);
+    m.insert("confederations cup", 0x009bbe24);
+    m.insert("Brazilian Bahia Lower Division", 0x009bbe28);
+    m.insert("Brazilian Central Lower Division", 0x009bbe2c);
+    m.insert("Brazilian Santa Catarina Lower D", 0x009bbe30);
+    m.insert("Brazilian Pernambuco Lower Divis", 0x009bbe34);
+    m.insert("Brazilian North Lower Division", 0x009bbe38);
+    m.insert("Brazilian Rio de Janeiro Lower D", 0x009bbe3c);
+    m.insert("Brazilian Northeast Lower Divisi", 0x009bbe40);
+    m.insert("Brazilian Minas Gerais Lower Div", 0x009bbe48);
+    m.insert("Brazilian North State Championsh", 0x009bbe54);
+    m.insert("Brazilian Central State Champion", 0x009bbe58);
+    m.insert("Brazilian Central Regional Cup", 0x009bbe60);
+    m.insert("Brazilian Northeast State Champi", 0x009bbe64);
+    m.insert("Brazilian North Regional Cup", 0x009bbe68);
+    m.insert("Brazilian National Third Divisio", 0x009bbe6c);
+    m.insert("Brazilian Santa Catarina State C", 0x009bbe70);
+    m.insert("Brazilian Champions Cup", 0x009bbe78);
+    m.insert("Brazilian Pernambuco State Champ", 0x009bbe7c);
+    m.insert("Brazilian Bahia State Championsh", 0x009bbe80);
+    m.insert("Brazilian Northeast Regional Cup", 0x009bbe84);
+    m.insert("Brazilian South Minas Regional C", 0x009bbe90);
+    m.insert("Brazilian Minas Gerais State Cha", 0x009bbe94);
+    m.insert("Brazilian Rio de Janeiro State C", 0x009bbe9c);
+    m.insert("Brazilian National Second Divisi", 0x009bbea0);
+    m.insert("Brazilian Cup", 0x009bbea8);
+    m.insert("Brazilian National First Divisio", 0x009bbeb0);
+    m.insert("Irish Munster Senior Cup", 0x009bbeb0);
+    m.insert("Irish Leinster Senior Cup", 0x009bbeb4);
+    m
+}

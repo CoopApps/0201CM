@@ -1,0 +1,4 @@
+unicorn>=2.1
+pefile>=2024.8
+capstone>=5.0
+frida>=17.0
