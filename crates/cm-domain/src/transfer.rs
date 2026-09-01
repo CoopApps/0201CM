@@ -866,6 +866,123 @@ pub const RECALL_PRE_SEASON_DAY: (u8, u8) = (18,  7);
 /// Round cap on wage-negotiation counter-offers — from `FUN_008ad0e0` and
 /// the bid-record `+0x2e round_counter` (capped at 3).
 pub const NEGOTIATION_ROUND_CAP: u8 = 3;
+
+/// Weekly scout throttle — VERIFIED port of FUN_008286f0:121-161 + :435
+/// (see reports/transfer_cluster_giants.md). Governs how many transfer
+/// candidates a club fully evaluates per weekly AI pass. Returns the
+/// throttle divisor N; a candidate is evaluated only when
+/// `(player_id + club_id) % N == 0`.
+///
+/// Low-rep clubs with weak coaching get a small N (they scout everything);
+/// top-5 English-league clubs get N≈50 (they only look at marquee names).
+///
+/// - `club_rep`: club reputation (i16)
+/// - `coach_attrs`: for each of 7 coach slots — Some((attr5, attr6)) for a
+///   filled slot, None for empty
+/// - `academy_flag`: DAT_00ac688c-derived youth-academy present
+/// - `league_top5`: club plays in one of the five continental top-flight ids
+pub fn scout_throttle(
+    club_rep: i16,
+    coach_attrs: &[Option<(i8, i8)>; 7],
+    academy_flag: bool,
+    league_top5: bool,
+) -> i16 {
+    let mut f: i32 = if club_rep < 0xDAC { (0x1789 - club_rep as i32) * 4 }
+                     else if league_top5 { 50 }
+                     else { club_rep as i32 };
+    for slot in coach_attrs {
+        match slot {
+            None => f += if academy_flag { 10 } else { 5 },
+            Some((a5, a6)) => f += 30 - 2 * (*a6 as i32) - (*a5 as i32),
+        }
+    }
+    ((f as i16) as i32 / 10).max(2) as i16
+}
+
+/// Position → scoutable bucket range (inclusive both ends). VERIFIED port of
+/// FUN_008286f0:303-325. Given a tactical role code the AI wants to fill,
+/// returns the range of scoutable player position codes to search.
+pub fn scout_bucket_range(role: u8) -> (u8, u8) {
+    match role {
+        0x11 => (0x01, 0x04),   // SW  → FBs
+        0x12 => (0x08, 0x0D),   // DM  → full midfield
+        0x13 => (0x05, 0x07),   // CM  → central mid
+        0x15 => (0x0B, 0x0D),   // WNG → AM + wingers
+        0x14 => (0x0E, 0x0E),   // F   → strikers only
+        r    => (r, r),
+    }
+}
+
+/// Foreign-player work-permit / xenophobia gate. VERIFIED port of
+/// FUN_008286f0:441-467. Returns true iff the club may pursue this player.
+///
+/// `club_country`/`player_country`: nation ids (i32 -1 = unknown).
+/// `player_current_club_country`: nation of the player's CURRENT owning
+/// club (for the "same-league importer" branch); -1 if free agent.
+/// `open_borders_flag`: `country_flag[+0x85] > 11` — some leagues have
+/// "no work permit issues" flag set. Repetition thresholds 2749/4249 are
+/// verified from exe compares.
+pub fn foreign_player_permit(
+    club_rep: i16,
+    club_country: i32,
+    player_country: i32,
+    player_current_club_country: i32,
+    open_borders_flag: bool,
+) -> bool {
+    if club_country == player_country { return true; }
+    if open_borders_flag { return true; }
+    if club_rep > 0x1099 { return true; } // 4249 — top clubs sign anyone
+    if club_rep > 0x0ABD && player_current_club_country == club_country {
+        return true; // 2749 — mid clubs can sign in-league foreigners
+    }
+    false
+}
+
+/// Managers whose players bypass the `+0x39` mentor-loyalty gate in
+/// [`player_signing_score`]. Shipped-data quirk in CM01/02 — the devs
+/// flagged these three "developmental / cycling" managers so their
+/// nominally-loyal players remain movable in transfer AI (Gradi @ Crewe,
+/// Nevin @ Motherwell, Keegan @ England/Man City would otherwise clog
+/// lower-league pipelines).
+///
+/// VERIFIED from FUN_0082dab0:73-136 strcmp allowlist:
+///   - "Dario Gradi"  at .rdata 0x00a6e294
+///   - "Pat Nevin"    at .rdata 0x00a6e288
+///   - "Kevin Keegan" at .rdata 0x00a6e278
+///
+/// Effect: bypass the "player+0x39 != 0 → refuse offers" hard-reject at
+/// the top of FUN_0082dab0. Single boolean override, no per-attribute
+/// effect. Case-insensitive match (exe strcmp; use eq_ignore_ascii_case).
+pub const MENTOR_LOYALTY_OVERRIDE_MANAGERS: &[&str] = &[
+    "Dario Gradi",
+    "Pat Nevin",
+    "Kevin Keegan",
+];
+
+/// Returns true when the given current-club manager name is one of the
+/// three developmental-manager exceptions that bypass the mentor-loyalty
+/// gate in the transfer-AI signing-attractiveness scorer.
+pub fn mentor_loyalty_bypass(current_club_manager_name: &str) -> bool {
+    MENTOR_LOYALTY_OVERRIDE_MANAGERS.iter()
+        .any(|q| current_club_manager_name.eq_ignore_ascii_case(q))
+}
+
+/// Away-goals verdict on a two-leg tie. VERIFIED port of
+/// FUN_00503e30:688-698 (see reports/cup_tie_resolution_decode.md).
+/// Called only when the round tie-break policy allows replays AND the
+/// away-goals rule flag `RF_AWAY_GOALS (0x800)` at `round+0x0d` is set.
+///
+/// Returns Some(winner_team_id) if away goals separate, None if still level.
+pub fn away_goals_verdict(
+    home_away_goals: u8, away_away_goals: u8,
+    home_team_id: u32, away_team_id: u32,
+) -> Option<u32> {
+    match away_away_goals.cmp(&home_away_goals) {
+        std::cmp::Ordering::Greater => Some(away_team_id),
+        std::cmp::Ordering::Less    => Some(home_team_id),
+        std::cmp::Ordering::Equal   => None,
+    }
+}
 /// Bid arrival thresholds from `FUN_008ad0e0`:
 ///   asking_price > base_value * 1.5 → reject (line 82)
 ///   reputation-fit ratio >= 0.75    → accept (line 156)
