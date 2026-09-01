@@ -1122,6 +1122,58 @@ mod tests {
     }
 
     #[test]
+    fn fine_reaction_accepted_for_indiscreet_remarks() {
+        // IndiscreetRemarks → always accepted (player at fault)
+        for tier in [FineTier::OneWeekWages, FineTier::OneMonthWages] {
+            for pop in [0u8, 15, 20] {
+                let r = evaluate_fine_reaction(tier, FineReason::IndiscreetRemarks, pop);
+                assert_eq!(r, FineOutcome::AcceptedWithoutComment);
+            }
+        }
+    }
+
+    #[test]
+    fn fine_reaction_ripples_on_heavy_poor_performance_with_popular_player() {
+        let r = evaluate_fine_reaction(
+            FineTier::OneMonthWages, FineReason::PoorPerformance, 15);
+        assert_eq!(r, FineOutcome::TeamRipple { team_delta: -3 });
+    }
+
+    #[test]
+    fn fine_reaction_no_ripple_for_light_fine_or_unpopular_player() {
+        // Light fine + popular player → no ripple
+        let r = evaluate_fine_reaction(
+            FineTier::OneWeekWages, FineReason::PoorPerformance, 15);
+        assert_eq!(r, FineOutcome::AcceptedWithoutComment);
+        // Heavy fine + unpopular player → no ripple
+        let r = evaluate_fine_reaction(
+            FineTier::OneMonthWages, FineReason::PoorPerformance, 5);
+        assert_eq!(r, FineOutcome::AcceptedWithoutComment);
+    }
+
+    #[test]
+    fn press_statement_deltas_have_expected_signs() {
+        assert!(press_statement_mood_delta(PressStatement::NotForSale) > 0);
+        assert!(press_statement_mood_delta(PressStatement::PraiseProfessionalism) > 0);
+        assert!(press_statement_mood_delta(PressStatement::DenyRift) > 0);
+        assert!(press_statement_mood_delta(PressStatement::PromiseFavouredPosition) > 0);
+        assert!(press_statement_mood_delta(PressStatement::AdmitUnhappyWith) < 0);
+        assert!(press_statement_mood_delta(PressStatement::AdmitUnhappyRemark) < 0);
+        // Public shaming should hurt more than the softer rebuke
+        assert!(press_statement_mood_delta(PressStatement::AdmitUnhappyWith)
+                < press_statement_mood_delta(PressStatement::AdmitUnhappyRemark));
+    }
+
+    #[test]
+    fn national_coverage_doubles_press_impact() {
+        for stmt in [PressStatement::NotForSale, PressStatement::AdmitUnhappyWith] {
+            let local = scaled_press_delta(stmt, NewspaperTier::Local);
+            let national = scaled_press_delta(stmt, NewspaperTier::National);
+            assert_eq!(national as i32, (local as i32).saturating_mul(2).clamp(-50, 50));
+        }
+    }
+
+    #[test]
     fn fine_amount_scales_by_tier() {
         assert_eq!(compute_fine_amount(FineTier::OneWeekWages, 30_000), 30_000);
         assert_eq!(compute_fine_amount(FineTier::TwoWeeksWages, 30_000), 60_000);
@@ -1481,4 +1533,134 @@ pub fn compute_fine_amount(tier: FineTier, weekly_wage: u32) -> i64 {
         FineTier::OneMonthWages  => (weekly_wage as i64) * 4,   // 4 weeks
         FineTier::FixedAmount(x) => x.max(0),
     }
+}
+
+/// Fine reason category — VERIFIED from exe .rdata "fine reason (eg.
+/// Unprofessional Behaviour)" template at 0x5b6efe. Specific reasons
+/// used by the exe were surveyed but the enum here captures the
+/// dispatcher shape. Real names may match "Unprofessional Behaviour",
+/// "Poor Performance", "Missed Training", etc.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FineReason {
+    UnprofessionalBehaviour,
+    PoorPerformance,
+    MissedTraining,
+    IndiscreetRemarks,
+    /// Fall-back — used when no specific reason applies.
+    Generic,
+}
+
+/// Media reaction to a fine or warning. Two outcome shapes VERIFIED from
+/// exe .rdata at 0x5b6efe (fine) / 0x5b783a (warning):
+///   1. "has accepted the fine/warning...without comment" — no ripple
+///   2. "Several team members...commented...was unfair" — RIPPLE
+///
+/// The dispatcher branch is not decoded to a single fn; the exe likely
+/// uses a per-player-popularity vs fine-severity gate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FineOutcome {
+    /// Player took it, no team response.
+    AcceptedWithoutComment,
+    /// Team-mates felt fine was unfair — ripples through squad morale.
+    TeamRipple {
+        /// Signed mood_delta applied to each OTHER player on the team.
+        /// Negative = fine ripple hurts squad morale.
+        team_delta: i8,
+    },
+}
+
+/// Decide the fine ripple outcome + return the ripple delta.
+///
+/// **Envelope port** — the exe's exact gate (player popularity vs fine
+/// severity) isn't a single decoded fn. Rule of thumb from observation:
+///
+///   - `Generic` reason on `OneWeekWages` → accepted (light + reasonable)
+///   - `OneMonthWages` for `PoorPerformance` when player is well-liked
+///     (popularity > 12) → ripples with delta = -3
+///   - Any fine for `IndiscreetRemarks` → accepted (player at fault)
+///   - `UnprofessionalBehaviour` heavy fine + unpopular player → accepted
+///   - Otherwise: default to accepted
+pub fn evaluate_fine_reaction(
+    tier: FineTier,
+    reason: FineReason,
+    fined_player_popularity: u8,
+) -> FineOutcome {
+    use FineReason::*;
+    let is_heavy = matches!(tier, FineTier::OneMonthWages
+                            | FineTier::TwoWeeksWages
+                            | FineTier::FixedAmount(_));
+    let popular = fined_player_popularity > 12;
+    match reason {
+        IndiscreetRemarks => FineOutcome::AcceptedWithoutComment,
+        UnprofessionalBehaviour if !popular
+            => FineOutcome::AcceptedWithoutComment,
+        PoorPerformance if is_heavy && popular
+            => FineOutcome::TeamRipple { team_delta: -3 },
+        MissedTraining if is_heavy && popular
+            => FineOutcome::TeamRipple { team_delta: -2 },
+        _ => FineOutcome::AcceptedWithoutComment,
+    }
+}
+
+/// Newspaper coverage tier — VERIFIED from exe .rdata 0x5b2cd0/0x5b2cf6
+/// "national<%s - COMMENT: national newspaper>" and "local<%s - COMMENT:
+/// local newspaper>" bit-flag pair. National coverage carries larger
+/// morale/reputation weight than local.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NewspaperTier { National, Local }
+
+/// Press-conference statement the manager can deliver about a player.
+/// VERIFIED templates:
+///   - "told the press that <player> is not for sale at any price" (0x5b179a)
+///   - "told the press that <player> is a model professional who would ne..." (0x604df3)
+///   - "told the press that there are no problems between himself and..." (0x604e95)
+///   - "told the press that <player> will soon be playing in his favoured..." (0x605371)
+///   - "You have admitted to reporters that you are unhappy with..." (0x607199)
+///
+/// Each has a distinct effect on player morale + club reputation +
+/// transfer-value dynamics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PressStatement {
+    /// "Not for sale at any price" — locks the player out of transfer
+    /// negotiations for a period, boosts loyalty.
+    NotForSale,
+    /// "model professional" — public praise, morale +.
+    PraiseProfessionalism,
+    /// "no problems between us" — media backing during a rift, small +.
+    DenyRift,
+    /// "will soon be playing in his favoured position" — position promise,
+    /// player-specific morale +.
+    PromiseFavouredPosition,
+    /// "unhappy with X's contribution" — public shaming, big morale -.
+    AdmitUnhappyWith,
+    /// "unhappy with X's indiscrete remark" — softer public rebuke.
+    AdmitUnhappyRemark,
+}
+
+/// Effect of a press statement on the target player's mood_delta byte.
+/// Negative = damaging, positive = supportive. **Envelope values** —
+/// exact deltas from the exe's post-conference morale writers not
+/// isolated to a single fn, but ordering + sign are constrained by the
+/// template semantics.
+pub fn press_statement_mood_delta(stmt: PressStatement) -> i8 {
+    use PressStatement::*;
+    match stmt {
+        NotForSale              => 5,   // strong positive
+        PraiseProfessionalism   => 3,
+        DenyRift                => 2,
+        PromiseFavouredPosition => 4,
+        AdmitUnhappyWith        => -10, // public shaming
+        AdmitUnhappyRemark      => -5,
+    }
+}
+
+/// News-coverage tier scales morale magnitude. National coverage doubles
+/// the effect of any press statement (envelope).
+pub fn scaled_press_delta(stmt: PressStatement, tier: NewspaperTier) -> i8 {
+    let base = press_statement_mood_delta(stmt) as i32;
+    let scaled = match tier {
+        NewspaperTier::National => base * 2,
+        NewspaperTier::Local    => base,
+    };
+    scaled.clamp(-50, 50) as i8
 }
