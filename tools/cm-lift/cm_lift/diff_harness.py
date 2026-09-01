@@ -156,6 +156,39 @@ RUST_ONLY_PROBES: list[Probe] = [
     Probe(fn_va=0, args=(0x0804,),     rust_bin="role_mask_to_position",  label="role_mask 0x0804 → Dr(3)"),
     Probe(fn_va=0, args=(20, 100),     rust_bin="age_wage_cap",        label="age_wage_cap(20, 100) == 275000"),
     Probe(fn_va=0, args=(1, 3, 5, 10, 2, 4), rust_bin="fifa_score",   label="fifa_score smoke"),
+    # Season-avg rating (verified sum/count formula from FUN_007aa490)
+    Probe(fn_va=0, args=(10, 60),      rust_bin="season_avg_rating",   label="season_avg 6.0 (60/10)"),
+    Probe(fn_va=0, args=(0, 0),        rust_bin="season_avg_rating",   label="season_avg none (0 apps → -1)"),
+    Probe(fn_va=0, args=(5, 40),       rust_bin="season_avg_rating",   label="season_avg 8.0 (40/5)"),
+    # Predict wage (FUN_006ce0e0 port)
+    Probe(fn_va=0, args=(2000, 15, 5, 25, 0, 1234, 100, 1),
+          rust_bin="predict_wage", label="predict_wage renewal ask"),
+    # Assist bonus
+    Probe(fn_va=0, args=(15,),         rust_bin="assist_bonus_milli",  label="assist_bonus(15) == 280"),
+    Probe(fn_va=0, args=(30,),         rust_bin="assist_bonus_milli",  label="assist_bonus(30) == 285"),
+    # Chairman approves overrun
+    Probe(fn_va=0, args=(400_000, 1),  rust_bin="chairman_approves_overrun", label="chairman approve overrun under cap"),
+    Probe(fn_va=0, args=(20_000_000, 1), rust_bin="chairman_approves_overrun", label="chairman REJECT overrun over cap"),
+    # Club status byte
+    Probe(fn_va=0, args=(5, 100, 32*100), rust_bin="club_status_byte", label="club_status[5] byte"),
+    Probe(fn_va=0, args=(101, 100, 32*100), rust_bin="club_status_byte", label="club_status out-of-range → 0xFF"),
+    # Foreign player permit
+    Probe(fn_va=0, args=(5000, 1, 1, 1, 0), rust_bin="foreign_player_permit", label="permit same country"),
+    Probe(fn_va=0, args=(2000, 1, 2, 3, 0), rust_bin="foreign_player_permit", label="permit low rep, different country → deny"),
+    Probe(fn_va=0, args=(5000, 1, 2, 3, 0), rust_bin="foreign_player_permit", label="permit high rep, any nation → allow"),
+    # Mentor loyalty override
+    Probe(fn_va=0, args=(),             rust_bin="mentor_loyalty_bypass", label="MENTOR_LOYALTY_OVERRIDE_MANAGERS count == 3"),
+    # Morale label
+    Probe(fn_va=0, args=(0,),           rust_bin="morale_label_id", label="morale 0 → Very Low(0)"),
+    Probe(fn_va=0, args=(10,),          rust_bin="morale_label_id", label="morale 10 → Ok(2)"),
+    Probe(fn_va=0, args=(20,),          rust_bin="morale_label_id", label="morale 20 → Superb(5)"),
+    # Scout bucket range
+    Probe(fn_va=0, args=(0x11,),        rust_bin="scout_bucket_range", label="scout_bucket SW → 0x01..0x04"),
+    Probe(fn_va=0, args=(0x14,),        rust_bin="scout_bucket_range", label="scout_bucket F → 0x0E only"),
+    # Away goals verdict
+    Probe(fn_va=0, args=(2, 3, 100, 200), rust_bin="away_goals_verdict", label="away goals win (200)"),
+    Probe(fn_va=0, args=(3, 2, 100, 200), rust_bin="away_goals_verdict", label="home wins on away goals (100)"),
+    Probe(fn_va=0, args=(2, 2, 100, 200), rust_bin="away_goals_verdict", label="away goals level → -1"),
 ]
 
 

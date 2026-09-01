@@ -1,6 +1,6 @@
 {
-  "count": 11,
-  "passed": 11,
+  "count": 33,
+  "passed": 33,
   "failed": 0,
   "results": [
     {
@@ -207,6 +207,437 @@
           4
         ],
         "label": "fifa_score smoke"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 6000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 11,
+        "fn_va": "0x00000000",
+        "args": [
+          10,
+          60
+        ],
+        "label": "season_avg 6.0 (60/10)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": -1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 12,
+        "fn_va": "0x00000000",
+        "args": [
+          0,
+          0
+        ],
+        "label": "season_avg none (0 apps \u2192 -1)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 8000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 13,
+        "fn_va": "0x00000000",
+        "args": [
+          5,
+          40
+        ],
+        "label": "season_avg 8.0 (40/5)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1702,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 14,
+        "fn_va": "0x00000000",
+        "args": [
+          2000,
+          15,
+          5,
+          25,
+          0,
+          1234,
+          100,
+          1
+        ],
+        "label": "predict_wage renewal ask"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 280,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 15,
+        "fn_va": "0x00000000",
+        "args": [
+          15
+        ],
+        "label": "assist_bonus(15) == 280"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 285,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 16,
+        "fn_va": "0x00000000",
+        "args": [
+          30
+        ],
+        "label": "assist_bonus(30) == 285"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 17,
+        "fn_va": "0x00000000",
+        "args": [
+          400000,
+          1
+        ],
+        "label": "chairman approve overrun under cap"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 18,
+        "fn_va": "0x00000000",
+        "args": [
+          20000000,
+          1
+        ],
+        "label": "chairman REJECT overrun over cap"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 173,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 19,
+        "fn_va": "0x00000000",
+        "args": [
+          5,
+          100,
+          3200
+        ],
+        "label": "club_status[5] byte"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 255,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 20,
+        "fn_va": "0x00000000",
+        "args": [
+          101,
+          100,
+          3200
+        ],
+        "label": "club_status out-of-range \u2192 0xFF"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 21,
+        "fn_va": "0x00000000",
+        "args": [
+          5000,
+          1,
+          1,
+          1,
+          0
+        ],
+        "label": "permit same country"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 22,
+        "fn_va": "0x00000000",
+        "args": [
+          2000,
+          1,
+          2,
+          3,
+          0
+        ],
+        "label": "permit low rep, different country \u2192 deny"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 23,
+        "fn_va": "0x00000000",
+        "args": [
+          5000,
+          1,
+          2,
+          3,
+          0
+        ],
+        "label": "permit high rep, any nation \u2192 allow"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 3,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 24,
+        "fn_va": "0x00000000",
+        "args": [],
+        "label": "MENTOR_LOYALTY_OVERRIDE_MANAGERS count == 3"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 25,
+        "fn_va": "0x00000000",
+        "args": [
+          0
+        ],
+        "label": "morale 0 \u2192 Very Low(0)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 2,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 26,
+        "fn_va": "0x00000000",
+        "args": [
+          10
+        ],
+        "label": "morale 10 \u2192 Ok(2)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 5,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 27,
+        "fn_va": "0x00000000",
+        "args": [
+          20
+        ],
+        "label": "morale 20 \u2192 Superb(5)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 260,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 28,
+        "fn_va": "0x00000000",
+        "args": [
+          17
+        ],
+        "label": "scout_bucket SW \u2192 0x01..0x04"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 3598,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 29,
+        "fn_va": "0x00000000",
+        "args": [
+          20
+        ],
+        "label": "scout_bucket F \u2192 0x0E only"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 200,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 30,
+        "fn_va": "0x00000000",
+        "args": [
+          2,
+          3,
+          100,
+          200
+        ],
+        "label": "away goals win (200)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 100,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 31,
+        "fn_va": "0x00000000",
+        "args": [
+          3,
+          2,
+          100,
+          200
+        ],
+        "label": "home wins on away goals (100)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": -1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 32,
+        "fn_va": "0x00000000",
+        "args": [
+          2,
+          2,
+          100,
+          200
+        ],
+        "label": "away goals level \u2192 -1"
       }
     }
   ]

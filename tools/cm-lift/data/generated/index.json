@@ -1,10 +1,12 @@
 {
-  "count": 37,
+  "count": 48,
   "by_kind": {
     "constant_return": 23,
+    "field_setter": 8,
     "bit_gate": 5,
     "strcmpi_registrar": 4,
-    "field_getter": 5
+    "field_getter": 5,
+    "clamp_helper": 3
   },
   "entries": [
     {
@@ -30,6 +32,14 @@
     {
       "kind": "constant_return",
       "fn": "00536bc0"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "005516a0"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "005516c0"
     },
     {
       "kind": "constant_return",
@@ -96,6 +106,30 @@
       "fn": "006da000"
     },
     {
+      "kind": "field_setter",
+      "fn": "006e5d60"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "006e5d70"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "006e5d80"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "006e5da0"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "006e5db0"
+    },
+    {
+      "kind": "clamp_helper",
+      "fn": "006f02a0"
+    },
+    {
       "kind": "constant_return",
       "fn": "006f3930"
     },
@@ -110,6 +144,10 @@
     {
       "kind": "constant_return",
       "fn": "006f39b0"
+    },
+    {
+      "kind": "field_setter",
+      "fn": "006fbae0"
     },
     {
       "kind": "bit_gate",
@@ -134,6 +172,14 @@
     {
       "kind": "field_getter",
       "fn": "008f28f0"
+    },
+    {
+      "kind": "clamp_helper",
+      "fn": "00934e80"
+    },
+    {
+      "kind": "clamp_helper",
+      "fn": "00934eb0"
     },
     {
       "kind": "constant_return",
