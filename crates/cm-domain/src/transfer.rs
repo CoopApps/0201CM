@@ -2239,6 +2239,132 @@ pub fn player_rating_wage_ceiling(view: PlayerRatingCapView, seniority: u8) -> i
     0x2ab98              // 175_000 — full-potential elite
 }
 
+/// Port of `FUN_0052a500` (19 lines). Predicate for "is this club in the
+/// TOP-TIER manageable-league region of the club array?"
+///
+/// The exe's condition: `club_id >= DAT_00acd564 - DAT_00acd558`
+///
+/// Contrast with [`is_generated_ghost_club`] which uses `- nation_count * 2`.
+/// This predicate carves off just the LAST `nation_count` clubs (one per
+/// nation) which are the "top league champions" placeholders. Used by
+/// FUN_005ea590's chain-descent to decide whether to continue walking to
+/// the next related club.
+///
+/// # Params
+/// - `club_id`: numeric id
+/// - `total_clubs`: `DAT_00acd564`
+/// - `nation_count`: `DAT_00acd558`
+#[inline]
+pub fn is_top_tier_league_club(
+    club_id: i32,
+    total_clubs: i32,
+    nation_count: i32,
+) -> bool {
+    club_id >= total_clubs - nation_count
+}
+
+/// Snapshot of the per-club, per-player status flags read by
+/// `FUN_005ea590`'s inner check (via FUN_005e7b80, 005e6d30, 005e6fc0,
+/// 005e71f0). These are 4 bytes/words in a per-club status pool at
+/// `club_base + 0x9a01..0x9ace + player_idx * 0xa6ef`.
+///
+/// Populated externally by the caller; passed in to keep the predicate
+/// pure. When any of these fields fire (plus the player-id gate +
+/// FUN_00525450 branch), the slot is considered "open" at this club.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PlayerSlotFlags {
+    /// FUN_005e7b80 result at `+0x9ace` (u32). Non-zero → slot open.
+    pub flag_9ace: u32,
+    /// FUN_005e6d30 result at `+0x9a01` (u32). Non-zero → slot open.
+    pub flag_9a01: u32,
+    /// FUN_005e6fc0 bool at `+0x9a05` (byte != 0). Set → transfer-listed.
+    pub transfer_listed: bool,
+    /// FUN_005e71f0 bool for loan-listed status. Set → loan-listed.
+    pub loan_listed: bool,
+}
+
+/// Callable snapshot for one club in [`player_slot_open_in_chain`]'s
+/// descent. Each iteration of the exe's while-loop reads a NEW club
+/// snapshot after advancing via FUN_00524f20.
+#[derive(Debug, Clone, Copy)]
+pub struct ChainClubSnapshot {
+    pub club_id: i32,
+    /// `club[+0xcf]` != 0 — club has a roster (some_slot != 0 check).
+    pub has_roster: bool,
+    /// The player-slot flags at THIS club for the target player.
+    pub slot_flags: PlayerSlotFlags,
+}
+
+/// Port of `FUN_005ea590` (58 lines) — walks a club's related-club chain
+/// asking "is there an open slot for this player at any club in the chain?".
+///
+/// Direct port of the loop structure:
+///
+///   loop {
+///     if club has_roster AND player_id >= (max_players - 16)
+///        AND (param_2 != 0 || (flag_9ace==0 && flag_9a01==0)):
+///       is_ghost = is_generated_ghost_club(club_id, ...)
+///       if !is_ghost:
+///         if param_5 != 0 || param_3 != 0: return true
+///         if transfer_listed: return true
+///       else:
+///         if param_5 != 0 || param_3 != 0: return true
+///         if loan_listed: return true
+///     if !is_top_tier_league_club(club_id): return false
+///     param_3 = false
+///     advance to next related club  (caller supplies next snapshot)
+///   }
+///
+/// # Params
+/// - `chain`: iterator of successive club snapshots (from FUN_00524f20
+///    descent). First snapshot = starting club; each subsequent is the
+///    next related club.
+/// - `player_id`: numeric id — must satisfy `>= max_players - 16` gate
+/// - `max_players`: `DAT_00acd56c` (staff/player pool size)
+/// - `total_clubs`: for the ghost-club test
+/// - `nation_count`: for the ghost + top-tier tests
+/// - `mode`: `param_2` — 0 = check squad-listed only, 1 = check transfer
+/// - `descent_flag`: initial `param_3` — 1 = allow open slots at first club
+/// - `short_circuit`: `param_5` — 1 = return true on ANY per-club match
+///   without waiting for transfer/loan listing
+pub fn player_slot_open_in_chain(
+    chain: impl IntoIterator<Item = ChainClubSnapshot>,
+    player_id: i32,
+    max_players: i32,
+    total_clubs: i32,
+    nation_count: i32,
+    mode: u8,
+    descent_flag: bool,
+    short_circuit: bool,
+) -> bool {
+    let mut allow_descent = descent_flag;
+    let player_gate = max_players - 16;
+    for snap in chain.into_iter() {
+        // Inner slot check (exe lines 22-49)
+        if snap.has_roster && player_id >= player_gate
+            && (mode != 0
+                || (snap.slot_flags.flag_9ace == 0
+                    && snap.slot_flags.flag_9a01 == 0))
+        {
+            let is_ghost = is_generated_ghost_club(
+                snap.club_id, total_clubs, nation_count);
+            if !is_ghost {
+                if short_circuit || allow_descent { return true; }
+                if snap.slot_flags.transfer_listed { return true; }
+            } else {
+                if short_circuit || allow_descent { return true; }
+                if snap.slot_flags.loan_listed { return true; }
+            }
+        }
+        // Descent gate (exe line 50-53)
+        if !is_top_tier_league_club(snap.club_id, total_clubs, nation_count) {
+            return false;
+        }
+        allow_descent = false;  // exe line 54: param_3 = 0 after first iter
+    }
+    false
+}
+
 /// Direct port of `FUN_00525450` (19 lines). Checks whether the club_id
 /// falls into the **generated / ghost-club tail region** of the club
 /// array — clubs created at runtime by the AI (e.g. B-teams, feeder
@@ -4817,6 +4943,112 @@ mod tests {
         assert_eq!(player_rating_wage_ceiling(view(7250, 200, 5000, 25, true),  1), 125_000);
         // potential >= 6750 → 175k
         assert_eq!(player_rating_wage_ceiling(view(8000, 200, 7000, 25, true),  1), 175_000);
+    }
+
+    #[test]
+    fn top_tier_league_club_predicate_matches_exe() {
+        // With 5000 clubs and 200 nations, the top-tier region starts at
+        // 5000 - 200 = 4800 (the last N=200 clubs).
+        assert!(!is_top_tier_league_club(0,    5000, 200));
+        assert!(!is_top_tier_league_club(4799, 5000, 200));
+        assert!( is_top_tier_league_club(4800, 5000, 200));
+        assert!( is_top_tier_league_club(4999, 5000, 200));
+        // Contrast with ghost tail (starts at 4600 with * 2)
+        assert!(is_generated_ghost_club(4700, 5000, 200));  // ghost
+        assert!(!is_top_tier_league_club(4700, 5000, 200)); // NOT top-tier
+    }
+
+    fn slot_flags_all_zero() -> PlayerSlotFlags {
+        PlayerSlotFlags::default()
+    }
+
+    #[test]
+    fn slot_open_short_circuit_when_short_circuit_flag_set() {
+        // Any per-club match + short_circuit=true → return true immediately
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true,
+            slot_flags: slot_flags_all_zero(),
+        }];
+        // player_id must pass the gate: max_players - 16 = 5000 - 16 = 4984
+        assert!(player_slot_open_in_chain(
+            chain, 4990, 5000, 5000, 200, /*mode*/ 0,
+            /*descent*/ false, /*short_circuit*/ true));
+    }
+
+    #[test]
+    fn slot_open_transfer_listed_at_real_club() {
+        // Non-ghost club + transfer_listed → true
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true,
+            slot_flags: PlayerSlotFlags { transfer_listed: true, ..Default::default() },
+        }];
+        assert!(player_slot_open_in_chain(
+            chain, 4990, 5000, 5000, 200, 0, false, false));
+    }
+
+    #[test]
+    fn slot_open_loan_listed_at_ghost_club() {
+        // Ghost club (id 4700 with 5000/200 config) + loan_listed → true
+        let chain = vec![ChainClubSnapshot {
+            club_id: 4700, has_roster: true,
+            slot_flags: PlayerSlotFlags { loan_listed: true, ..Default::default() },
+        }];
+        assert!(player_slot_open_in_chain(
+            chain, 4990, 5000, 5000, 200, 0, false, false));
+    }
+
+    #[test]
+    fn slot_open_returns_false_when_no_flags_set() {
+        // Real club, no flags set, no short-circuit → false
+        // Also: club_id 100 is NOT top-tier (need id >= 4800) → hit line 51
+        // returning false.
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true, slot_flags: slot_flags_all_zero(),
+        }];
+        assert!(!player_slot_open_in_chain(
+            chain, 4990, 5000, 5000, 200, 0, false, false));
+    }
+
+    #[test]
+    fn slot_open_descent_stops_at_non_top_tier() {
+        // First club top-tier, second not → descent stops
+        let chain = vec![
+            ChainClubSnapshot { club_id: 4800, has_roster: false,
+                slot_flags: slot_flags_all_zero() },
+            ChainClubSnapshot { club_id: 100, has_roster: true,  // has transfer_listed
+                slot_flags: PlayerSlotFlags { transfer_listed: true, ..Default::default() } },
+        ];
+        // First iter: has_roster=false → skip inner. Then top-tier check → true → descend.
+        // Second iter: not top-tier → but inner runs first and finds transfer_listed
+        // → returns true.
+        assert!(player_slot_open_in_chain(
+            chain, 4990, 5000, 5000, 200, 0, true, false));
+    }
+
+    #[test]
+    fn slot_open_mode_1_bypasses_flag_9_checks() {
+        // mode=1 means transfer-list check — bypasses flag_9ace/9a01 gate
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true,
+            slot_flags: PlayerSlotFlags {
+                flag_9ace: 42, flag_9a01: 7,   // both non-zero (would block mode=0)
+                transfer_listed: true, ..Default::default()
+            },
+        }];
+        assert!(player_slot_open_in_chain(
+            chain, 4990, 5000, 5000, 200, /*mode*/ 1, false, false));
+    }
+
+    #[test]
+    fn slot_open_player_id_below_gate_returns_false() {
+        // player_id below the max_players - 16 gate → never enters inner
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true,
+            slot_flags: PlayerSlotFlags { transfer_listed: true, ..Default::default() },
+        }];
+        // player_id=100 is way below 5000-16=4984
+        assert!(!player_slot_open_in_chain(
+            chain, 100, 5000, 5000, 200, 0, false, false));
     }
 
     #[test]
