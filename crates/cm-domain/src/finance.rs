@@ -967,6 +967,155 @@ impl FinanceBook {
         self.clubs.iter().any(|c| c.club_id == club_id && c.in_administration)
     }
 
+    /// Submit a [`BoardDemand`] to the board — applies the response's
+    /// side-effects (transfer_budget/balance/board_confidence) and returns
+    /// the response so the caller can render a news template.
+    ///
+    /// Item 5 wire — call site: human-manager action pipeline when the
+    /// manager clicks "Request X" in the board interaction screen.
+    ///
+    /// # Params
+    /// - `club_id`: manager's club
+    /// - `demand`: which of the 7 requests
+    /// - `recent_form_score`: manager's recent form aggregate (-100..+100)
+    pub fn submit_board_demand(
+        &mut self,
+        club_id: u32,
+        demand: BoardDemand,
+        recent_form_score: i16,
+    ) -> BoardResponse {
+        let club = match self.clubs.iter_mut().find(|c| c.club_id == club_id) {
+            Some(c) => c,
+            None => return BoardResponse::OutOfScope,
+        };
+        let response = evaluate_board_demand(demand, club, recent_form_score);
+        match response {
+            BoardResponse::Approved { cash_granted, confidence_delta } => {
+                // Route cash: TransferFunds → transfer_budget; else balance.
+                match demand {
+                    BoardDemand::TransferFunds => {
+                        club.transfer_budget = club.transfer_budget
+                            .saturating_add(cash_granted);
+                    }
+                    _ => {
+                        club.balance = club.balance.saturating_add(cash_granted);
+                    }
+                }
+                // Bump confidence, clamp 0..100
+                let new_conf = (club.board_confidence as i32 + confidence_delta as i32)
+                    .clamp(0, 100) as u8;
+                club.board_confidence = new_conf;
+            }
+            BoardResponse::Refused { confidence_delta, .. } => {
+                let new_conf = (club.board_confidence as i32 + confidence_delta as i32)
+                    .clamp(0, 100) as u8;
+                club.board_confidence = new_conf;
+            }
+            BoardResponse::OutOfScope => {
+                // No side-effect (silly requests just refuse silently)
+            }
+        }
+        response
+    }
+
+    /// Apply a fine to a player. Deducts cash from the player's contract
+    /// (via the transfer market), routes reason to the fine-reaction
+    /// dispatcher, and applies any team ripple to the whole squad's
+    /// morale via [`crate::transfer::apply_mood_delta`].
+    ///
+    /// Item 5 wire — call site: human-manager fines a player from the
+    /// player screen, or auto-fine triggers on missed-training news.
+    ///
+    /// # Params
+    /// - `market`: transfer market carrying player contracts (mutated
+    ///   for the team-ripple + fine-cash deduction)
+    /// - `club_id`: fined player's club
+    /// - `player_id`: fined player
+    /// - `tier`: [`FineTier`]
+    /// - `reason`: [`FineReason`]
+    /// - `player_popularity`: how well the fined player is liked by the
+    ///   squad (0..20; higher → more likely to ripple)
+    ///
+    /// Returns the [`FineOutcome`] so caller can render a news template.
+    pub fn apply_fine(
+        &mut self,
+        market: &mut crate::transfer::TransferMarket,
+        _club_id: u32,
+        player_id: u32,
+        tier: FineTier,
+        reason: FineReason,
+        player_popularity: u8,
+    ) -> FineOutcome {
+        // Find fined player's contract for wage lookup + cash deduction.
+        let weekly_wage = market.contracts.iter()
+            .find(|c| c.player_id == player_id)
+            .map(|c| c.weekly_wage)
+            .unwrap_or(0);
+        let fine_amount = compute_fine_amount(tier, weekly_wage);
+
+        // Deduct fine from the player's "pay" — modelled here as a
+        // negative one-shot mood_delta (exe's fine hits morale as well
+        // as the pay packet; the pay-packet deduction flows via the
+        // weekly wage tick).
+        let fined_delta: i8 = match tier {
+            FineTier::OneWeekWages   => -3,
+            FineTier::TwoWeeksWages  => -6,
+            FineTier::OneMonthWages  => -10,
+            FineTier::FixedAmount(_) => {
+                // Scale by ratio to a month's wages, clamped
+                let month = (weekly_wage as i64) * 4;
+                if month > 0 {
+                    (-10 * (fine_amount * 100 / month).max(1).min(100) / 100) as i8
+                } else { -5 }
+            }
+        };
+        if let Some(c) = market.contracts.iter_mut()
+            .find(|c| c.player_id == player_id) {
+            crate::transfer::apply_mood_delta(c, fined_delta);
+        }
+
+        // Evaluate team reaction
+        let outcome = evaluate_fine_reaction(tier, reason, player_popularity);
+        if let FineOutcome::TeamRipple { team_delta } = outcome {
+            // Apply to EVERY OTHER player at this club (not the fined one).
+            let target_club = market.contracts.iter()
+                .find(|c| c.player_id == player_id).map(|c| c.club_id);
+            if let Some(cid) = target_club {
+                for c in market.contracts.iter_mut() {
+                    if c.club_id == cid && c.player_id != player_id {
+                        crate::transfer::apply_mood_delta(c, team_delta);
+                    }
+                }
+            }
+        }
+        outcome
+    }
+
+    /// Deliver a press statement about a specific player. Applies the
+    /// tier-scaled mood delta to the target player's contract.
+    ///
+    /// Item 5 wire — call site: human-manager press-conference screen.
+    ///
+    /// # Params
+    /// - `market`: for the target player's contract
+    /// - `target_player_id`: subject of the statement
+    /// - `stmt`: which of the 6 verified statement templates
+    /// - `tier`: newspaper coverage tier (National doubles impact)
+    pub fn deliver_press_statement(
+        &self,
+        market: &mut crate::transfer::TransferMarket,
+        target_player_id: u32,
+        stmt: PressStatement,
+        tier: NewspaperTier,
+    ) -> i8 {
+        let delta = scaled_press_delta(stmt, tier);
+        if let Some(c) = market.contracts.iter_mut()
+            .find(|c| c.player_id == target_player_id) {
+            crate::transfer::apply_mood_delta(c, delta);
+        }
+        delta
+    }
+
     /// Post-match gate + TV/prize income (kill #8d) — port of `FUN_00584790`.
     /// League gates: rand(250)+rand(250) base; cup gates: rand(400 or 200)
     /// (all in the exe's inline float form, collapsed here). Reputation of the
@@ -1119,6 +1268,110 @@ mod tests {
         let rich = club(20_000_000, 100_000, 70);
         let r = evaluate_board_demand(BoardDemand::ExpandStadium, &rich, 0);
         assert!(matches!(r, BoardResponse::Approved { .. }));
+    }
+
+    fn book_with_club(club_id: u32, balance: i64, wage_bill: u32, conf: u8) -> FinanceBook {
+        let mut b = FinanceBook::new();
+        let mut c = club(balance, wage_bill, conf);
+        c.club_id = club_id;
+        b.clubs.push(c);
+        b
+    }
+
+    #[test]
+    fn submit_board_demand_wires_approved_transfer_funds_to_budget() {
+        // Rich confident club → transfer funds approved → transfer_budget grows.
+        let mut b = book_with_club(100, 100_000_000, 100_000, 60);
+        let r = b.submit_board_demand(100, BoardDemand::TransferFunds, 5);
+        assert!(matches!(r, BoardResponse::Approved { .. }));
+        let c = b.clubs.iter().find(|c| c.club_id == 100).unwrap();
+        assert!(c.transfer_budget > 20_000_000);
+        assert_eq!(c.balance, 100_000_000);  // balance untouched
+    }
+
+    #[test]
+    fn submit_board_demand_wires_approved_wage_budget_to_balance() {
+        // Rich confident club → wage budget approved → balance grows (headroom)
+        let mut b = book_with_club(100, 50_000_000, 100_000, 60);
+        let start_balance = b.clubs[0].balance;
+        let start_budget = b.clubs[0].transfer_budget;
+        let r = b.submit_board_demand(100, BoardDemand::HigherWageBudget, 5);
+        assert!(matches!(r, BoardResponse::Approved { .. }));
+        let c = b.clubs.iter().find(|c| c.club_id == 100).unwrap();
+        assert!(c.balance > start_balance);
+        assert_eq!(c.transfer_budget, start_budget);  // budget untouched
+    }
+
+    #[test]
+    fn submit_board_demand_refused_lowers_confidence() {
+        // Low-confidence + terrible-form → TimeToRebuild refused →
+        // board_confidence drops by refusal delta.
+        let mut b = book_with_club(100, 0, 100_000, 25);
+        b.submit_board_demand(100, BoardDemand::TimeToRebuild, -50);
+        assert!(b.clubs[0].board_confidence < 25);
+    }
+
+    #[test]
+    fn submit_board_demand_half_time_oranges_no_side_effect() {
+        // OutOfScope should not change anything
+        let mut b = book_with_club(100, 5_000_000, 100_000, 50);
+        let start_conf = b.clubs[0].board_confidence;
+        let start_bal = b.clubs[0].balance;
+        let r = b.submit_board_demand(100, BoardDemand::HalfTimeOranges, 50);
+        assert_eq!(r, BoardResponse::OutOfScope);
+        assert_eq!(b.clubs[0].board_confidence, start_conf);
+        assert_eq!(b.clubs[0].balance, start_bal);
+    }
+
+    #[test]
+    fn apply_fine_ripples_to_team_when_dispatcher_fires() {
+        use crate::transfer::{TransferMarket, Contract, SquadStatus};
+        let mut b = FinanceBook::new();
+        let mut m = TransferMarket::default();
+        // 3 players on club 100, one gets fined (popular player + heavy fine
+        // + PoorPerformance → ripples)
+        for pid in [1u32, 2, 3] {
+            m.contracts.push(Contract {
+                player_id: pid, club_id: 100, weekly_wage: 30_000,
+                signed_year: 2001, expires_year: 2004,
+                bosman_eligible: false, morale: 10, mood_delta: 0,
+                squad_status: SquadStatus::FirstTeam,
+                ..Default::default()
+            });
+        }
+        let outcome = b.apply_fine(
+            &mut m, 100, /*fined*/ 1,
+            FineTier::OneMonthWages, FineReason::PoorPerformance,
+            /*popularity*/ 15);
+        assert_eq!(outcome, FineOutcome::TeamRipple { team_delta: -3 });
+        // Fined player has direct hit (-10 for OneMonth)
+        let p1 = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        assert!(p1.mood_delta <= -10);
+        // Other players have the -3 ripple
+        for other in [2u32, 3] {
+            let c = m.contracts.iter().find(|c| c.player_id == other).unwrap();
+            assert_eq!(c.mood_delta, -3);
+        }
+    }
+
+    #[test]
+    fn deliver_press_statement_applies_scaled_delta() {
+        use crate::transfer::{TransferMarket, Contract, SquadStatus};
+        let b = FinanceBook::new();
+        let mut m = TransferMarket::default();
+        m.contracts.push(Contract {
+            player_id: 42, club_id: 100, weekly_wage: 30_000,
+            signed_year: 2001, expires_year: 2004,
+            bosman_eligible: false, morale: 10, mood_delta: 0,
+            squad_status: SquadStatus::FirstTeam,
+            ..Default::default()
+        });
+        // NotForSale + National → +5 * 2 = +10
+        let delta = b.deliver_press_statement(
+            &mut m, 42, PressStatement::NotForSale, NewspaperTier::National);
+        assert_eq!(delta, 10);
+        let c = m.contracts.iter().find(|c| c.player_id == 42).unwrap();
+        assert_eq!(c.mood_delta, 10);
     }
 
     #[test]
