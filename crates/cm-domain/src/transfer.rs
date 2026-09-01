@@ -965,9 +965,11 @@ pub enum ClubFinanceStatus {
 /// 0x186a = 6250, 0x1482 = 5250, 0x128e = 4750) are the exact hex literals
 /// in the ported branch.
 ///
-/// Everything past line 102 of FUN_00580a90 (agent-mult branch, param_3
-/// switch, FUN_005ea590 gates, __ftol chains) is OPEN GAP — see
-/// [`compose_wage_offer`]'s existing 2-tier approximation.
+/// The rest of FUN_00580a90 (agent-mult, sibling floor, LAB_00580dd1,
+/// CP tail, CA² formula, player-rating tree, 5-nation bonus, manager
+/// bonus, seniority switch, final clamp) is now ALSO ported — see
+/// [`resolve_wage_cap`] for the full end-to-end cascade wired into
+/// [`compose_wage_offer_with_cap`].
 pub fn wage_cap_rep_band(
     club_reputation: i16,
     nation_tier: NationTier,
@@ -1571,6 +1573,58 @@ pub struct WageCapInputs {
 
     // -- Counter-party (optional player context) ------------------------
     pub counter_party: Option<CounterPartyContext>,
+}
+
+impl WageCapInputs {
+    /// Minimal-defaults constructor — usable by callers that only have
+    /// club rep + wage-field + id. Sets neutral defaults for everything
+    /// else (Normal status, Other nation classification, no sibling, no
+    /// world-rep bump). Runs the cascade in **base-probe mode** (no
+    /// counter-party).
+    ///
+    /// The returned cap uses:
+    /// - Full [`wage_cap_rep_band`] (real spending band from rep)
+    /// - Full [`agent_wage_multiplier`] (but lower-league branch, so no
+    ///   group multiplier applies)
+    /// - Full [`quadratic_wage_base`] (rep² × local_8 × 0.0001)
+    /// - Full [`world_rep_wage_bump`] (no-op when world_rep_value=0)
+    /// - Full [`cp_tail_no_counter_party`] (Other-nation → no bump)
+    /// - Full [`final_wage_clamp_assembly`]
+    ///
+    /// Callers who have richer world context should build [`WageCapInputs`]
+    /// directly for the full FUN_00580a90 fidelity.
+    pub fn minimal(
+        club_reputation: i16,
+        club_wage_field: i32,
+        club_id: i32,
+        total_clubs: i32,
+        nation_count: i32,
+    ) -> Self {
+        Self {
+            club_reputation,
+            club_wage_field,
+            club_flag_byte: 0,
+            club_status_byte: 0,
+            club_id,
+            total_clubs,
+            nation_count,
+            outer_frame_tier: NationTier::Mid,
+            agent_group: AgentNationGroup::Default,
+            big3: Big3NationMembership::No,
+            cp_tail_nation: CpTailNation::Other,
+            top5: Top5Nation::No,
+            // league_strength = 2 puts us in the non-top-league branch
+            // where the agent-multiplier is just world_rank / 40 without
+            // the group multiplier.
+            nation_league_strength: 2,
+            nation_world_rank: 40,
+            finance_status: ClubFinanceStatus::Normal,
+            world_rep_value: 0,
+            sibling_club_reputation: None,
+            linked_parent_reputation: None,
+            counter_party: None,
+        }
+    }
 }
 
 /// Optional counter-party context — populated when the composer is
@@ -3224,6 +3278,48 @@ pub fn compose_wage_offer_from_rated(
     )
 }
 
+/// The from-rated shim wired to the full FUN_00580a90 cascade.
+///
+/// Derives [`WageCapInputs::minimal`] from the club's rep + wage field,
+/// runs [`resolve_wage_cap`], and calls [`compose_wage_offer_with_cap`]
+/// with the resolved value.
+///
+/// Callers with richer world context (nation classification, manager,
+/// world-rep pool, sibling clubs) should build `WageCapInputs` directly
+/// for full fidelity.
+pub fn compose_wage_offer_from_rated_cascaded(
+    p: &crate::player_rating::RatedPlayer,
+    club: ComposerClub,
+    club_wage_field: i32,
+    total_clubs: i32,
+    nation_count: i32,
+    existing_contract: Option<&Contract>,
+    tier: SquadStatus,
+    mode: u8,
+    seed: u64,
+) -> Option<WageOffer> {
+    let inputs = WageCapInputs::minimal(
+        club.reputation as i16, club_wage_field, club.club_id as i32,
+        total_clubs, nation_count,
+    );
+    let cap = resolve_wage_cap(inputs);
+    compose_wage_offer_with_cap(
+        ComposerPlayer {
+            player_id: p.staff_id,
+            ca: p.ca, pa: p.pa,
+            player_reputation: 0,
+            market_value: p.market_value,
+            current_wage: p.weekly_wage,
+            age: p.age_est,
+            international_caps: 0,
+            role_byte: 5,
+            has_agent: false,
+        },
+        club, existing_contract, tier, mode, seed,
+        Some(cap.max(0) as u32),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3539,6 +3635,20 @@ mod tests {
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
     }
+
+    #[test]
+    fn wage_cap_inputs_minimal_defaults_produce_valid_cap() {
+        // Base probe minimal: rep=5000, wage_field=25000, id=42
+        let inputs = WageCapInputs::minimal(5000, 25_000, 42, 5000, 200);
+        let cap = resolve_wage_cap(inputs);
+        assert!(cap >= WAGE_FLOOR_BASE + 100,
+                "cap ({}) below floor+100", cap);
+    }
+
+    // (compose_from_rated_cascaded is exercised at the caller-integration
+    // layer once run_ai_transfer_pass wires it. Constructing a RatedPlayer
+    // here requires ~30 fields; verifying the wired path via a functional
+    // test upstream is cleaner.)
 
     #[test]
     fn compose_with_cap_none_matches_original_compose() {
