@@ -1013,6 +1013,121 @@ pub fn wage_cap_rep_band(
     band
 }
 
+/// Six-way nation grouping used by `FUN_00580a90` lines 121-185 (the
+/// agent-multiplier branch that only fires for `league_strength == 1`,
+/// i.e. top-flight leagues in premier-league nations).
+///
+/// The exe compares `country_ptr` against 17 shipped nation addresses in
+/// `.rdata` and dispatches to one of six wage-multiplier groups. Nation
+/// identities:
+///
+/// | Group   | Multiplier | Nations (`DAT_009bb*` addresses)            |
+/// |---------|-----------:|---------------------------------------------|
+/// | Top     | 1.00       | 7a4, 820, 948, 82c                          |
+/// | Brazil  | 0.75       | 9b8 (only, no linear rebase)                |
+/// | Big     | 0.65       | 7d4, 7c0, 91c, 7f8                          |
+/// | Rising  | 0.55       | 720, 6d8, 968, 704, 8f4                     |
+/// | Small   | 0.35       | 780, 8c8, 7bc (also caps at 0.75 in rebase) |
+/// | Default | 0.30       | any other country                           |
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AgentNationGroup {
+    /// Multiplier 1.0 — DAT constants match FUN_00580a90 line 126.
+    Top,
+    /// Multiplier 0.75 — DAT constants match FUN_00580a90 line 129/167.
+    /// No linear-rebase branch (line 130 short-circuits).
+    Brazil,
+    /// Multiplier 0.65 — line 133.
+    Big,
+    /// Multiplier 0.55 — line 148.
+    Rising,
+    /// Multiplier 0.35 — line 160. Rebase caps at 0.75 (line 168).
+    Small,
+    /// Multiplier 0.30 — line 172 (fall-through default).
+    Default,
+}
+
+/// Direct-decoded f64 wage multipliers for each [`AgentNationGroup`]
+/// (VERIFIED from .rdata via pefile — see [`crate::exe_constants`]).
+impl AgentNationGroup {
+    #[inline]
+    pub fn multiplier(self) -> f64 {
+        match self {
+            Self::Top     => 1.00, // _DAT_00955890
+            Self::Brazil  => 0.75, // _DAT_00957030
+            Self::Big     => 0.65, // _DAT_009585c0
+            Self::Rising  => 0.55, // _DAT_009585c8
+            Self::Small   => 0.35, // _DAT_00957500
+            Self::Default => 0.30, // _DAT_00956e78
+        }
+    }
+}
+
+/// Port of FUN_00580a90 lines 108-185 — the **agent-multiplier scale**
+/// (`local_8` in the decompile) that layers on top of [`wage_cap_rep_band`].
+///
+/// Only fires when `param_2 == 0` (no counter-party — pure base wage) AND
+/// the club has a country record. Formula:
+///
+///   base = min(max(league_strength, 1), 3)  // line 111-117
+///   local_8 = world_rank / (base * 20)      // line 120
+///   if base == 1:                            // top-league nations only
+///     mult = per-group multiplier            // lines 121-183
+///     if group has rebase && world_rank*10 < band:  // lines 134/149/161/173
+///       cand = (band / max(world_rank, 1)) * 0.1 * mult
+///       if cand > 1.0: mult = 1.0            // LAB_005810d3 (line 142)
+///       elif Small && cand <= 0.75: mult = 0.75  // line 168
+///       else: mult = cand
+///     local_8 *= mult
+///
+/// Where `band` is the value returned by [`wage_cap_rep_band`] (the
+/// spending-band index — sVar13 in the decompile).
+///
+/// # Params
+/// - `band`: spending-band from [`wage_cap_rep_band`]
+/// - `league_strength`: `country_ptr[+0x7e]` — 1..3 (clamped)
+/// - `world_rank`: `country_ptr[+0x85]` — nation's world ranking byte
+/// - `group`: identity classification (see [`AgentNationGroup`])
+///
+/// Cross-checked line-by-line against decompile lines 108-185. `_DAT_00955880`
+/// = 0.1 is the outer scale in the rebase formula (VERIFIED).
+pub fn agent_wage_multiplier(
+    band: i16,
+    league_strength: i8,
+    world_rank: i8,
+    group: AgentNationGroup,
+) -> f64 {
+    let base = league_strength.clamp(1, 3) as i32;
+    let world_rank_i = world_rank as i32;
+    let mut local_8 = (world_rank_i as f64) / ((base * 20) as f64);
+    if base == 1 {
+        let mut mult = group.multiplier();
+        // Brazil (line 130 short-circuit) skips the rebase branch entirely.
+        // Top uses 1.0 outright, no rebase branch either (LAB_005810d3 path).
+        let has_rebase = matches!(
+            group,
+            AgentNationGroup::Big | AgentNationGroup::Rising
+                | AgentNationGroup::Small | AgentNationGroup::Default
+        );
+        if has_rebase && world_rank_i * 10 < band as i32 {
+            let denom = if world_rank_i > 0 { world_rank_i } else { 1 };
+            let cand = (band as f64 / denom as f64)
+                * crate::exe_constants::DAT_00955880
+                * mult;
+            // LAB_005810c4 → LAB_005810d3: if candidate exceeds 1.0, snap to 1.0
+            if cand > 1.0 {
+                mult = 1.0;
+            } else if matches!(group, AgentNationGroup::Small) && cand <= 0.75 {
+                // Line 168: Small-group cap at 0.75 when cand is small
+                mult = 0.75;
+            } else {
+                mult = cand;
+            }
+        }
+        local_8 *= mult;
+    }
+    local_8
+}
+
 /// Verdict from the loan-recall gate ([`can_recall_loan`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RecallVerdict {
@@ -2009,6 +2124,79 @@ mod tests {
 
         // ---- 0xd2 = 210 hard cap
         assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
+    }
+
+    #[test]
+    fn agent_multiplier_top_league_uses_group_factor() {
+        // league_strength = 1 → base=1, top-league branch fires.
+        // base scale: world_rank / 20. For world_rank=20, base=1.0.
+        let base_scale = agent_wage_multiplier(
+            100, 1, 20, AgentNationGroup::Top);
+        // Top group has multiplier 1.0, no rebase (world_rank*10 = 200 ≥ band 100)
+        assert!((base_scale - 1.0).abs() < 1e-9, "Top: {}", base_scale);
+
+        // Brazil group: 0.75 flat, no rebase branch
+        let brazil = agent_wage_multiplier(100, 1, 20, AgentNationGroup::Brazil);
+        assert!((brazil - 0.75).abs() < 1e-9, "Brazil: {}", brazil);
+
+        // Big group at same inputs: 0.65 (no rebase, world_rank*10=200 ≥ band=100)
+        let big = agent_wage_multiplier(100, 1, 20, AgentNationGroup::Big);
+        assert!((big - 0.65).abs() < 1e-9, "Big: {}", big);
+    }
+
+    #[test]
+    fn agent_multiplier_lower_leagues_skip_group_factor() {
+        // league_strength = 2 → base=2, top-league branch NOT taken.
+        // Only base scale applies: world_rank / (2*20) = world_rank / 40.
+        // Group multiplier irrelevant.
+        let x = agent_wage_multiplier(100, 2, 20, AgentNationGroup::Top);
+        assert!((x - 0.5).abs() < 1e-9, "got {}", x);
+        // Different group, same result — group is ignored when base != 1
+        let y = agent_wage_multiplier(100, 2, 20, AgentNationGroup::Default);
+        assert!((x - y).abs() < 1e-12);
+    }
+
+    #[test]
+    fn agent_multiplier_rebase_triggers_when_world_rank_small() {
+        // world_rank=5, band=200 → world_rank*10 = 50 < 200 (rebase fires)
+        // cand = (band/max(rank,1)) * 0.1 * mult = (200/5) * 0.1 * mult = 4.0 * mult
+        // For Big (mult=0.65): cand = 4.0 * 0.65 = 2.6 > 1.0 → snap to 1.0
+        let big = agent_wage_multiplier(200, 1, 5, AgentNationGroup::Big);
+        // local_8 = 5/20 * 1.0 = 0.25
+        assert!((big - 0.25).abs() < 1e-9, "Big rebase snap: {}", big);
+    }
+
+    #[test]
+    fn agent_multiplier_small_group_special_cap_at_075() {
+        // For Small group: cand = 4.0 * 0.35 = 1.4 > 1.0 → snap to 1.0.
+        // At smaller ratios cand can dip; check the 0.75 cap path.
+        // world_rank=10, band=15 → world_rank*10 = 100 > band 15 (NO rebase)
+        // Just flat multiplier 0.35.
+        let no_rebase = agent_wage_multiplier(
+            15, 1, 10, AgentNationGroup::Small);
+        // local_8 = 10/20 * 0.35 = 0.175
+        assert!((no_rebase - 0.175).abs() < 1e-9);
+
+        // Now with rebase but cand small enough to hit the 0.75 cap:
+        // band=110, world_rank=10 → 100 < 110 (rebase fires)
+        // cand = (110/10) * 0.1 * 0.35 = 11 * 0.035 = 0.385
+        // 0.385 <= 0.75 → mult snaps to 0.75
+        let capped = agent_wage_multiplier(
+            110, 1, 10, AgentNationGroup::Small);
+        // local_8 = 10/20 * 0.75 = 0.375
+        assert!((capped - 0.375).abs() < 1e-9, "Small cap: {}", capped);
+    }
+
+    #[test]
+    fn agent_multiplier_league_strength_clamps_to_1_3() {
+        // league_strength=0 or negative → clamped to 1 (top-league branch)
+        let clamped_low = agent_wage_multiplier(100, 0, 20, AgentNationGroup::Top);
+        let base_1     = agent_wage_multiplier(100, 1, 20, AgentNationGroup::Top);
+        assert!((clamped_low - base_1).abs() < 1e-12);
+        // league_strength=5 → clamped to 3, base scale = rank/60
+        let clamped_hi = agent_wage_multiplier(100, 5, 60, AgentNationGroup::Top);
+        let base_3     = agent_wage_multiplier(100, 3, 60, AgentNationGroup::Top);
+        assert!((clamped_hi - base_3).abs() < 1e-12);
     }
 
     #[test]
