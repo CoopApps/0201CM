@@ -2239,6 +2239,145 @@ pub fn player_rating_wage_ceiling(view: PlayerRatingCapView, seniority: u8) -> i
     0x2ab98              // 175_000 — full-potential elite
 }
 
+/// Position candidate byte codes emitted by [`player_position_candidates`].
+/// The exe walks these left-to-right in FUN_00843590 to place the player
+/// into a squad slot; 0xFF is the sentinel terminator.
+///
+/// Values decoded from the FUN_00843590 branch tree at 0x00843630..0x005843865:
+/// - `0..=1` : Goalkeeper / defensive-specialist slots
+/// - `2..=5` : Defender / fullback slots (2 = wingback preference,
+///             3-5 = full-back / centre-back cluster)
+/// - `5..=7` : Midfield cluster
+/// - `7..=10`: Forward cluster
+pub const POS_CANDIDATE_TERMINATOR: u8 = 0xFF;
+
+/// Aptitude gate threshold read at every branch: `type10[+offset] < 0x0f` ==
+/// "player is NOT competent at this position". `>= 0x0f` (= 15) means
+/// competent.
+pub const POSITION_APTITUDE_GATE: i8 = 0x0F;
+
+/// Type-10 aptitude offsets used by FUN_00843590 (VERIFIED via
+/// [`crate::editor_is_ground_truth`] memory — 12×i8 aptitudes at
+/// +0x0f..+0x1a in DFM order GK, SW, D, DM, M, AM, ST, WB, RS, LS, C, FR).
+pub const APT_OFFSET_GK: usize = 0x0F;
+pub const APT_OFFSET_SW: usize = 0x10;
+pub const APT_OFFSET_D:  usize = 0x11;
+pub const APT_OFFSET_DM: usize = 0x12;
+pub const APT_OFFSET_M:  usize = 0x13;
+pub const APT_OFFSET_AM: usize = 0x14;
+pub const APT_OFFSET_ST: usize = 0x15;
+pub const APT_OFFSET_WB: usize = 0x16;
+pub const APT_OFFSET_RS: usize = 0x17;
+pub const APT_OFFSET_LS: usize = 0x18;
+
+/// Snapshot of the 5 aptitude bytes FUN_00843590 reads on the type10
+/// record. Populated by the caller from the player's type10 pool entry.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PositionAptitudes {
+    /// `type10[+0x0f]` — Goalkeeper aptitude
+    pub gk: i8,
+    /// `type10[+0x10]` — Sweeper aptitude
+    pub sw: i8,
+    /// `type10[+0x11]` — Defender aptitude
+    pub d: i8,
+    /// `type10[+0x12]` — DM aptitude
+    pub dm: i8,
+    /// `type10[+0x13]` — MC aptitude
+    pub m: i8,
+    /// `type10[+0x14]` — AM aptitude
+    pub am: i8,
+    /// `type10[+0x15]` — ST aptitude
+    pub st: i8,
+    /// `type10[+0x17]` — RS aptitude
+    pub rs: i8,
+    /// `type10[+0x18]` — LS aptitude
+    pub ls: i8,
+}
+
+/// Compact position-candidate list (up to 4 slots + terminator).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PositionCandidates {
+    /// Byte codes; unused slots hold `POS_CANDIDATE_TERMINATOR` (0xFF).
+    pub codes: [u8; 5],
+}
+
+impl PositionCandidates {
+    /// Iterate over the non-terminator codes.
+    pub fn iter(&self) -> impl Iterator<Item = u8> + '_ {
+        self.codes.iter().take_while(|&&b| b != POS_CANDIDATE_TERMINATOR).copied()
+    }
+
+    /// Number of active candidates before the 0xFF terminator.
+    pub fn len(&self) -> usize {
+        self.iter().count()
+    }
+
+    /// True when the candidate list is effectively empty.
+    pub fn is_empty(&self) -> bool {
+        self.codes[0] == POS_CANDIDATE_TERMINATOR
+    }
+
+    /// Build from a slice of up to 4 byte codes; pads with terminator.
+    pub fn from_slice(codes: &[u8]) -> Self {
+        let mut out = [POS_CANDIDATE_TERMINATOR; 5];
+        for (i, &c) in codes.iter().enumerate().take(4) {
+            out[i] = c;
+        }
+        Self { codes: out }
+    }
+}
+
+/// Port of the position-candidate branch tree at FUN_00843590:0x00843630..
+/// 0x00843865 — the aptitude → position-candidates classifier that decides
+/// where in the squad this player can be slotted.
+///
+/// Direct port of the exe's if/else tree, reading aptitudes with the
+/// `< 15` (below-competent) / `>= 15` (competent) gate:
+///
+///   if GK >= 15                       → [0]                (keeper)
+///   elif D >= 15  || SW >= 15
+///     if RS >= 15                     → [1]                (WB/CB right)
+///     elif LS >= 15                   → [2]                (LB)
+///     else                            → [3, 4, 5]          (fullback/CB)
+///   elif DM >= 15 || M >= 15 || AM >= 15  → [5, 6, 7]      (midfield)
+///   elif ST >= 15                     → [7, 8, 9, 10]      (forward)
+///   else                              → []                 (no slot fits)
+///
+/// The exe uses `local_108`/`local_104` u32 packing to emit the sequence,
+/// terminating with 0xFF. This port unpacks to a struct + terminator.
+///
+/// VERIFIED: 5 direct branches, 4 slot-code emissions. The exe's packed
+/// `0xa090807` = bytes 7, 8, 9, 10 (LSB-first); `0x70605` = 5, 6, 7;
+/// `0x50403` = 3, 4, 5; `0xff02` = 2 + terminator; `0xff01` = 1 + terminator;
+/// `0xff00` = 0 + terminator.
+pub fn player_position_candidates(apt: PositionAptitudes) -> PositionCandidates {
+    let competent = |x: i8| x >= POSITION_APTITUDE_GATE;
+    // Keeper — top precedence
+    if competent(apt.gk) {
+        return PositionCandidates::from_slice(&[0]);
+    }
+    // Defender / SW branch
+    if competent(apt.d) || competent(apt.sw) {
+        if competent(apt.rs) {
+            return PositionCandidates::from_slice(&[1]);
+        }
+        if competent(apt.ls) {
+            return PositionCandidates::from_slice(&[2]);
+        }
+        return PositionCandidates::from_slice(&[3, 4, 5]);
+    }
+    // Midfield branch
+    if competent(apt.dm) || competent(apt.m) || competent(apt.am) {
+        return PositionCandidates::from_slice(&[5, 6, 7]);
+    }
+    // Forward branch
+    if competent(apt.st) {
+        return PositionCandidates::from_slice(&[7, 8, 9, 10]);
+    }
+    // No competent slot — empty candidate list
+    PositionCandidates::from_slice(&[])
+}
+
 /// Port of `FUN_0052a500` (19 lines). Predicate for "is this club in the
 /// TOP-TIER manageable-league region of the club array?"
 ///
@@ -4943,6 +5082,68 @@ mod tests {
         assert_eq!(player_rating_wage_ceiling(view(7250, 200, 5000, 25, true),  1), 125_000);
         // potential >= 6750 → 175k
         assert_eq!(player_rating_wage_ceiling(view(8000, 200, 7000, 25, true),  1), 175_000);
+    }
+
+    fn apt(gk: i8, sw: i8, d: i8, dm: i8, m: i8, am: i8, st: i8,
+           rs: i8, ls: i8) -> PositionAptitudes {
+        PositionAptitudes { gk, sw, d, dm, m, am, st, rs, ls }
+    }
+
+    #[test]
+    fn position_candidates_keeper_precedence() {
+        // GK >= 15 always takes precedence
+        let c = player_position_candidates(apt(15, 20, 20, 20, 20, 20, 20, 20, 20));
+        assert_eq!(c.iter().collect::<Vec<_>>(), vec![0u8]);
+    }
+
+    #[test]
+    fn position_candidates_defender_variants() {
+        // D competent, RS competent → [1]
+        let c = player_position_candidates(apt(0, 0, 15, 0, 0, 0, 0, 15, 0));
+        assert_eq!(c.iter().collect::<Vec<_>>(), vec![1u8]);
+        // D competent, LS competent (not RS) → [2]
+        let c = player_position_candidates(apt(0, 0, 15, 0, 0, 0, 0, 0, 15));
+        assert_eq!(c.iter().collect::<Vec<_>>(), vec![2u8]);
+        // D competent, neither side → [3, 4, 5]
+        let c = player_position_candidates(apt(0, 0, 15, 0, 0, 0, 0, 0, 0));
+        assert_eq!(c.iter().collect::<Vec<_>>(), vec![3u8, 4, 5]);
+        // SW competent (no D) → same defender branch
+        let c = player_position_candidates(apt(0, 15, 0, 0, 0, 0, 0, 0, 0));
+        assert_eq!(c.iter().collect::<Vec<_>>(), vec![3u8, 4, 5]);
+    }
+
+    #[test]
+    fn position_candidates_midfielder() {
+        // Any of DM/M/AM competent → [5, 6, 7]
+        let dm = player_position_candidates(apt(0, 0, 0, 15, 0, 0, 0, 0, 0));
+        assert_eq!(dm.iter().collect::<Vec<_>>(), vec![5u8, 6, 7]);
+        let m = player_position_candidates(apt(0, 0, 0, 0, 15, 0, 0, 0, 0));
+        assert_eq!(m.iter().collect::<Vec<_>>(), vec![5u8, 6, 7]);
+        let am = player_position_candidates(apt(0, 0, 0, 0, 0, 15, 0, 0, 0));
+        assert_eq!(am.iter().collect::<Vec<_>>(), vec![5u8, 6, 7]);
+    }
+
+    #[test]
+    fn position_candidates_forward() {
+        // ST competent, nothing else → [7, 8, 9, 10]
+        let c = player_position_candidates(apt(0, 0, 0, 0, 0, 0, 15, 0, 0));
+        assert_eq!(c.iter().collect::<Vec<_>>(), vec![7u8, 8, 9, 10]);
+    }
+
+    #[test]
+    fn position_candidates_no_competent_slot() {
+        let c = player_position_candidates(apt(0, 0, 0, 0, 0, 0, 0, 0, 0));
+        assert!(c.is_empty());
+        assert_eq!(c.len(), 0);
+    }
+
+    #[test]
+    fn position_candidates_boundary_at_15() {
+        // Exactly 15 is competent (>=), 14 is not
+        let c = player_position_candidates(apt(0, 0, 15, 0, 0, 0, 0, 0, 0));
+        assert!(!c.is_empty(), "15 defender = competent");
+        let c = player_position_candidates(apt(0, 0, 14, 0, 0, 0, 0, 0, 0));
+        assert!(c.is_empty(), "14 defender + no others = empty");
     }
 
     #[test]
