@@ -3034,33 +3034,61 @@ pub fn compose_wage_offer(
     mode: u8,
     seed: u64,
 ) -> Option<WageOffer> {
-    // -- (1) 3-tier reputation cascade — `FUN_004d3ea0`:reads club rep and
-    //    picks a tier-scale via 4 bands. Reproduced verbatim.
+    compose_wage_offer_with_cap(player, club, existing_contract, tier, mode, seed, None)
+}
+
+/// Composer variant that accepts a **pre-computed wage cap** from the
+/// full [`resolve_wage_cap`] cascade. When `resolved_cap` is `Some`:
+/// - The rep_scale sentinel is replaced by `if cap < WAGE_FLOOR_WEEKLY { None }`
+/// - The rep_scale MIN clamp is replaced by `weekly = min(weekly, cap)`
+///
+/// When `None`, falls back to the original 2-tier approximation.
+///
+/// This is the intended production entry point once the caller has
+/// enough context to build [`WageCapInputs`].
+pub fn compose_wage_offer_with_cap(
+    player: ComposerPlayer,
+    club: ComposerClub,
+    existing_contract: Option<&Contract>,
+    tier: SquadStatus,
+    mode: u8,
+    seed: u64,
+    resolved_cap: Option<u32>,
+) -> Option<WageOffer> {
+    // -- (1) Reputation-based wage cap. When `resolved_cap` was supplied
+    //    from the full [`resolve_wage_cap`] cascade (13-chunk port of
+    //    FUN_00580a90), use that as the authoritative ceiling. Otherwise
+    //    fall back to the original 2-tier approximation.
     let rep_scale: f64 = if club.reputation < REP_TIER_A      { 0.35 }  // small club
                          else if club.reputation < REP_TIER_B { 0.60 }  // mid club
                          else if club.reputation < REP_TIER_C { 0.85 }  // big club
                          else                                 { 1.00 }; // top club
 
-    // -- (2) Sentinel gate — the `_DAT_009569a0` "declined" test at
-    //    0x0084a35b. In asm, this is a double-fcomp on the fitted wage; when
-    //    the max of the 4-way rep-mult falls below the sentinel, callers see
-    //    no offer. Ported as: if player is >2 tiers above the club's rep
-    //    band, reject. Cross-checked vs `FUN_008d2d20`:141 which also refuses
-    //    unless player-tier & 0x3f is in {1,3,5}.
-    let player_band = match player.player_reputation {
-        r if r < REP_TIER_A => 0,
-        r if r < REP_TIER_B => 1,
-        r if r < REP_TIER_C => 2,
-        _ => 3,
-    };
-    let club_band = match club.reputation {
-        r if r < REP_TIER_A => 0,
-        r if r < REP_TIER_B => 1,
-        r if r < REP_TIER_C => 2,
-        _ => 3,
-    };
-    if player_band as i32 - club_band as i32 >= 2 {
-        return None; // sentinel path — "not interested"
+    // -- (2) Sentinel gate.
+    //    If we have a resolved cap from the full cascade: "not interested"
+    //    when cap < WAGE_FLOOR_WEEKLY (the exe's `_DAT_009569a0` fcomp
+    //    against the "declined" sentinel double).
+    //    Otherwise: 2-tier approximation (player is >2 tiers above club).
+    if let Some(cap) = resolved_cap {
+        if cap < WAGE_FLOOR_WEEKLY {
+            return None;
+        }
+    } else {
+        let player_band = match player.player_reputation {
+            r if r < REP_TIER_A => 0,
+            r if r < REP_TIER_B => 1,
+            r if r < REP_TIER_C => 2,
+            _ => 3,
+        };
+        let club_band = match club.reputation {
+            r if r < REP_TIER_A => 0,
+            r if r < REP_TIER_B => 1,
+            r if r < REP_TIER_C => 2,
+            _ => 3,
+        };
+        if player_band as i32 - club_band as i32 >= 2 {
+            return None; // sentinel path — "not interested"
+        }
     }
 
     // -- (3) Base wage — VERIFIED per-role x87 cascade from `FUN_0084d5d0`
@@ -3077,10 +3105,13 @@ pub fn compose_wage_offer(
     let mut weekly = wage_formula_by_role(
         player.role_byte, player.ca, player.pa, 3, player.has_agent
     ) as u32;
-    // Club-rep tier delta layered on top — the real exe reaches the same
-    // effect via `FUN_00580a90` (affordable-wage cap) applied AFTER the
-    // formula. Kept as a MIN clamp so a mid-club can't out-bid its band.
-    let cap = ((weekly as f64) * rep_scale) as u32;
+    // Club-rep tier delta layered on top. When resolved_cap is Some,
+    // apply the REAL cap from the FUN_00580a90 cascade instead of the
+    // 2-tier approximation.
+    let cap: u32 = match resolved_cap {
+        Some(real_cap) => real_cap,
+        None => ((weekly as f64) * rep_scale) as u32,
+    };
     if cap < weekly { weekly = cap; }
     // Squad-status delta (from `FUN_004d79c0` mode-1 vs mode-0 gap): asking
     // for KeyPlayer status costs ~20% more than SquadPlayer. Verified only as
@@ -3507,6 +3538,46 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    #[test]
+    fn compose_with_cap_none_matches_original_compose() {
+        let p = cp(100, 110, 5000, 500_000, 5_000, 24);
+        let c = cc(5000);
+        let a = compose_wage_offer(p, c, None, SquadStatus::FirstTeam, 0x0b, 42).unwrap();
+        let b = compose_wage_offer_with_cap(
+            p, c, None, SquadStatus::FirstTeam, 0x0b, 42, None).unwrap();
+        assert_eq!(a.weekly_wage, b.weekly_wage);
+        assert_eq!(a.signing_on_fee, b.signing_on_fee);
+        assert_eq!(a.contract_years, b.contract_years);
+    }
+
+    #[test]
+    fn compose_with_cap_supplied_uses_that_cap() {
+        // current_wage=800 so it doesn't override our test cap.
+        let p = cp(100, 110, 5000, 500_000, 800, 24);
+        let c = cc(5000);
+        let low = compose_wage_offer_with_cap(
+            p, c, None, SquadStatus::FirstTeam, 0x0b, 42, Some(2_000)).unwrap();
+        let high = compose_wage_offer_with_cap(
+            p, c, None, SquadStatus::FirstTeam, 0x0b, 42, Some(100_000)).unwrap();
+        // The caller-supplied cap acts as a ceiling on the base formula
+        // (before the current_wage floor and hard clamp are applied).
+        // low.weekly_wage clamped at WAGE_FLOOR_WEEKLY (750) minimum,
+        // capped by min(2000, formula_wage), then floored at current_wage.
+        assert!(low.weekly_wage <= 2_000, "low cap: {}", low.weekly_wage);
+        assert!(high.weekly_wage >= low.weekly_wage,
+                "high cap should permit >= wage than low cap");
+    }
+
+    #[test]
+    fn compose_with_cap_below_floor_returns_none() {
+        let p = cp(100, 110, 5000, 500_000, 5_000, 24);
+        let c = cc(5000);
+        // cap below WAGE_FLOOR_WEEKLY (750) → sentinel path → None
+        let out = compose_wage_offer_with_cap(
+            p, c, None, SquadStatus::FirstTeam, 0x0b, 42, Some(500));
+        assert!(out.is_none(), "expected None for cap {}", 500);
     }
 
     fn default_cap_inputs() -> WageCapInputs {
