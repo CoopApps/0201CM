@@ -1217,6 +1217,118 @@ pub fn final_wage_clamp_assembly(
     counter_party_wage.min(estimate)
 }
 
+/// Snapshot of the exact person + type-10 fields FUN_00580a90's
+/// player-rating cap decision tree reads (lines 371-420 in the decompile).
+///
+/// The exe reads:
+/// | Rust field         | exe read                             |
+/// |--------------------|--------------------------------------|
+/// | `reputation`       | `type10_ptr[+0x0b]` (i16)           |
+/// | `world_reputation` | `type10_ptr[+0x05]` (i16)           |
+/// | `potential`        | `type10_ptr[+0x0d]` (i16)           |
+/// | `age`              | `person_ptr[+0x18]` (u8)            |
+/// | `international_caps`| `person_ptr[+0x22]` (u8, != 0)     |
+#[derive(Debug, Clone, Copy)]
+pub struct PlayerRatingCapView {
+    pub reputation: i16,
+    pub world_reputation: i16,
+    pub potential: i16,
+    pub age: u8,
+    pub has_caps: bool,
+}
+
+/// Player-rating wage-cap decision tree — port of FUN_00580a90 lines
+/// 369-420. Given a player's rating + a squad-status seniority tier,
+/// returns the maximum wage the club would justify paying for this player.
+///
+/// # Rep bands (from `type10[+0x0b]`)
+/// - `< 3750`  (0xea6)  — Youth / Reserve
+/// - `< 5250`  (0x1482) — Mid-tier
+/// - `< 7250`  (0x1c52) — Top-tier
+/// - `>= 7250`          — Elite (further split by potential)
+///
+/// # Full-cap decision table (line-referenced to decompile)
+///
+/// | Rep band | world_rep | age  | caps | seniority | cap    | line |
+/// |----------|-----------|------|------|-----------|-------:|------|
+/// | <3750    | <60       | <24  | -    | -         |  7500  | 373-374 |
+/// | <3750    | <60       | >=24 | -    | -         |  5000  | 373-374 |
+/// | <3750    | 60..99    | -    | -    | 1/2/3/>24 | 15000  | 376-378 |
+/// | <3750    | 60..99    | -    | -    | else      | 10000  | 380-382 |
+/// | <3750    | >=100     | -    | -    | -         | 25000  | 384-386 |
+/// | <5250    | >99       | -    | -    | -         | 30000  | 388-389 |
+/// | <5250    | <=99      | -    | -    | -         | 25000  | 388-389 |
+/// | <7250    | <140      | any  | true | any       | 45000  | 393-394 |
+/// | <7250    | <140      | any  | false| any       | 40000  | 393-394 |
+/// | <7250    | 140..179  | <35  | false| 1/2/3     | 65000  | 397-398 |
+/// | <7250    | >=180     | <35  | false| 1/2/3     | 80000  | 397-398 |
+/// | <7250    | 140+      | <35  | true | 1/2/3     | 57500  | 400-401 |
+/// | <7250    | any       | <35  | any  | 4/5/6/8+  | 45000  | 405 |
+/// | <7250    | any       | >=35 | any  | 1/2/3     | 37500  | 408-409 |
+/// | <7250    | any       | >=35 | any  | else      | 32500  | 411-412 |
+/// | >=7250, potential<6750  | any | any | false    | 100000 | 415-416 |
+/// | >=7250, potential<6750  | any | any | true     | 125000 | 415-416 |
+/// | >=7250, potential>=6750 | any | any | any      | 175000 | 418-419 |
+///
+/// Seniority tier byte (`param_3` in the exe) uses the same encoding
+/// as [`seniority_hard_cap_for`]: 1 = KeyPlayer, 2 = FirstTeam, 3 =
+/// FirstTeamSquad, 4+ = lower tiers.
+pub fn player_rating_wage_ceiling(view: PlayerRatingCapView, seniority: u8) -> i32 {
+    let rep = view.reputation as i32;
+    let world = view.world_reputation as i32;
+    let potential = view.potential as i32;
+    let age = view.age;
+    let caps = view.has_caps;
+    // Seniority in {1,2,3} triggers the "first-team-ish" pathways
+    let sen_1_to_3 = matches!(seniority, 1 | 2 | 3);
+
+    if rep < 0xea6 {
+        // Youth / Reserve tier
+        if world < 0x3c {
+            return if age < 24 { 7_500 } else { 5_000 };
+        }
+        if world < 100 {
+            return if sen_1_to_3 || age > 23 { 15_000 } else { 10_000 };
+        }
+        return 25_000;
+    }
+    if rep < 0x1482 {
+        // Mid-tier: bump by 5000 when world_rep > 99
+        return if world > 99 { 30_000 } else { 25_000 };
+    }
+    if rep < 0x1c52 {
+        // Top-tier
+        //   line 392: `if age < 35 || world_rep > 119`
+        if age < 35 || world > 0x77 {
+            // line 393: sub-branch on world_rep < 140 && potential < 3750
+            if world < 140 && potential < 0xea6 {
+                return if caps { 45_000 } else { 40_000 };
+            }
+            // line 396: elif param_3 < 4 && param_3 != 0 && param_3 != 7
+            if sen_1_to_3 {
+                if !caps {
+                    // line 398: world_rep > 139 → 80000, else 65000
+                    return if world > 0x8b { 80_000 } else { 65_000 };
+                }
+                // line 401: caps + first-team senior
+                return 0xe09c;  // 57_500
+            }
+            // line 405: fall-through
+            return 45_000;
+        }
+        // age >= 35 && world_rep <= 119
+        if sen_1_to_3 {
+            return 0x927c;   // 37_500
+        }
+        return 0x7ef4;       // 32_500
+    }
+    // Elite (rep >= 7250)
+    if potential < 0x1a5e {
+        return if caps { 125_000 } else { 100_000 };
+    }
+    0x2ab98              // 175_000 — full-potential elite
+}
+
 /// Direct port of `FUN_00525450` (19 lines). Checks whether the club_id
 /// falls into the **generated / ghost-club tail region** of the club
 /// array — clubs created at runtime by the AI (e.g. B-teams, feeder
@@ -2616,6 +2728,84 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    fn view(rep: i16, world: i16, potential: i16, age: u8, has_caps: bool)
+            -> PlayerRatingCapView {
+        PlayerRatingCapView { reputation: rep, world_reputation: world,
+            potential, age, has_caps }
+    }
+
+    #[test]
+    fn player_cap_youth_low_world_rep_ages() {
+        // rep=100, world=50 (< 60), age split at 24
+        assert_eq!(player_rating_wage_ceiling(view(100, 50, 0, 20, false), 3), 7_500);
+        assert_eq!(player_rating_wage_ceiling(view(100, 50, 0, 24, false), 3), 5_000);
+    }
+
+    #[test]
+    fn player_cap_youth_mid_world_rep_seniority_and_age() {
+        // rep=100, world=80 (60..99): 15000 if seniority 1-3 OR age > 23
+        assert_eq!(player_rating_wage_ceiling(view(100, 80, 0, 20, false), 1), 15_000);
+        assert_eq!(player_rating_wage_ceiling(view(100, 80, 0, 20, false), 4), 10_000); // low senior
+        assert_eq!(player_rating_wage_ceiling(view(100, 80, 0, 30, false), 4), 15_000); // age>23
+    }
+
+    #[test]
+    fn player_cap_youth_high_world_rep() {
+        // rep=100, world=100+ → 25000 regardless
+        assert_eq!(player_rating_wage_ceiling(view(100, 100, 0, 20, false), 4), 25_000);
+        assert_eq!(player_rating_wage_ceiling(view(100, 200, 0, 40, true), 6), 25_000);
+    }
+
+    #[test]
+    fn player_cap_midtier_world_split() {
+        // rep=4000 (mid): 30000 if world>99, else 25000
+        assert_eq!(player_rating_wage_ceiling(view(4000, 100, 0, 25, false), 3), 30_000);
+        assert_eq!(player_rating_wage_ceiling(view(4000, 99,  0, 25, false), 3), 25_000);
+        assert_eq!(player_rating_wage_ceiling(view(4000, 50,  0, 25, true),  3), 25_000);
+    }
+
+    #[test]
+    fn player_cap_toptier_agile_no_caps_low_potential() {
+        // rep=6000 (top-tier), young, world<140, potential<3750, no caps
+        assert_eq!(player_rating_wage_ceiling(view(6000, 100, 3000, 25, false), 3), 40_000);
+        // with caps: 45000
+        assert_eq!(player_rating_wage_ceiling(view(6000, 100, 3000, 25, true),  3), 45_000);
+    }
+
+    #[test]
+    fn player_cap_toptier_first_team_high_world_rep() {
+        // rep=6000, young, world=150, seniority=1, no caps → 80000
+        assert_eq!(player_rating_wage_ceiling(view(6000, 150, 5000, 25, false), 1), 80_000);
+        // world=140 (>= 140), seniority 1, no caps → 65000 (world_rep NOT > 139: 140 > 139 is TRUE → 80000)
+        assert_eq!(player_rating_wage_ceiling(view(6000, 140, 5000, 25, false), 1), 80_000);
+        // world=139 → 65000
+        assert_eq!(player_rating_wage_ceiling(view(6000, 139, 5000, 25, false), 1), 65_000);
+        // with caps → 57500
+        assert_eq!(player_rating_wage_ceiling(view(6000, 200, 5000, 25, true),  1), 57_500);
+    }
+
+    #[test]
+    fn player_cap_toptier_low_seniority() {
+        // rep=6000, young, world=200, seniority=4 → fall through 45000
+        assert_eq!(player_rating_wage_ceiling(view(6000, 200, 5000, 25, false), 4), 45_000);
+    }
+
+    #[test]
+    fn player_cap_toptier_veteran() {
+        // rep=6000, age>=35, world<=119
+        assert_eq!(player_rating_wage_ceiling(view(6000, 100, 5000, 36, false), 1), 37_500);
+        assert_eq!(player_rating_wage_ceiling(view(6000, 100, 5000, 36, false), 4), 32_500);
+    }
+
+    #[test]
+    fn player_cap_elite_potential_split() {
+        // rep=7250+, potential<6750 → 100k / 125k
+        assert_eq!(player_rating_wage_ceiling(view(7250, 200, 5000, 25, false), 1), 100_000);
+        assert_eq!(player_rating_wage_ceiling(view(7250, 200, 5000, 25, true),  1), 125_000);
+        // potential >= 6750 → 175k
+        assert_eq!(player_rating_wage_ceiling(view(8000, 200, 7000, 25, true),  1), 175_000);
     }
 
     #[test]
