@@ -243,6 +243,11 @@ RUST_ONLY_PROBES: list[Probe] = [
     Probe(fn_va=0, args=(0x20,), rust_bin="mentality_outcome_scaler", label="mentality Normal -> 500 (=0.5)"),
     Probe(fn_va=0, args=(0x40,), rust_bin="mentality_outcome_scaler", label="mentality Attacking -> 4000"),
     Probe(fn_va=0, args=(0,),    rust_bin="mentality_outcome_scaler", label="mentality Defensive -> 2000"),
+    # update_best_rating: sentinel + max compare
+    Probe(fn_va=0, args=(-1000, 7500), rust_bin="update_best_rating", label="update_best_rating sentinel init -> 7500"),
+    Probe(fn_va=0, args=(6000, 7500),  rust_bin="update_best_rating", label="update_best_rating upgrade 6000->7500"),
+    Probe(fn_va=0, args=(8000, 7500),  rust_bin="update_best_rating", label="update_best_rating keep 8000 (>7500)"),
+    Probe(fn_va=0, args=(),             rust_bin="rating_scale_from_raw", label="rating_scale_from_raw == 1000 (0.01 * 100k)"),
 ]
 
 

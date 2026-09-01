@@ -1,6 +1,6 @@
 {
-  "count": 40,
-  "passed": 40,
+  "count": 44,
+  "passed": 44,
   "failed": 0,
   "results": [
     {
@@ -788,6 +788,79 @@
           0
         ],
         "label": "mentality Defensive -> 2000"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 7500,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 40,
+        "fn_va": "0x00000000",
+        "args": [
+          -1000,
+          7500
+        ],
+        "label": "update_best_rating sentinel init -> 7500"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 7500,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 41,
+        "fn_va": "0x00000000",
+        "args": [
+          6000,
+          7500
+        ],
+        "label": "update_best_rating upgrade 6000->7500"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 8000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 42,
+        "fn_va": "0x00000000",
+        "args": [
+          8000,
+          7500
+        ],
+        "label": "update_best_rating keep 8000 (>7500)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 43,
+        "fn_va": "0x00000000",
+        "args": [],
+        "label": "rating_scale_from_raw == 1000 (0.01 * 100k)"
       }
     }
   ]

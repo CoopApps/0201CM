@@ -169,6 +169,19 @@ fn dispatch(name: &str, args: &[i64]) -> Result<i64, String> {
             Ok(match_engine_exe::shot_in_box(
                 args[0] as i8, args[1] as i8, args[2] as u8) as i64)
         }
+        "update_best_rating" => {
+            // Args: (current_slot_milli, candidate_milli). Returns new slot value * 1000 as i64.
+            if args.len() < 2 { return Err("need 2 args".into()); }
+            let mut slot = args[0] as f32 / 1000.0;
+            let cand = args[1] as f32 / 1000.0;
+            // The sentinel is -1.0 f32; caller sends -1000 to test that path.
+            match_engine_exe::update_best_rating(&mut slot, cand);
+            Ok((slot * 1000.0) as i64)
+        }
+        "rating_scale_from_raw" => {
+            // Return the constant as milli-i64.
+            Ok((match_engine_exe::RATING_SCALE_FROM_RAW * 100_000.0) as i64)
+        }
         "mentality_outcome_scaler" => {
             if args.len() < 1 { return Err("need 1 arg (tactic_word)".into()); }
             // return milli-scaled i64 to preserve fractional value

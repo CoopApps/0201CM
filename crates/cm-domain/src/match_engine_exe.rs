@@ -1978,6 +1978,40 @@ pub fn assist_bonus_milli(stamina: i16) -> i16 {
     (stamina / 3).saturating_add(0x113)
 }
 
+/// Sentinel value used to mark "no best-average-rating yet" on the
+/// per-team match-report record's +0x1f1 float. VERIFIED f64/f32
+/// from `_DAT_00956948` (see `reports/season_avg_writer_hunt.md`).
+///
+/// The MotM/best-avg-rating loop at FUN_00453360:48-50 initialises
+/// this field to -1.0 then updates it via a max compare gated by
+/// `== -1.0` (sentinel) OR `< new_candidate`. Every port that
+/// implements "best of match" tracking should use this sentinel.
+pub const BEST_RATING_UNSET_SENTINEL: f32 = -1.0;
+
+/// Update a "best so far" rating slot per FUN_00453360:48-50.
+/// If `slot == BEST_RATING_UNSET_SENTINEL` OR `slot < candidate`, set
+/// slot to candidate. Otherwise leave alone. Byte-exact idiom.
+#[inline]
+pub fn update_best_rating(slot: &mut f32, candidate: f32) {
+    if *slot == BEST_RATING_UNSET_SENTINEL || *slot < candidate {
+        *slot = candidate;
+    }
+}
+
+/// Rating-average scale multiplier for the season-record threshold
+/// (float-average case 0x12). VERIFIED from `_DAT_00955898` (see
+/// `reports/record_threshold_mutators_decode.md`).
+///
+/// Used at FUN_004aea10:345 as `local_87f = raw * _DAT_00955898` —
+/// scales an internal raw int to a display float in the 0..~10 range.
+pub const RATING_SCALE_FROM_RAW: f64 = crate::exe_constants::DAT_00955898;
+
+/// Post-write clamp multiplier used when engine token flag 0x880 is
+/// set. VERIFIED from `_DAT_009586D0` (see
+/// `reports/token_float_field_sources_decode.md`). Applied to
+/// certain FP fields at FUN_006cxxxx:485-495 in the shipped exe.
+pub const ENGINE_FLAG_0X880_CLAMP: f64 = crate::exe_constants::DAT_009586D0;
+
 /// Mentality-driven shot-outcome value scaler — VERIFIED port of
 /// FUN_006AE160:107-129 (was OPEN GAP in
 /// `reports/match_engine_tactic_reads_decode.md` — three `_DAT_*` FP
