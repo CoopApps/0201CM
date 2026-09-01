@@ -1,7 +1,8 @@
 {
-  "count": 32,
+  "count": 37,
   "by_kind": {
     "constant_return": 23,
+    "bit_gate": 5,
     "strcmpi_registrar": 4,
     "field_getter": 5
   },
@@ -35,6 +36,10 @@
       "fn": "0059a460"
     },
     {
+      "kind": "bit_gate",
+      "fn": "005d89a0"
+    },
+    {
       "kind": "strcmpi_registrar",
       "fn": "005f71d0"
     },
@@ -65,6 +70,10 @@
     {
       "kind": "constant_return",
       "fn": "00672530"
+    },
+    {
+      "kind": "bit_gate",
+      "fn": "00689d50"
     },
     {
       "kind": "constant_return",
@@ -103,6 +112,10 @@
       "fn": "006f39b0"
     },
     {
+      "kind": "bit_gate",
+      "fn": "007a9c90"
+    },
+    {
       "kind": "constant_return",
       "fn": "00822580"
     },
@@ -133,6 +146,14 @@
     {
       "kind": "constant_return",
       "fn": "0093dba9"
+    },
+    {
+      "kind": "bit_gate",
+      "fn": "0093e4f6"
+    },
+    {
+      "kind": "bit_gate",
+      "fn": "0093e588"
     }
   ]
 }

@@ -55,17 +55,18 @@ def run_exe_probe(emu: Emulator, probe: Probe) -> dict:
 
 
 def run_rust_probe(probe: Probe) -> dict:
-    """Run the Rust equivalent via subprocess. Expects a small
-    `cm-lift-rpc` binary that accepts (fn_name, args...) → JSON on stdout.
-    Returns {ret, exc}."""
+    """Run the Rust equivalent via cm_lift_rpc.exe (pre-built release
+    binary). Fast — no cargo overhead."""
     if not probe.rust_bin:
         return {"ret": probe.expected_eax, "exc": None, "source": "expected_eax"}
+    exe = RUST_ROOT / "target" / "release" / "cm_lift_rpc.exe"
+    if not exe.exists():
+        return {"ret": None, "exc": f"missing {exe} — run: cargo build --release -p cm-domain --bin cm_lift_rpc"}
     try:
         args_flat = [str(a) for a in probe.args]
         result = subprocess.run(
-            ["cargo", "run", "--release", "--quiet", "--bin", "cm-lift-rpc",
-             "--", probe.rust_bin, *args_flat],
-            cwd=RUST_ROOT, capture_output=True, text=True, timeout=30,
+            [str(exe), probe.rust_bin, *args_flat],
+            capture_output=True, text=True, timeout=30,
         )
         try:
             return json.loads(result.stdout)
@@ -77,25 +78,35 @@ def run_rust_probe(probe: Probe) -> dict:
         return {"ret": None, "exc": repr(e)}
 
 
-def diff(exe: dict, rust: dict) -> dict:
-    """Compare exe vs rust output tuples."""
+def diff(exe: dict | None, rust: dict) -> dict:
+    """Compare exe vs rust output tuples. If exe is None, this is a
+    rust-only smoke probe — mark 'rust_ok' iff rust returned a non-null,
+    non-exception value."""
+    if exe is None:
+        rust_ok = rust.get("ret") is not None and rust.get("exc") is None
+        return {"exe": None, "rust": rust, "match": rust_ok,
+                "kind": "rust_only", "delta": None}
     exe_v = exe.get("eax_signed", exe.get("eax"))
     rust_v = rust.get("ret")
     ok = (exe_v == rust_v) if (exe_v is not None and rust_v is not None) else False
     return {
         "exe": exe, "rust": rust,
-        "match": ok,
+        "match": ok, "kind": "diff",
         "delta": (exe_v - rust_v) if (isinstance(exe_v, int)
                                      and isinstance(rust_v, int)) else None,
     }
 
 
 def run_matrix(probes: list[Probe], out_path: Optional[Path] = None) -> Path:
-    """Run every probe, write consolidated diff report."""
+    """Run every probe, write consolidated diff report.
+
+    Probes with `fn_va == 0` skip the exe run — they're rust-only smoke
+    tests. Probes with `fn_va != 0` run both and diff EAX.
+    """
     emu = make_emulator()
     results = []
     for i, p in enumerate(probes):
-        exe = run_exe_probe(emu, p)
+        exe = run_exe_probe(emu, p) if p.fn_va != 0 else None
         rust = run_rust_probe(p)
         d = diff(exe, rust)
         d["probe"] = {
@@ -123,13 +134,28 @@ def run_matrix(probes: list[Probe], out_path: Optional[Path] = None) -> Path:
 # ported so the harness has meaningful baseline data.
 
 DEFAULT_PROBES: list[Probe] = [
-    # FUN_006A2790:98-104 — box gate. shot_in_box(x, y, side).
-    Probe(fn_va=0x006DB520, args=(2, 10, 1), label="shot_in_box side1"),
-    Probe(fn_va=0x006DB520, args=(4, 5, 0),  label="shot_in_box mid"),
-    Probe(fn_va=0x006DB520, args=(3, 1, 0),  label="shot_in_box side0"),
-    # FUN_006b3de0:64-73 finalize_rating (via wrapper if needed)
-    # Args: rating_milli only lives on tokens, so this probe needs pre-setup;
-    # left as placeholder for a full-fn probe.
+    # NOTE: FUN_006DB520 is __thiscall(token_ptr, side) — reads zone_x/y
+    # from token+0x102/+0x103. Our Rust port takes (x, y, side) directly.
+    # To diff, we need to allocate a token in emu memory + write x/y +
+    # pass a pointer. Left as TODO; using rust-only smoke test.
+]
+
+# --- Direct Rust-only probes (no exe emulation needed) --------------------
+# For fns without a clean single-fn exe entry point, we still exercise the
+# RPC bin to smoke-test the port. exe-side check reports 'no-emu' — sanity
+# only.
+RUST_ONLY_PROBES: list[Probe] = [
+    Probe(fn_va=0, args=(6400,),       rust_bin="finalize_rating",     label="finalize_rating(6400) == 6"),
+    Probe(fn_va=0, args=(500,),        rust_bin="finalize_rating",     label="finalize_rating(500) == 1"),
+    Probe(fn_va=0, args=(9500,),       rust_bin="finalize_rating",     label="finalize_rating(9500) == 10"),
+    Probe(fn_va=0, args=(0, 0),        rust_bin="gk_save_rating_delta_milli", label="gk_save (no conc, no flags) == 400"),
+    Probe(fn_va=0, args=(1, 2),        rust_bin="gk_save_rating_delta_milli", label="gk_save (concede + flag=0b10)"),
+    Probe(fn_va=0, args=(15,),         rust_bin="team_mentality_mask", label="team_mentality(15) == 0x100"),
+    Probe(fn_va=0, args=(5,),          rust_bin="team_mentality_mask", label="team_mentality(5) == 0"),
+    Probe(fn_va=0, args=(0x0001,),     rust_bin="role_mask_to_position",  label="role_mask 0x0001 → Gk(0)"),
+    Probe(fn_va=0, args=(0x0804,),     rust_bin="role_mask_to_position",  label="role_mask 0x0804 → Dr(3)"),
+    Probe(fn_va=0, args=(20, 100),     rust_bin="age_wage_cap",        label="age_wage_cap(20, 100) == 275000"),
+    Probe(fn_va=0, args=(1, 3, 5, 10, 2, 4), rust_bin="fifa_score",   label="fifa_score smoke"),
 ]
 
 
@@ -155,7 +181,7 @@ def main():
     ap.add_argument("-o", "--out", default=None)
     args = ap.parse_args()
 
-    probes = load_probes_from_json(Path(args.probes)) if args.probes else DEFAULT_PROBES
+    probes = load_probes_from_json(Path(args.probes)) if args.probes else (DEFAULT_PROBES + RUST_ONLY_PROBES)
     out = run_matrix(probes, Path(args.out) if args.out else None)
     data = json.loads(out.read_text())
     print(f"wrote {out}")

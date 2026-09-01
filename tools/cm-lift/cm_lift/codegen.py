@@ -204,6 +204,107 @@ def emit_constant_return(cap: dict, fn_addr: str) -> str:
     ])
 
 
+# 5. thunk_delegate — one-line pass-through `return FUN_xxxx(...args);`
+THUNK_ONLY = re.compile(
+    r'^\s*return\s+FUN_([0-9a-fA-F]{6,8})\s*\(([^)]*)\)\s*;\s*$', re.MULTILINE
+)
+
+def detect_thunk(text: str) -> Optional[dict]:
+    body_start = text.find("{")
+    body = text[body_start:] if body_start >= 0 else text
+    if body.count("\n") > 6:
+        return None
+    m = THUNK_ONLY.search(body)
+    if not m:
+        return None
+    return {"target": m.group(1).lower(), "args": m.group(2).strip()}
+
+
+def emit_thunk(cap: dict, fn_addr: str) -> str:
+    return "\n".join([
+        f"// AUTO-GENERATED from FUN_{fn_addr}.c by cm-lift codegen",
+        f"// Pattern: thunk_delegate → FUN_{cap['target']}",
+        "//",
+        "// One-line pass-through wrapper. Inline the target's Rust port at",
+        "// every call site instead of shipping this stub.",
+        "",
+        f"#[inline(always)]",
+        f"pub fn thunk_{fn_addr}(args: &str) -> u32 {{",
+        f"    // → FUN_{cap['target']}({cap['args']})",
+        f"    let _ = args; 0",
+        f"}}",
+    ])
+
+
+# 6. dat_reader — `return _DAT_XXXX;` or `return (float)_DAT_XXXX;`
+DAT_READER = re.compile(
+    r'^\s*return\s+(?:\(\w+\))?\s*_DAT_([0-9a-fA-F]{8})\s*;\s*$', re.MULTILINE
+)
+
+def detect_dat_reader(text: str) -> Optional[dict]:
+    body_start = text.find("{")
+    body = text[body_start:] if body_start >= 0 else text
+    if body.count("\n") > 6:
+        return None
+    m = DAT_READER.search(body)
+    if not m:
+        return None
+    return {"dat_va": int(m.group(1), 16)}
+
+
+def emit_dat_reader(cap: dict, fn_addr: str) -> str:
+    va = cap['dat_va']
+    return "\n".join([
+        f"// AUTO-GENERATED from FUN_{fn_addr}.c by cm-lift codegen",
+        f"// Pattern: dat_reader — returns _DAT_{va:08X}",
+        "",
+        f"#[inline]",
+        f"pub fn get() -> f64 {{ crate::exe_constants::DAT_{va:08X} }}",
+    ])
+
+
+# 7. bit_gate — role_from_mask style: `if (mask & X) ... else if (mask & Y) ...`
+BIT_GATE_LINE = re.compile(
+    r'(?:if|else\s+if)\s*\(\s*\(?\s*(?:\w+|\*\(\w+ \*\)\s*\w+)\s*&\s*(0x[0-9a-fA-F]+|\d+)\s*\)?\s*(?:!=\s*0)?\s*\)'
+)
+
+def detect_bit_gate(text: str) -> Optional[dict]:
+    body_start = text.find("{")
+    body = text[body_start:] if body_start >= 0 else text
+    hits = BIT_GATE_LINE.findall(body)
+    if len(hits) < 4:  # need at least 4 branches to be a bit-decoder
+        return None
+    if body.count("\n") > 60:
+        return None
+    bits = [int(h, 0) for h in hits[:16]]
+    return {"bits": bits}
+
+
+def emit_bit_gate(cap: dict, fn_addr: str) -> str:
+    lines = [
+        f"// AUTO-GENERATED from FUN_{fn_addr}.c by cm-lift codegen",
+        f"// Pattern: bit_gate — first-match-wins over {len(cap['bits'])} mask bits",
+        "//",
+        "// Semantic labels for each branch aren't recoverable from the",
+        "// decompile alone; the human port should replace `Variant<N>`",
+        "// with the enum this decoder discriminates.",
+        "",
+        f"#[derive(Debug, Clone, Copy, PartialEq, Eq)]",
+        f"pub enum Variant_{fn_addr} {{",
+    ]
+    for i, _ in enumerate(cap["bits"]):
+        lines.append(f"    B{i},")
+    lines.append("    None,")
+    lines.append("}")
+    lines.append("")
+    lines.append(f"pub fn decode(mask: u32) -> Variant_{fn_addr} {{")
+    for i, bit in enumerate(cap["bits"]):
+        lines.append(f"    if mask & 0x{bit:X} != 0 {{ return Variant_{fn_addr}::B{i}; }}")
+    lines.append(f"    Variant_{fn_addr}::None")
+    lines.append("}")
+    return "\n".join(lines)
+
+
 # --- Dispatcher ----------------------------------------------------------
 
 PATTERNS: list[tuple[str, Callable, Callable]] = [
@@ -211,6 +312,9 @@ PATTERNS: list[tuple[str, Callable, Callable]] = [
     ("enum_switch",       detect_enum_switch,       emit_enum_switch),
     ("field_getter",      detect_field_getter,      emit_field_getter),
     ("constant_return",   detect_constant_return,   emit_constant_return),
+    ("thunk_delegate",    detect_thunk,             emit_thunk),
+    ("dat_reader",        detect_dat_reader,        emit_dat_reader),
+    ("bit_gate",          detect_bit_gate,          emit_bit_gate),
 ]
 
 

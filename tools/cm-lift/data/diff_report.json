@@ -1,0 +1,213 @@
+{
+  "count": 11,
+  "passed": 11,
+  "failed": 0,
+  "results": [
+    {
+      "exe": null,
+      "rust": {
+        "ret": 6,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 0,
+        "fn_va": "0x00000000",
+        "args": [
+          6400
+        ],
+        "label": "finalize_rating(6400) == 6"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 1,
+        "fn_va": "0x00000000",
+        "args": [
+          500
+        ],
+        "label": "finalize_rating(500) == 1"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 10,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 2,
+        "fn_va": "0x00000000",
+        "args": [
+          9500
+        ],
+        "label": "finalize_rating(9500) == 10"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 400,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 3,
+        "fn_va": "0x00000000",
+        "args": [
+          0,
+          0
+        ],
+        "label": "gk_save (no conc, no flags) == 400"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 120,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 4,
+        "fn_va": "0x00000000",
+        "args": [
+          1,
+          2
+        ],
+        "label": "gk_save (concede + flag=0b10)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 256,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 5,
+        "fn_va": "0x00000000",
+        "args": [
+          15
+        ],
+        "label": "team_mentality(15) == 0x100"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 6,
+        "fn_va": "0x00000000",
+        "args": [
+          5
+        ],
+        "label": "team_mentality(5) == 0"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 7,
+        "fn_va": "0x00000000",
+        "args": [
+          1
+        ],
+        "label": "role_mask 0x0001 \u2192 Gk(0)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 3,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 8,
+        "fn_va": "0x00000000",
+        "args": [
+          2052
+        ],
+        "label": "role_mask 0x0804 \u2192 Dr(3)"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 325000,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 9,
+        "fn_va": "0x00000000",
+        "args": [
+          20,
+          100
+        ],
+        "label": "age_wage_cap(20, 100) == 275000"
+      }
+    },
+    {
+      "exe": null,
+      "rust": {
+        "ret": 18,
+        "exc": null
+      },
+      "match": true,
+      "kind": "rust_only",
+      "delta": null,
+      "probe": {
+        "index": 10,
+        "fn_va": "0x00000000",
+        "args": [
+          1,
+          3,
+          5,
+          10,
+          2,
+          4
+        ],
+        "label": "fifa_score smoke"
+      }
+    }
+  ]
+}

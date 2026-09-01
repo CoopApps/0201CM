@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from .util import PeInfo, load_pe, DATA_OUT
 
 MIN_VTABLE_SLOTS = 3
-MAX_SEARCH_SLOTS = 512  # let the scanner find the real end, not our cap
+MAX_SEARCH_SLOTS = 512
 
 
 @dataclass
@@ -46,12 +46,59 @@ class Vtable:
 
 
 def is_text_ptr(pe: PeInfo, va: int) -> bool:
-    """True iff VA looks like it points into .text."""
     return pe.text_va <= va < pe.text_va + pe.text_size
 
 
+def _load_fn_entries() -> set[int]:
+    """Load Ghidra's set of fn entry addresses from functions.json.
+
+    A real C++ vtable slot points to the FIRST byte of a fn — not to
+    an arbitrary mid-fn offset. Cross-referencing every candidate slot
+    against Ghidra's fn-entry set eliminates ~all the false vtable
+    detections that were previously running for 512 slots into jump
+    tables and unrelated .rdata regions.
+    """
+    from .util import DECOMPILE
+    fns_json = DECOMPILE.parent / "functions.json"
+    if not fns_json.exists():
+        return set()
+    import json
+    with open(fns_json, "rb") as f:
+        data = json.loads(f.read().decode("utf-8", errors="replace"))
+    out: set[int] = set()
+    if isinstance(data, list):
+        for e in data:
+            va = e.get("entry")
+            if isinstance(va, str):
+                try: out.add(int(va, 0))
+                except ValueError: pass
+            elif isinstance(va, int):
+                out.add(va)
+    return out
+
+
+_FN_ENTRIES_CACHE: set[int] | None = None
+def fn_entries() -> set[int]:
+    global _FN_ENTRIES_CACHE
+    if _FN_ENTRIES_CACHE is None:
+        _FN_ENTRIES_CACHE = _load_fn_entries()
+    return _FN_ENTRIES_CACHE
+
+
 def scan_vtables(pe: PeInfo) -> list[Vtable]:
-    """Sweep .rdata for consecutive-text-pointer runs."""
+    """Sweep .rdata for consecutive fn-entry-pointer runs.
+
+    Slot validation: each pointer must be a real Ghidra fn entry, not
+    just any address in .text. This eliminates the jump-table false
+    positives that previously gave 128+/512+ slot 'vtables'.
+    """
+    entries = fn_entries()
+    if not entries:
+        # Fallback: use loose text-ptr check
+        _accept = lambda p: is_text_ptr(pe, p)
+    else:
+        _accept = lambda p: p in entries
+
     tables: list[Vtable] = []
     data = pe.rdata_bytes
     base = pe.rdata_va
@@ -59,18 +106,16 @@ def scan_vtables(pe: PeInfo) -> list[Vtable]:
     i = 0
     while i + 4 <= length:
         ptr = struct.unpack_from("<I", data, i)[0]
-        if is_text_ptr(pe, ptr):
-            # Try to grow a run.
+        if _accept(ptr):
             slots = []
             j = i
             while j + 4 <= length and len(slots) < MAX_SEARCH_SLOTS:
                 p = struct.unpack_from("<I", data, j)[0]
-                if not is_text_ptr(pe, p):
+                if not _accept(p):
                     break
                 slots.append(p)
                 j += 4
             if len(slots) >= MIN_VTABLE_SLOTS:
-                # Look at [-1] for RTTI COL pointer (may be in .rdata itself).
                 rtti = None
                 if i >= 4:
                     ptr_prev = struct.unpack_from("<I", data, i - 4)[0]
@@ -78,7 +123,7 @@ def scan_vtables(pe: PeInfo) -> list[Vtable]:
                         or pe.data_va <= ptr_prev < pe.data_va + pe.data_size):
                         rtti = ptr_prev
                 tables.append(Vtable(va=base + i, slots=slots, rtti_col=rtti))
-                i = j  # skip past this table
+                i = j
                 continue
         i += 4
     return tables
