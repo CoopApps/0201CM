@@ -1128,6 +1128,66 @@ pub fn agent_wage_multiplier(
     local_8
 }
 
+/// Wage-FLOOR scale table (VERIFIED via pefile from `.rdata:009b4988` /
+/// `009b4a38` — the two are byte-identical i64 arrays). Mirrors the
+/// two-way [`WAGE_CAP_SMALL`] / [`WAGE_CAP_LARGE`] ceiling tables. Used in
+/// the FUN_00580a90 counter-party path at lines 202-232 (raw asm at
+/// 0x00581218 / 0x00581260 — indexed by an edx*8 offset from a divide
+/// magic-mul chain).
+pub const WAGE_FLOOR_TABLE: [i64; 8] = [250, 250, 300, 450, 600, 700, 800, 1000];
+
+/// Scale multipliers applied to `local_2c` (counter-party estimate) based
+/// on the club's [`ClubFinanceStatus`] byte. Extracted via pefile from
+/// `.rdata` at the exact addresses in the asm at 0x005812c2 / 0x005812ce.
+///
+/// | Status         | Multiplier   | Address              |
+/// |----------------|--------------|----------------------|
+/// | Normal         | 1.0 (identity) | (no fmul, branches around) |
+/// | Administration | 1.05         | `_DAT_009569B8` = 1.05 |
+/// | Receivership   | 1.10         | `_DAT_009569C0` = 1.10 |
+///
+/// The Ghidra decompile lines 205-209 collapsed this into an unassigned
+/// `__ftol()` call. The raw asm at 0x005812b4 shows the branch structure.
+pub const FINANCE_STATUS_COUNTERPARTY_MULT_ADMIN: f64 =
+    crate::exe_constants::DAT_009569B8;
+pub const FINANCE_STATUS_COUNTERPARTY_MULT_RECV: f64 =
+    crate::exe_constants::DAT_009569C0;
+
+/// Small top-league bump when the club has a specific country pointer AND
+/// reputation > 0x1e46. VERIFIED from asm at 0x00581315: multiplied by
+/// `_DAT_00956F90 = 1.025`.
+pub const FINANCE_TOP_LEAGUE_HIGH_REP_MULT: f64 =
+    crate::exe_constants::DAT_00956F90;
+
+/// Apply the counter-party finance-status scaling to a wage estimate.
+/// Verified port of FUN_00580a90:0x005812b4..0x005812e1.
+///
+/// The exe branches on the byte returned by `FUN_00582870` (the
+/// [`ClubFinanceStatus`] enum):
+/// - `Normal` → no adjustment (branch skips fmul entirely)
+/// - `Administration` → multiply by 1.05
+/// - `Receivership` → multiply by 1.10
+///
+/// Called on the "no-counter-party" side of the wage-cap composer to
+/// bump the estimate slightly when the club is in financial distress
+/// (paradoxically — a struggling club will pay MORE per player to attract
+/// help; that's the AI heuristic the exe encodes).
+///
+/// # Params
+/// - `wage_estimate`: the `local_2c` int as computed upstream
+/// - `status`: from [`ClubFinanceStatus`] / `FUN_00582870`
+///
+/// Returns the scaled estimate, __ftol-truncated to i32 (matching exe).
+#[inline]
+pub fn scale_wage_by_finance_status(wage_estimate: i32, status: ClubFinanceStatus) -> i32 {
+    let mult = match status {
+        ClubFinanceStatus::Normal          => return wage_estimate,
+        ClubFinanceStatus::Administration  => FINANCE_STATUS_COUNTERPARTY_MULT_ADMIN,
+        ClubFinanceStatus::Receivership    => FINANCE_STATUS_COUNTERPARTY_MULT_RECV,
+    };
+    (wage_estimate as f64 * mult) as i32
+}
+
 /// Minimum wage floor when the club (200) — the initial value of `local_18`
 /// at FUN_00580a90:31. Bumped by [`sibling_club_wage_floor`] when the club
 /// has a sibling / linked parent record.
@@ -2186,6 +2246,36 @@ mod tests {
 
         // ---- 0xd2 = 210 hard cap
         assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
+    }
+
+    #[test]
+    fn wage_floor_table_matches_extracted_i64_values() {
+        // Both .rdata addresses hold identical [250, 250, 300, 450, 600, 700, 800, 1000]
+        // Verified via pefile — see commit note.
+        assert_eq!(WAGE_FLOOR_TABLE,
+            [250i64, 250, 300, 450, 600, 700, 800, 1000]);
+        // Structure: 8 entries, first two equal (250-250), monotonic non-decreasing.
+        assert_eq!(WAGE_FLOOR_TABLE[0], WAGE_FLOOR_TABLE[1]);
+        for i in 1..WAGE_FLOOR_TABLE.len() {
+            assert!(WAGE_FLOOR_TABLE[i-1] <= WAGE_FLOOR_TABLE[i]);
+        }
+    }
+
+    #[test]
+    fn wage_finance_status_scale_matches_exe() {
+        use ClubFinanceStatus::*;
+        assert_eq!(scale_wage_by_finance_status(10_000, Normal),        10_000);
+        assert_eq!(scale_wage_by_finance_status(10_000, Administration), 10_500);
+        assert_eq!(scale_wage_by_finance_status(10_000, Receivership),  11_000);
+
+        // f64 → i32 truncation matches __ftol (toward zero)
+        assert_eq!(scale_wage_by_finance_status(1_001, Administration), 1_051);  // 1051.05 → 1051
+        assert_eq!(scale_wage_by_finance_status(1_001, Receivership),   1_101);  // 1101.1 → 1101
+
+        // Constants are the exact .rdata values
+        assert!((FINANCE_STATUS_COUNTERPARTY_MULT_ADMIN - 1.05).abs() < 1e-12);
+        assert!((FINANCE_STATUS_COUNTERPARTY_MULT_RECV  - 1.10).abs() < 1e-12);
+        assert!((FINANCE_TOP_LEAGUE_HIGH_REP_MULT      - 1.025).abs() < 1e-12);
     }
 
     #[test]
