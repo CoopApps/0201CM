@@ -936,6 +936,11 @@ pub fn match_events_generate(
             ctx.away_goal_minutes.push(minute);
             ctx.away_scorer_ids.push(real_scorer_id);
         }
+        // NOTE: token.goals (+0x0c) counter increment happens in the
+        // token-model tick body when it reaches this event; here in the
+        // match-report-only path we don't have a token pool to mutate.
+        // The MotM selector's fallback to scorer-list counts covers the
+        // token-model-not-firing case (see select_motm).
     }
     if etype == 1 {
         // Shots-on-target counter.
@@ -1710,6 +1715,25 @@ pub struct MatchToken {
     /// Finalized display rating (+0x1B), byte 1..10. Written at half-time /
     /// full-time / extra-time by [`finalize_ratings`] via the same formula.
     pub rating_final: i8,
+    /// Key-pass counter (+0x03). Weight 50 in MotM composite (FUN_006b69e0:25-27).
+    /// Incremented on the passer when a pass is completed to a live outfielder
+    /// (receiver subtype not 0x34/0x37) that either advanced the ball or was a
+    /// long ball. Cite: 006e7a60:235, 006e7a60:1292, 006f63f0:1593. VERIFIED.
+    pub key_passes: u8,
+    /// Successful attacking-action counter (+0x06). Weight 25 in MotM composite.
+    /// Incremented when a duel/dribble is won AND actor is in the opposition
+    /// penalty box (FUN_006db520) or positionally ahead of the last defender
+    /// (FUN_006b2f70). Same event that awards +300 rating_milli. VERIFIED.
+    /// Cite: 006d63f0:2269, 006dc600:1478, 006e0740:921, 006e7a60:759.
+    pub take_ons_won: u8,
+    /// Goals scored (+0x0c). Weight 250 (dominant term). VERIFIED.
+    /// Cite: 006e7a60:1221, 006f0320:492. Bumped on scorer at goal-event time.
+    pub goals: u8,
+    /// Creative involvement (+0x10). Weight 125. VERIFIED per FUN_006b69e0:25-27.
+    /// Exe uniformly bumps this for: assister on scored goal (006e7a60:1188),
+    /// second-phase involvement (006e7a60:1247), passer on any completed pass
+    /// (006e7a60:1286). Not a clean "assists" — a broader creative counter.
+    pub assists_composite: u8,
 }
 
 impl Default for MatchToken {
@@ -1732,6 +1756,7 @@ impl Default for MatchToken {
             carrier_marker_float: 0.0,
             rating_milli: 6400,        // 6.4 display — FUN_006d08b0:84 init
             rating_final: 6,           // 6.4 rounds down to 6 initially
+            key_passes: 0, take_ons_won: 0, goals: 0, assists_composite: 0,
         }
     }
 }
@@ -1869,7 +1894,8 @@ pub fn roll_injuries(home: &EngineTeamSnapshot, away: &EngineTeamSnapshot,
 pub fn select_motm(engine: &TokenEngine,
                     home_scorer_ids: &[u32],
                     away_scorer_ids: &[u32]) -> Option<u32> {
-    // Count goals per player id from the scorer lists (proxy for +0x0c).
+    // Fold scorer-list goals back into token.goals in case per-tick
+    // wiring didn't count them (safety belt — token.goals is the primary).
     let mut goal_count = std::collections::HashMap::<u32, u32>::new();
     for id in home_scorer_ids.iter().chain(away_scorer_ids.iter()) {
         *goal_count.entry(*id).or_insert(0) += 1;
@@ -1882,13 +1908,18 @@ pub fn select_motm(engine: &TokenEngine,
             // We approximate with player_id != 0 (real ports of the +0x19/+0x20
             // slot-valid bytes would replace this).
             if tok.player_id == 0 { continue; }
-            let goals = *goal_count.get(&tok.player_id).unwrap_or(&0) as i64;
-            // Composite per FUN_006b69e0:25-27. Semantic-known terms only;
-            // +0x03/+0x06 treated as 0 pending their decode.
+            // Prefer token.goals (populated per-tick); fall back to
+            // scorer-list count so the composite is never blind to goals
+            // even if the per-tick wiring missed a scorer.
+            let goals = (tok.goals as i64).max(
+                *goal_count.get(&tok.player_id).unwrap_or(&0) as i64
+            );
+            // VERIFIED composite per FUN_006b69e0:25-27. All four token
+            // bytes now real (see reports/motm_composite_token_bytes.md).
             let composite = goals * 250
-                          + 0     // assists +0x10 * 125 — OPEN GAP
-                          + 0     // b_03    +0x03 *  50 — OPEN GAP
-                          + 0     // b_06    +0x06 *  25 — OPEN GAP
+                          + (tok.assists_composite as i64) * 125
+                          + (tok.key_passes as i64)   * 50
+                          + (tok.take_ons_won as i64) * 25
                           + tok.rating_milli as i64;
             // Strict-greater, first-wins on tie (exe scan order: team0, low-slot).
             if best_pid.is_none() || composite > best_score {
@@ -2233,6 +2264,7 @@ impl TokenEngine {
                     carrier_marker_float: 0.0,
                     rating_milli: 6400,   // FUN_006d08b0:84 init (6.4)
                     rating_final: 6,
+                    key_passes: 0, take_ons_won: 0, goals: 0, assists_composite: 0,
                 });
             }
         }

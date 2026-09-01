@@ -18,7 +18,12 @@
 //! * `balance` — the club's cash reserve (starts from club_comp record's
 //!   own balance field once decoded; currently seeded to a plausible
 //!   default proportional to reputation).
-//! * `weekly_wage_bill` — sum of every squad member's weekly wage.
+//! * `weekly_wage_bill` — this week's actual cash outflow. NOT a sum of
+//!   individual contract wages; the exe (FUN_00586ec0:363-422) uses a
+//!   reputation-scaled formula with cash-tier gating + chairman-satisfaction
+//!   adjustment + RNG jitter. Per-contract wage at contract+0xc is only
+//!   read by UI/negotiation surfaces, never aggregated for cash flow.
+//!   See reports/weekly_wage_bill_decode.md.
 //! * `transfer_budget` — cash the manager can commit to signings this
 //!   window.
 //! * `salary_ceiling` — per-country wage cap (0 = no cap).
@@ -843,29 +848,40 @@ impl FinanceBook {
         let mut rng = crate::match_engine_exe::MatchRng::new(0x0058_6ec0);
         for c in &mut self.clubs {
             let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(1000) as i64;
-            let rep_i32 = rep as i32;
+            // Chairman-satisfaction adjustment (FUN_00586ec0:374-378) —
+            // rep_adj is used in the mid/low tier compares. `sat` = board
+            // chairman satisfaction byte (+0x59), `expect` = manager
+            // expectation byte (+0x20). When either is missing we fall
+            // back to raw rep (matches the else-branch at :378).
+            let (sat, expect) = self.chairman.get(&c.club_id)
+                .map(|ch| (ch.ambition as i32, ch.manager_patience as i32))
+                .unwrap_or((7, 0));  // neutral defaults
+            let rep_adj = ((rep as i32) + ((7 - sat) * 3 - expect) * 5).max(500) as i64;
             // Compute weekly wage draw by tier (FUN_00586ec0:363-421).
             let bal = c.balance;
             let top_gate = (rep * 8000).max(500_000);
-            let weekly = if bal >= top_gate {
-                // Top tier — rand(0x1F5) + 2000 (or 1500 under 4000 rep).
+            let flag82 = c.takeover_pending; // proxy for chairman_boost_flag +0x82
+            let weekly = if bal > top_gate && flag82 {
+                // Top tier — rand(0x1F5) + 2000 (or 1500 under 4000 rep),
+                // fully cash-comfortable + chairman-boosted branch.
                 if rep < 4000 {
-                    (rng.range(0x1F5) as i64 + 1500) * rep
+                    ((rng.range(0x1F5) as i64 + 1500) * rep).max(50_000)
                 } else {
                     (rng.range(0x1F5) as i64 + 2000) * rep
                 }
-            } else if bal >= rep * 6000 {
+            } else if bal > rep_adj * 6000 {
+                // Mid tier — cash > rep_adj×6000 uses adjusted rep + jitter.
                 if rep < 4000 {
                     (rng.range(0x1F5) as i64 + 1000) * rep
                 } else {
                     (rng.range(0x1F5) as i64 + 1500) * rep
                 }
-            } else if bal >= rep * 3000 {
+            } else if bal > rep_adj * 3000 {
+                // Low tier — fixed step by rep bracket.
                 if rep < 4000 { rep * 500 } else { rep * 750 }
             } else {
-                0 // skint — no wages this week
+                0 // skint — no wages this week (FUN_00586ec0:384-389)
             };
-            let _ = rep_i32;
             c.balance = c.balance.saturating_sub(weekly);
             c.month_wages = c.month_wages.saturating_add(weekly);
             c.weekly_wage_bill = weekly.min(u32::MAX as i64) as u32;

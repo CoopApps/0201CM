@@ -106,8 +106,63 @@ impl FormationCode {
             Self::F523        => &[Dc, Dl, Dc, Dc, Dr,  Mc, Mc,  Aml, St, Amr],
             Self::F3412       => &[Dc, Dc, Dc,  Ml, Mc, Mc, Mr,  Amc,  St, St],
             Self::F460        => &[Dl, Dc, Dc, Dr,  Amc, Amc, Amc, Amc, Amc, Amc],
-            Self::Custom    => &[Dc; 10], // placeholder — real slot list per team
+            // Custom: this static fallback is used ONLY when a caller asks
+            // for slot roles WITHOUT passing the per-team Tactic. The real
+            // Custom layout comes from parsing the 11×u16 role-mask array
+            // at .tct/.pct file offset 0x102+i*2 via [`role_from_mask`];
+            // callers with a Tactic should read view.slot_role_mask(i)
+            // through role_from_mask + [`role_mask_to_position`] instead.
+            Self::Custom      => &[Dc; 10],
         }
+    }
+
+    /// Convert a u16 role mask (as read from .tct/.pct file offset 0x102+i*2)
+    /// into this port's [`Position`] enum. VERIFIED port of `FUN_005a16b0`
+    /// (`005a16b0.c`). See `reports/fifa_rankings_and_formation_bits.md` §2.
+    ///
+    /// Depth bits (mutually exclusive, first-match wins):
+    ///   0x01=GK 0x02=SW 0x04=D 0x08=WB 0x10=M 0x20=AM 0x40=ST
+    /// Side bits (upper 5):
+    ///   0x080=L 0x100=LC 0x200=C 0x400=RC 0x800=R
+    /// GK auto-forces Side::C regardless of side bits.
+    ///
+    /// Returns `None` on either exe error path: mask with no low-7 bit
+    /// (exe error 0xC13) or non-GK mask with no side bit (exe error 0xC3C).
+    pub fn role_mask_to_position(mask: u16) -> Option<Position> {
+        // Depth priority per 005a16b0.c:11-18
+        let is_gk  = mask & 0x0001 != 0;
+        let is_sw  = !is_gk && mask & 0x0002 != 0;
+        let is_d   = !is_gk && !is_sw && mask & 0x0004 != 0;
+        let is_wb  = !is_gk && !is_sw && !is_d && mask & 0x0008 != 0;
+        let is_m   = !is_gk && !is_sw && !is_d && !is_wb && mask & 0x0010 != 0;
+        let is_am  = !is_gk && !is_sw && !is_d && !is_wb && !is_m && mask & 0x0020 != 0;
+        let is_st  = !is_gk && !is_sw && !is_d && !is_wb && !is_m && !is_am
+                     && mask & 0x0040 != 0;
+        if !(is_gk || is_sw || is_d || is_wb || is_m || is_am || is_st) {
+            return None; // exe error 0xC13
+        }
+        // Side (GK auto-C per 005a16b0.c:57)
+        let is_l  = !is_gk && mask & 0x0080 != 0;
+        let is_lc = !is_gk && !is_l && mask & 0x0100 != 0;
+        let is_c  = is_gk || (!is_l && !is_lc && mask & 0x0200 != 0);
+        let is_rc = !is_gk && !is_l && !is_lc && !is_c && mask & 0x0400 != 0;
+        let is_r  = !is_gk && !is_l && !is_lc && !is_c && !is_rc && mask & 0x0800 != 0;
+        if !(is_l || is_lc || is_c || is_rc || is_r) {
+            return None; // exe error 0xC3C
+        }
+        // Combine depth + side into this port's Position enum. Where the
+        // Rust enum lacks a fine-grained variant, fall back to the nearest
+        // equivalent (e.g. SW → Dc; AM+centre → Amc).
+        use Position::*;
+        Some(if is_gk { Gk }
+            else if is_sw { Dc }  // sweeper → central defender
+            else if is_wb { if is_l { Wbl } else if is_r { Wbr } else { Dc } }
+            else if is_d  { if is_l || is_lc { Dl } else if is_r || is_rc { Dr } else { Dc } }
+            else if is_m  { if is_l { Ml } else if is_r { Mr } else { Mc } }
+            else if is_am { if is_l { Aml } else if is_r { Amr } else { Amc } }
+            else if is_st { St }
+            else { return None }
+        )
     }
 
     /// Human-readable name.
