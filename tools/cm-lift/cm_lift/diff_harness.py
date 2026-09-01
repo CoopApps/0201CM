@@ -190,6 +190,27 @@ DEFAULT_PROBES: list[Probe] = [
           thiscall=True,
           rust_bin="shot_in_box", rust_args=(0, 0, 1),
           label="shot_in_box: token{corner} side=1 -> NOT in box"),
+    # Zone-boundary probes — x edges (2 in, 1 out; 6 in, 7 out)
+    Probe(fn_va=0x006DB520, args=(0, 1),
+          struct_setup=[(0, {0x102: ('b', 2), 0x103: ('b', 10)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(2, 10, 1),
+          label="shot_in_box: x=2 (leftmost in) side=1 -> in"),
+    Probe(fn_va=0x006DB520, args=(0, 1),
+          struct_setup=[(0, {0x102: ('b', 1), 0x103: ('b', 10)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(1, 10, 1),
+          label="shot_in_box: x=1 (out) side=1 -> NOT in"),
+    Probe(fn_va=0x006DB520, args=(0, 1),
+          struct_setup=[(0, {0x102: ('b', 6), 0x103: ('b', 11)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(6, 11, 1),
+          label="shot_in_box: x=6 y=11 (both max in) side=1 -> in"),
+    Probe(fn_va=0x006DB520, args=(0, 1),
+          struct_setup=[(0, {0x102: ('b', 7), 0x103: ('b', 10)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(7, 10, 1),
+          label="shot_in_box: x=7 (out) side=1 -> NOT in"),
 
     # FUN_006a88f0 token_addr — pure arithmetic thiscall(pitch_base, side, slot).
     # Returns pitch_base + 0x4796 + (side*0x14 + slot) * 0x1BE.

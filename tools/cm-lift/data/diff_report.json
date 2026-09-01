@@ -1,6 +1,6 @@
 {
-  "count": 57,
-  "passed": 57,
+  "count": 61,
+  "passed": 61,
   "failed": 0,
   "results": [
     {
@@ -101,6 +101,102 @@
     },
     {
       "exe": {
+        "eax": 1,
+        "eax_signed": 1,
+        "fpu_st0": NaN,
+        "exc": null
+      },
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "diff",
+      "delta": 0,
+      "probe": {
+        "index": 4,
+        "fn_va": "0x006db520",
+        "args": [
+          0,
+          1
+        ],
+        "label": "shot_in_box: x=2 (leftmost in) side=1 -> in"
+      }
+    },
+    {
+      "exe": {
+        "eax": 0,
+        "eax_signed": 0,
+        "fpu_st0": NaN,
+        "exc": null
+      },
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "diff",
+      "delta": 0,
+      "probe": {
+        "index": 5,
+        "fn_va": "0x006db520",
+        "args": [
+          0,
+          1
+        ],
+        "label": "shot_in_box: x=1 (out) side=1 -> NOT in"
+      }
+    },
+    {
+      "exe": {
+        "eax": 1,
+        "eax_signed": 1,
+        "fpu_st0": NaN,
+        "exc": null
+      },
+      "rust": {
+        "ret": 1,
+        "exc": null
+      },
+      "match": true,
+      "kind": "diff",
+      "delta": 0,
+      "probe": {
+        "index": 6,
+        "fn_va": "0x006db520",
+        "args": [
+          0,
+          1
+        ],
+        "label": "shot_in_box: x=6 y=11 (both max in) side=1 -> in"
+      }
+    },
+    {
+      "exe": {
+        "eax": 0,
+        "eax_signed": 0,
+        "fpu_st0": NaN,
+        "exc": null
+      },
+      "rust": {
+        "ret": 0,
+        "exc": null
+      },
+      "match": true,
+      "kind": "diff",
+      "delta": 0,
+      "probe": {
+        "index": 7,
+        "fn_va": "0x006db520",
+        "args": [
+          0,
+          1
+        ],
+        "label": "shot_in_box: x=7 (out) side=1 -> NOT in"
+      }
+    },
+    {
+      "exe": {
         "eax": 18326,
         "eax_signed": 18326,
         "fpu_st0": NaN,
@@ -114,7 +210,7 @@
       "kind": "diff",
       "delta": 0,
       "probe": {
-        "index": 4,
+        "index": 8,
         "fn_va": "0x006a88f0",
         "args": [
           0,
@@ -139,7 +235,7 @@
       "kind": "diff",
       "delta": 0,
       "probe": {
-        "index": 5,
+        "index": 9,
         "fn_va": "0x006a88f0",
         "args": [
           0,
@@ -164,7 +260,7 @@
       "kind": "diff",
       "delta": 0,
       "probe": {
-        "index": 6,
+        "index": 10,
         "fn_va": "0x006a88f0",
         "args": [
           0,
@@ -189,7 +285,7 @@
       "kind": "diff",
       "delta": 0,
       "probe": {
-        "index": 7,
+        "index": 11,
         "fn_va": "0x006a88f0",
         "args": [
           4096,
@@ -210,7 +306,7 @@
       "expected": 6,
       "delta": 0,
       "probe": {
-        "index": 8,
+        "index": 12,
         "fn_va": "0x00000000",
         "args": [
           6400
@@ -229,7 +325,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 9,
+        "index": 13,
         "fn_va": "0x00000000",
         "args": [
           500
@@ -248,7 +344,7 @@
       "expected": 10,
       "delta": 0,
       "probe": {
-        "index": 10,
+        "index": 14,
         "fn_va": "0x00000000",
         "args": [
           9500
@@ -267,7 +363,7 @@
       "expected": 400,
       "delta": 0,
       "probe": {
-        "index": 11,
+        "index": 15,
         "fn_va": "0x00000000",
         "args": [
           0,
@@ -287,7 +383,7 @@
       "expected": 120,
       "delta": 0,
       "probe": {
-        "index": 12,
+        "index": 16,
         "fn_va": "0x00000000",
         "args": [
           1,
@@ -307,7 +403,7 @@
       "expected": 256,
       "delta": 0,
       "probe": {
-        "index": 13,
+        "index": 17,
         "fn_va": "0x00000000",
         "args": [
           15
@@ -326,7 +422,7 @@
       "expected": 0,
       "delta": 0,
       "probe": {
-        "index": 14,
+        "index": 18,
         "fn_va": "0x00000000",
         "args": [
           5
@@ -344,7 +440,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 15,
+        "index": 19,
         "fn_va": "0x00000000",
         "args": [
           1
@@ -362,7 +458,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 16,
+        "index": 20,
         "fn_va": "0x00000000",
         "args": [
           2052
@@ -381,7 +477,7 @@
       "expected": 325000,
       "delta": 0,
       "probe": {
-        "index": 17,
+        "index": 21,
         "fn_va": "0x00000000",
         "args": [
           20,
@@ -401,7 +497,7 @@
       "expected": 18,
       "delta": 0,
       "probe": {
-        "index": 18,
+        "index": 22,
         "fn_va": "0x00000000",
         "args": [
           1,
@@ -425,7 +521,7 @@
       "expected": 6000,
       "delta": 0,
       "probe": {
-        "index": 19,
+        "index": 23,
         "fn_va": "0x00000000",
         "args": [
           10,
@@ -444,7 +540,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 20,
+        "index": 24,
         "fn_va": "0x00000000",
         "args": [
           0,
@@ -464,7 +560,7 @@
       "expected": 8000,
       "delta": 0,
       "probe": {
-        "index": 21,
+        "index": 25,
         "fn_va": "0x00000000",
         "args": [
           5,
@@ -483,7 +579,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 22,
+        "index": 26,
         "fn_va": "0x00000000",
         "args": [
           2000,
@@ -509,7 +605,7 @@
       "expected": 280,
       "delta": 0,
       "probe": {
-        "index": 23,
+        "index": 27,
         "fn_va": "0x00000000",
         "args": [
           15
@@ -528,7 +624,7 @@
       "expected": 285,
       "delta": 0,
       "probe": {
-        "index": 24,
+        "index": 28,
         "fn_va": "0x00000000",
         "args": [
           30
@@ -547,7 +643,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 25,
+        "index": 29,
         "fn_va": "0x00000000",
         "args": [
           400000,
@@ -567,7 +663,7 @@
       "expected": 0,
       "delta": 0,
       "probe": {
-        "index": 26,
+        "index": 30,
         "fn_va": "0x00000000",
         "args": [
           20000000,
@@ -587,7 +683,7 @@
       "expected": 173,
       "delta": 0,
       "probe": {
-        "index": 27,
+        "index": 31,
         "fn_va": "0x00000000",
         "args": [
           5,
@@ -607,7 +703,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 28,
+        "index": 32,
         "fn_va": "0x00000000",
         "args": [
           101,
@@ -628,7 +724,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 29,
+        "index": 33,
         "fn_va": "0x00000000",
         "args": [
           5000,
@@ -650,7 +746,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 30,
+        "index": 34,
         "fn_va": "0x00000000",
         "args": [
           2000,
@@ -673,7 +769,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 31,
+        "index": 35,
         "fn_va": "0x00000000",
         "args": [
           5000,
@@ -696,7 +792,7 @@
       "expected": 3,
       "delta": 0,
       "probe": {
-        "index": 32,
+        "index": 36,
         "fn_va": "0x00000000",
         "args": [],
         "label": "MENTOR_LOYALTY_OVERRIDE_MANAGERS count == 3"
@@ -712,7 +808,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 33,
+        "index": 37,
         "fn_va": "0x00000000",
         "args": [
           0
@@ -730,7 +826,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 34,
+        "index": 38,
         "fn_va": "0x00000000",
         "args": [
           10
@@ -748,7 +844,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 35,
+        "index": 39,
         "fn_va": "0x00000000",
         "args": [
           20
@@ -766,7 +862,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 36,
+        "index": 40,
         "fn_va": "0x00000000",
         "args": [
           17
@@ -784,7 +880,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 37,
+        "index": 41,
         "fn_va": "0x00000000",
         "args": [
           20
@@ -802,7 +898,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 38,
+        "index": 42,
         "fn_va": "0x00000000",
         "args": [
           2,
@@ -823,7 +919,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 39,
+        "index": 43,
         "fn_va": "0x00000000",
         "args": [
           3,
@@ -844,7 +940,7 @@
       "kind": "rust_only",
       "delta": null,
       "probe": {
-        "index": 40,
+        "index": 44,
         "fn_va": "0x00000000",
         "args": [
           2,
@@ -866,7 +962,7 @@
       "expected": 500,
       "delta": 0,
       "probe": {
-        "index": 41,
+        "index": 45,
         "fn_va": "0x00000000",
         "args": [
           32
@@ -885,7 +981,7 @@
       "expected": 4000,
       "delta": 0,
       "probe": {
-        "index": 42,
+        "index": 46,
         "fn_va": "0x00000000",
         "args": [
           64
@@ -904,7 +1000,7 @@
       "expected": 2000,
       "delta": 0,
       "probe": {
-        "index": 43,
+        "index": 47,
         "fn_va": "0x00000000",
         "args": [
           0
@@ -923,7 +1019,7 @@
       "expected": 7500,
       "delta": 0,
       "probe": {
-        "index": 44,
+        "index": 48,
         "fn_va": "0x00000000",
         "args": [
           -1000,
@@ -943,7 +1039,7 @@
       "expected": 7500,
       "delta": 0,
       "probe": {
-        "index": 45,
+        "index": 49,
         "fn_va": "0x00000000",
         "args": [
           6000,
@@ -963,7 +1059,7 @@
       "expected": 8000,
       "delta": 0,
       "probe": {
-        "index": 46,
+        "index": 50,
         "fn_va": "0x00000000",
         "args": [
           8000,
@@ -983,7 +1079,7 @@
       "expected": 1000,
       "delta": 0,
       "probe": {
-        "index": 47,
+        "index": 51,
         "fn_va": "0x00000000",
         "args": [],
         "label": "rating_scale_from_raw == 1000 (0.01 * 100k)"
@@ -1000,7 +1096,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 48,
+        "index": 52,
         "fn_va": "0x00000000",
         "args": [
           0
@@ -1019,7 +1115,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 49,
+        "index": 53,
         "fn_va": "0x00000000",
         "args": [
           499
@@ -1038,7 +1134,7 @@
       "expected": 1,
       "delta": 0,
       "probe": {
-        "index": 50,
+        "index": 54,
         "fn_va": "0x00000000",
         "args": [
           500
@@ -1057,7 +1153,7 @@
       "expected": 5,
       "delta": 0,
       "probe": {
-        "index": 51,
+        "index": 55,
         "fn_va": "0x00000000",
         "args": [
           2500
@@ -1076,7 +1172,7 @@
       "expected": 19,
       "delta": 0,
       "probe": {
-        "index": 52,
+        "index": 56,
         "fn_va": "0x00000000",
         "args": [
           9999
@@ -1095,7 +1191,7 @@
       "expected": 40000,
       "delta": 0,
       "probe": {
-        "index": 53,
+        "index": 57,
         "fn_va": "0x00000000",
         "args": [
           50000
@@ -1114,7 +1210,7 @@
       "expected": 30000,
       "delta": 0,
       "probe": {
-        "index": 54,
+        "index": 58,
         "fn_va": "0x00000000",
         "args": [
           30000
@@ -1133,7 +1229,7 @@
       "expected": 25000,
       "delta": 0,
       "probe": {
-        "index": 55,
+        "index": 59,
         "fn_va": "0x00000000",
         "args": [
           30000
@@ -1152,7 +1248,7 @@
       "expected": 20000,
       "delta": 0,
       "probe": {
-        "index": 56,
+        "index": 60,
         "fn_va": "0x00000000",
         "args": [
           20000
