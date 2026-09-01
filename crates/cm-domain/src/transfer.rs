@@ -1217,6 +1217,104 @@ pub fn final_wage_clamp_assembly(
     counter_party_wage.min(estimate)
 }
 
+/// The two "second-tier" nation addresses (`DAT_009bb7d4`, `DAT_009bb7c0`)
+/// that only trigger the finance-status bump for Administration or
+/// Receivership (Normal status = no bump). Cross-checked against the exe
+/// asm at 0x00581855 / 0x0058185b.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CpTailNation {
+    /// Big3: `DAT_009bb820, 7a4, 948` — Normal + rep>4250 gets 1.025x
+    /// bump; Admin gets 1.05x; Recv gets 1.10x.
+    Big3,
+    /// Second-tier: `DAT_009bb7d4, 7c0` — Normal status = no bump;
+    /// Admin 1.05x; Recv 1.10x.
+    SecondTier,
+    /// Anything else — no CP-tail bump.
+    Other,
+}
+
+/// Verified low-rep club-flag remap constants (asm 0x581903..0x581919).
+pub const CP_TAIL_LOW_REP_MIDPOINT: f64 = 2100.0;   // DAT_009585A0 / A8
+pub const CP_TAIL_LOW_REP_SLOPE:    f64 = 0.2;      // DAT_00956918
+pub const CP_TAIL_LOW_REP_MIN:      i32 = 250;      // 0xfa
+pub const CP_TAIL_LOW_REP_ABOVE_MIDPOINT_GATE: i32 = 2100; // 0x834
+pub const CP_TAIL_LOW_REP_REP_GATE: i16 = 0x8ca;    // 2250
+
+/// Port of FUN_00580a90 lines 312-333 — the **no-counter-party tail**
+/// (`param_2 == 0` branch). Applies a below-floor blend, a
+/// nation+finance-status wage bump, and a low-rep club-flag remap.
+///
+/// Recovered from raw asm at 0x00581801..0x0058191e — every branch
+/// verified from ops and constants extracted via pefile.
+///
+/// # Params
+/// - `wage_estimate`: `iVar10` = ftol of upstream FPU chain
+/// - `sibling_adjust`: `local_24` = [`sibling_adjust_contribution`] result
+/// - `is_ghost_club`: [`is_generated_ghost_club`] on this club (skip if true)
+/// - `nation`: [`CpTailNation`] classification
+/// - `status`: [`ClubFinanceStatus`]
+/// - `club_reputation`: `iVar1[+0x80]` (i16)
+/// - `club_flag_byte`: `iVar1[+0x64]` (u8) — 1 triggers low-rep remap
+///
+/// Returns the adjusted wage estimate.
+pub fn cp_tail_no_counter_party(
+    wage_estimate: i32,
+    sibling_adjust: i32,
+    is_ghost_club: bool,
+    nation: CpTailNation,
+    status: ClubFinanceStatus,
+    club_reputation: i16,
+    club_flag_byte: u8,
+) -> i32 {
+    // Step 1 (asm 0x00581801..0x0058182f): below-floor blend
+    //   if wage < local_24:
+    //     wage = int(wage * 0.75 + local_24 * 0.25)
+    let mut wage = wage_estimate;
+    if wage < sibling_adjust {
+        wage = (wage as f64 * 0.75 + sibling_adjust as f64 * 0.25) as i32;
+    }
+    // Step 2 (asm 0x00581835..0x005818be): nation+status bump
+    // Only fires when NOT a ghost club AND nation != Other
+    if !is_ghost_club && nation != CpTailNation::Other {
+        match (nation, status) {
+            (CpTailNation::Big3, ClubFinanceStatus::Normal) => {
+                // Normal Big3: only bump if rep > 0x109a (4250)
+                if club_reputation > 0x109a {
+                    wage = (wage as f64 * FINANCE_TOP_LEAGUE_HIGH_REP_MULT) as i32;  // 1.025
+                }
+            }
+            (CpTailNation::SecondTier, ClubFinanceStatus::Normal) => {
+                // Second-tier Normal: no bump
+            }
+            (_, ClubFinanceStatus::Administration) => {
+                wage = scale_wage_by_finance_status(wage, ClubFinanceStatus::Administration);
+            }
+            (_, ClubFinanceStatus::Receivership) => {
+                wage = scale_wage_by_finance_status(wage, ClubFinanceStatus::Receivership);
+            }
+            (CpTailNation::Other, ClubFinanceStatus::Normal) => {
+                // Unreachable — outer `nation != Other` guard filters this.
+                // Match required for exhaustiveness.
+            }
+        }
+    }
+    // Step 3 (asm 0x005818cf..0x0058191e): club_flag_byte==1 low-rep remap
+    if club_flag_byte == 1 {
+        if wage < CP_TAIL_LOW_REP_MIN {
+            wage = CP_TAIL_LOW_REP_MIN;
+        }
+        // Rep gate: only remap when rep < 2250 AND wage > 2100
+        if club_reputation < CP_TAIL_LOW_REP_REP_GATE
+           && wage > CP_TAIL_LOW_REP_ABOVE_MIDPOINT_GATE
+        {
+            // wage = (wage - 2100) * 0.2 + 2100
+            wage = ((wage as f64 - CP_TAIL_LOW_REP_MIDPOINT) * CP_TAIL_LOW_REP_SLOPE
+                    + CP_TAIL_LOW_REP_MIDPOINT) as i32;
+        }
+    }
+    wage
+}
+
 /// Snapshot of the exact person + type-10 fields FUN_00580a90's
 /// player-rating cap decision tree reads (lines 371-420 in the decompile).
 ///
@@ -2728,6 +2826,83 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    #[test]
+    fn cp_tail_blend_below_sibling_floor() {
+        // wage=1000 < sibling_adjust=5000 → blend: 1000*0.75 + 5000*0.25 = 750+1250 = 2000
+        let out = cp_tail_no_counter_party(
+            1000, 5000, false, CpTailNation::Other,
+            ClubFinanceStatus::Normal, 3000, 0);
+        assert_eq!(out, 2000);
+    }
+
+    #[test]
+    fn cp_tail_ghost_club_skips_nation_bump() {
+        // Would bump for Big3+Admin normally, but ghost_club=true skips
+        let bumped = cp_tail_no_counter_party(
+            10_000, 0, false, CpTailNation::Big3,
+            ClubFinanceStatus::Administration, 5000, 0);
+        assert_eq!(bumped, 10_500);  // 10000 * 1.05
+        let skipped = cp_tail_no_counter_party(
+            10_000, 0, true, CpTailNation::Big3,
+            ClubFinanceStatus::Administration, 5000, 0);
+        assert_eq!(skipped, 10_000);  // no bump
+    }
+
+    #[test]
+    fn cp_tail_big3_normal_rep_gate() {
+        // rep <= 4250 (0x109a): no bump
+        let low = cp_tail_no_counter_party(
+            10_000, 0, false, CpTailNation::Big3,
+            ClubFinanceStatus::Normal, 4250, 0);
+        assert_eq!(low, 10_000);
+        // rep > 4250: 1.025 bump
+        let high = cp_tail_no_counter_party(
+            10_000, 0, false, CpTailNation::Big3,
+            ClubFinanceStatus::Normal, 4251, 0);
+        assert_eq!(high, 10_250);
+    }
+
+    #[test]
+    fn cp_tail_second_tier_normal_no_bump() {
+        let out = cp_tail_no_counter_party(
+            10_000, 0, false, CpTailNation::SecondTier,
+            ClubFinanceStatus::Normal, 8000, 0);
+        assert_eq!(out, 10_000);
+        // But Admin fires
+        let admin = cp_tail_no_counter_party(
+            10_000, 0, false, CpTailNation::SecondTier,
+            ClubFinanceStatus::Administration, 8000, 0);
+        assert_eq!(admin, 10_500);
+    }
+
+    #[test]
+    fn cp_tail_low_rep_remap_fires_at_flag1() {
+        // club_flag=1, rep=1000 (<2250), wage=5000 (>2100)
+        // remap: (5000-2100)*0.2 + 2100 = 580 + 2100 = 2680
+        let out = cp_tail_no_counter_party(
+            5000, 0, false, CpTailNation::Other,
+            ClubFinanceStatus::Normal, 1000, 1);
+        assert_eq!(out, 2680);
+    }
+
+    #[test]
+    fn cp_tail_low_rep_remap_gated_by_rep() {
+        // rep=2250 → gate NOT satisfied (< strict), no remap
+        let out = cp_tail_no_counter_party(
+            5000, 0, false, CpTailNation::Other,
+            ClubFinanceStatus::Normal, 2250, 1);
+        assert_eq!(out, 5000);
+    }
+
+    #[test]
+    fn cp_tail_low_rep_min_bumps_below_250() {
+        // club_flag=1, wage=100 → bumped to 250 minimum
+        let out = cp_tail_no_counter_party(
+            100, 0, false, CpTailNation::Other,
+            ClubFinanceStatus::Normal, 5000, 1);
+        assert_eq!(out, 250);
     }
 
     fn view(rep: i16, world: i16, potential: i16, age: u8, has_caps: bool)
