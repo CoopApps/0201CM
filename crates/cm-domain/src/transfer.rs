@@ -1128,6 +1128,85 @@ pub fn agent_wage_multiplier(
     local_8
 }
 
+/// The three "big-3" nation record addresses (`DAT_009bb7a4`,
+/// `DAT_009bb820`, `DAT_009bb948`) that gate the LAB_00580dd1
+/// sibling-adjustment branch in FUN_00580a90 lines 274-277. Note this is
+/// a strict subset of [`AgentNationGroup::Top`] (which also includes
+/// `DAT_009bb82c`); the extra nation is EXCLUDED from this branch, so
+/// they can't be unified.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Big3NationMembership {
+    /// Country pointer matches one of `.rdata` {009bb7a4, 009bb820, 009bb948}.
+    Yes,
+    /// Any other nation (or null).
+    No,
+}
+
+/// Direct-lifted magic constants from the LAB_00580dd1 branch tree.
+pub const SIBLING_ADJUST_REP_HIGH_GATE: i16 = 0x1676; // 5750
+pub const SIBLING_ADJUST_REP_MIN_GATE:  i16 = 0x128e; // 4750 (club rep must exceed)
+pub const SIBLING_ADJUST_SUB_NORMAL:    i32 = 0x2ee;  //  750
+pub const SIBLING_ADJUST_SUB_PREMIUM:   i32 = 0x4e2;  // 1250
+pub const SIBLING_ADJUST_ADMIN_SUB_NORMAL:  i32 =  6000;
+pub const SIBLING_ADJUST_ADMIN_SUB_PREMIUM: i32 = 10000;
+
+/// Port of FUN_00580a90 lines 272-310 — the LAB_00580dd1 sibling-adjust
+/// branch. Computes `local_24`, an extra wage-cap contribution added to
+/// the running estimate later in the fn. Fires ONLY for clubs in one of
+/// the three "big-3" nations with rep > 4750; else returns 0.
+///
+/// The 8-cell formula table (recovered line-by-line from the decompile):
+///
+/// | premium_bit | status | rep <  5750    | rep >= 5750         |
+/// |:-----------:|:-------|:---------------|:---------------------|
+/// |     0       | Normal | `(l30-750)*6`  | `(l30-750)*6`        |
+/// |     0       | Admin  | `(l30-750)*6`  | `l30*8 - 6000`       |
+/// |     0       | Recv   | `(l30-750)*6`  | `(l30-750)*10`       |
+/// |    >0       | Normal | `(l30-1250)*6` | `(l30-1250)*6`       |
+/// |    >0       | Admin  | `(l30-1250)*6` | `l30*8 - 10000`      |
+/// |    >0       | Recv   | `(l30-1250)*6` | `(l30-1250)*10`      |
+///
+/// Where `local_30` is the clamped-to-10000 wage estimate computed earlier
+/// (from line 96 in the decompile). The `*6` and `*10` factors come from
+/// the exe's `*3 << 1` and `*5 << 1` chains at LAB_005813ef / line 309.
+/// Admin+rep-high paths jump direct to LAB_005813f8 (skipping the shift),
+/// so the multiplier is baked into the constant.
+///
+/// # Params
+/// - `nation`: three-way membership predicate
+/// - `club_reputation`: `iVar1[+0x80]` (i16)
+/// - `premium_bit`: `iVar1[+0x82]` — some tier flag (`0` = default path)
+/// - `status`: [`ClubFinanceStatus`] from `FUN_00582870`
+/// - `local_30`: clamped wage estimate (0..=10000)
+pub fn sibling_adjust_contribution(
+    nation: Big3NationMembership,
+    club_reputation: i16,
+    premium_bit: u8,
+    status: ClubFinanceStatus,
+    local_30: i32,
+) -> i32 {
+    if nation != Big3NationMembership::Yes { return 0; }
+    if club_reputation <= SIBLING_ADJUST_REP_MIN_GATE { return 0; }
+    // All three ClubFinanceStatus values pass the exe's `status ∈ {0,1,2}` test.
+    let is_premium   = premium_bit != 0;
+    let sub          = if is_premium { SIBLING_ADJUST_SUB_PREMIUM }
+                       else          { SIBLING_ADJUST_SUB_NORMAL  };
+    let admin_sub    = if is_premium { SIBLING_ADJUST_ADMIN_SUB_PREMIUM }
+                       else          { SIBLING_ADJUST_ADMIN_SUB_NORMAL  };
+    let l30_i32      = local_30;
+    let low_rep = (club_reputation as i32) < (SIBLING_ADJUST_REP_HIGH_GATE as i32);
+    if low_rep {
+        // low-rep branch — same formula regardless of status
+        return (l30_i32 - sub) * 6;
+    }
+    // rep >= 5750: status-branched
+    match status {
+        ClubFinanceStatus::Normal          => (l30_i32 - sub) * 6,
+        ClubFinanceStatus::Administration  => l30_i32 * 8 - admin_sub,
+        ClubFinanceStatus::Receivership    => (l30_i32 - sub) * 10,
+    }
+}
+
 /// Role-byte wage caps applied on the counter-party path of FUN_00580a90.
 /// Direct-extracted from the switch at lines 246-268 — each branch is a
 /// hard cap on the wage estimate for staff of that role.
@@ -2353,6 +2432,84 @@ mod tests {
 
         // ---- 0xd2 = 210 hard cap
         assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
+    }
+
+    #[test]
+    fn sibling_adjust_returns_0_outside_big3() {
+        // Not in big-3 → always 0
+        let x = sibling_adjust_contribution(
+            Big3NationMembership::No, 8000, 0, ClubFinanceStatus::Normal, 5000);
+        assert_eq!(x, 0);
+    }
+
+    #[test]
+    fn sibling_adjust_returns_0_below_min_rep_gate() {
+        // In big-3 but rep <= 4750 → 0
+        let x = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 4750, 0, ClubFinanceStatus::Normal, 5000);
+        assert_eq!(x, 0);
+        let y = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 4751, 0, ClubFinanceStatus::Normal, 5000);
+        assert_ne!(y, 0);
+    }
+
+    #[test]
+    fn sibling_adjust_low_rep_uses_same_formula_all_statuses() {
+        // rep=5000 < 5750 (low-rep branch): (l30-sub)*6, no status split
+        // premium_bit=0 → sub=750
+        let expected = (5000 - 750) * 6;   // 25_500
+        for status in [ClubFinanceStatus::Normal,
+                       ClubFinanceStatus::Administration,
+                       ClubFinanceStatus::Receivership] {
+            let x = sibling_adjust_contribution(
+                Big3NationMembership::Yes, 5000, 0, status, 5000);
+            assert_eq!(x, expected, "status={:?}", status);
+        }
+    }
+
+    #[test]
+    fn sibling_adjust_high_rep_normal_uses_6x_multiplier() {
+        // rep=8000 >= 5750, status=Normal, premium=0 → (l30-750)*6
+        let x = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 8000, 0, ClubFinanceStatus::Normal, 5000);
+        assert_eq!(x, (5000 - 750) * 6);   // 25_500
+    }
+
+    #[test]
+    fn sibling_adjust_high_rep_admin_uses_special_l30_8x_minus_offset() {
+        // rep=8000, Admin, premium=0 → l30*8 - 6000
+        let x = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 8000, 0, ClubFinanceStatus::Administration, 5000);
+        assert_eq!(x, 5000 * 8 - 6000);    // 34_000
+
+        // premium=1 → l30*8 - 10000
+        let y = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 8000, 1, ClubFinanceStatus::Administration, 5000);
+        assert_eq!(y, 5000 * 8 - 10000);   // 30_000
+    }
+
+    #[test]
+    fn sibling_adjust_high_rep_recv_uses_10x_multiplier() {
+        // rep=8000, Recv, premium=0 → (l30-750)*10
+        let x = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 8000, 0, ClubFinanceStatus::Receivership, 5000);
+        assert_eq!(x, (5000 - 750) * 10);  // 42_500
+
+        // premium=1 → (l30-1250)*10
+        let y = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 8000, 1, ClubFinanceStatus::Receivership, 5000);
+        assert_eq!(y, (5000 - 1250) * 10); // 37_500
+    }
+
+    #[test]
+    fn sibling_adjust_premium_bit_switches_subtrahend() {
+        // premium=0 uses 750, premium=1+ uses 1250 for all non-Admin paths
+        let n = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 6000, 0, ClubFinanceStatus::Normal, 3000);
+        assert_eq!(n, (3000 - 750) * 6);   // 13_500
+        let p = sibling_adjust_contribution(
+            Big3NationMembership::Yes, 6000, 42, ClubFinanceStatus::Normal, 3000);
+        assert_eq!(p, (3000 - 1250) * 6);  // 10_500
     }
 
     #[test]
