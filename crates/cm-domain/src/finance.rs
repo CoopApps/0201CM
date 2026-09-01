@@ -455,16 +455,11 @@ impl FinanceBook {
         let mut rng = MatchRng::new(seed);
         let club_ids: Vec<u32> = self.clubs.iter().map(|c| c.club_id).collect();
         let mut fired_by: Vec<u32> = Vec::new();
-        // Chairman-presence: rust-db's ClubView::flag_6d() currently reads
-        // 0 for every club (data-side issue — likely wrong offset in the
-        // import; every real CM01/02 club ships with a chairman). If the
-        // whole map is false, treat as uniform-import-bug and proceed
-        // anyway so the monthly board tick actually fires.
-        let any_true = self.club_has_chairman.values().any(|v| *v);
+        // Chairman-presence read at raw offset +0xbf (ClubView::has_chairman).
+        // ~25% of shipped clubs carry a chairman staff id; the rest are
+        // chairman-less and skip the monthly board tick as the exe does.
         for cid in club_ids {
-            let has_chairman = if any_true {
-                self.club_has_chairman.get(&cid).copied().unwrap_or(true)
-            } else { true };
+            let has_chairman = self.club_has_chairman.get(&cid).copied().unwrap_or(false);
             if !has_chairman { continue; }
             let cs = self.chairman.entry(cid).or_insert_with(ChairmanState::default);
             let patience = self.board_patience.entry(cid).or_insert(15u8);
@@ -541,7 +536,11 @@ impl FinanceBook {
             // otherwise fall back to the START_CASH-by-reputation table. This
             // is what makes SWFC boot as bankrupt (their shipped cash is
             // -£14M), same as the game itself.
-            let has_chair = cv.flag_6d() != 0; // Item 1 — VERIFIED (005803d0.c:102)
+            // Real chairman presence: club record has a chairman staff id at
+            // raw offset +0xbf (VERIFIED — was earlier misidentified as
+            // flag_6d/+0x6d which reads 0 for every club). ~25% of shipped
+            // clubs carry a chairman; the rest are chairman-less.
+            let has_chair = cv.has_chairman();
             let mut cfinance = ClubFinance::seed_from(cv.id(), cv.reputation(), false, cv.cash(), has_chair);
             cfinance.home_stadium_id = cv.home_stadium_id();
             cf.push(cfinance);

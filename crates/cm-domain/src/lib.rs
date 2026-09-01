@@ -1762,6 +1762,9 @@ struct FixtureOutcome {
     /// paired with their staff id. Feeds the season-rating accumulator port
     /// (FUN_007a90b0 — see reports/rating_accumulator_writer.md).
     per_player_ratings: Vec<(u32, i8)>,
+    /// Injury events emitted by the match engine, (player_id, days).
+    /// Consumed by `InjuryBook::add_injury` in the fixture-commit block.
+    injury_events: Vec<(u32, u16)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -18535,12 +18538,12 @@ impl RuntimeSaveGame {
                 // token model's finalized ratings + MotM so the season
                 // accumulator still fires.
                 let cond = crate::match_engine_exe::simulate_one_fixture(
-                    &home, &away, seed, Some(6.8));
+                    &home, &away, seed, Some(2.8));
                 (cond, ratings, motm)
             }
         } else {
             let cond = crate::match_engine_exe::simulate_one_fixture(
-                &home, &away, seed, Some(6.8));
+                &home, &away, seed, Some(2.8));
             let ratings = cond.per_player_ratings.clone();
             let motm    = cond.motm_player_id;
             (cond, ratings, motm)
@@ -18554,6 +18557,7 @@ impl RuntimeSaveGame {
             home_out_of_position: home.out_of_position_ids.clone(),
             away_out_of_position: away.out_of_position_ids.clone(),
             per_player_ratings: ratings_from_token,
+            injury_events: used.injury_events.clone(),
         })
     }
 
@@ -18863,6 +18867,22 @@ impl RuntimeSaveGame {
                     // exe's own "Background Matches: Off" no-stats behaviour.
                     for (pid, rating) in outcome.per_player_ratings.iter() {
                         self.player_ratings.record_match_rating(*pid, *rating);
+                    }
+                    // Injuries from this match — real per-XI generator
+                    // rolled from injury_proneness (see roll_injuries in
+                    // match_engine_exe.rs). Fixes the "no injury generator"
+                    // gap surfaced by simulate_season observations.
+                    for (pid, days) in outcome.injury_events.iter() {
+                        let severity = if *days <= 5 {
+                            crate::injury::InjurySeverity::Knock
+                        } else if *days <= 20 {
+                            crate::injury::InjurySeverity::Minor
+                        } else if *days <= 60 {
+                            crate::injury::InjurySeverity::Moderate
+                        } else {
+                            crate::injury::InjurySeverity::Major
+                        };
+                        self.injuries.add_injury(*pid, severity);
                     }
                     // Post-match gate + TV/prize income (kill #8d).
                     self.finance.record_match_income(home_id, away_id, false);

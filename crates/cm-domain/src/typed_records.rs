@@ -388,6 +388,13 @@ impl<'a> ClubView<'a> {
     pub fn flag_72(&self) -> u8 { u8_at(self.raw, 0x72) }
     pub fn flag_7f(&self) -> u8 { u8_at(self.raw, 0x7f) }
 
+    /// True when this club has a shipped chairman staff record. Reads the
+    /// existing [`Self::chairman_id`] at raw offset +0xbf. Supersedes the
+    /// earlier misidentification `flag_6d() != 0` as the "has chairman"
+    /// flag — +0x6d is 0 for every shipped club record in rust-db.
+    /// Approximately 25% of shipped clubs (2625/10580) have a chairman.
+    pub fn has_chairman(&self) -> bool { self.chairman_id().is_some() }
+
     // --- Runtime state (all -1 / 0 in shipped clubs; kept for save-file
     //     round-trip and for later runtime read/write). ---
 

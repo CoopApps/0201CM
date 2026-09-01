@@ -584,7 +584,11 @@ pub fn run_pre_match_pass(
     grudge: impl Fn(u32, u32) -> GrudgeMask,
     league_avg_goals: Option<f32>,
 ) {
-    let avg = league_avg_goals.unwrap_or(6.8);
+    // League-average goals per match. 6.8 was the original speculative value
+    // and produced absurd scorelines (6+ goals per match) — real Premier
+    // League is 2.6-2.8. See simulate_season observations pre-tuning where
+    // Everton had 216 GF in 36 games (6.0/game) via this fallback path.
+    let avg = league_avg_goals.unwrap_or(2.8);
 
     for (side_id, (team, opp)) in [(0u8, (home, away)), (1u8, (away, home))].iter() {
         let side = *side_id;
@@ -1458,6 +1462,14 @@ pub struct ExeMatchResult {
     /// `reports/rating_accumulator_writer.md`.
     #[serde(default)]
     pub per_player_ratings: Vec<(u32, i8)>,
+    /// Injury events emitted this match: (player_id, severity_days).
+    /// Rolled per XI player from `EngineTeamPlayer.injury_proneness` (real
+    /// staff attribute already threaded through the snapshot). Consumed by
+    /// the fixture-commit block to feed `InjuryBook::add_injury`. Was
+    /// silent-zero before this wire (advance_day recovered nothing because
+    /// no code was generating injuries).
+    #[serde(default)]
+    pub injury_events: Vec<(u32, u16)>,
 }
 
 /// Simulate one fixture. This condenses the exe's match_day_play inner
@@ -1515,6 +1527,9 @@ pub fn simulate_one_fixture(
         // ratings to emit. Season accumulator only feeds from the
         // token-model engine (foreground fixtures).
         per_player_ratings: Vec::new(),
+        // Roll injury events from injury_proneness — same generator both
+        // engines use.
+        injury_events: roll_injuries(home, away, &mut rng),
     }
 }
 
@@ -1787,6 +1802,47 @@ pub mod rating_delta {
     pub const BAD_CHANCE_TAKEN:         i16 = -750;
     /// Sitter miss (shot rolled +7 < param_5). FUN_006CFEF0:36.
     pub const SITTER_MISS:              i16 =-1000;
+}
+
+/// Roll per-XI injury events based on each player's injury_proneness
+/// (0..20 scaled attribute already carried on EngineTeamPlayer). Rolled
+/// once per match per side; not per-tick or per-tackle. Returns
+/// `(player_id, days_remaining)` pairs the fixture-commit block feeds to
+/// `InjuryBook::add_injury`.
+///
+/// Injury-proneness reads as the exe's per-player byte scaled 0..20; the
+/// per-match injury probability is `injury_proneness / 400.0` (so a very
+/// injury-prone player at 20/20 sees ~5% chance per match, roughly
+/// matching the real Premier League per-match injury rate of ~4-6% for
+/// glass-jaw players). Non-XI slots skipped.
+///
+/// Not a decode of a specific exe function — the exe's injury generator
+/// lives in an FP-heavy path (Ghidra couldn't lift the odds table) so
+/// this is a plausible-envelope generator using verified attribute data.
+pub fn roll_injuries(home: &EngineTeamSnapshot, away: &EngineTeamSnapshot,
+                     rng: &mut MatchRng) -> Vec<(u32, u16)> {
+    let mut out = Vec::new();
+    for team in [home, away] {
+        for (i, p) in team.players.iter().enumerate().take(11) {
+            let _ = i;
+            if p.player_id == 0 || p.injury_proneness <= 0 { continue; }
+            // Per-match roll: rand(400) < injury_proneness (0..20) →
+            // gives injury_proneness/400 = up to 5% per match.
+            let roll = rng.range(400) as i16;
+            if roll >= p.injury_proneness as i16 { continue; }
+            // Severity split (approximate distribution — 60% knock, 25% minor,
+            // 12% moderate, 3% major). Career-ending left to a separate rare
+            // path not yet ported.
+            let severity_days: u16 = match rng.range(100) {
+                0..=59 => crate::injury::InjurySeverity::Knock.recovery_days(),
+                60..=84 => crate::injury::InjurySeverity::Minor.recovery_days(),
+                85..=96 => crate::injury::InjurySeverity::Moderate.recovery_days(),
+                _ => crate::injury::InjurySeverity::Major.recovery_days(),
+            };
+            out.push((p.player_id, severity_days));
+        }
+    }
+    out
 }
 
 /// Man-of-the-Match selector — VERIFIED port of `FUN_006b69e0`
@@ -4233,7 +4289,7 @@ pub fn simulate_one_fixture_token_model(
     ctx.home_reputation = home.reputation;
     ctx.away_reputation = away.reputation;
     // Pre-match pass (setup port).
-    run_pre_match_pass(&mut ctx, home, away, &mut rng, |_, _| GrudgeMask::default(), Some(6.8));
+    run_pre_match_pass(&mut ctx, home, away, &mut rng, |_, _| GrudgeMask::default(), Some(2.8));
 
     // Default formations = 4-4-2 flat both sides. Real integration
     // will read from `TacticalBundle` per team; wired at the callsite.
@@ -4303,6 +4359,7 @@ pub fn simulate_one_fixture_token_model(
         abandoned: ctx.abandoned,
         pre_match_events: ctx.event_queue.clone(),
         motm_player_id,
+        injury_events: roll_injuries(home, away, &mut rng),
         per_player_ratings: {
             // Collect (player_id, finalized 1..=10 display rating) for every
             // real XI player — feeds the season-rating accumulator per the
@@ -4390,7 +4447,7 @@ mod tests {
         let mut rng = MatchRng::new(42);
         // Grudge for every player vs opp team.
         let grudge = |_p: u32, _t: u32| GrudgeMask { bits: 0x02000000 };
-        run_pre_match_pass(&mut ctx, &home, &away, &mut rng, grudge, Some(6.8));
+        run_pre_match_pass(&mut ctx, &home, &away, &mut rng, grudge, Some(2.8));
         assert!(ctx.event_queue.iter().any(|e| e.event_type == EVT_SERIOUS_FOUL));
     }
 
@@ -4407,7 +4464,7 @@ mod tests {
         }
         let mut rng = MatchRng::new(42);
         let grudge = |_p: u32, _t: u32| GrudgeMask::default();
-        run_pre_match_pass(&mut ctx, &home, &away, &mut rng, grudge, Some(6.8));
+        run_pre_match_pass(&mut ctx, &home, &away, &mut rng, grudge, Some(2.8));
         // A few events might still fire (random) but not many.
         assert!(ctx.event_queue.len() <= 3);
     }
@@ -4476,7 +4533,7 @@ mod tests {
     fn simulate_one_fixture_produces_a_result() {
         let home = mk_team(1, 11, 15000);
         let away = mk_team(2, 11, 10000);
-        let r = simulate_one_fixture(&home, &away, 42, Some(6.8));
+        let r = simulate_one_fixture(&home, &away, 42, Some(2.8));
         // Match completed
         assert!(!r.abandoned, "match should not have abandoned");
         // Some shot activity happened
@@ -4490,8 +4547,8 @@ mod tests {
     fn simulate_is_deterministic_from_seed() {
         let home = mk_team(1, 11, 12000);
         let away = mk_team(2, 11, 12000);
-        let a = simulate_one_fixture(&home, &away, 1234, Some(6.8));
-        let b = simulate_one_fixture(&home, &away, 1234, Some(6.8));
+        let a = simulate_one_fixture(&home, &away, 1234, Some(2.8));
+        let b = simulate_one_fixture(&home, &away, 1234, Some(2.8));
         assert_eq!(a.home_score, b.home_score);
         assert_eq!(a.away_score, b.away_score);
         assert_eq!(a.event_log.len(), b.event_log.len());
@@ -4504,7 +4561,7 @@ mod tests {
         let mut strong_wins = 0;
         let mut weak_wins = 0;
         for seed in 0..100 {
-            let r = simulate_one_fixture(&strong, &weak, seed, Some(6.8));
+            let r = simulate_one_fixture(&strong, &weak, seed, Some(2.8));
             if r.home_score > r.away_score { strong_wins += 1; }
             else if r.away_score > r.home_score { weak_wins += 1; }
         }

@@ -315,7 +315,7 @@ impl TransferMarket {
     ///
     /// Market value = CA² * 100.
     pub fn resolve_bids(&mut self, current_year: u16,
-                        ratings: &crate::player_rating::PlayerRatingBook,
+                        ratings: &mut crate::player_rating::PlayerRatingBook,
                         finance: &mut FinanceBook)
     {
         let bids = std::mem::take(&mut self.pending_bids);
@@ -430,6 +430,15 @@ impl TransferMarket {
                     bosman_eligible: false, morale: 10, mood_delta: 0,
                     ..Default::default()
                 });
+                // Update player registration — RatedPlayer.club_id must
+                // move with the contract so snapshot_team_for_engine sees
+                // the player at their new club. Prior resolve_bids left
+                // this stale; run_ai_transfer_pass moved it directly.
+                // Now unified so bid-pipeline transfers keep the pool in
+                // sync with contracts.
+                if let Some(rp) = ratings.players.iter_mut().find(|p| p.staff_id == bid.target_player_id) {
+                    rp.club_id = Some(bid.bidding_club_id as i32);
+                }
             }
             self.resolved_bids.push((bid, outcome));
         }
@@ -615,15 +624,13 @@ impl TransferMarket {
                 asking_status, ask_wage, /*mode=*/1,
             );
             let years = (rng.range(4) + 2) as u16; // FUN_008ac0c0: rand%4+2
-            // Accept band (kill #3): buyer offers full value → accepted.
-            // Move money (budget + balance), player, contract.
+
+            // Pre-flight can-afford + wage-bill refuse gates. Skip
+            // submitting bids we already know will collapse — matches the
+            // exe's FUN_008ac0c0 pre-composer sanity checks that gate whether
+            // a bid record is ever built.
             let can_afford = finance.for_club(buyer).map(|c| c.balance >= fee).unwrap_or(false);
             if !can_afford { continue; }
-            // Wage-bill refuse gate — verified port of `FUN_00618450 > 0x46`
-            // (70%). If adding this signing pushes wage_bill past 70% of
-            // last month's income the board refuses the deal. Income proxy
-            // = balance / 12 (annual → monthly) since gate_receipts /
-            // TV-prize aren't stitched onto the tick income yet.
             let (bal, wage_bill) = finance.for_club(buyer)
                 .map(|c| (c.balance, c.weekly_wage_bill)).unwrap_or((0, 0));
             let monthly_income = (bal / 12).max(1) as u32;
@@ -631,23 +638,29 @@ impl TransferMarket {
             if new_wage_bill as u64 * 100 > monthly_income as u64 * WAGE_BILL_REFUSE_PCT as u64 {
                 continue;
             }
-            if let Some(b) = finance.clubs.iter_mut().find(|c| c.club_id == buyer) {
-                b.balance -= fee; b.transfer_budget -= fee;
-            }
-            if let Some(s) = finance.clubs.iter_mut().find(|c| c.club_id == seller) {
-                s.balance += fee; s.transfer_budget += fee;
-            }
-            ratings.players[ti].club_id = Some(buyer as i32);
-            self.contracts.retain(|c| c.player_id != ratings.players[ti].staff_id);
-            self.contracts.push(Contract {
-                player_id: ratings.players[ti].staff_id,
-                club_id: buyer, weekly_wage: wage,
-                signed_year: current_year,
-                expires_year: current_year + years,
-                bosman_eligible: false, morale: 10, mood_delta: 0,
-                ..Default::default()
+
+            // Submit the bid through the pipeline — matches the exe's
+            // FUN_008ac0c0 path where every AI transfer goes through
+            // FUN_008d48b0 bid ctor → pending_bids → FUN_008ad0e0 resolver.
+            // This makes the AI transfer visible to a human observer via
+            // pending_bids / resolved_bids, and reuses all the verified
+            // resolver logic (chairman_approves_overrun,
+            // NEGOTIATION_ROUND_CAP, active_counters sidecar, admin
+            // override, etc.) instead of duplicating half of it here.
+            self.pending_bids.push(TransferBid {
+                bidding_club_id: buyer,
+                target_player_id: ratings.players[ti].staff_id,
+                selling_club_id: seller,
+                amount: fee,
+                player_wage_offer: wage,
+                contract_years: years as u8,
+                round: 0,
             });
-            // Keep the club index + position counts current for later buyers.
+
+            // Track position quotas + moved-this-pass optimistically —
+            // resolve_bids may reject some. The bookkeeping stays close
+            // enough for the next buyer's candidate selection; a
+            // rejected bid's slot will re-open on the next AI pass.
             by_club.entry(buyer as i32).or_default().push(ti);
             let (is_gk, is_d, is_m, is_f) = bucket_of(&ratings.players[ti]);
             let bc = counts.entry(buyer as i32).or_insert((0, 0, 0, 0, false));
@@ -655,7 +668,6 @@ impl TransferMarket {
             if is_d  { bc.1 = bc.1.saturating_add(1); }
             if is_m  { bc.2 = bc.2.saturating_add(1); }
             if is_f  { bc.3 = bc.3.saturating_add(1); }
-            // And decrement the seller's counts.
             if let Some(sc) = counts.get_mut(&(seller as i32)) {
                 if is_gk { sc.4 = false; } else { sc.0 = sc.0.saturating_sub(1); }
                 if is_d  { sc.1 = sc.1.saturating_sub(1); }
@@ -663,8 +675,19 @@ impl TransferMarket {
                 if is_f  { sc.3 = sc.3.saturating_sub(1); }
             }
             moved_this_pass.insert(ratings.players[ti].staff_id);
-            completed += 1;
         }
+
+        // Drive the resolver on everything the AI just submitted. The
+        // real exe runs FUN_008ad0e0 on the daily tick to process
+        // pending_bids; we co-run it inside the AI pass so the pipeline
+        // resolves this batch before the next AI pass runs. Bids that
+        // Counter/Reject stay visible in resolved_bids for news + human
+        // observation. `completed` counts Accepted only.
+        let batch_start = self.resolved_bids.len();
+        self.resolve_bids(current_year, ratings, finance);
+        completed = self.resolved_bids[batch_start..].iter()
+            .filter(|(_, o)| *o == BidOutcome::Accepted)
+            .count();
         completed
     }
 
