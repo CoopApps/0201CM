@@ -879,6 +879,140 @@ pub const RECALL_PRE_SEASON_DAY: (u8, u8) = (18,  8);
 /// the bid-record `+0x2e round_counter` (capped at 3).
 pub const NEGOTIATION_ROUND_CAP: u8 = 3;
 
+/// Nation-tier classification used by `FUN_00580a90`'s wage-cap dispatch.
+/// The exe compares `club_country_ptr` against 20+ nation-record addresses
+/// (`DAT_009bb*`) to bucket into one of four tables. The two SCALE tables
+/// dedupe to only two distinct payload arrays — see [`WAGE_CAP_SMALL`] /
+/// [`WAGE_CAP_LARGE`] — but the top-league branch stays distinct because
+/// lines 70/80/89 in the exe test specifically for `puVar12 == 009b4cf8`
+/// (the top-league table) to trigger a linear-remap formula instead of the
+/// additive bump.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NationTier {
+    /// Table A (`.rdata:009b4ae8`): country ptr is null OR one of 4
+    /// specific nation records ({009bb9d0, 009bb79c, 009bb8a4, 009bb6e4}).
+    Small,
+    /// Table B (`.rdata:009b4b98`): 11 specific nation records ({009bb82c,
+    /// 009bb968, 009bb76c, 009bb8f0, 009bb8c8, 009bb9b8, 009bb8f4,
+    /// 009bb780, 009bb7bc, 009bb91c, 009bb7d4}).
+    Mid,
+    /// Table C (`.rdata:009b4c48`): country ptr == `DAT_009bb7c0` OR the
+    /// fallback for administration/receivership clubs.
+    Large,
+    /// Table D (`.rdata:009b4cf8`): normal-status club in a nation not in
+    /// the small/mid/large sets AND with `+0x82 == 0`. THIS is the "top
+    /// league" branch — its identity gates the linear-remap formulas at
+    /// exe lines 71 / 81 / 90.
+    Top,
+}
+
+/// Wage-cap scale table (VERIFIED via pefile from `.rdata:009b4ae8` /
+/// `009b4b98` — the two are byte-identical). 8 × f64 payload, indexed by
+/// derived spending-band index in downstream FMUL chains.
+pub const WAGE_CAP_SMALL: [f64; 8] = [
+    4000.0, 5000.0, 6000.0, 7000.0, 8000.0, 10000.0, 14000.0, 18000.0,
+];
+/// Wage-cap scale table (VERIFIED via pefile from `.rdata:009b4c48` /
+/// `009b4cf8` — the two are byte-identical). Larger ceiling than
+/// [`WAGE_CAP_SMALL`]; used for large + top nation tiers.
+pub const WAGE_CAP_LARGE: [f64; 8] = [
+    5000.0, 6000.0, 7000.0, 8000.0, 10000.0, 14000.0, 18000.0, 30000.0,
+];
+
+/// Pick the wage-cap scale table by [`NationTier`]. Two-way after dedup —
+/// the four-way exe dispatch is preserved for the *identity* test in
+/// [`wage_cap_rep_band`] but the payload is one of two arrays only.
+#[inline]
+pub fn wage_cap_table_for(tier: NationTier) -> &'static [f64; 8] {
+    match tier {
+        NationTier::Small | NationTier::Mid  => &WAGE_CAP_SMALL,
+        NationTier::Large | NationTier::Top  => &WAGE_CAP_LARGE,
+    }
+}
+
+/// Club financial-status flavour used by `FUN_00580a90`'s three-way branch.
+/// Value matches the byte returned by `FUN_00582870` (already ported).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum ClubFinanceStatus {
+    /// `FUN_00582870` returned 0 — normal running.
+    Normal          = 0,
+    /// Returned 1 — in administration.
+    Administration  = 1,
+    /// Returned 2 — in receivership / bankruptcy.
+    Receivership    = 2,
+}
+
+/// Port of `FUN_00580a90` lines 30–102 (~15% of the fn) — the deterministic
+/// **spending-band index** computed from club reputation, nation tier, and
+/// financial status. Feeds every downstream branch as `sVar13`.
+///
+/// Formula, direct from the asm:
+///   band = rep / 50
+///   match (status, tier, rep):
+///     (Normal,        Top, rep > 5750) → band = (rep - 6250) / 25 + 115
+///     (Normal,        _,   rep > 5750) → band += 5
+///     (Administration, _,  rep < 5251) → band += 5
+///     (Administration, Top, rep ≥ 5251) → band = (rep - 5250) / 25 + 105
+///     (Administration, _,   rep ≥ 5251) → band += 10
+///     (Receivership,  _,   rep < 4751) → band += 10
+///     (Receivership,  Top, rep ≥ 4751) → band = (rep - 4750) / 25 + 95
+///     (Receivership,  _,   rep ≥ 4751) → band += 15
+///   band = min(band, 0xd2)
+///
+/// Cross-checked line-by-line against decompile lines 68–102. The magic
+/// reputation-band constants (0x1676 = 5750, 0x1483 = 5251, 0x128f = 4751,
+/// 0x186a = 6250, 0x1482 = 5250, 0x128e = 4750) are the exact hex literals
+/// in the ported branch.
+///
+/// Everything past line 102 of FUN_00580a90 (agent-mult branch, param_3
+/// switch, FUN_005ea590 gates, __ftol chains) is OPEN GAP — see
+/// [`compose_wage_offer`]'s existing 2-tier approximation.
+pub fn wage_cap_rep_band(
+    club_reputation: i16,
+    nation_tier: NationTier,
+    finance_status: ClubFinanceStatus,
+) -> i16 {
+    let mut band: i16 = club_reputation / 50;
+    let rep = club_reputation as i32;
+    use ClubFinanceStatus::*;
+    match finance_status {
+        Normal => {
+            if rep > 0x1676 {
+                if nation_tier != NationTier::Top {
+                    band = band.saturating_add(5); // LAB_00580cc6
+                } else {
+                    // Top-league rebase (line 71): (rep-6250)/25 + 115
+                    band = (((rep - 0x186a) / 25) + 0x73) as i16;
+                }
+            }
+            // rep ≤ 5750: baseline only
+        }
+        Administration => {
+            if rep < 0x1483 {
+                band = band.saturating_add(5);  // LAB_00580cc6 via fallthrough
+            } else if nation_tier == NationTier::Top {
+                // Line 81: (rep-5250)/25 + 105
+                band = (((rep - 0x1482) / 25) + 0x69) as i16;
+            } else {
+                band = band.saturating_add(10); // LAB_00580c8e
+            }
+        }
+        Receivership => {
+            if rep < 0x128f {
+                band = band.saturating_add(10); // LAB_00580c8e
+            } else if nation_tier == NationTier::Top {
+                // Line 90: (rep-4750)/25 + 95
+                band = (((rep - 0x128e) / 25) + 0x5f) as i16;
+            } else {
+                band = band.saturating_add(15);
+            }
+        }
+    }
+    if band > 0xd2 { band = 0xd2; }
+    band
+}
+
 /// Verdict from the loan-recall gate ([`can_recall_loan`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RecallVerdict {
@@ -1796,6 +1930,85 @@ mod tests {
             assert!(off.contract_years >= 2 && off.contract_years <= 5,
                 "seed {}: years={} out of [2,5]", seed, off.contract_years);
         }
+    }
+
+    #[test]
+    fn wage_cap_scale_tables_are_dedup_pairs() {
+        // Sanity check on the deduplication: the FOUR .rdata tables in the
+        // exe collapse to TWO distinct payloads.
+        assert_eq!(WAGE_CAP_SMALL.len(), 8);
+        assert_eq!(WAGE_CAP_LARGE.len(), 8);
+        assert_ne!(WAGE_CAP_SMALL, WAGE_CAP_LARGE);
+        // Small tops out at 18k, large tops out at 30k.
+        assert_eq!(*WAGE_CAP_SMALL.last().unwrap(), 18_000.0);
+        assert_eq!(*WAGE_CAP_LARGE.last().unwrap(), 30_000.0);
+        // Tier routing agrees with the exe's 4→2 collapse.
+        assert!(std::ptr::eq(
+            wage_cap_table_for(NationTier::Small),
+            wage_cap_table_for(NationTier::Mid)));
+        assert!(std::ptr::eq(
+            wage_cap_table_for(NationTier::Large),
+            wage_cap_table_for(NationTier::Top)));
+    }
+
+    #[test]
+    fn wage_cap_rep_band_matches_exe_formulas() {
+        use ClubFinanceStatus::*;
+
+        // ---- Normal-status baseline (rep ≤ 5750): band = rep/50 exact.
+        assert_eq!(wage_cap_rep_band(5000, NationTier::Mid,   Normal), 100);
+        assert_eq!(wage_cap_rep_band(5750, NationTier::Top,   Normal), 115);
+        assert_eq!(wage_cap_rep_band(   0, NationTier::Small, Normal),   0);
+
+        // ---- Normal + non-top + rep > 5750: baseline + 5
+        // rep=6000 → 120 + 5 = 125
+        assert_eq!(wage_cap_rep_band(6000, NationTier::Large, Normal), 125);
+        // rep=8000 → 160 + 5 = 165
+        assert_eq!(wage_cap_rep_band(8000, NationTier::Mid,   Normal), 165);
+
+        // ---- Normal + Top + rep > 5750: (rep-6250)/25 + 115
+        // rep=6250 → 0 + 115 = 115 (baseline+5 path uses band+=5 → 130; top uses rebase)
+        assert_eq!(wage_cap_rep_band(6250, NationTier::Top, Normal), 115);
+        // rep=6500 → 250/25 + 115 = 10 + 115 = 125
+        assert_eq!(wage_cap_rep_band(6500, NationTier::Top, Normal), 125);
+        // rep=9000 → 2750/25 + 115 = 110 + 115 = 225 → clamps to 0xd2 = 210
+        assert_eq!(wage_cap_rep_band(9000, NationTier::Top, Normal), 210);
+
+        // ---- Administration + non-top + rep < 5251: baseline + 5
+        // rep=5000 → 100 + 5 = 105
+        assert_eq!(wage_cap_rep_band(5000, NationTier::Mid, Administration), 105);
+
+        // ---- Administration + non-top + rep ≥ 5251: baseline + 10
+        // rep=6000 → 120 + 10 = 130
+        assert_eq!(wage_cap_rep_band(6000, NationTier::Large, Administration), 130);
+
+        // ---- Administration + Top + rep ≥ 5251: (rep-5250)/25 + 105
+        // BOUNDARY: rep=5250 is < 5251, so takes the +5 fallthrough path,
+        // NOT the top-rebase (that only fires at rep ≥ 5251). 5250/50 + 5 = 110.
+        assert_eq!(wage_cap_rep_band(5250, NationTier::Top, Administration), 110);
+        // rep=5500 → top-rebase: (5500-5250)/25 + 105 = 10 + 105 = 115
+        assert_eq!(wage_cap_rep_band(5500, NationTier::Top, Administration), 115);
+        // rep=5251 → top-rebase: (5251-5250)/25 + 105 = 0 + 105 = 105 (integer div)
+        assert_eq!(wage_cap_rep_band(5251, NationTier::Top, Administration), 105);
+
+        // ---- Receivership + non-top + rep < 4751: baseline + 10
+        // rep=3000 → 60 + 10 = 70
+        assert_eq!(wage_cap_rep_band(3000, NationTier::Small, Receivership), 70);
+
+        // ---- Receivership + non-top + rep ≥ 4751: baseline + 15
+        // rep=5000 → 100 + 15 = 115
+        assert_eq!(wage_cap_rep_band(5000, NationTier::Mid,   Receivership), 115);
+
+        // ---- Receivership + Top + rep ≥ 4751: (rep-4750)/25 + 95
+        // BOUNDARY: rep=4750 is < 4751, hits +10 fallthrough: 95 + 10 = 105.
+        assert_eq!(wage_cap_rep_band(4750, NationTier::Top, Receivership), 105);
+        // rep=4751 → top-rebase: (4751-4750)/25 + 95 = 0 + 95 = 95
+        assert_eq!(wage_cap_rep_band(4751, NationTier::Top, Receivership), 95);
+        // rep=5000 → top-rebase: (5000-4750)/25 + 95 = 10 + 95 = 105
+        assert_eq!(wage_cap_rep_band(5000, NationTier::Top, Receivership), 105);
+
+        // ---- 0xd2 = 210 hard cap
+        assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
     }
 
     #[test]
