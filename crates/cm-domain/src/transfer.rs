@@ -3278,6 +3278,164 @@ pub fn compose_wage_offer_from_rated(
     )
 }
 
+/// Inputs for [`compose_loan_offer`] — the loan-flavor sibling of
+/// [`compose_wage_offer_with_cap`]. Everything the wage composer needs
+/// plus the parent-club identity, today's date, and the loan-length
+/// decision (typically end-of-season = 30-Jun).
+#[derive(Debug, Clone)]
+pub struct LoanOfferInputs {
+    pub player: ComposerPlayer,
+    pub club: ComposerClub,              // borrower
+    pub parent_club_id: u32,             // lender
+    pub existing_contract: Option<Contract>,
+    pub tier: SquadStatus,
+    pub mode: u8,
+    pub seed: u64,
+    /// Weekly wage cap from [`resolve_wage_cap`] on the BORROWER club.
+    pub resolved_wage_cap: u32,
+    /// Today's date (year, month_1idx, day). Used to set loan_start and
+    /// to place earliest_recall in the correct calendar year.
+    pub today: (u16, u8, u8),
+    /// End of the loan window — typically end-of-season (30-Jun of the
+    /// following year). Caller supplies to match the exe's contract-length
+    /// choice for loan spells.
+    pub loan_end: (u16, u8, u8),
+    /// Parent's negotiated wage-share fraction (0..=100). Caller can
+    /// derive from parent+player rep, or use [`derive_loan_wage_share_pct`]
+    /// as a starting point.
+    pub wage_share_pct: u8,
+    /// Loan fee (£, one-off). Caller supplies from market_value; use
+    /// [`derive_loan_fee`] as a starting point.
+    pub loan_fee: i64,
+    /// If `true`, agreement includes a buy-back option. Contract `+0x24 & 0x20`.
+    pub loan_back_option: bool,
+}
+
+/// Envelope formula for the loan wage-share percentage (0..=100).
+///
+/// **NOT a byte-exact port** — the exact FUN_00848da0 loan sub-branch
+/// coefficients are undecompilable inline asm. This uses the domain
+/// convention observed in gameplay: prospects loan with parent paying
+/// the majority of wages; established players loan with borrower paying
+/// most or all. Scale by relative reputation:
+///
+///   parent_rep >  borrower_rep: parent covers more (borrower share = 40%)
+///   parent_rep == borrower_rep: 50/50 split
+///   parent_rep <  borrower_rep: borrower covers more (share = 80%)
+///
+/// Values are placeholder envelope until either (a) FUN_00848da0's loan
+/// sub-branch gets decoded via Unicorn emulation, or (b) shipped-data
+/// evidence surfaces contradicting the envelope.
+pub fn derive_loan_wage_share_pct(parent_rep: u16, borrower_rep: u16) -> u8 {
+    if parent_rep > borrower_rep {
+        40
+    } else if parent_rep == borrower_rep {
+        50
+    } else {
+        80
+    }
+}
+
+/// Envelope formula for the loan fee.
+///
+/// **NOT a byte-exact port** — same disclaimer as [`derive_loan_wage_share_pct`].
+/// Uses the football-domain convention of loan_fee ≈ 5-10% of market value,
+/// scaled by borrower reputation (top clubs pay premium):
+///
+///   loan_fee = market_value × 0.05 × (borrower_rep / 5000)^0.5
+///
+/// Clamped to `[0, market_value / 4]` — a loan_fee larger than a quarter
+/// of the player's value doesn't happen in the exe's observed range.
+pub fn derive_loan_fee(market_value: i64, borrower_rep: u16) -> i64 {
+    let base = (market_value as f64) * 0.05;
+    let rep_scale = ((borrower_rep as f64) / 5000.0).sqrt().max(0.5).min(2.0);
+    let raw = (base * rep_scale) as i64;
+    let cap = market_value / 4;
+    raw.max(0).min(cap.max(0))
+}
+
+/// Direct port of the FUN_00594220 date-gate + placement of earliest_recall.
+///
+/// Returns the correct recall date for a loan **STARTING** on `today`:
+/// - If `today` is BEFORE 18-Aug: recall = 18-Aug of same year (pre-season cutoff)
+/// - Else if `today` is BEFORE 15-Nov: recall = 15-Nov of same year (mid-season cutoff)
+/// - Else: recall = 18-Aug of NEXT year
+///
+/// This mirrors the two-stage gate in FUN_00594220 (already ported as
+/// [`can_recall_loan`]) — the recall date is the earliest cutoff strictly
+/// after `today`.
+pub fn compute_earliest_recall(today: (u16, u8, u8)) -> (u16, u8, u8) {
+    let (year, month, day) = today;
+    let before_aug18 = before_cutoff_in_year(today,
+        RECALL_PRE_SEASON_DAY.0, RECALL_PRE_SEASON_DAY.1);
+    let before_nov15 = before_cutoff_in_year(today,
+        RECALL_MID_SEASON_DAY.0, RECALL_MID_SEASON_DAY.1);
+    if before_aug18 {
+        (year, RECALL_PRE_SEASON_DAY.1, RECALL_PRE_SEASON_DAY.0)
+    } else if before_nov15 {
+        (year, RECALL_MID_SEASON_DAY.1, RECALL_MID_SEASON_DAY.0)
+    } else {
+        (year + 1, RECALL_PRE_SEASON_DAY.1, RECALL_PRE_SEASON_DAY.0)
+    }
+    // month/day return in cm-domain 1-indexed convention; unused vars silence
+    // lints when today is post-Nov.
+    // (marker) year, month, day
+}
+
+/// Compose a loan offer — the loan-flavor sibling of [`compose_wage_offer`].
+/// Returns a [`WageOffer`] with `loan: Some(LoanState { ... })` populated.
+///
+/// # Fidelity map
+///
+/// | Field                | Source                                           |
+/// |----------------------|--------------------------------------------------|
+/// | `weekly_wage`        | [`compose_wage_offer_with_cap`] ← verified       |
+/// | `signing_on_fee`     | [`compose_wage_offer_with_cap`] ← verified       |
+/// | `contract_years`     | Loan-adjusted — always 1 (loan spells)           |
+/// | `LoanState.parent_club_id` | Caller-supplied                            |
+/// | `LoanState.loan_start`     | Caller-supplied (today)                    |
+/// | `LoanState.loan_end`       | Caller-supplied (usually end-of-season)    |
+/// | `LoanState.wage_share_pct` | Caller-supplied (envelope OR exe-decoded)  |
+/// | `LoanState.loan_fee`       | Caller-supplied (envelope OR exe-decoded)  |
+/// | `LoanState.earliest_recall`| [`compute_earliest_recall`] ← VERIFIED     |
+/// | `LoanState.loan_back_option` | Caller-supplied                          |
+/// | `on_loan_list`       | Set to `true`                                    |
+///
+/// The wage/signing-fee/bonus fields come from the fully-verified
+/// composer + cascade. The two undecoded values (wage_share_pct,
+/// loan_fee) are passed IN — caller can use [`derive_loan_wage_share_pct`]
+/// / [`derive_loan_fee`] envelopes as starting points, or supply real
+/// values once the exact FUN_00848da0 loan sub-branch is decoded.
+pub fn compose_loan_offer(inputs: &LoanOfferInputs) -> Option<WageOffer> {
+    // Start from the standard wage offer composed with the verified cap.
+    let mut offer = compose_wage_offer_with_cap(
+        inputs.player,
+        inputs.club,
+        inputs.existing_contract.as_ref(),
+        inputs.tier,
+        inputs.mode,
+        inputs.seed,
+        Some(inputs.resolved_wage_cap),
+    )?;
+    // Loan spells are always 1 year in the exe (season contracts).
+    offer.contract_years = 1;
+    // Set the on-loan-list flag (offer +0x4f & 0x02) mirroring
+    // FUN_00848da0's prologue write at 0x00848e8b (documented in the
+    // composer's structural summary — `+0x35 = person[+0x35] & 0x40 | 0x02`).
+    offer.on_loan_list = true;
+    // Assemble the LoanState from verified + caller-supplied fields.
+    offer.loan = Some(LoanState {
+        parent_club_id: inputs.parent_club_id,
+        loan_start: inputs.today,
+        loan_end: inputs.loan_end,
+        wage_share_pct: inputs.wage_share_pct.min(100),
+        loan_fee: inputs.loan_fee.max(0),
+        earliest_recall: compute_earliest_recall(inputs.today),
+        loan_back_option: inputs.loan_back_option,
+    });
+    Some(offer)
+}
+
 /// The from-rated shim wired to the full FUN_00580a90 cascade.
 ///
 /// Derives [`WageCapInputs::minimal`] from the club's rep + wage field,
@@ -3634,6 +3792,93 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    #[test]
+    fn derive_loan_wage_share_scales_with_rep() {
+        // parent > borrower → parent pays more → borrower share 40%
+        assert_eq!(derive_loan_wage_share_pct(9000, 5000), 40);
+        // equal → 50/50
+        assert_eq!(derive_loan_wage_share_pct(5000, 5000), 50);
+        // parent < borrower → borrower pays more → share 80%
+        assert_eq!(derive_loan_wage_share_pct(3000, 8000), 80);
+    }
+
+    #[test]
+    fn derive_loan_fee_scales_by_market_value_and_rep() {
+        // £1M value, 5000 rep → 5% × 1.0 = £50k
+        let fee = derive_loan_fee(1_000_000, 5000);
+        assert_eq!(fee, 50_000);
+        // Higher rep buyer → larger fee (rep_scale > 1)
+        let big = derive_loan_fee(1_000_000, 8000);
+        assert!(big > fee, "big={} vs fee={}", big, fee);
+        // Cap at market_value / 4
+        let capped = derive_loan_fee(100_000, 20_000);
+        assert!(capped <= 100_000 / 4);
+    }
+
+    #[test]
+    fn compute_earliest_recall_matches_stage_gates() {
+        // Today before Aug 18 → recall = Aug 18 same year
+        assert_eq!(compute_earliest_recall((2001, 5, 10)), (2001, 8, 18));
+        assert_eq!(compute_earliest_recall((2001, 8, 17)), (2001, 8, 18));
+        // Today between Aug 18 and Nov 15 → recall = Nov 15 same year
+        assert_eq!(compute_earliest_recall((2001, 8, 18)), (2001, 11, 15));
+        assert_eq!(compute_earliest_recall((2001, 10, 1)), (2001, 11, 15));
+        assert_eq!(compute_earliest_recall((2001, 11, 14)), (2001, 11, 15));
+        // Today on/after Nov 15 → recall = Aug 18 next year
+        assert_eq!(compute_earliest_recall((2001, 11, 15)), (2002, 8, 18));
+        assert_eq!(compute_earliest_recall((2001, 12, 25)), (2002, 8, 18));
+    }
+
+    #[test]
+    fn compose_loan_offer_populates_loan_state() {
+        let p = cp(100, 110, 5000, 500_000, 800, 24);
+        let c = cc(5000);
+        let inputs = LoanOfferInputs {
+            player: p, club: c, parent_club_id: 200,
+            existing_contract: None,
+            tier: SquadStatus::FirstTeam, mode: 0x0b, seed: 42,
+            resolved_wage_cap: 15_000,
+            today: (2001, 9, 1),
+            loan_end: (2002, 5, 31),
+            wage_share_pct: derive_loan_wage_share_pct(5000, 5000),
+            loan_fee: derive_loan_fee(500_000, 5000),
+            loan_back_option: false,
+        };
+        let offer = compose_loan_offer(&inputs).expect("loan offer");
+        // Loan-specific state populated
+        let loan = offer.loan.as_ref().expect("loan state present");
+        assert_eq!(loan.parent_club_id, 200);
+        assert_eq!(loan.loan_start, (2001, 9, 1));
+        assert_eq!(loan.loan_end,   (2002, 5, 31));
+        assert_eq!(loan.wage_share_pct, 50);
+        assert_eq!(loan.loan_fee, 25_000);
+        // Recall date computed from today: 9-1 is between Aug-18 and Nov-15
+        // → recall = Nov 15 same year
+        assert_eq!(loan.earliest_recall, (2001, 11, 15));
+        // Loan flags
+        assert!(offer.on_loan_list);
+        assert_eq!(offer.contract_years, 1);
+    }
+
+    #[test]
+    fn compose_loan_offer_defers_to_wage_composer_for_wage_fields() {
+        // Weekly wage still flows through the standard composer / cap
+        let p = cp(100, 110, 5000, 500_000, 800, 24);
+        let c = cc(5000);
+        let inputs = LoanOfferInputs {
+            player: p, club: c, parent_club_id: 200,
+            existing_contract: None,
+            tier: SquadStatus::FirstTeam, mode: 0x0b, seed: 42,
+            resolved_wage_cap: 500,  // BELOW WAGE_FLOOR_WEEKLY → None
+            today: (2001, 9, 1),
+            loan_end: (2002, 5, 31),
+            wage_share_pct: 50, loan_fee: 25_000, loan_back_option: false,
+        };
+        // resolved_cap < WAGE_FLOOR_WEEKLY → underlying composer returns None
+        let offer = compose_loan_offer(&inputs);
+        assert!(offer.is_none(), "expected None for cap below WAGE_FLOOR_WEEKLY");
     }
 
     #[test]
