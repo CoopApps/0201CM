@@ -1315,6 +1315,49 @@ pub fn cp_tail_no_counter_party(
     wage
 }
 
+/// Verified clamp values for [`world_rep_wage_bump`] — from raw asm at
+/// 0x0058197f / 0x00581998 / 0x00581990.
+pub const WORLD_REP_RATIO_MIN: f64 = 1.0;   // _DAT_00955890 (lower clamp)
+pub const WORLD_REP_RATIO_MAX: f64 = 1.2;   // _DAT_00956978 (upper clamp)
+/// Minimum club-rep divisor (line 005817d2). Prevents divide-by-tiny
+/// producing runaway ratios.
+pub const WORLD_REP_MIN_CLUB_REP: i32 = 1000; // 0x3e8
+
+/// Port of FUN_00580a90 lines 0x00581955..0x005819be — the "world
+/// reputation bump" that fires as the finance-status FPU chain in the
+/// `param_2 == 0` branch. Given the club's shipped world-rep number and
+/// its live reputation, computes a wage bump ratio `clamp(world/rep, 1.0,
+/// 1.2)` and multiplies the current wage by it.
+///
+/// # FPU sequence recovered from raw asm
+///
+///   ratio = world_rep_value / max(club_rep, 1000)
+///   ratio = clamp(ratio, 1.0, 1.2)          // asm 581985..5819a9
+///   wage  = int(wage × ratio)               // asm 5819af..5819b5
+///
+/// (Constants VERIFIED via pefile: `_DAT_00955890 = 1.0`, `_DAT_00956978
+/// = 1.2`; min-club-rep clamp = 1000 from line 005817d2.)
+///
+/// # Params
+/// - `wage_estimate`: `iVar10` from earlier chain (the ebx value at
+///    esp+0x14 in asm)
+/// - `world_rep_value`: runtime table lookup `[ecx+0xdc][club.id*9 + 5]`
+///    — the club's world-ranking i16 from a runtime pool
+/// - `club_reputation`: `iVar1[+0x80]`
+///
+/// Returns the adjusted wage.
+pub fn world_rep_wage_bump(
+    wage_estimate: i32,
+    world_rep_value: i16,
+    club_reputation: i16,
+) -> i32 {
+    let clamped_rep = (club_reputation as i32).max(WORLD_REP_MIN_CLUB_REP);
+    let mut ratio = world_rep_value as f64 / clamped_rep as f64;
+    if ratio < WORLD_REP_RATIO_MIN { ratio = WORLD_REP_RATIO_MIN; }
+    if ratio > WORLD_REP_RATIO_MAX { ratio = WORLD_REP_RATIO_MAX; }
+    (wage_estimate as f64 * ratio) as i32
+}
+
 /// Inputs for [`seniority_gate_resolves`] — the specific fields needed
 /// to resolve the FUN_005ea590 gate + rep-check branches inside
 /// param_3 seniority switch cases 2 and 3.
@@ -3252,6 +3295,34 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    #[test]
+    fn world_rep_bump_clamps_at_1_0_when_ratio_low() {
+        // world=500, rep=1000 → ratio=0.5, clamped to 1.0 → no bump
+        assert_eq!(world_rep_wage_bump(10_000, 500, 1000), 10_000);
+    }
+
+    #[test]
+    fn world_rep_bump_clamps_at_1_2_when_ratio_high() {
+        // world=10000, rep=1000 → ratio=10.0, clamped to 1.2 → 1.2× bump
+        assert_eq!(world_rep_wage_bump(10_000, 10_000, 1000), 12_000);
+    }
+
+    #[test]
+    fn world_rep_bump_linear_between_clamps() {
+        // world=1500, rep=1000 → ratio=1.5, clamped to 1.2 (>1.2)
+        // wait actually 1.5 > 1.2 → capped at 1.2
+        assert_eq!(world_rep_wage_bump(10_000, 1500, 1000), 12_000);
+        // world=1100, rep=1000 → ratio=1.1 (in range) → 11_000
+        assert_eq!(world_rep_wage_bump(10_000, 1100, 1000), 11_000);
+    }
+
+    #[test]
+    fn world_rep_bump_min_club_rep_floor_at_1000() {
+        // rep=500 (below floor) → clamped to 1000
+        // world=1500 → ratio=1.5→1.2 → 12_000
+        assert_eq!(world_rep_wage_bump(10_000, 1500, 500), 12_000);
     }
 
     fn sgate(open: bool, has_t10: bool, prep: i16) -> SeniorityGateView {
