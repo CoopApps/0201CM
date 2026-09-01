@@ -13,22 +13,56 @@
 //!               + nation[+0xd0]
 //!   qsort by ranking
 //!
-//! The weights `W0..W3` are runtime `.data` doubles at `0x00956918` /
-//! `0x009569b0` / `0x00956e00` / `0x00956e48` — populated by an init function
-//! not yet decoded, so their exact values are unknown at rest.
+//! The weights `W0..W3` are `.rdata` doubles at `0x00956918` (0.2) /
+//! `0x009569b0` (0.8) / `0x00956e00` (0.4) / `0x00956e48` (0.6) —
+//! LIFTED via cm-lift from the shipped exe's .rdata:
+//!   W(N-4, most decayed) = 0.2   (year N-4 weight)
+//!   W(N-3)               = 0.4
+//!   W(N-2)               = 0.6
+//!   W(N-0, current year) = 0.8
+//! Combined with the +0xD0 (year N-1) and +0xD8 (pending accrual) which
+//! are added at unit weight, this is a 5-year weighted-history sum
+//! (steadily-increasing weight, current year heaviest).
 //!
-//! **Ported honestly** as a nation-strength calculator: we compute a ranking
-//! from data we *do* have (the average reputation of a nation's clubs — a
-//! reasonable proxy for national strength). This fixes the "Tahiti wins the
-//! Confederations Cup" fidelity gap by giving the international-cup draws
-//! a strength-weighted candidate pool. Flagged: not the exact exe algorithm
-//! until the runtime weight table and the nation-record history-slot layout
-//! (`+0xb0..+0xd8`) are decoded.
+//! We can now compute the REAL ranking formula when history data is
+//! available on the nation record. Until the nation-record history-slot
+//! layout (+0xb0..+0xd8) is threaded through NationView, we fall back to
+//! the average-club-reputation proxy for the strength scalar.
 
 use serde::{Deserialize, Serialize};
 
 use crate::typed_records::{ClubView, NationView};
 use crate::DomainOpaqueRecord;
+
+/// VERIFIED FIFA ranking weights lifted from cm0102.exe .rdata via
+/// cm-lift `fp_sniper scan-refs`. Consumed at FUN_005c01d0:57-61.
+pub const FIFA_W_YEAR_MINUS_4: f64 = crate::exe_constants::DAT_00956918; // 0.2
+pub const FIFA_W_YEAR_MINUS_3: f64 = crate::exe_constants::DAT_00956E00; // 0.4
+pub const FIFA_W_YEAR_MINUS_2: f64 = crate::exe_constants::DAT_00956E48; // 0.6
+pub const FIFA_W_YEAR_MINUS_0: f64 = crate::exe_constants::DAT_009569B0; // 0.8
+
+/// Real FIFA ranking score — VERIFIED formula from FUN_005c01d0:57-61.
+///
+/// score = year_N_0 * 0.8
+///       + year_N_4 * 0.2
+///       + year_N_3 * 0.4
+///       + year_N_2 * 0.6
+///       + pending_accrual (+0xD8)
+///       + year_N_1 (+0xD0)
+///
+/// Caller supplies the 6 per-nation history-slot values (as stored on
+/// nation record at +0xB0..+0xD8). Returns the exact score the shipped
+/// exe would sort by.
+#[inline]
+pub fn fifa_score(year_n_4: f64, year_n_3: f64, year_n_2: f64,
+                  year_n_0: f64, pending_accrual: f64, year_n_1: f64) -> f64 {
+    year_n_0 * FIFA_W_YEAR_MINUS_0
+        + year_n_4 * FIFA_W_YEAR_MINUS_4
+        + year_n_3 * FIFA_W_YEAR_MINUS_3
+        + year_n_2 * FIFA_W_YEAR_MINUS_2
+        + pending_accrual
+        + year_n_1
+}
 
 /// One row of the FIFA ranking table: nation + a computed strength value.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

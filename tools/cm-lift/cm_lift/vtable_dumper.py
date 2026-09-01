@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from .util import PeInfo, load_pe, DATA_OUT
 
 MIN_VTABLE_SLOTS = 3
-MAX_SEARCH_SLOTS = 128  # vtables > 128 slots are noise for our purposes
+MAX_SEARCH_SLOTS = 512  # let the scanner find the real end, not our cap
 
 
 @dataclass

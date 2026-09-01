@@ -13,6 +13,7 @@ pub mod asia_oceania_nations;
 pub mod asia_super_cup;
 pub mod concacaf_champ;
 pub mod euro_super_cup;
+pub mod exe_constants;
 pub mod intl_comps;
 pub mod aus_nsl;
 pub mod aus_rules;
