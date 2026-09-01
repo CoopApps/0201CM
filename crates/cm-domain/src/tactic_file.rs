@@ -343,6 +343,26 @@ pub enum Passing { Short, Mixed, Direct, Long, Unset }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mentality { Defensive, Normal, Attacking, Unset }
 
+impl Mentality {
+    /// Convert to the `team_tactic_word` u32 that
+    /// [`crate::match_engine_exe::mentality_outcome_scaler`] reads.
+    ///
+    /// The exe uses bit `0x20` for Normal, bit `0x40` for Attacking, and
+    /// zero (default = 2.0 = Defensive) otherwise. Unset defaults to the
+    /// Defensive path so a club without a chosen tactic still gets a
+    /// deterministic scaler value (matches the exe's fallback: no bit
+    /// set → 2.0×).
+    #[inline]
+    pub fn to_scaler_word(self) -> u32 {
+        match self {
+            Mentality::Normal    => 0x20,
+            Mentality::Attacking => 0x40,
+            Mentality::Defensive => 0,
+            Mentality::Unset     => 0,
+        }
+    }
+}
+
 /// Team-wide pressing intensity. Group E, bits 11..12.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Pressing { Normal, High, Unset }
@@ -362,13 +382,43 @@ pub enum Tackling { Easy, Hard, Normal, Unset }
 /// INFERRED from group cardinality and shipped-preset value distribution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TeamSettings {
+    #[serde(default = "default_passing")]
     pub passing: Passing,
+    #[serde(default = "default_mentality")]
     pub mentality: Mentality,
+    #[serde(default)]
     pub counter_attack: bool,
+    #[serde(default)]
     pub offside_trap: bool,
+    #[serde(default = "default_pressing")]
     pub pressing: Pressing,
+    #[serde(default = "default_marking")]
     pub marking: Marking,
+    #[serde(default = "default_tackling")]
     pub tackling: Tackling,
+}
+
+// Default constructors for TeamSettings serde defaults (also used to
+// derive a Default impl that matches how tactic-less clubs are treated
+// in the engine — everything Unset).
+fn default_passing()   -> Passing   { Passing::Unset }
+fn default_mentality() -> Mentality { Mentality::Unset }
+fn default_pressing()  -> Pressing  { Pressing::Unset }
+fn default_marking()   -> Marking   { Marking::Unset }
+fn default_tackling()  -> Tackling  { Tackling::Unset }
+
+impl Default for TeamSettings {
+    fn default() -> Self {
+        TeamSettings {
+            passing: default_passing(),
+            mentality: default_mentality(),
+            counter_attack: false,
+            offside_trap: false,
+            pressing: default_pressing(),
+            marking: default_marking(),
+            tackling: default_tackling(),
+        }
+    }
 }
 
 /// Read the seven team switches out of a tactic's `team_flags_2` word.

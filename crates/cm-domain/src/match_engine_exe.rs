@@ -344,6 +344,12 @@ pub struct MatchCtx {
     /// `+0x1D6/+0x1D8` — reputation copies from each team.
     pub home_reputation: u16,
     pub away_reputation: u16,
+    /// Per-side team-tactic settings copied from the fixture's
+    /// EngineTeamSnapshot at match start. Read per-tick by the shot
+    /// resolver (tactics gap #6 wire — see [`mentality_outcome_scaler`]
+    /// consumption at match_tick shot branch).
+    #[serde(default = "default_home_away_team_settings")]
+    pub team_settings: [crate::tactic_file::TeamSettings; 2],
     /// Ball-height byte at pitch/match `+0x8EA9`. Fed into shot-damage
     /// randomness at `006d63f0.c:248`:
     /// `iVar17 = FUN_008fc4f0((int)cVar10 * (int)cVar10 * (int)cVar10 * 0x32)`.
@@ -483,6 +489,10 @@ pub struct EngineTeamSnapshot {
     /// look for these values instead of hardcoding neutrality.
     #[serde(default = "default_team_settings")]
     pub team_settings: crate::tactic_file::TeamSettings,
+}
+
+fn default_home_away_team_settings() -> [crate::tactic_file::TeamSettings; 2] {
+    [default_team_settings(), default_team_settings()]
 }
 
 fn default_team_settings() -> crate::tactic_file::TeamSettings {
@@ -1378,6 +1388,18 @@ pub fn match_tick(
                 let mut gk_shot_count = 0u8;
                 let mut counters = SideShotCounters::default();
 
+                // Per-tick tactic read (item 3/4): bias shot difficulty by
+                // the shooting team's team-wide mentality. Attacking mentality
+                // (scaler 4.0) → shots go in more easily; Defensive (2.0) →
+                // harder; Normal (0.5) → normal.
+                // Baseline scaler = 2.0 (Defensive/Unset), so we normalize
+                // by dividing difficulty by (scaler / 2.0).
+                let mentality_word = ctx.team_settings[side as usize]
+                    .mentality.to_scaler_word();
+                let scaler = mentality_outcome_scaler(mentality_word);
+                let normalized = (scaler / 2.0).max(0.1);
+                let shot_difficulty = ((shot_difficulty as f32 / normalized) as u8).max(1);
+
                 let (outcome, _xg) = shot_outcome_resolver(
                     &mut shooter,
                     &mut gk_shot_count,
@@ -1488,6 +1510,9 @@ pub fn simulate_one_fixture(
     let mut ctx = *MatchCtx::new();
     ctx.home_reputation = home.reputation;
     ctx.away_reputation = away.reputation;
+    // Copy per-side team-tactic settings into ctx for per-tick reads
+    // (tactics gap #6 wire — mentality_outcome_scaler consumption).
+    ctx.team_settings = [home.team_settings.clone(), away.team_settings.clone()];
     let mut rng = MatchRng::new(seed);
 
     // Pre-match pass (FUN_0069D950 §7).
@@ -4438,6 +4463,9 @@ pub fn simulate_one_fixture_token_model(
     let mut rng = MatchRng::new(seed);
     ctx.home_reputation = home.reputation;
     ctx.away_reputation = away.reputation;
+    // Copy per-side team-tactic settings into ctx for per-tick reads
+    // (tactics gap #6 wire — mentality_outcome_scaler consumption).
+    ctx.team_settings = [home.team_settings.clone(), away.team_settings.clone()];
     // Pre-match pass (setup port).
     run_pre_match_pass(&mut ctx, home, away, &mut rng, |_, _| GrudgeMask::default(), Some(2.8));
 
@@ -5403,6 +5431,32 @@ mod tests {
                     "carrier delta is 0 per exe");
         assert_eq!(e.wing_delta_for_token(gl, 0, (0, 4)), 5,   // token[4].zone_y = 5
                     "non-carrier uses zone_y - home_y");
+    }
+
+    #[test]
+    fn mentality_to_scaler_word_matches_exe_bits() {
+        use crate::tactic_file::Mentality;
+        assert_eq!(Mentality::Normal.to_scaler_word(),    0x20);
+        assert_eq!(Mentality::Attacking.to_scaler_word(), 0x40);
+        assert_eq!(Mentality::Defensive.to_scaler_word(), 0);
+        assert_eq!(Mentality::Unset.to_scaler_word(),     0);
+        // Scaler outputs match the DAT constants
+        assert!((mentality_outcome_scaler(0x20) - 0.5).abs() < 1e-6);
+        assert!((mentality_outcome_scaler(0x40) - 4.0).abs() < 1e-6);
+        assert!((mentality_outcome_scaler(0)    - 2.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn match_ctx_default_populates_team_settings() {
+        // Default MatchCtx via new() has a populated team_settings array
+        let ctx = MatchCtx::new();
+        assert_eq!(ctx.team_settings.len(), 2);
+        // Both sides default to fully-unset (matches the exe default when
+        // a club has no tactic assigned).
+        for side in 0..2 {
+            assert_eq!(ctx.team_settings[side].mentality,
+                       crate::tactic_file::Mentality::Unset);
+        }
     }
 
     #[test]
