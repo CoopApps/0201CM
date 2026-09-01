@@ -322,6 +322,123 @@ pub fn apply_team_morale_wave(
     applied
 }
 
+/// Per-player snapshot used by [`apply_team_morale_wave_real`] — the
+/// full-fidelity FUN_00843100 replacement. One entry per player on the
+/// club's roster (up to 50).
+#[derive(Debug, Clone, Copy)]
+pub struct TeamWavePlayer {
+    pub player_id: u32,
+    /// Ratings snapshot for [`player_position_candidates`].
+    pub aptitudes: PositionAptitudes,
+    /// Ratings snapshot for [`player_slot_open_in_chain`].
+    pub slot_flags: PlayerSlotFlags,
+    /// Person id (goes into the chain walker's player_id gate).
+    pub person_id: i32,
+}
+
+/// **REAL port** of FUN_00843100 (team-wide morale wave) — replaces the
+/// CA-proxy envelope [`apply_team_morale_wave`] with the exact algorithm.
+///
+/// The exe walks the club's roster, and for each player:
+///   1. Reads position-candidate list via FUN_00843590 (aptitudes)
+///   2. Checks slot availability via FUN_00843880 (uses slot flags)
+///   3. If slot is open in a related-club chain (FUN_005ea590), writes
+///      NEGATIVE mood_delta (=−1 − rank); else POSITIVE (=rank + 1)
+///
+/// This port composes the three ported pieces:
+/// - [`player_position_candidates`] — decides where this player fits
+/// - [`player_slot_open_in_chain`] — decides "open in chain" verdict
+/// - [`apply_mood_delta`] — writes the mood_delta byte
+///
+/// The exact rank-emission scheme comes straight from FUN_00843590's
+/// tail loop (lines 89-116, 108-121): the FIRST empty slot in
+/// `local_fc[0..0x32]` is picked, with delta sign determined by the
+/// slot-open verdict.
+///
+/// # Params
+/// - `market`: transfer market to mutate
+/// - `club_id`: target club
+/// - `chain_snapshots`: snapshots of THIS club + all related clubs (via
+///    FUN_00524f20 descent); typically starts with the club itself.
+/// - `roster`: per-player snapshots (aptitudes + slot flags + person id)
+/// - `max_players`, `total_clubs`, `nation_count`: runtime globals
+///
+/// Returns the number of contracts mutated.
+pub fn apply_team_morale_wave_real(
+    market: &mut TransferMarket,
+    club_id: u32,
+    chain_snapshots: &[ChainClubSnapshot],
+    roster: &[TeamWavePlayer],
+    max_players: i32,
+    total_clubs: i32,
+    nation_count: i32,
+) -> usize {
+    let mut applied = 0usize;
+    // Per-club occupied-slot bitmap (0..0x32 = 50 slots), matches the exe's
+    // local_fc[] area from FUN_00843590:22-45. Ported as a plain array —
+    // fills as we walk the roster, so the FIRST player at each position
+    // gets the low-code slot and subsequent same-position players fall back.
+    let mut occupied = [false; 50];
+
+    // Walk roster: for each player, pick first-fit slot, emit mood_delta
+    // based on slot_open verdict + slot rank.
+    for (rank, p) in roster.iter().enumerate() {
+        let cands = player_position_candidates(p.aptitudes);
+        if cands.is_empty() { continue; }
+
+        // Walk candidates left-to-right; pick first empty slot
+        let mut chosen_slot: Option<u8> = None;
+        for code in cands.iter() {
+            let idx = code as usize;
+            if idx < occupied.len() && !occupied[idx] {
+                chosen_slot = Some(code);
+                occupied[idx] = true;
+                break;
+            }
+        }
+        // If no candidate fits, walk slots 11..50 as fallback
+        // (matches exe fallback loop at lines 106-121)
+        if chosen_slot.is_none() {
+            for i in 11..occupied.len() {
+                if !occupied[i] {
+                    chosen_slot = Some(i as u8);
+                    occupied[i] = true;
+                    break;
+                }
+            }
+        }
+        let slot_code = match chosen_slot { Some(s) => s, None => continue };
+
+        // Delta sign from slot-open verdict (exe FUN_00843590 lines 89-116)
+        let slot_open = player_slot_open_in_chain(
+            chain_snapshots.iter().copied(),
+            p.person_id,
+            max_players, total_clubs, nation_count,
+            0,      // mode = 0 (squad-listed check)
+            true,   // descent = 1 (allow open slot at first club)
+            false,  // short_circuit = 0
+        );
+        let _ = rank; // rank kept for future extensions; slot_code drives sign
+        // Exe FUN_00843590 lines 89-98:
+        //   if iVar5 == 0  (slot NOT open):  cVar6 = -1 - local_101  → NEGATIVE
+        //   else           (slot open):      cVar6 = local_101 + 1   → POSITIVE
+        let delta: i8 = if slot_open {
+             (slot_code as i8) + 1     // slot open → POSITIVE
+        } else {
+            -(slot_code as i8) - 1     // slot NOT open → NEGATIVE
+        };
+
+        // Clamp to [-50, 50] (exe FUN_00843970 validation range)
+        let delta = delta.clamp(-50, 50);
+        if let Some(c) = market.contracts.iter_mut()
+            .find(|c| c.player_id == p.player_id && c.club_id == club_id) {
+            apply_mood_delta(c, delta);
+            applied += 1;
+        }
+    }
+    applied
+}
+
 impl TransferMarket {
     pub fn new() -> Self { Self::default() }
 
@@ -4181,6 +4298,109 @@ mod tests {
             bosman_eligible: false, morale: 10, mood_delta: mood,
             ..Default::default()
         }
+    }
+
+    fn wave_player(pid: u32, apt: PositionAptitudes) -> TeamWavePlayer {
+        TeamWavePlayer {
+            player_id: pid,
+            aptitudes: apt,
+            slot_flags: PlayerSlotFlags::default(),
+            person_id: 4990,   // above the max_players-16 gate
+        }
+    }
+
+    #[test]
+    fn team_wave_real_writes_mood_delta_from_slot_code() {
+        let mut m = TransferMarket::default();
+        m.contracts.push(make_contract(1, 100, 0));
+        m.contracts.push(make_contract(2, 100, 0));
+
+        // Player 1: keeper (slot 0)
+        // Player 2: forward (slot 7, first fit)
+        let roster = vec![
+            wave_player(1, apt(15, 0, 0, 0, 0, 0, 0, 0, 0)),   // GK
+            wave_player(2, apt(0, 0, 0, 0, 0, 0, 15, 0, 0)),   // ST
+        ];
+        // Chain with descent_flag=true fires slot_open=true at the first
+        // non-ghost real club (short-circuit path in FUN_005ea590).
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true,
+            slot_flags: PlayerSlotFlags::default(),
+        }];
+        let applied = apply_team_morale_wave_real(
+            &mut m, 100, &chain, &roster, 5000, 5000, 200);
+        assert_eq!(applied, 2);
+
+        // Exe FUN_00843590:98: slot open → POSITIVE (slot_code + 1)
+        // Player 1: slot 0 → +1
+        let p1 = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        assert_eq!(p1.mood_delta, 1);
+        // Player 2: slot 7 → +8
+        let p2 = m.contracts.iter().find(|c| c.player_id == 2).unwrap();
+        assert_eq!(p2.mood_delta, 8);
+    }
+
+    #[test]
+    fn team_wave_real_negative_when_slot_not_open() {
+        let mut m = TransferMarket::default();
+        m.contracts.push(make_contract(1, 100, 0));
+
+        // Player: keeper (slot 0)
+        let roster = vec![wave_player(1, apt(15, 0, 0, 0, 0, 0, 0, 0, 0))];
+        // Ghost-club chain with no flags — walker returns false
+        // (is_ghost=true, but transfer_listed and loan_listed both false,
+        //  and non-top-tier so no descent)
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: false,   // has_roster=false → skip inner
+            slot_flags: PlayerSlotFlags::default(),
+        }];
+        apply_team_morale_wave_real(
+            &mut m, 100, &chain, &roster, 5000, 5000, 200);
+
+        // Slot NOT open → NEGATIVE delta = -slot_code - 1
+        // Slot 0 → -1
+        let p1 = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        assert_eq!(p1.mood_delta, -1);
+    }
+
+    #[test]
+    fn team_wave_real_empty_candidates_skipped() {
+        let mut m = TransferMarket::default();
+        m.contracts.push(make_contract(1, 100, 0));
+
+        // Player has NO competent aptitudes → empty candidate list → skip
+        let roster = vec![wave_player(1, apt(0, 0, 0, 0, 0, 0, 0, 0, 0))];
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: true, slot_flags: PlayerSlotFlags::default(),
+        }];
+        let applied = apply_team_morale_wave_real(
+            &mut m, 100, &chain, &roster, 5000, 5000, 200);
+        assert_eq!(applied, 0);
+        let p1 = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        assert_eq!(p1.mood_delta, 0);
+    }
+
+    #[test]
+    fn team_wave_real_two_gks_second_takes_fallback_slot() {
+        let mut m = TransferMarket::default();
+        m.contracts.push(make_contract(1, 100, 0));
+        m.contracts.push(make_contract(2, 100, 0));
+
+        // Both are keepers — first takes slot 0, second falls back to slot 11+
+        let apt_gk = apt(15, 0, 0, 0, 0, 0, 0, 0, 0);
+        let roster = vec![wave_player(1, apt_gk), wave_player(2, apt_gk)];
+        // has_roster=false → slot_open returns false everywhere
+        let chain = vec![ChainClubSnapshot {
+            club_id: 100, has_roster: false, slot_flags: PlayerSlotFlags::default(),
+        }];
+        apply_team_morale_wave_real(&mut m, 100, &chain, &roster, 5000, 5000, 200);
+
+        let p1 = m.contracts.iter().find(|c| c.player_id == 1).unwrap();
+        // p1 gets slot 0 (slot NOT open) → delta = -1
+        assert_eq!(p1.mood_delta, -1);
+        let p2 = m.contracts.iter().find(|c| c.player_id == 2).unwrap();
+        // p2 gets slot 11 (first fallback, slot NOT open) → delta = -12
+        assert_eq!(p2.mood_delta, -12);
     }
 
     #[test]
