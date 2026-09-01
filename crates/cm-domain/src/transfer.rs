@@ -1217,6 +1217,38 @@ pub fn final_wage_clamp_assembly(
     counter_party_wage.min(estimate)
 }
 
+/// Direct port of `FUN_00525450` (19 lines). Checks whether the club_id
+/// falls into the **generated / ghost-club tail region** of the club
+/// array — clubs created at runtime by the AI (e.g. B-teams, feeder
+/// clubs, temp merge entries) rather than loaded from the shipped `.dat`.
+///
+/// The exe's condition: `club_id >= DAT_00acd564 - DAT_00acd558 * 2`
+///   where `DAT_00acd564` = total club count (see [`lib.rs`] "club count
+///   DAT_00acd564") and `DAT_00acd558` = nation count (see fifa_rankings).
+///
+/// The trailing region size is `nation_count * 2` (two generated slots
+/// per nation for B-teams / reserve fixtures).
+///
+/// Used inside FUN_00580a90 at three sites (lines 39, 204, 317) to
+/// suppress wage-cap logic that only applies to real clubs. Also called
+/// by FUN_005ea590 as a per-club membership gate.
+///
+/// # Params
+/// - `club_id`: the club's numeric id (`*club_ptr` at offset 0)
+/// - `total_clubs`: the runtime `DAT_00acd564` value (varies by game state)
+/// - `nation_count`: the runtime `DAT_00acd558` value
+///
+/// Returns `true` when the club is in the generated tail.
+#[inline]
+pub fn is_generated_ghost_club(
+    club_id: i32,
+    total_clubs: i32,
+    nation_count: i32,
+) -> bool {
+    let generated_region_start = total_clubs - nation_count * 2;
+    club_id >= generated_region_start
+}
+
 /// The three "big-3" nation record addresses (`DAT_009bb7a4`,
 /// `DAT_009bb820`, `DAT_009bb948`) that gate the LAB_00580dd1
 /// sibling-adjustment branch in FUN_00580a90 lines 274-277. Note this is
@@ -2584,6 +2616,25 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    #[test]
+    fn ghost_club_predicate_matches_exe_condition() {
+        // With 5000 total clubs and 200 nations, the generated tail
+        // starts at 5000 - 200*2 = 4600. Clubs 0..4599 are real,
+        // 4600..4999 are generated.
+        assert!(!is_generated_ghost_club(0,    5000, 200));
+        assert!(!is_generated_ghost_club(4599, 5000, 200));
+        assert!( is_generated_ghost_club(4600, 5000, 200));
+        assert!( is_generated_ghost_club(4999, 5000, 200));
+
+        // Boundary: when total == nations*2, ALL clubs are "generated"
+        assert!( is_generated_ghost_club(0, 400, 200));
+
+        // Zero-nations degenerate case: no tail, no clubs are ghost
+        assert!(!is_generated_ghost_club(0,    5000, 0));
+        assert!(!is_generated_ghost_club(4999, 5000, 0));
+        assert!( is_generated_ghost_club(5000, 5000, 0));  // >= end
     }
 
     #[test]
