@@ -152,9 +152,36 @@ class Emulator:
     # --- primitives ---------------------------------------------------
 
     def malloc(self, size: int) -> int:
+        """Allocate `size` bytes on the emulator's heap. Returns the VA
+        of a zeroed region. Aligned to 16 bytes."""
         addr = self._heap_ptr
         self._heap_ptr = (self._heap_ptr + size + 0xF) & ~0xF
+        # Zero the region.
+        self.uc.mem_write(addr, b"\x00" * size)
         return addr
+
+    def alloc_struct(self, fields: dict[int, tuple[str, int]]) -> int:
+        """Allocate + populate an exe struct instance in one call.
+
+        `fields` maps `offset → (type_char, value)`:
+          type_char in {'b' i8, 'B' u8, 'h' i16, 'H' u16, 'i' i32, 'I' u32, 'q' i64, 'Q' u64, 'f' f32, 'd' f64}
+
+        Returns the pointer to the allocated struct. Struct size is
+        auto-sized to the max offset + type size, rounded to 16 bytes.
+        """
+        sizes = {'b':1,'B':1,'h':2,'H':2,'i':4,'I':4,'q':8,'Q':8,'f':4,'d':8}
+        max_end = 0
+        for off, (t, _) in fields.items():
+            end = off + sizes[t]
+            if end > max_end: max_end = end
+        addr = self.malloc(max_end + 16)
+        for off, (t, val) in fields.items():
+            self.uc.mem_write(addr + off, struct.pack("<" + t, val))
+        return addr
+
+    def write_field(self, base: int, offset: int, type_char: str, value):
+        """Poke a single struct field at `base + offset`."""
+        self.uc.mem_write(base + offset, struct.pack("<" + type_char, value))
 
     def push(self, val: int):
         esp = self.uc.reg_read(UC_X86_REG_ESP) - 4

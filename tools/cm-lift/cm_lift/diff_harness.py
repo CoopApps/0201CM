@@ -32,20 +32,39 @@ from .emulate import make_emulator, Emulator
 
 @dataclass
 class Probe:
-    """One fn + input tuple + expected-output spec."""
+    """One fn + input tuple + expected-output spec.
+
+    For __thiscall / struct-arg fns, `struct_setup` lists per-arg struct
+    layouts. Each entry is `(arg_index, {offset: (type_char, value)})`.
+    The harness allocates that struct in emu heap and substitutes its
+    pointer as arg[arg_index] before the call.
+    """
     fn_va: int
     args: tuple[int, ...]
     thiscall: bool = False
-    # Rust-side handle. Either a `cargo run --bin cm-lift-rpc --  <name> <args>`
-    # invocation, or an inline expected value.
+    struct_setup: list = None
     rust_bin: Optional[str] = None
+    # rust_args: if the Rust fn takes different args than the exe (e.g. exe
+    # passes a token_ptr while Rust takes raw x/y), specify what to send
+    # to the RPC bin here. Defaults to `args`.
+    rust_args: Optional[tuple] = None
     expected_eax: Optional[int] = None
     label: str = ""
 
 
 def run_exe_probe(emu: Emulator, probe: Probe) -> dict:
-    """Run one probe under Unicorn, return {eax, fpu, exc}."""
-    eax = emu.call(probe.fn_va, *probe.args, thiscall=probe.thiscall)
+    """Run one probe under Unicorn, return {eax, fpu, exc}. When
+    `struct_setup` is present, allocate + populate those structs in
+    emu heap and substitute their pointers into `args`."""
+    args = list(probe.args)
+    if probe.struct_setup:
+        for arg_idx, layout in probe.struct_setup:
+            ptr = emu.alloc_struct(layout)
+            # Extend args if index is beyond current length
+            while len(args) <= arg_idx:
+                args.append(0)
+            args[arg_idx] = ptr
+    eax = emu.call(probe.fn_va, *args, thiscall=probe.thiscall)
     return {
         "eax": eax & 0xFFFFFFFF,
         "eax_signed": eax if eax < 0x80000000 else eax - (1 << 32),
@@ -63,7 +82,8 @@ def run_rust_probe(probe: Probe) -> dict:
     if not exe.exists():
         return {"ret": None, "exc": f"missing {exe} — run: cargo build --release -p cm-domain --bin cm_lift_rpc"}
     try:
-        args_flat = [str(a) for a in probe.args]
+        rargs = probe.rust_args if probe.rust_args is not None else probe.args
+        args_flat = [str(a) for a in rargs]
         result = subprocess.run(
             [str(exe), probe.rust_bin, *args_flat],
             capture_output=True, text=True, timeout=30,
@@ -134,10 +154,29 @@ def run_matrix(probes: list[Probe], out_path: Optional[Path] = None) -> Path:
 # ported so the harness has meaningful baseline data.
 
 DEFAULT_PROBES: list[Probe] = [
-    # NOTE: FUN_006DB520 is __thiscall(token_ptr, side) — reads zone_x/y
-    # from token+0x102/+0x103. Our Rust port takes (x, y, side) directly.
-    # To diff, we need to allocate a token in emu memory + write x/y +
-    # pass a pointer. Left as TODO; using rust-only smoke test.
+    # FUN_006DB520 shot_in_box — __thiscall(token_ptr, side).
+    # exe reads token+0x102 (zone_x) and token+0x103 (zone_y).
+    # rust_bin `shot_in_box` takes (x, y, side) directly — same result.
+    Probe(fn_va=0x006DB520, args=(0, 1),
+          struct_setup=[(0, {0x102: ('b', 4), 0x103: ('b', 10)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(4, 10, 1),
+          label="shot_in_box: token{x=4,y=10} side=1 -> in box"),
+    Probe(fn_va=0x006DB520, args=(0, 0),
+          struct_setup=[(0, {0x102: ('b', 4), 0x103: ('b', 5)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(4, 5, 0),
+          label="shot_in_box: token{x=4,y=5} side=0 -> NOT in box"),
+    Probe(fn_va=0x006DB520, args=(0, 0),
+          struct_setup=[(0, {0x102: ('b', 3), 0x103: ('b', 1)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(3, 1, 0),
+          label="shot_in_box: token{x=3,y=1} side=0 -> in box"),
+    Probe(fn_va=0x006DB520, args=(0, 1),
+          struct_setup=[(0, {0x102: ('b', 0), 0x103: ('b', 0)})],
+          thiscall=True,
+          rust_bin="shot_in_box", rust_args=(0, 0, 1),
+          label="shot_in_box: token{corner} side=1 -> NOT in box"),
 ]
 
 # --- Direct Rust-only probes (no exe emulation needed) --------------------
