@@ -53,6 +53,12 @@ class Probe:
     # a rust-only probe (fn_va == 0) is graded on rust_ret == expected_ret
     # instead of just "did it return non-null". Catches regressions.
     expected_ret: Optional[int] = None
+    # Float-return diffing. When set, compare `exe.fpu_st0 * fpu_scale`
+    # (rounded to int) against `rust.ret`. Use for x87 float10 returns.
+    fpu_scale: Optional[float] = None
+    # Tolerance in *scaled units* — e.g. fpu_scale=1000 + fpu_tol=1 allows
+    # a milli-drift. Defaults to 0 (exact).
+    fpu_tol: int = 0
     label: str = ""
 
 
@@ -102,6 +108,22 @@ def run_rust_probe(probe: Probe) -> dict:
         return {"ret": None, "exc": repr(e)}
 
 
+def diff_fpu(exe: dict, rust: dict, scale: float, tol: int) -> dict:
+    """Compare exe.fpu_st0 * scale vs rust.ret. Tolerance in scaled units."""
+    rust_v = rust.get("ret")
+    exc = rust.get("exc")
+    st0 = exe.get("fpu_st0")
+    import math
+    if exc is not None or rust_v is None or st0 is None or math.isnan(st0):
+        return {"exe": exe, "rust": rust, "match": False, "kind": "fpu_diff",
+                "delta": None, "scale": scale}
+    exe_scaled = int(round(st0 * scale))
+    ok = abs(exe_scaled - rust_v) <= tol
+    return {"exe": exe, "rust": rust, "match": ok, "kind": "fpu_diff",
+            "exe_scaled": exe_scaled, "delta": exe_scaled - rust_v,
+            "scale": scale, "tol": tol}
+
+
 def diff(exe: dict | None, rust: dict, expected_ret: Optional[int] = None) -> dict:
     """Compare exe vs rust output tuples.
 
@@ -141,7 +163,10 @@ def run_matrix(probes: list[Probe], out_path: Optional[Path] = None) -> Path:
     for i, p in enumerate(probes):
         exe = run_exe_probe(emu, p) if p.fn_va != 0 else None
         rust = run_rust_probe(p)
-        d = diff(exe, rust, p.expected_ret)
+        if p.fpu_scale is not None and exe is not None:
+            d = diff_fpu(exe, rust, p.fpu_scale, p.fpu_tol)
+        else:
+            d = diff(exe, rust, p.expected_ret)
         d["probe"] = {
             "index": i,
             "fn_va": f"{p.fn_va:#010x}",
@@ -230,6 +255,17 @@ DEFAULT_PROBES: list[Probe] = [
     Probe(fn_va=0x006A88F0, args=(0x1000, 1, 19), thiscall=True,
           rust_bin="token_addr", rust_args=(0x1000, 1, 19),
           label="token_addr(0x1000, away, slot=19) largest"),
+
+    # NOTE: FPU-return diff (season_avg FUN_007aa490 mode 0x11) is scaffolded
+    # but blocked on Emulator.call() capturing x87 ST(0) after `fstp` — the
+    # current read_fpu() returns the pre-call state, so float10 returns come
+    # back as NaN. See diff_harness.diff_fpu(). Once Emulator captures ST(0)
+    # correctly, uncomment these:
+    #   Probe(fn_va=0x007aa490, args=(0, 0x11, 0),
+    #         struct_setup=[(0, {0x00: ('B', 10), 0x0e: ('h', 60)})],
+    #         rust_bin="season_avg_rating", rust_args=(10, 60),
+    #         fpu_scale=1000, fpu_tol=1,
+    #         label="season_avg 60/10 -> 6.0"),
 
     # FUN_00618410 club_status_byte — __thiscall(status_table_ptr, record_ptr)
     # Reads *(int*)(record+0x61) — must be non-null.
