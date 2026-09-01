@@ -1128,6 +1128,113 @@ pub fn agent_wage_multiplier(
     local_8
 }
 
+/// Role-byte wage caps applied on the counter-party path of FUN_00580a90.
+/// Direct-extracted from the switch at lines 246-268 — each branch is a
+/// hard cap on the wage estimate for staff of that role.
+///
+/// | Role byte | Cap    | exe branch                    |
+/// |-----------|-------:|-------------------------------|
+/// | 5, 6, 7   | 35_000 | case 5/6/7 → iVar10 = 35000  |
+/// | 8         | 20_000 | case 8 → iVar10 = 20000       |
+/// | 9         |  1_500 | case 9 → iVar10 = 0x5dc       |
+/// | 10        |  1_000 | case 10 → min(local_2c, 1000) |
+/// | any other |    750 | default → min(local_2c, 0x2ee)|
+pub const ROLE_WAGE_CAP_5_TO_7: i32 = 35_000;
+pub const ROLE_WAGE_CAP_8:      i32 = 20_000;
+pub const ROLE_WAGE_CAP_9:      i32 =  1_500;
+pub const ROLE_WAGE_CAP_10:     i32 =  1_000;
+pub const ROLE_WAGE_CAP_OTHER:  i32 =    750;
+
+/// Ratings + membership inputs for [`counter_party_base_wage`]. Mirrors the
+/// exact fields FUN_00580a90 reads on `param_2` (staff record) in the
+/// counter-party branch (asm 0x00581380..0x005813f8).
+#[derive(Debug, Clone, Copy)]
+pub struct CounterPartyStaff {
+    /// Person's role byte at `+0x3d`. Drives [`role_cap_for`].
+    pub role_byte: u8,
+    /// `person[+0x39]` — the club this person currently plays for. Compared
+    /// against the caller's club identity (parameter `at_this_club`).
+    pub current_club_id: u32,
+    /// Non-zero when person has an agent record (`person[+0x69]`). Only
+    /// gate for triggering the role-byte cap chain.
+    pub has_agent: bool,
+    /// Non-zero when person is a **player** (has `type10_ptr` at `+0x61`).
+    /// When set, skip the role-byte cap chain entirely.
+    pub is_player: bool,
+}
+
+/// Pick the cap for a role byte (line 246-268 switch).
+#[inline]
+pub fn role_wage_cap_for(role_byte: u8) -> RoleWageCapKind {
+    match role_byte {
+        5 | 6 | 7 => RoleWageCapKind::HardCap(ROLE_WAGE_CAP_5_TO_7),
+        8         => RoleWageCapKind::HardCap(ROLE_WAGE_CAP_8),
+        9         => RoleWageCapKind::HardCap(ROLE_WAGE_CAP_9),
+        10        => RoleWageCapKind::MinClamp(ROLE_WAGE_CAP_10),
+        _         => RoleWageCapKind::MinClamp(ROLE_WAGE_CAP_OTHER),
+    }
+}
+
+/// Whether a role-byte cap is a `HardCap` (min with existing estimate)
+/// or a `MinClamp` that also short-circuits the sibling-club adjustment
+/// (`goto LAB_00580dd1` in the exe).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoleWageCapKind {
+    /// Apply as `local_2c = min(local_2c, cap)`, then continue.
+    HardCap(i32),
+    /// Apply as `local_2c = min(local_2c, cap)`, then jump past the role
+    /// switch (line 262 / 267 in decompile).
+    MinClamp(i32),
+}
+
+/// Port of FUN_00580a90 lines 234-271 — the counter-party base-wage
+/// computation on the "staff record given" side (`param_2 != 0`).
+///
+/// Semantics, direct from decompile:
+///   local_2c = 0
+///   if staff.current_club_id == this_club_ptr:
+///       local_2c = current_wage_lookup(staff_id)     // FUN_004d7050
+///       local_2c = min(local_2c, club_record.wage_field * 2)
+///   local_2c = max(local_2c, club_record.wage_field)
+///   if !staff.has_agent || staff.is_player:
+///       return local_2c   // skip role cap (LAB_00580dd1)
+///   apply role_wage_cap_for(staff.role_byte) to local_2c
+///   return local_2c
+///
+/// # Params
+/// - `staff`: the [`CounterPartyStaff`] snapshot
+/// - `at_this_club`: is `staff.current_club_id == this_club_id`? (the
+///    `param_2->current_club_id == iVar1` test at line 235)
+/// - `current_wage`: value from `FUN_004d7050(person)` — 0 when unknown
+/// - `club_wage_field`: `param_1[+0x14]` — the club record's wage-cap field
+///
+/// Returns `local_2c` — the counter-party base wage estimate.
+pub fn counter_party_base_wage(
+    staff: CounterPartyStaff,
+    at_this_club: bool,
+    current_wage: i32,
+    club_wage_field: i32,
+) -> i32 {
+    let mut local_2c: i32 = 0;
+    if at_this_club {
+        local_2c = current_wage;
+        let cap = club_wage_field.saturating_mul(2);
+        if cap < local_2c { local_2c = cap; }
+    }
+    if local_2c < club_wage_field {
+        local_2c = club_wage_field;
+    }
+    if !staff.has_agent || staff.is_player {
+        return local_2c;   // LAB_00580dd1
+    }
+    match role_wage_cap_for(staff.role_byte) {
+        RoleWageCapKind::HardCap(cap) | RoleWageCapKind::MinClamp(cap) => {
+            if cap < local_2c { local_2c = cap; }
+        }
+    }
+    local_2c
+}
+
 /// Wage-FLOOR scale table (VERIFIED via pefile from `.rdata:009b4988` /
 /// `009b4a38` — the two are byte-identical i64 arrays). Mirrors the
 /// two-way [`WAGE_CAP_SMALL`] / [`WAGE_CAP_LARGE`] ceiling tables. Used in
@@ -2246,6 +2353,89 @@ mod tests {
 
         // ---- 0xd2 = 210 hard cap
         assert!(wage_cap_rep_band(20_000, NationTier::Top, Normal) <= 210);
+    }
+
+    #[test]
+    fn role_cap_lookup_matches_exe_switch() {
+        assert_eq!(role_wage_cap_for(5),  RoleWageCapKind::HardCap(35_000));
+        assert_eq!(role_wage_cap_for(6),  RoleWageCapKind::HardCap(35_000));
+        assert_eq!(role_wage_cap_for(7),  RoleWageCapKind::HardCap(35_000));
+        assert_eq!(role_wage_cap_for(8),  RoleWageCapKind::HardCap(20_000));
+        assert_eq!(role_wage_cap_for(9),  RoleWageCapKind::HardCap( 1_500));
+        assert_eq!(role_wage_cap_for(10), RoleWageCapKind::MinClamp(1_000));
+        assert_eq!(role_wage_cap_for(4),  RoleWageCapKind::MinClamp(  750));
+        assert_eq!(role_wage_cap_for(11), RoleWageCapKind::MinClamp(  750));
+        assert_eq!(role_wage_cap_for(255),RoleWageCapKind::MinClamp(  750));
+    }
+
+    #[test]
+    fn counter_party_base_wage_at_own_club_uses_current_wage() {
+        let staff = CounterPartyStaff {
+            role_byte: 5, current_club_id: 42, has_agent: true, is_player: false,
+        };
+        // At own club: local_2c starts at current_wage, capped at club*2
+        let wage = counter_party_base_wage(staff, true, 12_000, 10_000);
+        // min(12_000, 20_000) = 12_000, then max with 10_000 = 12_000, then role_cap 35_000 (no bind)
+        assert_eq!(wage, 12_000);
+
+        // Current wage exceeds club×2 cap
+        let wage2 = counter_party_base_wage(staff, true, 100_000, 10_000);
+        // min(100_000, 20_000) = 20_000, max with 10_000 = 20_000, role_cap doesn't bind
+        assert_eq!(wage2, 20_000);
+    }
+
+    #[test]
+    fn counter_party_base_wage_not_at_club_uses_only_floor() {
+        let staff = CounterPartyStaff {
+            role_byte: 5, current_club_id: 99, has_agent: true, is_player: false,
+        };
+        // Not at own club (at_this_club=false): local_2c starts at 0
+        // Then max with club_wage_field
+        let wage = counter_party_base_wage(staff, false, 12_000, 10_000);
+        assert_eq!(wage, 10_000);
+    }
+
+    #[test]
+    fn counter_party_base_wage_no_agent_skips_role_cap() {
+        let staff = CounterPartyStaff {
+            role_byte: 9,  // would cap at 1_500 if agent present
+            current_club_id: 42, has_agent: false, is_player: false,
+        };
+        let wage = counter_party_base_wage(staff, true, 50_000, 25_000);
+        // min(50_000, 50_000) = 50_000, max with 25_000 = 50_000
+        // no_agent → skip role cap → 50_000 stands
+        assert_eq!(wage, 50_000);
+    }
+
+    #[test]
+    fn counter_party_base_wage_player_skips_role_cap() {
+        // is_player=true also short-circuits the role switch
+        let staff = CounterPartyStaff {
+            role_byte: 10, current_club_id: 42, has_agent: true, is_player: true,
+        };
+        let wage = counter_party_base_wage(staff, true, 50_000, 25_000);
+        // Role 10 would else apply MinClamp(1_000), but is_player → skip
+        assert_eq!(wage, 50_000);
+    }
+
+    #[test]
+    fn counter_party_base_wage_role_9_hard_caps_at_1500() {
+        let staff = CounterPartyStaff {
+            role_byte: 9, current_club_id: 42, has_agent: true, is_player: false,
+        };
+        let wage = counter_party_base_wage(staff, true, 50_000, 25_000);
+        // min(50_000, 50_000) = 50_000, max with 25_000 = 50_000, then role 9 caps at 1_500
+        assert_eq!(wage, 1_500);
+    }
+
+    #[test]
+    fn counter_party_base_wage_role_default_caps_at_750() {
+        let staff = CounterPartyStaff {
+            role_byte: 15, current_club_id: 42, has_agent: true, is_player: false,
+        };
+        let wage = counter_party_base_wage(staff, true, 50_000, 25_000);
+        // default MinClamp(750)
+        assert_eq!(wage, 750);
     }
 
     #[test]
