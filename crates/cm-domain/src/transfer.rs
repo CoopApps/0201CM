@@ -1315,6 +1315,100 @@ pub fn cp_tail_no_counter_party(
     wage
 }
 
+/// Verified integer gates for the LAB_00581b17 manager-bonus branch
+/// (decompile lines 466-484).
+pub const MANAGER_BONUS_REP_MARGIN:  i16 = 0x4e2;  // 1250 — bonus fires when
+                                                    // club_rep < player_rep + 1250
+pub const MANAGER_STYLE_MIN:  i8 = 6;              // manager[+0xf] gate low
+pub const MANAGER_STYLE_MAX:  i8 = 15;             // manager[+0xf] gate high (inclusive)
+pub const MANAGER_ATTR_MIN:   i8 = 16;             // > 15 attribute gate
+
+/// Inputs for [`manager_bonus_verdict`] — snapshot of the exact fields
+/// FUN_00580a90 reads on the manager pointer + club + player.
+#[derive(Debug, Clone, Copy)]
+pub struct ManagerBonusView {
+    /// `iVar1[+0xbf]` != 0 — club has a manager appointed.
+    pub has_manager: bool,
+    /// `manager[+0x69]` != 0 — manager has a person record.
+    pub manager_has_person: bool,
+    /// `iVar1[+0x80]` — club reputation.
+    pub club_reputation: i16,
+    /// `person[+0x61]` != 0 — player has a type-10 record.
+    pub has_type10: bool,
+    /// `type10[+0x0b]` — player reputation.
+    pub player_reputation: i16,
+    /// Result of `FUN_005313f0(person, manager)` — manager tactical match
+    /// (int, 0/1).
+    pub manager_tactical_match: bool,
+    /// Result of `FUN_00531370(person, club)` — nationality / academy match.
+    pub manager_nationality_match: bool,
+    /// `manager.person[+0x0f]` — style/reputation byte. Gate: `6..=15`.
+    pub manager_style_byte: i8,
+    /// `iVar1[+0x82]` — club flag byte (same as in cp_tail).
+    pub club_flag_byte: u8,
+    /// `manager.person[+0x20]` — adaptability byte. Gate: `> 15`.
+    pub manager_adaptability: i8,
+    /// `manager[+0x57]` — manager attribute byte. Gate: `> 15`.
+    pub manager_attribute_57: i8,
+}
+
+/// Which manager-bonus __ftol values applied. Each variant means the
+/// caller must resolve one more FPU-derived wage-cap tightening.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ManagerBonusVerdict {
+    /// Line 470 — base bonus (always fires when the outer guard passes).
+    pub base: bool,
+    /// Line 473 — manager tactical/nationality match bonus.
+    pub tactical_or_nationality_match: bool,
+    /// Line 479 — manager style byte OUT of [6..=15] range.
+    pub style_out_of_range: bool,
+    /// Line 483 — club_flag == 0 AND adaptability > 15 AND attr_57 > 15.
+    pub high_attr_flag0_club: bool,
+}
+
+/// Port of FUN_00580a90 lines 466-484 — the LAB_00581b17 manager-bonus
+/// branch. Returns which of four __ftol adjustments fire.
+///
+/// # Outer guard (line 468-469, all must be true)
+/// - `has_manager` (`iVar1[+0xbf] != 0`)
+/// - `manager_has_person` (`manager[+0x69] != 0`)
+/// - `club_reputation < player_reputation + 1250` (line 469, VERIFIED)
+pub fn manager_bonus_verdict(view: ManagerBonusView) -> ManagerBonusVerdict {
+    if !view.has_manager
+        || !view.manager_has_person
+        || !view.has_type10
+    {
+        return ManagerBonusVerdict {
+            base: false,
+            tactical_or_nationality_match: false,
+            style_out_of_range: false,
+            high_attr_flag0_club: false,
+        };
+    }
+    let rep_gate = (view.club_reputation as i32)
+                    < (view.player_reputation as i32 + MANAGER_BONUS_REP_MARGIN as i32);
+    if !rep_gate {
+        return ManagerBonusVerdict {
+            base: false,
+            tactical_or_nationality_match: false,
+            style_out_of_range: false,
+            high_attr_flag0_club: false,
+        };
+    }
+    let tac_or_nat = view.manager_tactical_match || view.manager_nationality_match;
+    let style_oor = view.manager_style_byte < MANAGER_STYLE_MIN
+                    || view.manager_style_byte > MANAGER_STYLE_MAX;
+    let high_attr = view.club_flag_byte == 0
+                    && view.manager_adaptability >= MANAGER_ATTR_MIN
+                    && view.manager_attribute_57 >= MANAGER_ATTR_MIN;
+    ManagerBonusVerdict {
+        base: true,
+        tactical_or_nationality_match: tac_or_nat,
+        style_out_of_range: style_oor,
+        high_attr_flag0_club: high_attr,
+    }
+}
+
 /// The five "big-nation" addresses that gate the FUN_00527340 marquee
 /// bonus branch (asm 0x00581763..0x0058178b). Superset of both Big3 and
 /// SecondTier — includes both.
@@ -3086,6 +3180,81 @@ mod tests {
         let out = final_wage_clamp_assembly(800, 5_000, 500);
         // 500+100=600, estimate=max(800,600)=800; 5000 > 500 floor; min(5000, 800)=800
         assert_eq!(out, 800);
+    }
+
+    fn mgr_view(has_mgr: bool, has_person: bool, club_rep: i16,
+                has_t10: bool, prep: i16, tac: bool, nat: bool,
+                style: i8, flag: u8, adapt: i8, attr57: i8)
+                -> ManagerBonusView {
+        ManagerBonusView {
+            has_manager: has_mgr, manager_has_person: has_person,
+            club_reputation: club_rep, has_type10: has_t10,
+            player_reputation: prep, manager_tactical_match: tac,
+            manager_nationality_match: nat, manager_style_byte: style,
+            club_flag_byte: flag, manager_adaptability: adapt,
+            manager_attribute_57: attr57,
+        }
+    }
+
+    #[test]
+    fn manager_bonus_no_manager_no_bonuses() {
+        let v = mgr_view(false, true, 5000, true, 6000, true, true, 10, 0, 20, 20);
+        let out = manager_bonus_verdict(v);
+        assert!(!out.base && !out.tactical_or_nationality_match
+                && !out.style_out_of_range && !out.high_attr_flag0_club);
+    }
+
+    #[test]
+    fn manager_bonus_rep_gate_stops_all() {
+        // club_rep 8000, player_rep 6000 → 8000 < 6000 + 1250 = 7250? No, 8000 > 7250 → gate fails
+        let v = mgr_view(true, true, 8000, true, 6000, true, true, 10, 0, 20, 20);
+        let out = manager_bonus_verdict(v);
+        assert!(!out.base);
+    }
+
+    #[test]
+    fn manager_bonus_base_fires_on_close_club_player_rep() {
+        // club_rep 7000, player_rep 6000 → 7000 < 7250 → base fires
+        let v = mgr_view(true, true, 7000, true, 6000, false, false, 10, 1, 5, 5);
+        let out = manager_bonus_verdict(v);
+        assert!(out.base);
+        assert!(!out.tactical_or_nationality_match);
+        assert!(!out.style_out_of_range);   // style=10 in [6..=15]
+        assert!(!out.high_attr_flag0_club); // flag != 0
+    }
+
+    #[test]
+    fn manager_bonus_tactical_match_fires_second_bonus() {
+        let v = mgr_view(true, true, 6000, true, 6000, true, false, 10, 0, 5, 5);
+        let out = manager_bonus_verdict(v);
+        assert!(out.base && out.tactical_or_nationality_match);
+    }
+
+    #[test]
+    fn manager_bonus_style_out_of_range_fires_third() {
+        // style = 5 (below MIN 6) or 16 (above MAX 15) → out of range
+        for style in [5i8, 16, 0, 20] {
+            let v = mgr_view(true, true, 6000, true, 6000, false, false, style, 1, 5, 5);
+            assert!(manager_bonus_verdict(v).style_out_of_range, "style={}", style);
+        }
+        // In range → not out
+        for style in [6i8, 10, 15] {
+            let v = mgr_view(true, true, 6000, true, 6000, false, false, style, 1, 5, 5);
+            assert!(!manager_bonus_verdict(v).style_out_of_range, "style={}", style);
+        }
+    }
+
+    #[test]
+    fn manager_bonus_high_attr_flag0_all_three_conditions() {
+        // flag=0 AND adapt>15 AND attr57>15
+        let v = mgr_view(true, true, 6000, true, 6000, false, false, 10, 0, 16, 16);
+        assert!(manager_bonus_verdict(v).high_attr_flag0_club);
+        // flag=1 → false
+        let v_f1 = mgr_view(true, true, 6000, true, 6000, false, false, 10, 1, 16, 16);
+        assert!(!manager_bonus_verdict(v_f1).high_attr_flag0_club);
+        // adapt=15 → false (strict >)
+        let v_a = mgr_view(true, true, 6000, true, 6000, false, false, 10, 0, 15, 16);
+        assert!(!manager_bonus_verdict(v_a).high_attr_flag0_club);
     }
 
     fn top5(nation: Top5Nation, club_rep: i16, has_t10: bool, prep: i16,
