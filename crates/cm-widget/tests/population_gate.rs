@@ -32,7 +32,17 @@ fn sha256(bytes: &[u8]) -> String {
     // Mirror of the inline SHA in cm-widget — kept independent so the test
     // catches divergence between test and runtime hashers.
     use std::io::Write;
-    let mut cmd = std::process::Command::new("python");
+    // Prefer $CM_PYTHON, then a hard-coded Windows install, then bare
+    // "python" — the child never inherits PATH aliases so "python" alone
+    // fails on this box.
+    let exe = std::env::var("CM_PYTHON")
+        .ok()
+        .or_else(|| {
+            let p = "D:/Python312/python.exe";
+            std::path::Path::new(p).exists().then(|| p.to_string())
+        })
+        .unwrap_or_else(|| "python".into());
+    let mut cmd = std::process::Command::new(exe);
     cmd.arg("-c").arg(
         r#"import sys, hashlib; sys.stdout.write(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())"#,
     );
