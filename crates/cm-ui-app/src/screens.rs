@@ -236,10 +236,113 @@ fn ordinal(n: usize) -> String {
     format!("{n}{suffix}")
 }
 
-fn month_name(m: u8) -> &'static str {
+pub fn month_name(m: u8) -> &'static str {
     ["", "January", "February", "March", "April", "May", "June", "July",
      "August", "September", "October", "November", "December"]
         .get(m as usize).copied().unwrap_or("")
+}
+
+// ------- FIFA World Rankings (menu cmd 0x3f3 — FUN_004A2190 + FUN_004A2200) -------
+
+/// Nation table rect and visible row count. Layout is this app's hand-laid
+/// idiom (same as the Squad table) — NOT an exe geometry capture yet; the
+/// values in the rows are real working-game data.
+const FIFA_TABLE: (i32, i32, i32, i32) = (110, 140, 780, 540);
+pub const FIFA_ROWS_VISIBLE: usize = 18;
+
+fn fifa_row_layout() -> cm_render::layout::Layout {
+    // pos | nation | points
+    rebuild_layout(FIFA_TABLE, 2, &[2, 12, 4], &[1; FIFA_ROWS_VISIBLE as i32 as usize], false)
+}
+
+/// Build the rankings view for the working game — the ported body of
+/// FUN_004A2200 (`screen_batch30::build_fifa_world_rankings_screen`) fed with
+/// `save.fifa_rankings`. One page holding every nation; the app scrolls it.
+///
+/// Honesty note: the "points" column is `fifa_rankings::compute`'s proxy
+/// (mean club reputation per nation) until the per-nation history slots
+/// behind the exact `fifa_score` formula are lifted; and `has_flag` (the
+/// exe reads nation+0x71) isn't carried by `NationRanking`, so no flag
+/// swatch is drawn.
+pub fn fifa_view_from_save(
+    save: &cm_domain::RuntimeSaveGame,
+) -> cm_domain::screen_batch30::FifaRankingsView {
+    let rankings: Vec<(String, f64, bool)> = save
+        .fifa_rankings
+        .iter()
+        .map(|r| (r.nation_name.clone(), r.strength as f64, false))
+        .collect();
+    let page_size = (rankings.len().max(1)) as u32;
+    cm_domain::screen_batch30::build_fifa_world_rankings_screen(
+        rankings,
+        1,
+        page_size,
+        month_name(save.date.month),
+        save.date.year as u32,
+    )
+}
+
+/// Render the FIFA World Rankings table. `scroll` is the first visible row.
+pub fn fifa_rankings(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    view: &cm_domain::screen_batch30::FifaRankingsView,
+    scroll: usize,
+) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    // Title banner (same blue-fill/white-text banner the News page uses).
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
+    let f7 = fonts.slot(7);
+    s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, "FIFA World Rankings");
+    // Period label — the exe's "< month > < year >" line under the banner.
+    let f4 = fonts.slot(4);
+    s.draw_text_box(110, 78, 780, 108, 0x1, f4, pal.near_white, &view.period_label);
+    // Column headers.
+    let f3 = fonts.slot(3);
+    let lo = fifa_row_layout();
+    let hdr_t = FIFA_TABLE.1 - 26;
+    let hdr_b = FIFA_TABLE.1 - 2;
+    for (col, text) in [(0, "Pos"), (1, "Nation"), (2, "Points")] {
+        s.draw_text_box(lo.col_left[col], hdr_t, lo.col_right[col], hdr_b, 0x1, f3, (200, 200, 200), text);
+    }
+    // Table body.
+    s.draw_panel(FIFA_TABLE.0, FIFA_TABLE.1, FIFA_TABLE.2, FIFA_TABLE.3, F_TRANSPARENT, (40, 40, 40));
+    for row in 0..FIFA_ROWS_VISIBLE {
+        let Some(r) = view.rows.get(scroll + row) else { break };
+        let cells = [
+            (0, format!("{}", r.rank)),
+            (1, r.nation_name.clone()),
+            (2, format!("{:.2}", r.rating)),
+        ];
+        for (col, text) in cells {
+            s.draw_text_box(
+                lo.col_left[col], lo.row_top[row], lo.col_right[col], lo.row_bottom[row],
+                0x1, f3, pal.near_white, &text,
+            );
+        }
+    }
+    // Scrollbar (same construction as the Squad table's).
+    if view.rows.len() > FIFA_ROWS_VISIBLE {
+        let tl = FIFA_TABLE.2 - 12;
+        s.draw_panel(tl, FIFA_TABLE.1, FIFA_TABLE.2, FIFA_TABLE.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let h = (FIFA_TABLE.3 - FIFA_TABLE.1).max(1);
+        let th = (FIFA_ROWS_VISIBLE as i32 * h / view.rows.len() as i32).max(12);
+        let maxs = (view.rows.len() - FIFA_ROWS_VISIBLE) as i32;
+        let tt = FIFA_TABLE.1 + (scroll as i32) * (h - th) / maxs.max(1);
+        s.draw_panel(tl + 1, tt, FIFA_TABLE.2 - 1, (tt + th).min(FIFA_TABLE.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
+    }
+    s.draw_text_box(
+        110, FIFA_TABLE.3 + 6, 780, FIFA_TABLE.3 + 34, 0x1, f3, (170, 170, 170),
+        &format!("{} nations — scroll with the mouse wheel", view.rows.len()),
+    );
 }
 
 // ------- News page (the home screen — the exe's news.c / LAB_00770170) -------

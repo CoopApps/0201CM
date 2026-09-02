@@ -51,6 +51,13 @@ enum Screen {
         view: cm_domain::DashboardView,
         squad_scroll: usize,
     },
+    /// FIFA World Rankings (menu cmd 0x3f3 → exe launcher FUN_004A2190 +
+    /// body FUN_004A2200). Rows come from `save.fifa_rankings`, computed at
+    /// new-game and each year rollover by `fifa_rankings::compute`.
+    FifaRankings {
+        view: cm_domain::screen_batch30::FifaRankingsView,
+        scroll: usize,
+    },
     /// Widget-pool debug view — draws the raw widget records produced by
     /// `impl RenderableView::to_widget_pool()` as coloured rectangles labelled
     /// by kind, for visual confirmation that a ported View lays out where the
@@ -155,6 +162,10 @@ impl App {
                 screens::dashboard(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *squad_scroll);
                 self.overlay_menu_bar();
             }
+            Screen::FifaRankings { view, scroll } => {
+                screens::fifa_rankings(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
+                self.overlay_menu_bar();
+            }
             Screen::WidgetPoolDebug { label, widgets } => {
                 screens::draw_widget_pool_debug(
                     &mut self.frame, &mut self.fonts, widgets, label,
@@ -203,7 +214,10 @@ impl App {
                     None => Pressed::None,
                 }
             }
-            Screen::Dashboard { .. } | Screen::News { .. } | Screen::WidgetPoolDebug { .. } => Pressed::None,
+            Screen::Dashboard { .. }
+            | Screen::News { .. }
+            | Screen::FifaRankings { .. }
+            | Screen::WidgetPoolDebug { .. } => Pressed::None,
         }
     }
 
@@ -211,7 +225,10 @@ impl App {
     fn on_release(&mut self, x: i32, y: i32) {
         // The persistent menu bar (sidebar) is global on in-game screens and
         // takes clicks before the screen's own controls. Handle it first.
-        if matches!(self.screen, Screen::Dashboard { .. } | Screen::News { .. }) {
+        if matches!(
+            self.screen,
+            Screen::Dashboard { .. } | Screen::News { .. } | Screen::FifaRankings { .. }
+        ) {
             if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                 let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
                 match screens::menu_sidebar_hit(&bar, self.menu_open, x, y) {
@@ -402,6 +419,9 @@ impl App {
             Screen::Dashboard { .. } => {
                 // The squad/info screen has no non-menu controls wired yet.
             }
+            Screen::FifaRankings { .. } => {
+                // Read-only table; navigation is via the menu bar (handled above).
+            }
             Screen::WidgetPoolDebug { .. } => {
                 // Debug view — clicks are inert.
             }
@@ -462,6 +482,20 @@ impl App {
         }
     }
 
+    /// Open the FIFA World Rankings table (menu cmd 0x3f3). The exe's
+    /// launcher FUN_004A2190 seeds the screen fields and its body
+    /// FUN_004A2200 pages the nation table — ported as
+    /// `screen_batch30::build_fifa_world_rankings_screen`. The rows are the
+    /// working game's `save.fifa_rankings` (computed at new-game and at each
+    /// year rollover), so the table reflects THIS game, not the master DB.
+    fn open_fifa_rankings(&mut self) {
+        if let Some(game) = self.game.as_ref() {
+            let view = screens::fifa_view_from_save(&game.save);
+            eprintln!("[fifa] {} nations ranked, period {}", view.rows.len(), view.period_label);
+            self.screen = Screen::FifaRankings { view, scroll: 0 };
+        }
+    }
+
     /// Route a menu-bar command (the Rust side of the exe's two dispatchers
     /// FUN_007491e0 / FUN_0074bf60). Commands with a ported screen act; the
     /// rest surface a "not yet implemented" status naming their exe target.
@@ -479,6 +513,7 @@ impl App {
                     }
                 }
             }
+            cmd::FIFA_RANKINGS => self.open_fifa_rankings(),
             cmd::ADD_MANAGER => {
                 // Add a new (unemployed) human — the exe's cmd 0x3fb. They join
                 // the hotseat; appointment happens via Apply/Take Control later.
@@ -821,6 +856,11 @@ impl ApplicationHandler for App {
                         *squad_scroll = if dy > 0.0 { squad_scroll.saturating_sub(1) } else { (*squad_scroll + 1).min(max) };
                         changed = true;
                     }
+                    Screen::FifaRankings { view, scroll } => {
+                        let max = view.rows.len().saturating_sub(screens::FIFA_ROWS_VISIBLE);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
+                        changed = true;
+                    }
                     _ => {}
                 }
                 if changed {
@@ -855,7 +895,7 @@ impl ApplicationHandler for App {
                         // mechanism, so they always process a release.
                         let in_game = matches!(
                             self.screen,
-                            Screen::Dashboard { .. } | Screen::News { .. }
+                            Screen::Dashboard { .. } | Screen::News { .. } | Screen::FifaRankings { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
@@ -1062,6 +1102,31 @@ fn dump(path: &str, which: &str) {
                     }
                 }
             }
+            "fifa" => {
+                // Headless render of the FIFA World Rankings table for the same
+                // England / Arsenal test game the other dumps use.
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    let view = screens::fifa_view_from_save(&save);
+                    let scroll = std::env::var("CM_SCROLL").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                    eprintln!("[dump] fifa: {} nations ranked, period {}", view.rows.len(), view.period_label);
+                    screens::fifa_rankings(&mut frame, &mut fonts, bg.as_ref(), &view, scroll);
+                    let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                    let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                    screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
+                }
+            }
             "news" => {
                 let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
                 if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
@@ -1181,8 +1246,13 @@ fn main() {
     //   dashboard      → News page for an England / Arsenal / Fergie test game
     //   news-widgets   → raw NewsView widget-pool debug (colour-coded rects)
     //   dash-widgets   → raw ClubDashboardView widget-pool debug
+    //   fifa           → same test game, straight to the FIFA World Rankings table
     match std::env::var("CM_BOOT").ok().as_deref() {
         Some("dashboard") => app.boot_dashboard(),
+        Some("fifa") => {
+            app.boot_dashboard();
+            app.open_fifa_rankings();
+        }
         Some(v @ ("news-widgets" | "dash-widgets")) => app.boot_widget_pool_debug(v),
         _ => {}
     }
