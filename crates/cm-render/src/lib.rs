@@ -30,6 +30,7 @@ pub mod lang_bank;
 pub mod layout;
 pub mod line;
 pub mod packed;
+pub mod packed_glyph;
 pub mod msgbox;
 pub mod palette;
 pub mod panel;
