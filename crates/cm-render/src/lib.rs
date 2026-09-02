@@ -29,6 +29,7 @@ pub mod l10n;
 pub mod lang_bank;
 pub mod layout;
 pub mod line;
+pub mod packed;
 pub mod msgbox;
 pub mod palette;
 pub mod panel;
