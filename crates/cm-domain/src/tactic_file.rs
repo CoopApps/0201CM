@@ -612,6 +612,48 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
 pub const PRESET_TOKEN_GOALKEEPER: u32     = 0x15552221;
 pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
 
+/// **Nibble 4 = role-defaulted slider (empirical evidence)**.
+///
+/// The 40-preset sweep showed nib 4 with the WIDEST variance across all
+/// 8 nibbles (6 distinct values: 2, 5, 6, 8, 9, 10). Follow-up joint
+/// analysis with the role-code nib (nib 7) reveals nib 4 is **strongly
+/// role-determined**:
+///
+///   nib7=5 (wide mid): nib 4 = 8 EXCLUSIVELY (61 samples)
+///   nib7=6 (?): nib 4 = 8 EXCLUSIVELY (2 samples)
+///   nib7=9 (?): nib 4 = 2 EXCLUSIVELY (52 samples)
+///   nib7=10 (?): nib 4 = 2 EXCLUSIVELY (3 samples)
+///   nib7=1 (defender): nib 4 varies (5, 6, 9, 10)
+///   nib7=2 (?): nib 4 varies (5, 9, 10)
+///
+/// Per-slot table across 8 verified presets shows a clear positional
+/// gradient:
+///
+///   Slot 0 (GK)      → nib 4 = 5 (constant)
+///   Slot 1, 2 (LB/RB)→ nib 4 = 8 or 10
+///   Slot 3, 4 (CB)   → nib 4 = 9 or 10
+///   Slot 5-7 (MID)   → nib 4 = 6 (attacking-mid) or 10 (defensive-mid)
+///   Slot 8, 9 (ST)   → nib 4 = 2 (constant)
+///
+/// Pattern: HIGH values (8, 9, 10) for defensive positions, LOW values
+/// (2, 5, 6) for attacking positions. Consistent with a **positional-
+/// instinct slider** — how far back the player stations. Exact
+/// tactics-editor label pending a slot-specific override anchor
+/// (haven't found a pair where two presets differ ONLY in nib 4 for
+/// one slot).
+pub const NIBBLE_4_GOALKEEPER_DEFAULT: u8 = 5;
+pub const NIBBLE_4_FULLBACK_DEFAULT:   u8 = 8;
+pub const NIBBLE_4_CENTREBACK_DEFAULT: u8 = 10;
+pub const NIBBLE_4_ATTACK_MID_DEFAULT: u8 = 6;
+pub const NIBBLE_4_STRIKER_DEFAULT:    u8 = 2;
+
+/// Extract the nibble 4 value from a slot's `movement_token` — the
+/// role-defaulted positional-instinct slider.
+#[inline]
+pub fn slot_nibble_4(token: u32) -> u8 {
+    ((token >> (4 * 4)) & 0xF) as u8
+}
+
 /// **VERIFIED empirical decode of nibbles 3 and 6 = defensive-behavior sliders.**
 ///
 /// Evidence: `442_default.pct` vs `442_defensive_default.pct` diffs at
@@ -855,6 +897,27 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nibble_4_role_defaults_match_verified_positions() {
+        // Extract from the anchor tokens
+        assert_eq!(slot_nibble_4(PRESET_TOKEN_GOALKEEPER),
+                   NIBBLE_4_GOALKEEPER_DEFAULT);
+        // Striker token: 0x95522221 → nib 4 = 2
+        assert_eq!(slot_nibble_4(PRESET_TOKEN_STRIKER_442),
+                   NIBBLE_4_STRIKER_DEFAULT);
+    }
+
+    #[test]
+    fn nibble_4_role_defaults_have_expected_ordering() {
+        // Empirical gradient: LOW = attacking, HIGH = defensive
+        assert!(NIBBLE_4_STRIKER_DEFAULT      < NIBBLE_4_GOALKEEPER_DEFAULT);
+        assert!(NIBBLE_4_ATTACK_MID_DEFAULT   < NIBBLE_4_FULLBACK_DEFAULT);
+        assert!(NIBBLE_4_FULLBACK_DEFAULT     < NIBBLE_4_CENTREBACK_DEFAULT);
+        // Striker (2) < AM (6) < FB (8) < CB (10)
+        assert_eq!(NIBBLE_4_STRIKER_DEFAULT, 2);
+        assert_eq!(NIBBLE_4_CENTREBACK_DEFAULT, 10);
+    }
 
     #[test]
     fn marking_closing_nibbles_from_442_defensive_midfielder_diff() {
