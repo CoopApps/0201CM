@@ -18760,7 +18760,7 @@ impl RuntimeSaveGame {
             .unwrap_or_else(|| crate::tactic_file::TeamSettings {
                 passing:        crate::tactic_file::Passing::Unset,
                 mentality:      crate::tactic_file::Mentality::Unset,
-                counter_attack: false,
+                counter_attack: false, men_behind_ball: false,
                 offside_trap:   false,
                 pressing:       crate::tactic_file::Pressing::Unset,
                 marking:        crate::tactic_file::Marking::Unset,

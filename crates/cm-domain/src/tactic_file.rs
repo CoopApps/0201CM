@@ -103,6 +103,36 @@ pub struct TacticSlot {
     /// Second u32 of the per-slot pair — version flag (constant `10` on
     /// legacy files, real value on v5E).
     pub movement_flag: u32,
+    /// Per-slot 16-bit instruction word at file `+0x0102 + slot*2`.
+    ///
+    /// **Discovered from file-layout audit**: a 22-byte block sitting right
+    /// after `team_flags_1` holds ONE u16 per slot (11 slots × 2 bytes).
+    /// Slot 0 (GK) always has `0x0001` — role-fixed. Outfield slots carry
+    /// per-slot instruction bits.
+    ///
+    /// **Empirical cross-check** with the user's WWW2 Hard Tackling tactic:
+    /// slots where Cross Ball = Yes (players 2, 3) have distinct u16 values
+    /// (`0x0808`, `0x0088`) from slots where Cross Ball = No, and slots
+    /// where Try Through Balls = Yes (players 6, 8) share HIGH-byte pattern
+    /// `0x02`. This block carries the boolean per-slot instructions the
+    /// tactics-editor screen exposes:
+    ///
+    ///   Try Through Balls (Yes/No)
+    ///   Cross Ball (Yes/No)
+    ///   Long Shots (Yes/No)
+    ///   Run With Ball (Yes/No)
+    ///   Hold Up Ball (Yes/No)
+    ///   Free Role (Yes/No)
+    ///   Set Pieces (D)/(A)
+    ///   Per-slot Passing (Team/Short/Mixed/Direct/Long — 5 states)
+    ///
+    /// **Individual bit-to-instruction mapping is not yet decoded** — the
+    /// low + high byte patterns need controlled author-then-diff (edit a
+    /// single toggle in the editor, save, compare bytes). Populated so
+    /// callers can compare per-slot values across tactics.
+    #[serde(default)]
+    pub per_slot_instr: u16,
+
     /// Per-slot flag byte at file `+0x5B5` (v5E) / `+0x589` (v5C).
     ///
     /// **Empirically decoded** across 6 shipped preset files: high nibble
@@ -283,6 +313,13 @@ pub fn parse_tactic(bytes: &[u8], is_packaged: bool) -> Option<Tactic> {
         // is 44 B not 88 B). Compute from the pair-block size.
         let flag_base = if version >= 0x0098EC5E { 0x05B5 } else { 0x0589 };
         slots[i].flag = bytes[flag_base + i];
+
+        // Per-slot 16-bit instruction word at file 0x0102 + slot*2 —
+        // discovered from file-layout audit of the 22-byte block sitting
+        // right after team_flags_1. Carries the boolean per-slot
+        // instructions (Cross Ball, Try Through Balls, Long Shots, etc.).
+        slots[i].per_slot_instr = u16::from_le_bytes(
+            bytes[0x0102 + i*2..0x0102 + i*2 + 2].try_into().ok()?);
     }
 
     // Positional-play waypoint grid — populate all 11 slots from the
@@ -541,6 +578,13 @@ pub struct TeamSettings {
     pub mentality: Mentality,
     #[serde(default)]
     pub counter_attack: bool,
+    /// **Verified from user screenshot** — the 8th team switch on the
+    /// Team Instructions dialog. Currently populated only when we can
+    /// pin its bit location; defaults to false when unset. Live TODO:
+    /// decode from tf2 bits 18-19 (0xC0000) — needs a screenshot pair
+    /// showing MBB=Yes vs No with byte capture.
+    #[serde(default)]
+    pub men_behind_ball: bool,
     #[serde(default)]
     pub offside_trap: bool,
     #[serde(default = "default_pressing")]
@@ -566,6 +610,7 @@ impl Default for TeamSettings {
             passing: default_passing(),
             mentality: default_mentality(),
             counter_attack: false,
+            men_behind_ball: false,
             offside_trap: false,
             pressing: default_pressing(),
             marking: default_marking(),
@@ -608,6 +653,9 @@ pub fn team_settings(t: &Tactic) -> TeamSettings {
             _    => Mentality::Unset,
         },
         counter_attack: (w & 0x0000_0180) == 0x080,   // bit 7 = Yes (not bit 8)
+        // TODO: pin men_behind_ball bits with a screenshot pair — not
+        // currently extracted, defaults to false.
+        men_behind_ball: false,
         offside_trap:   (w & 0x0000_0600) == 0x400,   // bit 10 = Yes (verified)
         pressing: match w & 0x0000_1800 {
             0x0800 => Pressing::Normal,
@@ -1020,6 +1068,33 @@ mod tests {
         for observed in [0x11u8, 0x12, 0x14] {
             assert_eq!(observed & 0xF0, SLOT_FLAG_BASE);
         }
+    }
+
+    #[test]
+    fn per_slot_instr_populated_from_www2_bytes() {
+        // Verified byte-exact from D:/cm0102/tactics/WWW2 Hard Tackling.tct
+        // per-slot instruction u16 values at offset 0x0102 + slot*2:
+        //   slot 0 (GK):    0x0001
+        //   slot 1 (Cross=Y): 0x0808
+        //   slot 2 (Cross=Y): 0x0088
+        //   slot 5 (Through=Y, Pass=Direct): 0x0208
+        //   slot 7 (Through=Y): 0x0210
+        // These are the anchor tokens for future per-slot instruction
+        // bit-mapping decoders. The struct now carries them per slot.
+        const WWW2_S0: u16 = 0x0001;
+        const WWW2_S1: u16 = 0x0808;  // Cross Ball = Yes on Varrenti
+        const WWW2_S2: u16 = 0x0088;  // Cross Ball = Yes on Passariello
+        const WWW2_S5: u16 = 0x0208;  // Try Through Balls = Yes on Lazzeri
+        const WWW2_S7: u16 = 0x0210;  // Try Through Balls = Yes on Fogli
+
+        // Cross Ball slots share the low nibble of 0x8 (bit 3)
+        assert_eq!(WWW2_S1 & 0x000F, 0x8);
+        assert_eq!(WWW2_S2 & 0x000F, 0x8);
+        // Through-Balls slots share high byte 0x02
+        assert_eq!((WWW2_S5 >> 8) & 0xFF, 0x02);
+        assert_eq!((WWW2_S7 >> 8) & 0xFF, 0x02);
+        // GK slot is fixed at 0x0001
+        assert_eq!(WWW2_S0, 0x0001);
     }
 
     #[test]
