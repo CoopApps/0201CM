@@ -146,6 +146,24 @@ pub const AI_PACK_DEFAULT_NAMES: [&str; 45] = [
     "5-3-2 Defensive", "5-3-2 Attacking", "Sweeper", "4-1-3-2",
 ];
 
+/// The 39 preset filenames the exe loads when the user clicks "Start
+/// New Game" (from agevak's SaveGameTacticsEditor/Docs/StartNewGamePctFiles.txt).
+/// This is a deduplicated SUBSET of [`AI_PACK_FILENAMES`] — the same
+/// files, minus the 6 duplicate entries in the AI-manager preset table.
+pub const START_NEW_GAME_PCT_FILES: [&str; 39] = [
+    "343_default.pct", "343_defensive.pct", "352_attacking_default.pct",
+    "352_default.pct", "352_defensive_default.pct", "352_v1.pct",
+    "352_v2.pct", "41212_default.pct", "4132.pct", "424_default.pct",
+    "424_v1.pct", "4312_v1.pct", "433_default.pct", "442_default.pct",
+    "442_defensive_default.pct", "442_diamond_default.pct", "442_push.pct",
+    "442_v1.pct", "442_v10.pct", "442_v4.pct", "442_v8.pct",
+    "442_wide.pct", "451_default.pct", "451_defensive.pct",
+    "451_norway.pct", "532_attacking_default.pct", "532_default.pct",
+    "532_defensive_default.pct", "532_v1.pct", "532_v2.pct", "532_v3.pct",
+    "532_v4.pct", "532_v5.pct", "532_v6.pct", "532_v7.pct", "532_v9.pct",
+    "defensive_counter.pct", "sweeper_default.pct", "sweeper_v1.pct",
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -190,6 +208,27 @@ mod tests {
             let stem = AI_PACK_FILENAMES[i].trim_end_matches(".pct");
             assert_eq!(stem, AI_PACK_DEFAULT_NAMES[i], "row {i} mismatch");
         }
+    }
+
+    #[test]
+    fn start_new_game_list_is_subset_of_ai_pack_deduped() {
+        // Every file in the start-new-game list appears at least once
+        // in the AI pack list, and the start-new-game list has no
+        // duplicates.
+        for f in START_NEW_GAME_PCT_FILES.iter() {
+            assert!(AI_PACK_FILENAMES.contains(f), "{f} missing from AI pack");
+        }
+        // No duplicates in the new-game list.
+        let mut sorted: Vec<&str> = START_NEW_GAME_PCT_FILES.to_vec();
+        sorted.sort();
+        for i in 1..sorted.len() {
+            assert_ne!(sorted[i-1], sorted[i], "duplicate {} in start-new-game list", sorted[i]);
+        }
+        // AI pack has exactly 6 duplicate entries (45 total, 39 unique).
+        let mut ai_sorted: Vec<&str> = AI_PACK_FILENAMES.to_vec();
+        ai_sorted.sort();
+        ai_sorted.dedup();
+        assert_eq!(ai_sorted.len(), 39, "AI pack has {} unique entries", ai_sorted.len());
     }
 
     #[test]
