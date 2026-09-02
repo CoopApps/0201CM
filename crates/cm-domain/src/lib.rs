@@ -18766,10 +18766,18 @@ impl RuntimeSaveGame {
                 marking:        crate::tactic_file::Marking::Unset,
                 tackling:       crate::tactic_file::Tackling::Unset,
             });
+        // Populate per-slot movement_token array from the club's Tactic
+        // (item 3 wire) — 11 slots × u32. Zero = defaults for that slot.
+        let mut slot_movement_tokens = [0u32; 11];
+        if let Some(t) = self.club_tactics.get(&club_id) {
+            for i in 0..11 {
+                slot_movement_tokens[i] = t.slots[i].movement_token;
+            }
+        }
         Some(crate::match_engine_exe::EngineTeamSnapshot {
             club_id, reputation, grudge_score: 0, players,
             sum_position_ratings, out_of_position_ids,
-            team_settings,
+            team_settings, slot_movement_tokens,
         })
     }
 
