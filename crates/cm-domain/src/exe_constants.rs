@@ -106,6 +106,12 @@ pub const DAT_00956928_F32: f32 = 0.000000e+00_f32;
 /// 17 refs (both f32/f64 plausible)
 pub const DAT_00956930: f64 = 3.0;
 pub const DAT_00956930_F32: f32 = 0.000000e+00_f32;
+/// `[0x958340]` — FIFA table seed: points(+0xc) = nation coefficient(+0xA8) × this
+/// (= 1/35). Read by `FUN_00577b00` via `fld qword [ecx+eax+0xa8]; fmul qword [0x958340]`.
+/// Extracted from cm0102.exe .rdata with pefile (2026-09-02).
+pub const DAT_00958340: f64 = 0.028571428571428574;
+// The FIFA Rankings screen's display multiplier is the already-lifted
+// `DAT_00956A78_F32` (10.0): `FUN_004A2200` prints `points × it` with "%.2f".
 /// 7 refs (both f32/f64 plausible)
 pub const DAT_00956938: f64 = 4.0;
 pub const DAT_00956938_F32: f32 = 0.000000e+00_f32;

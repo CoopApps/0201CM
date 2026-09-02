@@ -17063,7 +17063,7 @@ impl World {
         // Seed FIFA rankings + year-rollover tracker so the tick sees a
         // populated cache from day 0 (equivalent to `game_init` running
         // `game_recompute_fifa_rankings` once at boot).
-        save.fifa_rankings = fifa_rankings::compute(&self.core.nations, &self.core.clubs);
+        save.fifa_rankings = fifa_rankings::compute(&self.core.nations);
         save.last_year_rollover = save.date.year;
 
         save.new_game = Some(options.clone());
@@ -17604,7 +17604,7 @@ impl World {
     /// Call after `tick_days`/`tick_to_date` to ensure derived state is current.
     pub fn refresh_after_tick(&self, save: &mut RuntimeSaveGame) {
         if save.fifa_rankings.is_empty() {
-            save.fifa_rankings = fifa_rankings::compute(&self.core.nations, &self.core.clubs);
+            save.fifa_rankings = fifa_rankings::compute(&self.core.nations);
         }
     }
 

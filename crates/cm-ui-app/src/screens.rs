@@ -259,18 +259,21 @@ fn fifa_row_layout() -> cm_render::layout::Layout {
 /// FUN_004A2200 (`screen_batch30::build_fifa_world_rankings_screen`) fed with
 /// `save.fifa_rankings`. One page holding every nation; the app scrolls it.
 ///
-/// Honesty note: the "points" column is `fifa_rankings::compute`'s proxy
-/// (mean club reputation per nation) until the per-nation history slots
-/// behind the exact `fifa_score` formula are lifted; and `has_flag` (the
-/// exe reads nation+0x71) isn't carried by `NationRanking`, so no flag
-/// swatch is drawn.
+/// The Points column is the exe's `+0xc` float × `DAT_00956A78_F32` (10.0),
+/// which `FUN_004A2200` prints with "%.2f" — at game start that is
+/// `coefficient / 35 × 10`. The third exe column (continent name, read via
+/// nation+0x71) is carried as `has_flag = true` for every ranked nation —
+/// only nations with a continent are ranked — and not drawn yet.
 pub fn fifa_view_from_save(
     save: &cm_domain::RuntimeSaveGame,
 ) -> cm_domain::screen_batch30::FifaRankingsView {
     let rankings: Vec<(String, f64, bool)> = save
         .fifa_rankings
         .iter()
-        .map(|r| (r.nation_name.clone(), r.strength as f64, false))
+        .map(|r| {
+            let shown = r.strength * cm_domain::exe_constants::DAT_00956A78_F32;
+            (r.nation_name.clone(), shown as f64, true)
+        })
         .collect();
     let page_size = (rankings.len().max(1)) as u32;
     cm_domain::screen_batch30::build_fifa_world_rankings_screen(
