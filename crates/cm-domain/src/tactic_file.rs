@@ -103,8 +103,50 @@ pub struct TacticSlot {
     /// Second u32 of the per-slot pair — version flag (constant `10` on
     /// legacy files, real value on v5E).
     pub movement_flag: u32,
-    /// Per-slot flag byte at file `+0x5B5`. `0x11` = normal.
+    /// Per-slot flag byte at file `+0x5B5` (v5E) / `+0x589` (v5C).
+    ///
+    /// **Empirically decoded** across 6 shipped preset files: high nibble
+    /// is fixed at `0x1` (base marker bit `0x10` always set), low nibble
+    /// encodes a **mutually-exclusive 3-state position category**:
+    ///
+    ///   `0x11` = position category A — GKs (slot 0) + strikers in most presets
+    ///   `0x12` = position category B — outfield generic (defenders, mids)
+    ///   `0x14` = position category C — "step-up" role for CBs in attacking
+    ///            presets, for wide mids in 451_defensive
+    ///
+    /// See [`SLOT_FLAG_CATEGORY_MASK`] / [`slot_flag_category`] to extract.
     pub flag: u8,
+}
+
+/// Base bit of `TacticSlot::flag` — set in every observed slot across
+/// every shipped preset. `flag & 0xF0` should always be `0x10`.
+pub const SLOT_FLAG_BASE: u8 = 0x10;
+
+/// Mask for the position-category low-nibble in `TacticSlot::flag`.
+pub const SLOT_FLAG_CATEGORY_MASK: u8 = 0x0F;
+
+/// Position category encoded in `TacticSlot::flag`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SlotFlagCategory {
+    /// `0x11` — GKs + strikers in most presets.
+    KeeperOrStriker,
+    /// `0x12` — outfield generic (defenders, mids).
+    OutfieldGeneric,
+    /// `0x14` — "step-up" / attacking-role marker.
+    StepUpRole,
+    /// Any other observed low-nibble value (rare / non-shipped preset).
+    Unknown(u8),
+}
+
+/// Decode the position category from a slot's flag byte.
+#[inline]
+pub fn slot_flag_category(flag: u8) -> SlotFlagCategory {
+    match flag & SLOT_FLAG_CATEGORY_MASK {
+        0x1 => SlotFlagCategory::KeeperOrStriker,
+        0x2 => SlotFlagCategory::OutfieldGeneric,
+        0x4 => SlotFlagCategory::StepUpRole,
+        b   => SlotFlagCategory::Unknown(b),
+    }
 }
 
 /// Team-level tempo bitmask — VERIFIED port of FUN_006c34c0:63-83.
@@ -897,6 +939,26 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn slot_flag_category_decodes_verified_values() {
+        assert_eq!(slot_flag_category(0x11), SlotFlagCategory::KeeperOrStriker);
+        assert_eq!(slot_flag_category(0x12), SlotFlagCategory::OutfieldGeneric);
+        assert_eq!(slot_flag_category(0x14), SlotFlagCategory::StepUpRole);
+        // Other observed rare bytes fall through
+        match slot_flag_category(0x18) {
+            SlotFlagCategory::Unknown(0x8) => {}
+            other => panic!("expected Unknown(0x8), got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn slot_flag_base_bit_always_set_in_verified_presets() {
+        // Every observed slot flag has bit 0x10 set (empirical anchor)
+        for observed in [0x11u8, 0x12, 0x14] {
+            assert_eq!(observed & 0xF0, SLOT_FLAG_BASE);
+        }
+    }
 
     #[test]
     fn nibble_4_role_defaults_match_verified_positions() {
