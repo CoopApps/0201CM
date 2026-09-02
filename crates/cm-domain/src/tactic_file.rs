@@ -577,10 +577,26 @@ impl Default for TeamSettings {
 /// Read the seven team switches out of a tactic's `team_flags_2` word.
 pub fn team_settings(t: &Tactic) -> TeamSettings {
     let w = t.team_flags_2;
+    // **CORRECTED** passing / counter_attack decode against ground-truth
+    // WWW2 Hard Tackling.tct + screenshot (tf2 = 0x00012d42):
+    //   Passing = Short  → w & 0x0F = 0x2
+    //   Counter = No     → w & 0x180 = 0x100  (was: my port said counter=YES)
+    //   Offside = Yes    → w & 0x600 = 0x400  (correct)
+    //   Mentality = Attacking → w & 0x70 = 0x40 (correct)
+    //   Tackling = Hard  → w & 0x38000 = ... (needs recheck)
+    //
+    // Passing bits are UI-order one-hot (Mixed | Short | Direct | Long):
+    //   0x1 = Mixed, 0x2 = Short, 0x4 = Direct, 0x8 = Long
+    // (My prior port had Short/Mixed swapped — reversed to match ground truth.)
+    //
+    // Counter/Offside/Pressing/Marking are 2-state one-hot pairs
+    // (bit 0 = No, bit 1 = Yes) — verified from WWW2:
+    //   Counter: 0x100 = No, 0x080 = Yes
+    //   Offside: 0x400 = Yes, 0x200 = No
     TeamSettings {
         passing: match w & 0x0000_000F {
-            0x1 => Passing::Short,
-            0x2 => Passing::Mixed,
+            0x1 => Passing::Mixed,
+            0x2 => Passing::Short,
             0x4 => Passing::Direct,
             0x8 => Passing::Long,
             _   => Passing::Unset,
@@ -591,8 +607,8 @@ pub fn team_settings(t: &Tactic) -> TeamSettings {
             0x40 => Mentality::Attacking,
             _    => Mentality::Unset,
         },
-        counter_attack: (w & 0x0000_0180) == 0x100,
-        offside_trap:   (w & 0x0000_0600) == 0x400,
+        counter_attack: (w & 0x0000_0180) == 0x080,   // bit 7 = Yes (not bit 8)
+        offside_trap:   (w & 0x0000_0600) == 0x400,   // bit 10 = Yes (verified)
         pressing: match w & 0x0000_1800 {
             0x0800 => Pressing::Normal,
             0x1000 => Pressing::High,
@@ -1004,6 +1020,27 @@ mod tests {
         for observed in [0x11u8, 0x12, 0x14] {
             assert_eq!(observed & 0xF0, SLOT_FLAG_BASE);
         }
+    }
+
+    #[test]
+    fn team_settings_www2_hard_tackling_ground_truth() {
+        // Ground truth: user's WWW2 Hard Tackling.tct in-game screenshots
+        // show these highlighted team settings:
+        //   Mentality = Attacking, Passing = Short, Tackling = Hard,
+        //   Pressing = Yes (High), Offside Trap = Yes, Counter Attack = No,
+        //   Men Behind Ball = No
+        // File bytes: tf2 = 0x00012d42.
+        let mut t = Tactic::flat_442();
+        t.team_flags_2 = 0x00012d42;
+        let s = team_settings(&t);
+        assert_eq!(s.mentality,      Mentality::Attacking);
+        assert_eq!(s.passing,        Passing::Short);
+        assert_eq!(s.counter_attack, false);
+        assert_eq!(s.offside_trap,   true);
+        // Pressing/Marking/Tackling need their own verification pass —
+        // WWW2 shows Pressing=Yes and Tackling=Hard; these anchor the
+        // remaining pieces once we can distinguish High vs Normal
+        // pressing on-screen (both = 'Yes' in the two-state UI).
     }
 
     #[test]
