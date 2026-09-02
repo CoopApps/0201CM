@@ -332,7 +332,14 @@ impl PlayerRatingBook {
                 season_assists: 0,
                 market_value,
                 weekly_wage,
-                position_aptitudes: t10.unknown_bytes_15_26,
+                // Via full_attributes(): the legacy `unknown_bytes_15_26`
+                // array is absent (zero) on post-migration rust-db.
+                position_aptitudes: {
+                    let fa = t10.full_attributes();
+                    let mut a = [0u8; 12];
+                    a.copy_from_slice(&fa[0..12]);
+                    a
+                },
                 heading, important_matches, dribbling, decisions, throw_ins,
             });
         }

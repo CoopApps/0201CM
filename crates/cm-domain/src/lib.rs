@@ -798,6 +798,30 @@ impl DomainStaffType10 {
         out[12..43].copy_from_slice(&self.attributes);
         out[43..50].copy_from_slice(&self.unknown_bytes_58_64);
         out[50..54].copy_from_slice(&self.trailing_bytes[0..4]);
+        if out.iter().any(|&b| b != 0) {
+            return out;
+        }
+        // Post-migration rust-db carries the block as the typed fields only
+        // (the legacy byte arrays are absent → zero). Reassemble in record
+        // byte order: 12 aptitudes (+0x0f..) then the 42 attributes (+0x1b..)
+        // in declaration order.
+        let typed: [i8; 54] = [
+            self.apt_goalkeeper, self.apt_sweeper, self.apt_defender, self.apt_def_midfielder,
+            self.apt_midfielder, self.apt_att_midfielder, self.apt_attacker, self.apt_wing_back,
+            self.apt_right_side, self.apt_left_side, self.apt_central, self.apt_free_role,
+            self.acceleration, self.aggression, self.agility, self.anticipation, self.balance,
+            self.bravery, self.consistency, self.corners, self.crossing, self.free_kicks,
+            self.handling, self.heading, self.important_matches, self.injury_proneness,
+            self.jumping, self.leadership, self.left_foot, self.long_shots, self.dirtiness,
+            self.dribbling, self.finishing, self.flair, self.decisions, self.movement,
+            self.natural_fitness, self.one_on_ones, self.marking, self.pace, self.passing,
+            self.penalties, self.positioning, self.reflexes, self.right_foot, self.stamina,
+            self.strength, self.tackling, self.teamwork, self.throw_ins, self.versatility,
+            self.vision, self.work_rate, self.technique,
+        ];
+        for (o, t) in out.iter_mut().zip(typed) {
+            *o = t as u8;
+        }
         out
     }
 
@@ -918,12 +942,34 @@ impl DomainStaffType10 {
     /// Stored as the 0x0d byte (0..~200), widening to 0x0d..0x0e for the very
     /// top of the world.
     pub fn reputation(&self) -> u16 {
-        self.rating_short_0x0d
+        // Typed field first; the legacy raw short is only populated on
+        // pre-migration data.
+        if self.world_reputation != 0 { self.world_reputation as u16 } else { self.rating_short_0x0d }
+    }
+
+    /// Home reputation (+0x09) with the same typed-first rule.
+    pub fn home_reputation_value(&self) -> u16 {
+        if self.home_reputation != 0 {
+            self.home_reputation as u16
+        } else {
+            u16::from_le_bytes([self.unknown_bytes_9_12[0], self.unknown_bytes_9_12[1]])
+        }
+    }
+
+    /// Current reputation (+0x0b) with the same typed-first rule.
+    pub fn current_reputation_value(&self) -> u16 {
+        if self.current_reputation != 0 {
+            self.current_reputation as u16
+        } else {
+            u16::from_le_bytes([self.unknown_bytes_9_12[2], self.unknown_bytes_9_12[3]])
+        }
     }
 
     /// Current Ability (0..200), from the outfield/attribute record +0x05.
     pub fn current_ability(&self) -> i16 {
-        self.rating_short_0x05 as i16
+        // The typed field (`staff/type10.json` "current_ability") is the
+        // live value; the legacy raw short only exists on pre-migration data.
+        if self.current_ability != 0 { self.current_ability } else { self.rating_short_0x05 as i16 }
     }
 
     /// Potential Ability as stored at +0x07, interpreted SIGNED. A negative
@@ -931,7 +977,7 @@ impl DomainStaffType10 {
     /// is resolved at game-init with RNG (FUN_0051f5d0, blocks 810-924). A
     /// positive value is the fixed PA.
     pub fn potential_ability_raw(&self) -> i16 {
-        self.rating_short_0x07 as i16
+        if self.potential_ability != 0 { self.potential_ability } else { self.rating_short_0x07 as i16 }
     }
 
     /// A concrete potential ability for this game instance. When the stored PA
@@ -1056,7 +1102,10 @@ impl DomainStaffType10 {
     /// +0x13/+0x14), 0x040 defensive-mid/anchor, then a second pass over
     /// +0x17/+0x18/+0x19 sets the wide/attacking bits 0x800/0x080/0x200.
     pub fn position_eligibility_bits(&self) -> u16 {
-        let a = &self.unknown_bytes_15_26; // +0xf..+0x1a, 12 bytes
+        // +0xf..+0x1a, 12 bytes — via full_attributes() so the typed fields
+        // are used on post-migration rust-db (legacy array is zero there).
+        let fa = self.full_attributes();
+        let a = &fa[0..12];
         let byte_at = |off: usize| -> i8 { a[off - 0x0f] as i8 };
 
         let mut bits: u16 = 0;
@@ -1579,6 +1628,144 @@ pub fn latest_scores(save: &RuntimeSaveGame, manager_club: Option<u32>) -> Vec<L
     // Most-recent first (GameDate is Ord over year/month/day).
     rows.sort_by(|a, b| b.date.cmp(&a.date));
     rows
+}
+
+/// A player's profile — the exe's player screen (FUN_008D6310 family): the
+/// person's details plus the type-10 attribute record. CA/PA are deliberately
+/// NOT carried: the exe never shows them numerically; the screen shows the 12
+/// position aptitudes and the 42 attributes on the 1–20 scale.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlayerProfile {
+    pub player_id: u32,
+    pub name: String,
+    pub age: Option<u8>,
+    pub club_name: Option<String>,
+    /// The exe's "Born d.m.yy ... Nation." line — the slot→field binding
+    /// verified by `derive_bindings` against a live capture.
+    pub born_line: String,
+    pub nation_name: Option<String>,
+    pub wage: i32,
+    pub value: i32,
+    pub international_caps: u8,
+    pub international_goals: u8,
+    /// The 12 position aptitudes in the type-10 order (GK, SW, D, DM, M, AM,
+    /// ST, WB, RS, LS, C, FR). 20 = natural.
+    pub positions: Vec<(&'static str, i8)>,
+    /// The 42 attributes in the type-10 declaration order (DFM
+    /// tabsheet_staff_pl2 order — see [[editor-is-ground-truth]]).
+    pub attributes: Vec<(&'static str, i8)>,
+}
+
+impl World {
+    /// Build the profile of `player_id` (a type-6 person id with a type-10
+    /// attribute record). `None` if either record is missing.
+    pub fn player_profile_for(&self, save: &RuntimeSaveGame, player_id: u32) -> Option<PlayerProfile> {
+        let person = self.staff.type6.iter().find(|p| p.id == player_id)?;
+        let pv = typed_records::PlayerView::from_split(person.id, &person.body);
+        // The attribute record is linked by the person's player_data_id
+        // (verified on Bergkamp: type10 73003 carries his AM/ST 20 / CA 165
+        // record; type10 88613 == person.id is someone else's).
+        let attr_id = pv.player_data_id().map(|l| l as u32).unwrap_or(player_id);
+        let a = self.staff.type10.iter().find(|a| a.id == attr_id)?;
+        let start_day = day_of_year(save.date.year, save.date.month, save.date.day);
+        let club_name = person.current_club_id().and_then(|c| self.club_name(c));
+        let nation_name = pv.nation_id().and_then(|id| self.nation_name(id as u32));
+        let dob = pv.date_of_birth();
+        let (mon, dom) = dob.to_month_day();
+        let born_line = format!(
+            "Born {}.{}.{:02} ... {}.",
+            dom, mon, dob.year % 100,
+            nation_name.as_deref().unwrap_or("?")
+        );
+        let positions = vec![
+            ("GK", a.apt_goalkeeper), ("SW", a.apt_sweeper), ("D", a.apt_defender),
+            ("DM", a.apt_def_midfielder), ("M", a.apt_midfielder), ("AM", a.apt_att_midfielder),
+            ("ST", a.apt_attacker), ("WB", a.apt_wing_back), ("R", a.apt_right_side),
+            ("L", a.apt_left_side), ("C", a.apt_central), ("FR", a.apt_free_role),
+        ];
+        let attributes = vec![
+            ("Acceleration", a.acceleration), ("Aggression", a.aggression), ("Agility", a.agility),
+            ("Anticipation", a.anticipation), ("Balance", a.balance), ("Bravery", a.bravery),
+            ("Consistency", a.consistency), ("Corners", a.corners), ("Crossing", a.crossing),
+            ("Free Kicks", a.free_kicks), ("Handling", a.handling), ("Heading", a.heading),
+            ("Important Matches", a.important_matches), ("Injury Proneness", a.injury_proneness),
+            ("Jumping", a.jumping), ("Leadership", a.leadership), ("Left Foot", a.left_foot),
+            ("Long Shots", a.long_shots), ("Dirtiness", a.dirtiness), ("Dribbling", a.dribbling),
+            ("Finishing", a.finishing), ("Flair", a.flair), ("Decisions", a.decisions),
+            ("Off The Ball", a.movement), ("Natural Fitness", a.natural_fitness),
+            ("One On Ones", a.one_on_ones), ("Marking", a.marking), ("Pace", a.pace),
+            ("Passing", a.passing), ("Penalties", a.penalties), ("Positioning", a.positioning),
+            ("Reflexes", a.reflexes), ("Right Foot", a.right_foot), ("Stamina", a.stamina),
+            ("Strength", a.strength), ("Tackling", a.tackling), ("Teamwork", a.teamwork),
+            ("Throw Ins", a.throw_ins), ("Versatility", a.versatility), ("Creativity", a.vision),
+            ("Work Rate", a.work_rate), ("Technique", a.technique),
+        ];
+        Some(PlayerProfile {
+            player_id,
+            name: self.person_display_name(person),
+            age: person.age_at(save.date.year, start_day),
+            club_name,
+            born_line,
+            nation_name,
+            wage: pv.wage(),
+            value: pv.value(),
+            international_caps: pv.international_caps(),
+            international_goals: pv.international_goals(),
+            positions,
+            attributes,
+        })
+    }
+}
+
+/// One row of a club's fixture list.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClubFixtureRow {
+    pub date: GameDate,
+    pub competition_name: String,
+    pub opponent_name: String,
+    pub is_home: bool,
+    /// (own goals, opponent goals) once the fixture is `Played`.
+    pub result: Option<(u8, u8)>,
+}
+
+/// A club's season fixture list (the exe's club Fixtures screen): every
+/// scheduled fixture involving the club, in date order, with results.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClubFixturesView {
+    pub club_id: u32,
+    pub club_name: String,
+    pub rows: Vec<ClubFixtureRow>,
+}
+
+impl World {
+    /// Build `club_id`'s fixture list from `save.season.fixtures`.
+    pub fn club_fixtures_for(&self, save: &RuntimeSaveGame, club_id: u32) -> Option<ClubFixturesView> {
+        let club_name = self.club_name(club_id)?;
+        let mut rows: Vec<ClubFixtureRow> = save
+            .season
+            .fixtures
+            .iter()
+            .filter(|f| f.home_club_id == club_id || f.away_club_id == club_id)
+            .map(|f| {
+                let is_home = f.home_club_id == club_id;
+                let result = match (f.status, f.home_score, f.away_score) {
+                    (HeadlessFixtureStatus::Played, Some(h), Some(a)) => {
+                        Some(if is_home { (h, a) } else { (a, h) })
+                    }
+                    _ => None,
+                };
+                ClubFixtureRow {
+                    date: f.date.clone(),
+                    competition_name: f.competition_name.clone(),
+                    opponent_name: if is_home { f.away_club_name.clone() } else { f.home_club_name.clone() },
+                    is_home,
+                    result,
+                }
+            })
+            .collect();
+        rows.sort_by(|a, b| a.date.cmp(&b.date));
+        Some(ClubFixturesView { club_id, club_name, rows })
+    }
 }
 
 /// One row of a division's league table.
@@ -17524,7 +17711,13 @@ impl World {
         let mut squad: Vec<SquadMember> = Vec::new();
         for person in &self.staff.type6 {
             if person.current_club_id() == Some(club_id) {
-                let attr = attr_by_id.get(&person.id);
+                // Attribute record via the person's player_data_id link (see
+                // `player_profile_for`); fall back to the id match.
+                let link = typed_records::PlayerView::from_split(person.id, &person.body)
+                    .player_data_id()
+                    .map(|l| l as u32)
+                    .unwrap_or(person.id);
+                let attr = attr_by_id.get(&link);
                 squad.push(SquadMember {
                     player_id: person.id,
                     name: self.person_display_name(person),

@@ -199,7 +199,7 @@ impl PlayerDevelopmentBook {
                 continue;
             }
             let gk_aptitude = t10.get(&st.player_id)
-                .map(|t| t.unknown_bytes_15_26[0] as i8)
+                .map(|t| t.full_attributes()[0] as i8)
                 .unwrap_or(0);
             let is_gk = gk_aptitude >= 0x13;
             // Mental proxies (flagged): growth cap from PA headroom, decline

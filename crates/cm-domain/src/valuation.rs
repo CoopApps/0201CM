@@ -68,9 +68,7 @@ pub fn market_value(ca: i16, pa: i16, rep9: u16, rep_b: u16, rep_d: u16) -> i64 
 
 /// Read the three reputation shorts off a type10 record (+0x09/+0x0b/+0x0d).
 pub fn reputations_of(t10: &crate::DomainStaffType10) -> (u16, u16, u16) {
-    let b = &t10.unknown_bytes_9_12;
-    let rep9 = u16::from_le_bytes([b[0], b[1]]);
-    let rep_b = u16::from_le_bytes([b[2], b[3]]);
-    let rep_d = t10.rating_short_0x0d;
-    (rep9, rep_b, rep_d)
+    // Typed fields first (post-migration rust-db); the raw bytes only carry
+    // values on pre-migration data.
+    (t10.home_reputation_value(), t10.current_reputation_value(), t10.reputation())
 }

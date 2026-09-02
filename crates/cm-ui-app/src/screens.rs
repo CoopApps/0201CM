@@ -128,6 +128,24 @@ fn dash_squad_layout() -> cm_render::layout::Layout {
     rebuild_layout(DASH_SQUAD, 2, &[10, 3, 3, 3], &[1; DASH_SQUAD_ROWS as i32 as usize], false)
 }
 
+/// The dashboard's next-fixture panel — entity link to the club's fixture list.
+pub const DASH_FIXTURE_LINK: (i32, i32, i32, i32) = (110, 150, 780, 200);
+
+/// Inclusive point-in-rect test for the `(l, t, r, b)` link rects.
+pub fn in_rect(x: i32, y: i32, r: (i32, i32, i32, i32)) -> bool {
+    x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3
+}
+
+/// Which visible squad row (0-based, before scroll) a point on the dashboard
+/// lands in, using the same layout the rows are drawn with.
+pub fn dash_squad_row_at(x: i32, y: i32) -> Option<usize> {
+    if x < DASH_SQUAD.0 || x > DASH_SQUAD.2 - 12 {
+        return None;
+    }
+    let lo = dash_squad_layout();
+    (0..DASH_SQUAD_ROWS).find(|&row| y >= lo.row_top[row] && y <= lo.row_bottom[row])
+}
+
 /// Render the club dashboard (or the unemployed view) — the game's home screen.
 pub fn dashboard(
     s: &mut Surface,
@@ -428,6 +446,160 @@ pub fn league_table(
     }
     s.draw_text_box(110, TABLE_RECT.3 + 6, 780, TABLE_RECT.3 + 34, F_LEFT, f3, (170, 170, 170),
         &format!("{} clubs", view.rows.len()));
+}
+
+// ------- Club Fixtures (dashboard next-fixture entity link) -------
+
+const FIXTURES_RECT: (i32, i32, i32, i32) = (110, 120, 780, 540);
+pub const FIXTURE_ROWS_VISIBLE: usize = 20;
+
+fn fixture_row_layout() -> cm_render::layout::Layout {
+    // date | competition | H/A | opponent | result
+    rebuild_layout(FIXTURES_RECT, 2, &[4, 7, 1, 8, 3], &[1; FIXTURE_ROWS_VISIBLE as i32 as usize], false)
+}
+
+/// Render a club's fixture list (`World::club_fixtures_for`). Played rows
+/// carry the result in the highlight ink; `scroll` is the first visible row.
+pub fn club_fixtures(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    view: &cm_domain::ClubFixturesView,
+    scroll: usize,
+) {
+    use cm_render::font::{F_LEFT, F_RIGHT};
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
+    {
+        let f7 = fonts.slot(7);
+        s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, &clip_text(&view.club_name, 34));
+    }
+    let f3 = fonts.slot(3);
+    let lo = fixture_row_layout();
+    let headers = ["Date", "Competition", "", "Opponent", "Result"];
+    for (col, text) in headers.iter().enumerate() {
+        let flags = if col == 4 { F_RIGHT } else { F_LEFT };
+        s.draw_text_box(lo.col_left[col], FIXTURES_RECT.1 - 26, lo.col_right[col], FIXTURES_RECT.1 - 2,
+            flags, f3, (200, 200, 200), text);
+    }
+    s.draw_panel(FIXTURES_RECT.0, FIXTURES_RECT.1, FIXTURES_RECT.2, FIXTURES_RECT.3, F_TRANSPARENT, (40, 40, 40));
+    for row in 0..FIXTURE_ROWS_VISIBLE {
+        let Some(r) = view.rows.get(scroll + row) else { break };
+        let (result, ink) = match r.result {
+            Some((us, them)) => (format!("{us}-{them}"), pal.highlight_fg),
+            None => (String::new(), pal.near_white),
+        };
+        let cells = [
+            format!("{} {} {}", r.date.day, month_name(r.date.month), r.date.year),
+            clip_text(&r.competition_name, 20),
+            if r.is_home { "H" } else { "A" }.to_string(),
+            clip_text(&r.opponent_name, 22),
+            result,
+        ];
+        for (col, text) in cells.iter().enumerate() {
+            let flags = if col == 4 { F_RIGHT } else { F_LEFT };
+            s.draw_text_box(lo.col_left[col], lo.row_top[row], lo.col_right[col], lo.row_bottom[row],
+                flags, f3, ink, text);
+        }
+    }
+    if view.rows.len() > FIXTURE_ROWS_VISIBLE {
+        let tl = FIXTURES_RECT.2 - 12;
+        s.draw_panel(tl, FIXTURES_RECT.1, FIXTURES_RECT.2, FIXTURES_RECT.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let h = (FIXTURES_RECT.3 - FIXTURES_RECT.1).max(1);
+        let th = (FIXTURE_ROWS_VISIBLE as i32 * h / view.rows.len() as i32).max(12);
+        let maxs = (view.rows.len() - FIXTURE_ROWS_VISIBLE) as i32;
+        let tt = FIXTURES_RECT.1 + (scroll as i32) * (h - th) / maxs.max(1);
+        s.draw_panel(tl + 1, tt, FIXTURES_RECT.2 - 1, (tt + th).min(FIXTURES_RECT.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
+    }
+    s.draw_text_box(110, FIXTURES_RECT.3 + 6, 780, FIXTURES_RECT.3 + 34, F_LEFT, f3, (170, 170, 170),
+        &format!("{} fixtures", view.rows.len()));
+}
+
+// ------- Player Profile (dashboard squad-row entity link) -------
+
+/// Position aptitude strip and the three attribute columns.
+const PROFILE_POS: (i32, i32, i32, i32) = (110, 176, 780, 202);
+const PROFILE_ATTRS: (i32, i32, i32, i32) = (110, 232, 780, 570);
+const PROFILE_ATTR_ROWS: usize = 14;
+
+fn profile_attr_layout() -> cm_render::layout::Layout {
+    // 3 × (name | value)
+    rebuild_layout(PROFILE_ATTRS, 2, &[6, 1, 6, 1, 6, 1], &[1; PROFILE_ATTR_ROWS as i32 as usize], false)
+}
+
+/// Render a player's profile (`World::player_profile_for`): name banner,
+/// age/club line, the 12 position aptitudes, then the 42 attributes on the
+/// 1–20 scale in three columns.
+pub fn player_profile(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    view: &cm_domain::PlayerProfile,
+) {
+    use cm_render::font::{F_LEFT, F_RIGHT};
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
+    {
+        let f7 = fonts.slot(7);
+        s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, &clip_text(&view.name, 34));
+    }
+    {
+        let f4 = fonts.slot(4);
+        let age = view.age.map(|a| a.to_string()).unwrap_or_else(|| "?".into());
+        let club = view.club_name.clone().unwrap_or_else(|| "Unattached".into());
+        s.draw_text_box(110, 78, 780, 108, F_LEFT, f4, pal.near_white, &format!("Age {age}    {club}"));
+    }
+    let f3 = fonts.slot(3);
+    s.draw_text_box(110, 108, 780, 128, F_LEFT, f3, (200, 200, 200), &view.born_line);
+    s.draw_text_box(
+        110, 126, 780, 146, F_LEFT, f3, (200, 200, 200),
+        &format!(
+            "Value {}    Wage {} p/w    Caps {} ({} goals)",
+            // cash_format (0x00442500) port — thousands-grouped, £ prefix.
+            cm_domain::cash::Money(view.value as i64).format_gbp(),
+            cm_domain::cash::Money(view.wage as i64).format_gbp(),
+            view.international_caps, view.international_goals
+        ),
+    );
+    // Positions: one cell per aptitude; natural (20) positions in the highlight ink.
+    let plo = rebuild_layout(PROFILE_POS, 2, &[1; 12], &[1], false);
+    s.draw_text_box(110, PROFILE_POS.1 - 26, 780, PROFILE_POS.1 - 2, F_LEFT, f3, (200, 200, 200), "Positions");
+    s.draw_panel(PROFILE_POS.0, PROFILE_POS.1, PROFILE_POS.2, PROFILE_POS.3, F_TRANSPARENT, (40, 40, 40));
+    for (i, (label, apt)) in view.positions.iter().enumerate() {
+        let ink = if *apt >= 20 { pal.highlight_fg } else if *apt >= 15 { pal.near_white } else { (150, 150, 150) };
+        s.draw_text_box(plo.col_left[i], plo.row_top[0], plo.col_right[i], plo.row_bottom[0],
+            0, f3, ink, &format!("{label} {apt}"));
+    }
+    // Attributes: three columns of name | value.
+    s.draw_text_box(110, PROFILE_ATTRS.1 - 26, 780, PROFILE_ATTRS.1 - 2, F_LEFT, f3, (200, 200, 200), "Attributes");
+    s.draw_panel(PROFILE_ATTRS.0, PROFILE_ATTRS.1, PROFILE_ATTRS.2, PROFILE_ATTRS.3, F_TRANSPARENT, (40, 40, 40));
+    let lo = profile_attr_layout();
+    for (i, (label, value)) in view.attributes.iter().enumerate() {
+        let column = i / PROFILE_ATTR_ROWS;
+        let row = i % PROFILE_ATTR_ROWS;
+        if column >= 3 {
+            break;
+        }
+        let (nc, vc) = (column * 2, column * 2 + 1);
+        s.draw_text_box(lo.col_left[nc], lo.row_top[row], lo.col_right[nc], lo.row_bottom[row],
+            F_LEFT, f3, pal.near_white, label);
+        s.draw_text_box(lo.col_left[vc], lo.row_top[row], lo.col_right[vc], lo.row_bottom[row],
+            F_RIGHT, f3, pal.highlight_fg, &value.to_string());
+    }
 }
 
 // ------- Selected Leagues (menu cmd 0x431 — Setup.c FUN_008053D0, in-game view) -------
@@ -1885,9 +2057,6 @@ pub fn start_season(
 
 // ------- helpers -------
 
-fn in_rect(x: i32, y: i32, r: (i32, i32, i32, i32)) -> bool {
-    x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3
-}
 
 /// Paint a solid dark background with a warning message. Fallback when the
 /// spec JSON isn't reachable — makes the failure obvious in the UI instead

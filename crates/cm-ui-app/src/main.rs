@@ -58,6 +58,17 @@ enum Screen {
         view: cm_domain::LeagueTableView,
         scroll: usize,
     },
+    /// Player Profile — reached from a Dashboard squad row. Built by
+    /// `World::player_profile_for` from the type-6 person + type-10 attributes.
+    PlayerProfile {
+        view: cm_domain::PlayerProfile,
+    },
+    /// Club Fixtures — reached from the Dashboard's next-fixture panel. Built
+    /// by `World::club_fixtures_for` from `save.season.fixtures`.
+    ClubFixtures {
+        view: cm_domain::ClubFixturesView,
+        scroll: usize,
+    },
     /// Selected Leagues (menu cmd 0x431 → exe FUN_008053D0 in view mode):
     /// the nation tiers of the working game (`save.nation_tiers`) plus the
     /// new-game options it was started with (`save.new_game`).
@@ -199,6 +210,14 @@ impl App {
                 screens::league_table(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
                 self.overlay_menu_bar();
             }
+            Screen::PlayerProfile { view } => {
+                screens::player_profile(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view);
+                self.overlay_menu_bar();
+            }
+            Screen::ClubFixtures { view, scroll } => {
+                screens::club_fixtures(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
+                self.overlay_menu_bar();
+            }
             Screen::WidgetPoolDebug { label, widgets } => {
                 screens::draw_widget_pool_debug(
                     &mut self.frame, &mut self.fonts, widgets, label,
@@ -253,6 +272,8 @@ impl App {
             | Screen::LatestScores { .. }
             | Screen::SelectedLeagues { .. }
             | Screen::LeagueTable { .. }
+            | Screen::PlayerProfile { .. }
+            | Screen::ClubFixtures { .. }
             | Screen::WidgetPoolDebug { .. } => Pressed::None,
         }
     }
@@ -269,6 +290,8 @@ impl App {
                 | Screen::LatestScores { .. }
                 | Screen::SelectedLeagues { .. }
                 | Screen::LeagueTable { .. }
+                | Screen::PlayerProfile { .. }
+                | Screen::ClubFixtures { .. }
         ) {
             if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                 let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
@@ -317,6 +340,10 @@ impl App {
         let mut start_game: Option<(SelectLeaguesState, StartSeasonState)> = None;
         // Deferred league-table open (club id) — set by the Dashboard arm.
         let mut open_table: Option<u32> = None;
+        // Deferred player-profile open (player id) — set by a Dashboard squad row.
+        let mut open_profile: Option<u32> = None;
+        // Deferred club-fixtures open (club id) — set by the Dashboard's fixture panel.
+        let mut open_fixtures: Option<u32> = None;
         // Deferred: Enter Name -> Select Club (needs self.world + self.game).
         let mut goto_select_club = false;
         // Deferred: club picked on Select Club -> install + Dashboard.
@@ -459,13 +486,21 @@ impl App {
                     None => {}
                 }
             }
-            Screen::Dashboard { view: cm_domain::DashboardView::Club(d), .. } => {
+            Screen::Dashboard { view: cm_domain::DashboardView::Club(d), squad_scroll } => {
                 // The division line under the club name is the exe's entity link
                 // to the competition dashboard — open this division's table.
                 let (l, t, r, b) = screens::DASH_DIVISION_LINK;
                 if x >= l && x <= r && y >= t && y <= b {
                     // Deferred: `self.screen` is borrowed by this match.
                     open_table = Some(d.club_id);
+                } else if screens::in_rect(x, y, screens::DASH_FIXTURE_LINK) {
+                    // The next-fixture panel is the entity link to the fixture list.
+                    open_fixtures = Some(d.club_id);
+                } else if let Some(row) = screens::dash_squad_row_at(x, y) {
+                    // A squad row is the entity link to that player's profile.
+                    if let Some(p) = d.squad.get(*squad_scroll + row) {
+                        open_profile = Some(p.player_id);
+                    }
                 }
             }
             Screen::Dashboard { .. } => {
@@ -483,6 +518,12 @@ impl App {
             Screen::LeagueTable { .. } => {
                 // Read-only table; club rows are not entity links yet.
             }
+            Screen::PlayerProfile { .. } => {
+                // Read-only; navigation is via the menu bar (handled above).
+            }
+            Screen::ClubFixtures { .. } => {
+                // Read-only list; navigation is via the menu bar (handled above).
+            }
             Screen::WidgetPoolDebug { .. } => {
                 // Debug view — clicks are inert.
             }
@@ -493,6 +534,12 @@ impl App {
         // The screen borrow is released here — safe to build the working game.
         if let Some(club_id) = open_table {
             self.open_league_table(club_id);
+        }
+        if let Some(player_id) = open_profile {
+            self.open_player_profile(player_id);
+        }
+        if let Some(club_id) = open_fixtures {
+            self.open_club_fixtures(club_id);
         }
         if let Some((leagues, season)) = start_game {
             self.start_new_game(&leagues, &season);
@@ -543,6 +590,36 @@ impl App {
             let view = world.news_for(&game.save, game.save.active_human);
             let selected = 0;
             self.screen = Screen::News { view, selected, scroll: 0, tab: screens::NewsTab::All };
+        }
+    }
+
+    /// Open `club_id`'s fixture list (`save.season.fixtures`).
+    fn open_club_fixtures(&mut self, club_id: u32) {
+        if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+            match world.club_fixtures_for(&game.save, club_id) {
+                Some(view) => {
+                    eprintln!("[fixtures] {} — {} fixtures", view.club_name, view.rows.len());
+                    self.screen = Screen::ClubFixtures { view, scroll: 0 };
+                }
+                None => {
+                    self.status = Some("No fixtures for this club".into());
+                }
+            }
+        }
+    }
+
+    /// Open `player_id`'s profile (type-6 person + type-10 attributes).
+    fn open_player_profile(&mut self, player_id: u32) {
+        if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+            match world.player_profile_for(&game.save, player_id) {
+                Some(view) => {
+                    eprintln!("[profile] {} ({})", view.name, player_id);
+                    self.screen = Screen::PlayerProfile { view };
+                }
+                None => {
+                    self.status = Some("No attribute record for this player".into());
+                }
+            }
         }
     }
 
@@ -988,6 +1065,11 @@ impl ApplicationHandler for App {
                         *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
                         changed = true;
                     }
+                    Screen::ClubFixtures { view, scroll } => {
+                        let max = view.rows.len().saturating_sub(screens::FIXTURE_ROWS_VISIBLE);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
+                        changed = true;
+                    }
                     _ => {}
                 }
                 if changed {
@@ -1028,6 +1110,8 @@ impl ApplicationHandler for App {
                                 | Screen::LatestScores { .. }
                                 | Screen::SelectedLeagues { .. }
                                 | Screen::LeagueTable { .. }
+                                | Screen::PlayerProfile { .. }
+                                | Screen::ClubFixtures { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
@@ -1259,6 +1343,70 @@ fn dump(path: &str, which: &str) {
                     screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
                 }
             }
+            "fixtures" => {
+                // Headless render of Arsenal's fixture list (CM_ADV_DAYS ticks
+                // first so some rows carry results; CM_SCROLL scrolls).
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    if let Ok(n) = std::env::var("CM_ADV_DAYS").unwrap_or_default().parse::<u32>() {
+                        save.tick_days(n);
+                        eprintln!("[dump] advanced {n} days -> {}", save.date.iso());
+                    }
+                    if let Some(view) = world.club_fixtures_for(&save, 676) {
+                        let scroll = std::env::var("CM_SCROLL").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                        eprintln!("[dump] fixtures: {} — {} rows", view.club_name, view.rows.len());
+                        screens::club_fixtures(&mut frame, &mut fonts, bg.as_ref(), &view, scroll);
+                        let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                        let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                        screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
+                    }
+                }
+            }
+            "profile" => {
+                // Headless render of the first Arsenal squad member's profile
+                // (CM_PLAYER_ROW picks another dashboard squad row).
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    let row = std::env::var("CM_PLAYER_ROW").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                    let dash = world.dashboard_for(&save, save.active_human);
+                    let player_id = match &dash {
+                        Some(cm_domain::DashboardView::Club(d)) => d.squad.get(row).map(|p| p.player_id),
+                        _ => None,
+                    };
+                    match player_id.and_then(|id| world.player_profile_for(&save, id)) {
+                        Some(view) => {
+                            eprintln!("[dump] profile: {} age={:?} club={:?}", view.name, view.age, view.club_name);
+                            screens::player_profile(&mut frame, &mut fonts, bg.as_ref(), &view);
+                            let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                            let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                            screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
+                        }
+                        None => eprintln!("[dump] profile: no player at squad row {row}"),
+                    }
+                }
+            }
             "table" => {
                 // Headless render of Arsenal's division table (day 0 unless
                 // CM_ADV_DAYS advances the tick so results populate it).
@@ -1478,6 +1626,23 @@ fn main() {
         Some("table") => {
             app.boot_dashboard();
             app.open_league_table(676); // Arsenal's division
+        }
+        Some("fixtures") => {
+            app.boot_dashboard();
+            app.open_club_fixtures(676); // Arsenal
+        }
+        Some("profile") => {
+            // First squad row of the Arsenal dashboard.
+            app.boot_dashboard();
+            let first = match &app.screen {
+                Screen::Dashboard { view: cm_domain::DashboardView::Club(d), .. } => {
+                    d.squad.first().map(|p| p.player_id)
+                }
+                _ => None,
+            };
+            if let Some(id) = first {
+                app.open_player_profile(id);
+            }
         }
         Some("selected") => {
             app.boot_dashboard();

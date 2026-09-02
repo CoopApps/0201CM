@@ -75,7 +75,7 @@ pub struct RegenScoreContext {
 /// "another CA/reputation-scale short", per the `+0xd` field right next to
 /// it (`DomainStaffType10::rating_short_0x0d`, "probable_reputation").
 fn type10_field_0xb(t: &DomainStaffType10) -> i16 {
-    i16::from_le_bytes([t.unknown_bytes_9_12[2], t.unknown_bytes_9_12[3]])
+    t.current_reputation_value() as i16
 }
 
 /// Direct port of `FUN_0078F4F0` — the free-agent suitability scorer.
@@ -128,7 +128,7 @@ pub fn regen_suitability_score(
     // see module docs) plus two reputation-threshold bonuses.
     if let Some(t10) = type10 {
         score += rng(FLOAT_TERM_BOUND);
-        if t10.rating_short_0x0d as i16 > 0x1d4c {
+        if t10.reputation() as i16 > 0x1d4c {
             score += 100;
         }
         if type10_field_0xb(t10) > 0x1d4c {
@@ -158,7 +158,7 @@ pub fn regen_suitability_score(
             score += caps * caps;
             if let Some(t10) = type10 {
                 let roll = rng(10000);
-                if roll < t10.rating_short_0x0d as i16 as i32 {
+                if roll < t10.reputation() as i16 as i32 {
                     score *= 2;
                 }
             }
