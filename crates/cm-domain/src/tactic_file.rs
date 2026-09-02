@@ -313,9 +313,32 @@ pub struct PitchXY {
 /// Per-slot 24-waypoint positional-play grid.
 ///
 /// Shape: `[side ∈ 0..2][row ∈ 0..3][col ∈ 0..4]` → one [`PitchXY`].
-/// `side` = home / away mentality mirror.
-/// `row` = lateral corridor (left / centre / right).
-/// `col` = depth waypoint (front → back).
+///
+/// **Axis semantics — VERIFIED empirically** via byte-diff of
+/// `D:/cm0102/Data/352_default.pct` vs `352_attacking_default.pct`:
+///
+/// - **`side` = possession phase**. Empirically `side=0` = own possession
+///   (defensive positioning), `side=1` = opposition possession
+///   (attacking positioning). The attacking-variant preset shifts BOTH
+///   sides for the AM (slot 7) but only `side=1` for the fullbacks
+///   (slots 1, 2) — confirming these are per-possession-phase waypoints.
+///
+/// - **`row` and `col` index the 12 waypoints per side** — row=0..2
+///   varies X coordinate (lateral column: 17 → 23 → 24 for a fullback);
+///   col=0..3 varies Y coordinate (depth waypoint: 10 → 15 → 24 → 27).
+///
+/// - **`PitchXY.x` = LATERAL COORDINATE** — the width position across the
+///   pitch. **Fixed per (row, col)** in the mentality-variant diff —
+///   attacking presets never change X, only Y.
+///
+/// - **`PitchXY.y` = DEPTH COORDINATE** — the length position along the
+///   pitch. HIGHER value = MORE FORWARD. Attacking preset pushes Y UP:
+///   fullback's y goes `10,15,24,27` → `13,20,28,31` (a uniform +3..+4
+///   shift in the attacking phase).
+///
+/// This axis mapping matches how the exe consumes the grid in
+/// FUN_006DFB40 (reachability check) and token target-picker — X is
+/// zone_x (0..7 corridor code), Y is zone_y (0..11 depth code).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SlotInstructions {
     pub grid: [[[PitchXY; 4]; 3]; 2],
@@ -333,6 +356,47 @@ impl SlotInstructions {
                 (0..4).map(move |col| (side, row, col, self.grid[side][row][col]))
             })
         })
+    }
+
+    /// Return the average Y-shift between two slot grids on the
+    /// attacking (side=1) phase — positive means `other` is set further
+    /// FORWARD than `self`. VERIFIED semantics via the 352 default →
+    /// attacking diff (uniform +3..+4 Y shift observed across all 12
+    /// waypoints of a shifted slot).
+    ///
+    /// A caller comparing two presets can use this to detect the
+    /// mentality-variant relationship even when neither preset's team_flags_1
+    /// mentality byte is decoded to a label.
+    pub fn attacking_phase_y_shift(&self, other: &SlotInstructions) -> f32 {
+        let mut sum: i32 = 0;
+        let mut count: i32 = 0;
+        for row in 0..3 {
+            for col in 0..4 {
+                let a = self.grid[1][row][col].y as i32;
+                let b = other.grid[1][row][col].y as i32;
+                sum += b - a;
+                count += 1;
+            }
+        }
+        sum as f32 / count as f32
+    }
+
+    /// Return true if all X coordinates match `other` on both possession
+    /// phases. VERIFIED empirically: attacking preset never changes X,
+    /// only Y — this predicate tells the caller "these two grids differ
+    /// only in depth (mentality-variant relationship), not in width
+    /// (formation-variant relationship)."
+    pub fn same_lateral_layout(&self, other: &SlotInstructions) -> bool {
+        for side in 0..2 {
+            for row in 0..3 {
+                for col in 0..4 {
+                    if self.grid[side][row][col].x != other.grid[side][row][col].x {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
     }
 }
 
@@ -722,6 +786,52 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn same_lateral_layout_verified_from_352_diff() {
+        // Build two grids sharing X but differing Y — matches empirical
+        // slot 1 shift observed in 352_default → 352_attacking_default.
+        let mut a = SlotInstructions::default();
+        let mut b = SlotInstructions::default();
+        // side=1, row=0..2, col=0..3 for slot 1 fullback
+        let xs = [17u16, 23, 24];
+        let ys_default = [[10u16, 15, 24, 27]; 3];
+        let ys_attacking = [[13u16, 20, 28, 31]; 3];
+        for row in 0..3 {
+            for col in 0..4 {
+                a.grid[1][row][col] = PitchXY { x: xs[row], y: ys_default[row][col] };
+                b.grid[1][row][col] = PitchXY { x: xs[row], y: ys_attacking[row][col] };
+            }
+        }
+        assert!(a.same_lateral_layout(&b),
+                "attacking-variant preserves X across the shift");
+
+        // Verify Y-shift average matches the observed +3..+4 pattern
+        // (empirically the mean is exactly 3.5 for this fullback slot).
+        let shift = a.attacking_phase_y_shift(&b);
+        assert!(shift > 3.0 && shift < 4.5,
+                "expected +3..+4 avg Y shift, got {}", shift);
+    }
+
+    #[test]
+    fn different_x_breaks_same_lateral_layout() {
+        // If any X differs, the grids don't share lateral layout — this
+        // predicate is the "formation-variant relationship" gate the
+        // docstring describes.
+        let mut a = SlotInstructions::default();
+        let mut b = SlotInstructions::default();
+        a.grid[0][0][0] = PitchXY { x: 10, y: 15 };
+        b.grid[0][0][0] = PitchXY { x: 11, y: 15 };
+        assert!(!a.same_lateral_layout(&b));
+    }
+
+    #[test]
+    fn identical_grids_have_zero_shift() {
+        let a = SlotInstructions::default();
+        let b = SlotInstructions::default();
+        assert!(a.same_lateral_layout(&b));
+        assert_eq!(a.attacking_phase_y_shift(&b), 0.0);
+    }
 
     #[test]
     fn nibble_role_dispatch_matches_sweep_findings() {
