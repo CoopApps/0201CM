@@ -2048,6 +2048,21 @@
     "_source": "player_stats.cpp - Player statistics tracker",
     "_ported": "match_stats already ported; season aggregation follow-up"
   },
+  "comp_fifa.cpp": {
+    "_range": "0x00577210 .. 0x00578030 (runtime FIFA table; error strings cite comp_f…)",
+    "_source": "comp_fifa.cpp - FIFA World Rankings runtime table (0x2c-byte per-nation records)",
+    "_ported": "fifa_rankings::compute (start-of-game table exact, a62e408) + app Screen::FifaRankings (be33101); monthly/annual evolution NOT ported",
+    "0x00577b00": "fifa_table_build: per nation {index@0, points f32@+0xc = coef(+0xA8)*[0x958340]=1/35, rank@+0x10, prev_rank@+0x12, history[6] i32@+0x14 = (int)(points*1000)}; then rank via fifa_table_sort. x87 expr dropped by Ghidra — see 02221_sub_00577b00.asm",
+    "0x005773c0": "fifa_table_sort: malloc nation_count ptrs, keep nations with continent ptr (+0x71) non-null, qsort by sub_00577ff0",
+    "0x00577ff0": "fifa_cmp_points_desc: fld [a+0xc]; fcomp [b+0xc] — descending by points (a<b ⇒ +1)",
+    "0x00577210": "fifa_monthly_maintenance: on day 0x12 (18th) expire per-nation result list (+4 ptr, +10 count, 5-byte entries) vs window, annual shift of the 6 history ints (+0x28..+0x14, newest zeroed), FUN_00577d70 recompute, re-rank",
+    "0x00577d70": "fifa_points_recompute (called by fifa_monthly_maintenance) — NOT yet decoded",
+    "0x00577fd0": "fifa_result_entry_cmp (qsort comparator for the 5-byte result entries)"
+  },
+  "game.cpp (FIFA)": {
+    "0x005c01d0": "game_recompute_fifa_rankings: one-time fan-out of coef +0xA8 into +0xB0..+0xD0 (DAT_009b97b8 gate); on schedule day (DAT_009b97a0[month]) scores every nation via fifa_score (0.8/0.2/0.4/0.6 weights + pending + N-1); on annual day (DAT_009b97b6) accrues +0xD8 += (12-months@+0x121)*rep(+0x8e)*0.05*3.0 then shifts 6 doubles; sorts temp array by sub_004b5fd0 then FREES it (sort is a no-op)",
+    "0x004b5fd0": "fifa_score_cmp_desc: fld [a+4]; fcomp [b+4] (f64) — descending"
+  },
   "comp_screens.cpp": {
     "_range": "per file_attribution.json (comp_screens.cpp)",
     "_source": "comp_screens.cpp - Competition screens",
@@ -2131,8 +2146,7 @@
     "0x004aea10": "emit_achievement_news (1646-line past-tense achievement-news dispatcher; same 22 SeasonRecordSlot values as 0x004ac150 but streams data via FUN_0076d7d0 pulls; templates catalogued in batch35, full body deferred pending news scaffolding) [batch35 metadata]",
     "0x0076d7d0": "news_stream_pull_next (typed pull from serialized news buffer)",
     "0x004c6370": "match_nation_differs (used by attendance/scoring slots to switch between primary and 'in nation N' template variants)",
-    "0x004b5e70": "news_frame_open (news-item construction start)"
-  },
+    "0x004b5e70": "news_frame_free (frees the two news-item buffers at +0/+4 — called at the start of each emitter before building the next item; NOT an 'open')"
   },
   "find_screens.cpp": {
     "_range": "per file_attribution.json (find_screens.cpp)",
