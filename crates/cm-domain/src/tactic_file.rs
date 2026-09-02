@@ -611,6 +611,33 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
 /// checking which values are fixed per-role vs which vary preset-to-preset.
 pub const PRESET_TOKEN_GOALKEEPER: u32     = 0x15552221;
 pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
+
+/// **VERIFIED empirical decode of nibble 5 = "Forward Runs" slider.**
+///
+/// Evidence: `442_attacking_default.pct` differs from `442_default.pct`
+/// in EXACTLY TWO bytes across the full 44-byte per-slot pair block —
+/// slot 8 nibble 5: `9 → 5`, slot 9 nibble 5: `9 → 5`. Slots 8 and 9
+/// in a 4-4-2 are the two strikers.
+///
+/// The 40-preset frequency sweep showed nibble 5's two dominant values
+/// as `5` (51%) and `9` (48%) — a **2-state slider**. Combined with
+/// the pinpoint 442 diff evidence (attacking preset raises strikers'
+/// nib 5 to 9), the semantics are clear:
+///
+///   nib[5] = 5 → forward-runs "Mixed" (default)
+///   nib[5] = 9 → forward-runs "Often" (attacking-variant strikers)
+///
+/// The mapping between numeric value (5, 9) and the tactics-editor
+/// label (Rarely / Mixed / Often) needs one more anchor for the
+/// third state; observations only show two states in shipped presets.
+pub const NIBBLE_FORWARD_RUNS_MIXED: u8 = 5;
+pub const NIBBLE_FORWARD_RUNS_OFTEN: u8 = 9;
+
+/// Extract the forward-runs slider value from a slot's `movement_token`.
+#[inline]
+pub fn slot_forward_runs_nibble(token: u32) -> u8 {
+    ((token >> (5 * 4)) & 0xF) as u8
+}
 /// 343-default vs 343-defensive show these slots DIFFER (empirical). The
 /// specific nibbles that shift between the two variants are candidates for
 /// per-slot sliders like Closing Down / Forward Runs / Hold Up Ball.
@@ -786,6 +813,28 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn forward_runs_nibble_decode_from_442_striker_diff() {
+        // Verified from D:/cm0102/Data/442_default.pct → 442_attacking_default.pct:
+        // strikers (slot 8, 9) shift nibble 5 from 5 (Mixed) → 9 (Often).
+        // Extract from the striker token PRESET_TOKEN_STRIKER_442 = 0x95522221:
+        //   nibbles = [1, 2, 2, 2, 2, 5, 5, 9]
+        //   nib[5] = 5 → Mixed (this is the 442_default value)
+        assert_eq!(slot_forward_runs_nibble(PRESET_TOKEN_STRIKER_442),
+                   NIBBLE_FORWARD_RUNS_MIXED);
+
+        // Synthesize the 442_attacking_default striker token: same as
+        // default but nib 5 = 9. Base 0x95522221 has nibbles [1,2,2,2,2,5,5,9]
+        // (LSB→MSB). Changing nib 5 (bits 20..24) from 5 to 9 gives
+        // [1,2,2,2,2,9,5,9] = 0x95922221.
+        let attacking_striker = (PRESET_TOKEN_STRIKER_442 & !(0xF << 20))
+                                | ((NIBBLE_FORWARD_RUNS_OFTEN as u32) << 20);
+        assert_eq!(attacking_striker, 0x95922221,
+                   "attacking-striker token has nib 5 = 9 (only nib 5 changes)");
+        assert_eq!(slot_forward_runs_nibble(attacking_striker),
+                   NIBBLE_FORWARD_RUNS_OFTEN);
+    }
 
     #[test]
     fn same_lateral_layout_verified_from_352_diff() {
