@@ -242,7 +242,25 @@ pub fn ca_dependent_in_match(
             v = apply_exp_bonus(deserves, v, 18.0, 1.2);
         }
         A::Marking | A::Positioning => {
-            v = apply_exp_bonus(deserves, v, 16.0, 1.2);
+            // **CRITICAL fidelity note** (from
+            // agevak/Patches/PositioningMarkingRemoveMegaBoost):
+            //
+            // The ORIGINAL cm0102.exe applies TWO boosts to Marking and
+            // Positioning (unique to these two attributes):
+            //   1) 'Mega' boost:   v = (v + 0.13)^2.2 + 1  ← unique
+            //   2) Standard boost: v = 16 + (v - 16)^1.2   ← same as others
+            //
+            // The mega boost can push values into the 0..480 range, which
+            // OVERFLOWS the signed byte the exe stores it in, producing
+            // the well-documented 'higher Marking → more goals conceded'
+            // bug (see champman0102.net forum thread 2609).
+            //
+            // For BYTE-EXACT fidelity with the shipped exe (including the
+            // bug) we apply the mega boost first, then the standard boost.
+            // Callers who want the community-patched behavior can call
+            // [`ca_dependent_in_match_patched`] instead.
+            v = (v + 0.13).powf(2.2) + 1.0;         // mega boost (bugged)
+            v = apply_exp_bonus(deserves, v, 16.0, 1.2);  // standard boost
         }
         A::Movement => {
             // Age/DM adjustments before the blend
@@ -277,6 +295,38 @@ pub fn ca_dependent_in_match(
         }
     }
     v.max(0.0)
+}
+
+/// **PATCHED variant** of [`ca_dependent_in_match`] — removes the
+/// buggy "mega boost" on Marking and Positioning that causes signed-
+/// byte overflow in the shipped exe.
+///
+/// Use this for the community-patched behavior (`PositioningMarkingRemove
+/// MegaBoost` patch semantics). Use [`ca_dependent_in_match`] for
+/// byte-exact fidelity with the ORIGINAL exe (including the bug).
+///
+/// Benchmark evidence (from agevak/Patches/PositioningMarkingRemove
+/// MegaBoost benchmarks, 100 seasons per test):
+/// - Marking 0/60/120 (original):     52.29/51.31/52.79 for, 29/23/34 against
+///   → higher Marking = MORE conceded (overflow bug)
+/// - Marking 0/60/120 (mega removed): 49.01/48.47/48.07 for, 26/23/22 against
+///   → higher Marking = FEWER conceded (bug-free)
+pub fn ca_dependent_in_match_patched(
+    attr: PlayerAttribute,
+    intrinsic: i8,
+    ability: i32,
+    ctx: AttrCtx,
+) -> f32 {
+    if matches!(attr, PlayerAttribute::Marking | PlayerAttribute::Positioning) {
+        // Skip the mega boost, apply only the standard boost
+        let ability_scaled = ((ability / 2 + 80) & 0xFF) as f32;
+        let intrinsic_f = intrinsic as f32;
+        let v = (2.0 * intrinsic_f + ability_scaled) * 0.1;
+        let deserves = ability_scaled > 150.0;
+        apply_exp_bonus(deserves, v, 16.0, 1.2).max(0.0)
+    } else {
+        ca_dependent_in_match(attr, intrinsic, ability, ctx)
+    }
 }
 
 /// Compute the in-match value for a NON-CA-dependent attribute.
@@ -412,6 +462,39 @@ mod tests {
         let old = in_match_value(PlayerAttribute::Movement, 20, 150,
             AttrCtx { year_of_birth_gt_36: true, defensive_mid_20: false });
         assert!(old < young, "old={} vs young={}", old, young);
+    }
+
+    #[test]
+    fn marking_original_shows_the_overflow_bug() {
+        // The mega boost pushes Marking way past 20 for high-CA players
+        // and this is the DOCUMENTED BUG in shipped cm0102.
+        let ctx = AttrCtx::default();
+        let low_marking  = ca_dependent_in_match(PlayerAttribute::Marking, 8, 100, ctx);
+        let high_marking = ca_dependent_in_match(PlayerAttribute::Marking, 18, 200, ctx);
+        // Mega boost + standard boost = huge numbers for high intrinsic/CA
+        assert!(high_marking > low_marking * 2.0,
+                "high={} vs low={}", high_marking, low_marking);
+    }
+
+    #[test]
+    fn patched_marking_no_mega_boost() {
+        // Patched variant produces MUCH smaller values, no overflow.
+        let ctx = AttrCtx::default();
+        let orig    = ca_dependent_in_match(PlayerAttribute::Marking, 18, 200, ctx);
+        let patched = ca_dependent_in_match_patched(PlayerAttribute::Marking, 18, 200, ctx);
+        assert!(patched < orig,
+                "patched={} should be < orig={}", patched, orig);
+        // Patched values sanely bounded (below ~30 for even elite players)
+        assert!(patched < 40.0, "patched Marking should stay bounded, got {}", patched);
+    }
+
+    #[test]
+    fn patched_variant_only_affects_marking_and_positioning() {
+        // Passing should be identical between orig and patched
+        let ctx = AttrCtx::default();
+        let orig    = ca_dependent_in_match(PlayerAttribute::Passing, 15, 150, ctx);
+        let patched = ca_dependent_in_match_patched(PlayerAttribute::Passing, 15, 150, ctx);
+        assert!((orig - patched).abs() < 1e-6);
     }
 
     #[test]
