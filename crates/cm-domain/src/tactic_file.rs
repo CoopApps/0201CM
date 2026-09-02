@@ -859,6 +859,12 @@ pub fn slot_nibble_4(token: u32) -> u8 {
 /// confirm the specific slider identity. The nibble ROLES are certain;
 /// the exact slider-label mapping is best-guess pending further evidence.
 pub const NIBBLE_MARKING_LOOSE:  u8 = 2;
+/// Marking = Normal (3rd state). VERIFIED empirically from the second
+/// 442.tct → 442-1 change.tct diff: nibble 3 shifted 2 → 4 at slots 4,
+/// 7, AND 8 simultaneously in a single save operation — a cross-cutting
+/// signature of "set Marking = Normal on 3 players". Rules out any
+/// interpretation where value 4 is not a Marking state.
+pub const NIBBLE_MARKING_NORMAL: u8 = 4;
 pub const NIBBLE_MARKING_TIGHT:  u8 = 8;
 pub const NIBBLE_CLOSING_NORMAL: u8 = 5;
 pub const NIBBLE_CLOSING_HIGH:   u8 = 9;
@@ -1232,6 +1238,22 @@ mod tests {
                         | ((NIBBLE_CLOSING_HIGH as u32) << 24);
         assert_eq!(synthesized, MID_DEFENSIVE,
                    "defensive-midfielder token from two-nibble mask op");
+    }
+
+    #[test]
+    fn marking_normal_is_third_state_from_442_multi_diff() {
+        // 3rd Marking state pinned by the 442.tct multi-toggle diff:
+        // slots 4, 7, 8 all shifted nib 3 from 2 → 4 in one save.
+        // Rules out non-Marking interpretations of value 4.
+        assert_eq!(NIBBLE_MARKING_LOOSE,  2);
+        assert_eq!(NIBBLE_MARKING_NORMAL, 4);
+        assert_eq!(NIBBLE_MARKING_TIGHT,  8);
+        // Values are distinct (3-state UI)
+        assert_ne!(NIBBLE_MARKING_LOOSE, NIBBLE_MARKING_NORMAL);
+        assert_ne!(NIBBLE_MARKING_NORMAL, NIBBLE_MARKING_TIGHT);
+        // Ordering matches UI (Loose ← Normal → Tight); values ARE ordered
+        assert!(NIBBLE_MARKING_LOOSE < NIBBLE_MARKING_NORMAL);
+        assert!(NIBBLE_MARKING_NORMAL < NIBBLE_MARKING_TIGHT);
     }
 
     #[test]
