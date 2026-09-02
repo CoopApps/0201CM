@@ -491,6 +491,43 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
     out
 }
 
+/// VERIFIED empirical constants — the per-slot movement_token values
+/// observed across shipped `.pct` presets. Extracted directly from
+/// `D:/cm0102/Data/*.pct` files, giving concrete anchor points for
+/// future setter-cluster decode.
+///
+/// Key empirical findings (from a comparison sweep across 352_default,
+/// 352_defensive_default, 352_attacking_default, 343_default,
+/// 343_defensive):
+///
+/// 1. **352 attacking vs defensive vs default have BYTE-IDENTICAL per-slot
+///    tokens.** The variants differ only in team-level `team_flags_2` —
+///    **team mentality is NOT stored per-slot**. The [`SlotSlider::Mentality`]
+///    variant in the enum below documents the UI slider name, but the
+///    actual value lives in [`Tactic::team_flags_2`] via [`team_settings`].
+///
+/// 2. **The goalkeeper (slot 0) has the fixed token `0x15552221`** across
+///    every preset examined. Nibbles `[1, 2, 2, 2, 5, 5, 5, 1]`.
+///    GKs don't get individual instructions.
+///
+/// 3. **Strikers (slots 8, 9 in 4-x-2 shapes) have the fixed token
+///    `0x95522221`** — nibbles `[1, 2, 2, 2, 2, 5, 5, 9]`. The high nibble
+///    `[7] = 9` distinguishes striker-position defaults from other roles.
+///
+/// 4. **The high nibble at position 7 correlates with position role**:
+///    GK / DEF / MID → nibble `[7] = 1`; ST → nibble `[7] = 9`;
+///    varies for other positions.
+///
+/// These anchors let future decoders reason about specific nibbles by
+/// checking which values are fixed per-role vs which vary preset-to-preset.
+pub const PRESET_TOKEN_GOALKEEPER: u32     = 0x15552221;
+pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
+/// 343-default vs 343-defensive show these slots DIFFER (empirical). The
+/// specific nibbles that shift between the two variants are candidates for
+/// per-slot sliders like Closing Down / Forward Runs / Hold Up Ball.
+/// Nibble positions that vary in the shift: 3, 4, 6, 7.
+pub const SHIFT_NIBBLE_POSITIONS_DEFAULT_TO_DEFENSIVE: [usize; 4] = [3, 4, 6, 7];
+
 /// The 8 per-slot slider names — VERIFIED via exe .rdata tactics-editor
 /// label cluster at 0x006779ed (in order):
 ///
@@ -519,6 +556,14 @@ pub enum SlotSlider {
     /// Player's individual mentality override (Ultra-Defensive to All-Out
     /// Attack — the 5-state per-position slider mentioned at tactic_file
     /// line 343).
+    ///
+    /// **Empirical caveat**: the 352_attacking_default / 352_default /
+    /// 352_defensive_default preset triple has BYTE-IDENTICAL per-slot
+    /// movement_tokens, meaning team-level mentality is stored ONLY in
+    /// [`Tactic::team_flags_2`], not per-slot. This slider likely allows
+    /// OVERRIDING the team default for a specific player, but the default
+    /// case leaves this nibble at its role-default (see
+    /// [`PRESET_TOKEN_GOALKEEPER`] / [`PRESET_TOKEN_STRIKER_442`]).
     Mentality,
     /// Closing-down intensity (Rarely / Sometimes / Often / Always).
     ClosingDown,
@@ -558,6 +603,28 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn preset_token_constants_have_expected_nibble_patterns() {
+        // GK token: nibbles [1, 2, 2, 2, 5, 5, 5, 1]
+        let nibs: Vec<u8> = (0..8).map(|i| ((PRESET_TOKEN_GOALKEEPER >> (i * 4)) & 0xF) as u8)
+            .collect();
+        assert_eq!(nibs, vec![1u8, 2, 2, 2, 5, 5, 5, 1]);
+
+        // Striker token: nibbles [1, 2, 2, 2, 2, 5, 5, 9]
+        let nibs: Vec<u8> = (0..8).map(|i| ((PRESET_TOKEN_STRIKER_442 >> (i * 4)) & 0xF) as u8)
+            .collect();
+        assert_eq!(nibs, vec![1u8, 2, 2, 2, 2, 5, 5, 9]);
+
+        // Position-role marker at nibble[7]: 1 for GK, 9 for ST
+        assert_eq!(nibs[7], 9);
+    }
+
+    #[test]
+    fn shift_nibbles_document_default_vs_defensive_variance() {
+        // The empirical shift positions the sweep documented
+        assert_eq!(SHIFT_NIBBLE_POSITIONS_DEFAULT_TO_DEFENSIVE, [3usize, 4, 6, 7]);
+    }
 
     #[test]
     fn flat_442_carries_empty_slot_instructions() {
