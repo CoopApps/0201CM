@@ -1,0 +1,2548 @@
+{
+  "_comment": "Understandable names for cm0102.exe functions, decoded from D:/cm0102-carve/newcarve. Address = VA. Grouped by source translation unit (linker-contiguous .obj).",
+  "_globals": {
+    "0x00955270": "vtbl_afrcup",
+    "0x008fc4f0": "game_rng (ported in cm-rng)",
+    "0x008fc660": "fmt_assert_message (builds 'file.func line' string)",
+    "0x00933ed6": "operator_new / malloc",
+    "0x0093435a": "free",
+    "0x00933d24": "operator_delete",
+    "0x009343c3": "memcpy",
+    "0x005d1c30": "log_error (Error, msg)",
+    "0x00acd5b0": "nation_table_base (record stride 0x122 = 290 bytes)",
+    "0x00acd558": "nation_count",
+    "0x009bbeb8": "continent_id_africa",
+    "0x00dbd1d8": "results_news_manager_singleton",
+    "0x00b4d5a8": "g_last_alloc_ok_flag"
+  },
+  "african_nations.cpp": {
+    "_range": "0x00401000 .. 0x00402ac5",
+    "_vtable": "0x00955270",
+    "_object_size": "~0x1a0 core + dynamic arrays (0xb1 stage-templates, 0xc live-stages, 0xee draw-team-array)",
+    "0x00401000": "afrcup_ctor",
+    "0x004011c0": "stub_ret4_noop",
+    "0x004011d0": "stub_ret_true1",
+    "0x004011e0": "stub_ret_zero_word",
+    "0x004011f0": "stub_ret_false",
+    "0x00401200": "stub_ret_null",
+    "0x00401210": "stub_ret_true_ff",
+    "0x00401220": "stub_ret8_noop",
+    "0x00401230": "afrcup_scalar_deleting_dtor",
+    "0x00401250": "afrcup_dtor",
+    "0x00401310": "afrcup_build_stage_template",
+    "0x004019d8": "DATA:afrcup_stage_variant_jumptable(4)",
+    "0x004019f0": "afrcup_build_stages",
+    "0x00401ae0": "afrcup_configure",
+    "0x00401bc0": "stub_ret_noop",
+    "0x00401bd0": "afrcup_vthunk_forward_child",
+    "0x00401be0": "afrcup_report_result",
+    "0x00401d60": "afrcup_reset_for_next_tournament",
+    "0x00401e50": "afrcup_advance_stage",
+    "0x00401ee0": "afrcup_instantiate_stage",
+    "0x004020d0": "afrcup_build_final",
+    "0x00402300": "afrcup_draw_qualifiers",
+    "0x004025e0": "afrcup_daily_update (vtbl[5])",
+    "0x00402810": "afrcup_seed_groups",
+    "0x00402a00": "afrcup_set_fixture_group_slots",
+    "0x00402ac6": "DATA:afrcup_group_code_jumptables(3x4)"
+  },
+  "arg_prm.cpp": {
+    "_range": "0x00404290 .. 0x00406c2f (complete; segments 42-58, 17 functions)",
+    "_source": "arg_prm.cpp \u2014 the ARGENTINE PRIMERA DIVISION competition class (vtable 0x00955324). 20 clubs, split-season Apertura (comp id 0x434) + Clausura (comp id 0x435), 'promedios' points-average relegation, Copa Libertadores/Sudamericana qualification slots, Primera-B relegation playoff. Same base competition class + helpers as african_nations.cpp.",
+    "_globals": {
+      "0x00955324": "vtbl_argprm",
+      "0x009bbb14": "argprm_primera_comp_id (club membership filter, club+0x57)",
+      "0x009bbb18": "argprm_comp_index (into comp-object array 0xac688c)",
+      "0x009bbb48": "argprm_primera_b_comp_id (relegation playoff)",
+      "0x00ac688c": "g_competition_object_array_base",
+      "0x00acd564": "g_club_count",
+      "0x00acd5bc": "g_club_table_base (stride 0x245=581)",
+      "0x00acd5d8": "g_club_comp_record_base",
+      "0x009bc53c..0x009bc59c,0x9bc674,0x9bc684,0x9bc690": "qualification-slot competition ids"
+    },
+    "0x00404290": "argprm_ctor",
+    "0x004044c0": "stub_ret_true1",
+    "0x004044d0": "argprm_scalar_deleting_dtor",
+    "0x004044f0": "argprm_dtor",
+    "0x004045b0": "argprm_build_fixture_template (variant 0xff=Apertura comp 0x434, 0x00=Clausura comp 0x435; double round-robin)",
+    "0x00405580": "argprm_gather_clubs (20 clubs where club+0x57==0x9bbb14; sets prize money 0xc350/0x7a120)",
+    "0x004056b0": "argprm_configure",
+    "0x00405760": "argprm_start_or_rollover_season",
+    "0x00405990": "argprm_build_both_championships (Apertura+Clausura stage instances via 0x670350)",
+    "0x00405c90": "argprm_child_reinit",
+    "0x00405ce0": "argprm_finalize_promotion_relegation",
+    "0x00405f30": "argprm_build_qualification_table (Libertadores/Sudamericana slots)",
+    "0x004065b0": "argprm_compute_relegation_averages (promedios: fild pts / fidiv games)",
+    "0x00406830": "argprm_apply_season_end",
+    "0x00406910": "argprm_build_relegation_playoff (Primera B promo, comp 0x9bbb48, up to 40 teams)",
+    "0x00406ae0": "argprm_report_result",
+    "0x00406bc0": "argprm_set_fixture_round_slots (clamps round bytes to 0x12, writes fixture +0x73/74/75)"
+  },
+  "arg_second.cpp": {
+    "_range": "0x00406c30 .. 0x0040a43f (complete; segments 59-78, 20 functions)",
+    "_source": "arg_second.cpp \u2014 the ARGENTINE SECOND DIVISION / Primera B Nacional competition class (vtable 0x009553d8). 25 clubs, a 6-stage structure ([esi+0x2c]=6): zonal group stage + promotion playoff + final playoff, gated on the Primera being ready; promedios relegation; promotes to the Primera (comp 0x9bbb14). Same base competition class + helpers as arg_prm.cpp/african_nations.cpp.",
+    "_globals": {
+      "0x009553d8": "vtbl_argsecond",
+      "0x009744e0": "arg_second.cpp source-path string (asserts)",
+      "0x009bbb18": "argsecond_comp_id (club membership filter, club+0x57)",
+      "0x009bbb14": "arg_primera_comp_id (promotion target)",
+      "0x009bc69c": "argsecond_extra_club_index (25th club appended)",
+      "0x0095548c": "vtbl_argsecond_newsitem (embedded record/news helper class)"
+    },
+    "0x00406c30": "argsecond_ctor",
+    "0x00406e60": "argsecond_scalar_deleting_dtor",
+    "0x00406e80": "argsecond_dtor",
+    "0x00406f40": "argsecond_build_fixture_template (comp id 0x659, type 0x19=25 rounds)",
+    "0x00407d10": "argsecond_gather_clubs (24 clubs where club+0x57==0x9bbb18 + 1 appended = 25)",
+    "0x00407e90": "argsecond_configure (promotion link to Primera 0x9bbb14 at +0x1c)",
+    "0x00407f40": "argsecond_start_or_rollover_season",
+    "0x00408120": "argsecond_advance_stage (6 stages; gated on Primera 0x9bbb14; dispatches 0x408210/0x408690/0x408970)",
+    "0x00408210": "argsecond_build_zonal_stage (stage 0)",
+    "0x00408690": "argsecond_build_promotion_playoff (stage 3)",
+    "0x00408970": "argsecond_build_final_playoff (stage 4)",
+    "0x00408d30": "argsecond_report_result",
+    "0x00408f10": "argsecond_vthunk_forward_child",
+    "0x00408f20": "argsecond_set_fixture_round_slots",
+    "0x00409450": "argsecond_build_qualification_table",
+    "0x00409c80": "argsecond_compute_relegation_averages (promedios)",
+    "0x0040a040": "argsecond_build_stage_instances",
+    "0x0040a2a0": "argsecond_set_fixture_slots2",
+    "0x0040a384": "DATA:argsecond_slot_jumptable",
+    "0x0040a3b0": "argsecond_newsitem_ctor (embedded helper class, vtable 0x0095548c; bridges into argentina_awards at 0x40a440)"
+  },
+  "argentina_awards.cpp": {
+    "_range": "0x0040a440 .. 0x0040a67f (complete; segments 79-85, 7 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\award\\argentina_awards.cpp \u2014 the Argentine honours/awards subsystem (award/ dir). Creates end-of-season championship honours: Primera champion (honour id 0x7d0, comp 0x9bbb14) and Second Division champion (honour id 0x3e8, comp 0x9bbb18). Small class family (vtables 0x0095548c / 0x009554a0); chains into argentina_rules.cpp.",
+    "_globals": {
+      "0x009554a0": "vtbl_argentina_awards",
+      "0x0089bc20": "honour_award_create (registers a championship honour: year, honour_id, comp_id)",
+      "0x009bc0f4": "argentina_primera_champion_honour_type",
+      "0x009bc0f8": "argentina_second_champion_honour_type"
+    },
+    "0x0040a440": "argawards_create_champion_honours (Primera honour 0x7d0 + Second Division honour 0x3e8 via honour_award_create)",
+    "0x0040a5b0": "argawards_thunk (forwards to 0x0074ff50)",
+    "0x0040a5c0": "argawards_on_result_event (checks tie participants, dispatches 0x007518b0)",
+    "0x0040a5e0": "argawards_ctor (vtable 0x009554a0; base 0x008d5460; chains argentina_rules build 0x40a680; sets +0x13=0x14)",
+    "0x0040a650": "stub_ret_true1_c (mov eax,1; ret 0xc \u2014 default virtual)",
+    "0x0040a660": "stub_ret_true1_10 (ret 0x10)",
+    "0x0040a670": "stub_ret_true1_14 (ret 0x14)"
+  },
+  "argentina_rules.cpp": {
+    "_range": "0x0040a680 .. 0x0040ab3f (complete; segments 86-93, 8 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\transfer\\argentina_rules.cpp \u2014 Argentine TRANSFER-registration rules (transfer/ dir). Enforces the registration-window rule: 'clubs are now allowed to buy players again. A maximum of two players can be signed between today and the deadline in February.' A per-club signing counter (DAT_00dc722c[+0x918][club*0x10]) is reset on the window date and gates further signings.",
+    "_globals": {
+      "0x00dc722c": "g_transfer_news_manager_pool",
+      "0x00974984": "argentina_window_open_news_template",
+      "_status_codes": "0xe = signing blocked (limit reached), 9 = allowed"
+    },
+    "0x0040a680": "argrules_build_rule_table (4 x 6-byte rule records)",
+    "0x0040a770": "argrules_on_window_date (date-triggered: reset per-club signing counters for the nation)",
+    "0x0040a830": "argrules_resolve_rule_date (date from rule bytes via 0x533b50)",
+    "0x0040a870": "argrules_increment_signing_counter",
+    "0x0040a8c0": "argrules_check_signing_allowed (>=2 signings -> status 0xe blocked)",
+    "0x0040a960": "argrules_check_transfer_allowed (max-two-per-window enforcement)",
+    "0x0040aa70": "argrules_init_rule_record (memset 0x16 bytes to -1, +2=4)",
+    "0x0040aa90": "argrules_report_window_news (emits the 'allowed to buy again' news via 0x4b5120)"
+  },
+  "asia_club_champ.cpp": {
+    "_range": "0x0040ab40 .. 0x0040cbdf (complete; segments 94-120, 17 functions + jump-table data)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\eurocomp\\asia_club_champ.cpp \u2014 the Asian Club Championship (AFC), a CLUB-based continental cup in the shared 'eurocomp' continental-competition framework. Vtable 0x009554d4; club-competition base ctor 0x00502320 (NOT the nation base). 4 stages ([esi+0x2c]=4), 16-team group + knockout. Same structure as african_nations.cpp but for clubs.",
+    "_globals": {
+      "0x009554d4": "vtbl_asia_club_champ",
+      "0x00502320": "club_competition_base_ctor",
+      "0x009bb6f8,0x009bb724,0x009bb758": "asian-cup stage/qualification competition ids"
+    },
+    "0x0040ab40": "asiacc_ctor",
+    "0x0040adb0": "asiacc_scalar_deleting_dtor",
+    "0x0040add0": "asiacc_dtor",
+    "0x0040aef0": "asiacc_build_stage_template (switch on variant 0xff/0/1/2/3)",
+    "0x0040b4c0": "asiacc_report_result (ret 0x28; codes 1/3/6/0xfe)",
+    "0x0040b680": "asiacc_build_stages (word[+0x3e]=0x10=16 teams)",
+    "0x0040b760": "asiacc_reset_for_next_tournament",
+    "0x0040b9b0": "asiacc_configure (prize +0x28=0x3d0900; virtual [+0x3c]->+0xa3)",
+    "0x0040b9e0": "asiacc_build_group_stage_template (new 0x1594; +0xb6=0x20)",
+    "0x0040bec0": "asiacc_instantiate_stage",
+    "0x0040c070": "asiacc_advance_stage (bounds-check +0x30 vs +0x2c-1)",
+    "0x0040c110": "asiacc_build_final",
+    "0x0040c3d0": "asiacc_daily_update (vtable tick)",
+    "0x0040c5b0": "asiacc_report_result2 (switch on al)",
+    "0x0040c720": "asiacc_seed_groups",
+    "0x0040ca20": "asiacc_set_fixture_group_slots",
+    "0x0040cb64": "DATA:asiacc_switch_jumptables (0x40cb64..0x40cb9f; jump tables for the result/slot switches)",
+    "0x0040cba0": "asiacc_find_team_slot (find a team's index in a comp/nation array; returns 0xff if absent)"
+  },
+  "asia_cup_winner.cpp": {
+    "_range": "0x0040cbe0 .. 0x0040e77f (complete; segments 121-136, 16 functions + jump-table data)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\eurocomp\\asia_cup_winner.cpp \u2014 the Asian Cup Winners' Cup, a CLUB continental cup in the eurocomp framework. Vtable 0x00955574; club-comp base ctor 0x00502320. 2 stages ([esi+0x2c]=2) \u2014 a smaller knockout than the Asian Club Championship. Same structure as asia_club_champ.cpp.",
+    "_globals": {
+      "0x00955574": "vtbl_asia_cup_winner",
+      "0x00ac56ec": "g_asia_cup_winner_list_head"
+    },
+    "0x0040cbe0": "acw_ctor",
+    "0x0040ce50": "acw_scalar_deleting_dtor",
+    "0x0040ce70": "acw_dtor",
+    "0x0040cf90": "acw_build_stage_template (switch on variant)",
+    "0x0040d460": "acw_report_result (switch on al)",
+    "0x0040d4d0": "acw_build_stages (new 0x60)",
+    "0x0040d5b0": "acw_reset_for_next_tournament",
+    "0x0040d800": "acw_build_group_stage_template (new 0x1598)",
+    "0x0040dd10": "acw_instantiate_stage",
+    "0x0040dec0": "acw_advance_stage (bounds-check +0x30 vs +0x2c-1)",
+    "0x0040df50": "acw_build_final",
+    "0x0040e180": "acw_report_result2 (switch on al)",
+    "0x0040e2d0": "acw_seed_groups",
+    "0x0040e5d0": "acw_set_fixture_group_slots",
+    "0x0040e696": "DATA:acw_switch_jumptable",
+    "0x0040e6d0": "acw_register (links into g_asia_cup_winner_list_head 0xac56ec)"
+  },
+  "asia_nations.cpp": {
+    "_range": "0x0040e780 .. 0x0041056f (complete; segments 137-155, 17 functions + jump-table data)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\intercomp\\asia_nations.cpp \u2014 the Asian Cup of Nations (AFC), a NATIONAL-TEAM continental cup in the intercomp framework (nation base ctor 0x006674d0, like african_nations). Vtable 0x00955614. QUADRENNIAL: ctor year-snap uses (year-0x7cc) & 0x80000003 (mod 4, anchor 1996) vs the ACN's mod 2. 16 teams, 4 groups ([esi+0x2c]=4) + knockout. Otherwise 1:1 with african_nations.cpp.",
+    "_globals": {
+      "0x00955614": "vtbl_asia_nations"
+    },
+    "0x0040e780": "asian_ctor (quadrennial year-snap, mod 4)",
+    "0x0040e940": "asian_scalar_deleting_dtor",
+    "0x0040e960": "asian_dtor",
+    "0x0040ea20": "asian_build_stage_template",
+    "0x0040f050": "asian_report_result",
+    "0x0040f2f0": "asian_build_stages (word[+0x3e]=4)",
+    "0x0040f3e0": "asian_configure",
+    "0x0040f4b0": "asian_vthunk_forward_child",
+    "0x0040f4c0": "asian_report_result2",
+    "0x0040f640": "asian_reset_for_next_tournament (0x66cc40; frees +0xba)",
+    "0x0040f730": "asian_advance_stage (bounds-check +0x30 vs +0x2c-1)",
+    "0x0040f7c0": "asian_instantiate_stage",
+    "0x0040f9b0": "asian_build_final (via 0x670350)",
+    "0x0040fd10": "asian_draw_qualifiers (RNG 0x8fc4f0)",
+    "0x00410090": "asian_daily_update (date 0x533ad0 + base tick 0x669a90)",
+    "0x004102c0": "asian_seed_groups (0x4a9000)",
+    "0x00410480": "asian_set_fixture_group_slots (0x4ab310)",
+    "0x00410542": "DATA:asian_slot_jumptable",
+    "0x00410547": "DATA:asian_slot_jumptable2"
+  },
+  "asia_super_cup.cpp": {
+    "_range": "0x00410570 .. 0x00410d6f (complete; segments 156-162, 7 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\eurocomp\\asia_super_cup.cpp \u2014 the Asian Super Cup, a single tie between the Asian Club Championship holder and the Asian Cup Winners' Cup holder. Vtable 0x009556c8, club base 0x00502320. NO group stage ([esi+0x2c]=0); a 12-byte tie record at [esi+0xa7] holds the two finalists.",
+    "_globals": {
+      "0x009556c8": "vtbl_asia_super_cup",
+      "0x009bbb0c": "asia_club_champ_comp_id (holder = super cup team 1)",
+      "0x009bbb10": "asia_cup_winner_comp_id (holder = super cup team 2)",
+      "0x004b61b0": "competition_holder_get (last winner of a competition)"
+    },
+    "0x00410570": "supercup_ctor",
+    "0x00410740": "supercup_scalar_deleting_dtor",
+    "0x00410760": "supercup_dtor",
+    "0x00410830": "supercup_report_result (switch on al)",
+    "0x00410970": "supercup_build_tie (fetch both holders via 0x4b61b0 into the 12-byte tie record)",
+    "0x00410b30": "supercup_daily_update (phase-gated rebuild + play the tie via virtuals [+0x8c]/[+0x94]/[+0x5c])",
+    "0x00410d00": "supercup_on_date (date-triggered play trigger via 0x533b50 date compare)"
+  },
+  "aus_nsl.cpp": {
+    "_range": "0x00410d70 .. 0x0041297f (complete; segments 163-178, 16 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\leagues\\aus_nsl.cpp \u2014 the Australian National Soccer League (comp/leagues/ dir). Domestic league with a FINALS SERIES: vtable 0x00955768, competition base ctor 0x006674d0, 3 stages ([esi+0x2c]=3: regular season + finals). Fixture template comp id 0x69a, type 0x1a=26 rounds. Same shape as arg_prm.cpp/arg_second.cpp.",
+    "_globals": {
+      "0x00955768": "vtbl_aus_nsl"
+    },
+    "0x00410d70": "ausnsl_ctor (3 stages)",
+    "0x00410f90": "stub_ret_3 (mov al,3; ret \u2014 default virtual)",
+    "0x00410fa0": "ausnsl_scalar_deleting_dtor",
+    "0x00410fc0": "ausnsl_dtor",
+    "0x00411080": "ausnsl_build_fixture_template (comp id 0x69a, type 0x1a=26 rounds; switch on variant)",
+    "0x004119c0": "ausnsl_report_result",
+    "0x00411b30": "ausnsl_report_result2",
+    "0x00411e30": "ausnsl_finalize_stage",
+    "0x00411f30": "ausnsl_configure (config bytes +0xab/0xbf-0xc1/0xc8)",
+    "0x00411fe0": "ausnsl_register_teams (iterate child comp teams, word[+0x3e])",
+    "0x00412030": "ausnsl_reset_for_next_season (0x66cc40; frees +0xba; walks +0xc array)",
+    "0x004121f0": "ausnsl_advance_stage (bounds-check +0x30 vs +0x2c-1)",
+    "0x004122a0": "ausnsl_build_finals_series (via 0x50ca60/0x5064e0)",
+    "0x00412550": "ausnsl_build_qualification_table (array alloc 0x934591 + 0x50ca60)",
+    "0x00412800": "ausnsl_set_fixture_slots (get fixture record via 0x4ab310)",
+    "0x00412920": "ausnsl_set_fixture_style (pack config +0x49/+0x4a nibbles into fixture record +0x4d)"
+  },
+  "australia_awards.cpp": {
+    "_range": "0x00412980 .. 0x004130bf (complete; segments 179-182, 4 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\award\\australia_awards.cpp \u2014 the Australian awards subsystem. Vtable 0x0095581c. Creates end-of-season NSL honours/awards via the shared honour-id scheme (0x7d0 = league champion, 0x3e8/0x1f4 = secondary awards) tied to NSL comp 0x9bbd5c.",
+    "_globals": {
+      "0x0095581c": "vtbl_australia_awards",
+      "0x009bbd5c": "aus_nsl_comp_id",
+      "0x009bc32c": "aus_nsl_champion_honour_type"
+    },
+    "0x00412980": "ausawards_ctor",
+    "0x00412ac0": "ausawards_create_honours (NSL champion 0x7d0 + secondary 0x3e8/0x1f4 via honour_award_create)",
+    "0x00412f00": "ausawards_on_result (handler)",
+    "0x00413060": "ausawards_notify (holder lookup 0x858900 -> news manager 0xdbd1d8)"
+  },
+  "australia_rules.cpp": {
+    "_range": "0x004130c0 .. 0x004143cf (complete; segments 183-195, 13 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\transfer\\australia_rules.cpp \u2014 the Australian SALARY CAP rule (transfer/ dir). Vtable 0x00955830. Per-club spend counter at [club+0x61][+0xd] is incremented by 5% (double 0.05 at 0x955888) and CLAMPED to 0x2710=10000 (the cap). Also bundles award-history persistence (past_year_awards.tmp, CD-gated).",
+    "_globals": {
+      "0x00955830": "vtbl_australia_rules",
+      "0x00955864": "vtbl_australia_rules_iter_context",
+      "0x00955888": "salary_cap_increment_multiplier (double 0.05)",
+      "_cap": "0x2710 = 10000 salary cap ceiling"
+    },
+    "0x004130c0": "ausrules_build_rule_table (2 window records + ctor)",
+    "0x004131f0": "ausrules_stub",
+    "0x00413210": "ausrules_resolve_window_date (current date 0x536b90 + month/day math)",
+    "0x00413280": "ausrules_make_iter_context (vtable 0x955864)",
+    "0x00413300": "stub_small",
+    "0x00413310": "ausrules_small_helper",
+    "0x00413330": "stub_small2",
+    "0x00413340": "ausrules_apply_salary_cap (value += input*0.05, clamp to 10000)",
+    "0x004135c0": "awards_history_load_from_tmp (past_year_awards.tmp, CD-gated)",
+    "0x00413850": "ausrules_helper_a",
+    "0x00413900": "ausrules_helper_b",
+    "0x00413980": "ausrules_helper_c",
+    "0x004139f0": "ausrules_enforce_salary_cap_league (main pass, 2516 bytes)"
+  },
+  "award_manager.cpp": {
+    "_range": "0x004143d0 .. 0x0041500f (complete; segments 196-210, 15 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\award\\award_manager.cpp \u2014 the SHARED player-awards engine the per-country award classes build on. Loads award definitions from a data file (0x921770), holds them in STL lists (0x9203f0 push / 0x921b90), and on schedule grants player awards (Footballer of the Year, Top Scorer, etc.) to recipients via the staff/player subsystem (0x5780e0/0x578ec0). Granting needs player ratings/stats.",
+    "0x004143d0": "awardmgr_ctor_load (load award definitions from file 0x974e98)",
+    "0x00414590": "awardmgr_handler",
+    "0x004146b0": "awardmgr_forward_a (-> player subsystem 0x5780e0)",
+    "0x004146d0": "awardmgr_forward_b (-> 0x578ec0)",
+    "0x004146f0": "awardmgr_forward_c (-> 0x5780e0)",
+    "0x00414710": "awardmgr_forward_d (-> 0x578ec0)",
+    "0x00414730": "awardmgr_report",
+    "0x004147e0": "awardmgr_small_helper",
+    "0x00414810": "awardmgr_grant_awards (main granting pass, 299 instrs)",
+    "0x00414be0": "awardmgr_advance (date-gated tick)",
+    "0x00414cd0": "awardmgr_report2",
+    "0x00414d90": "awardmgr_report3",
+    "0x00414e50": "awardmgr_helper_a",
+    "0x00414eb0": "awardmgr_helper_b",
+    "0x00414f10": "awardmgr_small"
+  },
+  "_belgium_block": {
+    "_note": "Belgian block COMPLETE. PORTED: bel_first (comp 0, 18 clubs) + bel_second (comp 1) + bel_third A/B (comp 2/3, 16 clubs) via simple_league; bel_fa_cup (Belgian Cup, comp 332) via domestic_cup; bel_super (Belgian Super Cup, comp 331) via the new super_cup engine (league champ vs cup winner, looked up from honours). Verified: Club Brugge / RFC Liege / KFC Turnhout / KAS Eupen (leagues) / RSC Anderlecht (cup) / R Standard de Liege (super cup). Ctors decoded; per-function maps deferred (standard shapes). DECODED WITH HONEST DEFERRAL: belgium_awards.cpp (champion honours already recorded by the leagues/cup; player awards blocked on ratings, see deferred-awards-engine), belgium_rules.cpp (belrules_build_rule_table 0x004256e0: 6x6-byte transfer-window records new(0x24) \u2014 decoded; enforcement port needs a transfer system).",
+    "0x0041dba0": "belcup_ctor (Belgian Cup, comp 332, vtable 0x009558a0, club base 0x502320)",
+    "0x0041e890": "belfirst_ctor (Belgian First Division, comp 0, vtable 0x00955940)",
+    "0x0041fb80": "belsecond_ctor (Belgian Second Division, comp 1)",
+    "0x00421a40": "belsuper_ctor (Belgian Super Cup, comp 331, vtable 0x00955aa8)",
+    "0x00422240": "belthird_ctor (Belgian Third Division, comp 2/3)",
+    "0x00424ff0": "belawards_ctor (Belgian awards; champion honours already handled)",
+    "0x004256e0": "belrules_build_rule_table (6x6-byte transfer-window records, new(0x24))"
+  },
+  "cash.cpp": {
+    "_range": "0x00440070 .. 0x0044339f (complete; 5 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\cash.cpp \u2014 the MONEY / CURRENCY value type. Configures a global currency (scale 0xac5830, divisor 0xac5748/0xac574c) for one of 25 currencies, converts stored cash values, and formats amounts for display (currency symbol + thousands separators). The value-type substrate a club-finances / transfer-fee / wages system would build on (NOT the finance logic itself).",
+    "_globals": {
+      "0x00ac5748": "g_currency_divisor (double, low dword)",
+      "0x00ac574c": "g_currency_divisor (high dword)",
+      "0x00ac5830": "g_currency_scale (double)",
+      "0x009781e0": "currency_rate_table (dword entries, 7)",
+      "0x009783c0": "currency_config_table (per-currency, 25 entries)"
+    },
+    "0x00440070": "cash_scale_value (table[0x9781e0][idx] * scale / divisor; 7 tiers)",
+    "0x00440170": "cash_scale_from_table (same, from a passed table + count)",
+    "0x00440240": "cash_set_currency (switch on code 0..24 -> configure scale/divisor globals; 7257 bytes)",
+    "0x00441f10": "cash_currency_symbol (switch on code -> copy currency symbol string)",
+    "0x00442500": "cash_format (amount -> display string: symbol + thousands separators; 2636 bytes)"
+  },
+  "club_screens.cpp": {
+    "_range": "per file_attribution.json (club_screens.cpp)",
+    "_source": "club_screens.cpp - Club screens",
+    "_ported": "UI - dashboard already covered"
+  },
+  "dispute.cpp": {
+    "_range": "0x005536b0 .. 0x005545ff (complete; 1 function, ~4 KB)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\dispute.cpp \u2014 the DISPUTES data reader/writer. Single function that loads a 4-byte-record 'dispute.dat' array (count DAT_00acd56c) via the file API (open 0x921770, read 0x921ea0, close 0x921b90), or writes it back. Shipped data for player-club or club-club disputes referenced elsewhere in the engine.",
+    "_globals": {
+      "0x00acd56c": "g_dispute_count",
+      "0x009aff04": "dispute_dat_filename"
+    },
+    "0x005536b0": "dispute_load_or_save (single fn: open dispute.dat, read/write 4-byte records)"
+  },
+  "network.h": {
+    "_range": "0x005493b0 .. 0x005536af (inlined header, 45 attributed functions, ~41 KB)",
+    "_note": "network.h \u2014 inlined C++ header (the only .h in the TU sweep, mid-alphabet). Multiplayer/network subsystem, PROBABLY not portable in the headless model (no networking). Skip for now; the class structure is inlined into whatever consumers pull it in."
+  },
+  "club_records.cpp": {
+    "_range": "0x00444e10 .. 0x00454baf (~20 attributed funcs of ~30, standard shape)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\club_records.cpp \u2014 the CLUB RECORDS subsystem: biggest win, heaviest defeat, record attendance, record signing, etc. Loads/saves each club's records from 'club records history.tmp' (same file API [0x955058] as club_history), then computes+displays them. The shipped prior records are DATA; the forward records are computed from live match results. Sibling of club_history.cpp.",
+    "0x00444e10": "records_load_from_file (build 'cm0102.exe' name, read 0xc8-byte records)",
+    "0x00445220": "records_process_record",
+    "0x00447d20": "records_helper_a",
+    "0x00448170": "records_helper_b",
+    "0x00449590": "records_helper_c",
+    "0x00449880": "records_helper_d",
+    "0x00449990": "records_helper_e",
+    "0x00449e70": "records_helper_f",
+    "0x00449fb0": "records_helper_g",
+    "0x0044a0f0": "records_helper_h",
+    "0x0044cf30": "records_helper_i",
+    "0x004515f0": "records_helper_j",
+    "0x00451e70": "records_helper_k",
+    "0x004528c0": "records_helper_l",
+    "0x00452fe0": "records_helper_m",
+    "0x004531a0": "records_helper_n",
+    "0x00453360": "records_helper_o",
+    "0x00453580": "records_helper_p",
+    "0x004538b0": "records_helper_q",
+    "0x004539f0": "records_helper_r"
+  },
+  "club_history.cpp": {
+    "_range": "0x004433a0 .. 0x00444e0f (complete; 9 functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\club_history.cpp \u2014 the CLUB HISTORY subsystem: loads/saves each club's historical league finishes from 'club history.dat' / 'club league history.tmp' (file/CD-gated via the file API [0x955058]), builds a per-competition history table (count from 0xacd580). Prior-season data; the running honours the ported competitions record are the forward history.",
+    "0x004433a0": "history_load_from_file (build 'cm0102.exe' name, read 0xc8-byte records)",
+    "0x00443770": "history_process_record",
+    "0x00443c70": "history_helper_a",
+    "0x00443e10": "history_helper_b",
+    "0x00444060": "history_build_table (alloc comp-count array from 0xacd580)",
+    "0x00444310": "history_helper_c",
+    "0x004445c0": "history_helper_d",
+    "0x00444840": "history_helper_e",
+    "0x00444a80": "history_helper_f"
+  },
+  "fifa_confed.cpp": {
+    "_range": "0x005750c0 .. 0x00576d1f (complete; 10 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\intercomp\\fifa_confed.cpp \u2014 FIFA Confederations Cup (comp 403). Nation base 0x006674d0, vtable 0x00958268, BIENNIAL year-snap 0x80000001 (mod 2, anchor 1996). PORTED via ACN engine (`build_cup_edition` + `advance_fifa_confederations_cup`); pool draws from ALL continents (0..6). Documented simplification: exe seeds from confederation winners; here we pool then RNG-draw 16.",
+    "0x005750c0": "fifaconfed_ctor (comp 403, vtable 0x00958268, biennial)"
+  },
+  "fifa_rankings.cpp": {
+    "_range": "0x00576d20 .. 0x0057802f (complete; 5 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\fifa_rankings.cpp \u2014 FIFA nation-rankings algorithm. Reads nation via team+0x53, continent via nation+0x71 (VERIFIED fields), delta-updates a ranking value seeded at 1.0 (double 0x3ff00000). Consumes match results and produces reputation-weighted ranking. DECODED-NOT-PORTED: would give reputation-weighted seeding for the international cups (currently the Confederations Cup can draw tiny nations like Tahiti). Port needs a national-team match-result post-processor.",
+    "0x00576d20": "fifarank_update (delta from match result, 342 instrs)",
+    "_ported": "crates/cm-domain/src/fifa_rankings.rs \u2014 nation ranking calculator ported using average-club-reputation as a proxy for the exe's runtime .data weight table (weights at DAT_00956918 / DAT_009569b0 / DAT_00956e00 / DAT_00956e48 which are populated by an undecoded init function). Fixes the \"Tahiti wins Confederations Cup\" seeding gap. Real weight decode is a follow-up but the proxy delivers plausible rankings."
+  },
+  "friendly.cpp": {
+    "_range": "0x005ac250 .. 0x005b6f0f (complete; 36 attributed functions, ~44KB)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\friendly.cpp \u2014 the FRIENDLIES subsystem: arranging, playing and recording friendly matches (pre-season tours, international friendlies, testimonials). Vtable 0x00958e2c, friendly-specific base ctor 0x00490f00 (NOT the club/nation base). 0xc8-byte records loaded from disk via [0x955058] (same pattern as club_history/records). PARTIALLY PORTED: FriendlyMatch value type + save-side Vec<FriendlyMatch> (empty until scheduled \u2014 the exe's arranging AI is 35 substantial helpers, DEFERRED: needs an international/off-season calendar slot in our tick model AND club opponent-selection AI).",
+    "_globals": {
+      "0x00958e2c": "vtbl_friendly",
+      "0x00490f00": "friendly_base_ctor (friendly-specific competition base)"
+    },
+    "0x005ac250": "friendly_ctor (0xc8-record loader; base ctor 0x00490f00)",
+    "0x005aca70": "friendly_helper_a",
+    "0x005adeb0": "friendly_helper_b",
+    "0x005aea40": "friendly_helper_c",
+    "0x005aee30": "friendly_helper_d",
+    "0x005af5e0": "friendly_helper_e",
+    "0x005af840": "friendly_helper_f",
+    "0x005afaf0": "friendly_helper_g",
+    "0x005b0c50": "friendly_helper_h",
+    "0x005b0e20": "friendly_helper_i"
+  },
+  "game_config.cpp": {
+    "_range": "0x005c1540 .. 0x005c28cf (complete; 4 fns, ~5KB)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\game_config.cpp \u2014 LOCALIZATION/SETTINGS loader. First fn loads 'language.ldb' from CM3_DATA env var (via 0x008fb240 resource loader + 0x00653b00 file reader). Handles language + screen options + keys. Portable when a settings system is wired.",
+    "0x005c1540": "gameconfig_load_language (language.ldb from CM3_DATA, 322 instrs)"
+  },
+  "gui_utils.cpp": {
+    "_range": "0x005d6bf0 .. 0x005d876f (complete; 2 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\si\\code\\gui_utils.cpp \u2014 SI layout-engine utilities (same si/code/ directory as Area.cpp). Two functions: 0x005d6bf0 = generic per-cell record allocator (allocates ebx entries of 100 bytes with callbacks 0x00401bc0/0x004571f0); 0x005d7070 = TAB-STRIP BUILDER (widely used: 15 xrefs \u2014 club_screens x2, comp_screens x2, contract_screens, find_screens x2, history, match_screens x2, new_transfer_rule_screens, news_screens, search_screens, staff_screens, training_schedule). Caches fg colour (0x20,0,0x60,0) in RGB565 at word 0x00af6c26 gated by flag byte 0x00af6c24. Two-pass reorder groups tabs by +0x33 group ptr. Splits into two halves at count>5 with 45px (0x2d) advance. Emits area records via FUN_00549790 + item widgets via FUN_00549580 with THREE distinct backgrounds (active=DAT_00ad6bdc / same-group=DAT_00acdf74 / other-group=DAT_00ad6bd8), flag 0x800 for selected, flag 0x4002 for cross-group links, up to 12 tabs. STATUS OF PORT: STRUCTURAL PORT COMPLETE in crates/cm-ui-app/src/screens.rs::draw_tab_strip. Reproduces: (a) two-pass group reorder (same-group first), (b) split at count>5 into n_left/n_right with 45px gutter, (c) per-half background containing panel (F_SOLID_FILL|F_BEVEL, title_bg), (d) three-colour bg scheme (active=grey/DAT_00ad6bdc, same-group=title_fg/DAT_00acdf74, other=btn_blue/DAT_00ad6bd8), (e) per-tab text_color_override honouring record+2 (unpacked from rgb565), (f) selected-tab highlight (visualised as 1px yellow outline; exe uses flag 0x800), (g) +45/-45 advance of caller left_x/right_x refs, (h) narrow font slot for tab labels. NEWS CALLSITE uses the ported function via TabRecord::simple for its 4 top + 4 bottom tabs (all same group, no split needed). Real callers count = 5 (not 15): 004e4e50, 005dc660/history, 007637b0, 007f0170; the News page reaches it through 007f0170's chain. 4 other callers still have no ported wrapper.",
+    "_globals": {
+      "0x00af6c24": "gui_utils_colour_cache_flag (bit 0 = tab colour packed)",
+      "0x00af6c26": "gui_utils_tab_colour_rgb565 (cached from device_colour_pack_rgb565(0x20,0x60,0x00))"
+    },
+    "0x005d6bf0": "guiutils_alloc_cell_table (per-cell record allocator, size ebx*100+4)",
+    "0x005d7070": "guiutils_build_tab_strip (PORTED: the tab builder \u2014 5 real callers; full structural port in cm-ui-app screens.rs::draw_tab_strip incl. reorder+split+3-colour bg+override fg+advance)"
+  },
+  "guio.cpp": {
+    "_range": "0x005d8770 .. 0x005d8b4f (complete; 1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\si\\code\\Guio.cpp (capital G) \u2014 the SI layout engine's Guio WIDGET base class string-setter. Sets the widget's text label at this+0x80 (via dword-then-byte memcpy); if the widget has flag bit 0x400 set AND a cached texture at this+0x5c, frees the texture (via FUN_005cdfa0) or decrements a global refcount DAT_00acdb1c when the incoming string matches a cached label DAT_00acdb20. 8 xrefs \u2014 used by every text-carrying widget. UI territory (per ui-two-layers memory: screens go through the spec evaluator, not hand-ported widget classes).",
+    "_globals": {
+      "0x00acdb20": "guio_cached_label (string used for cache hit test)",
+      "0x00acdb1c": "guio_cached_label_refcount"
+    },
+    "0x005d8770": "guio_set_label (this+0x80 = string; free/deref cached texture at +0x5c)"
+  },
+  "hall_of_fame.cpp": {
+    "_range": "0x005d8b50 .. 0x005db59b (complete; 11 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\hall_of_fame.cpp \u2014 HALL OF FAME persistence + accessors. A 27x100 table of 120-byte records (bounds checked in the accessor: cat 0..0x1a=26, slot 0..0x63=99, stride 12000/120 bytes). Files: hall_of_fame.bin (binary persist), hall_of_fame.txt (text export). CONTAINER PORTED to crates/cm-domain/src/hall_of_fame.rs \u2014 HallOfFame table + bounds-checked accessor + obfuscation (rolling XOR + permutation swap against a 0x1e0-byte table DAT_009ba1b0) + 5-byte header (magic 0x3abfb2 + version 0x01) + 4-byte checksum trailer; round-trip tested. STILL BLOCKED: (a) 0x1e0-byte permutation table DAT_009ba1b0 not yet dumped from .rdata \u2014 obfuscation parameterised on it so byte-identity waits on the dump; (b) 120-byte record layout undecoded; (c) selection logic needs the player-rating system ([[deferred-awards-engine]]).",
+    "_globals": {
+      "0x009ba974": "hall_of_fame_bin_filename",
+      "0x00a6cc18": "hall_of_fame_txt_filename",
+      "0x009ba988": "hall_of_fame_write_error_message"
+    },
+    "0x005d8b50": "hof_get_entry (cat, slot -> record*; bounds cat<=0x1a, slot<=0x63; stride 12000/120)",
+    "0x005d8c90": "hof_helper_a",
+    "0x005d8d50": "hof_helper_b",
+    "0x005d8fe0": "hof_load_or_init (902b \u2014 main loader; hall_of_fame.bin)",
+    "0x005d9370": "hof_helper_c",
+    "0x005d94a0": "hof_helper_d",
+    "0x005d9750": "hof_write_txt (877b \u2014 text export)",
+    "0x005d9ac0": "hof_write_bin (865b \u2014 binary persist to hall_of_fame.bin)",
+    "0x005d9e30": "hof_helper_e",
+    "0x005da080": "hof_helper_f",
+    "0x005da1c0": "hof_helper_g",
+    "_ported": "crates/cm-domain/src/hall_of_fame.rs \u2014 27x100 table + 120-byte record accessors + obfuscation cipher (rolling XOR + permutation) + I/O container. Round-trip tested. Byte-identity with the shipped hall_of_fame.bin needs the 0x1e0-byte permutation table DAT_009ba1b0 dumped from the exe's .rdata (not yet done). Selection logic (who gets which slot each season) can now hook into crates/cm-domain/src/player_rating.rs + awards_engine."
+  },
+  "history.cpp": {
+    "_range": "0x005db59c .. 0x005dc660 (per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\history.cpp \u2014 CM3 HISTORY viewer: enumerates *.his SHIPPED-CONTENT text files under cm3_history/ (5 categories: 0=Clubs, 1=Nations, 2=Competitions, 3=Leagues, 4=Players), parses `title { ... } section { name\\nrow1\\nrow2\\n } category { N }` blocks, renders the History screen. GROUND-TRUTH: `.his` files are NOT simulation output \u2014 an exhaustive grep of cm3_history/CM3_HISTORY across the whole decompile found 8 files, 0 writers. They're bundled pre-authored real-world football history for display. PORTED: crates/cm-domain/src/history.rs \u2014 HistoryCategory enum + HistoryFile/HistorySection model + parse_his() reader (ports the FUN_005db8b0 keyword-driven state machine: title/section/category, unknown keys consumed to '}') + scan_dir() (matches FUN_005dc2a0/005dc660 enumeration, alphabetical sort by title). SCREEN callback FUN_005dc660 (banner + tab strip via ported FUN_005d7070 + alphabetical list + Back/Next) not yet routed into cm-ui-app but the data model is ready.",
+    "_globals": {
+      "0x009bb298": "hist_dir_CM3_HISTORY",
+      "0x009bb290": "hist_glob_star_his",
+      "0x009bb0fc": "hist_dir_cm3_history_lowercase (for open by comp)",
+      "0x009bb108": "hist_dbg_source_path"
+    },
+    "0x005db8b0": "history_open_selected (1699b \u2014 opens a selected .his file for the history detail screen)",
+    "0x005dbf60": "history_exists_for_comp (117b \u2014 probes cm3_history/<comp>.his existence)",
+    "0x005dbfe0": "history_read_category_field (370b \u2014 parses `category:` line from a .his)",
+    "0x005dc160": "history_read_title_field (308b \u2014 parses `title:` line from a .his)",
+    "0x005dc2a0": "history_verify_all (804b \u2014 walks cm3_history/*.his, validates each)",
+    "0x005dc5e0": "history_helper (117b)",
+    "0x005dc660": "history_screen_draw (1508b \u2014 SCREEN CALLBACK, uses ported guiutils_build_tab_strip for its 5-tab strip)"
+  },
+  "hol_cup.cpp": {
+    "_range": "0x005dcee0 .. 0x005dec29 (17 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\hol_cup.cpp \u2014 Dutch Cup (KNVB Beker) competition class. Real comp id 338 (from rust-db club_competitions.json, nation_id=83 Netherlands, scope=2). Standard cup ctor pattern: vtbl PTR_FUN_00959770, sets record fields at +0x49=7 +0x4a=3 +0x51=0xc +0x14=0xf. Includes cup-specific draw + result recording + honours entry hooks (16 helpers attributed to this TU).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 Dutch Cup added as domestic_cup::CupState (id 338, pool = clubs from division 22 (Eredivisie) + 23 (Dutch First Division), start Sep 8). Uses the shared domestic_cup engine \u2014 same shape as Belgian/German/Greek/Finnish cups. PORTED_COMPETITION_IDS updated. NB: hol_first/hol_prm/hol_super/holland_awards/holland_rules deliberately deferred to next TUs \u2014 walking one file at a time.",
+    "0x005dcee0": "hol_cup_ctor (constructor \u2014 see FUN_005dcee0)",
+    "0x005dd070": "hol_cup_dtor (vtable slot 0 \u2014 from xrefs)"
+  },
+  "hol_first.cpp": {
+    "_range": "0x005def20 .. 0x005e0560 (11 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\hol_first.cpp \u2014 Dutch First Division (Eerste Divisie) competition class. Real comp id 23 (from rust-db club_competitions.json, nation_id=83 Netherlands, scope=2). 18 clubs per rust-db (div 23). Standard league ctor + season generation.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 Dutch First Division added as simple_league::SimpleLeagueState (id 23, 2-leg double round-robin, start Aug 18). Uses the shared simple_league engine. PORTED_COMPETITION_IDS updated with 23.",
+    "0x005def20": "hol_first_ctor"
+  },
+  "hol_prm.cpp": {
+    "_range": "0x005e10a0 .. 0x005e21bd (7 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\hol_prm.cpp \u2014 Eredivisie competition class. Real comp id 22 (nation_id=83 Netherlands). 18 clubs per rust-db (div 22, verified: AZ, Ajax, De Graafschap, FC Den Bosch, Feyenoord, ...). vtbl PTR_FUN_009598d8. Standard league ctor with additional gen helpers (FUN_005e1ec0 fixture builder, FUN_005e1ff0 pre-init).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 Eredivisie added as simple_league::SimpleLeagueState (id 22, 2-leg double round-robin, start Aug 18) alongside hol_first in a single loop. PORTED_COMPETITION_IDS updated with 22.",
+    "0x005e10a0": "hol_prm_ctor",
+    "0x005e1ec0": "hol_prm_gen_fixtures",
+    "0x005e1ff0": "hol_prm_pre_init"
+  },
+  "hol_super.cpp": {
+    "_range": "0x005e22b0 .. 0x005e2a13 (6 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\hol_super.cpp \u2014 Johan Cruyff Schaal (Dutch Super Cup) competition class. Real comp id 102 (nation_id=83 Netherlands). vtbl PTR_FUN_0095998c. Champion of Eredivisie vs winner of KNVB Beker, single-fixture ceremonial tie.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 Dutch Super Cup added as super_cup::SuperCupState (runtime id RUNTIME_BASE+102, links `Dutch Premier Division` + `Dutch Cup`). Fixture created by the tick once both holders are known. PORTED_COMPETITION_IDS updated with 102.",
+    "0x005e22b0": "hol_super_ctor"
+  },
+  "holland_awards.cpp": {
+    "_range": "0x005e2b00 (1 attributed function per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\awards\\holland_awards.cpp \u2014 Dutch domestic player awards engine (analogue of belgium_awards etc.). Allocates a 0x28-byte award state block, sets category count = 10, then per-award seeding.",
+    "0x005e2b00": "holland_awards_ctor",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 awards fire at season end via `country_award_slate(comp_id)` + `award_league_season_end(...)`. Each country participates in the categories defined by its comp_id in the slate (top-flight leagues get PlayerOfSeason + TopScorer + YoungPlayer + TeamOfSeason; second-tier gets PlayerOfSeason + TopScorer + TeamOfSeason; lower tier gets the minimum two). Substrate: crates/cm-domain/src/player_rating.rs \u2014 CA-driven proxy scoring; will upgrade to real per-match performance when match_eng lands."
+  },
+  "host_country.cpp": {
+    "_range": "0x005e32e0 .. 0x005e4e40 (6 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\host_country.cpp \u2014 HOST COUNTRY table used by the international-cup engines to place finals in the host nation's calendar. Ships as a 57-row \u00d7 34-byte-stride table (0x792 bytes) sorted by (sub_tournament, year). Record layout decoded from FUN_005e3490's per-field writes: +0x00 primary host nation ptr, +0x04 year (short), +0x06/+0x0e/+0x16 co-host ptrs, +0x1e aux, +0x20 sub_tournament code (0x20=World Cup, 0x10=Copa America, 0xfe=UEFA European, 0xfd=African Cup of Nations, 0x00=Asian Cup, 0x01=Gold Cup, 0xff=sentinel), +0x21 pad. Runtime cache = CM3_TEMP\\HostCountry.tmp (u16 count + count*34 bytes). Cold init in FUN_005e3490 pulls nation ptrs from DAT_009bb... slots \u2014 VERIFIED via raw .data dump that all these slots are 0xffffffff in the file image, meaning they're populated by the nation-pool loader at runtime.",
+    "_ported": "crates/cm-domain/src/host_country.rs \u2014 HostEntry (34-byte record parser + writer), HostCountryTable (empty, load_tmp, save_tmp, sort matching LAB_005e4f10, lookup by (sub, year)), HostSubTournament enum. 3 tests pass. UNBLOCK PATH IDENTIFIED: the DAT_009bb... slots (0xffffffff in the file image) are populated at startup by FUN_005eb410 in index.cpp \u2014 a name-to-index resolver that runs ~1220 strcmp lookups against runtime pools (colour, nation, comp, club) and stores resolved indices into DAT_009bb638..DAT_00b4bc10. Fully porting host_country's cold-init path requires porting FUN_005eb410's resolver table (data-driven; needs a disasm walker to extract the string/pool/slot triples). Also SKIPPED: the CD check gate in FUN_005e32e0 (GetLogicalDriveStringsA + drive type 5 lookup for cm0102.exe on CD) \u2014 we don't need it.",
+    "_globals": {
+      "0x009bb5d0": "hostcountry_tmp_filename (CM3_TEMP\\HostCountry.tmp)",
+      "0x009bb5a0": "hostcountry_dbg_source_path",
+      "0x009bb700_to_0x009bb9dc": "hostcountry_nation_ptr_slots (25+ slots, runtime-init)"
+    },
+    "0x005e32e0": "hostcountry_load_or_seed (CD check + cache load or cold build)",
+    "0x005e3490": "hostcountry_seed_static_table (57 rows populated from runtime nation ptr slots)",
+    "0x005e4690": "hostcountry_helper_a",
+    "0x005e4840": "hostcountry_helper_b",
+    "0x005e4c80": "hostcountry_load_tmp (CM3_TEMP\\HostCountry.tmp reader)",
+    "0x005e4e40": "hostcountry_qsort_shim (invokes LAB_005e4f10 comparator)"
+  },
+  "ire_chal_cup.cpp": {
+    "_range": "0x0061d730 .. 0x0061e130 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_chal_cup.cpp \u2014 Irish Senior Challenge Cup (comp 122, Republic of Ireland nation_id=92) \u2014 the FAI Cup main knockout. vtbl PTR_FUN_00959be4. Standard cup ctor: +0x42=1 +0x49=5 +0x4a=3 +0x14=0x10, prize=100000.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 122, pool = 119+120, start Sep 15. PORTED_COMPETITION_IDS updated.",
+    "0x0061d730": "ire_chal_cup_ctor"
+  },
+  "ire_first.cpp": {
+    "_range": "0x0061e2a0 .. 0x0061fb00 (9 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_first.cpp \u2014 Irish First Division (comp 120, 9 clubs per rust-db).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league::SimpleLeagueState id 120, 2-leg, start Mar 8 (Irish season is calendar-year). PORTED_COMPETITION_IDS updated.",
+    "0x0061e2a0": "ire_first_ctor"
+  },
+  "ire_leinster_cup.cpp": {
+    "_range": "0x0061fb00 .. 0x00620430 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_leinster_cup.cpp \u2014 Irish Leinster Senior Cup (comp 300).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 300, pool = 119+120, start Oct 10. PORTED_COMPETITION_IDS updated.",
+    "0x0061fb00": "ire_leinster_cup_ctor"
+  },
+  "ire_lge_cup.cpp": {
+    "_range": "0x00620430 .. 0x00621e00 (16 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_lge_cup.cpp \u2014 Irish League Cup (comp 121). Larger function count (16) suggests group-stage or multi-round shape.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 121, pool = 119+120, start Aug 20. May not fully match exe's group phase \u2014 using single-elim shape as playable stand-in. PORTED_COMPETITION_IDS updated.",
+    "0x00620430": "ire_lge_cup_ctor"
+  },
+  "ire_munster_cup.cpp": {
+    "_range": "0x00621e00 .. 0x00622900 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_munster_cup.cpp \u2014 Irish Munster Senior Cup (comp 299).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 299, pool = 119+120, start Oct 10. PORTED_COMPETITION_IDS updated.",
+    "0x00621e00": "ire_munster_cup_ctor"
+  },
+  "ire_pres_cup.cpp": {
+    "_range": "0x00622900 .. 0x00623240 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_pres_cup.cpp \u2014 Irish Presidents Cup (comp 191). Traditionally the Irish season opener (Premier champ vs FAI Cup winner) \u2014 check whether this is the Super Cup role rather than a knockout; the naming here matches the shipped comp id.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 191, pool = 119+120, start Mar 3. PORTED_COMPETITION_IDS updated.",
+    "0x00622900": "ire_pres_cup_ctor"
+  },
+  "ire_prm.cpp": {
+    "_range": "0x00623240 .. 0x00624360 (8 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_prm.cpp \u2014 Irish Premier Division (comp 119, 12 clubs per rust-db). Standard league ctor.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league::SimpleLeagueState id 119, 2-leg, start Mar 8. PORTED_COMPETITION_IDS updated.",
+    "0x00623240": "ire_prm_ctor"
+  },
+  "ire_super_cup.cpp": {
+    "_range": "0x00624360 .. 0x00624ce0 (7 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ire_super_cup.cpp \u2014 Irish Super Cup (comp 123). vtbl PTR_FUN_0095a080. Standard super-cup shape: +0x49=7 +0x4a=5 +0x42=1 +0x14=0x10, base FUN_006674d0 with follow-up mutators (super-cup subclass of standard cup).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 super_cup::SuperCupState linking `Irish Premier Division` (comp 119) + `Irish Senior Challenge Cup` (comp 122), runtime id RUNTIME_BASE+123. PORTED_COMPETITION_IDS updated.",
+    "0x00624360": "ire_super_cup_ctor"
+  },
+  "ireland_awards.cpp": {
+    "_range": "0x00624ce0 .. 0x006258b0 (2 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\awards\\ireland_awards.cpp \u2014 Republic of Ireland domestic player awards.",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 awards fire at season end via `country_award_slate(comp_id)` + `award_league_season_end(...)`. Each country participates in the categories defined by its comp_id in the slate (top-flight leagues get PlayerOfSeason + TopScorer + YoungPlayer + TeamOfSeason; second-tier gets PlayerOfSeason + TopScorer + TeamOfSeason; lower tier gets the minimum two). Substrate: crates/cm-domain/src/player_rating.rs \u2014 CA-driven proxy scoring; will upgrade to real per-match performance when match_eng lands."
+  },
+  "ireland_rules.cpp": {
+    "_range": "0x006258b0 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\rules\\ireland_rules.cpp \u2014 Republic of Ireland domestic finance/transfer/registration rules.",
+    "_ported": "crates/cm-domain/src/finance.rs \u2014 country rules registered at new-game time via CountryRulesSpec (nation_id, max_contract_years, salary_ceiling_weekly, max_foreigners_matchday, transfer_window_open_month, youth_recruitment). Per-club balance/wages/transfer budget seeded from reputation and ticked weekly via finance::pay_weekly_wages + monthly via end_of_month. Wired into hook_weekly_wednesday."
+  },
+  "international_awards.cpp": {
+    "_range": "0x0061c210 (1 attributed function per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\awards\\international_awards.cpp \u2014 INTERNATIONAL awards (FIFA World Player of the Year, Ballon d'Or continental analogue, etc.). Standard *_awards pattern: allocates 0x18 bytes for 6 award records at param_1+4, sets category count=6 at param_1+8, then per-award ctor via operator_new(0x2b)+FUN_0091ef10(kind, 0, DAT_009bbed0, 9000, 8000, -1, 1, &spec, 0, ...). DAT_009bbed0 is one of the resolved slot names.",
+    "0x0061c210": "international_awards_ctor",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 awards fire at season end via `country_award_slate(comp_id)` + `award_league_season_end(...)`. Each country participates in the categories defined by its comp_id in the slate (top-flight leagues get PlayerOfSeason + TopScorer + YoungPlayer + TeamOfSeason; second-tier gets PlayerOfSeason + TopScorer + TeamOfSeason; lower tier gets the minimum two). Substrate: crates/cm-domain/src/player_rating.rs \u2014 CA-driven proxy scoring; will upgrade to real per-match performance when match_eng lands."
+  },
+  "intertoto_cup.cpp": {
+    "_range": "0x0061c690 .. 0x0061d636 (9 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\eurocomp\\intertoto_cup.cpp \u2014 Intertoto Cup (comp 330, European summer secondary tournament, 3 winners qualify for UEFA Cup). vtbl PTR_FUN_00959b44. Base FUN_00502320 (eurocomp base). Ctor sets +0x42=2 +0x52=3 +0x49=7 +0x4a=3. FUN_0061cd40 = participant selector: 60 clubs (0x3c), filter = club[+0x1db] == INTER_TOTO_CUP (DAT_009bbbb8, verified via index resolver extraction \u2014 the club record's `secondary_comp` field). FUN_0061c980 = round descriptor: 5 rounds with variable leg counts (rounds 0..2 single-leg, round 3 two-leg = final).",
+    "0x0061c690": "intertoto_ctor",
+    "0x0061c980": "intertoto_round_descriptor (5-round schedule)",
+    "0x0061cd40": "intertoto_participant_selector (60 clubs where secondary_comp == INTER_TOTO_CUP)",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 Intertoto Cup registered as domestic_cup::CupState id 330, pool = arg_primera::clubs_in_any_competition(&clubs, 330) (60 clubs pre-nominated via their secondary_comp slot). Uses shared domestic_cup engine. Full 5-round schedule not modelled \u2014 the domestic_cup engine does single-elim; multi-round shape tracked in ledger for later group-stage engine."
+  },
+  "inter_amer_cup.cpp": {
+    "_range": "0x0061b760 .. 0x0061c133 (6 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\eurocomp\\inter_amer_cup.cpp \u2014 Inter-American Cup (comp 199, scope=-2 continental): single tie between the year's Copa Libertadores winner (comp 58) and CONCACAF Champions Cup winner (comp 343). vtbl PTR_FUN_00959a90. Base FUN_00502320 (eurocomp base class). Ctor sets +0x42=2, +0x52=2, +0x49=7, +0x4a=3. FUN_0061bb60 = participant selector: walks club pool DAT_00acd5bc stride 0x245, filters clubs by nation.continent == NORTH_AMERICA (slot DAT_009bbec4 verified via index resolver extraction) AND reputation > 1000 for the CONCACAF slot. FUN_0061ba20 = round descriptor: single-round two-team bracket (round_code=3, tournament_type=7). Also has an early gate FUN_00653070 == 0 and year != 0x7d1 (2001).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 registered as super_cup::SuperCupState linking `South American Copa Libertadores` + `CONCACAF Champions Cup` at runtime id RUNTIME_BASE+199. Uses the same super-cup engine as Belgium/Holland super cups. Inert until feeder comps 58 and 343 are registered by their own TUs (sa_lib*.cpp / concacaf_*.cpp, both later in the alphabetical walk). PORTED_COMPETITION_IDS updated with 199.",
+    "0x0061b760": "inter_amer_cup_ctor (see FUN_0061b760)",
+    "0x0061ba20": "inter_amer_cup_round_descriptor (single-round setup)",
+    "0x0061bb60": "inter_amer_cup_participant_selector (walks club pool, filters by continent + reputation)"
+  },
+  "jap_emp_cup.cpp": {
+    "_range": "0x0064b3d0 .. 0x0064c200 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\jap_emp_cup.cpp \u2014 Japanese Emperor's Cup (comp 70, nation_id=97 Japan). The oldest football tournament in Japan; open to all divisions including amateurs. Single-elimination knockout, traditionally runs Sep-Jan with final on New Year's Day.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 70, pool = J1 (69) + J2 (100). Start Dec 15 2001 INVENTED. Real dates need per-cup ROUND helper decode.",
+    "0x0064b3d0": "jap_emp_cup_ctor"
+  },
+  "jap_j1.cpp": {
+    "_range": "0x0064c200 .. 0x0064db90 (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\jap_j1.cpp \u2014 Japanese J-League 1 (comp 69, 16 clubs per rust-db). Top tier of Japanese club football. Calendar-year season (Feb-Nov) per SEASON_STARTS. Traditionally Apertura+Clausura split until 2004 so may use 2-phase format.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league::SimpleLeagueState id 69, 2-leg. Start Mar 2 2002 INVENTED (real needs +0x3c handler emulation).",
+    "0x0064c200": "jap_j1_ctor"
+  },
+  "jap_j2.cpp": {
+    "_range": "0x0064db90 .. 0x0064eb00 (7 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\jap_j2.cpp \u2014 Japanese J-League 2 (comp 100, 12 clubs per rust-db). Second tier.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 100, 2-leg. Start Mar 2 2002 INVENTED.",
+    "0x0064db90": "jap_j2_ctor"
+  },
+  "jap_j_cup.cpp": {
+    "_range": "0x0064eb00 .. 0x0064f520 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\jap_j_cup.cpp \u2014 Japanese Cup / Nabisco Cup (comp 71, nowadays YBC Levain Cup). J-League clubs only knockout, roughly March-November each year, often with group stage.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 71, pool = J1+J2. Start Apr 1 2002 INVENTED.",
+    "0x0064eb00": "jap_j_cup_ctor"
+  },
+  "jap_super.cpp": {
+    "_range": "0x0064f520 .. 0x0064fed0 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\jap_super.cpp \u2014 Xerox Super Cup (comp 81). J1 champion vs Emperor's Cup winner, played at season start (traditionally February).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 super_cup::SuperCupState id RUNTIME_BASE+81 linking J1 (69) + Emperor's Cup (70). FEEDER WIRING NOT VERIFIED against exe feeder-fetch helper.",
+    "0x0064f520": "jap_super_ctor"
+  },
+  "japan_awards.cpp": {
+    "_range": "0x0064fed0 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\awards\\japan_awards.cpp \u2014 Japanese domestic player awards (J-League MVP, top scorer, best XI).",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 awards fire at season end via `country_award_slate(comp_id)` + `award_league_season_end(...)`. Each country participates in the categories defined by its comp_id in the slate (top-flight leagues get PlayerOfSeason + TopScorer + YoungPlayer + TeamOfSeason; second-tier gets PlayerOfSeason + TopScorer + TeamOfSeason; lower tier gets the minimum two). Substrate: crates/cm-domain/src/player_rating.rs \u2014 CA-driven proxy scoring; will upgrade to real per-match performance when match_eng lands."
+  },
+  "japan_rules.cpp": {
+    "_range": "0x006503f0 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\rules\\japan_rules.cpp \u2014 Japanese domestic finance/transfer rules (registration windows, foreigner limits).",
+    "_ported": "crates/cm-domain/src/finance.rs \u2014 country rules registered at new-game time via CountryRulesSpec (nation_id, max_contract_years, salary_ceiling_weekly, max_foreigners_matchday, transfer_window_open_month, youth_recruitment). Per-club balance/wages/transfer budget seeded from reputation and ticked weekly via finance::pay_weekly_wages + monthly via end_of_month. Wired into hook_weekly_wednesday."
+  },
+  "ita_c1_super.cpp": {
+    "_range": "0x00625c60 .. 0x006262c0 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_c1_super.cpp \u2014 Italian C1 Super Cup (comp 192, Serie C1/A champ vs C1/B champ tie). Ctor 0x00625c60, ROUND helper FUN_00626050. Feeder-fetch: FUN_00626050 zeroes feeders at ctor time \u2014 the exe fills them elsewhere at season-transition when both Serie C1/A and C1/B crown their champions. My earlier `Serie C1/A vs Serie C Cup winner` mapping was a known-wrong stand-in.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 super_cup::SuperCupState id RUNTIME_BASE+192. **KNOWN WRONG** feeder wiring: uses C1/A + C Cup as stand-in. Correct feeders (C1/A champ + C1/B champ) need a `two_champions_super_cup` engine variant.",
+    "0x00625c60": "ita_c1_super_ctor",
+    "0x00626050": "ita_c1_super_round_helper (feeders left zero at ctor \u2014 filled elsewhere)"
+  },
+  "ita_c_cup.cpp": {
+    "_range": "0x006262c0 .. 0x00627f80 (16 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_c_cup.cpp \u2014 Italian Serie C Cup (comp 340). Ctor 0x006262c0 sets +0x4a=3, +0x49=7, +0x50=0x12, +0x51=0xc, +0xd9=0x28. PSEL at FUN_00627660 selects 90 clubs filtered by DAT_009bba38..48 divisions + DAT_009bb820 (Serie B) reference. Draw seed FUN_00627c00. Main knockout ROUND helper = FUN_006245f0 (SHARED with ire_super_cup) \u2014 3 rounds R0=27 Jun, R1=29 Jun, R2=1 Jul. Group phase ROUND helper = FUN_00625f10, 15 group instances via FUN_00627060(0..14).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 340, pool = divs 26+27+28+29+30 (Serie C1/A + C1/B + C2/A + C2/B + C2/C), start VERIFIED 27 Jun 2001. Full round schedule and group phase in reports/cup_round_schedules_batch2.md.",
+    "0x006262c0": "ita_c_cup_ctor",
+    "0x00627660": "ita_c_cup_psel (90 clubs)",
+    "0x00627c00": "ita_c_cup_seed_draw",
+    "0x006245f0": "ita_c_cup_main_ko_round_helper (shared with ire_super_cup)",
+    "0x00625f10": "ita_c_cup_group_phase_round_helper"
+  },
+  "ita_cup.cpp": {
+    "_range": "0x00627f80 .. 0x00629d50 (16 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_cup.cpp \u2014 Coppa Italia (comp 339). Ctor 0x00627f80 sets +0x49=7, +0x4a=3, +0x50=0x12, +0x51=0xc, +0xd9=0x28, param_1[0xb]=8. PSEL at FUN_00629170 selects 48 clubs (div DAT_009bb820 Serie A + subdivs); seeding draw FUN_00629890 via qsort LAB_004b6bd0 into buckets by FUN_004a9000. Real ROUND helper = FUN_006282d0 (disasm-only). Two branches: short (param_2<7, ctor's -1 path) = 3 rounds R0=12 Aug, R1=19 Aug, R2=29 Aug; full (param_2==7) = 5 rounds R0=30 Aug through R4=7 Feb.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 domestic_cup::CupState id 339, pool = divs 24+25 (Serie A + Serie B), start VERIFIED 12 Aug 2001. Full round schedule in reports/cup_round_schedules.md.",
+    "0x00627f80": "ita_cup_ctor",
+    "0x00629170": "ita_cup_psel (48 clubs, Serie A + subdivs)",
+    "0x00629890": "ita_cup_seed_draw",
+    "0x006282d0": "ita_cup_round_helper (disasm-only, two-branch)"
+  },
+  "ita_ser_a.cpp": {
+    "_range": "0x00629d50 .. 0x0062ef10 (13 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_a.cpp \u2014 Italian Serie A (comp 24, nation_id=94 Italy). 18 clubs per rust-db (div 24). CFG helper FUN_0062acc0 sets +0xd9 |= 0x40 (\u2192 0x43), +0x4a=3, +0xc5/+0xc6 = 1/2, param_1[8] = ITALIAN_SERIE_B display name. First-fixture date computed by per-league vtable slot +0x3c (invented Aug 26 in lib.rs \u2014 still needs handler emulation to verify).",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league::SimpleLeagueState id 24, 2-leg double round-robin. **DATE INVENTED** (Aug 26); real first-fixture needs Unicorn-emulation of the +0x3c handler.",
+    "0x00629d50": "ita_ser_a_ctor",
+    "0x0062acc0": "ita_ser_a_cfg",
+    "0x0062c180": "ita_ser_a_psel"
+  },
+  "ita_ser_b.cpp": {
+    "_range": "0x0062ef10 .. 0x006340e0 (11 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_b.cpp \u2014 Italian Serie B (comp 25). 20 clubs per rust-db. CFG helper FUN_0062ffa0: +0xd9 |= 0x40, +0xbe/+0xbf = 4/0.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 25, 2-leg. DATE INVENTED (Aug 26).",
+    "0x0062ef10": "ita_ser_b_ctor",
+    "0x0062ffa0": "ita_ser_b_cfg",
+    "0x006308a0": "ita_ser_b_psel"
+  },
+  "ita_ser_c1a.cpp": {
+    "_range": "0x006340e0 .. 0x00638290 (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_c1a.cpp \u2014 Italian Serie C1/A (comp 26). 18 clubs. CFG FUN_00634de0: +0xd9 |= 0x40, +0xbe/+0xbf = 1/4.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 26, 2-leg. DATE INVENTED (Aug 26).",
+    "0x006340e0": "ita_ser_c1a_ctor",
+    "0x00634de0": "ita_ser_c1a_cfg",
+    "0x00635500": "ita_ser_c1a_psel"
+  },
+  "ita_ser_c1b.cpp": {
+    "_range": "0x00638290 .. 0x0063c620 (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_c1b.cpp \u2014 Italian Serie C1/B (comp 27). 18 clubs. Same shape as C1/A.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 27, 2-leg. DATE INVENTED (Aug 26).",
+    "0x00638290": "ita_ser_c1b_ctor",
+    "0x00638f90": "ita_ser_c1b_cfg",
+    "0x00639890": "ita_ser_c1b_psel"
+  },
+  "ita_ser_c2a.cpp": {
+    "_range": "0x0063c620 .. 0x006407b0 (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_c2a.cpp \u2014 Italian Serie C2/A (comp 28). 18 clubs.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 28, 2-leg. DATE INVENTED (Aug 26).",
+    "0x0063c620": "ita_ser_c2a_ctor",
+    "0x0063d320": "ita_ser_c2a_cfg",
+    "0x0063da20": "ita_ser_c2a_psel"
+  },
+  "ita_ser_c2b.cpp": {
+    "_range": "0x006407b0 .. 0x00644940 (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_c2b.cpp \u2014 Italian Serie C2/B (comp 29). 18 clubs.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 29, 2-leg. DATE INVENTED (Aug 26).",
+    "0x006407b0": "ita_ser_c2b_ctor",
+    "0x006414b0": "ita_ser_c2b_cfg",
+    "0x00641bb0": "ita_ser_c2b_psel"
+  },
+  "ita_ser_c2c.cpp": {
+    "_range": "0x00644940 .. 0x00648ce0 (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_ser_c2c.cpp \u2014 Italian Serie C2/C (comp 30). 18 clubs.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 simple_league id 30, 2-leg. DATE INVENTED (Aug 26).",
+    "0x00644940": "ita_ser_c2c_ctor",
+    "0x00645640": "ita_ser_c2c_cfg",
+    "0x00645f50": "ita_ser_c2c_psel"
+  },
+  "ita_super.cpp": {
+    "_range": "0x00648ce0 .. 0x00649560 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\\ita_super.cpp \u2014 Supercoppa Italiana (comp 341, Serie A champ vs Coppa Italia winner). Ctor 0x00648ce0, ROUND helper FUN_006490d0. Feeder-fetch VERIFIED: reads DAT_009bba30 (ITALIAN_SERIE_A) and DAT_009bbbdc (ITALIAN_CUP); if A==B refetches cup runner-up. Model matches our super_cup engine.",
+    "_ported": "crates/cm-domain/src/lib.rs \u2014 super_cup::SuperCupState id RUNTIME_BASE+341 linking Italian Serie A + Italian Cup. FEEDERS VERIFIED CORRECT against exe.",
+    "0x00648ce0": "ita_super_ctor",
+    "0x006490d0": "ita_super_round_helper",
+    "_feeder_dats": {
+      "A": "0x009bba30 (ITALIAN_SERIE_A)",
+      "B": "0x009bbbdc (ITALIAN_CUP)"
+    }
+  },
+  "italy_awards.cpp": {
+    "_range": "0x00649560 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\awards\\italy_awards.cpp \u2014 Italian domestic player awards (Serie A player of the year, top scorer, etc.).",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 awards fire at season end via `country_award_slate(comp_id)` + `award_league_season_end(...)`. Each country participates in the categories defined by its comp_id in the slate (top-flight leagues get PlayerOfSeason + TopScorer + YoungPlayer + TeamOfSeason; second-tier gets PlayerOfSeason + TopScorer + TeamOfSeason; lower tier gets the minimum two). Substrate: crates/cm-domain/src/player_rating.rs \u2014 CA-driven proxy scoring; will upgrade to real per-match performance when match_eng lands."
+  },
+  "italy_rules.cpp": {
+    "_range": "0x0064aa90 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\rules\\italy_rules.cpp \u2014 Italian domestic finance/transfer rules (loan windows, foreigner limits, salary cap).",
+    "_ported": "crates/cm-domain/src/finance.rs \u2014 country rules registered at new-game time via CountryRulesSpec (nation_id, max_contract_years, salary_ceiling_weekly, max_foreigners_matchday, transfer_window_open_month, youth_recruitment). Per-club balance/wages/transfer budget seeded from reputation and ticked weekly via finance::pay_weekly_wages + monthly via end_of_month. Wired into hook_weekly_wednesday."
+  },
+  "manager_manager.cpp": {
+    "_range": "0x00672e40 .. 0x00693510 (13 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\manager_manager.cpp \u2014 the HUMAN MANAGER POOL orchestrator (companion to human_manager.cpp). Ctor 0x00672e40 gates on the CD check (GetLogicalDriveStringsA + drive type 5 + cm0102.exe on CD \u2014 same skip as host_country.cpp / human_manager.cpp). Sets up per-manager runtime state (career history, form ratings, employer, contract). 1251-byte main function + 12 helpers that mutate per-slot fields \u2014 most likely the SETTERS for fields already ledgered in human_manager.rs.",
+    "0x00672e40": "manager_pool_ctor (CD-checked)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "manager_screens.cpp": {
+    "_range": "0x00693510 .. 0x00699640 (5 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\manager_screens.cpp \u2014 human-manager UI screens. FUN_00693510 is 9399 bytes (huge \u2014 the main manager-profile screen builder). 5 total: profile screen, history/CV screen, contracts screen, offers screen, options screen probably.",
+    "0x00693510": "manager_profile_screen_draw (9399b)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_day.cpp": {
+    "_range": "0x00699640 .. 0x0069d950 (11 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_day.cpp \u2014 MATCH DAY DRIVER. Per memory [[game-tick]]: FUN_00699640 (1406b) = `build day's matches` (populates the day's fixture list from the master calendar); FUN_00699d90 (3286b) = `play matches` (iterates the day's fixtures and dispatches each to the match engine). Both are called directly from the tick driver FUN_005b6a90.",
+    "0x00699640": "match_day_build (per-day fixture assembly from calendar)",
+    "0x00699d90": "match_day_play (per-day dispatch to match engine)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_eng.cpp": {
+    "_range": "0x0069d950 .. 0x006bc8d0 (14 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_eng.cpp \u2014 the MATCH ENGINE core. FUN_0069d950 (6272 bytes) is the main simulation loop: reads home + away team tactics, walks minute-by-minute simulating events. Uses doubles (floating-point arithmetic) \u2014 visible from Ghidra decompile signature. 13 helper functions probably do: possession calc, chance creation, shot outcome, injury/card triggers, tactical decisions.",
+    "0x0069d950": "match_eng_simulate (6272b \u2014 the main sim loop)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_events.cpp": {
+    "_range": "0x006bc8d0 .. 0x006c0f10 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_events.cpp \u2014 per-minute event generation (goals, shots on/off, cards, injuries, subs, corners). FUN_006bc8d0 = 2510 bytes. Called from match_eng each simulated minute.",
+    "0x006bc8d0": "match_events_generate",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_man.cpp": {
+    "_range": "0x006c0f10 .. 0x006d0170 (5 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_man.cpp \u2014 MATCH MANAGER (session orchestrator). Not to be confused with human manager. Creates a match session, holds the two teams, feeds them to match_eng, collects match_stats, produces match_events sequence, returns the final result.",
+    "0x006c0f10": "match_man_session_ctor",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_official.cpp": {
+    "_range": "per file_attribution.json (match_official.cpp)",
+    "_source": "match_official.cpp - Match officials",
+    "_ported": "referee assignment - integrated into match_engine"
+  },
+  "match_pl.cpp": {
+    "_range": "0x006d63f0 .. 0x006fd6c0 (13 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_pl.cpp \u2014 MATCH PLAYER (per-player match simulation). FUN_006d63f0 is 13,437 bytes \u2014 one of the biggest single game functions. Handles per-player performance during a match: positioning, stamina drain, tactic adherence, form/morale modifiers, individual event triggers. Called from match_eng per minute per active player.",
+    "0x006d63f0": "match_pl_simulate (13437b \u2014 per-player-per-minute logic)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_screens.cpp": {
+    "_range": "0x006fd6c0 .. 0x00710880 (13 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_screens.cpp \u2014 LIVE MATCH UI screens. Text commentary view, radar view, stats overlay, half-time report. Also draws the tab strip via ported FUN_005d7070. 13 screen builders + helpers.",
+    "0x006fd6c0": "match_screens_first (234b \u2014 small; probably a mode router)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "match_stats.cpp": {
+    "_range": "0x00710880 .. 0x0071b430 (9 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\match_stats.cpp \u2014 per-match statistics accumulator. Shots, shots on target, corners, offsides, fouls, possession%, passes attempted/completed. Fed from match_eng each event; read by match_screens for display and by season-end aggregation for player-of-the-season awards.",
+    "0x00710880": "match_stats_ctor / accumulator (960b)",
+    "_ported": "crates/cm-domain/src/match_engine.rs \u2014 minute-by-minute simulation replacing the reputation-weighted proxy. Deterministic (seeded RNG). Produces goals, shots, shots on target, corners, fouls, cards, injuries, subs, possession%. Not bit-exact with the exe (needs formation.cpp port for tactical fidelity) but produces plausible stats that feed match_stats aggregation and awards seeding. Enough to unblock this TU's downstream consumers."
+  },
+  "key_nation.cpp": {
+    "_range": "0x006508e0 .. 0x00653d30 (9 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\key_nation.cpp \u2014 the PICKER league-table builder. Constructs the 0x264*4 = 2448-byte table at DAT_00b4bc70 that the country-selection UI reads (34 entries \u00d7 0x48 bytes = 8 international + 26 country leagues). Each entry: {handler_va (LAB_0081Axxx), date object at year DAT_00acde92 (2001), flags}. FUN_006508e0 is the master builder \u2014 populates every entry by calling FUN_00533b50(day=1, month=6, year, -1) for the base date, FUN_00418770 to install into the table slot. This is the source of truth for `crates/cm-domain/src/league_calendar.rs::SEASON_STARTS`.",
+    "_ported": "DECODED via league_calendar.rs \u2014 the 26 country season-start dates + calendar-year flags are extracted verbatim from this function's per-entry `FUN_00533b50(day, month, year_flag)` calls. Not re-ported here; league_calendar.rs is authoritative.",
+    "0x006508e0": "picker_league_table_builder"
+  },
+  "langlib.cpp": {
+    "_range": "0x00653d30 .. 0x00667937 (3 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\si\\code\\langlib.cpp \u2014 language library / i18n. Gates every lookup on DAT_009d73b4 = -1 \u2192 'Setup not yet called' error. Loads the .idx language string catalogue (see index.cpp / FUN_005eb410 name resolver work).",
+    "_status": "ENGINE INFRASTRUCTURE \u2014 Rust equivalent is `include_str!` + Fluent-style resource loading, no direct port. Ledgered as reference.",
+    "0x00653d30": "langlib_lookup",
+    "_globals": {
+      "0x009d73b4": "langlib_setup_flag (-1 = not initialised)"
+    }
+  },
+  "league.cpp": {
+    "_range": "0x00667937 .. 0x00670350 (21 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\league.cpp \u2014 LEAGUE base class. Foundation for every simple_league/domestic_cup/super_cup subclass. Provides: fixture generation, table sorting, tie-breaker rules, promotion/relegation gating, champion honour recording. Every country's `*_prm.cpp` / `*_first.cpp` etc. inherits from this via vtable PTR_FUN_0095ace8.",
+    "_ported": "STRUCTURALLY REPLACED \u2014 crates/cm-domain/src/simple_league.rs, domestic_cup.rs, super_cup.rs cover the same responsibilities in Rust idiomatic form. The Rust engines don't share a vtable base; instead each is a separate struct with its own generation/advance methods. Ledger note: no per-function port here because the whole abstraction is remade.",
+    "0x00667937": "league_something (21 funcs \u2014 first one)",
+    "0x00667920": "league_base_first_fixture_stub (returns 0 - default implementation; every subclass overrides via +0x3c vtable slot per CFG_HELPER_TAGS.md)"
+  },
+  "league_stage.cpp": {
+    "_range": "0x00670350 .. 0x006725c0 (4 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\league_stage.cpp \u2014 describes one STAGE of a league (a round-robin phase, group stage, playoff bracket, etc.). Ctor takes 23 params (start date, leg counts, pot sizes, promotion/relegation slots). Multi-stage leagues (Argentine Apertura+Clausura, Irish Premier split-league, Coppa Italia group+KO) instantiate multiple LeagueStage objects.",
+    "_ported": "PARTIALLY REPLACED by simple_league::LeaguePlayoff (in cm-domain) for the single case ported (Brazilian championship playoff). Full multi-stage engine not yet built \u2014 would let us properly represent Argentine two-phase seasons, Irish split-league, group+KO cups (Coppa Italia, Nabisco, Irish League Cup).",
+    "0x00670350": "league_stage_ctor (23 params \u2014 big surface area)"
+  },
+  "main.cpp": {
+    "_range": "0x006725c0 .. 0x006674d0? (2 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\main.cpp \u2014 WinMain + app singleton bootstrap. Creates a named mutex 'Championship Manager 2001_02 Pro' via CreateMutexA (prevents multiple instances), sets up DirectDraw + DirectSound handles, initialises the game clock, then hands control to the main loop at FUN_005b6a90 (verified as the day-tick driver per memory [[game-tick]]).",
+    "_ported": "STRUCTURALLY REPLACED \u2014 crates/cm-app/src/main.rs bootstraps a Rust `App` that runs the same tick loop via `RuntimeSaveGame::tick_cm_phase`. The mutex-based singleton, DDraw/DSound handles, and window setup are all Windows-specific artefacts we don't reproduce.",
+    "0x006725c0": "WinMain (mutex + DirectDraw/DirectSound init + main loop entry)",
+    "_globals": {
+      "0x00b4d58c": "hInstance",
+      "0x00b4d59c": "app_singleton_mutex"
+    }
+  },
+  "index.cpp": {
+    "_range": "0x005eb410 .. 0x00600680 (3 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\index.cpp \u2014 NAME-TO-INDEX resolver + region localiser. Three functions: (1) FUN_005eb410 40995 bytes \u2014 the master startup RESOLVER (decode from disasm below): -1-inits 1270 slots in DAT_009bb638..DAT_00b4bc10 then runs ~1220 named-entity lookups (linear pool scan + strcmp) that fill those slots with resolved indices. Every hard-coded reference in the code (colour 'Black', nation 'England', comp 'Champions Cup', etc.) becomes an int index via this table at startup. Pool bases include 0xacd5f4 (colours), 0xacd554, 0xacd604. UNBLOCKS host_country.cpp's ff-filled DAT slots. (2) FUN_005f7140 129 bytes \u2014 'Unable to find the %s index' error dialog (called 1220 times, one per lookup that could fail). (3) FUN_00600680 2019 bytes \u2014 region-name localiser: (category 1..14, out_buf, min_id>=100, nationality_or_0xff) returns adjective or noun form of a region name; overrides for lang 2/4/5/9 use hand-crafted tables (s_Britannico___Irlandese for Italian, s_Sul_Europeias for Portuguese, etc.); English is the default branch.",
+    "_ported": "crates/cm-domain/src/index.rs \u2014 RegionCategory enum (14 variants) + region_name(cat, nationality) English localiser. 3 tests pass. STILL DEFERRED: FUN_005eb410's giant text-lookup switch (needs shipped .idx file format decoded); non-English variants of region_name (Italian/Portuguese/German/French/Spanish \u2014 would need reading each hand-coded PTR table in .rdata + decoding language byte from FUN_006547b0).",
+    "0x005eb410": "index_resolve_all_names_at_startup (40995b, 9557 instructions \u2014 DECODED FROM DISASM: NOT a switch, it's a MASSIVE name-to-index resolver. Init phase: -1-fills 1270 unique slots in DAT_009bb638..DAT_00b4bc10 (the runtime-index table). Body: performs ~1220 named-entity lookups against several runtime pools (0xacd5f4 = colour pool [34 calls], 0xacd554 [6 calls], 0xacd604 [6 calls], + more via inlined rep cmpsb). Each lookup: walks a pool linearly, strcmps each record's name-at-offset+4 against a hard-coded string constant, stores the matched index at a specific slot in DAT_009bb638+. Verified first lookup: 'Black' vs colour pool -> DAT_00b5b638. On miss calls FUN_005f7140 with the name string, popping the 'Unable to find the %s index' dialog (1220 err calls one-per-lookup). THIS IS THE FUNCTION THAT POPULATES host_country.cpp's DAT_009bb700..DAT_009bb9dc slots (all 0xffffffff in the file image); porting it unblocks host_country's cold init. Full lookup table extraction requires a proper disasm walker \u2014 deferred as a data-driven follow-up)",
+    "0x005f7140": "index_error_not_found (129b \u2014 'Unable to find the %s index' dialog)",
+    "0x00600680": "index_region_localised_name (2019b \u2014 14-region adjective/noun table, English branch ported)"
+  },
+  "human_manager.cpp": {
+    "_range": "0x005e4f50 .. 0x005eb250 (50 attributed functions per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\human_manager.cpp \u2014 the HUMAN MANAGER POOL: state of every human player-manager. Ctor FUN_005e4f50 allocates 0xa6ef4 bytes = 4 + 0x10 slots x 0xa6ef bytes/slot (683764 bytes total). 16 concurrent humans MAX (`param_1[1] = 0x10`). Also has a CD-check gate at entry (same GetLogicalDriveStringsA + drive type 5 + cm0102.exe lookup as host_country) \u2014 we skip it. Per-club scan during init: iterates DAT_00acd5c4[0..DAT_00acd56c] (clubs pool) and calls FUN_005e5330 for each. FUN_005e5820 accessor decoded: uses (*param_1 + 0x9a69 + slot*0xa6ef) as a u8 selector to address one of the slot's sub-records at 0x1ecd (7885) bytes each; the seat record is at DAT_00b59fc2 + active_human*0xc0 (matches memory [[dashboard-manager-model]]).",
+    "_ported": "crates/cm-domain/src/human_manager.rs \u2014 FULL FIELD MAP decoded. Constants for pool geometry (HUMAN_MAX_SLOTS=16, SLOT_STRIDE=0xa6ef, SUB_RECORD_STRIDE=0x1ecd \u00d7 5 tiles, SEAT_STRIDE=0xc0). Named offsets for every scalar/array field of the 42735-byte slot AND its 5 sub-records: sub-record fields (tactics_data_blob 0x0..0x18e2, tactic_field_a/b, tactic_flag_a/b/c, tactic_name +history, ref_id_list 50xi32), general slot fields (current_team_or_entity_id 0x9a01, flag_a/b, packed_block 0x9a09 0x50B, runtime_ptrs, counter_c, SELECTOR 0x9a69, arrays A/B, current_managed_club_id 0x9ace, week_counter 0x9ad2 init 0x7d, PERSON identity block 0x9ad4 0x4f B with id/pool_a_idx/pool_b_idx_a/b + 4 cached pool ptrs + 4 shorts + type_or_gender, comp_mode[5], comp_cache 16x{u32,i32}, search_name/history, training_name/history, print_name, misc block, dyn_records ptr+count 0x1e stride). Typed getters/setters for the 15+ common fields. HumanPool::empty() runs FUN_005e5330's init defaults (week_counter=0x7d, tactic flags 1/1/0, ref_id_list all -1). Selector==1 aliases to 0 for ref-list accessors (matches FUN_005eaa40 remap). 8 tests pass.",
+    "_status": "FIELD MAP COMPLETE \u2014 all 46 remaining functions decoded and ledgered as offset+width+type+reader-fn+writer-fn (see reports/human_manager_field_map.md for the full audit). REMAINING WORK: (a) implement the chunked-container reader/writer FUN_00921770 for human_manager.dat (blocks all .dat-backed subsystems); (b) wire cached_pool_ptr_{a,b,c,d} recomputation to real pool bases DAT_00acd5b8/bc/d8; (c) legacy-version fork translations (< 0x3e021, < 0x3e005, < 0x3e001); (d) comp_cache side-effect populate (comp_mode[3] setter iterates 16 slots via FUN_008815a0); (e) person-add validation chain (FUN_005e8040 / 5e8240 / 5ea590 / 5ea720) \u2014 depends on club-chain walker substrate.",
+    "_globals": {
+      "0x00b5d016": "human_active_index (u8) \u2014 which slot is currently on-screen",
+      "0x00b59fc2": "human_seat_pool_base \u2014 0xc0-byte public records per slot",
+      "0x00acd5c4": "clubs_pool_base (referenced by per-club init scan)",
+      "0x00acd56c": "clubs_pool_count"
+    },
+    "0x005e4f50": "human_pool_ctor (16-slot allocator + per-club init)",
+    "0x005e5330": "human_pool_per_club_init (called for each club during ctor)",
+    "0x005e5820": "human_slot_addr_sub_record (accessor: slot base + selector[+0x9a69] * 0x1ecd)",
+    "0x005e8990": "human_pool_load (existing state loader \u2014 not decoded yet)"
+  },
+  "holland_rules.cpp": {
+    "_range": "0x005e3120 (1 attributed function per file_attribution.json)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\rules\\holland_rules.cpp \u2014 Dutch domestic financial/transfer/registration rules. vtbl PTR_LAB_00959a40. Wraps FUN_008d5460 (rules base class ctor) and adds a per-nation config block (12 bytes malloc'd).",
+    "0x005e3120": "holland_rules_ctor",
+    "_ported": "crates/cm-domain/src/finance.rs \u2014 country rules registered at new-game time via CountryRulesSpec (nation_id, max_contract_years, salary_ceiling_weekly, max_foreigners_matchday, transfer_window_open_month, youth_recruitment). Per-club balance/wages/transfer budget seeded from reputation and ticked weekly via finance::pay_weekly_wages + monthly via end_of_month. Wired into hook_weekly_wednesday."
+  },
+  "_germany_block": {
+    "_note": "Germany (8 TUs) \u2014 6 competitions PORTED via reusable engines. ger_first (Bundesliga 16, 18 clubs, vtable), ger_second (2. Bundesliga 17, 18), ger_regional (Regionalliga N 20 + S 21, 18 each) via simple_league; ger_cup (DFB-Pokal 337) + ger_lge_cup (Ligapokal 91) via domestic_cup. Verified 2001: Bayer Leverkusen (Bundesliga), Bayern M\u00fcnchen (DFB-Pokal + League Cup double). NB: Regionalliga West/Southwest (18) and East (19) are 0 primary members in shipped data (probably tertiary/multi-group like Brazilian states) \u2014 SKIPPED as flat leagues, ctors ledgered. DECODED WITH HONEST DEFERRAL: germany_awards.cpp (0x005c92f0, 2 fns) + germany_rules.cpp (0x005c9cd0, 1 fn).",
+    "0x005c28d0": "gercup_ctor (DFB-Pokal 337)",
+    "0x005c3660": "gerfirst_ctor (Bundesliga 16)",
+    "0x005c5d90": "gerlgecup_ctor (Ligapokal 91)",
+    "0x005c6880": "gerreg_ctor (Regionalliga 105/20/21)",
+    "0x005c7f80": "gersecond_ctor (2. Bundesliga 17)",
+    "0x005c92f0": "germanyawards_ctor",
+    "0x005c9cd0": "germanyrules_ctor"
+  },
+  "game.cpp": {
+    "_range": "0x005b6f10 .. 0x005c153f (complete; 3 attributed functions, ~42KB)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\game.cpp \u2014 the CENTRAL GAME OBJECT and evening-phase gameplay dispatcher. FULL EXHAUSTIVE ANALYSIS: see reports/game_cpp_analysis.md. Summary: game_init (0x5b6f10, 4085b) runs the intro splash sequence + top-level init (FUN_00803e00) + forever main loop (build fixtures FUN_00699640 -> play FUN_00699d90 -> advance date FUN_004cdef0 -> phase increment -> repeat). Dispatches competition subsystems via vtable +0x14 on DAT_00ac688c array. game_dispatch_evening (0x5b85b0, MASSIVE 30467b/9271 instrs) is the daily gameplay AI: 395 game-RNG calls + 74 to staff_contracts + 17 player_stats + 13 human_manager + 9 transfer_manager + 8 contract_manager + 7 media/news + more. game_recompute_fifa_rankings (0x5c01d0, 645b) recomputes nation rankings from a weighted sum of 6 history slots (nation +0xb0/0xb8/0xc0/0xc8/0xd0/0xd8 * weights DAT_00956918..0x9569b0). Ported: address constants only (game.rs) + our RuntimeSaveGame/tick_cm_phase is the functional equivalent of the outer loop. FIFA rankings is next portable target (self-contained, 645 bytes).",
+    "_globals": {
+      "0x00dbbcf2": "g_live_game_marker (set to vtable 0x005c0460 on init)",
+      "0x005c0460": "vtbl_game (the game-object vtable)"
+    },
+    "0x005b6f10": "game_init (4085b \u2014 sets DAT_00dbbcf2=vtbl, calls tick 0x00672770)",
+    "0x005b85b0": "game_dispatch (MASSIVE 30467b / 9271 instr \u2014 per-turn state machine)",
+    "0x005c01d0": "game_report (645b \u2014 status/formatting helper)"
+  },
+  "_game_saver_absent": {
+    "_note": "NOTE: game_saver.cpp was NOT found in Ghidra's attribution. The save-writing logic is elsewhere \u2014 see memory `sav-file-format`: written by FUN_00818060 orchestrator + FUN_005176c0 DB writer + ~35 subsystem savers. No dedicated game_saver.cpp TU in this build."
+  },
+  "_fitness_flag_absent": {
+    "_note": "NOTE: fitness.cpp and flag.cpp were NOT found in Ghidra's file attribution (checked alphabetically between fin_prm.cpp and fix_man.cpp, and between fix_man/fog_of_war). Both are absent from the .text alphabetical sweep in this build. Either inlined into consumers (like network.h at TU 79), never linked in this Windows retail build, or attribution missed them. If they exist, look for match-time fitness/condition logic and country-flag rendering."
+  },
+  "_france_block": {
+    "_note": "France (10 TUs) \u2014 6 competitions PORTED, 2 flat-pool leagues + awards/rules deferred. PORTED via reusable engines: fra_first (Ligue 1 comp 11, 18 clubs), fra_second (Ligue 2 comp 12, 20), fra_third (National comp 13, 20) via simple_league; fra_cup (French Cup comp 335) + fra_lge_cup (League Cup comp 336) via domestic_cup (top-3-div pool); fra_super (Troph\u00e9e des Champions comp 96) via super_cup (Ligue 1 champ vs French Cup winner). Verified 2001: Olympique Lyonnais (both cups), FC Metz (Ligue 1 + Troph\u00e9e), Strasbourg (L2), Boulogne-sur-Mer (National). DECODED-NOT-PORTED as flat leagues: fra_cfa.cpp (comp 14, 59-club bucket \u2014 the real CFA is multi-group regional) and fra_lower.cpp (comp 15, 139-club bucket \u2014 thousands of amateur clubs). Registering them as flat 59/139-club double round-robins would generate 10K+ synthetic fixtures per season for no gain; their ctors are named in the ledger. DECODED WITH HONEST DEFERRAL: france_awards.cpp (0x005aacf0, 1 fn) + france_rules.cpp (0x005ab8b0, 1 fn) \u2014 same standard patterns.",
+    "0x005a34d0": "fracfa_ctor (French CFA comp 14; flat-pool port skipped)",
+    "0x005a4390": "fracup_ctor (French Cup comp 335)",
+    "0x005a5390": "frafirst_ctor (Ligue 1 comp 11)",
+    "0x005a6bc0": "fralgecup_ctor (League Cup comp 336)",
+    "0x005a7840": "fralower_ctor (Lower Division comp 15; flat-pool port skipped)",
+    "0x005a8600": "frasecond_ctor (Ligue 2 comp 12)",
+    "0x005a95f0": "frasuper_ctor (Troph\u00e9e des Champions comp 96)",
+    "0x005a9e10": "frathird_ctor (National comp 13)",
+    "0x005aacf0": "franceawards_ctor",
+    "0x005ab8b0": "francerules_ctor"
+  },
+  "fix_man.cpp": {
+    "_range": "0x00594370 .. 0x00599d5f (complete; 23 attributed functions, ~23KB)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\fix_man.cpp \u2014 the FIXTURE MANAGER: loads/generates the master fixture list from data files (0xc8-byte records via the shared file API [0x955058]/[0x955130]), same pattern as club_history/club_records/dispute. DECODED-NOT-PORTED: our headless engine already generates fixtures through the reusable simple_league/domestic_cup/ACN engines; porting fix_man would replace a working piece. Recorded as hooks for future save-format work (the exe's fixture data lives on disk; ours lives in save.season.fixtures).",
+    "0x00594370": "fixman_load_from_file (0xc8-byte records)",
+    "0x00594750": "fixman_helper_a",
+    "0x00594950": "fixman_helper_b",
+    "0x00594d00": "fixman_helper_c",
+    "0x005958b0": "fixman_helper_d",
+    "0x00595b90": "fixman_helper_e",
+    "0x005962b0": "fixman_helper_f",
+    "0x00596410": "fixman_helper_g",
+    "0x00596590": "fixman_helper_h",
+    "0x005966e0": "fixman_helper_i",
+    "0x00596a30": "fixman_helper_j",
+    "0x00596e20": "fixman_helper_k",
+    "0x00597260": "fixman_helper_l",
+    "0x00597560": "fixman_helper_m",
+    "0x00597e00": "fixman_helper_n",
+    "_ported": "The fixture manager's per-fixture play path is now unblocked by crates/cm-domain/src/match_engine.rs. Master fixture list is already built by the country blocks in lib.rs and stored in save.season.fixtures. Simulation of each fixture happens through the (already-hooked) match_engine::simulate_fixture call chain. Container format for on-disk .fix files is not yet ported (that stays a follow-up when the .dat container substrate lands)."
+  },
+  "fog_of_war.cpp": {
+    "_range": "0x00599d60 .. 0x0059cc3f (complete; 4 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\fog_of_war.cpp \u2014 save-integrity + scout-knowledge fog. First function fingerprint-checks a global against magic 0x3e036 (DAT_00dbc3e8 xor + sub trick = obfuscated save-integrity value). The scout-knowledge piece (what a manager 'knows' about hidden player attributes) needs a scouting/reports system, DEFERRED. Only the magic constant is directly portable and self-contained.",
+    "_globals": {
+      "0x00dbc3e8": "g_fogofwar_integrity_magic (validated against 0x3e036)"
+    },
+    "0x00599d60": "fogwar_validate_magic (cdq/xor/sub obfuscation vs 0x3e036)",
+    "0x0059a150": "fogwar_helper_a",
+    "0x0059a690": "fogwar_helper_b",
+    "0x0059a7f0": "fogwar_helper_c"
+  },
+  "formation.cpp": {
+    "_range": "0x0059cc40 .. 0x005a34cf (complete; 33 attributed functions, ~27KB)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\formation.cpp \u2014 the tactics/FORMATIONS engine: 4-4-2, 4-3-3, sweeper variants, player positioning within a shape. DECODED-NOT-PORTED: 33 functions of tactical logic that a match engine consumes. Our match engine is still the placeholder stub (see HANDOVER: 'Match engine is a pipeline that produces scores + a match report, but it's not the real match engine'), so porting formation is blocked until the match engine is real. Recorded as hooks.",
+    "0x0059cc40": "formation_helper_or_ctor",
+    "0x0059cdf0": "formation_helper_b",
+    "0x0059ceb0": "formation_helper_c",
+    "0x0059d240": "formation_helper_d",
+    "0x0059d4c0": "formation_helper_e",
+    "0x0059d580": "formation_helper_f",
+    "0x0059d770": "formation_helper_g",
+    "0x0059d870": "formation_helper_h",
+    "0x0059df80": "formation_helper_i",
+    "0x0059e0f0": "formation_helper_j",
+    "0x0059e2a0": "formation_helper_k",
+    "0x0059e430": "formation_helper_l",
+    "0x0059e5b0": "formation_helper_m",
+    "0x0059e720": "formation_helper_n",
+    "0x0059e8c0": "formation_helper_o",
+    "_ported": "crates/cm-domain/src/formation.rs \u2014 15 FormationCode variants with 10-slot Position layouts, TacticalBundle with 6 slider dimensions (mentality/passing/closing_down/tempo/marking/width), 3 preset bundles. Wired into match_engine::SimulateFixtureInput.home/away_tactics: formation attack_bias + mentality shift both teams' xG. 4 tests pass."
+  },
+  "_finland_block": {
+    "_note": "Finland (5 TUs) \u2014 3 competitions PORTED via reusable engines. fin_prm.cpp (comp 114 Premier, 12 clubs, vtable 0x009584b0) + fin_first.cpp (comp 118 First Division, vtable 0x009583f0) via simple_league (double round-robin). fin_cup.cpp (comp 113 Finnish Cup, club base 0x502320, vtable 0x00958350) via domestic_cup. Verified 2001: Tampere United (Premier), HJK Helsinki (Cup) \u2014 both real Finnish sides. DECODED WITH HONEST DEFERRAL: finland_awards.cpp (0x00593620, 2 fns) + finland_rules.cpp (0x00593fd0, 1 fn) \u2014 same standard patterns.",
+    "0x0057c470": "fincup_ctor (Finnish Cup 113, vtable 0x00958350)",
+    "0x0057d0c0": "finfirst_ctor (Finnish First 118, vtable 0x009583f0)",
+    "0x0057f370": "finprm_ctor (Finnish Premier 114, vtable 0x009584b0)",
+    "0x00593620": "finawards_ctor",
+    "0x00593fd0": "finrules_ctor"
+  },
+  "euro_champ_qual.cpp": {
+    "_range": "0x00566ab0 .. 0x0056d11f (complete; 33 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\intercomp\\euro_champ_qual.cpp \u2014 European Championship QUALIFYING (comp 396). Vtable 0x009580cc, nation base 0x006674d0, QUADRENNIAL. Runs group-stage qualifying that FEEDS the 16-team euro_champ.cpp finals. DECODED-NOT-PORTED (large 33-fn qualifier engine; the ACN-engine port of euro_champ.cpp draws its 16 finalists directly from the whole European pool, a documented simplification of what qualifying would do). Standard nation-base ctor pattern.",
+    "0x00566ab0": "eurochampqual_ctor (comp 396, vtable 0x009580cc, quadrennial)",
+    "_ported": "DECODED-NOT-PORTED \u2014 still needs a group-stage engine (single-elim domestic_cup engine doesn't model group + KO). Same substrate would also complete Coppa Italia and Nabisco Cup group phases. Tracked as one shared follow-up."
+  },
+  "european_awards.cpp": {
+    "_range": "0x0056d120 .. 0x0056d45f (complete; 1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\award\\european_awards.cpp \u2014 European awards (UEFA Footballer of the Year, etc.). Single-function TU. Champion honours already recorded by the ported European cups (Champions Cup, UEFA Cup, Cup Winners', Super Cup, Euro Championship, Euro Qualifying). Player awards blocked on ratings (see deferred-awards-engine).",
+    "0x0056d120": "euawards_ctor (champion honours already handled; player awards blocked)",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 European champion honours were already recorded via the existing honours system. Player-facing awards (UEFA Footballer of the Year, Golden Boot) can now fire via awards_engine::award_international_season_end(year, \"European Footballer\", &top_flight_ids, ratings). Registration hook to be added at each year rollover."
+  },
+  "european_cup.cpp": {
+    "_range": "0x0056d460 .. 0x005750bf (complete; 17 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\eurocomp\\european_cup.cpp \u2014 the European Champions Cup / Champions League (comp 326). Vtable 0x009581c8, club base 0x00502320, [+0x2c]=0xd = 13 STAGES of group+knockout (a much larger format than the ACN engine's 4-group+KO). PORTED as a 32-team knockout via domestic_cup (top 2 clubs per league from 17 top European leagues incl big-5 Spain/Italy/Germany/France) \u2014 Barcelona won 2001, real football-plausible. Same TU also spawns Cup Winners' Cup (327) + UEFA Cup (328) shapes; the three now activate the European Super Cup (329) end-to-end via super_cup. Documented simplification: the exact 13-stage format isn't modelled \u2014 the port crowns real winners but doesn't reproduce the qualifying rounds / group stages.",
+    "0x0056d460": "eurocup_ctor (comp 326, vtable 0x009581c8, 13 stages)"
+  },
+  "eur_super_cup.cpp": {
+    "_range": "0x00563da0 .. 0x0056452f (complete; 6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\eurocomp\\eur_super_cup.cpp \u2014 the UEFA/European Super Cup. Vtable 0x00957f78, club base 0x00502320. Ties the European Champions Cup (comp 326) winner vs the UEFA Cup (comp 328) winner, comp 329. Same shape as asia_super_cup / bel_super. PORTED via the super_cup engine (registered in new-game); DORMANT until european_cup.cpp + uefa_cup are ported.",
+    "0x00563da0": "eursupercup_ctor (comp 329, vtable 0x00957f78)"
+  },
+  "euro_champ.cpp": {
+    "_range": "0x00564530 .. 0x00566aaf (complete; 18 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\comp\\intercomp\\euro_champ.cpp \u2014 the European Football Championship (UEFA Euros). Vtable 0x00958018, nation base 0x006674d0, QUADRENNIAL year-snap (0x80000003 mod 4, anchor 1996), 16-team group + knockout. Same shape as asia_nations.cpp. Comp 406. PORTED via the ACN engine (build_cup_edition + advance_european_championship). Verified: Finland crowned 2004 European champions after group + QF + SF + Final.",
+    "0x00564530": "eurochamp_ctor (comp 406, vtable 0x00958018, quadrennial)"
+  },
+  "_england_block": {
+    "_note": "England (12 TUs) COMPLETE. PORTED: eng_prm (comp 7 Prem 20-club), eng_first (8, 24), eng_second (9, 24), eng_third (10, 24), eng_conf (93, 22) via simple_league (double round-robin -> champion); eng_fa_cup (comp 351, 128-team from Prem+1st+2nd+3rd+Conf+Isthmian+Southern+Northern), eng_cc_cup/League Cup (352, top 4 divs 64 teams), eng_fa_trophy (94, non-league 64 teams), eng_auto_cup/Vans (354, 2nd+3rd divs 32 teams) via domestic_cup; eng_charity/Charity Shield (353) via super_cup (Prem champ vs FA Cup winner). Verified 2001: Bolton Wanderers Prem+Charity Shield, Man United FA Cup+League Cup, Barnet FA Trophy, Bristol City Vans Trophy, Crewe/Blackpool/Bristol Rovers/Chester City other divisions. DECODED WITH HONEST DEFERRAL: england_awards.cpp (0x00562440, 2 fns), england_rules.cpp (0x005637f0, 1 fn \u2014 same standard patterns).",
+    "0x00554600": "engauto_ctor (Vans Trophy, comp 354, vtable 0x0095788c, 2 stages)",
+    "0x00555e80": "engcc_ctor (League Cup, comp 352, vtable 0x0095792c, club base)",
+    "0x00556f90": "engcharity_ctor (Charity Shield, comp 353, vtable 0x009579cc)",
+    "0x005577a0": "engconf_ctor (Conference, comp 93)",
+    "0x00558c80": "engfa_ctor (FA Cup, comp 351, vtable 0x00957b20, club base)",
+    "0x0055a8f0": "engtrophy_ctor (FA Trophy, comp 94)",
+    "0x0055b340": "engfirst_ctor (First Division, comp 8)",
+    "0x0055cf20": "engprm_ctor (Premier Division, comp 7, vtable 0x00957d14, nation base 0x006674d0)",
+    "0x0055f040": "engsecond_ctor (Second Division, comp 9)",
+    "0x00560b40": "engthird_ctor (Third Division, comp 10, vtable 0x00957e7c, [+0x2c]=1)",
+    "0x00562440": "englandawards_ctor (2 fns)",
+    "0x005637f0": "englandrules_ctor (1 fn)"
+  },
+  "_brazil_block": {
+    "_note": "Brazil (19 TUs) COMPLETE. PORTED: 12 STATE CHAMPIONSHIPS (bra_reg_*.cpp: Paulista 67, Carioca 66, Gaucho 254, Mineiro 262, Baiano 258, Paranaense 266, Goiano 260, Pernambucano 264, Catarinense 268, North 73, Central 74, Northeast 256) via simple_league \u2014 MEMBERSHIP IS TERTIARY (club+0x60; gathered via clubs_in_any_competition); Serie A/B/C (bra_nat_first 65 28-club / bra_nat_second 79 / bra_nat_third 80 56-club) as SINGLE round-robin leagues (simple_league legs=1); bra_champ_cup.cpp (comp 270) as the NATIONAL-TITLE PLAYOFF via the new simple_league::LeaguePlayoff -> domestic_cup (Serie A top 8 -> knockout -> champion); Copa do Brasil (bra_cup.cpp, comp 68) via domestic_cup. Verified: Corinthians win the Brazilian Championship playoff + Copa do Brasil; Vasco da Gama (Carioca); Bahia; Criciuma; etc. DECODED WITH HONEST DEFERRAL: brazil_awards.cpp (award/, 0x0043dd90 \u2014 champion honours already recorded, player awards blocked on ratings), brazil_rules.cpp (transfer/, 0x0043fb30 \u2014 2x6-byte transfer-window records new(0xc), enforcement needs a transfer system).",
+    "0x0042a490": "branat1_ctor (Serie A, comp 65, vtable 0x00955d98)",
+    "0x004265e0": "brachampcup_ctor (national playoff, comp 270, vtable 0x00955c44, 3 stages; PORTED via LeaguePlayoff)",
+    "0x00428070": "bracup_ctor (Copa do Brasil, comp 68)",
+    "0x0043cc50": "brasp_ctor (Campeonato Paulista, comp 67)",
+    "0x0043dd90": "brawards_ctor (Brazilian awards)",
+    "0x0043fb30": "brarules_build_rule_table (2x6-byte transfer-window records, new(0xc))"
+  },
+  "media.cpp": {
+    "_range": "0x00712ac0 .. 0x00745540 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\media.cpp \u2014 press/media system: generates newspaper articles when noteworthy events happen (transfers, sackings, big wins, cup shocks). Feeds the news generator FUN_00733610 (news templates catalogued in reports/news_templates.json, 4849 templates per memory [[news-generation-logic]]).",
+    "_ported": "crates/cm-domain/src/news.rs - media/news pipeline ported as a single module (news.cpp is the primary; media.cpp is a 6-function adjunct). Consumes tick game state and produces prose events.",
+    "0x00712ac0": "media_article_ctor"
+  },
+  "menubar.cpp": {
+    "_range": "0x00745540 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\menubar.cpp \u2014 the main sidebar menu builder. FUN_00745540 = the game_mbr sidebar (89px vertical strip at x=0..89, 5 top-level menus). Memory [[menu-command-tree]] has the full menu/screen/command map.",
+    "_ported": "PORTED \u2014 crates/cm-ui-app/src/screens.rs handles the sidebar via draw_panel(0,0,89,599,F_VGRADIENT,pal.sidebar_blue) matching FUN_00549790(0,0,0x59,599,...). Full menu tree per reports/menu_tree_scope.md.",
+    "0x00745540": "sidebar_menubar_build"
+  },
+  "mini_cup.cpp": {
+    "_range": "0x0074d830 .. 0x0074e140 (5 attributed functions)",
+    "_ported": "crates/cm-domain/src/mini_cup.rs - TieInput -> MiniCupView, current-round ties + previous-round text summaries, manager-tie highlighting. 3 tests pass.",
+    "0x0074d830": "mini_cup_widget_ctor",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\mini_cup.cpp - compact cup bracket widget. 5 helpers: bracket geometry, tie labels, per-tie result glyph."
+  },
+  "mini_league.cpp": {
+    "_range": "0x0074e140 .. 0x0074eb90 (5 attributed functions)",
+    "_ported": "crates/cm-domain/src/mini_league.rs - StandingsRow input + MiniLeagueView output, 4-row window centred on focus club with edge-sliding, highlighted focus row. 5 tests pass.",
+    "0x0074e140": "mini_league_widget_ctor",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\mini_league.cpp - compact league standings widget (3-4 row compressed table shown on dashboards and news items). 5 helpers: row geometry, position-arrow glyphs, form column."
+  },
+  "month_award.cpp": {
+    "_range": "0x0074eb90 .. 0x0074f760 (3 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\month_award.cpp \u2014 Monthly Player/Manager of the Month persistence. References \"Load Game Error / The save game is corrupted\" so it also handles save-round-tripping of the monthly award history.",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 award_month_player_of_month fires per-league on the monthly hook (hook_monthly in lib.rs). Uses PlayerOfTheMonth + ManagerOfTheMonth categories. Persistence into save round-trip lands with the save format work.",
+    "0x0074eb90": "month_award_ctor"
+  },
+  "month_ratings.cpp": {
+    "_range": "0x0074f760 .. 0x00750000 (3 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\\month_ratings.cpp \u2014 monthly aggregator that produces the per-player rating over the past 30 days. Feeds month_award (winner selection) and the manager-report screens.",
+    "_ported": "crates/cm-domain/src/player_rating.rs is the CA-driven proxy that stands in for this. Real per-month aggregation from match_stats will be a small refactor once match_engine is wired into fixture resolution.",
+    "0x0074f760": "month_ratings_ctor"
+  },
+  "nation_awards.cpp": {
+    "_range": "0x00750000 .. 0x00752000 (10 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\nation_awards.cpp \u2014 national-team awards (International Footballer of the Year per continent, National Team Player of the Year, National Team Coach of the Year). 10 functions covering the different award categories.",
+    "_ported": "crates/cm-domain/src/awards_engine.rs \u2014 NationFootballerOfTheYear and NationPlayerOfTheYear categories added. Fires via award_international_season_end. Full per-continent hookup lands when nation records expose the continent field to the awards engine.",
+    "0x00750000": "nation_awards_ctor"
+  },
+  "national_teams.cpp": {
+    "_range": "0x00752120 .. 0x00760c5e (12 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\national_teams.cpp - national-team squad management. Handles the auto-selection of national team squads from eligible players per nation, and the international manager AI (call-ups, tactical selection for internationals).",
+    "_ported": "crates/cm-domain/src/national_teams.rs - NationalSquad + select_squad + select_all_squads + captain + average_ca. 22-player selection ranked by season rating with per-player nationality filter. 5 tests pass.",
+    "0x00752120": "national_teams_ctor"
+  },
+  "national_teams_screens.cpp": {
+    "_range": "0x00760c5e .. 0x00762b90 (4 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\national_teams_screens.cpp - national-team squad screens (formation editor, cap history, call-up letter view).",
+    "_ported": "DECODED-STRUCTURAL - UI screens through cm-widget spec-evaluator when routed.",
+    "0x00760c5e": "national_teams_squad_screen"
+  },
+  "network.cpp": {
+    "_range": "0x00762b90 .. 0x00763660 (2 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\network.cpp - networking layer (multiplayer/LAN game, defunct in shipped 2001-02). Only 2 stubs remain in the exe.",
+    "_ported": "IGNORED - multiplayer is out of scope for the Rust port. The 2 functions are noop stubs even in the original.",
+    "0x00762b90": "network_stub"
+  },
+  "new_transfer_rule_screens.cpp": {
+    "_range": "0x00763660 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\new_transfer_rule_screens.cpp - the \"New Transfer Rule\" news screen (2001-02 introduced post-Bosman rules; game displays the notice at start). Uses the ported FUN_005d7070 tab strip.",
+    "_ported": "DECODED-STRUCTURAL - one-off notice screen through cm-widget when routed.",
+    "0x00763660": "new_transfer_rule_screen"
+  },
+  "news.cpp": {
+    "_range": "0x00763c30 .. 0x0076ffb0 (29 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\news.cpp - the news GENERATOR. 29 functions covering the weekly per-club predicate cascade (FUN_0067ce90), news template selection, and prose formatter (FUN_00733610 catalogued in reports/news_templates.json, 4849 templates per memory [[news-generation-logic]]).",
+    "_ported": "crates/cm-domain/src/news.rs - NewsFact enum (10 variants covering match/table/award/manager/finance/cup categories), category() dispatch, format() with 22 templates chosen deterministically by content hash. 5 tests pass. Template pool grows without breaking the API; full 4849-template dump from exe .rdata is a follow-up.",
+    "0x00763c30": "news_generator_dispatch"
+  },
+  "news_screens.cpp": {
+    "_range": "0x0076ffb0 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\cm3\\code\news_screens.cpp - the News page draw callback (VA 0x00770170 per memory [[news-screen-geometry]]). One function that builds the whole screen.",
+    "_ported": "PORTED - crates/cm-ui-app/src/screens.rs::news is a pixel-exact port emulated via tools/capture_news.py. Widgets decoded to analysis/screens/00770170.json. Tab strip via ported FUN_005d7070.",
+    "0x0076ffb0": "news_screen_draw_callback"
+  },
+  "nir_prm.cpp": {
+    "_range": "0x00776140 .. 0x0077ae50 (3 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\nir_prm.cpp - NI Premier Division comp 154, 10 clubs.",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 154, 2-leg, start Aug 11 2001.",
+    "0x00776140": "nir_prm_ctor"
+  },
+  "nir_first.cpp": {
+    "_range": "0x007730e0 .. 0x00774850 (10 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\nir_first.cpp - NI First Division comp 155, 10 clubs.",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 155, 2-leg.",
+    "0x007730e0": "nir_first_ctor"
+  },
+  "nir_cup.cpp": {
+    "_range": "0x00772680 .. 0x007730e0 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\nir_cup.cpp - NI Cup comp 157, single-elim knockout.",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 157, pool = Premier+First, start Dec 1 (INVENTED). Real dates need ROUND helper decode.",
+    "0x00772680": "nir_cup_ctor"
+  },
+  "nir_lge_cup.cpp": {
+    "_range": "0x00774850 .. 0x00776140 (16 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\nir_lge_cup.cpp - NI League Cup comp 158. 16 functions = group+KO shape.",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 158, single-elim stand-in for group+KO. Start Sep 18 INVENTED.",
+    "0x00774850": "nir_lge_cup_ctor"
+  },
+  "nir_charity.cpp": {
+    "_range": "0x00771ec0 .. 0x00772680 (6 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\\leagues\nir_charity.cpp - NI Charity Shield comp 161 (Prem champ vs Cup winner).",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking Premier (154) + Cup (157).",
+    "0x00771ec0": "nir_charity_ctor"
+  },
+  "northern_ireland_awards.cpp": {
+    "_range": "0x0077ae50 .. 0x0077b7a0 (2 attributed functions)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\u0007wards\northern_ireland_awards.cpp - NI player awards.",
+    "_ported": "crates/cm-domain/src/awards_engine.rs - fires via country_award_slate + season-end hook.",
+    "0x0077ae50": "northern_ireland_awards_ctor"
+  },
+  "northern_ireland_rules.cpp": {
+    "_range": "0x0077b7a0 (1 attributed function)",
+    "_source": "C:\\dev\\CM3 00-01\\comp\rules\northern_ireland_rules.cpp - NI finance rules.",
+    "_ported": "crates/cm-domain/src/finance.rs - CountryRulesSpec { nation_id: 128, ..STANDARD_EUROPEAN_TOP_FLIGHT } registered at new-game creation.",
+    "0x0077b7a0": "northern_ireland_rules_ctor"
+  },
+  "nor_prm.cpp": {
+    "_range": "per file_attribution.json (nor_prm.cpp)",
+    "_source": "nor_prm.cpp - Norwegian Premier Division (315)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 315"
+  },
+  "nor_first.cpp": {
+    "_range": "per file_attribution.json (nor_first.cpp)",
+    "_source": "nor_first.cpp - Norwegian First Division (316)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 316"
+  },
+  "norway_awards.cpp": {
+    "_range": "per file_attribution.json (norway_awards.cpp)",
+    "_source": "norway_awards.cpp - Norway awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "norway_rules.cpp": {
+    "_range": "per file_attribution.json (norway_rules.cpp)",
+    "_source": "norway_rules.cpp - Norway finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 138"
+  },
+  "pol_first.cpp": {
+    "_range": "per file_attribution.json (pol_first.cpp)",
+    "_source": "pol_first.cpp - Polish First Division (133)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 133"
+  },
+  "pol_second.cpp": {
+    "_range": "per file_attribution.json (pol_second.cpp)",
+    "_source": "pol_second.cpp - Polish Second Division (134)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 134"
+  },
+  "pol_cup.cpp": {
+    "_range": "per file_attribution.json (pol_cup.cpp)",
+    "_source": "pol_cup.cpp - Polish FA Cup (137)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 137, pool = 133+134"
+  },
+  "pol_lge_cup.cpp": {
+    "_range": "per file_attribution.json (pol_lge_cup.cpp)",
+    "_source": "pol_lge_cup.cpp - Polish League Cup (136)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 136"
+  },
+  "pol_super.cpp": {
+    "_range": "per file_attribution.json (pol_super.cpp)",
+    "_source": "pol_super.cpp - Polish Super Cup (198)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking First Div + FA Cup"
+  },
+  "poland_awards.cpp": {
+    "_range": "per file_attribution.json (poland_awards.cpp)",
+    "_source": "poland_awards.cpp - Poland awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "poland_rules.cpp": {
+    "_range": "per file_attribution.json (poland_rules.cpp)",
+    "_source": "poland_rules.cpp - Poland finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 148"
+  },
+  "por_prm.cpp": {
+    "_range": "per file_attribution.json (por_prm.cpp)",
+    "_source": "por_prm.cpp - Portuguese Premier (46)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 46"
+  },
+  "por_second.cpp": {
+    "_range": "per file_attribution.json (por_second.cpp)",
+    "_source": "por_second.cpp - Portuguese Second (47)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 47"
+  },
+  "por_second_b.cpp": {
+    "_range": "per file_attribution.json (por_second_b.cpp)",
+    "_source": "por_second_b.cpp - Portuguese Second B (48)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 48"
+  },
+  "por_cup.cpp": {
+    "_range": "per file_attribution.json (por_cup.cpp)",
+    "_source": "por_cup.cpp - Portuguese Cup (347)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 347"
+  },
+  "por_super.cpp": {
+    "_range": "per file_attribution.json (por_super.cpp)",
+    "_source": "por_super.cpp - Portuguese Super Cup (99)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking Prem + Cup"
+  },
+  "portugal_awards.cpp": {
+    "_range": "per file_attribution.json (portugal_awards.cpp)",
+    "_source": "portugal_awards.cpp - Portugal awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "portugal_rules.cpp": {
+    "_range": "per file_attribution.json (portugal_rules.cpp)",
+    "_source": "portugal_rules.cpp - Portugal finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 149"
+  },
+  "rus_prm.cpp": {
+    "_range": "per file_attribution.json (rus_prm.cpp)",
+    "_source": "rus_prm.cpp - Russian Premier (176)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 176"
+  },
+  "rus_first.cpp": {
+    "_range": "per file_attribution.json (rus_first.cpp)",
+    "_source": "rus_first.cpp - Russian First (177)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 177"
+  },
+  "rus_cup.cpp": {
+    "_range": "per file_attribution.json (rus_cup.cpp)",
+    "_source": "rus_cup.cpp - Russian Cup (190)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 190"
+  },
+  "russia_awards.cpp": {
+    "_range": "per file_attribution.json (russia_awards.cpp)",
+    "_source": "russia_awards.cpp - Russia awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "russia_rules.cpp": {
+    "_range": "per file_attribution.json (russia_rules.cpp)",
+    "_source": "russia_rules.cpp - Russia finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 154 calendar-year"
+  },
+  "sco_prm.cpp": {
+    "_range": "per file_attribution.json (sco_prm.cpp)",
+    "_source": "sco_prm.cpp - Scottish Premier (34)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 34"
+  },
+  "sco_first.cpp": {
+    "_range": "per file_attribution.json (sco_first.cpp)",
+    "_source": "sco_first.cpp - Scottish First (35)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 35"
+  },
+  "sco_second.cpp": {
+    "_range": "per file_attribution.json (sco_second.cpp)",
+    "_source": "sco_second.cpp - Scottish Second (36)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 36"
+  },
+  "sco_third.cpp": {
+    "_range": "per file_attribution.json (sco_third.cpp)",
+    "_source": "sco_third.cpp - Scottish Third (37)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 37"
+  },
+  "sco_fa_cup.cpp": {
+    "_range": "per file_attribution.json (sco_fa_cup.cpp)",
+    "_source": "sco_fa_cup.cpp - Scottish Cup (355)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 355"
+  },
+  "sco_lge_cup.cpp": {
+    "_range": "per file_attribution.json (sco_lge_cup.cpp)",
+    "_source": "sco_lge_cup.cpp - Scottish League Cup (356)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 356"
+  },
+  "sco_chal_cup.cpp": {
+    "_range": "per file_attribution.json (sco_chal_cup.cpp)",
+    "_source": "sco_chal_cup.cpp - Scottish Challenge Cup (101)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 101"
+  },
+  "scotland_awards.cpp": {
+    "_range": "per file_attribution.json (scotland_awards.cpp)",
+    "_source": "scotland_awards.cpp - Scotland awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "scotland_rules.cpp": {
+    "_range": "per file_attribution.json (scotland_rules.cpp)",
+    "_source": "scotland_rules.cpp - Scotland finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 160"
+  },
+  "spa_first.cpp": {
+    "_range": "per file_attribution.json (spa_first.cpp)",
+    "_source": "spa_first.cpp - Spanish First (52)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 52"
+  },
+  "spa_second.cpp": {
+    "_range": "per file_attribution.json (spa_second.cpp)",
+    "_source": "spa_second.cpp - Spanish Second (53)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 53"
+  },
+  "spa_second_b.cpp": {
+    "_range": "per file_attribution.json (spa_second_b.cpp)",
+    "_source": "spa_second_b.cpp - Spanish Second B (54)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 54"
+  },
+  "spa_lower.cpp": {
+    "_range": "per file_attribution.json (spa_lower.cpp)",
+    "_source": "spa_lower.cpp - Spanish Lower Division (98)",
+    "_ported": "crates/cm-domain/src/lib.rs - not registered - flat pool"
+  },
+  "spa_cup.cpp": {
+    "_range": "per file_attribution.json (spa_cup.cpp)",
+    "_source": "spa_cup.cpp - Spanish Cup (348)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 348"
+  },
+  "spain_awards.cpp": {
+    "_range": "per file_attribution.json (spain_awards.cpp)",
+    "_source": "spain_awards.cpp - Spain awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "spain_rules.cpp": {
+    "_range": "per file_attribution.json (spain_rules.cpp)",
+    "_source": "spain_rules.cpp - Spain finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 171"
+  },
+  "swe_prm.cpp": {
+    "_range": "per file_attribution.json (swe_prm.cpp)",
+    "_source": "swe_prm.cpp - Swedish Premier (38)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 38 calendar-year"
+  },
+  "swe_first.cpp": {
+    "_range": "per file_attribution.json (swe_first.cpp)",
+    "_source": "swe_first.cpp - Swedish First (39)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 39"
+  },
+  "swe_second.cpp": {
+    "_range": "per file_attribution.json (swe_second.cpp)",
+    "_source": "swe_second.cpp - Swedish Second South Gotaland (40)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 40"
+  },
+  "swe_cup.cpp": {
+    "_range": "per file_attribution.json (swe_cup.cpp)",
+    "_source": "swe_cup.cpp - Swedish Cup (350)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 350"
+  },
+  "sweden_awards.cpp": {
+    "_range": "per file_attribution.json (sweden_awards.cpp)",
+    "_source": "sweden_awards.cpp - Sweden awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "tur_first.cpp": {
+    "_range": "per file_attribution.json (tur_first.cpp)",
+    "_source": "tur_first.cpp - Turkish Premier (174)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 174"
+  },
+  "tur_second.cpp": {
+    "_range": "per file_attribution.json (tur_second.cpp)",
+    "_source": "tur_second.cpp - Turkish 2. Div Cat A (285)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 285"
+  },
+  "tur_second_b.cpp": {
+    "_range": "per file_attribution.json (tur_second_b.cpp)",
+    "_source": "tur_second_b.cpp - Turkish 2. Div Cat B G1 (289)",
+    "_ported": "crates/cm-domain/src/lib.rs - not registered - 6 regional groups"
+  },
+  "turkey_awards.cpp": {
+    "_range": "per file_attribution.json (turkey_awards.cpp)",
+    "_source": "turkey_awards.cpp - Turkey awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "turkey_rules.cpp": {
+    "_range": "per file_attribution.json (turkey_rules.cpp)",
+    "_source": "turkey_rules.cpp - Turkey finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 192"
+  },
+  "usa_awards.cpp": {
+    "_range": "per file_attribution.json (usa_awards.cpp)",
+    "_source": "usa_awards.cpp - USA awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "usa_mls_all_stars.cpp": {
+    "_range": "per file_attribution.json (usa_mls_all_stars.cpp)",
+    "_source": "usa_mls_all_stars.cpp - MLS All-Star Game (31)",
+    "_ported": "crates/cm-domain/src/lib.rs - placeholder in awards infra"
+  },
+  "wel_first.cpp": {
+    "_range": "per file_attribution.json (wel_first.cpp)",
+    "_source": "wel_first.cpp - Welsh Premier (186)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 186"
+  },
+  "wales_awards.cpp": {
+    "_range": "per file_attribution.json (wales_awards.cpp)",
+    "_source": "wales_awards.cpp - Wales awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "cro_a1.cpp": {
+    "_range": "per file_attribution.json (cro_a1.cpp)",
+    "_source": "cro_a1.cpp - Croatian First (138)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 138"
+  },
+  "cro_a2a.cpp": {
+    "_range": "per file_attribution.json (cro_a2a.cpp)",
+    "_source": "cro_a2a.cpp - Croatian A2A",
+    "_ported": "crates/cm-domain/src/lib.rs - lower divisions via helper"
+  },
+  "cro_a2b.cpp": {
+    "_range": "per file_attribution.json (cro_a2b.cpp)",
+    "_source": "cro_a2b.cpp - Croatian A2B",
+    "_ported": "crates/cm-domain/src/lib.rs - lower divisions via helper"
+  },
+  "croatia_awards.cpp": {
+    "_range": "per file_attribution.json (croatia_awards.cpp)",
+    "_source": "croatia_awards.cpp - Croatia awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "croatia_rules.cpp": {
+    "_range": "per file_attribution.json (croatia_rules.cpp)",
+    "_source": "croatia_rules.cpp - Croatia finance rules",
+    "_ported": "crates/cm-domain/src/lib.rs - CountryRulesSpec nation 47"
+  },
+  "den_prm.cpp": {
+    "_range": "per file_attribution.json (den_prm.cpp)",
+    "_source": "den_prm.cpp - Danish Premier (4)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 4"
+  },
+  "den_first.cpp": {
+    "_range": "per file_attribution.json (den_first.cpp)",
+    "_source": "den_first.cpp - Danish First (5)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 5"
+  },
+  "den_second.cpp": {
+    "_range": "per file_attribution.json (den_second.cpp)",
+    "_source": "den_second.cpp - Danish Second (6)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 6"
+  },
+  "denmark_awards.cpp": {
+    "_range": "per file_attribution.json (denmark_awards.cpp)",
+    "_source": "denmark_awards.cpp - Denmark awards",
+    "_ported": "crates/cm-domain/src/lib.rs - awards_engine slate"
+  },
+  "oceania_club_champ.cpp": {
+    "_range": "per file_attribution.json (oceania_club_champ.cpp)",
+    "_source": "oceania_club_champ.cpp - Oceania Champions Cup (109)",
+    "_ported": "crates/cm-domain/src/lib.rs - shared ACN engine"
+  },
+  "oceania_nations.cpp": {
+    "_range": "per file_attribution.json (oceania_nations.cpp)",
+    "_source": "oceania_nations.cpp - Oceania Nations Cup",
+    "_ported": "crates/cm-domain/src/lib.rs - shared ACN engine, quadrennial"
+  },
+  "notes.cpp": {
+    "_range": "per file_attribution.json (notes.cpp)",
+    "_source": "notes.cpp - Manager notes",
+    "_ported": "crates/cm-domain/src/lib.rs - small notepad UI"
+  },
+  "bel_first.cpp": {
+    "_range": "per file_attribution.json (bel_first.cpp)",
+    "_source": "bel_first.cpp - Belgian First Division (0)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 0"
+  },
+  "bel_second.cpp": {
+    "_range": "per file_attribution.json (bel_second.cpp)",
+    "_source": "bel_second.cpp - Belgian Second Division (1)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 1"
+  },
+  "bel_third.cpp": {
+    "_range": "per file_attribution.json (bel_third.cpp)",
+    "_source": "bel_third.cpp - Belgian Third Division A/B (2,3)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league ids 2, 3"
+  },
+  "bel_fa_cup.cpp": {
+    "_range": "per file_attribution.json (bel_fa_cup.cpp)",
+    "_source": "bel_fa_cup.cpp - Belgian Cup (332)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 332, verified Aug 6"
+  },
+  "bel_super.cpp": {
+    "_range": "per file_attribution.json (bel_super.cpp)",
+    "_source": "bel_super.cpp - Belgian Super Cup (331)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking First Div + Cup"
+  },
+  "eng_prm.cpp": {
+    "_range": "per file_attribution.json (eng_prm.cpp)",
+    "_source": "eng_prm.cpp - English Premier Division (7)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 7"
+  },
+  "eng_first.cpp": {
+    "_range": "per file_attribution.json (eng_first.cpp)",
+    "_source": "eng_first.cpp - English First Division (8)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 8"
+  },
+  "eng_second.cpp": {
+    "_range": "per file_attribution.json (eng_second.cpp)",
+    "_source": "eng_second.cpp - English Second Division (9)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 9"
+  },
+  "eng_third.cpp": {
+    "_range": "per file_attribution.json (eng_third.cpp)",
+    "_source": "eng_third.cpp - English Third Division (10)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 10"
+  },
+  "eng_conf.cpp": {
+    "_range": "per file_attribution.json (eng_conf.cpp)",
+    "_source": "eng_conf.cpp - English Conference (93)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 93"
+  },
+  "eng_fa_cup.cpp": {
+    "_range": "per file_attribution.json (eng_fa_cup.cpp)",
+    "_source": "eng_fa_cup.cpp - English FA Cup (351)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 351, verified Oct 9"
+  },
+  "eng_cc_cup.cpp": {
+    "_range": "per file_attribution.json (eng_cc_cup.cpp)",
+    "_source": "eng_cc_cup.cpp - English League Cup (352)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 352, verified Jul 23"
+  },
+  "eng_fa_trophy.cpp": {
+    "_range": "per file_attribution.json (eng_fa_trophy.cpp)",
+    "_source": "eng_fa_trophy.cpp - English FA Trophy (94)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 94, verified Nov 8"
+  },
+  "eng_auto_cup.cpp": {
+    "_range": "per file_attribution.json (eng_auto_cup.cpp)",
+    "_source": "eng_auto_cup.cpp - English Vans Trophy (354)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 354, verified Nov 7"
+  },
+  "eng_charity.cpp": {
+    "_range": "per file_attribution.json (eng_charity.cpp)",
+    "_source": "eng_charity.cpp - English Charity Shield (353)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup Prem + FA Cup, feeders VERIFIED"
+  },
+  "fra_second.cpp": {
+    "_range": "per file_attribution.json (fra_second.cpp)",
+    "_source": "fra_second.cpp - French Ligue 2 (12)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 12"
+  },
+  "fra_cfa.cpp": {
+    "_range": "per file_attribution.json (fra_cfa.cpp)",
+    "_source": "fra_cfa.cpp - French CFA (14)",
+    "_ported": "crates/cm-domain/src/lib.rs - ctor-only, flat pool skipped"
+  },
+  "fra_lower.cpp": {
+    "_range": "per file_attribution.json (fra_lower.cpp)",
+    "_source": "fra_lower.cpp - French Lower (15)",
+    "_ported": "crates/cm-domain/src/lib.rs - ctor-only, flat pool skipped"
+  },
+  "fra_cup.cpp": {
+    "_range": "per file_attribution.json (fra_cup.cpp)",
+    "_source": "fra_cup.cpp - French Cup (335)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 335, verified Oct 10"
+  },
+  "fra_lge_cup.cpp": {
+    "_range": "per file_attribution.json (fra_lge_cup.cpp)",
+    "_source": "fra_lge_cup.cpp - French League Cup (336)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 336, verified Sep 1"
+  },
+  "fra_super.cpp": {
+    "_range": "per file_attribution.json (fra_super.cpp)",
+    "_source": "fra_super.cpp - French Trophee des Champions (96)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking Ligue 1 + Cup"
+  },
+  "ger_first.cpp": {
+    "_range": "per file_attribution.json (ger_first.cpp)",
+    "_source": "ger_first.cpp - German Bundesliga (16)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 16"
+  },
+  "ger_second.cpp": {
+    "_range": "per file_attribution.json (ger_second.cpp)",
+    "_source": "ger_second.cpp - German 2. Bundesliga (17)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 17"
+  },
+  "ger_regional.cpp": {
+    "_range": "per file_attribution.json (ger_regional.cpp)",
+    "_source": "ger_regional.cpp - German Regionalliga (20,21)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league ids 20, 21"
+  },
+  "ger_cup.cpp": {
+    "_range": "per file_attribution.json (ger_cup.cpp)",
+    "_source": "ger_cup.cpp - German DFB-Pokal (337)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 337, verified Jul 10"
+  },
+  "ger_lge_cup.cpp": {
+    "_range": "per file_attribution.json (ger_lge_cup.cpp)",
+    "_source": "ger_lge_cup.cpp - German League Cup (91)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 91, verified Jul 1"
+  },
+  "gre_prm.cpp": {
+    "_range": "per file_attribution.json (gre_prm.cpp)",
+    "_source": "gre_prm.cpp - Greek Alpha Ethniki (143)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 143"
+  },
+  "gre_second.cpp": {
+    "_range": "per file_attribution.json (gre_second.cpp)",
+    "_source": "gre_second.cpp - Greek Beta Ethniki (144)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 144"
+  },
+  "gre_cup.cpp": {
+    "_range": "per file_attribution.json (gre_cup.cpp)",
+    "_source": "gre_cup.cpp - Greek Cup (142)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 142, verified Jul 5"
+  },
+  "gre_super.cpp": {
+    "_range": "per file_attribution.json (gre_super.cpp)",
+    "_source": "gre_super.cpp - Greek Super Cup (193)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking Alpha + Cup"
+  },
+  "fin_prm.cpp": {
+    "_range": "per file_attribution.json (fin_prm.cpp)",
+    "_source": "fin_prm.cpp - Finnish Premier (114)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 114"
+  },
+  "fin_first.cpp": {
+    "_range": "per file_attribution.json (fin_first.cpp)",
+    "_source": "fin_first.cpp - Finnish First (118)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 118"
+  },
+  "fin_cup.cpp": {
+    "_range": "per file_attribution.json (fin_cup.cpp)",
+    "_source": "fin_cup.cpp - Finnish Cup (113)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 113, verified Apr 15"
+  },
+  "bra_nat_first.cpp": {
+    "_range": "per file_attribution.json (bra_nat_first.cpp)",
+    "_source": "bra_nat_first.cpp - Brazilian Championship (65)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 65"
+  },
+  "bra_nat_second.cpp": {
+    "_range": "per file_attribution.json (bra_nat_second.cpp)",
+    "_source": "bra_nat_second.cpp - Brazilian Serie B (79)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 79"
+  },
+  "bra_nat_third.cpp": {
+    "_range": "per file_attribution.json (bra_nat_third.cpp)",
+    "_source": "bra_nat_third.cpp - Brazilian Serie C (80)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 80"
+  },
+  "bra_reg_bahia.cpp": {
+    "_range": "per file_attribution.json (bra_reg_bahia.cpp)",
+    "_source": "bra_reg_bahia.cpp - Brazilian Bahia State (67)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 67"
+  },
+  "bra_reg_central.cpp": {
+    "_range": "per file_attribution.json (bra_reg_central.cpp)",
+    "_source": "bra_reg_central.cpp - Brazilian Central State (66)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 66"
+  },
+  "bra_reg_gaucho.cpp": {
+    "_range": "per file_attribution.json (bra_reg_gaucho.cpp)",
+    "_source": "bra_reg_gaucho.cpp - Brazilian Gaucho State (254)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 254"
+  },
+  "bra_reg_goias.cpp": {
+    "_range": "per file_attribution.json (bra_reg_goias.cpp)",
+    "_source": "bra_reg_goias.cpp - Brazilian Goias State (262)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 262"
+  },
+  "bra_reg_minas_gerais.cpp": {
+    "_range": "per file_attribution.json (bra_reg_minas_gerais.cpp)",
+    "_source": "bra_reg_minas_gerais.cpp - Brazilian Minas Gerais State (258)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 258"
+  },
+  "bra_reg_north.cpp": {
+    "_range": "per file_attribution.json (bra_reg_north.cpp)",
+    "_source": "bra_reg_north.cpp - Brazilian North State (266)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 266"
+  },
+  "bra_reg_northeast.cpp": {
+    "_range": "per file_attribution.json (bra_reg_northeast.cpp)",
+    "_source": "bra_reg_northeast.cpp - Brazilian Northeast State (260)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 260"
+  },
+  "bra_reg_parana.cpp": {
+    "_range": "per file_attribution.json (bra_reg_parana.cpp)",
+    "_source": "bra_reg_parana.cpp - Brazilian Parana State (264)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 264"
+  },
+  "bra_reg_pern.cpp": {
+    "_range": "per file_attribution.json (bra_reg_pern.cpp)",
+    "_source": "bra_reg_pern.cpp - Brazilian Pernambuco State (268)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 268"
+  },
+  "bra_reg_rio.cpp": {
+    "_range": "per file_attribution.json (bra_reg_rio.cpp)",
+    "_source": "bra_reg_rio.cpp - Brazilian Rio State (73)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 73"
+  },
+  "bra_reg_santa.cpp": {
+    "_range": "per file_attribution.json (bra_reg_santa.cpp)",
+    "_source": "bra_reg_santa.cpp - Brazilian Santa Catarina State (74)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 74"
+  },
+  "bra_reg_sp.cpp": {
+    "_range": "per file_attribution.json (bra_reg_sp.cpp)",
+    "_source": "bra_reg_sp.cpp - Brazilian Sao Paulo State (256)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 256"
+  },
+  "bra_cup.cpp": {
+    "_range": "per file_attribution.json (bra_cup.cpp)",
+    "_source": "bra_cup.cpp - Copa do Brasil (68)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 68"
+  },
+  "bra_champ_cup.cpp": {
+    "_range": "per file_attribution.json (bra_champ_cup.cpp)",
+    "_source": "bra_champ_cup.cpp - Brazilian Champions Cup (270)",
+    "_ported": "crates/cm-domain/src/lib.rs - LeaguePlayoff atop Serie A"
+  },
+  "rb_argentina.cpp": {
+    "_range": "per file_attribution.json (rb_argentina.cpp)",
+    "_source": "rb_argentina.cpp - Rule Book registration for Argentina",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_asia.cpp": {
+    "_range": "per file_attribution.json (rb_asia.cpp)",
+    "_source": "rb_asia.cpp - Rule Book registration for Asia",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_australia.cpp": {
+    "_range": "per file_attribution.json (rb_australia.cpp)",
+    "_source": "rb_australia.cpp - Rule Book registration for Australia",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_belgium_league.cpp": {
+    "_range": "per file_attribution.json (rb_belgium_league.cpp)",
+    "_source": "rb_belgium_league.cpp - Rule Book registration for Belgium",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_brazil_national.cpp": {
+    "_range": "per file_attribution.json (rb_brazil_national.cpp)",
+    "_source": "rb_brazil_national.cpp - Rule Book registration for Brazil National",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_brazil_regional.cpp": {
+    "_range": "per file_attribution.json (rb_brazil_regional.cpp)",
+    "_source": "rb_brazil_regional.cpp - Rule Book registration for Brazil Regional",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_croatia.cpp": {
+    "_range": "per file_attribution.json (rb_croatia.cpp)",
+    "_source": "rb_croatia.cpp - Rule Book registration for Croatia",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_denmark.cpp": {
+    "_range": "per file_attribution.json (rb_denmark.cpp)",
+    "_source": "rb_denmark.cpp - Rule Book registration for Denmark",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_england.cpp": {
+    "_range": "per file_attribution.json (rb_england.cpp)",
+    "_source": "rb_england.cpp - Rule Book registration for England",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_europe.cpp": {
+    "_range": "per file_attribution.json (rb_europe.cpp)",
+    "_source": "rb_europe.cpp - Rule Book registration for Europe",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_finland_league.cpp": {
+    "_range": "per file_attribution.json (rb_finland_league.cpp)",
+    "_source": "rb_finland_league.cpp - Rule Book registration for Finland",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_france.cpp": {
+    "_range": "per file_attribution.json (rb_france.cpp)",
+    "_source": "rb_france.cpp - Rule Book registration for France",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_germany_league.cpp": {
+    "_range": "per file_attribution.json (rb_germany_league.cpp)",
+    "_source": "rb_germany_league.cpp - Rule Book registration for Germany",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_greece.cpp": {
+    "_range": "per file_attribution.json (rb_greece.cpp)",
+    "_source": "rb_greece.cpp - Rule Book registration for Greece",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_holland.cpp": {
+    "_range": "per file_attribution.json (rb_holland.cpp)",
+    "_source": "rb_holland.cpp - Rule Book registration for Holland",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_international.cpp": {
+    "_range": "per file_attribution.json (rb_international.cpp)",
+    "_source": "rb_international.cpp - Rule Book registration for International",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_ireland.cpp": {
+    "_range": "per file_attribution.json (rb_ireland.cpp)",
+    "_source": "rb_ireland.cpp - Rule Book registration for Ireland",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_italy_league.cpp": {
+    "_range": "per file_attribution.json (rb_italy_league.cpp)",
+    "_source": "rb_italy_league.cpp - Rule Book registration for Italy",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_japan_league.cpp": {
+    "_range": "per file_attribution.json (rb_japan_league.cpp)",
+    "_source": "rb_japan_league.cpp - Rule Book registration for Japan",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_northern_ireland.cpp": {
+    "_range": "per file_attribution.json (rb_northern_ireland.cpp)",
+    "_source": "rb_northern_ireland.cpp - Rule Book registration for Northern Ireland",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_norway_league.cpp": {
+    "_range": "per file_attribution.json (rb_norway_league.cpp)",
+    "_source": "rb_norway_league.cpp - Rule Book registration for Norway",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_oceania.cpp": {
+    "_range": "per file_attribution.json (rb_oceania.cpp)",
+    "_source": "rb_oceania.cpp - Rule Book registration for Oceania",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_poland.cpp": {
+    "_range": "per file_attribution.json (rb_poland.cpp)",
+    "_source": "rb_poland.cpp - Rule Book registration for Poland",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_portugal.cpp": {
+    "_range": "per file_attribution.json (rb_portugal.cpp)",
+    "_source": "rb_portugal.cpp - Rule Book registration for Portugal",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_russia.cpp": {
+    "_range": "per file_attribution.json (rb_russia.cpp)",
+    "_source": "rb_russia.cpp - Rule Book registration for Russia",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_scotland_league.cpp": {
+    "_range": "per file_attribution.json (rb_scotland_league.cpp)",
+    "_source": "rb_scotland_league.cpp - Rule Book registration for Scotland",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_south_america.cpp": {
+    "_range": "per file_attribution.json (rb_south_america.cpp)",
+    "_source": "rb_south_america.cpp - Rule Book registration for South America",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_spain_league.cpp": {
+    "_range": "per file_attribution.json (rb_spain_league.cpp)",
+    "_source": "rb_spain_league.cpp - Rule Book registration for Spain",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_sweden_league.cpp": {
+    "_range": "per file_attribution.json (rb_sweden_league.cpp)",
+    "_source": "rb_sweden_league.cpp - Rule Book registration for Sweden",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_turkey_league.cpp": {
+    "_range": "per file_attribution.json (rb_turkey_league.cpp)",
+    "_source": "rb_turkey_league.cpp - Rule Book registration for Turkey",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_usa.cpp": {
+    "_range": "per file_attribution.json (rb_usa.cpp)",
+    "_source": "rb_usa.cpp - Rule Book registration for Usa",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "rb_wales.cpp": {
+    "_range": "per file_attribution.json (rb_wales.cpp)",
+    "_source": "rb_wales.cpp - Rule Book registration for Wales",
+    "_ported": "crates/cm-domain/src/finance.rs - covered by CountryRulesSpec registrations at new-game creation. Each rb_*.cpp is a 1-function registration hook that our substrate reproduces via the country-block finance rules."
+  },
+  "award_screens.cpp": {
+    "_range": "per file_attribution.json (award_screens.cpp)",
+    "_source": "award_screens.cpp - Awards screens",
+    "_ported": "UI - through cm-widget spec-evaluator when routed"
+  },
+  "award_shortlist.cpp": {
+    "_range": "per file_attribution.json (award_shortlist.cpp)",
+    "_source": "award_shortlist.cpp - Award shortlist",
+    "_ported": "Consumer of awards_engine top-N candidates"
+  },
+  "awol.cpp": {
+    "_range": "per file_attribution.json (awol.cpp)",
+    "_source": "awol.cpp - AWOL / missed-training penalty",
+    "_ported": "small penalty helper - integrated into finance"
+  },
+  "background.cpp": {
+    "_range": "per file_attribution.json (background.cpp)",
+    "_source": "background.cpp - Background dialog",
+    "_ported": "UI placeholder"
+  },
+  "physio.cpp": {
+    "_range": "per file_attribution.json (physio.cpp)",
+    "_source": "physio.cpp - Physio / injury management",
+    "_ported": "placeholder - injury system is match_engine responsibility"
+  },
+  "search_edit_session.cpp": {
+    "_range": "per file_attribution.json (search_edit_session.cpp)",
+    "_source": "search_edit_session.cpp - Search session state",
+    "_ported": "small state helper"
+  },
+  "training_edit_session.cpp": {
+    "_range": "per file_attribution.json (training_edit_session.cpp)",
+    "_source": "training_edit_session.cpp - Training session state",
+    "_ported": "small state helper"
+  },
+  "ultimatum.cpp": {
+    "_range": "per file_attribution.json (ultimatum.cpp)",
+    "_source": "ultimatum.cpp - Board ultimatum",
+    "_ported": "placeholder in career narrative layer"
+  },
+  "player_regen.cpp": {
+    "_range": "per file_attribution.json (player_regen.cpp)",
+    "_source": "player_regen.cpp - Player regen (age-out replacement)",
+    "_ported": "covered by staff.type10 regeneration follow-up"
+  },
+  "sub_league.cpp": {
+    "_range": "per file_attribution.json (sub_league.cpp)",
+    "_source": "sub_league.cpp - Sub-league (group stage)",
+    "_ported": "placeholder for group-stage engine follow-up"
+  },
+  "ruling_body.cpp": {
+    "_range": "per file_attribution.json (ruling_body.cpp)",
+    "_source": "ruling_body.cpp - Governing body accessor",
+    "_ported": "referenced by *_rules TUs"
+  },
+  "fine.cpp": {
+    "_range": "per file_attribution.json (fine.cpp)",
+    "_source": "fine.cpp - Fines helper",
+    "_ported": "integrated into finance.rs balance debits"
+  },
+  "os.cpp": {
+    "_range": "per file_attribution.json (os.cpp)",
+    "_source": "os.cpp - OS abstraction",
+    "_ported": "IGNORED - Rust std handles this"
+  },
+  "wc_asia_league.cpp": {
+    "_range": "per file_attribution.json (wc_asia_league.cpp)",
+    "_source": "wc_asia_league.cpp - World Cup Asia qualifying league",
+    "_ported": "group-stage follow-up"
+  },
+  "wc_south_american_league.cpp": {
+    "_range": "per file_attribution.json (wc_south_american_league.cpp)",
+    "_source": "wc_south_american_league.cpp - World Cup S. America qualifying league",
+    "_ported": "group-stage follow-up"
+  },
+  "world_club_champ.cpp": {
+    "_range": "per file_attribution.json (world_club_champ.cpp)",
+    "_source": "world_club_champ.cpp - FIFA Club World Championship",
+    "_ported": "placeholder - continental cup engine"
+  },
+  "world_cup.cpp": {
+    "_range": "per file_attribution.json (world_cup.cpp)",
+    "_source": "world_cup.cpp - FIFA World Cup",
+    "_ported": "continental cup engine follow-up"
+  },
+  "world_cup_awards.cpp": {
+    "_range": "per file_attribution.json (world_cup_awards.cpp)",
+    "_source": "world_cup_awards.cpp - World Cup awards (Golden Ball etc.)",
+    "_ported": "awards_engine international slate"
+  },
+  "year_award.cpp": {
+    "_range": "per file_attribution.json (year_award.cpp)",
+    "_source": "year_award.cpp - Year-end award",
+    "_ported": "awards_engine"
+  },
+  "year_ratings.cpp": {
+    "_range": "per file_attribution.json (year_ratings.cpp)",
+    "_source": "year_ratings.cpp - Year-end ratings aggregate",
+    "_ported": "player_rating"
+  },
+  "team_award.cpp": {
+    "_range": "per file_attribution.json (team_award.cpp)",
+    "_source": "team_award.cpp - Team of the Season entry",
+    "_ported": "awards_engine TeamOfTheSeason"
+  },
+  "zipdir.cpp": {
+    "_range": "per file_attribution.json (zipdir.cpp)",
+    "_source": "zipdir.cpp - Zip directory helper",
+    "_ported": "ENGINE - not needed in Rust"
+  },
+  "staff_screens.cpp": {
+    "_range": "per file_attribution.json (staff_screens.cpp)",
+    "_source": "staff_screens.cpp - Staff screens",
+    "_ported": "UI - through spec-evaluator"
+  },
+  "search_screens.cpp": {
+    "_range": "per file_attribution.json (search_screens.cpp)",
+    "_source": "search_screens.cpp - Search screens",
+    "_ported": "UI - through spec-evaluator"
+  },
+  "transfer_screens.cpp": {
+    "_range": "per file_attribution.json (transfer_screens.cpp)",
+    "_source": "transfer_screens.cpp - Transfer screens",
+    "_ported": "UI - through spec-evaluator"
+  },
+  "training_screens.cpp": {
+    "_range": "per file_attribution.json (training_screens.cpp)",
+    "_source": "training_screens.cpp - Training screens",
+    "_ported": "UI - through spec-evaluator"
+  },
+  "training_schedule.cpp": {
+    "_range": "per file_attribution.json (training_schedule.cpp)",
+    "_source": "training_schedule.cpp - Training schedule",
+    "_ported": "placeholder - training system follow-up"
+  },
+  "contract_manager.cpp": {
+    "_range": "per file_attribution.json (contract_manager.cpp)",
+    "_source": "contract_manager.cpp - Contract manager",
+    "_ported": "placeholder - transfer/contract system follow-up"
+  },
+  "transfer_manager.cpp": {
+    "_range": "per file_attribution.json (transfer_manager.cpp)",
+    "_source": "transfer_manager.cpp - Transfer manager",
+    "_ported": "placeholder - transfer market follow-up"
+  },
+  "staff_contracts.cpp": {
+    "_range": "per file_attribution.json (staff_contracts.cpp)",
+    "_source": "staff_contracts.cpp - Staff contract state",
+    "_ported": "placeholder"
+  },
+  "player_stats.cpp": {
+    "_range": "per file_attribution.json (player_stats.cpp)",
+    "_source": "player_stats.cpp - Player statistics tracker",
+    "_ported": "match_stats already ported; season aggregation follow-up"
+  },
+  "comp_screens.cpp": {
+    "_range": "per file_attribution.json (comp_screens.cpp)",
+    "_source": "comp_screens.cpp - Competition screens",
+    "_ported": "batch 28 (screen_batch28.rs): comp_list_screen_build + comp_command_dispatch + comp_list_row_build",
+    "0x004a0c10": "comp_list_screen_build (22-slot enumerator + entry-list walker at stride 0x26b)",
+    "0x004a1fd0": "comp_command_dispatch (gate byte at seat+0xba966 stride 0x18c; falls to shared 007491e0/0074bf60 unless byte==1)",
+    "0x004a3d20": "comp_list_row_build (10-arg row widget from comp_screens.cpp with 'League' default label)",
+    "0x004a5610": "comp_slot_probe (returns 7 for valid rows)",
+    "0x004abbe0": "comp_slot_get_name (buf, size)",
+    "0x004abf80": "comp_slot_get_id",
+    "0x004b1b80": "comp_entry_list_alloc (allocates the 0x26b-stride entry list)"
+  },
+  "find_screens.cpp": {
+    "_range": "per file_attribution.json (find_screens.cpp)",
+    "_source": "find_screens.cpp - Find screens",
+    "_ported": "UI"
+  },
+  "contract_screens.cpp": {
+    "_range": "per file_attribution.json (contract_screens.cpp)",
+    "_source": "contract_screens.cpp - Contract screens",
+    "_ported": "UI"
+  },
+  "old_finland_awards.cpp": {
+    "_range": "per file_attribution.json (old_finland_awards.cpp)",
+    "_source": "old_finland_awards.cpp - Legacy Finland awards (older season format)",
+    "_ported": "awards_engine handles current + legacy shapes via category dispatch; legacy variant is a no-op registration."
+  },
+  "old_france_awards.cpp": {
+    "_range": "per file_attribution.json (old_france_awards.cpp)",
+    "_source": "old_france_awards.cpp - Legacy France awards (older season format)",
+    "_ported": "awards_engine handles current + legacy shapes via category dispatch; legacy variant is a no-op registration."
+  },
+  "old_international_awards.cpp": {
+    "_range": "per file_attribution.json (old_international_awards.cpp)",
+    "_source": "old_international_awards.cpp - Legacy International awards (older season format)",
+    "_ported": "awards_engine handles current + legacy shapes via category dispatch; legacy variant is a no-op registration."
+  },
+  "old_ireland_awards.cpp": {
+    "_range": "per file_attribution.json (old_ireland_awards.cpp)",
+    "_source": "old_ireland_awards.cpp - Legacy Ireland awards (older season format)",
+    "_ported": "awards_engine handles current + legacy shapes via category dispatch; legacy variant is a no-op registration."
+  },
+  "belgium_awards.cpp": {
+    "_range": "per file_attribution.json (belgium_awards.cpp)",
+    "_source": "belgium_awards.cpp - Belgium awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "belgium_rules.cpp": {
+    "_range": "per file_attribution.json (belgium_rules.cpp)",
+    "_source": "belgium_rules.cpp - Belgium finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 19"
+  },
+  "brazil_awards.cpp": {
+    "_range": "per file_attribution.json (brazil_awards.cpp)",
+    "_source": "brazil_awards.cpp - Brazil awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "brazil_rules.cpp": {
+    "_range": "per file_attribution.json (brazil_rules.cpp)",
+    "_source": "brazil_rules.cpp - Brazil finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 27"
+  },
+  "england_awards.cpp": {
+    "_range": "per file_attribution.json (england_awards.cpp)",
+    "_source": "england_awards.cpp - England awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "england_rules.cpp": {
+    "_range": "per file_attribution.json (england_rules.cpp)",
+    "_source": "england_rules.cpp - England finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 76"
+  },
+  "finland_awards.cpp": {
+    "_range": "per file_attribution.json (finland_awards.cpp)",
+    "_source": "finland_awards.cpp - Finland awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "finland_rules.cpp": {
+    "_range": "per file_attribution.json (finland_rules.cpp)",
+    "_source": "finland_rules.cpp - Finland finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 81"
+  },
+  "france_awards.cpp": {
+    "_range": "per file_attribution.json (france_awards.cpp)",
+    "_source": "france_awards.cpp - France awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "france_rules.cpp": {
+    "_range": "per file_attribution.json (france_rules.cpp)",
+    "_source": "france_rules.cpp - France finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 84"
+  },
+  "germany_awards.cpp": {
+    "_range": "per file_attribution.json (germany_awards.cpp)",
+    "_source": "germany_awards.cpp - Germany awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "germany_rules.cpp": {
+    "_range": "per file_attribution.json (germany_rules.cpp)",
+    "_source": "germany_rules.cpp - Germany finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 86"
+  },
+  "greece_awards.cpp": {
+    "_range": "per file_attribution.json (greece_awards.cpp)",
+    "_source": "greece_awards.cpp - Greece awards",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - awards_engine slate"
+  },
+  "greece_rules.cpp": {
+    "_range": "per file_attribution.json (greece_rules.cpp)",
+    "_source": "greece_rules.cpp - Greece finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 91"
+  },
+  "wales_rules.cpp": {
+    "_range": "per file_attribution.json (wales_rules.cpp)",
+    "_source": "wales_rules.cpp - Wales finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 207"
+  },
+  "usa_rules.cpp": {
+    "_range": "per file_attribution.json (usa_rules.cpp)",
+    "_source": "usa_rules.cpp - USA finance rules",
+    "_ported": "crates/cm-domain/src/awards_engine.rs / finance.rs - CountryRulesSpec nation 196"
+  },
+  "rb_belgium_cup.cpp": {
+    "_range": "per file_attribution.json (rb_belgium_cup.cpp)",
+    "_source": "rb_belgium_cup.cpp - Belgium cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Belgium cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_finland_cup.cpp": {
+    "_range": "per file_attribution.json (rb_finland_cup.cpp)",
+    "_source": "rb_finland_cup.cpp - Finland cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Finland cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_germany_cup.cpp": {
+    "_range": "per file_attribution.json (rb_germany_cup.cpp)",
+    "_source": "rb_germany_cup.cpp - Germany cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Germany cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_italy_cup.cpp": {
+    "_range": "per file_attribution.json (rb_italy_cup.cpp)",
+    "_source": "rb_italy_cup.cpp - Italy cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Italy cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_japan_cup.cpp": {
+    "_range": "per file_attribution.json (rb_japan_cup.cpp)",
+    "_source": "rb_japan_cup.cpp - Japan cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Japan cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_norway_cup.cpp": {
+    "_range": "per file_attribution.json (rb_norway_cup.cpp)",
+    "_source": "rb_norway_cup.cpp - Norway cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Norway cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_scotland_cup.cpp": {
+    "_range": "per file_attribution.json (rb_scotland_cup.cpp)",
+    "_source": "rb_scotland_cup.cpp - Scotland cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Scotland cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_spain_cup.cpp": {
+    "_range": "per file_attribution.json (rb_spain_cup.cpp)",
+    "_source": "rb_spain_cup.cpp - Spain cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Spain cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_sweden_cup.cpp": {
+    "_range": "per file_attribution.json (rb_sweden_cup.cpp)",
+    "_source": "rb_sweden_cup.cpp - Sweden cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Sweden cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "rb_turkey_cup.cpp": {
+    "_range": "per file_attribution.json (rb_turkey_cup.cpp)",
+    "_source": "rb_turkey_cup.cpp - Turkey cup rule-book",
+    "_ported": "crates/cm-domain/src/lib.rs - Turkey cup already registered in country block; rb_*_cup.cpp is the 1-function rule-book helper covered by the cup registration."
+  },
+  "cro_cup.cpp": {
+    "_range": "per file_attribution.json (cro_cup.cpp)",
+    "_source": "cro_cup.cpp - Croatian Cup (141)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 141"
+  },
+  "den_cup.cpp": {
+    "_range": "per file_attribution.json (den_cup.cpp)",
+    "_source": "den_cup.cpp - Danish Cup (334)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 334"
+  },
+  "nor_cup.cpp": {
+    "_range": "per file_attribution.json (nor_cup.cpp)",
+    "_source": "nor_cup.cpp - Norwegian Cup (345)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 345"
+  },
+  "tur_cup.cpp": {
+    "_range": "per file_attribution.json (tur_cup.cpp)",
+    "_source": "tur_cup.cpp - Turkish FA Cup (173)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 173"
+  },
+  "spa_super.cpp": {
+    "_range": "per file_attribution.json (spa_super.cpp)",
+    "_source": "spa_super.cpp - Spanish Super Cup (349)",
+    "_ported": "crates/cm-domain/src/lib.rs - super_cup linking First + Cup"
+  },
+  "usa_mls.cpp": {
+    "_range": "per file_attribution.json (usa_mls.cpp)",
+    "_source": "usa_mls.cpp - American Major League (31)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 31"
+  },
+  "usa_open_cup.cpp": {
+    "_range": "per file_attribution.json (usa_open_cup.cpp)",
+    "_source": "usa_open_cup.cpp - US Open Cup",
+    "_ported": "crates/cm-domain/src/lib.rs - placeholder - shared knockout engine"
+  },
+  "fra_first.cpp": {
+    "_range": "per file_attribution.json (fra_first.cpp)",
+    "_source": "fra_first.cpp - French Ligue 1 (11)",
+    "_ported": "crates/cm-domain/src/lib.rs - simple_league id 11 - same as fra_prm"
+  },
+  "fra_third.cpp": {
+    "_range": "per file_attribution.json (fra_third.cpp)",
+    "_source": "fra_third.cpp - French Ligue 3 / National",
+    "_ported": "crates/cm-domain/src/lib.rs - covered by fra_national"
+  },
+  "wel_cup.cpp": {
+    "_range": "per file_attribution.json (wel_cup.cpp)",
+    "_source": "wel_cup.cpp - Welsh Cup (188)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 188"
+  },
+  "wel_lge_cup.cpp": {
+    "_range": "per file_attribution.json (wel_lge_cup.cpp)",
+    "_source": "wel_lge_cup.cpp - Welsh League Cup (189)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 189"
+  },
+  "wel_prm_cup.cpp": {
+    "_range": "per file_attribution.json (wel_prm_cup.cpp)",
+    "_source": "wel_prm_cup.cpp - Welsh Premier Cup (185)",
+    "_ported": "crates/cm-domain/src/lib.rs - domestic_cup id 185"
+  },
+  "uefa_cup.cpp": {
+    "_range": "per file_attribution.json (uefa_cup.cpp)",
+    "_source": "uefa_cup.cpp - UEFA Cup (328)",
+    "_ported": "crates/cm-domain/src/lib.rs - shared european_cup engine"
+  },
+  "con_champ.cpp": {
+    "_range": "per file_attribution.json (con_champ.cpp)",
+    "_source": "con_champ.cpp - CONMEBOL Champions",
+    "_ported": "crates/cm-domain/src/lib.rs - shared ACN engine"
+  },
+  "con_merc_cup.cpp": {
+    "_range": "per file_attribution.json (con_merc_cup.cpp)",
+    "_source": "con_merc_cup.cpp - CONMEBOL Mercosul Cup",
+    "_ported": "crates/cm-domain/src/lib.rs - shared ACN engine"
+  },
+  "conmebol_liber.cpp": {
+    "_range": "per file_attribution.json (conmebol_liber.cpp)",
+    "_source": "conmebol_liber.cpp - Copa Libertadores",
+    "_ported": "crates/cm-domain/src/lib.rs - shared ACN engine"
+  },
+  "conmebol_merc.cpp": {
+    "_range": "per file_attribution.json (conmebol_merc.cpp)",
+    "_source": "conmebol_merc.cpp - CONMEBOL Mercosul",
+    "_ported": "crates/cm-domain/src/lib.rs - shared ACN engine"
+  },
+  "conmebol_seeding.cpp": {
+    "_range": "per file_attribution.json (conmebol_seeding.cpp)",
+    "_source": "conmebol_seeding.cpp - CONMEBOL seeding",
+    "_ported": "crates/cm-domain/src/lib.rs - seed helper for continental cups"
+  },
+  "wc_african_cup.cpp": {
+    "_range": "per file_attribution.json (wc_african_cup.cpp)",
+    "_source": "wc_african_cup.cpp - World Cup African qualifying",
+    "_ported": "crates/cm-domain/src/lib.rs - group-stage follow-up"
+  },
+  "wc_concacaf_cup.cpp": {
+    "_range": "per file_attribution.json (wc_concacaf_cup.cpp)",
+    "_source": "wc_concacaf_cup.cpp - World Cup CONCACAF qualifying",
+    "_ported": "crates/cm-domain/src/lib.rs - group-stage follow-up"
+  },
+  "wc_europe_league.cpp": {
+    "_range": "per file_attribution.json (wc_europe_league.cpp)",
+    "_source": "wc_europe_league.cpp - World Cup Europe qualifying league",
+    "_ported": "crates/cm-domain/src/lib.rs - group-stage follow-up"
+  },
+  "wc_oceania_league.cpp": {
+    "_range": "per file_attribution.json (wc_oceania_league.cpp)",
+    "_source": "wc_oceania_league.cpp - World Cup Oceania qualifying",
+    "_ported": "crates/cm-domain/src/lib.rs - group-stage follow-up"
+  },
+  "world_club_cup.cpp": {
+    "_range": "per file_attribution.json (world_club_cup.cpp)",
+    "_source": "world_club_cup.cpp - FIFA Club World Cup",
+    "_ported": "crates/cm-domain/src/lib.rs - placeholder - continental cup engine"
+  },
+  "goldcup.cpp": {
+    "_range": "per file_attribution.json (goldcup.cpp)",
+    "_source": "goldcup.cpp - Gold Cup",
+    "_ported": "crates/cm-domain/src/lib.rs - covered by concacaf_gold_cup"
+  },
+  "olympics.cpp": {
+    "_range": "per file_attribution.json (olympics.cpp)",
+    "_source": "olympics.cpp - Olympic football tournament",
+    "_ported": "crates/cm-domain/src/lib.rs - quadrennial international - placeholder"
+  },
+  "uefa_seeding.cpp": {
+    "_range": "per file_attribution.json (uefa_seeding.cpp)",
+    "_source": "uefa_seeding.cpp - UEFA seeding helper",
+    "_ported": "crates/cm-domain/src/lib.rs - seed helper for European cups"
+  },
+  "area.cpp": {
+    "_range": "per file_attribution.json (area.cpp)",
+    "_source": "area.cpp - Area layout engine",
+    "_ported": "crates/cm-render/src/area.rs - ported"
+  },
+  "coach.cpp": {
+    "_range": "per file_attribution.json (coach.cpp)",
+    "_source": "coach.cpp - Coach entity",
+    "_ported": "small helper - covered by human_manager"
+  },
+  "comp.cpp": {
+    "_range": "per file_attribution.json (comp.cpp)",
+    "_source": "comp.cpp - Competition base class",
+    "_ported": "covered by simple_league/domestic_cup/super_cup"
+  },
+  "comp_stats.cpp": {
+    "_range": "per file_attribution.json (comp_stats.cpp)",
+    "_source": "comp_stats.cpp - Competition statistics accumulator",
+    "_ported": "covered by player_rating + match_stats"
+  },
+  "comp_text.cpp": {
+    "_range": "per file_attribution.json (comp_text.cpp)",
+    "_source": "comp_text.cpp - Competition text formatters",
+    "_ported": "news.rs formatters"
+  },
+  "comp_util.cpp": {
+    "_range": "per file_attribution.json (comp_util.cpp)",
+    "_source": "comp_util.cpp - Competition utilities",
+    "_ported": "small helpers reused across simple_league/domestic_cup"
+  },
+  "cup.cpp": {
+    "_range": "per file_attribution.json (cup.cpp)",
+    "_source": "cup.cpp - Cup base class",
+    "_ported": "covered by domestic_cup"
+  },
+  "cup_stage.cpp": {
+    "_range": "per file_attribution.json (cup_stage.cpp)",
+    "_source": "cup_stage.cpp - Cup stage helper",
+    "_ported": "covered by domestic_cup rounds"
+  },
+  "database.cpp": {
+    "_range": "per file_attribution.json (database.cpp)",
+    "_source": "database.cpp - Database container",
+    "_ported": "covered by cm-db + rust-db"
+  },
+  "date.cpp": {
+    "_range": "per file_attribution.json (date.cpp)",
+    "_source": "date.cpp - Date arithmetic",
+    "_ported": "covered by GameDate + CmDate/CmPackedDate"
+  },
+  "db_files.cpp": {
+    "_range": "per file_attribution.json (db_files.cpp)",
+    "_source": "db_files.cpp - DB file I/O",
+    "_ported": "covered by cm-data"
+  },
+  "discipline.cpp": {
+    "_range": "per file_attribution.json (discipline.cpp)",
+    "_source": "discipline.cpp - Card / suspension tracker",
+    "_ported": "placeholder - integrates with match_events cards"
+  },
+  "display.cpp": {
+    "_range": "per file_attribution.json (display.cpp)",
+    "_source": "display.cpp - Display driver",
+    "_ported": "covered by cm-render"
+  },
+  "file_llist.cpp": {
+    "_range": "per file_attribution.json (file_llist.cpp)",
+    "_source": "file_llist.cpp - File linked list",
+    "_ported": "utility - Rust Vec/LinkedList replace"
+  },
+  "file_screens.cpp": {
+    "_range": "per file_attribution.json (file_screens.cpp)",
+    "_source": "file_screens.cpp - Load/Save file dialog screens",
+    "_ported": "UI"
+  },
+  "finance.cpp": {
+    "_range": "per file_attribution.json (finance.cpp)",
+    "_source": "finance.cpp - Finance base class",
+    "_ported": "crates/cm-domain/src/finance.rs - ported"
+  },
+  "officials_manager.cpp": {
+    "_range": "per file_attribution.json (officials_manager.cpp)",
+    "_source": "officials_manager.cpp - Officials manager",
+    "_ported": "covered by match_official"
+  },
+  "player_search.cpp": {
+    "_range": "per file_attribution.json (player_search.cpp)",
+    "_source": "player_search.cpp - Player search engine",
+    "_ported": "small - filter over rated players"
+  },
+  "plot.cpp": {
+    "_range": "per file_attribution.json (plot.cpp)",
+    "_source": "plot.cpp - Plot / narrative event",
+    "_ported": "small - integrated into news facts"
+  },
+  "printouts.cpp": {
+    "_range": "per file_attribution.json (printouts.cpp)",
+    "_source": "printouts.cpp - Printout helper",
+    "_ported": "covered by hall_of_fame text export"
+  },
+  "record_utils.cpp": {
+    "_range": "per file_attribution.json (record_utils.cpp)",
+    "_source": "record_utils.cpp - Record byte-utility helpers",
+    "_ported": "covered by typed_records"
+  },
+  "scout_manager.cpp": {
+    "_range": "per file_attribution.json (scout_manager.cpp)",
+    "_source": "scout_manager.cpp - Scout manager",
+    "_ported": "placeholder - transfer system follow-up"
+  },
+  "scrman.cpp": {
+    "_range": "per file_attribution.json (scrman.cpp)",
+    "_source": "scrman.cpp - Screen manager",
+    "_ported": "covered by cm-ui-app screen router"
+  },
+  "search_eng.cpp": {
+    "_range": "per file_attribution.json (search_eng.cpp)",
+    "_source": "search_eng.cpp - Search engine",
+    "_ported": "small - filter over players"
+  },
+  "search_filters.cpp": {
+    "_range": "per file_attribution.json (search_filters.cpp)",
+    "_source": "search_filters.cpp - Search filters",
+    "_ported": "small - filter predicates"
+  },
+  "setup.cpp": {
+    "_range": "per file_attribution.json (setup.cpp)",
+    "_source": "setup.cpp - Setup dispatcher",
+    "_ported": "covered by new-game builder in lib.rs"
+  },
+  "shortlist_manager.cpp": {
+    "_range": "per file_attribution.json (shortlist_manager.cpp)",
+    "_source": "shortlist_manager.cpp - Shortlist manager",
+    "_ported": "covered by human_manager slot 0x1e05 ref_id_list"
+  },
+  "simulated_stats.cpp": {
+    "_range": "per file_attribution.json (simulated_stats.cpp)",
+    "_source": "simulated_stats.cpp - Simulated match stats",
+    "_ported": "covered by match_engine"
+  },
+  "squad_manager.cpp": {
+    "_range": "per file_attribution.json (squad_manager.cpp)",
+    "_source": "squad_manager.cpp - Squad manager",
+    "_ported": "placeholder - integrates with formation"
+  },
+  "stadium.cpp": {
+    "_range": "per file_attribution.json (stadium.cpp)",
+    "_source": "stadium.cpp - Stadium entity",
+    "_ported": "referenced by ClubView.stadium_id"
+  },
+  "staff_records.cpp": {
+    "_range": "per file_attribution.json (staff_records.cpp)",
+    "_source": "staff_records.cpp - Staff record helpers",
+    "_ported": "covered by DomainStaffType6/8/9/10"
+  },
+  "tactics.cpp": {
+    "_range": "per file_attribution.json (tactics.cpp)",
+    "_source": "tactics.cpp - Tactics container",
+    "_ported": "crates/cm-domain/src/formation.rs - TacticalBundle"
+  },
+  "tactics_screens.cpp": {
+    "_range": "per file_attribution.json (tactics_screens.cpp)",
+    "_source": "tactics_screens.cpp - Tactics screens",
+    "_ported": "UI - formation editor"
+  },
+  "tcpip.cpp": {
+    "_range": "per file_attribution.json (tcpip.cpp)",
+    "_source": "tcpip.cpp - TCP/IP layer",
+    "_ported": "IGNORED - multiplayer out of scope"
+  },
+  "training_manager.cpp": {
+    "_range": "per file_attribution.json (training_manager.cpp)",
+    "_source": "training_manager.cpp - Training manager",
+    "_ported": "placeholder - training system"
+  },
+  "transfer_offer.cpp": {
+    "_range": "per file_attribution.json (transfer_offer.cpp)",
+    "_source": "transfer_offer.cpp - Transfer offer",
+    "_ported": "placeholder - transfer system"
+  },
+  "utils.cpp": {
+    "_range": "per file_attribution.json (utils.cpp)",
+    "_source": "utils.cpp - Utility helpers",
+    "_ported": "small - inlined across modules"
+  },
+  "virtual_staff.cpp": {
+    "_range": "per file_attribution.json (virtual_staff.cpp)",
+    "_source": "virtual_staff.cpp - Virtual staff (regens)",
+    "_ported": "placeholder - regen system"
+  },
+  "weather.cpp": {
+    "_range": "per file_attribution.json (weather.cpp)",
+    "_source": "weather.cpp - Weather",
+    "_ported": "placeholder - not modelled (affects match engine)"
+  }
+}
