@@ -2127,7 +2127,11 @@
     "0x004b5360": "news_link_entity (link current news item to a nation/team/player record for reader filtering)",
     "0x00527c90": "player_full_name_format (renders first+second+common name)",
     "0x00529e90": "age_format (renders 'aged NN' from birth_date + current_date)",
-    "0x005284e0": "player_nation_link_check (returns non-zero if player has a nation ref worth linking on news article)"
+    "0x005284e0": "player_nation_link_check (returns non-zero if player has a nation ref worth linking on news article)",
+    "0x004aea10": "emit_achievement_news (1646-line past-tense achievement-news dispatcher; same 22 SeasonRecordSlot values as 0x004ac150 but streams data via FUN_0076d7d0 pulls; templates catalogued in batch35, full body deferred pending news scaffolding) [batch35 metadata]",
+    "0x0076d7d0": "news_stream_pull_next (typed pull from serialized news buffer)",
+    "0x004c6370": "match_nation_differs (used by attendance/scoring slots to switch between primary and 'in nation N' template variants)",
+    "0x004b5e70": "news_frame_open (news-item construction start)"
   },
   },
   "find_screens.cpp": {
