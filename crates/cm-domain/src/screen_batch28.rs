@@ -297,6 +297,272 @@ pub fn build_comp_list_row(
 }
 
 // =====================================================================
+// FUN_004a3f10 — one fixture row in the competition-screen fixture list
+// =====================================================================
+
+/// The exe's special competition-id globals the fixture-row builder
+/// tests against. Kept as documentation constants for now — the caller
+/// tags a fixture with the right `TeamNameMode` based on which of
+/// these its competition id matches.
+pub mod comp_id_sentinels {
+    /// `DAT_009bba50` — US MLS conference-league competition id.
+    /// When the fixture's competition is this, team names are rendered
+    /// with a conference tag (Eastern / Central / Western) selected by
+    /// `FUN_008f92d0(team) == 0x413 / 0x47B / else`.
+    pub const MLS_CONFERENCE_COMP: &str = "DAT_009bba50";
+    /// `DAT_009bbb28` — another special competition (national-team
+    /// playoff family). When the fixture's competition is this, if the
+    /// home/away nation ids match and the reserves-team pointer at
+    /// team+0x57 is set, that reserves team's name is substituted in.
+    pub const RESERVES_CROSSOVER_COMP: &str = "DAT_009bbb28";
+}
+
+/// Which of the exe's per-side team-name fetch branches applies. Each
+/// value describes a distinct rendering rule the caller pre-selected.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TeamNameMode {
+    /// Standard: `<team.name>` verbatim. Corresponds to the exe's
+    /// fall-through path (no special-competition match).
+    Normal,
+    /// Reserves crossover (`DAT_009bbb28` competition, both teams have
+    /// same nation id, reserves-team pointer set): substitute the
+    /// reserves team's name.
+    ReservesCrossover,
+    /// Reserves crossover but the reserves-team competition slot is
+    /// empty — the exe emits an empty label (falls through to the
+    /// error-empty path).
+    ReservesCrossoverEmpty,
+    /// Reserves fallback via `FUN_00524f20` — the "second nation" team
+    /// name path (competition `+0x42 == 2` branch).
+    ReservesFallback,
+    /// MLS: `"E<...>"` — Eastern conference (0x413).
+    MlsEastern,
+    /// MLS: `"C<...>"` — Central conference (0x47B).
+    MlsCentral,
+    /// MLS: `"W<...>"` — Western conference (any other id).
+    MlsWestern,
+    /// `FUN_00491b70(round) != 0 && round.byte_0x43 == 0x02`: emit the
+    /// competition's team-list-derived name via `FUN_006679a0` scan.
+    /// The result is either a resolved name or an empty label.
+    CompetitionListLookup { name: Option<String> },
+}
+
+/// The match-state descriptor at `fixture + 0x43`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum MatchState {
+    /// `0x43 == 0xFF` (as signed char, -1) — not yet played. Row shows
+    /// a date/time placeholder.
+    #[default]
+    Unplayed,
+    /// `0x43 == 0xFE` (-2) — postponed. Row shows "PP" and formatted
+    /// "P<...>" / "P <...>" labels.
+    Postponed,
+    /// `0x43 == 0xFD` (-3) — abandoned. Row shows "A<...>" / "A <...>"
+    /// labels and uses fixture index as an id link.
+    Abandoned,
+    /// `0x43 >= 0` — played, value is the home team's regulation goals.
+    Played,
+}
+
+/// Per-side special-scoring marker at `fixture + 0x3d` (home) / `+0x3e`
+/// (away). Set only when the primary score field (`+0x43`) is `-1`
+/// (unplayed) OR when the fixture had OT (`+0x47 != -1`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ScoreMarker {
+    /// No marker for this side (default state).
+    #[default]
+    None,
+    /// 0x01 → shipped bullet string at `DAT_00988b08`.
+    Marker01,
+    /// 0x02 → bullet at `DAT_00988b04`.
+    Marker02,
+    /// 0x03..=0x08 → other named bullets (0x03 → `DAT_00988af8`, 0x04 →
+    /// `DAT_00988afc`, 0x05 → `DAT_00988b00`, 0x06 → `DAT_00988af4`,
+    /// 0x08 → `DAT_00988b08`). Only 0x03..=0x06 and 0x08 map — 0x07
+    /// isn't referenced.
+    Marker(u8),
+    /// Byte < 0 → format-decimal-of `-byte` as a numeric label.
+    NegativeAsNumber(u8),
+}
+
+/// The finished fixture-row model — everything one call of
+/// `FUN_004a3f10` emits.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct CompFixtureRow {
+    /// Home team name after all mode-specific substitution.
+    pub home_name: String,
+    /// Away team name after all mode-specific substitution.
+    pub away_name: String,
+    /// Home-team activity-form colour flag (`FUN_005ea590(home) != 0`
+    /// picks the highlight palette).
+    pub home_active: bool,
+    /// Away-team activity-form colour flag.
+    pub away_active: bool,
+    /// Match state at `+0x43`.
+    pub state: MatchState,
+    /// Home goals to display when `state == Played`.
+    pub home_goals: Option<u8>,
+    /// Away goals to display when `state == Played`.
+    pub away_goals: Option<u8>,
+    /// OT/pens marker for home side (drawn only when `state == Played`
+    /// with OT). `+0x47 == -1` means no OT and this is None.
+    pub home_ot_marker: Option<u8>,
+    /// OT/pens marker for away side.
+    pub away_ot_marker: Option<u8>,
+    /// Per-side small marker text (yellow / red-card / etc bullet).
+    pub home_marker: ScoreMarker,
+    pub away_marker: ScoreMarker,
+    /// If venue-flag byte `+0x0f` is set and `+0x18` (stadium ptr) is
+    /// non-null, this is the formatted "<stadium> (<city>)" string.
+    pub venue_line: Option<String>,
+}
+
+/// Outcome of `FUN_004a3f10`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CompFixtureOutcome {
+    /// `param_1 == NULL` — same error-dialog path as
+    /// [`CompListRowOutcome::ErrorDialog`], returns `0`.
+    ErrorDialog,
+    /// Normal row emit.
+    RowEmitted(CompFixtureRow),
+}
+
+/// Decode `fixture + 0x43` into a [`MatchState`].
+pub fn decode_match_state(byte_at_0x43: i8) -> MatchState {
+    match byte_at_0x43 {
+        -1 => MatchState::Unplayed,
+        -2 => MatchState::Postponed,
+        -3 => MatchState::Abandoned,
+        _  => MatchState::Played,
+    }
+}
+
+/// Decode a per-side score marker byte (`+0x3d` for home, `+0x3e` for
+/// away) into a [`ScoreMarker`]. The exe applies this mapping only
+/// when the primary state is Unplayed or when OT happened.
+pub fn decode_score_marker(byte: i8) -> ScoreMarker {
+    match byte {
+        0x01 => ScoreMarker::Marker01,
+        0x02 => ScoreMarker::Marker02,
+        0x03 | 0x04 | 0x05 | 0x06 | 0x08 => ScoreMarker::Marker(byte as u8),
+        b if b < 0 => ScoreMarker::NegativeAsNumber((-(b as i32)) as u8),
+        _ => ScoreMarker::None,
+    }
+}
+
+/// Direct port of `FUN_004a3f10(fixture, style_flag, column_counter, style_arg4)`.
+///
+/// The exe hand-walks a fixture record with 20+ fields; this port
+/// takes those fields as typed inputs (the caller pre-extracts them
+/// from the pool). The port encodes the fixture-row rendering
+/// structure — mode selection, state branching, marker decoding, venue
+/// row — without re-implementing widget spawns byte-for-byte.
+///
+/// Inputs:
+/// - `fixture_is_null` — matches the `param_1 == NULL` guard.
+/// - `home_mode`, `away_mode` — pre-classified [`TeamNameMode`] for
+///   each side (caller consults the fixture's competition id +
+///   `FUN_008f92d0` team lookup + reserves crossover check).
+/// - `home_base_name`, `away_base_name` — raw team name at `team + 0x38`.
+/// - `home_active`, `away_active` — `FUN_005ea590(team) != 0`.
+/// - `state_byte` = `fixture + 0x43`. Passed to [`decode_match_state`].
+/// - `home_regulation_goals`, `away_regulation_goals` — bytes at
+///   `+0x4b`/`+0x13` (used when `+0x43 == -1`) or `+0x43`/`+0x11` (when
+///   OT happened at `+0x47 == -1`).
+/// - `home_marker_byte`, `away_marker_byte` — bytes at `+0x3d`/`+0x3e`.
+///   Passed to [`decode_score_marker`] (only when `state == Unplayed`
+///   or OT happened).
+/// - `ot_happened` — `+0x47 != -1`.
+/// - `ot_home_marker`, `ot_away_marker` — bytes at `+0x47`/`+0x12`
+///   when OT happened.
+/// - `show_venue` — `(char)param_1[0x0f] != 0`.
+/// - `venue_stadium_name`, `venue_city_name` — for the optional venue
+///   row when `show_venue && fixture + 0x38 stadium ptr != NULL`.
+#[allow(clippy::too_many_arguments)]
+pub fn build_comp_fixture_row(
+    fixture_is_null: bool,
+    home_mode: TeamNameMode, away_mode: TeamNameMode,
+    home_base_name: &str, away_base_name: &str,
+    home_active: bool, away_active: bool,
+    state_byte: i8,
+    home_regulation_goals: Option<u8>, away_regulation_goals: Option<u8>,
+    home_marker_byte: i8, away_marker_byte: i8,
+    ot_happened: bool,
+    ot_home_marker: Option<u8>, ot_away_marker: Option<u8>,
+    show_venue: bool,
+    venue_stadium_name: Option<&str>,
+    venue_city_name: Option<&str>,
+) -> CompFixtureOutcome {
+    if fixture_is_null {
+        return CompFixtureOutcome::ErrorDialog;
+    }
+
+    fn resolve_name(mode: TeamNameMode, base: &str) -> String {
+        match mode {
+            TeamNameMode::Normal
+            | TeamNameMode::ReservesCrossover
+            | TeamNameMode::ReservesFallback => base.to_string(),
+            TeamNameMode::ReservesCrossoverEmpty => String::new(),
+            TeamNameMode::MlsEastern => format!("E<{base}>"),
+            TeamNameMode::MlsCentral => format!("C<{base}>"),
+            TeamNameMode::MlsWestern => format!("W<{base}>"),
+            TeamNameMode::CompetitionListLookup { name } => {
+                name.unwrap_or_default()
+            }
+        }
+    }
+
+    let state = decode_match_state(state_byte);
+    // The exe only draws goal digits when the fixture is played; when
+    // unplayed we surface the caller-supplied markers instead.
+    let (home_goals, away_goals) = match state {
+        MatchState::Played => (home_regulation_goals, away_regulation_goals),
+        _ => (None, None),
+    };
+
+    // Score markers are only decoded/drawn when unplayed OR when OT
+    // happened; the exe suppresses them otherwise (per the guard
+    // `if (*(char *)((int)param_1 + 0x4b) == -1) { ... }` / the
+    // marker-vs-numeric branch).
+    let show_markers = matches!(state, MatchState::Unplayed) || ot_happened;
+    let (home_marker, away_marker) = if show_markers {
+        (decode_score_marker(home_marker_byte),
+         decode_score_marker(away_marker_byte))
+    } else {
+        (ScoreMarker::None, ScoreMarker::None)
+    };
+
+    // OT markers only surface when OT actually happened.
+    let (home_ot_marker, away_ot_marker) = if ot_happened {
+        (ot_home_marker, ot_away_marker)
+    } else {
+        (None, None)
+    };
+
+    // Venue row: only when the flag is set AND both parts are present.
+    let venue_line = if show_venue {
+        match (venue_stadium_name, venue_city_name) {
+            (Some(s), Some(c)) => Some(format!("< {s} > < {c} >")),
+            (Some(s), None)    => Some(s.to_string()),
+            _                  => None,
+        }
+    } else {
+        None
+    };
+
+    CompFixtureOutcome::RowEmitted(CompFixtureRow {
+        home_name: resolve_name(home_mode, home_base_name),
+        away_name: resolve_name(away_mode, away_base_name),
+        home_active, away_active,
+        state,
+        home_goals, away_goals,
+        home_ot_marker, away_ot_marker,
+        home_marker, away_marker,
+        venue_line,
+    })
+}
+
+// =====================================================================
 
 #[cfg(test)]
 mod tests {
@@ -505,6 +771,206 @@ mod tests {
         assert_eq!(SEAT_SLOT_STRIDE, 0x18c);        // 396 bytes
         assert_eq!(SEAT_SLOT_STRIDE, 396);
     }
+
+    // ---- build_comp_fixture_row ----
+
+    #[test]
+    fn fixture_null_returns_error_dialog() {
+        let out = build_comp_fixture_row(
+            true,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "", "", false, false, 0, None, None, 0, 0,
+            false, None, None, false, None, None,
+        );
+        assert_eq!(out, CompFixtureOutcome::ErrorDialog);
+    }
+
+    #[test]
+    fn fixture_match_state_decodes_signed_negatives() {
+        assert_eq!(decode_match_state(-1), MatchState::Unplayed);
+        assert_eq!(decode_match_state(-2), MatchState::Postponed);
+        assert_eq!(decode_match_state(-3), MatchState::Abandoned);
+        assert_eq!(decode_match_state(0), MatchState::Played);
+        assert_eq!(decode_match_state(90), MatchState::Played);
+    }
+
+    #[test]
+    fn fixture_score_marker_decode_covers_all_named_bullets() {
+        assert_eq!(decode_score_marker(0x01), ScoreMarker::Marker01);
+        assert_eq!(decode_score_marker(0x02), ScoreMarker::Marker02);
+        assert_eq!(decode_score_marker(0x03), ScoreMarker::Marker(0x03));
+        assert_eq!(decode_score_marker(0x04), ScoreMarker::Marker(0x04));
+        assert_eq!(decode_score_marker(0x05), ScoreMarker::Marker(0x05));
+        assert_eq!(decode_score_marker(0x06), ScoreMarker::Marker(0x06));
+        assert_eq!(decode_score_marker(0x08), ScoreMarker::Marker(0x08));
+        // 0x07 is NOT one of the named bullets — unmapped.
+        assert_eq!(decode_score_marker(0x07), ScoreMarker::None);
+        assert_eq!(decode_score_marker(0), ScoreMarker::None);
+        // Negatives map to their positive numeric magnitude.
+        assert_eq!(decode_score_marker(-5), ScoreMarker::NegativeAsNumber(5));
+        assert_eq!(decode_score_marker(-1), ScoreMarker::NegativeAsNumber(1));
+    }
+
+    #[test]
+    fn fixture_normal_played_row_carries_goals_no_markers() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "Chelsea", "Arsenal",
+            true, false,
+            /*state*/ 0,   // Played
+            Some(2), Some(1),
+            0, 0,          // marker bytes ignored because state == Played
+            false, None, None,
+            false, None, None,
+        );
+        let row = match out {
+            CompFixtureOutcome::RowEmitted(r) => r,
+            _ => panic!(),
+        };
+        assert_eq!(row.home_name, "Chelsea");
+        assert_eq!(row.away_name, "Arsenal");
+        assert_eq!(row.state, MatchState::Played);
+        assert_eq!(row.home_goals, Some(2));
+        assert_eq!(row.away_goals, Some(1));
+        assert_eq!(row.home_marker, ScoreMarker::None);
+        assert_eq!(row.away_marker, ScoreMarker::None);
+        assert!(row.home_active);
+        assert!(!row.away_active);
+        assert!(row.venue_line.is_none());
+    }
+
+    #[test]
+    fn fixture_mls_prefixes_conference_letter() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::MlsEastern, TeamNameMode::MlsWestern,
+            "New York", "LA Galaxy",
+            false, false, 0, Some(3), Some(0), 0, 0,
+            false, None, None, false, None, None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.home_name, "E<New York>");
+        assert_eq!(row.away_name, "W<LA Galaxy>");
+    }
+
+    #[test]
+    fn fixture_reserves_crossover_empty_yields_blank_name() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::ReservesCrossoverEmpty, TeamNameMode::Normal,
+            "shouldn't appear", "Away",
+            false, false, 0, Some(1), Some(1), 0, 0,
+            false, None, None, false, None, None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.home_name, "");
+        assert_eq!(row.away_name, "Away");
+    }
+
+    #[test]
+    fn fixture_competition_list_lookup_uses_resolved_name() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::CompetitionListLookup { name: Some("Round 1 Winner".into()) },
+            TeamNameMode::CompetitionListLookup { name: None },
+            "ignored", "ignored", false, false, 0, None, None, 0, 0,
+            false, None, None, false, None, None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.home_name, "Round 1 Winner");
+        assert_eq!(row.away_name, "");
+    }
+
+    #[test]
+    fn fixture_postponed_suppresses_goals_but_keeps_state() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "H", "A", false, false,
+            -2,               // Postponed
+            Some(2), Some(1), // goals are ignored on postponed
+            0, 0,
+            false, None, None,
+            false, None, None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.state, MatchState::Postponed);
+        assert!(row.home_goals.is_none());
+        assert!(row.away_goals.is_none());
+    }
+
+    #[test]
+    fn fixture_ot_happened_carries_ot_markers() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "H", "A", false, false, 0, Some(1), Some(1), 0, 0,
+            true,                // ot_happened
+            Some(5), Some(4),    // OT markers per side
+            false, None, None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.home_ot_marker, Some(5));
+        assert_eq!(row.away_ot_marker, Some(4));
+    }
+
+    #[test]
+    fn fixture_unplayed_shows_score_markers_over_goals() {
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "H", "A", false, false,
+            -1,                          // Unplayed
+            Some(2), Some(1),
+            0x03, 0x04,                  // marker bytes surface for unplayed
+            false, None, None,
+            false, None, None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.state, MatchState::Unplayed);
+        assert_eq!(row.home_goals, None, "unplayed suppresses goals");
+        assert_eq!(row.home_marker, ScoreMarker::Marker(0x03));
+        assert_eq!(row.away_marker, ScoreMarker::Marker(0x04));
+    }
+
+    #[test]
+    fn fixture_venue_row_only_when_flag_and_stadium_set() {
+        // Flag off → no venue.
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "H", "A", false, false, 0, Some(1), Some(1), 0, 0,
+            false, None, None,
+            false, Some("Bridge"), Some("London"),
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert!(row.venue_line.is_none());
+
+        // Flag on + both parts → full formatted line.
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "H", "A", false, false, 0, Some(1), Some(1), 0, 0,
+            false, None, None,
+            true, Some("Bridge"), Some("London"),
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.venue_line, Some("< Bridge > < London >".into()));
+
+        // Flag on + stadium only → stadium alone.
+        let out = build_comp_fixture_row(
+            false,
+            TeamNameMode::Normal, TeamNameMode::Normal,
+            "H", "A", false, false, 0, Some(1), Some(1), 0, 0,
+            false, None, None,
+            true, Some("Bridge"), None,
+        );
+        let row = match out { CompFixtureOutcome::RowEmitted(r) => r, _ => panic!() };
+        assert_eq!(row.venue_line, Some("Bridge".into()));
+    }
+
+    // ---- back to structural tests ----
 
     #[test]
     fn comp_list_entry_stride_is_619_bytes() {

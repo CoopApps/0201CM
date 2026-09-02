@@ -2058,7 +2058,15 @@
     "0x004a5610": "comp_slot_probe (returns 7 for valid rows)",
     "0x004abbe0": "comp_slot_get_name (buf, size)",
     "0x004abf80": "comp_slot_get_id",
-    "0x004b1b80": "comp_entry_list_alloc (allocates the 0x26b-stride entry list)"
+    "0x004b1b80": "comp_entry_list_alloc (allocates the 0x26b-stride entry list)",
+    "0x004a3f10": "comp_fixture_row_build (one match row: home/away name + goals + state + markers + venue; MLS conference / reserves-crossover / competition-list-lookup name-mode branches)",
+    "0x005ea590": "team_active_form_flag (colour-highlight predicate)",
+    "0x00524f20": "reserves_team_lookup (returns reserves-team for a nation id)",
+    "0x00491b70": "competition_round_lookup",
+    "0x006679a0": "competition_team_list_get (returns {team_id, name} at index)",
+    "0x00525450": "reserves_leg_gate",
+    "0x008f92d0": "team_get_conference_id (MLS: 0x413=East, 0x47B=Central, else West)",
+    "0x00710d80": "fixture_date_valid (day, month, year, ...)"
   },
   "find_screens.cpp": {
     "_range": "per file_attribution.json (find_screens.cpp)",
