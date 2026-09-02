@@ -31,6 +31,7 @@ pub mod layout;
 pub mod line;
 pub mod packed;
 pub mod packed_glyph;
+pub mod packed_panel;
 pub mod msgbox;
 pub mod palette;
 pub mod panel;
