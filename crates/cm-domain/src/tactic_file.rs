@@ -654,6 +654,52 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
 pub const PRESET_TOKEN_GOALKEEPER: u32     = 0x15552221;
 pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
 
+/// **Nibbles 0-2 = author-customizable flag bits (empirical evidence)**.
+///
+/// Shipped DEFAULT-shape presets (`442_default`, `352_default`, `343_default`,
+/// etc.) all have nibbles 0-2 = `0x221` uniformly — never touched by
+/// default authors.
+///
+/// The ONE shipped preset that exercises them is `451_norway.pct` — an
+/// author-customized 4-5-1 for the Norwegian league. Diff against
+/// `451_defensive.pct` shows:
+///
+///   slot 1 (LB):  nib1: 0→2, nib2: 3→2  (norway removes nib1's bit,
+///                                        adds nib2's low bit)
+///   slot 2 (CB):  nib1: 4→2               (nib1 shifts bit position)
+///   slot 7 (AM):  nib1: 0→2, nib2: 3→2  (matches slot 1 pattern)
+///   slot 9 (ST):  nib1: 4→2               (matches slot 2 pattern)
+///
+/// Value patterns:
+///   Nibble 1 observed values: {0, 2, 4} — power-of-2 mutually-exclusive
+///     single-bit toggle. Same 3-state shape as [`SlotFlagCategory`].
+///   Nibble 2 observed values: {2, 3} — stacked bits: value 2 = bit 1
+///     (base), value 3 = bit 1 + bit 0 (base + extra flag).
+///
+/// These match the exe UI's per-slot toggle patterns (Playmaker /
+/// TargetMan / Free Role / etc are single-bit boolean flags), but
+/// without a controlled author-then-diff pass (edit one slider, save,
+/// diff) the specific bit → slider assignment isn't decoded.
+///
+/// See [`SlotFlag`] for the enumeration of possible UI-labeled flags.
+pub const NIBBLE_1_MUTEX_TOGGLE_NONE: u8 = 0;
+pub const NIBBLE_1_MUTEX_TOGGLE_A:    u8 = 2;
+pub const NIBBLE_1_MUTEX_TOGGLE_B:    u8 = 4;
+pub const NIBBLE_2_BASE_ONLY:         u8 = 2;
+pub const NIBBLE_2_BASE_PLUS_EXTRA:   u8 = 3;
+
+/// Extract the nibble 1 mutex-toggle value from a slot's `movement_token`.
+#[inline]
+pub fn slot_nibble_1(token: u32) -> u8 {
+    ((token >> (1 * 4)) & 0xF) as u8
+}
+
+/// Extract the nibble 2 stacked-bit value from a slot's `movement_token`.
+#[inline]
+pub fn slot_nibble_2(token: u32) -> u8 {
+    ((token >> (2 * 4)) & 0xF) as u8
+}
+
 /// **Nibble 4 = role-defaulted slider (empirical evidence)**.
 ///
 /// The 40-preset sweep showed nib 4 with the WIDEST variance across all
@@ -958,6 +1004,52 @@ mod tests {
         for observed in [0x11u8, 0x12, 0x14] {
             assert_eq!(observed & 0xF0, SLOT_FLAG_BASE);
         }
+    }
+
+    #[test]
+    fn nibble_1_and_2_from_451_norway_diff() {
+        // Verified 451_norway slot 1 token = 0x55984301
+        //   nibbles [1, 0, 3, 4, 8, 9, 5, 5]
+        // vs 451_defensive slot 1 token = 0x55984221
+        //   nibbles [1, 2, 2, 4, 8, 9, 5, 5]
+        // Only nibbles 1 (0 vs 2) and 2 (3 vs 2) differ.
+        const NORWAY_LB:    u32 = 0x55984301;
+        const DEFENSIVE_LB: u32 = 0x55984221;
+        assert_eq!(slot_nibble_1(NORWAY_LB),    NIBBLE_1_MUTEX_TOGGLE_NONE);
+        assert_eq!(slot_nibble_1(DEFENSIVE_LB), NIBBLE_1_MUTEX_TOGGLE_A);
+        assert_eq!(slot_nibble_2(NORWAY_LB),    NIBBLE_2_BASE_PLUS_EXTRA);
+        assert_eq!(slot_nibble_2(DEFENSIVE_LB), NIBBLE_2_BASE_ONLY);
+
+        // Slot 2 (CB) diff: 0x55984241 (norway) vs 0x55984221 (defensive)
+        //   only nib 1 differs: 4 vs 2 (mutex toggle position B vs A)
+        const NORWAY_CB:    u32 = 0x55984241;
+        const DEFENSIVE_CB: u32 = 0x55984221;
+        assert_eq!(slot_nibble_1(NORWAY_CB),    NIBBLE_1_MUTEX_TOGGLE_B);
+        assert_eq!(slot_nibble_1(DEFENSIVE_CB), NIBBLE_1_MUTEX_TOGGLE_A);
+        assert_eq!(slot_nibble_2(NORWAY_CB),    NIBBLE_2_BASE_ONLY);
+        assert_eq!(slot_nibble_2(DEFENSIVE_CB), NIBBLE_2_BASE_ONLY);
+    }
+
+    #[test]
+    fn nibble_1_values_are_powers_of_2() {
+        // Empirically observed values: 0, 2, 4 — mutually-exclusive
+        // single-bit toggles.
+        assert_eq!(NIBBLE_1_MUTEX_TOGGLE_NONE, 0);
+        assert_eq!(NIBBLE_1_MUTEX_TOGGLE_A,    2);
+        assert_eq!(NIBBLE_1_MUTEX_TOGGLE_B,    4);
+        // Neither observed value has more than one bit set (mutex).
+        assert_eq!(NIBBLE_1_MUTEX_TOGGLE_A.count_ones(), 1);
+        assert_eq!(NIBBLE_1_MUTEX_TOGGLE_B.count_ones(), 1);
+    }
+
+    #[test]
+    fn nibble_2_stacks_extra_bit_over_base() {
+        // Empirically: 2 = base bit (0b0010), 3 = base + extra (0b0011).
+        assert_eq!(NIBBLE_2_BASE_ONLY,       2);
+        assert_eq!(NIBBLE_2_BASE_PLUS_EXTRA, 3);
+        // The 'extra' bit is bit 0 (value 1) OR'd on top of base bit 1
+        assert_eq!(NIBBLE_2_BASE_PLUS_EXTRA - NIBBLE_2_BASE_ONLY, 1);
+        assert_eq!(NIBBLE_2_BASE_PLUS_EXTRA & NIBBLE_2_BASE_ONLY, NIBBLE_2_BASE_ONLY);
     }
 
     #[test]
