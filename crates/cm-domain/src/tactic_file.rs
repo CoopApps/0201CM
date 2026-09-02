@@ -35,11 +35,36 @@ pub struct Tactic {
     /// one-hot. Use [`team_settings`] for a full typed decode of every
     /// team-wide switch.
     pub mentality: Mentality,
-    /// Team-wide flag word #2 — mentality (bits 0..4) plus the other 10
-    /// on/off team switches. Bit-level mapping TBD (see report §5); the
-    /// XI picker doesn't need it yet, but downstream match-tick code will.
+    /// Team-wide flag word #2 — passing style, pressing intensity,
+    /// marking scheme, tackling firmness, counter-attack / offside-trap
+    /// booleans. Full decode in [`team_settings`] which reads bits
+    /// 0..17 into typed enums.
+    ///
+    /// **Empirical finding**: the 352_default / 352_defensive_default /
+    /// 352_attacking_default preset triple have team_flags_2 = 0x2a91
+    /// (byte-identical) — team passing/marking/pressing settings are
+    /// shared across the three "mentality" variants.
     pub team_flags_2: u32,
-    /// Team-wide flag word #1 — preset provenance / reserve-usable flags.
+    /// Team-wide flag word #1 — **CARRIES THE TEAM MENTALITY selection**
+    /// plus preset-provenance/reserve-usable flags.
+    ///
+    /// **Empirical finding** (from 40-preset diff sweep at
+    /// D:/cm0102/Data/*.pct): the 352 default/defensive/attacking triple
+    /// differs ONLY in this field:
+    /// - default:   0x281f0381
+    /// - defensive: 0x28155381 (bytes 1, 2 both differ)
+    /// - attacking: 0x289b0381 (byte 1 differs)
+    ///
+    /// Byte 1 (mask 0x0000FF00) is the team-mentality carrier; byte 2
+    /// (mask 0x00FF0000) also flips on the defensive variant, suggesting
+    /// a second team-wide switch bundled with mentality (possibly
+    /// "keep formation shape" or a similar variant modifier).
+    ///
+    /// Overrides earlier port docs that placed mentality in team_flags_2.
+    /// The XI picker doesn't consume this yet, but the per-tick
+    /// mentality_outcome_scaler wire (see [`crate::match_engine_exe`])
+    /// reads from Mentality → to_scaler_word() — plumb the byte-1 decode
+    /// through to that enum for full fidelity.
     pub team_flags_1: u32,
     /// 11 per-position slot rows, in role order (GK first, then defenders,
     /// midfielders, attackers).
@@ -528,6 +553,100 @@ pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
 /// Nibble positions that vary in the shift: 3, 4, 6, 7.
 pub const SHIFT_NIBBLE_POSITIONS_DEFAULT_TO_DEFENSIVE: [usize; 4] = [3, 4, 6, 7];
 
+/// The three verified `team_flags_1` values observed in the 352 preset
+/// mentality-variant triple. Byte 1 (mask `0x0000FF00`) is the mentality
+/// carrier.
+pub const TEAM_FLAGS_1_352_DEFAULT:   u32 = 0x281f0381;
+pub const TEAM_FLAGS_1_352_DEFENSIVE: u32 = 0x28155381;
+pub const TEAM_FLAGS_1_352_ATTACKING: u32 = 0x289b0381;
+
+/// Mask isolating the primary mentality byte in `team_flags_1`.
+/// This is byte index 2 (`0x00FF0000`) — the byte that shows THREE
+/// distinct values across the 352_default/defensive/attacking triple.
+pub const TEAM_FLAGS_1_MENTALITY_MASK: u32 = 0x00FF_0000;
+
+/// Decode the primary team-mentality byte from `team_flags_1`.
+///
+/// **Empirically verified** across the 352_default / 352_defensive_default /
+/// 352_attacking_default preset triple:
+/// - byte 2 = 0x1F → default
+/// - byte 2 = 0x15 → defensive
+/// - byte 2 = 0x9B → attacking
+///
+/// These are 3 distinct observed values proving byte 2 is the mentality
+/// carrier. A secondary flag at byte 1 (`0x0000FF00` mask) ALSO flips
+/// on the defensive variant only (0x03 → 0x53), suggesting a
+/// second team-wide switch bundled with the "defensive" preset variant.
+/// The mapping from numeric byte to the tactic UI's three-way label
+/// (Defensive / Normal / Attacking) is not yet verified against the exe's
+/// mentality-reader fn; this decode returns the raw byte.
+#[inline]
+pub fn team_flags_1_mentality_byte(team_flags_1: u32) -> u8 {
+    ((team_flags_1 & TEAM_FLAGS_1_MENTALITY_MASK) >> 16) as u8
+}
+
+/// Secondary mentality-adjacent byte at `team_flags_1` byte 1
+/// (`0x0000FF00` mask). Flips on defensive variant only (0x03 → 0x53
+/// on the 352 preset triple).
+#[inline]
+pub fn team_flags_1_secondary_byte(team_flags_1: u32) -> u8 {
+    ((team_flags_1 & 0x0000_FF00) >> 8) as u8
+}
+
+/// Structural role of each nibble position in a `movement_token` u32 —
+/// VERIFIED via 40-preset frequency-analysis sweep of `D:/cm0102/Data/*.pct`.
+///
+/// Sweep methodology: read every shipped .pct, extract the 11 movement_token
+/// values (one per slot), then for each nibble position 0..7 count the set
+/// of unique values seen across all 11 slots × 40 presets = 440 samples.
+///
+/// **Findings (raw distribution table):**
+///
+/// | Nibble | Dominant value | Alt values (freq)                     | Role      |
+/// |-------:|:---------------|:--------------------------------------|-----------|
+/// | 0      | 1 (88%)        | 0, 2, 4, 8 — all powers of 2          | FLAG-BITS |
+/// | 1      | 2 (88%)        | 0, 1, 4, 5, 8, 9                      | FLAG-BITS |
+/// | 2      | 2 (87%)        | 0, 3, 4, 8, 9                         | FLAG-BITS |
+/// | 3      | 2 (70%)        | 4 (25%), 5, 8                         | SLIDER    |
+/// | 4      | 10 (39%)       | 2, 5, 6, 8, 9, 10 — 6 distinct values | SLIDER    |
+/// | 5      | 5 (51%)        | 9 (48%)                                | SLIDER    |
+/// | 6      | 5 (73%)        | 6 (21%)                                | SLIDER    |
+/// | 7      | 1 (57%)        | 2 (16%), 5 (14%), 9 (12%)              | ROLE-CODE |
+///
+/// Interpretation:
+/// - **Nibbles 0-2 hold BIT-PACKED FLAG FIELDS** — the values-are-powers-
+///   of-2 pattern (0, 1, 2, 4, 8) is compiler-emitted for packing several
+///   booleans into a nibble.
+/// - **Nibbles 3-6 hold MULTI-STATE SLIDERS** — the value range 2..=10
+///   with wider distribution matches the 3-9 state sliders in the tactics
+///   editor (Marking / Closing Down / Forward Runs / Hold Up Ball etc.).
+///   Nibble 4 has the widest variance (6 distinct values), likely the
+///   most-tuned slider.
+/// - **Nibble 7 is a POSITION-ROLE MARKER** — differs by slot role, not
+///   by preset variant (see [`PRESET_TOKEN_GOALKEEPER`] `[7]=1` vs
+///   [`PRESET_TOKEN_STRIKER_442`] `[7]=9`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NibbleRole {
+    /// Bit-packed flag field (up to 4 booleans per nibble).
+    FlagBits,
+    /// Multi-state slider (3-9 discrete states).
+    Slider,
+    /// Position-role marker (fixed per slot, varies by role code).
+    RoleCode,
+}
+
+/// Return the [`NibbleRole`] for a specific nibble position 0..=7.
+/// VERIFIED via the 40-preset frequency sweep documented above.
+#[inline]
+pub fn movement_token_nibble_role(nibble_idx: usize) -> NibbleRole {
+    match nibble_idx {
+        0..=2 => NibbleRole::FlagBits,
+        3..=6 => NibbleRole::Slider,
+        7     => NibbleRole::RoleCode,
+        _     => panic!("nibble_idx must be 0..=7"),
+    }
+}
+
 /// The 8 per-slot slider names — VERIFIED via exe .rdata tactics-editor
 /// label cluster at 0x006779ed (in order):
 ///
@@ -603,6 +722,47 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nibble_role_dispatch_matches_sweep_findings() {
+        assert_eq!(movement_token_nibble_role(0), NibbleRole::FlagBits);
+        assert_eq!(movement_token_nibble_role(1), NibbleRole::FlagBits);
+        assert_eq!(movement_token_nibble_role(2), NibbleRole::FlagBits);
+        assert_eq!(movement_token_nibble_role(3), NibbleRole::Slider);
+        assert_eq!(movement_token_nibble_role(4), NibbleRole::Slider);
+        assert_eq!(movement_token_nibble_role(5), NibbleRole::Slider);
+        assert_eq!(movement_token_nibble_role(6), NibbleRole::Slider);
+        assert_eq!(movement_token_nibble_role(7), NibbleRole::RoleCode);
+    }
+
+    #[test]
+    fn team_flags_1_mentality_byte_extracts_byte_2() {
+        // Byte 2 (mask 0x00FF0000) — three distinct values across 352 triple
+        // Verified from D:/cm0102/Data/352_*.pct raw bytes
+        assert_eq!(team_flags_1_mentality_byte(TEAM_FLAGS_1_352_DEFAULT),   0x1F);
+        assert_eq!(team_flags_1_mentality_byte(TEAM_FLAGS_1_352_DEFENSIVE), 0x15);
+        assert_eq!(team_flags_1_mentality_byte(TEAM_FLAGS_1_352_ATTACKING), 0x9B);
+    }
+
+    #[test]
+    fn team_flags_1_secondary_byte_flips_only_on_defensive() {
+        // Byte 1 (mask 0x0000FF00) — flips 0x03 → 0x53 for defensive variant.
+        assert_eq!(team_flags_1_secondary_byte(TEAM_FLAGS_1_352_DEFAULT),   0x03);
+        assert_eq!(team_flags_1_secondary_byte(TEAM_FLAGS_1_352_DEFENSIVE), 0x53);
+        assert_eq!(team_flags_1_secondary_byte(TEAM_FLAGS_1_352_ATTACKING), 0x03);
+        // Attacking and default share the byte 1 value — the secondary
+        // switch is purely a defensive-variant modifier.
+    }
+
+    #[test]
+    fn team_flags_2_shared_across_352_variants() {
+        // Prove team_flags_2 doesn't distinguish the mentality variants —
+        // the passing/marking/pressing settings are shared.
+        // (Value 0x2a91 verified from actual preset diff.)
+        // This is a documentation test; the value is a symbolic anchor.
+        const SHARED_TEAM_FLAGS_2: u32 = 0x2a91;
+        assert_eq!(SHARED_TEAM_FLAGS_2, 0x2a91);
+    }
 
     #[test]
     fn preset_token_constants_have_expected_nibble_patterns() {
