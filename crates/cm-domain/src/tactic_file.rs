@@ -612,6 +612,48 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
 pub const PRESET_TOKEN_GOALKEEPER: u32     = 0x15552221;
 pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
 
+/// **VERIFIED empirical decode of nibbles 3 and 6 = defensive-behavior sliders.**
+///
+/// Evidence: `442_default.pct` vs `442_defensive_default.pct` diffs at
+/// EXACTLY nibbles 3 and 6 on slots 5 and 7 (midfielders):
+///
+///   slot 5 (LM/CM): 0x259a2221 → 0x299a8221  (nib 3: 2→8, nib 6: 5→9)
+///   slot 7 (RM/CM): 0x259a2221 → 0x299a8221  (same shift)
+///
+/// The defensive variant RAISES both nibbles on the midfielders — a
+/// characteristic signature of tighter marking and higher closing-down
+/// intensity for defensive shapes.
+///
+/// The 40-preset frequency sweep showed:
+///   nib 3: dominant `2` (70%), alt `4` (25%), rare `5, 8`
+///   nib 6: dominant `5` (73%), alt `6` (21%), rare `9`
+///
+/// The defensive variant uses the RARE high values (nib 3 = 8, nib 6 = 9)
+/// on midfielders. Consistent with:
+///   - Nibble 3: Marking Tightness (2 = loose default, 8 = tight defensive)
+///   - Nibble 6: Closing Down (5 = normal default, 9 = intense defensive)
+///
+/// Naming based on exe UI label order + defensive-signature pattern; a
+/// second anchor (e.g. a "marking-only" preset variant) would fully
+/// confirm the specific slider identity. The nibble ROLES are certain;
+/// the exact slider-label mapping is best-guess pending further evidence.
+pub const NIBBLE_MARKING_LOOSE:  u8 = 2;
+pub const NIBBLE_MARKING_TIGHT:  u8 = 8;
+pub const NIBBLE_CLOSING_NORMAL: u8 = 5;
+pub const NIBBLE_CLOSING_HIGH:   u8 = 9;
+
+/// Extract the marking-tightness slider (nibble 3) from a slot's `movement_token`.
+#[inline]
+pub fn slot_marking_nibble(token: u32) -> u8 {
+    ((token >> (3 * 4)) & 0xF) as u8
+}
+
+/// Extract the closing-down slider (nibble 6) from a slot's `movement_token`.
+#[inline]
+pub fn slot_closing_down_nibble(token: u32) -> u8 {
+    ((token >> (6 * 4)) & 0xF) as u8
+}
+
 /// **VERIFIED empirical decode of nibble 5 = "Forward Runs" slider.**
 ///
 /// Evidence: `442_attacking_default.pct` differs from `442_default.pct`
@@ -813,6 +855,28 @@ pub enum SlotFlag {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn marking_closing_nibbles_from_442_defensive_midfielder_diff() {
+        // Verified 442_default vs 442_defensive_default midfielder token:
+        //   default   = 0x259a2221  nibbles [1, 2, 2, 2, 10, 9, 5, 2]
+        //   defensive = 0x299a8221  nibbles [1, 2, 2, 8, 10, 9, 9, 2]
+        // Only nibbles 3 and 6 change: nib 3: 2→8, nib 6: 5→9.
+        const MID_DEFAULT:   u32 = 0x259a2221;
+        const MID_DEFENSIVE: u32 = 0x299a8221;
+        assert_eq!(slot_marking_nibble(MID_DEFAULT),   NIBBLE_MARKING_LOOSE);
+        assert_eq!(slot_marking_nibble(MID_DEFENSIVE), NIBBLE_MARKING_TIGHT);
+        assert_eq!(slot_closing_down_nibble(MID_DEFAULT),   NIBBLE_CLOSING_NORMAL);
+        assert_eq!(slot_closing_down_nibble(MID_DEFENSIVE), NIBBLE_CLOSING_HIGH);
+
+        // Cross-check: synthesizing the defensive from the default via the
+        // two nibble ops should reproduce the on-disk value.
+        let synthesized = (MID_DEFAULT & !(0xF << 12) & !(0xF << 24))
+                        | ((NIBBLE_MARKING_TIGHT as u32) << 12)
+                        | ((NIBBLE_CLOSING_HIGH as u32) << 24);
+        assert_eq!(synthesized, MID_DEFENSIVE,
+                   "defensive-midfielder token from two-nibble mask op");
+    }
 
     #[test]
     fn forward_runs_nibble_decode_from_442_striker_diff() {
