@@ -718,6 +718,33 @@ pub fn slot_slider_nibbles(t: &Tactic, slot: usize) -> [u8; 8] {
 pub const PRESET_TOKEN_GOALKEEPER: u32     = 0x15552221;
 pub const PRESET_TOKEN_STRIKER_442: u32    = 0x95522221;
 
+/// **VERIFIED empirical decode of nibble 0 = per-slot Passing override.**
+///
+/// Evidence: User author-then-save-then-diff of `442.tct` vs
+/// `442-1 change.tct` — exactly ONE byte differs at file offset 0x0595
+/// (= slot 7 movement_token byte 0):
+///   before: 0x21 (nibbles [1, 2, ...])
+///   after:  0x22 (nibbles [2, 2, ...])
+/// User confirmed the UI change was Player 8 (= slot 7) Passing:
+/// Team → Mixed.
+///
+/// So nibble 0 encodes per-slot Passing override with values (5-state
+/// one-hot per the 40-preset sweep which showed observed values
+/// {0, 1, 2, 4, 8}):
+///   NIBBLE_PASS_TEAM  = 1  (default — use team-level Passing)  VERIFIED
+///   NIBBLE_PASS_MIXED = 2                                       VERIFIED
+///   Values 0, 4, 8 = the remaining 3 UI options (Short/Direct/Long
+///   in some order) — need one more save-diff each to pin exactly.
+pub const NIBBLE_PASS_TEAM:  u8 = 1;
+pub const NIBBLE_PASS_MIXED: u8 = 2;
+
+/// Extract the per-slot Passing override nibble (nibble 0) from a
+/// slot's `movement_token`.
+#[inline]
+pub fn slot_passing_nibble(token: u32) -> u8 {
+    (token & 0xF) as u8
+}
+
 /// **Nibbles 0-2 = author-customizable flag bits (empirical evidence)**.
 ///
 /// Shipped DEFAULT-shape presets (`442_default`, `352_default`, `343_default`,
@@ -1205,6 +1232,28 @@ mod tests {
                         | ((NIBBLE_CLOSING_HIGH as u32) << 24);
         assert_eq!(synthesized, MID_DEFENSIVE,
                    "defensive-midfielder token from two-nibble mask op");
+    }
+
+    #[test]
+    fn passing_nibble_decode_from_442_change_diff() {
+        // Verified from D:/cm0102/tactics/442.tct → 442-1 change.tct byte
+        // diff: exactly ONE byte differs at file offset 0x0595, going from
+        // 0x21 → 0x22. That's slot 7 movement_token byte 0, meaning
+        // nibble 0 changed from 1 → 2. User confirmed the UI change was
+        // Player 8 (= slot 7) Passing: Team → Mixed.
+        // Baseline 442.tct slot 7 movement_token = 0x159a2221
+        // (VERIFIED from on-disk bytes at file 0x055D + 7*8 = 0x0595)
+        const S7_TEAM_PASSING:  u32 = 0x159a2221;
+        const S7_MIXED_PASSING: u32 = 0x159a2222;
+        assert_eq!(slot_passing_nibble(S7_TEAM_PASSING),  NIBBLE_PASS_TEAM);
+        assert_eq!(slot_passing_nibble(S7_MIXED_PASSING), NIBBLE_PASS_MIXED);
+
+        // The change flipped only nibble 0 — all other nibbles preserved
+        for shift in 1..8 {
+            let mask = 0xFu32 << (shift * 4);
+            assert_eq!(S7_TEAM_PASSING & mask, S7_MIXED_PASSING & mask,
+                       "only nibble 0 should differ, nib {} preserved", shift);
+        }
     }
 
     #[test]
