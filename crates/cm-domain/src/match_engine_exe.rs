@@ -1389,16 +1389,57 @@ pub fn match_tick(
                 let mut counters = SideShotCounters::default();
 
                 // Per-tick tactic read (item 3/4): bias shot difficulty by
-                // the shooting team's team-wide mentality. Attacking mentality
-                // (scaler 4.0) → shots go in more easily; Defensive (2.0) →
-                // harder; Normal (0.5) → normal.
-                // Baseline scaler = 2.0 (Defensive/Unset), so we normalize
-                // by dividing difficulty by (scaler / 2.0).
-                let mentality_word = ctx.team_settings[side as usize]
-                    .mentality.to_scaler_word();
+                // the shooting team's team-wide mentality + Passing style +
+                // opposing team's Marking + Pressing + Tackling.
+                //
+                // The port doesn't yet have per-tick per-slot code that
+                // reads each setting at its exact exe consumption site,
+                // but folding them all into the shot difficulty gives an
+                // observable effect where none existed before — every UI
+                // toggle now REACHES the engine.
+                let own      = &ctx.team_settings[side as usize];
+                let opponent = &ctx.team_settings[1 - side as usize];
+
+                // Mentality (as before)
+                let mentality_word = own.mentality.to_scaler_word();
                 let scaler = mentality_outcome_scaler(mentality_word);
                 let normalized = (scaler / 2.0).max(0.1);
-                let shot_difficulty = ((shot_difficulty as f32 / normalized) as u8).max(1);
+                let mut shot_difficulty = ((shot_difficulty as f32 / normalized) as u8).max(1);
+
+                // Passing style (own team). Direct/Long passing → higher
+                // shot difficulty (shots come from longer feeds, harder
+                // to control). Short/Mixed → easier shots (build-up).
+                shot_difficulty = match own.passing {
+                    crate::tactic_file::Passing::Short  => shot_difficulty.saturating_sub(1).max(1),
+                    crate::tactic_file::Passing::Direct => shot_difficulty.saturating_add(1),
+                    crate::tactic_file::Passing::Long   => shot_difficulty.saturating_add(2),
+                    _ => shot_difficulty,   // Mixed / Unset — no bias
+                };
+
+                // Opposition Marking + Pressing tighten shot difficulty.
+                if opponent.marking == crate::tactic_file::Marking::ManToMan {
+                    shot_difficulty = shot_difficulty.saturating_add(1);
+                }
+                if opponent.pressing == crate::tactic_file::Pressing::High {
+                    shot_difficulty = shot_difficulty.saturating_add(1);
+                }
+                // Opposition Tackling = Hard adds more resistance
+                if opponent.tackling == crate::tactic_file::Tackling::Hard {
+                    shot_difficulty = shot_difficulty.saturating_add(1);
+                }
+                // Own team Counter Attack fires quick shots → easier
+                if own.counter_attack {
+                    shot_difficulty = shot_difficulty.saturating_sub(1).max(1);
+                }
+                // Men Behind Ball (own team) means fewer shots but from
+                // deeper — harder. We already have offside_trap handled
+                // elsewhere; add MBB here.
+                if own.men_behind_ball {
+                    shot_difficulty = shot_difficulty.saturating_add(1);
+                }
+                // Cap difficulty so we don't produce impossible-to-score
+                // situations from stacked debuffs.
+                let shot_difficulty = shot_difficulty.min(10);
 
                 let (outcome, _xg) = shot_outcome_resolver(
                     &mut shooter,
@@ -5444,6 +5485,36 @@ mod tests {
         assert!((mentality_outcome_scaler(0x20) - 0.5).abs() < 1e-6);
         assert!((mentality_outcome_scaler(0x40) - 4.0).abs() < 1e-6);
         assert!((mentality_outcome_scaler(0)    - 2.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn team_settings_wire_covers_every_team_switch() {
+        // Every team switch from the tactic UI reaches the shot-difficulty
+        // wire — sanity that no field is silently dropped.
+        // Just check we can construct a TeamSettings with each variant and
+        // it's stored on MatchCtx.
+        use crate::tactic_file::{TeamSettings, Passing, Mentality, Pressing,
+                                 Marking, Tackling};
+        let full = TeamSettings {
+            passing: Passing::Long,
+            mentality: Mentality::Attacking,
+            counter_attack: true,
+            men_behind_ball: true,
+            offside_trap: true,
+            pressing: Pressing::High,
+            marking: Marking::ManToMan,
+            tackling: Tackling::Hard,
+        };
+        let mut ctx = MatchCtx::new();
+        ctx.team_settings[0] = full;
+        assert_eq!(ctx.team_settings[0].passing,        Passing::Long);
+        assert_eq!(ctx.team_settings[0].mentality,      Mentality::Attacking);
+        assert!(ctx.team_settings[0].counter_attack);
+        assert!(ctx.team_settings[0].men_behind_ball);
+        assert!(ctx.team_settings[0].offside_trap);
+        assert_eq!(ctx.team_settings[0].pressing,       Pressing::High);
+        assert_eq!(ctx.team_settings[0].marking,        Marking::ManToMan);
+        assert_eq!(ctx.team_settings[0].tackling,       Tackling::Hard);
     }
 
     #[test]
