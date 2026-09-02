@@ -69,6 +69,7 @@ pub mod screen_batch25;
 pub mod screen_batch26;
 pub mod screen_batch27;
 pub mod screen_batch28;
+pub mod screen_batch29;
 pub mod sidebar_dispatcher;
 pub mod tactic_dispatcher;
 pub mod world_facade;
