@@ -348,6 +348,270 @@ pub fn fifa_rankings(
     );
 }
 
+// ------- League Table (competition dashboard, via the club screen's division link) -------
+
+/// The Dashboard's division sub-heading rect — the exe's entity link from a
+/// club screen to its competition. Same rect `dashboard()` draws it in.
+pub const DASH_DIVISION_LINK: (i32, i32, i32, i32) = (110, 78, 780, 108);
+
+const TABLE_RECT: (i32, i32, i32, i32) = (110, 120, 780, 540);
+pub const LEAGUE_ROWS_VISIBLE: usize = 20;
+
+fn table_row_layout() -> cm_render::layout::Layout {
+    // pos | club | P | W | D | L | F | A | GD | Pts
+    rebuild_layout(TABLE_RECT, 2, &[2, 12, 2, 2, 2, 2, 2, 2, 3, 3], &[1; LEAGUE_ROWS_VISIBLE as i32 as usize], false)
+}
+
+/// Render a division's league table (`World::league_table_for`). The manager's
+/// club row is drawn in the highlight ink. `scroll` is the first visible row.
+pub fn league_table(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    view: &cm_domain::LeagueTableView,
+    scroll: usize,
+) {
+    use cm_render::font::{F_LEFT, F_RIGHT};
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
+    {
+        let f7 = fonts.slot(7);
+        s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, &clip_text(&view.competition_name, 34));
+    }
+    let f3 = fonts.slot(3);
+    let lo = table_row_layout();
+    let headers = ["Pos", "Club", "P", "W", "D", "L", "F", "A", "GD", "Pts"];
+    for (col, text) in headers.iter().enumerate() {
+        // Pos + Club left-aligned (so "1" doesn't butt against the club name);
+        // the numeric columns right-aligned.
+        let flags = if col <= 1 { F_LEFT } else { F_RIGHT };
+        s.draw_text_box(lo.col_left[col], TABLE_RECT.1 - 26, lo.col_right[col], TABLE_RECT.1 - 2,
+            flags, f3, (200, 200, 200), text);
+    }
+    s.draw_panel(TABLE_RECT.0, TABLE_RECT.1, TABLE_RECT.2, TABLE_RECT.3, F_TRANSPARENT, (40, 40, 40));
+    for row in 0..LEAGUE_ROWS_VISIBLE {
+        let Some(r) = view.rows.get(scroll + row) else { break };
+        let ink = if r.is_manager_club { pal.highlight_fg } else { pal.near_white };
+        let cells = [
+            format!("{}", r.position),
+            clip_text(&r.club_name, 22),
+            r.played.to_string(),
+            r.won.to_string(),
+            r.drawn.to_string(),
+            r.lost.to_string(),
+            r.goals_for.to_string(),
+            r.goals_against.to_string(),
+            format!("{:+}", r.goal_difference),
+            r.points.to_string(),
+        ];
+        for (col, text) in cells.iter().enumerate() {
+            let flags = if col <= 1 { F_LEFT } else { F_RIGHT };
+            s.draw_text_box(lo.col_left[col], lo.row_top[row], lo.col_right[col], lo.row_bottom[row],
+                flags, f3, ink, text);
+        }
+    }
+    if view.rows.len() > LEAGUE_ROWS_VISIBLE {
+        let tl = TABLE_RECT.2 - 12;
+        s.draw_panel(tl, TABLE_RECT.1, TABLE_RECT.2, TABLE_RECT.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let h = (TABLE_RECT.3 - TABLE_RECT.1).max(1);
+        let th = (LEAGUE_ROWS_VISIBLE as i32 * h / view.rows.len() as i32).max(12);
+        let maxs = (view.rows.len() - LEAGUE_ROWS_VISIBLE) as i32;
+        let tt = TABLE_RECT.1 + (scroll as i32) * (h - th) / maxs.max(1);
+        s.draw_panel(tl + 1, tt, TABLE_RECT.2 - 1, (tt + th).min(TABLE_RECT.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
+    }
+    s.draw_text_box(110, TABLE_RECT.3 + 6, 780, TABLE_RECT.3 + 34, F_LEFT, f3, (170, 170, 170),
+        &format!("{} clubs", view.rows.len()));
+}
+
+// ------- Selected Leagues (menu cmd 0x431 — Setup.c FUN_008053D0, in-game view) -------
+
+const LEAGUES_TABLE: (i32, i32, i32, i32) = (110, 200, 780, 500);
+const LEAGUES_ROWS: usize = 12;
+
+fn leagues_row_layout() -> cm_render::layout::Layout {
+    // nation | status | detailed matches
+    rebuild_layout(LEAGUES_TABLE, 2, &[8, 5, 5], &[1; LEAGUES_ROWS as i32 as usize], false)
+}
+
+/// Render the in-game Selected Leagues view: the working game's nation tiers
+/// (`save.nation_tiers`, foreground first) and the options it was started
+/// with. The exe reuses its setup screen (`FUN_008053D0`) here; this is the
+/// read-only presentation of the same state.
+pub fn selected_leagues(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    rows: &[cm_domain::NationTierAssignment],
+    options: Option<&cm_domain::NewGameOptions>,
+) {
+    use cm_domain::LeagueTier;
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
+    let f7 = fonts.slot(7);
+    s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, "Selected Leagues");
+
+    // Options block — the choices made on the setup screens.
+    let (real, mask, year) = options
+        .map(|o| (o.use_real_players, o.attribute_masking, o.start_year))
+        .unwrap_or((true, true, 0));
+    let onoff = |b: bool| if b { "Yes" } else { "No" };
+    {
+        let f4 = fonts.slot(4);
+        s.draw_text_box(110, 82, 780, 108, cm_render::font::F_LEFT, f4, pal.near_white,
+            &format!("Season {}/{}", year, (year + 1) % 100));
+    }
+    let f3 = fonts.slot(3);
+    s.draw_text_box(110, 112, 780, 136, cm_render::font::F_LEFT, f3, (200, 200, 200),
+        &format!("Real players: {}     Attribute masking: {}", onoff(real), onoff(mask)));
+    let foreground = rows.iter().filter(|r| r.tier == LeagueTier::Foreground).count();
+    let background = rows.iter().filter(|r| r.tier == LeagueTier::Background).count();
+    s.draw_text_box(110, 140, 780, 164, cm_render::font::F_LEFT, f3, (200, 200, 200),
+        &format!("{foreground} playable league(s), {background} background nation(s), {} nations loaded", rows.len()));
+
+    // Table: foreground first, then background, then the rest (by name).
+    let mut sorted: Vec<&cm_domain::NationTierAssignment> = rows.iter().collect();
+    sorted.sort_by_key(|r| (match r.tier {
+        LeagueTier::Foreground => 0,
+        LeagueTier::Background => 1,
+        _ => 2,
+    }, r.nation_name.clone()));
+    let lo = leagues_row_layout();
+    for (col, text) in [(0, "Nation"), (1, "Status"), (2, "Detailed matches")] {
+        s.draw_text_box(lo.col_left[col], LEAGUES_TABLE.1 - 26, lo.col_right[col], LEAGUES_TABLE.1 - 2,
+            cm_render::font::F_LEFT, f3, (200, 200, 200), text);
+    }
+    s.draw_panel(LEAGUES_TABLE.0, LEAGUES_TABLE.1, LEAGUES_TABLE.2, LEAGUES_TABLE.3, F_TRANSPARENT, (40, 40, 40));
+    for row in 0..LEAGUES_ROWS {
+        let Some(r) = sorted.get(row) else { break };
+        let (status, ink) = match r.tier {
+            LeagueTier::Foreground => ("Playable", pal.highlight_fg),
+            LeagueTier::Background => ("Background", pal.near_white),
+            _ => ("Loaded only", (170, 170, 170)),
+        };
+        let cells = [
+            (0, clip_text(&r.nation_name, 24)),
+            (1, status.to_string()),
+            (2, onoff(r.detailed_matches).to_string()),
+        ];
+        for (col, text) in cells {
+            s.draw_text_box(lo.col_left[col], lo.row_top[row], lo.col_right[col], lo.row_bottom[row],
+                cm_render::font::F_LEFT, f3, ink, &text);
+        }
+    }
+    if sorted.len() > LEAGUES_ROWS {
+        s.draw_text_box(110, LEAGUES_TABLE.3 + 6, 780, LEAGUES_TABLE.3 + 34, cm_render::font::F_LEFT, f3, (170, 170, 170),
+            &format!("... and {} more loaded nations", sorted.len() - LEAGUES_ROWS));
+    }
+}
+
+// ------- Latest Scores (menu cmd 0x418 — match_screens.cpp FUN_00700F20) -------
+
+const SCORES_TABLE: (i32, i32, i32, i32) = (110, 120, 780, 540);
+pub const LATEST_SCORES_ROWS_VISIBLE: usize = 20;
+
+fn scores_row_layout() -> cm_render::layout::Layout {
+    // date | home (right-aligned to the score) | score | away | competition
+    rebuild_layout(SCORES_TABLE, 2, &[3, 7, 2, 7, 7], &[1; LATEST_SCORES_ROWS_VISIBLE as i32 as usize], false)
+}
+
+/// Clip `text` to `max_chars` with an ellipsis — `draw_text_box` does not clip,
+/// so long competition names would run into the next column.
+fn clip_text(text: &str, max_chars: usize) -> String {
+    if text.chars().count() <= max_chars {
+        text.to_string()
+    } else {
+        // ASCII dots — the game's .fnt fonts have no U+2026 glyph.
+        let mut s: String = text.chars().take(max_chars.saturating_sub(3)).collect();
+        s.push_str("...");
+        s
+    }
+}
+
+/// Render the Latest Scores table. `rows` is `cm_domain::latest_scores`
+/// (played fixtures, most-recent first); `scroll` is the first visible row.
+/// The manager's own club's results are drawn in the highlight ink.
+pub fn latest_scores(
+    s: &mut Surface,
+    fonts: &mut Fonts,
+    bg: Option<&Image>,
+    rows: &[cm_domain::LatestScoreRow],
+    scroll: usize,
+) {
+    use cm_render::panel::{F_TRANSPARENT, F_VGRADIENT};
+    let pal = palette();
+    if let Some(image) = bg {
+        s.blit_image(image, 0, 0);
+    } else {
+        s.fill(0, 0, 0);
+    }
+    s.draw_panel(0, 0, 89, 599, F_VGRADIENT, pal.sidebar_blue);
+    s.draw_panel(100, 10, 790, 70, F_SOLID_FILL | F_BEVEL, (0, 48, 165));
+    let f7 = fonts.slot(7);
+    s.draw_text_box(100, 10, 790, 70, 0, f7, pal.highlight_fg, "Latest Scores");
+
+    let f3 = fonts.slot(3);
+    if rows.is_empty() {
+        s.draw_text_box(110, 90, 780, 130, 0x1, f3, pal.near_white,
+            "No matches have been played yet. Press Continue to advance.");
+        return;
+    }
+
+    // Column headers.
+    let lo = scores_row_layout();
+    let hdr_t = SCORES_TABLE.1 - 26;
+    let hdr_b = SCORES_TABLE.1 - 2;
+    for (col, text) in [(0, "Date"), (1, "Home"), (2, ""), (3, "Away"), (4, "Competition")] {
+        s.draw_text_box(lo.col_left[col], hdr_t, lo.col_right[col], hdr_b, 0x1, f3, (200, 200, 200), text);
+    }
+    s.draw_panel(SCORES_TABLE.0, SCORES_TABLE.1, SCORES_TABLE.2, SCORES_TABLE.3, F_TRANSPARENT, (40, 40, 40));
+    for row in 0..LATEST_SCORES_ROWS_VISIBLE {
+        let Some(r) = rows.get(scroll + row) else { break };
+        let ink = if r.involves_manager_club { pal.highlight_fg } else { pal.near_white };
+        // Alignment per column: home right-aligned against the score, score
+        // centred, everything else left (cm_render::font F_LEFT/F_RIGHT).
+        let cells = [
+            (0, format!("{} {}", r.date.day, month_name(r.date.month)), cm_render::font::F_LEFT),
+            (1, clip_text(&r.home_club_name, 17), cm_render::font::F_RIGHT),
+            (2, format!("{}-{}", r.home_score, r.away_score), 0),
+            (3, clip_text(&r.away_club_name, 17), cm_render::font::F_LEFT),
+            (4, clip_text(&r.competition_name, 19), cm_render::font::F_LEFT),
+        ];
+        for (col, text, flags) in cells {
+            s.draw_text_box(
+                lo.col_left[col], lo.row_top[row], lo.col_right[col], lo.row_bottom[row],
+                flags, f3, ink, &text,
+            );
+        }
+    }
+    if rows.len() > LATEST_SCORES_ROWS_VISIBLE {
+        let tl = SCORES_TABLE.2 - 12;
+        s.draw_panel(tl, SCORES_TABLE.1, SCORES_TABLE.2, SCORES_TABLE.3, F_SOLID_FILL | F_BEVEL, pal.grey);
+        let h = (SCORES_TABLE.3 - SCORES_TABLE.1).max(1);
+        let th = (LATEST_SCORES_ROWS_VISIBLE as i32 * h / rows.len() as i32).max(12);
+        let maxs = (rows.len() - LATEST_SCORES_ROWS_VISIBLE) as i32;
+        let tt = SCORES_TABLE.1 + (scroll as i32) * (h - th) / maxs.max(1);
+        s.draw_panel(tl + 1, tt, SCORES_TABLE.2 - 1, (tt + th).min(SCORES_TABLE.3), F_SOLID_FILL | F_BEVEL, pal.highlight_fg);
+    }
+    s.draw_text_box(
+        110, SCORES_TABLE.3 + 6, 780, SCORES_TABLE.3 + 34, 0x1, f3, (170, 170, 170),
+        &format!("{} results — scroll with the mouse wheel", rows.len()),
+    );
+}
+
 // ------- News page (the home screen — the exe's news.c / LAB_00770170) -------
 
 /// The four news filter tabs.

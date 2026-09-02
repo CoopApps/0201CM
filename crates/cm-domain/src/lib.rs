@@ -99,6 +99,65 @@ pub mod simple_league;
 pub mod super_cup;
 pub mod transfer_eligibility;
 
+/// League competition ids whose season is ACTUALLY built by a dedicated engine
+/// inside `World::new_game_from_rust_db` (the `simple_league` blocks, plus the
+/// Argentina and Australia ports). The generic double-round-robin builder must
+/// skip exactly these — and nothing else.
+///
+/// This exists because `PORTED_COMPETITION_IDS` (below) also lists leagues that
+/// are only DECLARED as ported (England 7/8/9/10/93, Scotland, Wales, Sweden,
+/// Turkey, Finland, Belgium, Brazil …) but have no new-game builder. Excluding
+/// those from the generic path left them with no season at all, and
+/// `default_headless_season_state` then silently invented one from the first
+/// 20 clubs of the world table with index ids ("1.FC Bocholt" as an English
+/// Premier Division club). Verified 2026-09-02 via the League Table screen.
+/// Keep in sync with the `SimpleLeagueState::from_teams` tuples in
+/// `new_game_from_rust_db`; the unit test below cross-checks the declared list.
+pub const LEAGUES_BUILT_BY_DEDICATED_ENGINES: &[i32] = &[
+    63, 64, // Argentina Primera / Second (arg_primera / arg_second ports)
+    151, // Australian NSL (aus_nsl port)
+    11, 12, 13, // France: Ligue 1 / Ligue 2 / National (simple_league)
+    16, 17, 20, 21, // Germany: Bundesliga / 2. Bundesliga / Regionalliga N+S
+    22, 23, // Holland: Premier / First
+    24, 25, 26, 27, 28, 29, 30, // Italy: Serie A / B / C1 A+B / C2 A+B+C
+    46, 47, 48, // Portugal: Premier / Second / Second B North
+    69, 82, 100, // Japan: J-League 1 / JFL / J-League 2
+    119, 120, 298, // Ireland: Premier / First / Leinster Senior Div One
+    133, 134, // Poland: First / Second
+    143, 144, // Greece: Alpha / Beta Ethniki
+    154, 155, 156, // Northern Ireland: Premier / First / Lower
+    176, 177, 178, // Russia: Premier / First / Second West
+    315, 316, 317, 346, // Norway: Premier / First / Second Grp 1 / Third
+];
+
+#[cfg(test)]
+mod season_exclusion_tests {
+    use super::*;
+
+    #[test]
+    fn every_built_league_is_also_declared_ported() {
+        for id in LEAGUES_BUILT_BY_DEDICATED_ENGINES {
+            assert!(
+                PORTED_COMPETITION_IDS.contains(id),
+                "league {id} is built at new-game but missing from PORTED_COMPETITION_IDS"
+            );
+        }
+    }
+
+    #[test]
+    fn english_leagues_are_not_excluded_from_the_generic_builder() {
+        // 7 Premier, 8 First, 9 Second, 10 Third, 93 Conference — declared as
+        // ported but with no new-game builder; the generic path must build them.
+        for id in [7, 8, 9, 10, 93] {
+            assert!(PORTED_COMPETITION_IDS.contains(&id), "precondition: {id} is declared");
+            assert!(
+                !LEAGUES_BUILT_BY_DEDICATED_ENGINES.contains(&id),
+                "England {id} must NOT be excluded — nothing builds it"
+            );
+        }
+    }
+}
+
 /// Competition ids handled by dedicated ported classes (their own league/cup
 /// engines), which must therefore be excluded from the generic double-round-
 /// robin builder to avoid a duplicate season. Argentina (63/64), Australia
@@ -1443,6 +1502,158 @@ pub struct SquadMember {
     pub age: Option<u8>,
     pub current_ability: i16,
     pub condition: u16,
+}
+
+/// One row of the Latest Scores screen (menu cmd 0x418 → `FUN_00700F20`): a
+/// played fixture, rendered "Home  h-a  Away  (competition)". The exe's screen
+/// setup only registers slots; the visible results come from the match/results
+/// pool — here `save.season.fixtures`, which already carries the club names,
+/// competition name, date, and final score for every fixture the tick played.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LatestScoreRow {
+    pub date: GameDate,
+    pub competition_name: String,
+    pub home_club_name: String,
+    pub away_club_name: String,
+    pub home_score: u8,
+    pub away_score: u8,
+    /// True when either club is the active manager's club — the screen
+    /// highlights the manager's own results.
+    pub involves_manager_club: bool,
+}
+
+/// Build the Latest Scores list from the working game: every PLAYED fixture in
+/// `save.season.fixtures` involving a FOREGROUND (selected-league) nation's
+/// club, most-recent first. `manager_club` (the active human's club, or `None`
+/// if unemployed) drives the highlight flag.
+///
+/// This is the data the exe's Latest Scores screen (`FUN_00700F20`,
+/// match_screens.cpp) presents. The exe scopes the page to the focus
+/// competition (its field 0xE); the tick here simulates every nation's
+/// fixtures (background ones through the condensed engine), so without the
+/// foreground filter an England game would list Croatian lower-division
+/// results ahead of the manager's own. Club→nation comes from
+/// `save.finance.club_nation`. A club with NO nation entry is not a
+/// selected-league club — those are the synthetic "Fallback Rust club"
+/// round-robin entries (`generate_headless_round_robin_fixtures`,
+/// `nation_id: -1`) the headless scheduler invents for unplaceable clubs, and
+/// the exe has no such competition — so they are excluded whenever a
+/// foreground set exists. (With no foreground nations at all, everything is
+/// shown rather than nothing.)
+pub fn latest_scores(save: &RuntimeSaveGame, manager_club: Option<u32>) -> Vec<LatestScoreRow> {
+    let foreground: std::collections::BTreeSet<i32> = save
+        .nation_tiers
+        .iter()
+        .filter(|t| t.tier == LeagueTier::Foreground)
+        .map(|t| t.nation_id as i32)
+        .collect();
+    let in_foreground = |club_id: u32| -> bool {
+        save.finance
+            .club_nation
+            .get(&club_id)
+            .is_some_and(|nation| foreground.contains(nation))
+    };
+    let mut rows: Vec<LatestScoreRow> = save
+        .season
+        .fixtures
+        .iter()
+        .filter(|f| f.status == HeadlessFixtureStatus::Played)
+        .filter(|f| foreground.is_empty() || in_foreground(f.home_club_id) || in_foreground(f.away_club_id))
+        .filter_map(|f| {
+            let (Some(home_score), Some(away_score)) = (f.home_score, f.away_score) else {
+                return None;
+            };
+            let involves_manager_club = manager_club
+                .is_some_and(|c| c == f.home_club_id || c == f.away_club_id);
+            Some(LatestScoreRow {
+                date: f.date.clone(),
+                competition_name: f.competition_name.clone(),
+                home_club_name: f.home_club_name.clone(),
+                away_club_name: f.away_club_name.clone(),
+                home_score,
+                away_score,
+                involves_manager_club,
+            })
+        })
+        .collect();
+    // Most-recent first (GameDate is Ord over year/month/day).
+    rows.sort_by(|a, b| b.date.cmp(&a.date));
+    rows
+}
+
+/// One row of a division's league table.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LeagueTableRow {
+    pub position: usize,
+    pub club_id: u32,
+    pub club_name: String,
+    pub played: u32,
+    pub won: u32,
+    pub drawn: u32,
+    pub lost: u32,
+    pub goals_for: u32,
+    pub goals_against: u32,
+    pub goal_difference: i32,
+    pub points: u32,
+    /// The active manager's own club (drawn highlighted).
+    pub is_manager_club: bool,
+}
+
+/// A division's league table — the exe's competition dashboard table, reached
+/// from a club screen's division link. Rows come from `save.season.standings`
+/// (one merged table over every foreground competition, kept sorted by
+/// points / goal difference / goals for by `sort_headless_standings`),
+/// filtered to this division's member clubs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LeagueTableView {
+    pub competition_id: u32,
+    pub competition_name: String,
+    pub rows: Vec<LeagueTableRow>,
+}
+
+impl World {
+    /// Build the league table of the division `club_id` plays in. `None` if
+    /// the club or its division can't be resolved.
+    pub fn league_table_for(&self, save: &RuntimeSaveGame, club_id: u32) -> Option<LeagueTableView> {
+        let club_rec = self.core.clubs.iter().find(|c| {
+            crate::typed_records::ClubView::new(c).id() == club_id
+        })?;
+        let division_id = crate::typed_records::ClubView::new(club_rec).division_id()? as u32;
+        let competition_name = self
+            .references
+            .club_competitions
+            .iter()
+            .find(|c| c.id == division_id)
+            .map(|c| c.long_name.clone())
+            .unwrap_or_else(|| "Unknown Division".to_string());
+        let members: BTreeSet<u32> = self
+            .club_members_of_competition(division_id)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        let rows = save
+            .season
+            .standings
+            .iter()
+            .filter(|s| members.contains(&s.club_id))
+            .enumerate()
+            .map(|(i, s)| LeagueTableRow {
+                position: i + 1,
+                club_id: s.club_id,
+                club_name: s.club_name.clone(),
+                played: s.played,
+                won: s.won,
+                drawn: s.drawn,
+                lost: s.lost,
+                goals_for: s.goals_for,
+                goals_against: s.goals_against,
+                goal_difference: s.goal_difference,
+                points: s.points,
+                is_manager_club: s.club_id == club_id,
+            })
+            .collect();
+        Some(LeagueTableView { competition_id: division_id, competition_name, rows })
+    }
 }
 
 /// The News page — the manager's home screen (the exe's news.c, drawn by the
@@ -17529,9 +17740,13 @@ impl World {
             // ported classes (arg_prm.cpp / arg_second.cpp) — skip them here so
             // they are not also built as generic leagues (which would duplicate
             // those clubs' seasons).
-            // Competitions handled by dedicated ported classes (leagues/cups)
-            // must not also be built by the generic double-round-robin path.
-            .filter(|c| !PORTED_COMPETITION_IDS.contains(&(c.id as i32)))
+            // Leagues whose season a dedicated engine ACTUALLY builds at
+            // new-game must not also be built here (duplicate season). Only
+            // that built set is excluded — NOT the broader
+            // PORTED_COMPETITION_IDS, which also lists merely-declared leagues
+            // (England …) and starved them of any season. See
+            // LEAGUES_BUILT_BY_DEDICATED_ENGINES.
+            .filter(|c| !LEAGUES_BUILT_BY_DEDICATED_ENGINES.contains(&(c.id as i32)))
         {
             let mut members = self.club_members_of_competition(competition.id);
             if members.len() < 2 {

@@ -51,6 +51,27 @@ enum Screen {
         view: cm_domain::DashboardView,
         squad_scroll: usize,
     },
+    /// League Table — the exe's competition dashboard table, reached from the
+    /// club screen's division link. Built by `World::league_table_for` from
+    /// `save.season.standings` filtered to the division's member clubs.
+    LeagueTable {
+        view: cm_domain::LeagueTableView,
+        scroll: usize,
+    },
+    /// Selected Leagues (menu cmd 0x431 → exe FUN_008053D0 in view mode):
+    /// the nation tiers of the working game (`save.nation_tiers`) plus the
+    /// new-game options it was started with (`save.new_game`).
+    SelectedLeagues {
+        rows: Vec<cm_domain::NationTierAssignment>,
+        options: Option<cm_domain::NewGameOptions>,
+    },
+    /// Latest Scores (menu cmd 0x418 → exe FUN_00700F20). Every played
+    /// fixture of the working game, most-recent first, built by
+    /// `cm_domain::latest_scores` from `save.season.fixtures`.
+    LatestScores {
+        rows: Vec<cm_domain::LatestScoreRow>,
+        scroll: usize,
+    },
     /// FIFA World Rankings (menu cmd 0x3f3 → exe launcher FUN_004A2190 +
     /// body FUN_004A2200). Rows come from `save.fifa_rankings`, computed at
     /// new-game and each year rollover by `fifa_rankings::compute`.
@@ -166,6 +187,18 @@ impl App {
                 screens::fifa_rankings(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
                 self.overlay_menu_bar();
             }
+            Screen::LatestScores { rows, scroll } => {
+                screens::latest_scores(&mut self.frame, &mut self.fonts, self.bg.as_ref(), rows, *scroll);
+                self.overlay_menu_bar();
+            }
+            Screen::SelectedLeagues { rows, options } => {
+                screens::selected_leagues(&mut self.frame, &mut self.fonts, self.bg.as_ref(), rows, options.as_ref());
+                self.overlay_menu_bar();
+            }
+            Screen::LeagueTable { view, scroll } => {
+                screens::league_table(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
+                self.overlay_menu_bar();
+            }
             Screen::WidgetPoolDebug { label, widgets } => {
                 screens::draw_widget_pool_debug(
                     &mut self.frame, &mut self.fonts, widgets, label,
@@ -217,6 +250,9 @@ impl App {
             Screen::Dashboard { .. }
             | Screen::News { .. }
             | Screen::FifaRankings { .. }
+            | Screen::LatestScores { .. }
+            | Screen::SelectedLeagues { .. }
+            | Screen::LeagueTable { .. }
             | Screen::WidgetPoolDebug { .. } => Pressed::None,
         }
     }
@@ -227,7 +263,12 @@ impl App {
         // takes clicks before the screen's own controls. Handle it first.
         if matches!(
             self.screen,
-            Screen::Dashboard { .. } | Screen::News { .. } | Screen::FifaRankings { .. }
+            Screen::Dashboard { .. }
+                | Screen::News { .. }
+                | Screen::FifaRankings { .. }
+                | Screen::LatestScores { .. }
+                | Screen::SelectedLeagues { .. }
+                | Screen::LeagueTable { .. }
         ) {
             if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                 let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
@@ -274,6 +315,8 @@ impl App {
         // `self.world` + `self.game`). Processed after the match releases the
         // screen borrow.
         let mut start_game: Option<(SelectLeaguesState, StartSeasonState)> = None;
+        // Deferred league-table open (club id) — set by the Dashboard arm.
+        let mut open_table: Option<u32> = None;
         // Deferred: Enter Name -> Select Club (needs self.world + self.game).
         let mut goto_select_club = false;
         // Deferred: club picked on Select Club -> install + Dashboard.
@@ -416,11 +459,29 @@ impl App {
                     None => {}
                 }
             }
+            Screen::Dashboard { view: cm_domain::DashboardView::Club(d), .. } => {
+                // The division line under the club name is the exe's entity link
+                // to the competition dashboard — open this division's table.
+                let (l, t, r, b) = screens::DASH_DIVISION_LINK;
+                if x >= l && x <= r && y >= t && y <= b {
+                    // Deferred: `self.screen` is borrowed by this match.
+                    open_table = Some(d.club_id);
+                }
+            }
             Screen::Dashboard { .. } => {
-                // The squad/info screen has no non-menu controls wired yet.
+                // Unemployed view — no non-menu controls.
             }
             Screen::FifaRankings { .. } => {
                 // Read-only table; navigation is via the menu bar (handled above).
+            }
+            Screen::LatestScores { .. } => {
+                // Read-only table; navigation is via the menu bar (handled above).
+            }
+            Screen::SelectedLeagues { .. } => {
+                // Read-only in-game view of the setup choices; menu bar navigates.
+            }
+            Screen::LeagueTable { .. } => {
+                // Read-only table; club rows are not entity links yet.
             }
             Screen::WidgetPoolDebug { .. } => {
                 // Debug view — clicks are inert.
@@ -430,6 +491,9 @@ impl App {
             self.status = Some("That news control is not yet implemented".into());
         }
         // The screen borrow is released here — safe to build the working game.
+        if let Some(club_id) = open_table {
+            self.open_league_table(club_id);
+        }
         if let Some((leagues, season)) = start_game {
             self.start_new_game(&leagues, &season);
         }
@@ -482,6 +546,57 @@ impl App {
         }
     }
 
+    /// Open the league table of the division `club_id` plays in — the exe's
+    /// competition dashboard table, reached via the club screen's division
+    /// link. Rows: `save.season.standings` filtered to the division.
+    fn open_league_table(&mut self, club_id: u32) {
+        if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+            match world.league_table_for(&game.save, club_id) {
+                Some(view) => {
+                    eprintln!("[table] {} — {} clubs", view.competition_name, view.rows.len());
+                    self.screen = Screen::LeagueTable { view, scroll: 0 };
+                }
+                None => {
+                    self.status = Some("No league table for this club's division".into());
+                }
+            }
+        }
+    }
+
+    /// Open the Selected Leagues view (menu cmd 0x431 → FUN_008053D0). In-game
+    /// this is the read-only view of the setup choices: every nation in the
+    /// working game with its tier (Foreground = selected league, Background,
+    /// Neither) and detailed-match flag, plus the new-game options.
+    fn open_selected_leagues(&mut self) {
+        if let Some(game) = self.game.as_ref() {
+            let rows = game.save.nation_tiers.clone();
+            let options = game.save.new_game.clone();
+            eprintln!(
+                "[leagues] {} nations ({} foreground)",
+                rows.len(),
+                game.save.foreground_count()
+            );
+            self.screen = Screen::SelectedLeagues { rows, options };
+        }
+    }
+
+    /// Open the Latest Scores table (menu cmd 0x418 → FUN_00700F20). Rows are
+    /// every played fixture of the working game, built by `latest_scores` from
+    /// `save.season.fixtures`, most-recent first, the manager's own club's
+    /// results highlighted.
+    fn open_latest_scores(&mut self) {
+        if let Some(game) = self.game.as_ref() {
+            let manager_club = game
+                .save
+                .humans
+                .get(game.save.active_human)
+                .and_then(|h| h.club);
+            let rows = cm_domain::latest_scores(&game.save, manager_club);
+            eprintln!("[scores] {} played fixtures", rows.len());
+            self.screen = Screen::LatestScores { rows, scroll: 0 };
+        }
+    }
+
     /// Open the FIFA World Rankings table (menu cmd 0x3f3). The exe's
     /// launcher FUN_004A2190 seeds the screen fields and its body
     /// FUN_004A2200 pages the nation table — ported as
@@ -514,6 +629,8 @@ impl App {
                 }
             }
             cmd::FIFA_RANKINGS => self.open_fifa_rankings(),
+            cmd::LATEST_SCORES => self.open_latest_scores(),
+            cmd::SELECTED_LEAGUES => self.open_selected_leagues(),
             cmd::ADD_MANAGER => {
                 // Add a new (unemployed) human — the exe's cmd 0x3fb. They join
                 // the hotseat; appointment happens via Apply/Take Control later.
@@ -861,6 +978,16 @@ impl ApplicationHandler for App {
                         *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
                         changed = true;
                     }
+                    Screen::LatestScores { rows, scroll } => {
+                        let max = rows.len().saturating_sub(screens::LATEST_SCORES_ROWS_VISIBLE);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
+                        changed = true;
+                    }
+                    Screen::LeagueTable { view, scroll } => {
+                        let max = view.rows.len().saturating_sub(screens::LEAGUE_ROWS_VISIBLE);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
+                        changed = true;
+                    }
                     _ => {}
                 }
                 if changed {
@@ -895,7 +1022,12 @@ impl ApplicationHandler for App {
                         // mechanism, so they always process a release.
                         let in_game = matches!(
                             self.screen,
-                            Screen::Dashboard { .. } | Screen::News { .. } | Screen::FifaRankings { .. }
+                            Screen::Dashboard { .. }
+                                | Screen::News { .. }
+                                | Screen::FifaRankings { .. }
+                                | Screen::LatestScores { .. }
+                                | Screen::SelectedLeagues { .. }
+                                | Screen::LeagueTable { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
@@ -1127,6 +1259,96 @@ fn dump(path: &str, which: &str) {
                     screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
                 }
             }
+            "table" => {
+                // Headless render of Arsenal's division table (day 0 unless
+                // CM_ADV_DAYS advances the tick so results populate it).
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    if let Ok(n) = std::env::var("CM_ADV_DAYS").unwrap_or_default().parse::<u32>() {
+                        save.tick_days(n);
+                        eprintln!("[dump] advanced {n} days -> {}", save.date.iso());
+                    }
+                    if let Some(view) = world.league_table_for(&save, 676) {
+                        let scroll = std::env::var("CM_SCROLL").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                        eprintln!("[dump] table: {} — {} clubs", view.competition_name, view.rows.len());
+                        // Diagnostics: why a division might resolve but match no standings rows.
+                        let members = world.club_members_of_competition(view.competition_id);
+                        let member_ids: std::collections::BTreeSet<u32> = members.iter().map(|(id, _)| *id).collect();
+                        let overlap = save.season.standings.iter().filter(|s| member_ids.contains(&s.club_id)).count();
+                        let fg_ids = world.competition_ids_for_nations(&["England".to_string()]);
+                        eprintln!(
+                            "[dump] division_id={} members={} standings={} overlap={} foreground_comp_ids={:?} first_standing_ids={:?}",
+                            view.competition_id, members.len(), save.season.standings.len(), overlap, fg_ids,
+                            save.season.standings.iter().take(5).map(|s| (s.club_id, s.club_name.clone())).collect::<Vec<_>>()
+                        );
+                        screens::league_table(&mut frame, &mut fonts, bg.as_ref(), &view, scroll);
+                        let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                        let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                        screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
+                    }
+                }
+            }
+            "selected" => {
+                // Headless render of the Selected Leagues view for the England /
+                // Arsenal test game (no tick needed).
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    eprintln!("[dump] selected leagues: {} nations, {} foreground", save.nation_tiers.len(), save.foreground_count());
+                    screens::selected_leagues(&mut frame, &mut fonts, bg.as_ref(), &save.nation_tiers, save.new_game.as_ref());
+                    let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                    let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                    screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
+                }
+            }
+            "scores" => {
+                // Headless render of the Latest Scores table after advancing the
+                // same England / Arsenal test game so fixtures are played.
+                let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
+                if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
+                    let opts = cm_domain::NewGameOptions {
+                        selected_nations: vec!["England".into()],
+                        background_nations: vec![], use_real_players: true,
+                        attribute_masking: true, start_year: 2001,
+                    };
+                    let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
+                    let h = save.add_manager(cm_domain::ManagerIdentity {
+                        first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into(),
+                    });
+                    save.install_manager_at_club(h, 676, Some(60));
+                    save.switch_active(h);
+                    let n = std::env::var("CM_ADV_DAYS").ok().and_then(|v| v.parse::<u32>().ok()).unwrap_or(40);
+                    save.tick_days(n);
+                    let rows = cm_domain::latest_scores(&save, Some(676));
+                    let scroll = std::env::var("CM_SCROLL").ok().and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                    eprintln!("[dump] scores after {n} days: {} played fixtures", rows.len());
+                    screens::latest_scores(&mut frame, &mut fonts, bg.as_ref(), &rows, scroll);
+                    let bar = cm_domain::menu::MenuBar::in_game(&world, &save);
+                    let open = std::env::var("CM_MENU_OPEN").ok().and_then(|v| v.parse::<usize>().ok());
+                    screens::menu_sidebar(&mut frame, &mut fonts, &bar, open, &save.date, save.simulation.phase);
+                }
+            }
             "news" => {
                 let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
                 if let Ok(world) = cm_db::World::read_rust_db_dir(std::path::Path::new(&dir)) {
@@ -1252,6 +1474,23 @@ fn main() {
         Some("fifa") => {
             app.boot_dashboard();
             app.open_fifa_rankings();
+        }
+        Some("table") => {
+            app.boot_dashboard();
+            app.open_league_table(676); // Arsenal's division
+        }
+        Some("selected") => {
+            app.boot_dashboard();
+            app.open_selected_leagues();
+        }
+        Some("scores") => {
+            // Same England / Arsenal test game, advanced so fixtures are played.
+            app.boot_dashboard();
+            if let Some(game) = app.game.as_mut() {
+                let n = std::env::var("CM_ADV_DAYS").ok().and_then(|v| v.parse::<u32>().ok()).unwrap_or(40);
+                game.save.tick_days(n);
+            }
+            app.open_latest_scores();
         }
         Some(v @ ("news-widgets" | "dash-widgets")) => app.boot_widget_pool_debug(v),
         _ => {}
