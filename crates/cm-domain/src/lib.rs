@@ -176,6 +176,7 @@ pub mod agevak_reference;
 pub mod agevak_enums;
 pub mod agevak_position_weights;
 pub mod agevak_extensions;
+pub mod agevak_sav_reader;
 pub mod menu;
 pub mod stadium;
 pub mod typed_records;
