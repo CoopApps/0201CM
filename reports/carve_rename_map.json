@@ -2117,7 +2117,17 @@
     "0x004abff0": "dispatch_screen_with_side_effects (FUN_004ac150 wrapper + min-goals/max-attr seeding for tabs 8 and 0x12)",
     "0x004ac150": "screen_registration_body (called by dispatch_screen_with_side_effects)",
     "0x004b3970": "player_history_alloc_new_record",
-    "0x004b3af0": "player_history_alloc_new_record_variant"
+    "0x004b3af0": "player_history_alloc_new_record_variant",
+    "0x004aa9a0": "format_team_attribute (17-case string-formatted team-history reader with reputation gates) [batch33]",
+    "0x004ab5e0": "player_history_filter_copy (dense-copy dropping trailing sentinel rows; form-window attrs skip drop pass) [batch33]",
+    "0x004ab880": "team_history_filter_copy (dense-copy with optional flag mask filter) [batch33]",
+    "0x004ac150": "emit_season_record_news (1380-line news headline emitter for the 22 SeasonRecordSlot values; metadata catalogued in batch34, full body deferred — needs FUN_004b5120/FUN_004b5360 primitives)",
+    "0x004ae9e0": "two_short_equals (2-line: packed u32 vs [i16;2] pair equality; used by streak 'active this year' gates) [batch34]",
+    "0x004b5120": "news_list_add (add formatted headline to news queue)",
+    "0x004b5360": "news_link_entity (link current news item to a nation/team/player record for reader filtering)",
+    "0x00527c90": "player_full_name_format (renders first+second+common name)",
+    "0x00529e90": "age_format (renders 'aged NN' from birth_date + current_date)",
+    "0x005284e0": "player_nation_link_check (returns non-zero if player has a nation ref worth linking on news article)"
   },
   },
   "find_screens.cpp": {
