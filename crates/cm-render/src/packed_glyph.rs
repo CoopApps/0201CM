@@ -19,15 +19,36 @@
 
 use crate::packed::PackedSurface;
 
-/// One glyph — width in pixels + a 4-bit nibble-packed bitmap of
-/// `ceil(width * height / 2)` bytes. `height` is carried by the parent
-/// `PixelFont` (the exe stores it once per font as the first int).
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// One glyph — width in pixels + a 4-bit nibble-packed bitmap.
+///
+/// The exe's char record is 5 ints wide: `[width, ?, kern_b, kern_c,
+/// bitmap_ptr]`. We name the two "unknown" middle ints per their use
+/// in the pair-wise kerning function `FUN_005cf4d0`:
+/// - `kern_b` is subtracted from the base when THIS char is the
+///   next-to-be-drawn (i.e. it's the "left bearing"-like value).
+/// - `kern_c` is subtracted from the base when THIS char was the
+///   previous char (i.e. it's the "right bearing"-like value).
+/// The first "unknown" int (unk_a) is not read by any traditional-
+/// font code path we've decoded; kept as raw for future use.
+///
+/// Row bytes = `ceil(width / 2)` — rows do NOT share bytes across
+/// boundaries; a row that ends on the high nibble has one byte of
+/// padding. (Was `ceil(width * height / 2)` earlier — that under-reads
+/// for odd widths, so 'l' and '.' lost their bottom rows.)
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Glyph {
     pub width: i32,
-    /// Row-major, high-nibble first. A row that ends on the high nibble
-    /// (odd `width`) advances the byte pointer at row end — matches the
-    /// exe's post-loop `if (!bVar25) pbVar22 += 1`.
+    /// `unk_a` in the record; not touched by draw or kern in the
+    /// traditional-font path. Kept so a full re-export matches disk.
+    pub kern_a: i32,
+    /// `unk_b` in the record; subtracted from kern base when this
+    /// char is the next-to-draw.
+    pub kern_b: i32,
+    /// `unk_c` in the record; subtracted from kern base when this
+    /// char was the previous-drawn.
+    pub kern_c: i32,
+    /// Row-major, high-nibble first, one byte per (width/2 rounded up)
+    /// pixel-pair, no cross-row nibble sharing.
     pub bitmap: Vec<u8>,
 }
 
@@ -44,6 +65,42 @@ impl PixelFont {
     pub fn empty(height: i32) -> Self {
         Self { height, glyphs: (0..256).map(|_| None).collect() }
     }
+
+    /// Space (`0x20`) glyph's width. Used by `kern_between` as the
+    /// base for the (space_width * 3) / 4 baseline. Exe reads this at
+    /// `*(font_base + 0x284)` — the first int of char record 0x20 —
+    /// which IS the space glyph's `width` field.
+    pub fn space_width(&self) -> i32 {
+        self.glyphs.get(0x20).and_then(|g| g.as_ref()).map(|g| g.width).unwrap_or(0)
+    }
+}
+
+/// Byte-exact port of `FUN_005cf4d0` (152 bytes, 54 instructions) —
+/// the pair-wise kerning function. Called between adjacent glyphs by
+/// the exe's `draw_string` and added to the current pen along with the
+/// just-drawn glyph's width. Returns 0 at end-of-string / null-string /
+/// font -1 / negative result.
+///
+/// Formula: `max(0, (space_width * 3) / 4 - curr.kern_b - prev.kern_c)`.
+/// The `|` → space (`0x20`) substitution matches the exe's asm at
+/// `005cf512..005cf526`.
+pub fn kern_between(font: &PixelFont, text: &[u8], idx: usize) -> i32 {
+    if idx == 0 || idx > text.len() {
+        return 0;
+    }
+    let curr = text.get(idx).copied().unwrap_or(0);
+    if curr == 0 {
+        return 0;
+    }
+    let prev = text[idx - 1];
+    let sub = |b: u8| -> u8 { if b == b'|' { b' ' } else { b } };
+    let curr = sub(curr) as usize;
+    let prev = sub(prev) as usize;
+    let space_w = font.space_width();
+    let base = (space_w * 3) / 4;
+    let curr_kb = font.glyphs.get(curr).and_then(|g| g.as_ref()).map(|g| g.kern_b).unwrap_or(0);
+    let prev_kc = font.glyphs.get(prev).and_then(|g| g.as_ref()).map(|g| g.kern_c).unwrap_or(0);
+    (base - curr_kb - prev_kc).max(0)
 }
 
 /// Draw one glyph at `(dst_x, dst_y)` onto `surface`. Returns the pen's
@@ -151,15 +208,26 @@ pub fn draw_text(
     text: &[u8],
     colour: u16,
 ) -> i32 {
+    // Match the exe's outer loop in FUN_005ceaa0: iterate chars, draw
+    // each glyph, then advance pen by `kern_between(prev, curr) +
+    // glyph.width`. The exe starts iVar21 (char index) at 1 and
+    // increments; the kern call uses iVar21 as the index for
+    // `string[idx]` = the just-drawn char, `string[idx-1]` is
+    // meaningless on the very first call — but exe reads it anyway
+    // and gets whatever's in memory. In practice callers ensure a
+    // clean prev so first char's kern is well-defined. We use idx
+    // starting at 1 (matches exe) and pass the string; kern_between
+    // does the same bytes-based lookback.
     let mut pen = dst_x;
-    for &raw in text {
+    for (i, &raw) in text.iter().enumerate() {
         let b = if raw == b'|' { b' ' } else { raw };
         if b < 0x20 {
             continue;
         }
         if let Some(Some(g)) = font.glyphs.get(b as usize) {
             let advance = draw_glyph(surface, pen, dst_y, font.height, g, colour);
-            pen += advance;
+            let k = kern_between(font, text, i + 1);
+            pen += advance + k;
         }
     }
     pen
@@ -171,12 +239,12 @@ mod tests {
 
     // Solid 2x2 glyph: 4 nibbles = 0xff, 0xff → 1 byte per row × 2 rows.
     fn solid_2x2() -> Glyph {
-        Glyph { width: 2, bitmap: vec![0xff, 0xff] }
+        Glyph { width: 2, bitmap: vec![0xff, 0xff], ..Default::default() }
     }
 
     // Empty 2x2 glyph: all-zero.
     fn empty_2x2() -> Glyph {
-        Glyph { width: 2, bitmap: vec![0x00, 0x00] }
+        Glyph { width: 2, bitmap: vec![0x00, 0x00], ..Default::default() }
     }
 
     #[test]
@@ -211,7 +279,7 @@ mod tests {
         // pointer advances (unused low nibble becomes padding).
         //   row 0 nibbles = f, f, 0  →  bytes 0..2 = 0xff, 0x00 (pad),
         //   row 1 nibbles = 0, f, f  →  bytes 2..4 = 0x0f, 0xf0 (pad).
-        let g = Glyph { width: 3, bitmap: vec![0xff, 0x00, 0x0f, 0xf0] };
+        let g = Glyph { width: 3, bitmap: vec![0xff, 0x00, 0x0f, 0xf0], ..Default::default() };
         let mut s = PackedSurface::rgb555(4, 3);
         let c = s.pack_rgb(0, 0, 0xff);
         draw_glyph(&mut s, 0, 0, 2, &g, c);
@@ -233,7 +301,7 @@ mod tests {
         // 1×1 glyph with alpha nibble = 8/15 (~53%). Destination white,
         // glyph colour black → result ≈ (0*8 + 255*7)/15 = 119 per
         // channel, then repacked in RGB555.
-        let g = Glyph { width: 1, bitmap: vec![0x80] };
+        let g = Glyph { width: 1, bitmap: vec![0x80], ..Default::default() };
         let mut s = PackedSurface::rgb555(1, 1);
         let white = s.pack_rgb(0xff, 0xff, 0xff);
         s.buf[0] = white;
@@ -252,8 +320,8 @@ mod tests {
     #[test]
     fn draw_text_walks_bytes_and_substitutes_pipe_for_space() {
         // Font with only glyphs for '.' (width 1, solid) and space (width 3, empty).
-        let dot = Glyph { width: 1, bitmap: vec![0xf0] };
-        let sp = Glyph { width: 3, bitmap: vec![0x00, 0x00] };
+        let dot = Glyph { width: 1, bitmap: vec![0xf0], ..Default::default() };
+        let sp = Glyph { width: 3, bitmap: vec![0x00, 0x00], ..Default::default() };
         let mut font = PixelFont::empty(1);
         font.glyphs[b'.' as usize] = Some(dot);
         font.glyphs[b' ' as usize] = Some(sp);

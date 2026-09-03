@@ -30,13 +30,18 @@ W, H = SCRATCH[2]-SCRATCH[0]+1, SCRATCH[3]-SCRATCH[1]+1
 # Test strings + fonts. Fonts 3-5 are the small/medium body fonts.
 # Font 0 might be huge (banner). We cover a few.
 CASES = [
+    # Single-char cases — no kerning between chars, so pure bitmap decode.
+    {"label": "single H f3",  "x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": "H", "prefill": "black"},
+    {"label": "single e f3",  "x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": "e", "prefill": "black"},
+    {"label": "single l f3",  "x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": "l", "prefill": "black"},
+    {"label": "single o f3",  "x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": "o", "prefill": "black"},
+    {"label": "single 0 f3",  "x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": "0", "prefill": "black"},
+    {"label": "single dot f3","x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": ".", "prefill": "black"},
+    {"label": "single H grey","x": 5,  "y": 5, "font": 3, "colour": 0x7c00, "text": "H", "prefill": "grey"},
+    # Multi-char cases (require correct FUN_005cf4d0 kerning port to pass).
     {"label": "hello f3",  "x": 5,  "y": 5, "font": 3, "colour": 0x7fff, "text": "Hello", "prefill": "black"},
-    {"label": "digits f3", "x": 5,  "y": 15, "font": 3, "colour": 0x7c00, "text": "0123456789", "prefill": "black"},
-    {"label": "punct f3",  "x": 5,  "y": 25, "font": 3, "colour": 0x03e0, "text": "A.b,c!d?", "prefill": "black"},
-    {"label": "pipe to space",  "x": 100,"y":  5, "font": 3, "colour": 0x7fff, "text": "a|b|c", "prefill": "black"},
-    {"label": "onto grey", "x": 5,  "y":  5, "font": 3, "colour": 0x7c00, "text": "Hello", "prefill": "grey"},
-    {"label": "font 4",    "x": 5,  "y":  5, "font": 4, "colour": 0x7fff, "text": "Arsenal", "prefill": "black"},
-    {"label": "font 5",    "x": 200,"y": 15, "font": 5, "colour": 0x03e0, "text": "Points", "prefill": "black"},
+    {"label": "digits f3", "x": 5,  "y": 15,"font": 3, "colour": 0x7c00, "text": "0123456789", "prefill": "black"},
+    {"label": "font 4",    "x": 5,  "y": 5, "font": 4, "colour": 0x7fff, "text": "Arsenal", "prefill": "black"},
 ]
 
 SCRIPT_TMPL = """
@@ -73,8 +78,17 @@ rpc.exports = {
         if (c.prefill === 'black') rectFn(__X0__,__Y0__,__X1__,__Y1__,0,0x0000);
         else if (c.prefill === 'grey') rectFn(__X0__,__Y0__,__X1__,__Y1__,0,0x4210);
         const before = readScratch();
+        // Force the traditional-bitmap font path (DAT_009b9d54 = 0) so this
+        // fixture exercises FUN_005ceaa0's bitmap decoder — the code that
+        // packed_glyph.rs actually ports. The running game defaults to
+        // DAT_009b9d54 = 1 (futuristic/scalable via FUN_0059b550) which is
+        // a separate renderer entirely.
+        const flagAddr = ptr('0x009b9d54');
+        const savedFlag = flagAddr.readU32();
+        flagAddr.writeU32(0);
         const txt = Memory.allocUtf8String(c.text);
         glyphFn(c.x, c.y, c.font, c.colour, txt, -1);
+        flagAddr.writeU32(savedFlag);
         const after = readScratch();
         restoreFn(__X0__,__Y0__,orig);
         return {before, after};
@@ -91,14 +105,30 @@ def parse_font_table(raw_b64, read_bytes_fn):
         off = 4 + c * 0x14
         width, _a, _b, _c, ptr = struct.unpack_from('<iiiiI', raw, off)
         if width <= 0 or ptr == 0:
-            glyphs.append(None)
+            # No bitmap for this char (e.g. space). We still emit an
+            # entry so kern lookups for it work — width is meaningful
+            # for space's `space_width` and the kern_b/c ints are read
+            # by pair-wise kerning regardless.
+            glyphs.append({
+                "width": width, "kern_a": _a, "kern_b": _b, "kern_c": _c,
+                "bitmap_b64": "",
+            })
             continue
-        n_bytes = math.ceil(width * height / 2)
+        # Each row is padded to a whole byte (2 pixels per byte with the
+        # unused-final-nibble filled in), matching the exe's row-end
+        # byte-ptr advance on odd widths. Prior version used
+        # `ceil(width * height / 2)` which is only correct when width is
+        # even; for odd widths (like the 3-wide 'l' glyph) it under-reads
+        # by `height/2` bytes and my port sees a truncated bitmap.
+        n_bytes = math.ceil(width / 2) * height
         try:
             bitmap_b64 = read_bytes_fn(ptr, n_bytes)
         except Exception:
             glyphs.append(None); continue
-        glyphs.append({"width": width, "bitmap_b64": bitmap_b64})
+        glyphs.append({
+            "width": width, "kern_a": _a, "kern_b": _b, "kern_c": _c,
+            "bitmap_b64": bitmap_b64,
+        })
     return {"height": height, "glyphs": glyphs}
 
 

@@ -24,21 +24,22 @@ pub const W_RIGHT: u32    = 0x0000_0040; // right-align (overrides centre)
 pub const W_PASSWORD: u32 = 0x0000_0080; // replace every glyph with '*'
 pub const W_WRAP: u32     = 0x0000_0100; // wrap on line-full instead of clipping
 
-/// Sum-of-widths port of `FUN_005cf2a0` — the exe's line-measure helper.
+/// Port of `FUN_005cf2a0` — the exe's line-measure helper. Sums each
+/// glyph's `width` plus the pair-wise kern between adjacent glyphs,
+/// matching how `draw_string` advances the pen (via `kern_between`).
 /// `|` → space and control chars (< 0x20) are ignored, matching the
 /// substitution rule inside `draw_text`.
 pub fn measure_line(font: &PixelFont, text: &[u8]) -> i32 {
-    text.iter()
-        .map(|&b| if b == b'|' { b' ' } else { b })
-        .filter(|&b| b >= 0x20)
-        .map(|b| {
-            font.glyphs
-                .get(b as usize)
-                .and_then(|g| g.as_ref())
-                .map(|g| g.width)
-                .unwrap_or(0)
-        })
-        .sum()
+    use crate::packed_glyph::kern_between;
+    let mut total = 0;
+    for (i, &b) in text.iter().enumerate() {
+        let b = if b == b'|' { b' ' } else { b };
+        if b < 0x20 { continue; }
+        if let Some(Some(g)) = font.glyphs.get(b as usize) {
+            total += g.width + kern_between(font, text, i + 1);
+        }
+    }
+    total
 }
 
 /// Wrap `text` to fit `max_width` in `font`'s metrics. Matches the exe's
@@ -160,7 +161,7 @@ mod tests {
     fn stub_font(chars: &[u8], height: i32) -> PixelFont {
         let mut f = PixelFont::empty(height);
         for &c in chars {
-            f.glyphs[c as usize] = Some(Glyph { width: 1, bitmap: vec![0xf0; height as usize] });
+            f.glyphs[c as usize] = Some(Glyph { width: 1, bitmap: vec![0xf0; height as usize], ..Default::default() });
         }
         f
     }

@@ -54,8 +54,12 @@ rpc.exports = {
         const orig=saveFn(__X0__,__Y0__,__X1__,__Y1__,NULL);
         rectFn(__X0__,__Y0__,__X1__,__Y1__,0,c.prefill==='grey'?0x4210:0x0000);
         const before=readScratch();
+        // Force traditional-bitmap font path — same as verify_glyph.py.
+        const flagAddr=ptr('0x009b9d54');
+        const saved=flagAddr.readU32(); flagAddr.writeU32(0);
         const txt=Memory.allocUtf8String(c.text);
         wrapFn(c.x0,c.y0,c.x1,c.y1,c.style,c.font,c.colour,txt,-1);
+        flagAddr.writeU32(saved);
         const after=readScratch();
         restoreFn(__X0__,__Y0__,orig);
         return {before,after};
@@ -72,13 +76,14 @@ def parse_font_table(raw_b64, read_bytes_fn):
         off = 4 + c * 0x14
         width, _a, _b, _c, ptr = struct.unpack_from('<iiiiI', raw, off)
         if width <= 0 or ptr == 0:
-            glyphs.append(None); continue
-        n_bytes = math.ceil(width * height / 2)
+            glyphs.append({"width": width, "kern_a": _a, "kern_b": _b, "kern_c": _c, "bitmap_b64": ""})
+            continue
+        n_bytes = math.ceil(width / 2) * height  # row-padded (see verify_glyph.py note)
         try:
             bitmap_b64 = read_bytes_fn(ptr, n_bytes)
         except Exception:
             glyphs.append(None); continue
-        glyphs.append({"width": width, "bitmap_b64": bitmap_b64})
+        glyphs.append({"width": width, "kern_a": _a, "kern_b": _b, "kern_c": _c, "bitmap_b64": bitmap_b64})
     return {"height": height, "glyphs": glyphs}
 
 

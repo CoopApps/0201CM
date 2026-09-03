@@ -111,7 +111,7 @@ impl FontDump {
                     .decode(&g.bitmap_b64)
                     .unwrap_or_default();
                 if i < f.glyphs.len() {
-                    f.glyphs[i] = Some(Glyph { width: g.width, bitmap });
+                    f.glyphs[i] = Some(Glyph { width: g.width, bitmap, ..Default::default() });
                 }
             }
         }

@@ -26,7 +26,13 @@ struct Scratch { x0: i32, y0: i32, width: i32, height: i32 }
 struct FontDump { height: i32, glyphs: Vec<Option<GlyphDump>> }
 
 #[derive(Deserialize)]
-struct GlyphDump { width: i32, bitmap_b64: String }
+struct GlyphDump {
+    width: i32,
+    #[serde(default)] kern_a: i32,
+    #[serde(default)] kern_b: i32,
+    #[serde(default)] kern_c: i32,
+    bitmap_b64: String,
+}
 
 #[derive(Deserialize)]
 struct Case {
@@ -53,7 +59,12 @@ fn build_font(dump: &FontDump) -> PixelFont {
     for (i, g) in dump.glyphs.iter().enumerate() {
         if let Some(g) = g {
             if i < f.glyphs.len() {
-                f.glyphs[i] = Some(Glyph { width: g.width, bitmap: decode_bytes(&g.bitmap_b64) });
+                let bitmap = if g.bitmap_b64.is_empty() { Vec::new() } else { decode_bytes(&g.bitmap_b64) };
+                f.glyphs[i] = Some(Glyph {
+                    width: g.width,
+                    kern_a: g.kern_a, kern_b: g.kern_b, kern_c: g.kern_c,
+                    bitmap,
+                });
             }
         }
     }
