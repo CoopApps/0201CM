@@ -39,6 +39,7 @@ pub mod packed_stipples;
 pub mod packed_icon_loader;
 pub mod packed_widget_globals;
 pub mod screen_nav_back_next;
+pub mod dispatcher;
 pub mod screens_faithful;
 pub mod packed_text;
 pub mod packed_sprintf;
