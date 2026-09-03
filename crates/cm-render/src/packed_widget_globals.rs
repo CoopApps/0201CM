@@ -116,11 +116,17 @@ impl PixelFormat {
 //          set DAT_00acda6c = 1.
 //        Else keep the widget's private bitmap, don't touch cache.
 //
-// The exe never DECREMENTS the counter (searched every text ref to
-// 0xacda6c) — it's a one-shot install lock, not a refcount. Once set
-// to 1 the cache never reinstalls again in the exe's lifetime. Our
-// port matches that (add a `reset_widget_icon_cache()` helper for
-// tests only).
+// The counter IS decremented by the widget-release peers:
+//   * FUN_005d8260:005d8324 — `dec word [0xacda6c]` on the "same name"
+//     release branch (widget being torn down still owns the cached
+//     bitmap; drop its reference).
+//   * FUN_005d8410:005d847f — same, on the terminal release branch.
+//   * FUN_00548de0:00548f44 — zeroes the slot outright when the whole
+//     widget pool is being freed and the cache hasn't been re-referenced.
+// So this is a real refcount, not a one-shot install lock: once every
+// referencing widget releases, the counter reaches zero and a later
+// miss can reinstall the slot. See `release_widget` /
+// `release_widget_full` in `packed_widget.rs` for the ported paths.
 // ---------------------------------------------------------------------
 
 use crate::packed_icon_loader::IconBitmap;

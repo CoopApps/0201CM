@@ -30,6 +30,25 @@ use crate::packed_widget_globals::{
 };
 use crate::widget_pool::GuiRecordPool;
 
+/// Decoded pre-rendered icon bitmap carried in `widget.cached_text`.
+///
+/// The exe's `[ebp+0x5c]` is a pointer to an `IconBitmap` whose header
+/// dwords `hdr[0x00]` (width) and `hdr[0x04]` (height) describe the
+/// bitmap's true extent. Block E's restore (`FUN_005cda90`) reads those
+/// dims from that record, not from the widget's own rect — so the Rust
+/// port carries them alongside the pixels. See
+/// `crate::packed_icon_loader::IconBitmap` (hdr fields at asm 5cdcaf /
+/// 5cdcb5).
+#[derive(Debug, Clone)]
+pub struct CachedIcon {
+    /// hdr[0x00] — bitmap width in pixels.
+    pub width: u32,
+    /// hdr[0x04] — bitmap height in pixels.
+    pub height: u32,
+    /// Packed 16bpp pixels, `width * height` entries.
+    pub pixels: Vec<u16>,
+}
+
 /// Widget record — the `ebp` object of `FUN_005d7aa0`. Only fields the
 /// renderer reads are exposed; unrelated fields on the exe's struct
 /// (event-handler vtable pointers, hit-testing rects, parent/child
@@ -78,10 +97,17 @@ pub struct Widget {
     /// so a subsequent hover-flicker can restore behind the widget.
     pub saved_bg: Option<SavedRect>,
 
-    /// `+0x5c` — cached pre-rendered icon bitmap pixels. Populated by
-    /// block D from either the global cache (`DAT_00ACDB74`) or a
+    /// `+0x5c` — cached pre-rendered icon bitmap (dims + pixels). Populated
+    /// by block D from either the global cache (`DAT_00ACDB74`) or a
     /// fresh `FUN_005cdb50` disk read.
-    pub cached_text: Option<Vec<u16>>,
+    ///
+    /// The exe stores a pointer here to an `IconBitmap` whose hdr[0x00] /
+    /// hdr[0x04] carry the true bitmap dimensions; block E's
+    /// `FUN_005cda90` reads those dims from the record itself, NOT from
+    /// the widget's own rect. So the Rust port must carry the same dims
+    /// alongside the pixels — otherwise an icon whose bitmap size differs
+    /// from the widget rect paints wrong.
+    pub cached_text: Option<CachedIcon>,
 
     /// `+0x72` — primary colour word. Blocks G/H swap it against
     /// `DAT_00AD6B22` → `DAT_00ACDEC8` (colour-key).
@@ -126,9 +152,9 @@ pub struct WidgetGlobals {
 /// is empty (asm treats those the same: `je 0x5d7b7f` from the empty
 /// check joins the else-branch of the strcmp).
 ///
-/// Returns the pixels stashed into `widget.cached_text` (or None if
+/// Returns the icon record stashed into `widget.cached_text` (or None if
 /// the loader failed).
-fn icon_cache_miss_install(widget: &mut Widget) -> Option<Vec<u16>> {
+fn icon_cache_miss_install(widget: &mut Widget) -> Option<CachedIcon> {
     use crate::packed_widget_globals::{DAT_00ACDA6C, DAT_00ACDA70, DAT_00ACDB74};
     // 005d7b7f  push 0                      ; cache_slot arg = NULL
     // 005d7b81  push edi                    ; filename = &widget.label
@@ -138,7 +164,10 @@ fn icon_cache_miss_install(widget: &mut Widget) -> Option<Vec<u16>> {
     // 005d7b8d  test eax, eax
     // 005d7b8f  je  0x5d7bde                 ; failed → skip install
     let bmp = crate::packed_icon_loader::load_icon_bitmap(&widget.label, None)?;
-    let stashed = bmp.pixels.clone();
+    // hdr[0x00]/hdr[0x04] on the loaded record — carried alongside the
+    // pixels so block E's restore uses the icon's real extent, not the
+    // widget rect's.
+    let stashed = CachedIcon { width: bmp.width, height: bmp.height, pixels: bmp.pixels.clone() };
     widget.cached_text = Some(stashed.clone());
 
     // 005d7b91  cmp word [0xacda6c], 0       ; hold_counter == 0 ?
@@ -188,6 +217,167 @@ fn icon_cache_miss_install(widget: &mut Widget) -> Option<Vec<u16>> {
     Some(stashed)
 }
 
+// ============================================================================
+// Widget release paths — FUN_005d8410, FUN_005d8260, FUN_00548de0 fragment.
+//
+// These are the peers of the renderer that DECREMENT DAT_00ACDA6C, i.e.
+// what lets the icon cache actually turn over. Ported here so the
+// counter has a working refcount-drop path in the Rust port.
+// ============================================================================
+
+/// Compare the widget's label against the cached filename slot
+/// `DAT_00ACDA70`. Shared strcmp used by FUN_005d8260 (005d82f7..8320)
+/// and FUN_005d8410 (005d843e..8467). Returns `true` if they match
+/// (asm branch: `eax == 0` after the compare).
+fn cached_filename_matches(label: &[u8]) -> bool {
+    let cache_name_guard = crate::packed_widget_globals::DAT_00ACDA70.lock().unwrap();
+    let a = &label[..];
+    let b: &[u8] = &cache_name_guard[..];
+    let an = a.iter().position(|&x| x == 0).unwrap_or(a.len());
+    let bn = b.iter().position(|&x| x == 0).unwrap_or(b.len());
+    an == bn && a[..an] == b[..bn]
+}
+
+/// Direct port of `FUN_005d8410` (0x005d8410..0x005d848f, 49 instructions).
+/// This is the standalone widget-release path — called when a widget is
+/// torn down.
+///
+/// Behaviour:
+///   1. `[edi+0x4c]` (saved_bg): if non-null, free it and clear the slot.
+///      (asm 005d8414..005d8424 — `call 0x5cdd30`, our port drops the
+///      Option.)
+///   2. `[edi+0x5c]` (cached_text): if non-null, compare widget.label
+///      against `DAT_00ACDA70`:
+///         * match: `dec word [0xacda6c]` — this widget was one of the
+///           refcounted holders (asm 005d847f).
+///         * differ: `call 0x5cdd30` on the widget's own bitmap — it
+///           held a private copy (miss-with-held-cache path); freed
+///           independently. (asm 005d846c..005d8475)
+///      Either way, clear `[edi+0x5c]`.
+///
+/// The Rust port maps the `call 0x5cdd30` frees to dropping the Option
+/// (the allocation is Rust-owned).
+pub fn release_widget(widget: &mut Widget) {
+    // 005d8414  mov eax, dword ptr [edi + 0x4c]  ; saved_bg
+    // 005d8417  test eax, eax
+    // 005d8419  je 0x5d842b
+    // 005d841b  push eax
+    // 005d841c  call 0x5cdd30                    ; free_bitmap(saved_bg)
+    // 005d8421  add esp, 4
+    // 005d8424  mov dword ptr [edi + 0x4c], 0    ; saved_bg = NULL
+    widget.saved_bg = None;
+
+    // 005d842b  mov ebp, dword ptr [edi + 0x5c]  ; cached_text
+    // 005d842e  test ebp, ebp
+    // 005d8430  je 0x5d848d                      ; nothing to do
+    if widget.cached_text.is_none() {
+        return;
+    }
+
+    // 005d8432..005d8467 — strcmp label vs DAT_00ACDA70
+    // 005d8469  pop esi
+    // 005d846a  je 0x5d847f                      ; equal → dec-counter branch
+    if cached_filename_matches(&widget.label) {
+        // 005d847f  dec word [0xacda6c]
+        // 005d8486  mov dword ptr [edi + 0x5c], 0
+        crate::packed_widget_globals::DAT_00ACDA6C
+            .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    } else {
+        // 005d846c  push ebp
+        // 005d846d  call 0x5cdd30                ; free_bitmap(private copy)
+        // 005d8472  add esp, 4
+        // 005d8475  mov dword ptr [edi + 0x5c], 0
+        // (Rust: drop the Option — the private CachedIcon deallocates
+        //  automatically on assignment to None.)
+    }
+    widget.cached_text = None;
+}
+
+/// The label-rename branch of `FUN_005d8260` (0x005d8260..0x005d8406).
+/// The full function does more than release — it also copies a new
+/// filename argument into the widget label, then re-invokes the
+/// renderer. We port the release fragment (asm 005d82db..005d8336) here
+/// so callers wiring up the widget-rename flow have the counter-drop
+/// path available. The rest of FUN_005d8260 (rename copy + repaint) is
+/// a caller-orchestrator concern — port pending in a separate commit
+/// alongside its wiring.
+///
+/// Behaviour (release fragment, asm 005d82db..005d8336):
+///   Only runs when `[ebp+0xc] & 0x400` is set (icon-owner flag) AND
+///   `[ebp+0x5c] != 0` (a bitmap is actually cached).
+///   Then, strcmp label vs DAT_00ACDA70:
+///     * match: `dec word [0xacda6c]` (005d8324).
+///     * differ: `call 0x5cdd30` on the widget's private bitmap.
+///   Clears `[ebp+0x5c]` unconditionally.
+pub fn release_widget_icon_before_rename(widget: &mut Widget) {
+    // 005d82db  mov eax, dword ptr [ebp + 0xc]
+    // 005d82df  test ah, 4                       ; flags & 0x400
+    // 005d82e3  je 0x5d8339                      ; skip if not icon-owner
+    if (widget.flags & 0x400) == 0 {
+        return;
+    }
+    // 005d82e5  mov edi, dword ptr [ebp + 0x5c]  ; cached_text
+    // 005d82e8  cmp edi, ebx (=0)
+    // 005d82ea  je 0x5d8339                      ; nothing cached
+    if widget.cached_text.is_none() {
+        return;
+    }
+    // 005d82ec..005d8320  strcmp label vs DAT_00ACDA70
+    // 005d8320  cmp eax, ebx
+    // 005d8322  jne 0x5d832d                     ; differ → free-private branch
+    if cached_filename_matches(&widget.label) {
+        // 005d8324  dec word [0xacda6c]
+        crate::packed_widget_globals::DAT_00ACDA6C
+            .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    }
+    // else: 005d832d  push edi ; call 0x5cdd30 ; add esp, 4
+    // (Rust: dropping the Option below deallocates the private copy.)
+    // 005d8336  mov dword ptr [ebp + 0x5c], ebx (=0)
+    widget.cached_text = None;
+}
+
+/// The icon-cache-zero fragment of `FUN_00548de0` (asm 00548f23..00548f4b).
+/// The full function is the tear-down for the whole widget pool
+/// (frees the sibling area vectors, the palette copies, walks every
+/// area calling `release_widget` at 00548ebb via `call 0x5d8410`); we
+/// port only the terminal cache-slot-zero fragment here.
+///
+/// Behaviour (asm 00548f23..00548f4b):
+///   If DAT_00ACDB74 is non-null AND DAT_00ACDA6C ≤ 0:
+///     free the cached bitmap, clear DAT_00ACDB74, set DAT_00ACDA6C = 0.
+///   Otherwise leave the slot as-is (some widget still holds it).
+///
+/// Should be called after every widget has released its icon reference
+/// (which pushes the counter to 0). The full FUN_00548de0 port lives
+/// in a separate commit alongside the pool-tear-down wiring.
+pub fn maybe_release_cached_icon_slot() {
+    // 00548f23  mov eax, dword ptr [0xacdb74]    ; cached ptr
+    // 00548f28  cmp eax, ebx (=0)
+    // 00548f2a  je 0x548f4b                      ; nothing to do
+    let mut slot = crate::packed_widget_globals::DAT_00ACDB74.lock().unwrap();
+    if slot.is_none() {
+        return;
+    }
+    // 00548f2c  cmp word ptr [0xacda6c], bx (=0)
+    // 00548f33  jg 0x548f4b                      ; still referenced → skip
+    // (`jg` on a signed word — the counter is treated as signed here.
+    // A zero counter passes; a positive counter skips. Our Rust
+    // counter is AtomicU16 so we read it as i16 to match.)
+    let raw = crate::packed_widget_globals::DAT_00ACDA6C
+        .load(std::sync::atomic::Ordering::SeqCst) as i16;
+    if raw > 0 {
+        return;
+    }
+    // 00548f35  push eax
+    // 00548f36  call 0x5cdd30                    ; free_bitmap(cached)
+    // 00548f3b  add esp, 4
+    // 00548f3e  mov dword ptr [0xacdb74], ebx    ; slot = NULL
+    // 00548f44  mov word ptr [0xacda6c], bx      ; counter = 0
+    *slot = None;
+    crate::packed_widget_globals::DAT_00ACDA6C
+        .store(0, std::sync::atomic::Ordering::SeqCst);
+}
+
 /// Look up a stipple pattern by its original VA. Panics if the palette
 /// is missing an expected VA (a bug in `packed_stipples`, not user error).
 fn stipple(va: u32) -> &'static StipplePattern {
@@ -213,7 +403,7 @@ pub fn render_widget(
     font: &PixelFont,
     globals: WidgetGlobals,
     first_paint: bool,
-) -> (Option<SavedRect>, Option<Vec<u16>>) {
+) -> (Option<SavedRect>, Option<CachedIcon>) {
     // ============================================================
     // BLOCK A — brighten via colour_scale (asm 005d7aa0..005d7ad6)
     // if [ebp+0x184] != 0:
@@ -304,12 +494,18 @@ pub fn render_widget(
     //         text" — the icon path.
     //
     // Cache:  single slot at DAT_00ACDA70 (filename) + DAT_00ACDB74
-    //         (IconBitmap ptr) with hold-counter DAT_00ACDA6C.
+    //         (IconBitmap ptr) with hold-counter DAT_00ACDA6C. Peers
+    //         `FUN_005d8260` (005d8324) and `FUN_005d8410` (005d847f)
+    //         both `dec word [0xacda6c]` on widget release; FUN_00548de0
+    //         also zeroes the slot at 00548f44. So the counter is a
+    //         real refcount — it CAN reach zero, letting a later miss
+    //         reinstall. Ports of those peers live below
+    //         (`release_widget` / `release_widget_full`).
     // ============================================================
     // 005d7b17  mov eax, [ebp+0xc]           ; eax = flags
     // 005d7b1a  test ah, 4                    ; flags & 0x400 ?
     // 005d7b1d  je  0x5d7bde                  ; skip block D if unset
-    let cached_text_out: Option<Vec<u16>> = if (widget.flags & 0x400) == 0 {
+    let cached_text_out: Option<CachedIcon> = if (widget.flags & 0x400) == 0 {
         widget.cached_text.clone()
     } else {
         // 005d7b23  cmp [ebp+0x5c], esi        ; cached_text already set?
@@ -361,7 +557,13 @@ pub fn render_widget(
                 // 005d7b7d  jmp 0x5d7bde
                 let cached_bmp_guard = crate::packed_widget_globals::DAT_00ACDB74.lock().unwrap();
                 if let Some(bmp) = cached_bmp_guard.as_ref() {
-                    let stashed = bmp.pixels.clone();
+                    // Copy the full record — hdr[0x00]/hdr[0x04] dims + pixels —
+                    // so block E restores at the icon's own extent.
+                    let stashed = CachedIcon {
+                        width: bmp.width,
+                        height: bmp.height,
+                        pixels: bmp.pixels.clone(),
+                    };
                     widget.cached_text = Some(stashed);
                     crate::packed_widget_globals::DAT_00ACDA6C
                         .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -393,12 +595,16 @@ pub fn render_widget(
     // 005d7bee  call 0x5cda90             ; restore_rect(x0, y0, cached_text)
     // 005d7bf3  add esp, 0xc
     if let Some(cached) = widget.cached_text.as_ref() {
-        // Reconstruct a SavedRect on the fly. Block D (deferred) is what
-        // constructs the cache; this branch is dormant until D lands.
-        let w = (widget.x1 - widget.x0 + 1).max(0);
-        let h = (widget.y1 - widget.y0 + 1).max(0);
-        if cached.len() as i32 == w * h && w > 0 && h > 0 {
-            let saved = SavedRect { width: w, height: h, data: cached.clone() };
+        // The exe's FUN_005cda90(x0, y0, record) reads the record's own
+        // hdr[0x00]/hdr[0x04] dims — NOT the widget rect. So we restore
+        // the icon at its actual size, positioned at the widget's
+        // top-left. Icons whose bitmap dims differ from the widget rect
+        // paint correctly this way; earlier the port derived dims from
+        // (x1-x0+1)x(y1-y0+1) and dropped mismatched icons entirely.
+        let w = cached.width as i32;
+        let h = cached.height as i32;
+        if w > 0 && h > 0 && cached.pixels.len() as i32 == w * h {
+            let saved = SavedRect { width: w, height: h, data: cached.pixels.clone() };
             surface.restore_rect(widget.x0, widget.y0, &saved);
         }
     }
@@ -1158,7 +1364,7 @@ mod tests {
         // is issued — see the SavedRect construction in block E).
         let mut s = PackedSurface::rgb555(10, 4);
         let mut w = stub_widget(0, 0, 3, 3, b"\0");
-        w.cached_text = Some(vec![0x7FFF; 4 * 4]);
+        w.cached_text = Some(CachedIcon { width: 4, height: 4, pixels: vec![0x7FFF; 4 * 4] });
         w.style_byte = 0x10; // skip block C
         let (_bg, cache) = render_widget(
             &mut s, &mut w, None, &stub_font(), WidgetGlobals::default(), true,
@@ -1181,45 +1387,179 @@ mod tests {
     }
 
     // ---- Block G ----
-    /// Fix 5 witness: the exe indexes its area pool by walking raw
-    /// bytes at fixed stride `0xBF1` from `[ebp+0]` (asm 005d7c69..7c7a).
-    /// Our Rust port indexes `pool.areas: Vec<Area>` by the frame index.
-    /// For byte-for-byte equivalence, the Vec's position must be the
-    /// same ordinal as the byte-stride offset — i.e. push order defines
-    /// walk order, no interior sort, no rebalancing.
+    /// The exe's block G resolves `widget.frame_idx` to a specific area
+    /// via a raw-byte walk at stride `0xBF1` from the pool base
+    /// (asm 005d7c69..7c7a — `lea ecx, [eax+eax*2]; shl ecx, 6; sub ecx,
+    /// eax; shl ecx, 4; add ecx, eax; add ecx, edx` = `base + idx*0xBF1`).
+    /// Our Rust port indexes `pool.areas: Vec<Area>` by that same idx.
     ///
-    /// Push three distinct areas, then confirm `pool.areas[0/1/2]`
-    /// point at those areas in order, which is exactly what the exe's
-    /// `base + N*0xBF1` walk would return.
+    /// This test EXERCISES block G rather than just poking at
+    /// `Vec::push` order: it builds a pool with three areas of very
+    /// different geometry, renders one widget with `frame_idx=2`, and
+    /// verifies (a) the TOP-stipple branch fires (which requires block G
+    /// to read `pool.areas[2]`'s tiny `area_h`) and (b) the same widget
+    /// rendered against `frame_idx=0` (whose area is much taller) does
+    /// NOT paint at the TOP-stipple pixel — its LEFT-stipple branch
+    /// fires instead. If block G ever regressed to `pool.areas[0]` when
+    /// `frame_idx=2`, the TOP pixel would go unpainted and this test
+    /// would fail.
     #[test]
-    fn area_pool_ordering_matches_raw_stride() {
-        let mut pool = GuiRecordPool::new();
-        pool.areas.push(Area {
-            x0: 10, y0: 10, x1: 20, y1: 20,
-            border_style: 0x100,
-            ..Default::default()
+    fn block_g_resolves_frame_idx_to_correct_area() {
+        // Shared setup: one child widget with parent_area_link=-1 so
+        // frame_lookup takes short_fallback → branch2 (border_style bit
+        // 0x100 SET) which sets out_a = child.panel_code_or_z_min = 0
+        // and out_b = child.unk_0x1c_right_edge + 3 = 3.
+        let build_pool = || {
+            let mut pool = GuiRecordPool::new();
+            pool.widgets.push(PoolWidget {
+                parent_area_link: -1,
+                panel_code_or_z_min: 0,
+                unk_0x1c_right_edge: 0,
+                max_columns_or_z_max: 0,
+                flags: 0,
+                ..Default::default()
+            });
+            // area[0]: tall (area_h = 500) and narrow (area_w = 10) so
+            // block G takes the LEFT branch (edx = area_w + out_b = 13 <
+            // widget.x0 = 100).
+            pool.areas.push(Area {
+                x0: 0, y0: 0, x1: 10, y1: 500,
+                child_widget_index: 0,
+                border_style: 0x100,
+                ..Default::default()
+            });
+            pool.areas.push(Area {
+                x0: 0, y0: 0, x1: 10, y1: 50,
+                child_widget_index: 0,
+                border_style: 0x100,
+                ..Default::default()
+            });
+            // area[2]: short (area_h = 5) so block G takes the TOP branch
+            // (edi = area_h + out_a = 5 < widget.y0 = 100).
+            pool.areas.push(Area {
+                x0: 0, y0: 0, x1: 10, y1: 5,
+                child_widget_index: 0,
+                border_style: 0x100,
+                ..Default::default()
+            });
+            pool
+        };
+
+        // Colour_a value carried through block G's colour-key check
+        // (DAT_00AD6B22 == 0, so anything non-zero passes through
+        // unchanged as colour_g).
+        const INK: u16 = 0x1234;
+
+        // TOP branch draws G_TOP (7x4) at (x=147, y=148). LEFT branch
+        // draws G_LEFT (4x7) at (x=148, y=147). Their bounding boxes
+        // overlap, but the pixel at (147, 151) is exclusively TOP:
+        // - TOP: col=147-147=0, row=151-148=3 → G_TOP[3][0] = 0x01 ✓
+        // - LEFT: col=147-148=-1 → out of bounds, not painted.
+        // Verify centre_axis calculations agree with the port:
+        assert_eq!(centre_axis(100, 200, 7, 0), 147);
+        assert_eq!(centre_axis(100, 200, 4, 0), 148);
+
+        // We want block G to be the ONLY block that paints anything.
+        // Approach: style_byte = 0 (no P_SOLID_FILL in block F), preset
+        // saved_bg so block C's save_rect skips, and flags = 0 so
+        // blocks D/H/I/J/K/L all bail. That leaves block G's stipple
+        // as the sole ink hitting the surface.
+        let dummy_saved = SavedRect { width: 1, height: 1, data: vec![0] };
+
+        // Render with frame_idx = 2 → area[2] (area_h = 5) → TOP branch.
+        let pool2 = build_pool();
+        let mut s2 = PackedSurface::rgb555(300, 300);
+        let mut w2 = stub_widget(100, 100, 200, 200, b"\0");
+        w2.style_byte = 0;   // no P_SOLID_FILL → block F paints nothing
+        w2.saved_bg = Some(dummy_saved.clone());   // skip block C
+        w2.flags = 0;         // gate blocks D/H/I/J/K/L off
+        w2.alt_hover = 0;
+        w2.colour_a = INK;
+        w2.frame_idx = 2;
+        render_widget(
+            &mut s2, &mut w2, Some(&pool2), &stub_font(), WidgetGlobals::default(), true,
+        );
+        // TOP-exclusive pixel (147, 151) — see comment above.
+        let idx_top = (s2.pitch_pixels * 151 + 147) as usize;
+        assert_eq!(
+            s2.buf[idx_top], INK,
+            "block G with frame_idx=2 must read pool.areas[2] (area_h=5) and take TOP branch"
+        );
+
+        // Render with frame_idx = 0 → area[0] (area_h = 500) → LEFT
+        // branch (draws G_LEFT 4x7 at centre_axis(100,200,4,0)=148 x,
+        // centre_axis(100,200,7,0)=147 y). The TOP-branch reference
+        // pixel at (150, 148) must be UNPAINTED — proof that block G
+        // is not reading pool.areas[0] via the wrong index.
+        let pool0 = build_pool();
+        let mut s0 = PackedSurface::rgb555(300, 300);
+        let mut w0 = stub_widget(100, 100, 200, 200, b"\0");
+        w0.style_byte = 0;
+        w0.saved_bg = Some(dummy_saved);
+        w0.flags = 0;
+        w0.alt_hover = 0;
+        w0.colour_a = INK;
+        w0.frame_idx = 0;
+        render_widget(
+            &mut s0, &mut w0, Some(&pool0), &stub_font(), WidgetGlobals::default(), true,
+        );
+        assert_ne!(
+            s0.buf[idx_top], INK,
+            "block G with frame_idx=0 must NOT paint the frame_idx=2 TOP pixel"
+        );
+    }
+
+    // ---- Fix 1 regression: block E must use icon's own dims ----
+    #[test]
+    fn block_e_uses_cached_icon_dims_not_widget_rect() {
+        // Widget rect is 100x20 (x0=0,y0=0,x1=99,y1=19); cached icon is
+        // 4x2 — matching the exe's FUN_005cda90 which reads dims from
+        // the record itself. Block E must restore a 4x2 rect at the
+        // widget's top-left, leaving pixels outside that 4x2 area
+        // untouched by the restore.
+        //
+        // Pre-fix, block E computed dims from (x1-x0+1)*(y1-y0+1) = 2000
+        // and dropped the restore because cached.len() (=8) mismatched.
+        // The icon then never painted at all.
+        //
+        // We silence every other block (style_byte=0 skips block F fill,
+        // saved_bg preset skips block C save, flags=0 gates D/H/I/J/K/L,
+        // frame_idx=-1 skips block G) so block E is the sole painter.
+        let mut s = PackedSurface::rgb555(200, 40);
+        for p in s.buf.iter_mut() { *p = 0x5555; }
+        let mut w = stub_widget(0, 0, 99, 19, b"\0");
+        w.cached_text = Some(CachedIcon {
+            width: 4,
+            height: 2,
+            pixels: vec![0x7C00, 0x03E0, 0x001F, 0x7FFF,
+                         0xAAAA, 0x1111, 0x2222, 0x3333],
         });
-        pool.areas.push(Area {
-            x0: 30, y0: 30, x1: 40, y1: 40,
-            border_style: 0x200,
-            ..Default::default()
-        });
-        pool.areas.push(Area {
-            x0: 50, y0: 50, x1: 60, y1: 60,
-            border_style: 0x300,
-            ..Default::default()
-        });
-        // Byte-stride offsets 0, 0xBF1, 0x17E2 in the exe correspond to
-        // indices 0, 1, 2 in Rust. Each Area must be at its push
-        // position — a Vec push guarantees this, and this test locks
-        // the invariant so future refactors can't quietly break the
-        // 0xBF1-stride correspondence block G depends on.
-        assert_eq!(pool.areas[0].border_style, 0x100, "stride offset 0");
-        assert_eq!(pool.areas[1].border_style, 0x200, "stride offset 0xBF1");
-        assert_eq!(pool.areas[2].border_style, 0x300, "stride offset 0x17E2");
-        assert_eq!(pool.areas[0].x0, 10);
-        assert_eq!(pool.areas[1].x0, 30);
-        assert_eq!(pool.areas[2].x0, 50);
+        w.style_byte = 0;   // no P_SOLID_FILL — block F paints nothing
+        w.saved_bg = Some(SavedRect { width: 1, height: 1, data: vec![0] });
+        w.flags = 0;
+        w.alt_hover = 0;
+        w.frame_idx = -1;
+        w.detached_glyph_cache = 0;
+        let (_bg, cache_out) = render_widget(
+            &mut s, &mut w, None, &stub_font(), WidgetGlobals::default(), true,
+        );
+        let cache_out = cache_out.expect("cached_text_out mirrors input");
+        assert_eq!(cache_out.width, 4);
+        assert_eq!(cache_out.height, 2);
+
+        // Icon must have painted through block E at (0,0) covering
+        // exactly cols 0..4, rows 0..2.
+        let pitch = s.pitch_pixels as usize;
+        assert_eq!(s.buf[0 * pitch + 0], 0x7C00, "icon (0,0)");
+        assert_eq!(s.buf[0 * pitch + 3], 0x7FFF, "icon (3,0)");
+        assert_eq!(s.buf[1 * pitch + 0], 0xAAAA, "icon (0,1)");
+        assert_eq!(s.buf[1 * pitch + 3], 0x3333, "icon (3,1)");
+        // Sentinel preserved OUTSIDE the icon's 4x2 rect — proves
+        // block E used the icon's own dims, not the widget rect.
+        assert_eq!(s.buf[0 * pitch + 4], 0x5555,
+            "restore must NOT extend past icon width (would fail on pre-fix code)");
+        assert_eq!(s.buf[2 * pitch + 0], 0x5555,
+            "restore must NOT extend past icon height");
     }
 
     #[test]
@@ -1375,7 +1715,9 @@ mod tests {
         w.style_byte = 0x10;
         render_widget(&mut s, &mut w, None, &stub_font(), WidgetGlobals::default(), true);
         // Widget got the pixels
-        assert_eq!(w.cached_text.as_ref().unwrap().as_slice(), &[0x1234, 0x5678, 0x9abc, 0xdef0]);
+        assert_eq!(w.cached_text.as_ref().unwrap().pixels.as_slice(), &[0x1234, 0x5678, 0x9abc, 0xdef0]);
+        assert_eq!(w.cached_text.as_ref().unwrap().width, 2);
+        assert_eq!(w.cached_text.as_ref().unwrap().height, 2);
         // Cache installed
         assert_eq!(
             crate::packed_widget_globals::DAT_00ACDA6C
@@ -1460,7 +1802,7 @@ mod tests {
         wb.style_byte = 0x10;
         render_widget(&mut s, &mut wb, None, &stub_font(), WidgetGlobals::default(), true);
         assert_eq!(
-            wb.cached_text.as_ref().unwrap().as_slice(),
+            wb.cached_text.as_ref().unwrap().pixels.as_slice(),
             &[0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD],
             "widget got B's pixels"
         );
@@ -1519,6 +1861,163 @@ mod tests {
             "coverage regressed: only {}/605 addresses cited in packed_widget.rs",
             count
         );
+    }
+
+    // ---- Fix 2: widget release paths (FUN_005d8410, 005d8260 fragment,
+    //             00548de0 fragment) — DAT_00ACDA6C decrement/zero-out.
+
+    #[test]
+    fn release_widget_matching_label_decrements_counter() {
+        let _g = BLOCK_D_LOCK.lock().unwrap();
+        crate::packed_widget_globals::reset_widget_icon_cache();
+        let path = tmp_icon_path("release_match");
+        write_icon_file(&path, 2, 2, &[0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD]);
+        let label = label_nul_terminated(&path);
+
+        // First render installs the cache (counter = 1). Second render
+        // is a cache hit (counter = 2). Both widgets hold refs.
+        let mut s = PackedSurface::rgb555(20, 20);
+        let mut w1 = stub_widget(0, 0, 15, 15, &label);
+        w1.flags = 0x400; w1.style_byte = 0x10;
+        render_widget(&mut s, &mut w1, None, &stub_font(), WidgetGlobals::default(), true);
+        let mut w2 = stub_widget(0, 0, 15, 15, &label);
+        w2.flags = 0x400; w2.style_byte = 0x10;
+        render_widget(&mut s, &mut w2, None, &stub_font(), WidgetGlobals::default(), true);
+        assert_eq!(
+            crate::packed_widget_globals::DAT_00ACDA6C
+                .load(std::sync::atomic::Ordering::SeqCst),
+            2
+        );
+
+        // Release w1 — label matches DAT_00ACDA70 → dec counter.
+        release_widget(&mut w1);
+        assert_eq!(
+            crate::packed_widget_globals::DAT_00ACDA6C
+                .load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "matching-label release must dec DAT_00ACDA6C (asm 005d847f)"
+        );
+        assert!(w1.cached_text.is_none(), "cached_text slot cleared");
+
+        // Release w2 — pushes counter to 0.
+        release_widget(&mut w2);
+        assert_eq!(
+            crate::packed_widget_globals::DAT_00ACDA6C
+                .load(std::sync::atomic::Ordering::SeqCst),
+            0
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn release_widget_differing_label_leaves_counter_alone() {
+        let _g = BLOCK_D_LOCK.lock().unwrap();
+        crate::packed_widget_globals::reset_widget_icon_cache();
+        let path_a = tmp_icon_path("rel_diff_a");
+        let path_b = tmp_icon_path("rel_diff_b");
+        write_icon_file(&path_a, 2, 2, &[0x1111, 0x2222, 0x3333, 0x4444]);
+        write_icon_file(&path_b, 2, 2, &[0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD]);
+        let label_a = label_nul_terminated(&path_a);
+        let label_b = label_nul_terminated(&path_b);
+
+        // Install A (counter = 1). Then load B — miss with counter held
+        // → widget gets its own private bitmap, DAT_00ACDA6C stays at 1.
+        let mut s = PackedSurface::rgb555(20, 20);
+        let mut wa = stub_widget(0, 0, 15, 15, &label_a);
+        wa.flags = 0x400; wa.style_byte = 0x10;
+        render_widget(&mut s, &mut wa, None, &stub_font(), WidgetGlobals::default(), true);
+        let mut wb = stub_widget(0, 0, 15, 15, &label_b);
+        wb.flags = 0x400; wb.style_byte = 0x10;
+        render_widget(&mut s, &mut wb, None, &stub_font(), WidgetGlobals::default(), true);
+        assert_eq!(
+            crate::packed_widget_globals::DAT_00ACDA6C
+                .load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "hold-counter unchanged by B's miss"
+        );
+
+        // Release wb — label DIFFERS from cache (still A's name) → do
+        // NOT decrement; instead drop the private bitmap. Counter
+        // stays at 1 (asm 005d846c..005d8475 vs 005d847f).
+        release_widget(&mut wb);
+        assert_eq!(
+            crate::packed_widget_globals::DAT_00ACDA6C
+                .load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "non-matching label release must NOT dec counter"
+        );
+        assert!(wb.cached_text.is_none(), "private bitmap slot cleared either way");
+        let _ = std::fs::remove_file(&path_a);
+        let _ = std::fs::remove_file(&path_b);
+    }
+
+    #[test]
+    fn maybe_release_cached_icon_slot_frees_when_counter_zero() {
+        let _g = BLOCK_D_LOCK.lock().unwrap();
+        crate::packed_widget_globals::reset_widget_icon_cache();
+        let path = tmp_icon_path("slot_zero");
+        write_icon_file(&path, 2, 2, &[0x1111, 0x2222, 0x3333, 0x4444]);
+        let label = label_nul_terminated(&path);
+
+        // Install → release → counter goes to 0.
+        let mut s = PackedSurface::rgb555(20, 20);
+        let mut w = stub_widget(0, 0, 15, 15, &label);
+        w.flags = 0x400; w.style_byte = 0x10;
+        render_widget(&mut s, &mut w, None, &stub_font(), WidgetGlobals::default(), true);
+        release_widget(&mut w);
+        assert_eq!(
+            crate::packed_widget_globals::DAT_00ACDA6C
+                .load(std::sync::atomic::Ordering::SeqCst),
+            0
+        );
+        // Cache slot still holds the bitmap (release_widget doesn't
+        // touch DAT_00ACDB74 directly, matching FUN_005d8410).
+        assert!(
+            crate::packed_widget_globals::DAT_00ACDB74.lock().unwrap().is_some(),
+            "cache slot preserved by release_widget"
+        );
+
+        // Now the pool-tear-down helper: counter is 0, so free the slot.
+        maybe_release_cached_icon_slot();
+        assert!(
+            crate::packed_widget_globals::DAT_00ACDB74.lock().unwrap().is_none(),
+            "counter==0 → slot must be freed (asm 00548f3e)"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn maybe_release_cached_icon_slot_skips_when_counter_positive() {
+        let _g = BLOCK_D_LOCK.lock().unwrap();
+        crate::packed_widget_globals::reset_widget_icon_cache();
+        let path = tmp_icon_path("slot_pos");
+        write_icon_file(&path, 2, 2, &[0x1111, 0x2222, 0x3333, 0x4444]);
+        let label = label_nul_terminated(&path);
+        let mut s = PackedSurface::rgb555(20, 20);
+        let mut w = stub_widget(0, 0, 15, 15, &label);
+        w.flags = 0x400; w.style_byte = 0x10;
+        render_widget(&mut s, &mut w, None, &stub_font(), WidgetGlobals::default(), true);
+        // Counter is 1 — slot must NOT be freed.
+        maybe_release_cached_icon_slot();
+        assert!(
+            crate::packed_widget_globals::DAT_00ACDB74.lock().unwrap().is_some(),
+            "counter>0 → slot must be preserved (asm 00548f33 jg skip)"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn release_widget_icon_before_rename_skips_when_flag_400_clear() {
+        let _g = BLOCK_D_LOCK.lock().unwrap();
+        crate::packed_widget_globals::reset_widget_icon_cache();
+        // No flag → asm 005d82df test ah,4 je 0x5d8339 skips entirely.
+        // Fabricate a widget with cached_text set but flag_400 clear:
+        // the release fragment must leave everything alone.
+        let mut w = stub_widget(0, 0, 15, 15, b"anything\0");
+        w.flags = 0;
+        w.cached_text = Some(CachedIcon { width: 1, height: 1, pixels: vec![0xBEEF] });
+        release_widget_icon_before_rename(&mut w);
+        assert!(w.cached_text.is_some(), "no flag 0x400 → don't touch cached_text");
     }
 
     #[test]
