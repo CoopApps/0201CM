@@ -85,35 +85,29 @@ impl PackedSurface {
         }
     }
 
-    /// Byte-exact port of `FUN_005cd330` (165 bytes) — clip a rectangle
-    /// against the surface bounds. Inclusive on both ends. Returns
-    /// `Some((left, top, right, bottom))` iff the clipped rectangle is
-    /// non-empty.
+    /// Byte-exact port of `FUN_005cd330` (165 bytes) — normalise a
+    /// rectangle into `Some((min_x, min_y, max_x, max_y))` iff it is
+    /// **fully inside** the surface `[0, W-1] × [0, H-1]`. Any corner
+    /// off-surface → `None`. Endpoints are order-agnostic (swaps to
+    /// min/max first).
+    ///
+    /// This is stricter than a "return visible portion" clip: the exe
+    /// returns `false` (and its callers skip drawing entirely) whenever
+    /// any part of the rect extends beyond the surface. Verified
+    /// against the running exe: `verify_clip_against_exe.rs` (14,641
+    /// cases). Bug this fixed: earlier revisions of this port returned
+    /// `Some(clamped_rect)` for partially-off rects, which would have
+    /// caused off-edge primitives to draw where the exe would have
+    /// dropped them silently.
     pub fn clip(&self, x0: i32, y0: i32, x1: i32, y1: i32) -> Option<(i32, i32, i32, i32)> {
-        let mut left = x0.min(x1);
-        let mut top = y0.min(y1);
-        let mut right = x0.max(x1);
-        let mut bottom = y0.max(y1);
-        if left < 0 {
-            left = 0;
+        let min_x = x0.min(x1);
+        let max_x = x0.max(x1);
+        let min_y = y0.min(y1);
+        let max_y = y0.max(y1);
+        if min_x < 0 || min_y < 0 || max_x > self.width - 1 || max_y > self.height - 1 {
+            return None;
         }
-        if top < 0 {
-            top = 0;
-        }
-        if right > self.width - 1 {
-            right = self.width - 1;
-        }
-        if bottom > self.height - 1 {
-            bottom = self.height - 1;
-        }
-        // Exe's final gate: right>=orig_right AND bottom>=orig_bottom AND
-        // top>=0 AND left>=0. In our clamped form that reduces to "the
-        // clipped rect is non-empty on the surface".
-        if left <= right && top <= bottom && left <= self.width - 1 && top <= self.height - 1 {
-            Some((left, top, right, bottom))
-        } else {
-            None
-        }
+        Some((min_x, min_y, max_x, max_y))
     }
 
     #[inline]
@@ -413,18 +407,25 @@ mod tests {
     // ---------------- clip ----------------
 
     #[test]
-    fn clip_swaps_and_clamps_inclusively() {
+    fn clip_swaps_endpoints_and_rejects_partially_off_surface() {
+        // Behaviour verified against the running exe (see
+        // tests/verify_clip_against_exe.rs, 14,641 cases). The exe
+        // returns false when ANY corner extends beyond the surface —
+        // NOT "return the visible portion".
         let s = PackedSurface::rgb555(10, 8);
         // Fully inside — no change.
         assert_eq!(s.clip(2, 3, 5, 6), Some((2, 3, 5, 6)));
-        // Reversed endpoints get swapped.
+        // Reversed endpoints get normalised to (min_x, min_y, max_x, max_y).
         assert_eq!(s.clip(5, 6, 2, 3), Some((2, 3, 5, 6)));
-        // Off the top-left clamps to 0,0.
-        assert_eq!(s.clip(-4, -4, 3, 3), Some((0, 0, 3, 3)));
-        // Off the bottom-right clamps to (W-1, H-1).
-        assert_eq!(s.clip(7, 5, 20, 20), Some((7, 5, 9, 7)));
-        // Fully outside → None.
+        // Any corner off-surface → None (verified: exe returns false
+        // on clip(-4, -4, 3, 3), even though (0..3, 0..3) is visible).
+        assert_eq!(s.clip(-4, -4, 3, 3), None);
+        assert_eq!(s.clip(7, 5, 20, 20), None);
         assert_eq!(s.clip(20, 20, 40, 40), None);
+        // Boundary — exactly W-1, H-1 is allowed.
+        assert_eq!(s.clip(0, 0, 9, 7), Some((0, 0, 9, 7)));
+        // One pixel beyond → None.
+        assert_eq!(s.clip(0, 0, 10, 7), None);
     }
 
     // ---------------- rectangle fill (byte-exact) ----------------
@@ -447,12 +448,18 @@ mod tests {
     }
 
     #[test]
-    fn rectangle_fill_clamps_off_surface() {
+    fn rectangle_fill_off_surface_is_dropped_entirely() {
+        // Verified against exe: any rect with a corner off-surface is
+        // NOT clamped-and-drawn — the exe's clip returns false and
+        // draw_rectangle bails. `verify_clip_against_exe.rs` proves
+        // this is exactly what the exe does.
         let mut s = PackedSurface::rgb555(4, 3);
         let c = s.pack_rgb(0, 0xff, 0);
-        // Rect running off both the top-left and bottom-right edges.
         s.draw_rectangle(-2, -1, 10, 10, 0, c);
-        // Whole surface should be `c`.
+        // Nothing drawn — the surface stays black.
+        assert!(s.buf.iter().all(|&v| v == 0));
+        // And an exactly-bounds rect still works.
+        s.draw_rectangle(0, 0, 3, 2, 0, c);
         assert!(s.buf.iter().all(|&v| v == c));
     }
 
@@ -528,22 +535,25 @@ mod tests {
     }
 
     #[test]
-    fn restore_rect_clips_to_surface() {
-        // Restore a 3×3 rect at (-1, -1): only its bottom-right 2×2
-        // corner should land at (0, 0)..(1, 1).
+    fn restore_rect_dropped_when_destination_off_surface() {
+        // Same rule as line/rect: if the destination rect extends past
+        // the surface, the exe's FUN_005cda90 skips entirely (via the
+        // clip false-return). Restore that behaviour here — a full
+        // reference-vs-exe verification for save/restore is a later
+        // step (verify_save_restore_against_exe.rs).
         let saved = SavedRect {
-            width: 3,
-            height: 3,
+            width: 3, height: 3,
             data: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
         };
         let mut dst = PackedSurface::rgb555(4, 4);
         dst.restore_rect(-1, -1, &saved);
-        // (0,0) comes from source (1,1) = 5, (1,0) from (2,1) = 6,
-        // (0,1) from (1,2) = 8, (1,1) from (2,2) = 9.
-        assert_eq!(dst.buf[0], 5);
-        assert_eq!(dst.buf[1], 6);
-        assert_eq!(dst.buf[4], 8);
-        assert_eq!(dst.buf[5], 9);
+        assert!(dst.buf.iter().all(|&v| v == 0), "off-surface restore must not draw");
+        // In-bounds destination still blits.
+        dst.restore_rect(1, 1, &saved);
+        assert_eq!(dst.buf[1 * 4 + 1], 1);
+        assert_eq!(dst.buf[1 * 4 + 3], 3);
+        assert_eq!(dst.buf[3 * 4 + 1], 7);
+        assert_eq!(dst.buf[3 * 4 + 3], 9);
     }
 
     // ---------------- darken ----------------
