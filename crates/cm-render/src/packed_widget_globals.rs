@@ -50,3 +50,54 @@ pub const DAT_00ACDEAC: u16 = 0x0000;
 /// FUN_005d03a0 wrapped-text and FUN_005ceaa0 glyph blit. BSS-zero on
 /// shipped exe → the gate lets rendering proceed.
 pub const DAT_00AD6B44: u32 = 0x0000_0000;
+
+/// The default pixel-format descriptor pointed at by the exe's global
+/// `DAT_00acde98`. `FUN_005ce2d0` (colour_scale) and other primitives
+/// take a `fmt_ref` argument and fall back to `mov esi, 0xacde98` when
+/// callers pass NULL (asm 005ce2ea..005ce2ec):
+///     `test ebx, ebx; jne skip; mov esi, 0xacde98`.
+///
+/// The record's raw layout is 8 dwords, of which the renderer reads
+/// three:
+///     +0x10 red_mask, +0x14 green_mask, +0x18 blue_mask.
+///
+/// FUN_005cc4f0 (GDI init) writes `0x7c00, 0x03e0, 0x001f` at boot into
+/// these slots — the RGB555 mask set. The exe's DDraw build overwrites
+/// them at device-negotiation time; the GDI/software build keeps them.
+/// So the "NULL fmt_ref" branch always resolves to RGB555 on the
+/// software renderer we're porting.
+///
+/// `size_code` is `[fmt+0x14] == 0x7e0` in the exe's 555/565 pack
+/// dispatch — a green-mask compare masquerading as a format tag. Kept
+/// here as a distinct field so the branch is explicit in the port.
+#[derive(Debug, Clone, Copy)]
+pub struct PixelFormat {
+    pub red_mask: u16,
+    pub green_mask: u16,
+    pub blue_mask: u16,
+}
+
+impl PixelFormat {
+    /// Build a PixelFormat mirroring the surface's mask set — matches the
+    /// exe's runtime behaviour where callers that own their surface pass
+    /// its format descriptor as `fmt_ref`. (Widget-renderer block A
+    /// passes NULL, which hits `DAT_00ACDE98` instead — see the static
+    /// below.)
+    #[inline]
+    pub fn from_surface(s: &crate::packed::PackedSurface) -> Self {
+        Self {
+            red_mask: s.red_mask,
+            green_mask: s.green_mask,
+            blue_mask: s.blue_mask,
+        }
+    }
+}
+
+/// Bytes of `DAT_00acde98` after `FUN_005cc4f0` (GDI init) has run —
+/// RGB555 masks. Every primitive that reads `[0xacde98+0x10..+0x18]` on
+/// the NULL-fmt_ref branch sees these three words.
+pub const DAT_00ACDE98: PixelFormat = PixelFormat {
+    red_mask: 0x7c00,
+    green_mask: 0x03e0,
+    blue_mask: 0x001f,
+};

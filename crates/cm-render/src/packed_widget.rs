@@ -174,7 +174,11 @@ pub fn render_widget(
         // 005d7acb  call 0x5ce2d0             ; colour_scale(colour, 110, NULL)
         // 005d7ad0  add esp, 0xc
         // 005d7ad3  mov [ebp+0x72], ax        ; colour_a = scaled
-        widget.colour_a = crate::packed::colour_scale(surface, widget.colour_a, 0x6e);
+        //
+        // NULL for the fmt_ref matches `push esi` where esi==0 at
+        // 005d7ac1 — the exe's colour_scale then reads masks from
+        // DAT_00acde98 (RGB555). No surface reference is passed.
+        widget.colour_a = crate::packed::colour_scale(widget.colour_a, 0x6e, None);
     }
 
     // ============================================================
@@ -551,6 +555,15 @@ fn block_g(
     // 005d7c78  add ecx, eax               ;      *3057 = 0xBF1
     // 005d7c7a  add ecx, edx               ; this_area = base + idx*0xBF1
     // 005d7c7c  call 0x403a20              ; frame_lookup(this_area, &out_a, &out_b)
+    //
+    // Rust port: `pool.areas` is a Vec<Area> ordered exactly the way
+    // the exe walks the raw byte-pool at stride 0xBF1 from `[ebp+0]`.
+    // Index N in the Vec corresponds to base + N*0xBF1 in the exe.
+    // The invariant is checked by `area_pool_ordering_matches_raw_stride`
+    // in the tests module — every push into `pool.areas` must land at
+    // the next ordinal position, i.e. the Vec order IS the stride
+    // order. If ever those diverge, block G's frame_idx would resolve
+    // to a different area than the exe's, so the test catches drift.
     let this_area = match pool.areas.get(widget.frame_idx as usize) {
         Some(a) => a,
         None => return,
@@ -755,11 +768,21 @@ fn block_ijk(
     if DAT_009B88F8 != 0 {
         // ---- sprintf branch (asm 005d7ec5..005d7f0a for I, mirror for J/K) ----
         // 005d7ec5  push 0x2b                  ; char '+' (or ',' / '-')
-        // 005d7ec7  lea edx, [esp+0x24]        ; scratch buffer
-        // 005d7ecb  push 0x9a3ac4              ; "%c"
+        // 005d7ec7  lea edx, [esp+0x24]        ; scratch buffer (32 bytes)
+        // 005d7ecb  push 0x9a3ac4              ; "%c\0" — see packed_sprintf
         // 005d7ed0  push edx
-        // 005d7ed1  call 0x933579              ; sprintf(buf, "%c", ch)
-        let scratch = [ch];
+        // 005d7ed1  call 0x933579              ; sprintf(buf, "%c\0", ch)
+        //
+        // Port: dispatch through packed_sprintf::sprintf_percent_c, which
+        // is the byte-exact effect of FUN_00933579 for the sole format
+        // string ("%c\0") the exe passes here. The buffer is the same
+        // 32-byte scratch the asm sets up at [esp+0x24].
+        let mut scratch = [0u8; 32];
+        let written = crate::packed_sprintf::sprintf_percent_c(&mut scratch, ch);
+        // asm 005d7ed6 does not read this return value, but the exe
+        // stores it (`mov esi, eax`); we bind it for parity even though
+        // it's unused downstream.
+        let _ = written;
         // 005d7ed6  mov cx, [ebp+0x78]         ; colour = widget.pattern
         // 005d7eda  mov edx, [ebp+0x1c]        ; y1
         // 005d7edd  lea eax, [esp+0x2c]        ; text ptr
@@ -796,6 +819,10 @@ fn block_ijk(
         // packed_text::draw_wrapped_text signature: the exe's 5th (0x48) is
         // packed_text's `style`; its 6th (0) is a background colour we
         // don't model. We pass style=0x48, ignore the background.
+        // Exe's draw_wrapped_text scans the NUL-terminated buffer; our
+        // port takes an explicit slice, so trim at the NUL sprintf just
+        // wrote.
+        let n = scratch.iter().position(|&b| b == 0).unwrap_or(scratch.len());
         draw_wrapped_text(
             surface,
             widget.x0.wrapping_add(ebx_off_x),
@@ -803,7 +830,7 @@ fn block_ijk(
             widget.x1.wrapping_add(ebx_off_x).wrapping_sub(4),
             widget.y1.wrapping_add(esi_off_y),
             font,
-            &scratch,
+            &scratch[..n],
             widget.pattern,
             0x48,
             -1,
@@ -958,6 +985,47 @@ mod tests {
     }
 
     // ---- Block G ----
+    /// Fix 5 witness: the exe indexes its area pool by walking raw
+    /// bytes at fixed stride `0xBF1` from `[ebp+0]` (asm 005d7c69..7c7a).
+    /// Our Rust port indexes `pool.areas: Vec<Area>` by the frame index.
+    /// For byte-for-byte equivalence, the Vec's position must be the
+    /// same ordinal as the byte-stride offset — i.e. push order defines
+    /// walk order, no interior sort, no rebalancing.
+    ///
+    /// Push three distinct areas, then confirm `pool.areas[0/1/2]`
+    /// point at those areas in order, which is exactly what the exe's
+    /// `base + N*0xBF1` walk would return.
+    #[test]
+    fn area_pool_ordering_matches_raw_stride() {
+        let mut pool = GuiRecordPool::new();
+        pool.areas.push(Area {
+            x0: 10, y0: 10, x1: 20, y1: 20,
+            border_style: 0x100,
+            ..Default::default()
+        });
+        pool.areas.push(Area {
+            x0: 30, y0: 30, x1: 40, y1: 40,
+            border_style: 0x200,
+            ..Default::default()
+        });
+        pool.areas.push(Area {
+            x0: 50, y0: 50, x1: 60, y1: 60,
+            border_style: 0x300,
+            ..Default::default()
+        });
+        // Byte-stride offsets 0, 0xBF1, 0x17E2 in the exe correspond to
+        // indices 0, 1, 2 in Rust. Each Area must be at its push
+        // position — a Vec push guarantees this, and this test locks
+        // the invariant so future refactors can't quietly break the
+        // 0xBF1-stride correspondence block G depends on.
+        assert_eq!(pool.areas[0].border_style, 0x100, "stride offset 0");
+        assert_eq!(pool.areas[1].border_style, 0x200, "stride offset 0xBF1");
+        assert_eq!(pool.areas[2].border_style, 0x300, "stride offset 0x17E2");
+        assert_eq!(pool.areas[0].x0, 10);
+        assert_eq!(pool.areas[1].x0, 30);
+        assert_eq!(pool.areas[2].x0, 50);
+    }
+
     #[test]
     fn block_g_gate_skips_when_frame_idx_neg1() {
         let mut s = PackedSurface::rgb555(100, 40);

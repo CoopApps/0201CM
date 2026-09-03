@@ -200,6 +200,11 @@ pub fn draw_glyph(
 /// The exe's `|` → space substitution (unusable line-break marker) is
 /// applied here. Characters below 0x20 are skipped without drawing —
 /// matches the `if (0x1f < bVar7)` gate in the outer loop.
+///
+/// Caret-less variant. New code should call [`draw_text_caret`], which
+/// carries the exe's caret arg (`param_10` on the wrapped-text call
+/// tree; FUN_005ceaa0 records it inside the per-glyph loop). This thin
+/// wrapper stays for existing callers that never use the caret.
 pub fn draw_text(
     surface: &mut PackedSurface,
     dst_x: i32,
@@ -207,6 +212,38 @@ pub fn draw_text(
     font: &PixelFont,
     text: &[u8],
     colour: u16,
+) -> i32 {
+    draw_text_caret(surface, dst_x, dst_y, font, text, colour, -1)
+}
+
+/// Draw one line of text with the exe's per-glyph caret pipeline.
+///
+/// `caret_char_index` is the exe's `[esp+0xa8]` slot inside
+/// `FUN_005ceaa0` — a 0-based byte index into the passed-in `text`
+/// slice. When the loop reaches that index it records the pen X into
+/// the caret slot; after the loop (at asm 005cf17c..005cf1ef) the
+/// recorded X drives a single vertical solid line from
+/// `(caret_x, dst_y)` to `(caret_x, dst_y + font.height - 1)`.
+///
+/// `-1` (or any negative) disables the caret via the exe's gate at
+/// 005cf180: `cmp edx, -1; jle skip`.
+///
+/// Faithfulness citations:
+/// * 005cf102..005cf124 — in-loop caret-X capture:
+///     ebx = current-char index (1-based, bumped at 005cf15b).
+///     eax = caret_char_index + 1.
+///     if (ebx == eax) [esp+0x18] = min(prev_pen, new_pen - 1).
+/// * 005cf16c..005cf178 — past-the-end capture after loop exit:
+///     if (ebx == caret_char_index + 1) [esp+0x18] = pen.
+/// * 005cf17c..005cf1ef — vertical-stroke draw when [esp+0x18] > -1.
+pub fn draw_text_caret(
+    surface: &mut PackedSurface,
+    dst_x: i32,
+    dst_y: i32,
+    font: &PixelFont,
+    text: &[u8],
+    colour: u16,
+    caret_char_index: i32,
 ) -> i32 {
     // Match the exe's outer loop in FUN_005ceaa0: iterate chars, draw
     // each glyph, then advance pen by `kern_between(prev, curr) +
@@ -219,16 +256,48 @@ pub fn draw_text(
     // starting at 1 (matches exe) and pass the string; kern_between
     // does the same bytes-based lookback.
     let mut pen = dst_x;
+    // Exe: [esp+0x18] init to -1 (no capture); asm 005cf17c reads it.
+    let mut caret_x: i32 = -1;
+    // Exe: ebx starts at 1 (1-based char count); [esp+0xa8] holds the
+    // caller's caret index; the compare is `ebx == caret_char_index+1`.
+    // Translated: 0-based index of the char we just processed.
+    let mut char_count: i32 = 0;
     for (i, &raw) in text.iter().enumerate() {
         let b = if raw == b'|' { b' ' } else { raw };
         if b < 0x20 {
             continue;
         }
         if let Some(Some(g)) = font.glyphs.get(b as usize) {
+            let prev_pen = pen;
             let advance = draw_glyph(surface, pen, dst_y, font.height, g, colour);
             let k = kern_between(font, text, i + 1);
-            pen += advance + k;
+            let new_pen = prev_pen + advance + k;
+            // 005cf102..005cf124: caret capture inside the loop —
+            //   ecx = prev_pen (old edi at loop head)
+            //   eax = new_pen - 1
+            //   [esp+0x18] = min(ecx, eax)
+            // Guard: exe only takes this branch when target_char just
+            // drew, i.e. char_count == caret_char_index (0-based).
+            if caret_char_index >= 0 && char_count == caret_char_index {
+                let clamp_hi = new_pen.wrapping_sub(1);
+                caret_x = if prev_pen > clamp_hi { clamp_hi } else { prev_pen };
+            }
+            pen = new_pen;
+            char_count += 1;
         }
+    }
+    // 005cf16c..005cf178: past-the-end capture — after loop exits (NUL
+    // terminator or end-of-slice) if we haven't already latched the
+    // caret and the caller asked for a caret AT the end, record the
+    // final pen.
+    if caret_char_index >= 0 && char_count == caret_char_index {
+        caret_x = pen;
+    }
+    // 005cf180: `cmp edx, -1; jle skip` — draw only when caret_x > -1.
+    if caret_x > -1 {
+        // 005cf1e7: `lea eax, [eax + ecx - 1]` — y_bottom = y_top + font_h - 1.
+        // 005cf1ef: draw_line(caret_x, y_top, caret_x, y_bottom, style=2).
+        surface.draw_line(caret_x, dst_y, caret_x, dst_y + font.height - 1, 2, colour);
     }
     pen
 }

@@ -39,6 +39,7 @@ pub mod packed_stipples;
 pub mod packed_widget_globals;
 pub mod screens_faithful;
 pub mod packed_text;
+pub mod packed_sprintf;
 pub mod msgbox;
 pub mod palette;
 pub mod panel;

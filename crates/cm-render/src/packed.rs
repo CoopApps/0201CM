@@ -387,36 +387,49 @@ impl PackedSurface {
 
 /// Byte-exact port of `FUN_005ce2d0` (349 bytes, 117 instructions) —
 /// scales `colour` by `intensity_pct` / 100 per RGB channel and repacks
-/// in the surface's pixel format. `intensity_pct > 100` brightens,
+/// in the descriptor's pixel format. `intensity_pct > 100` brightens,
 /// `< 100` darkens. Skipped (returns 0) when the exe's global
 /// `DAT_00ad6b44` gate is non-zero — see [`packed_widget_globals`].
 ///
-/// The exe reads channel masks from a pixel-format descriptor
-/// (`param_4`, defaulting to `DAT_00acde98` when NULL); we take them
-/// straight off the `PackedSurface`, which carries the same mask set.
-/// The RGB565 vs RGB555 dispatch is `fmt[+0x14] == 0x7e0`; we key off
-/// `surface.green_mask == 0x7e0`, which is exactly what the exe writes
-/// into that slot for the software surface.
+/// Follows the exe's argument shape exactly: `(colour, intensity, fmt)`
+/// where `fmt` is a pointer to a pixel-format descriptor. When `fmt` is
+/// `None`, the exe falls back to `DAT_00acde98`
+/// (asm 005ce2e6..005ce2ec):
+///
+///     test ebx, ebx
+///     mov  esi, ebx
+///     jne  005ce2f1
+///     mov  esi, 0xacde98
+///
+/// The static `DAT_00ACDE98` in [`packed_widget_globals`] carries the
+/// RGB555 mask set that `FUN_005cc4f0` writes there at GDI init.
+///
+/// The RGB565 vs RGB555 dispatch is `fmt[+0x14] == 0x7e0`, i.e. the
+/// green_mask carried by the descriptor.
 ///
 /// The divide-by-100 is the exe's `imul 0x51eb851f; sar edx, 5` magic —
 /// signed multiplicative inverse of 100 for a 32-bit dividend, with the
-/// sign-bit round-to-zero correction (`add edx, edx>>31`).
+/// sign-bit round-to-zero correction (`add edx, edx>>31`). Delegated to
+/// [`div_by_100_asm`] so every occurrence is literally the same asm.
 ///
 /// Every asm site cited inline. Address prefix is the byte offset inside
 /// `FUN_005ce2d0`.
-pub fn colour_scale(surface: &PackedSurface, colour: u16, intensity_pct: u32) -> u16 {
+pub fn colour_scale(
+    colour: u16,
+    intensity_pct: u32,
+    fmt: Option<&crate::packed_widget_globals::PixelFormat>,
+) -> u16 {
     // 005ce2d0..005ce2de: gate on DAT_00ad6b44 — return 0 if non-zero.
     if crate::packed_widget_globals::DAT_00AD6B44 != 0 {
         return 0;
     }
-    // 005ce2df..005ce2ec: pick the pixel-format descriptor. We already
-    // have the mask set on the surface — the exe's `mov esi, 0xacde98`
-    // default branch would give us the very same masks the surface
-    // carries, so we can just read them here.
-    let rm = surface.red_mask as u32;
-    let gm = surface.green_mask as u32;
-    let bm = surface.blue_mask as u32;
-    let is_565 = surface.green_mask == 0x7e0;
+    // 005ce2df..005ce2ec: pick the pixel-format descriptor. Match the
+    // exe's fall-back to `DAT_00acde98` when the pointer arg is NULL.
+    let fmt_ref = fmt.unwrap_or(&crate::packed_widget_globals::DAT_00ACDE98);
+    let rm = fmt_ref.red_mask as u32;
+    let gm = fmt_ref.green_mask as u32;
+    let bm = fmt_ref.blue_mask as u32;
+    let is_565 = fmt_ref.green_mask == 0x7e0;
     // 005ce2f1..005ce2f8: ecx = colour & 0xffff.
     let c = colour as u32;
     // 005ce2fe..005ce30a: r = ((rm & c) << 8) / (rm + 1) — normalise
@@ -430,25 +443,16 @@ pub fn colour_scale(surface: &PackedSurface, colour: u16, intensity_pct: u32) ->
     let blue_norm = ((bm & c) << 8) / (bm + 1);
     let intensity = intensity_pct & 0xff;
     // 005ce33e..005ce39e: for each channel byte:
-    //   scaled = ((byte * intensity) as i32).imul(0x51eb851f) >> 32 sar 5
-    //          + (that >> 31)  == byte * intensity / 100 with round-to-zero.
-    // The exe reloads bytes from stack locals; we've kept them in u32s.
-    let div100 = |v: u32| -> i32 {
-        let prod = (v as i32) as i64 * (intensity as i32) as i64;
-        // imul 0x51eb851f gives full 64-bit signed product; the exe uses
-        // (prod_hi >> 5) + ((prod_hi >> 5) >> 31) which is exactly
-        // prod_hi:prod_lo / 100 rounded toward zero. Straight /100 in
-        // Rust is the same for the small values here.
-        let base = (prod / 100) as i32;
-        base
-    };
-    let red = div100(red_norm);
-    let green = div100(green_norm);
-    let blue = div100(blue_norm);
+    //   scaled = (byte * intensity).mul_hi(0x51eb851f) >> 5
+    //          + ((above) >> 31)
+    //          == byte * intensity / 100 rounded toward zero.
+    // Delegate to `div_by_100_asm` — literally the same magic multiply
+    // + shift arithmetic the exe emits, applied to `byte * intensity`.
+    let red = div_by_100_asm((red_norm & 0xff) * intensity);
+    let green = div_by_100_asm((green_norm & 0xff) * intensity);
+    let blue = div_by_100_asm((blue_norm & 0xff) * intensity);
     // 005ce3a0..005ce3c6: clamp each channel to 0xff.
-    let clamp = |v: i32| -> u32 {
-        if v > 0xff { 0xff } else { v as u32 }
-    };
+    let clamp = |v: u32| -> u32 { if v > 0xff { 0xff } else { v } };
     let r = clamp(red);
     let g = clamp(green);
     let b = clamp(blue);
@@ -464,6 +468,44 @@ pub fn colour_scale(surface: &PackedSurface, colour: u16, intensity_pct: u32) ->
         let a = (r & 0xf8) << 5 | (g & 0xf8);
         ((a << 2) | (b >> 3)) as u16
     }
+}
+
+/// Byte-exact port of the exe's divide-by-100 idiom used in
+/// `FUN_005ce2d0` (three times per call, once per RGB channel; asm
+/// 005ce34f..005ce39e for the three chained blocks).
+///
+/// The compiler emits:
+///
+///     mov  eax, 0x51eb851f    ; signed multiplicative inverse of 100
+///     imul edx                 ; edx:eax = value * 0x51eb851f  (64-bit signed)
+///     sar  edx, 5              ; edx = high dword >> 5      (= value/100 flooring)
+///     mov  eax, edx
+///     shr  eax, 31             ; eax = sign bit  (0 for non-negative)
+///     add  edx, eax            ; round toward zero
+///
+/// The `sar edx, 5` step takes only the upper 32 bits of the 64-bit
+/// signed product before the shift — Rust's `wrapping_mul` on a 64-bit
+/// value gives us the full product, `>> 37` on the whole i64 combines
+/// the high-dword pick and the arithmetic shift by 5 (5 + 32 = 37) —
+/// exactly the exe's arithmetic. The final `+ (result >> 31)` restores
+/// round-toward-zero for negative dividends.
+///
+/// For the u32 domain this function sees (channel byte × intensity
+/// byte, ≤ 0xff * 0xff = 0xfe01) the sign bit is always clear, so the
+/// round-correction is a no-op — but the port emits it anyway to stay
+/// bit-identical with the exe's control flow.
+#[inline]
+pub fn div_by_100_asm(v: u32) -> u32 {
+    // imul edx with eax=0x51eb851f gives a full 64-bit signed product;
+    // sign-extend the u32 dividend to i64 (matches x86 `mov eax, v` +
+    // `cdq` implicit in `imul edx` on a 32-bit register), multiply by
+    // the sign-extended constant.
+    let prod: i64 = (v as i32 as i64) * (0x51eb851f_i32 as i64);
+    // High dword of edx:eax then `sar edx, 5` combines to `>> 37` on i64.
+    let hi_shr5: i32 = (prod >> 37) as i32;
+    // `add edx, edx>>31` — round-toward-zero for negative values.
+    let corr: i32 = ((hi_shr5 as u32) >> 31) as i32;
+    (hi_shr5.wrapping_add(corr)) as u32
 }
 
 /// Stipple pattern read by `FUN_005d7aa0` widget-decoration branches and
@@ -545,9 +587,10 @@ mod tests {
     #[test]
     fn colour_scale_at_100_pct_is_identity_within_pack_precision() {
         let s = PackedSurface::rgb555(1, 1);
+        let fmt = crate::packed_widget_globals::PixelFormat::from_surface(&s);
         // Mid-grey in RGB555 (r=g=b≈128).
         let mid = s.pack_rgb(0x80, 0x80, 0x80);
-        let out = colour_scale(&s, mid, 100);
+        let out = colour_scale(mid, 100, Some(&fmt));
         // Values round through the /100 magic and back through the
         // 5-bit pack; expect the same 5-bit-quantised colour.
         assert_eq!(out, mid);
@@ -556,8 +599,9 @@ mod tests {
     #[test]
     fn colour_scale_darkens_at_50_pct() {
         let s = PackedSurface::rgb555(1, 1);
+        let fmt = crate::packed_widget_globals::PixelFormat::from_surface(&s);
         let mid = s.pack_rgb(0x80, 0x80, 0x80);
-        let out = colour_scale(&s, mid, 50);
+        let out = colour_scale(mid, 50, Some(&fmt));
         let (r, g, b) = unpack555(out);
         let (rm, gm, bm) = unpack555(mid);
         // Every channel should have dropped to about half; allow one
@@ -571,12 +615,41 @@ mod tests {
     #[test]
     fn colour_scale_brightens_at_200_pct_and_clamps() {
         let s = PackedSurface::rgb555(1, 1);
+        let fmt = crate::packed_widget_globals::PixelFormat::from_surface(&s);
         // Mid-grey doubled should saturate the top of each 5-bit slot.
         let mid = s.pack_rgb(0x80, 0x80, 0x80);
-        let out = colour_scale(&s, mid, 200);
+        let out = colour_scale(mid, 200, Some(&fmt));
         // 0x80 * 2 = 0x100, clamped to 0xff, then (0xff & 0xf8) << 5 etc.
         // Expected pack: r=g=b saturated top-5-bit -> 0x7fff.
         assert_eq!(out, 0x7fff);
+    }
+
+    #[test]
+    fn colour_scale_null_fmt_falls_back_to_dat_00acde98() {
+        // Asm 005ce2e6..005ce2ec — `test ebx, ebx; jne skip; mov esi,
+        // 0xacde98`. When callers pass NULL the exe reads masks from
+        // the global format descriptor at DAT_00acde98. FUN_005cc4f0
+        // writes the RGB555 set (0x7c00, 0x03e0, 0x001f) there, so the
+        // NULL branch must match an RGB555 surface's fmt exactly.
+        let s = PackedSurface::rgb555(1, 1);
+        let fmt = crate::packed_widget_globals::PixelFormat::from_surface(&s);
+        let mid = s.pack_rgb(0x80, 0x80, 0x80);
+        let a = colour_scale(mid, 0x6e, Some(&fmt));
+        let b = colour_scale(mid, 0x6e, None);
+        assert_eq!(a, b, "NULL fmt_ref must equal fmt-from-RGB555-surface");
+    }
+
+    #[test]
+    fn div_by_100_asm_matches_scalar_div_over_channel_range() {
+        // Compare the magic-multiply-and-shift port against a straight
+        // `/100` for every plausible input (byte * byte = 0..0xfe01).
+        // The two must agree on every value in the range — that's how
+        // the exe's asm resolves.
+        for v in 0u32..=0xfe01 {
+            let mine = super::div_by_100_asm(v);
+            let scalar = v / 100;
+            assert_eq!(mine, scalar, "mismatch at v={v}");
+        }
     }
 
     // ---------------- pack_rgb ----------------

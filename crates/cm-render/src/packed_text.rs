@@ -13,7 +13,7 @@
 //! byte-exact on real inputs.
 
 use crate::packed::PackedSurface;
-use crate::packed_glyph::{draw_text, kern_between, PixelFont};
+use crate::packed_glyph::{draw_text, draw_text_caret, PixelFont};
 use crate::packed_panel::scale_colour;
 
 // ------ Style flag constants (from FUN_005d03a0's `param_5`) ------
@@ -51,6 +51,51 @@ pub fn measure_line(font: &PixelFont, text: &[u8]) -> i32 {
 /// - When it is false, the character is rejected but the line stays open
 ///   (the exe's `bVar3` flag keeps rejecting until end-of-string or
 ///   newline).
+/// Same as [`wrap_text`], but also returns the un-wrapped byte offset
+/// where each line's first char came from. Used by the caret pipeline
+/// so [`draw_wrapped_text`] can translate a global caret index (into
+/// the un-wrapped buffer) into a per-line local index — matching the
+/// exe, where the caret target is one specific char that either lives
+/// in a wrapped line or was dropped at the overflow boundary.
+pub fn wrap_text_with_origins(
+    font: &PixelFont,
+    max_width: i32,
+    text: &[u8],
+    wrap_on_overflow: bool,
+) -> Vec<(Vec<u8>, i32)> {
+    let mut lines: Vec<(Vec<u8>, i32)> = Vec::new();
+    let mut cur: Vec<u8> = Vec::new();
+    let mut cur_start: i32 = 0;
+    let mut overflow = false;
+    let last_idx = text.len().saturating_sub(1);
+    for (i, &b) in text.iter().enumerate() {
+        let mut do_flush = false;
+        if b == b'\n' {
+            do_flush = true;
+        } else {
+            if b >= 0x20 && !overflow {
+                cur.push(b);
+                if measure_line(font, &cur) > max_width {
+                    cur.pop();
+                    overflow = true;
+                }
+            }
+            if i == last_idx || (wrap_on_overflow && overflow) {
+                do_flush = true;
+            }
+        }
+        if do_flush {
+            let taken = std::mem::take(&mut cur);
+            lines.push((taken, cur_start));
+            overflow = false;
+            // The next line's origin starts after this char (which was
+            // either \n, an overflow-dropped byte, or the last byte).
+            cur_start = (i as i32) + 1;
+        }
+    }
+    lines
+}
+
 pub fn wrap_text(
     font: &PixelFont,
     max_width: i32,
@@ -128,39 +173,18 @@ pub fn draw_wrapped_text(
 ) {
     let w = x1 - x0 + 1;
     let h = y1 - y0 + 1;
-    let mut lines = wrap_text(font, w, text, (style & W_WRAP) != 0);
+    let mut lines = wrap_text_with_origins(font, w, text, (style & W_WRAP) != 0);
     if lines.is_empty() {
         return;
     }
     if (style & W_PASSWORD) != 0 {
-        for line in &mut lines {
+        for (line, _) in &mut lines {
             for b in line.iter_mut() {
                 *b = b'*';
             }
         }
     }
     let font_h = font.height;
-    // Precompute the pen X of `caret_char_index` inside the (unwrapped)
-    // buffer, using the same measurer that lays out glyphs. The exe
-    // updates its caret-X mid-loop (FUN_005ceaa0:005cf102..005cf16c) so
-    // it always reflects the pen just before the target char; measuring
-    // the prefix here gets us the same value without threading state
-    // through wrap. `-1` (or any negative index) disables the caret,
-    // matching the exe gate `cmp edx,-1; jle skip` at 005cf180.
-    let caret_prefix_w = if caret_char_index >= 0 {
-        let idx = (caret_char_index as usize).min(text.len());
-        let mut w = 0i32;
-        for (i, &b) in text[..idx].iter().enumerate() {
-            let bb = if b == b'|' { b' ' } else { b };
-            if bb < 0x20 { continue; }
-            if let Some(Some(g)) = font.glyphs.get(bb as usize) {
-                w += g.width + kern_between(font, &text[..idx], i + 1);
-            }
-        }
-        Some(w)
-    } else {
-        None
-    };
     let block_h = lines.len() as i32 * font_h;
     // Vertical centring is the default; W_TOP suppresses it.
     let mut y = if (style & W_TOP) != 0 {
@@ -168,8 +192,7 @@ pub fn draw_wrapped_text(
     } else {
         (h - block_h) / 2 + y0
     };
-    let mut painted_first = false;
-    for line in &lines {
+    for (line, origin) in &lines {
         let lw = measure_line(font, line);
         let x = if (style & W_LEFT) != 0 {
             x0
@@ -178,31 +201,38 @@ pub fn draw_wrapped_text(
         } else {
             (w - lw) / 2 + x0
         };
+        // Translate global caret_char_index → local index within this
+        // wrapped line. If the target falls in this line, pass the local
+        // index down to draw_text_caret — that's where the exe's
+        // FUN_005ceaa0 does the per-glyph pen-X capture (asm
+        // 005cf102..005cf124) and the vertical-stroke draw (005cf1ef).
+        // If the target sits inside a dropped-overflow boundary, no
+        // line owns it and the caret is silently lost — matches the
+        // exe (the target-char branch never fires).
+        let line_local_caret: i32 = if caret_char_index < 0 {
+            -1
+        } else {
+            let local = caret_char_index - *origin;
+            // `<= line.len()` so an "at end of line" caret still hits
+            // the past-the-end branch inside draw_text_caret.
+            if local >= 0 && local <= line.len() as i32 {
+                local
+            } else {
+                -1
+            }
+        };
         if (style & W_SHADOW) != 0 {
             // The exe samples the mid-rect pixel and scales BOTH the
             // shadow (0x42 ≈ 66%) and the foreground (0xa6 ≈ 166%) from
             // it. Sample-and-scale is deferred; for now paint the shadow
             // as a 66%-scaled version of `colour` — matches the exe when
             // called with a non-zero foreground colour (the common case).
+            // The shadow layer never carries the caret — matches the
+            // exe, which passes -1 for the shadow blit.
             let shadow = scale_colour(s, colour, 0x42);
             draw_text(s, x + 1, y + 1, font, line, shadow);
         }
-        draw_text(s, x, y, font, line, colour);
-        // Caret stroke — asm at FUN_005ceaa0:005cf1dd..005cf1ef draws a
-        // vertical 1-px SOLID line (style=2) from (x_pen, y_top) to
-        // (x_pen, y_top + font_h - 1). We render it on the FIRST line
-        // only, using the prefix width computed above as the pen X. The
-        // exe's line index is defined on the unwrapped buffer; because
-        // wrap drops the overflowing character, hoping to identify a
-        // wrapped-line target is ambiguous — the first-line convention
-        // matches every observed caller (single-line edit widgets).
-        if !painted_first {
-            if let Some(prefix_w) = caret_prefix_w {
-                let caret_x = x + prefix_w;
-                s.draw_line(caret_x, y, caret_x, y + font_h - 1, 2, colour);
-            }
-            painted_first = true;
-        }
+        draw_text_caret(s, x, y, font, line, colour, line_local_caret);
         y += font_h;
     }
 }
