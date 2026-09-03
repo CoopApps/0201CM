@@ -33,6 +33,7 @@ pub mod packed;
 pub mod packed_glyph;
 pub mod packed_panel;
 pub mod packed_capture;
+pub mod packed_widget;
 pub mod screens_faithful;
 pub mod packed_text;
 pub mod msgbox;
