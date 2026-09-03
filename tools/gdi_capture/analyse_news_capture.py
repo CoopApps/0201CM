@@ -29,6 +29,8 @@ Cite: fixtures/news_capture_analysis.md and reports/cm0102_exact_news_ui_evidenc
 """
 
 from __future__ import annotations
+import argparse
+import base64
 import collections
 import gzip
 import json
@@ -37,6 +39,69 @@ from pathlib import Path
 
 
 DEFAULT_PATH = Path("fixtures/news_capture.jsonl.gz")
+
+
+def find_present_fb(events: list[dict], present_index: int) -> dict | None:
+    """Return the `present_fb` event that immediately follows the Nth
+    `--- PRESENT ---` marker (0-indexed). Returns None if the capture
+    was recorded without --capture-framebuffers or the index is beyond
+    what was captured. Requires live_log.js's News Milestone C format:
+    a `present_fb` event with { width, height, pitch, data_b64 }
+    emitted right after the marker."""
+    seen = -1
+    for i, e in enumerate(events):
+        if e.get("op") == "--- PRESENT ---":
+            seen += 1
+            if seen == present_index:
+                # Scan forward for the paired `present_fb` — should be
+                # the very next event, but tolerate other events between.
+                for j in range(i + 1, min(i + 4, len(events))):
+                    if events[j].get("op") == "present_fb":
+                        return events[j]
+                return None
+    return None
+
+
+def dump_framebuffer_ppm(fb: dict, out: Path) -> None:
+    """Convert the base64 u16 LE framebuffer to a binary PPM (P6) file.
+    RGB555 unpack — matches what cm0102_GDI.exe writes to DAT_00ad6b1c.
+
+    A PPM is the plainest possible RGB image dump: header line, then raw
+    bytes. Any image viewer, ImageMagick, etc. reads it.
+    """
+    w = int(fb["width"])
+    h = int(fb["height"])
+    pitch = int(fb["pitch"])
+    raw = base64.b64decode(fb["data_b64"])
+    # Interpret as little-endian u16 pixels.
+    import struct
+    pixels = struct.unpack(f"<{pitch * h}H", raw)
+    with open(out, "wb") as fp:
+        fp.write(f"P6\n{w} {h}\n255\n".encode())
+        for y in range(h):
+            row = pixels[y * pitch : y * pitch + w]
+            row_bytes = bytearray(w * 3)
+            for x, p in enumerate(row):
+                # RGB555: r=bits 10-14, g=5-9, b=0-4. Scale 5→8 by
+                # left-shift 3 (drops low 3 bits — matches most viewers).
+                r = ((p >> 10) & 0x1f) << 3
+                g = ((p >> 5) & 0x1f) << 3
+                b = (p & 0x1f) << 3
+                row_bytes[x * 3 : x * 3 + 3] = bytes((r, g, b))
+            fp.write(row_bytes)
+    print(f"wrote {out} — {w}x{h} PPM", file=sys.stderr)
+
+
+def dump_framebuffer_pixels(fb: dict, out: Path) -> None:
+    """Write the raw u16 LE framebuffer to a binary file — exactly the
+    format the pixel-diff test reads (widthxheight u16, no padding
+    beyond `pitch_pixels` * height). Companion metadata (width/height/
+    pitch/masks) must be carried separately."""
+    raw = base64.b64decode(fb["data_b64"])
+    out.write_bytes(raw)
+    w, h, pitch = fb["width"], fb["height"], fb["pitch"]
+    print(f"wrote {out} — {len(raw)} bytes ({w}x{h}, pitch={pitch})",
+          file=sys.stderr)
 
 
 def clean_text(t: str) -> str:
@@ -61,9 +126,14 @@ def group_by_present(events: list[dict]) -> list[list[dict]]:
     frames: list[list[dict]] = []
     cur: list[dict] = []
     for e in events:
-        if e.get("op") == "--- PRESENT ---":
+        op = e.get("op")
+        if op == "--- PRESENT ---":
             frames.append(cur)
             cur = []
+        elif op == "present_fb":
+            # Milestone-C framebuffer snapshot — not a primitive, skip
+            # so the per-frame analysis stays unchanged.
+            continue
         else:
             cur.append(e)
     if cur:
@@ -178,12 +248,46 @@ def report_news_specific(cands: list[dict]) -> None:
 
 
 def main(argv: list[str]) -> int:
-    path = Path(argv[1]) if len(argv) > 1 else DEFAULT_PATH
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("capture", type=Path, nargs="?", default=DEFAULT_PATH)
+    p.add_argument("--dump-framebuffer", nargs=2, metavar=("INDEX", "OUT_PPM"),
+                   help="Extract present N (0-indexed) framebuffer to a PPM. "
+                        "Requires capture recorded with --capture-framebuffers.")
+    p.add_argument("--dump-pixels", nargs=2, metavar=("INDEX", "OUT_BIN"),
+                   help="Extract present N framebuffer to raw u16 LE bin "
+                        "(the format the pixel-diff test loads).")
+    args = p.parse_args(argv[1:])
+
+    path = args.capture
     if not path.exists():
         print(f"error: {path} not found", file=sys.stderr)
         return 1
     events = load(path)
     print(f"loaded {len(events)} events from {path}")
+
+    if args.dump_framebuffer:
+        idx = int(args.dump_framebuffer[0])
+        out = Path(args.dump_framebuffer[1])
+        fb = find_present_fb(events, idx)
+        if fb is None:
+            print(f"no present_fb event found for present index {idx} "
+                  f"(was capture recorded with --capture-framebuffers?)",
+                  file=sys.stderr)
+            return 2
+        dump_framebuffer_ppm(fb, out)
+        return 0
+    if args.dump_pixels:
+        idx = int(args.dump_pixels[0])
+        out = Path(args.dump_pixels[1])
+        fb = find_present_fb(events, idx)
+        if fb is None:
+            print(f"no present_fb event found for present index {idx} "
+                  f"(was capture recorded with --capture-framebuffers?)",
+                  file=sys.stderr)
+            return 2
+        dump_framebuffer_pixels(fb, out)
+        return 0
+
     frames = group_by_present(events)
     print(f"{len(frames)} present-frames")
 
