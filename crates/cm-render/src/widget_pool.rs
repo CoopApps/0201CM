@@ -58,8 +58,14 @@ pub struct Widget {
     pub top: i32,
     pub right: i32,
     pub bottom: i32,
-    /// +0x14 — max columns before scrollbar reservation.
-    pub max_columns: i32,
+    /// +0x14 — dual-role slot. As a leaf widget, `FUN_00403a20`
+    /// reads it as a height/width metric (`edi` at `00403b02`,
+    /// `00403c6b`, `00403bfa`) — the "max columns before scrollbar
+    /// reservation" reading. As a parent widget, `FUN_00403240`
+    /// (see `insert_widget_z_order`) *writes* it with the running MAX
+    /// of children's seq (`*(int *)(param_1 + 0x14) = iVar4` at
+    /// `00403266`). Same storage, different semantics per role.
+    pub max_columns_or_z_max: i32,
     /// +0x18 — style/flags.
     pub flags: u32,
     /// +0x1C..+0x38 — column left-x table (up to 8 cols).
@@ -77,19 +83,12 @@ pub struct Widget {
 
     // ------------------------------------------------------------------
     // Fields added for the FUN_00403a20 port. Named where the exe
-    // logic makes it clear; `unk_0x<off>` with a TODO otherwise. Kept
-    // separate from the pre-existing `left/top/right/bottom` +
-    // `max_columns` + `flags` slots to avoid disturbing the existing
-    // struct layout — those slots may or may not overlap in reality,
-    // but a later pass owns the reconciliation. See MEMORY notes on
-    // widgets-not-screens + layer2-widget-renderer-status.
+    // logic makes it clear; `unk_0x<off>` with a TODO otherwise.
+    // The +0x10 and +0x14 slots above (`panel_code_or_z_min` /
+    // `max_columns_or_z_max`) are shared with the pre-existing
+    // z-order min/max — same storage, dual role per caller (see
+    // their doc-comments). Do NOT re-add separate fields for them.
     // ------------------------------------------------------------------
-    /// +0x10 — read at `FUN_00403a20:00403c24`
-    /// (`mov edx, [eax + 0x10]`) and immediately compared to `0x190`.
-    /// If `≤ 0x190` the frame lookup short-circuits with this value as
-    /// the pen. Written by `FUN_005d7bd0:005d7d5f` (`param_1[4] = param_6`).
-    /// TODO: purpose not decoded — treat as an opaque "panel code" for now.
-    pub unk_0x10_panel_code: i32,
     /// +0x1c — coord edge (right-x, per `FUN_00403a20:00403b1e`
     /// `mov eax, [eax + 0x1c]`; also read at `00403bd1` and `00403c99`).
     /// Written by `FUN_005d7bd0:005d7d67` (`param_1[7] = param_9`).
@@ -117,10 +116,16 @@ pub struct Widget {
     /// +0x212 + i*2 — z-order list of child widget indices (sorted by
     /// child's +0x24 seq). Count lives at +0xB74 in the exe.
     pub z_order: Vec<u16>,
-    /// +0x10 — running min seq across children.
-    pub z_order_min: i32,
-    /// +0x14 — running max seq across children.
-    pub z_order_max: i32,
+    /// +0x10 — dual-role slot. As a parent widget, `FUN_00403240`
+    /// (see `insert_widget_z_order`) *writes* it with the running MIN
+    /// of children's seq (`*(int *)(param_1 + 0x10) = iVar4` at
+    /// `0040325e`). As a leaf widget, `FUN_00403a20` reads it at
+    /// `00403c24` (`mov edx, [eax + 0x10]`) and compares to `0x190` —
+    /// if `≤ 0x190` the frame lookup short-circuits with this value as
+    /// the pen ("panel code" reading). Written on spawn by
+    /// `FUN_005d7bd0:005d7d5f` (`param_1[4] = param_6`). Same storage,
+    /// different semantics per role.
+    pub panel_code_or_z_min: i32,
 }
 
 /// The 18-arg call signature of `FUN_005D7BD0` (the populator called
@@ -150,19 +155,17 @@ impl Default for Widget {
     fn default() -> Self {
         Self {
             left: 0, top: 0, right: 0, bottom: 0,
-            max_columns: 0, flags: 0,
+            max_columns_or_z_max: 0, flags: 0,
             col_left_x: [0; 8], cell_right_x: [0; 8],
             row_top_y: [0; 8], row_bottom_y: [0; 8],
             parent_area: -1, cached_grid_index: 0,
-            unk_0x10_panel_code: 0,
             unk_0x1c_right_edge: 0,
             parent_area_link: -1,
             cols: 0, col_weights: [0; 0x1E],
             rows: 0, row_weights: [0; 0x1E],
             descriptor: WidgetDescriptor::empty(),
             z_order: Vec::new(),
-            z_order_min: i32::MAX,
-            z_order_max: i32::MIN,
+            panel_code_or_z_min: 0,
         }
     }
 }
@@ -190,8 +193,9 @@ impl WidgetDescriptor {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Area {
     /// +0x00 — bbox left. i32. Written by `FUN_005d7bd0` param_6 path;
-    /// read by `FUN_00403a20:00403aff` as `mov edx, [ecx + 4]` (wait —
-    /// +4 is y0). Coord is a full dword.
+    /// read by `FUN_00403a20:00403ba2..00403bc2` as `mov eax, [ecx]`
+    /// on the jge-taken tail (i.e. the un-offset base pointer read).
+    /// Coord is a full dword.
     pub x0: i32,
     /// +0x04 — bbox top. i32. Read at `FUN_00403a20:00403aff`
     /// (`mov edx, dword ptr [ecx + 4]`).
@@ -539,9 +543,18 @@ pub fn insert_widget_z_order(
     // The child's seq is `+0x24` — model as descriptor.seq (which
     // corresponds to spawn_widget's `param_6` arg).
     let seq = child.descriptor.seq;
-    // Update parent min/max bounds.
-    if seq < parent.z_order_min { parent.z_order_min = seq; }
-    if parent.z_order_max < seq { parent.z_order_max = seq; }
+    // Update parent min/max bounds (shared storage with the "panel
+    // code" / "max_columns" reads used by leaf widgets — see the
+    // Widget field doc-comments). First insertion primes both slots
+    // to `seq`; matches the exe where 005d7bd0 seeds +0x10 with
+    // param_6 (parent's own seq) before any child arrives.
+    if parent.z_order.is_empty() {
+        parent.panel_code_or_z_min = seq;
+        parent.max_columns_or_z_max = seq;
+    } else {
+        if seq < parent.panel_code_or_z_min { parent.panel_code_or_z_min = seq; }
+        if parent.max_columns_or_z_max < seq { parent.max_columns_or_z_max = seq; }
+    }
     // Bubble insertion: find first index whose current seq >= new seq.
     let n = parent.z_order.len();
     let mut insert_at = n;
@@ -750,8 +763,8 @@ mod tests {
         insert_widget_z_order(&mut parent, &child_widgets, 1);   // seq 10
         insert_widget_z_order(&mut parent, &child_widgets, 2);   // seq 20
         assert_eq!(parent.z_order, vec![1u16, 2, 0], "ascending by seq: 10, 20, 30");
-        assert_eq!(parent.z_order_min, 10);
-        assert_eq!(parent.z_order_max, 30);
+        assert_eq!(parent.panel_code_or_z_min, 10);
+        assert_eq!(parent.max_columns_or_z_max, 30);
     }
 
     #[test]

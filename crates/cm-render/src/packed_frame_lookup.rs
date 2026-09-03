@@ -65,11 +65,20 @@ pub fn frame_lookup(this_area: &Area, pool: &GuiRecordPool) -> FrameMetrics {
     // 00403a34  jne 0x403aa5                    ; -1 → error-log path
     let cw_idx = this_area.child_widget_index;
     if cw_idx == -1 {
-        // 00403a36..00403aa2 — error-log path.
-        // Composes an error string, calls the logger + error dispatcher,
-        // sets DAT_00b4d4f0 = 0, returns without writing either output.
-        // Ported as "leave outputs untouched" (matches asm: no writes to
-        // arg1/arg2 on this path).
+        // 00403a36..00403aa2 — error-log path. Elided calls, with cites:
+        //   00403a4c  call 0x9335d9   ; format-string composer (varargs)
+        //   00403a66  call 0x8fbf90   ; string builder / concat
+        //   00403a76  call 0x933579   ; log dispatcher (0xacd620 = log ctx)
+        //   00403a87  call 0x5d1670   ; error-message routing
+        //   00403a8f  mov  [0xb4d4f0], 0   ; DAT_00b4d4f0 side-effect
+        // The four callees are the CRT/game error-logging pipeline; we
+        // do not port their side effects (log dispatch, message queue).
+        // DAT_00b4d4f0: no readers in the decompiled corpus
+        // (`grep -riE b4d4f0 D:/cm0102-carve/ghidra_out/` finds only
+        // its data-symbol entry in `cm0102_GDI.exe/data_symbols.json`,
+        // no code references), so the write to zero is a dead-global
+        // side effect intentionally elided in the port. Match the asm's
+        // observable behaviour: leave both out-slots untouched.
         return out;
     }
 
@@ -118,7 +127,7 @@ pub fn frame_lookup(this_area: &Area, pool: &GuiRecordPool) -> FrameMetrics {
     // 00403b0b  cmp ebx, 0x258
     let y1 = this_area.y1;
     let y0 = this_area.y0;
-    let child14 = child_widget.max_columns; // +0x14
+    let child14 = child_widget.max_columns_or_z_max; // +0x14
     let hsum = y1.wrapping_sub(y0).wrapping_add(child14);
     if hsum < 0x258 {
         // 00403b13..00403b1c   *out_b = edi
@@ -171,14 +180,14 @@ pub fn frame_lookup(this_area: &Area, pool: &GuiRecordPool) -> FrameMetrics {
         out.out_a = Some((child_widget.flags as i32).wrapping_add(3));
     } else {
         // 00403ba2..00403bc2  (jge taken)
-        //   edx = [ebx + 0x10]                  ; child_widget.unk_0x10_panel_code
+        //   edx = [ebx + 0x10]                  ; child_widget.panel_code_or_z_min
         //   eax = [ecx + 8]                     ; this.x1
         //   edx -= eax                          ; panel - x1
         //   eax = [ecx]                         ; this.x0
         //   ecx = edx + eax - 3
         //   *arg1 = ecx
         let v = child_widget
-            .unk_0x10_panel_code
+            .panel_code_or_z_min
             .wrapping_sub(this_area.x1)
             .wrapping_add(this_area.x0)
             .wrapping_sub(3);
@@ -242,7 +251,7 @@ fn branch2(this_area: &Area, pool: &GuiRecordPool, child_widget: &Widget, out: &
         //   edx = eax + edx - 3                 ; + y0 - 3
         //   *arg2 = edx
         let v = child_widget
-            .max_columns
+            .max_columns_or_z_max
             .wrapping_sub(y1)
             .wrapping_add(y0)
             .wrapping_sub(3);
@@ -251,9 +260,9 @@ fn branch2(this_area: &Area, pool: &GuiRecordPool, child_widget: &Widget, out: &
 
     // 00403c0a..0x403c62 — the "walk again → panel test → out_a" tail.
     // Skip the redundant walk (we still have child_widget), but preserve
-    // the read semantics: panel = child.unk_0x10_panel_code.
+    // the read semantics: panel = child.panel_code_or_z_min.
     let _ = pool; // walk elided; child_widget is the same pointer.
-    let panel = child_widget.unk_0x10_panel_code;
+    let panel = child_widget.panel_code_or_z_min;
     // 00403c27  cmp edx, 0x190
     // 00403c2d  jg  0x403c44
     if panel <= 0x190 {
@@ -294,7 +303,7 @@ fn branch3(
     // 00403c84  je   0x403c99                   ; clear → compute_from_1c
     let y0 = this_area.y0;
     let y1 = this_area.y1;
-    let edi = child_widget.max_columns; // +0x14
+    let edi = child_widget.max_columns_or_z_max; // +0x14
     let ep = y1.wrapping_sub(y0).wrapping_add(edi);
 
     let compute_from_1c = if ep < 0x258 {
@@ -337,7 +346,7 @@ fn branch3(
     // 00403cb3..0x403d21 — branch3_common: walk again, panel test,
     // gated by 0x200000/0x100000 on this.border_style.
     let _ = pool;
-    let panel = child_widget.unk_0x10_panel_code;
+    let panel = child_widget.panel_code_or_z_min;
 
     // 00403ccd  eax = [edx + 0x10]              ; panel
     // 00403cd0  cmp eax, 0x190
@@ -424,9 +433,9 @@ mod tests {
         // 0x100 set → branch 2; child.unk_0x10 <= 0x190 → out_a = panel.
         let child = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x50,
+            panel_code_or_z_min: 0x50,
             unk_0x1c_right_edge: 30,
-            max_columns: 40,
+            max_columns_or_z_max: 40,
             flags: 0,
             ..Default::default()
         };
@@ -443,9 +452,9 @@ mod tests {
         // panel > 0x190 → out_a = child.flags - x1 + x0
         let child = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x200,
+            panel_code_or_z_min: 0x200,
             unk_0x1c_right_edge: 30,
-            max_columns: 40,
+            max_columns_or_z_max: 40,
             flags: 200,
             ..Default::default()
         };
@@ -462,9 +471,9 @@ mod tests {
         // panel <= 0x190 → check 0x100000: clear → use +0x18: out_a = flags+3.
         let child = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x50,
+            panel_code_or_z_min: 0x50,
             unk_0x1c_right_edge: 25,
-            max_columns: 40,
+            max_columns_or_z_max: 40,
             flags: 7,
             ..Default::default()
         };
@@ -481,9 +490,9 @@ mod tests {
         //       = max(25 - 200 + 20, 0) = 0
         let child = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x50,
+            panel_code_or_z_min: 0x50,
             unk_0x1c_right_edge: 25,
-            max_columns: 40,
+            max_columns_or_z_max: 40,
             flags: 7,
             ..Default::default()
         };
@@ -503,9 +512,9 @@ mod tests {
         // We test the raw 0x800000-set path.
         let child = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x10,
+            panel_code_or_z_min: 0x10,
             unk_0x1c_right_edge: 5,
-            max_columns: 1000, // huge → hsum >> 0x258
+            max_columns_or_z_max: 1000, // huge → hsum >> 0x258
             flags: 0,
             ..Default::default()
         };
@@ -523,8 +532,8 @@ mod tests {
         // With 0x200000 set: check 0x100000 (clear) → use +0x18: flags+3.
         let child_no = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x200,
-            max_columns: 40,
+            panel_code_or_z_min: 0x200,
+            max_columns_or_z_max: 40,
             flags: 99,
             ..Default::default()
         };
@@ -545,8 +554,8 @@ mod tests {
         //   out_a = panel - x1 + x0 - 3 = 0x50 - 100 + 10 - 3 = -13
         let child = Widget {
             parent_area_link: -1,
-            unk_0x10_panel_code: 0x50,
-            max_columns: 40,
+            panel_code_or_z_min: 0x50,
+            max_columns_or_z_max: 40,
             flags: 99,
             ..Default::default()
         };
@@ -566,7 +575,7 @@ mod tests {
         // widget[0] = the "child_widget" of this_area
         pool.widgets.push(Widget {
             parent_area_link: 1,       // points to area[1]
-            max_columns: 40,           // +0x14
+            max_columns_or_z_max: 40,           // +0x14
             unk_0x1c_right_edge: 25,   // +0x1c
             flags: 12,                 // becomes out_a target
             ..Default::default()
@@ -605,8 +614,8 @@ mod tests {
         let mut pool = GuiRecordPool::new();
         pool.widgets.push(Widget {
             parent_area_link: 1,
-            unk_0x10_panel_code: 500,
-            max_columns: 40,
+            panel_code_or_z_min: 500,
+            max_columns_or_z_max: 40,
             unk_0x1c_right_edge: 25,
             flags: 0,
             ..Default::default()
@@ -640,7 +649,7 @@ mod tests {
         let mut pool = GuiRecordPool::new();
         pool.widgets.push(Widget {
             parent_area_link: 1,
-            max_columns: 40,
+            max_columns_or_z_max: 40,
             flags: 7,
             ..Default::default()
         });
@@ -668,8 +677,8 @@ mod tests {
         let child = Widget {
             parent_area_link: -1,
             unk_0x1c_right_edge: 600, // makes hsum big
-            max_columns: 250,
-            unk_0x10_panel_code: 0x10,
+            max_columns_or_z_max: 250,
+            panel_code_or_z_min: 0x10,
             ..Default::default()
         };
         // area y0=20, y1=200 → (600-20)+200+3 = 783 >= 600
