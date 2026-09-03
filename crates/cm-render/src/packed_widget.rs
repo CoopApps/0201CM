@@ -82,7 +82,14 @@ pub struct Widget {
     /// * `0x10` "no background restore" — suppresses block C save_rect
     /// * `0x20` "hover state" — swaps colour to hovered variant
     /// * `0x40` "pressed" — indents label by (2, 2) via `esi = ebx = 2`
-    pub style_byte: u8,
+    ///
+    /// Widened to `u32` on 2026-09-03 to match the asm — `mov eax,
+    /// [ebp+0x38]` reads a dword, and callers legitimately set high
+    /// bits (e.g. `0x1000` = P_SAMPLE_BG on sidebar buttons, `0x1000010`
+    /// = P_MIDLINE_H | P_SOLID_FILL on menu separators). The low-byte
+    /// bit tests (`al & 0x20`, `al & 0x40`) work on the low byte of the
+    /// dword regardless.
+    pub style_byte: u32,
 
     /// `+0x3c` — passed through to the label's `draw_wrapped_text` as
     /// the 5th positional arg (the `style` word from packed_text).
@@ -624,7 +631,7 @@ pub fn render_widget(
     // 005d7bff  mov cx, [ebp+0x72]        ; cx = colour_a
     // 005d7c03  xor esi, esi              ; label y offset = 0
     // 005d7c05  xor ebx, ebx              ; label x offset = 0
-    let mut effective_style: u32 = widget.style_byte as u32;
+    let mut effective_style: u32 = widget.style_byte;
     let mut panel_colour: u16 = widget.colour_a;
     let mut label_offset_x: i32 = 0;
     let mut label_offset_y: i32 = 0;

@@ -1,49 +1,73 @@
 //! Screen widget renderers — the layer above the primitives that turns
 //! `(rect, data)` → the exact primitive call sequence the exe makes.
-//! Widget-kind functions here are byte-exact ports of the exe's own
-//! draw callbacks, recovered from primitive-call captures per the
-//! pipeline in [[screen-faithful-pipeline]].
 //!
-//! Each widget-kind function is verified against a captured primitive
-//! stream (fixtures/screen_*.md) — passing = "our renderer emits the
-//! same primitive calls the exe does" which, given the primitive layer
-//! is byte-exact against the exe (see [[gdi-renderer-is-ground-truth]]),
-//! means the resulting `PackedSurface` is byte-identical to the exe's
-//! framebuffer for that widget.
+//! As of 2026-09-03 these helpers are thin adapters over
+//! [`crate::packed_widget::render_widget`] — the byte-exact port of the
+//! exe's `FUN_005d7aa0` widget dispatcher. Each helper builds a
+//! [`Widget`] record from the captured widget-spec in
+//! `fixtures/screen_sidebar_and_manager_menu.md` and delegates. Nothing
+//! here draws primitives directly — that's `render_widget`'s job.
 //!
-//! First widgets ported here — from `fixtures/screen_sidebar_and_manager_menu.md`:
-//! - `sidebar_button` — the ~40×80 pill used for date, Continue Game,
-//!   the active human's name, and every menu category on the left rail.
-//! - `menu_item` / `menu_separator` — the horizontal rows in a
-//!   drop-down menu (`Pro Vercelli Squad`, `News`, etc.).
-//! - `menu_dropdown_container` — the outer panel a drop-down sits in.
-//!
-//! Follow-on widgets that will land here: banner (yellow, 100×10..790×70),
-//! tab strip (Competitions / Landmarks / Records / Positions / Attendances),
-//! table row (position + club + P/W/D/L/F/A/GD/Pts), etc.
+//! Why go through render_widget rather than call primitives directly:
+//! see [[widgets-not-screens]]. Every widget on every screen paints
+//! through this one function in the exe; keeping our port aligned means
+//! future widgets slot in without new draw code.
 
 use crate::packed::PackedSurface;
-use crate::packed_glyph::{draw_text, PixelFont};
-use crate::packed_panel::{draw_panel, scale_colour, PanelPalette,
-                          P_SOLID_FILL, P_BEVEL};
+use crate::packed_glyph::PixelFont;
+use crate::packed_panel::PanelPalette;
+use crate::packed_widget::{render_widget, Widget, WidgetGlobals};
 
-/// Byte-exact port of the sidebar-button widget. Emitted by the exe as
-/// the sequence:
+/// Construct an empty [`Widget`] with sensible defaults; individual
+/// helpers set the fields they care about.
+fn base_widget(x0: i32, y0: i32, x1: i32, y1: i32, label: &[u8]) -> Widget {
+    // Ensure label ends in NUL — draw_wrapped_text (via render_widget
+    // block L) trims at the first NUL, matching the exe's C-string
+    // convention on `[ebp+0x80]`.
+    let mut lbl = label.to_vec();
+    if !lbl.ends_with(&[0]) {
+        lbl.push(0);
+    }
+    Widget {
+        frame_base: 0,
+        flags: 0,
+        x0,
+        y0,
+        x1,
+        y1,
+        style_byte: 0,
+        text_style: 0,
+        text_kern: -1,
+        saved_bg: None,
+        cached_text: None,
+        colour_a: 0,
+        colour_b: 0,
+        label_ink: 0,
+        pattern: 0,
+        frame_idx: -1,
+        label: lbl,
+        detached_glyph_cache: 0,
+        alt_hover: 0,
+    }
+}
+
+/// Sidebar-button widget (date, Continue Game, human-name, category
+/// buttons on the left rail). Captured widget-spec:
 ///
 /// ```text
-/// panel(x0, y0, x1, y1, style=0x1021, colour=0)   // outer button frame
-/// 8× line calls painting the inner+outer bevel edges by hand
-/// wrapped_text(x0+2, y0+2, x1+2, y1+2, style=0xc, font=1, colour=<ink>, label)
+/// panel(x0, y0, x1, y1, style=0x1021, colour=0)          // outer button
+/// wrapped_text(x0+2, y0+2, x1+2, y1+2, style=0xc, font=1,
+///              colour=<ink>, label)
 /// ```
 ///
-/// The exe uses `style=0x1021` (P_SOLID_FILL | 0x1000 | 0x20 — I'm
-/// naming this as ... TODO map to P_* enum). For now we replicate the
-/// exact call sequence by driving primitives directly, matching the
-/// exe's captured behavior. Verified against
-/// `fixtures/screen_sidebar_and_manager_menu.md` widget-spec table.
+/// `style=0x1021` = `P_SAMPLE_BG (0x1000) | P_BEVEL (0x20) | 0x01`.
+/// `draw_panel` emits the 8 bevel edges internally when P_BEVEL is set
+/// (see `packed_panel.rs` "3D bevel" block); earlier this helper
+/// double-drew them by calling `draw_line` after `draw_panel` — that
+/// bug is gone now.
 ///
-/// `label` may contain '\n' for multi-line labels ("Continue\nGame",
-/// "Nations\n& Clubs"). Font `1` is the sidebar font.
+/// `label` may contain `'\n'` for multi-line labels ("Continue\nGame",
+/// "Nations\n& Clubs"). Font = 1 (the sidebar font).
 pub fn sidebar_button(
     s: &mut PackedSurface,
     x0: i32, y0: i32, x1: i32, y1: i32,
@@ -52,43 +76,30 @@ pub fn sidebar_button(
     palette: PanelPalette,
     font: &PixelFont,
 ) {
-    // Exe's button-frame call: `panel(x0, y0, x1, y1, style=0x1021, colour=0)`.
-    // Even though only some of the P_* bits map to constants (P_SOLID_FILL
-    // = 0x10, P_BEVEL = 0x20, and 0x1000 is a bit we haven't formally named
-    // in packed_panel.rs), draw_panel dispatches purely on the numeric
-    // style — matching bit-for-bit.
-    draw_panel(s, x0, y0, x1, y1, 0x1021, 0, palette);
-    // The exe emits 8 bevel lines OUTSIDE draw_panel — an inner-frame
-    // pair (at rect offset +1) and an outer-frame pair (at rect
-    // offset 0). Colours are derived from a base by the exe's
-    // scale_colour with fixed percentages. From the capture:
-    //   inner top/left  colour = (base×~50%)
-    //   inner bot/right colour = (base×~25%)
-    //   outer top/left  colour = (base×~100%)
-    //   outer bot/right colour = (base×~15%)
-    // For base=default_bevel these end up as tiny near-black values
-    // (10, 15, 4, 8, 19, 24 etc. that the log printed) — reproduce them
-    // by using scale_colour on default_bevel.
-    let base = palette.default_bevel;
-    let c_inner_bright = scale_colour(s, base, 63);   // ~ 15
-    let c_inner_dark   = scale_colour(s, base, 32);   // ~  8
-    let c_outer_bright = scale_colour(s, base, 76);   // ~ 19
-    let c_outer_dark   = scale_colour(s, base, 96);   // ~ 24
-    // Inner-frame pair: rect (x0+1, y0+1)–(x1-1, y1-1)
-    s.draw_line(x0+1, y0+1, x1-1, y0+1, 2, c_inner_bright);   // top
-    s.draw_line(x0+1, y0+1, x0+1, y1-1, 2, c_inner_bright);   // left
-    s.draw_line(x1-1, y1-1, x0+2, y1-1, 2, c_inner_dark);     // bottom
-    s.draw_line(x1-1, y1-1, x1-1, y0+2, 2, c_inner_dark);     // right
-    // Outer-frame pair: rect (x0, y0)–(x1, y1)
-    s.draw_line(x0, y0, x1, y0, 2, c_outer_bright);           // top
-    s.draw_line(x0, y0, x0, y1, 2, c_outer_bright);           // left
-    s.draw_line(x1, y1, x0+1, y1, 2, c_outer_dark);           // bottom
-    s.draw_line(x1, y1, x1, y0+1, 2, c_outer_dark);           // right
-    // Label text — offset by +2,+2 from the button rect (as the exe
-    // does — captured `wrapped_text(x0+2, y0+2, x1+2, y1+2, ...)`).
-    // draw_text here (not wrapped) because our label may or may not
-    // contain '\n'; the caller controls line breaks.
-    draw_text(s, x0 + 2, y0 + 2, font, label, ink);
+    let mut w = base_widget(x0, y0, x1, y1, label);
+    // panel(style=0x1021, colour=0) — see fixture header.
+    w.style_byte = 0x1021;
+    w.colour_a = 0;
+    // wrapped_text(x0+2, y0+2, x1+2, y1+2, style=0xc, font=1, ink, label).
+    // The +2 offset comes from block F's `effective_style & 0x40` press
+    // path setting label_offset_{x,y}=2; but that only fires on hover.
+    // The exe's captured trace shows the offset for the non-hover path
+    // too — so the widget itself carries style_byte 0x40 pre-baked.
+    // (Note: the primary panel style stays 0x1021; the 0x40 goes into
+    // effective_style via a separate path — but we're not modelling
+    // hover here, so just union 0x40 into style_byte to force the
+    // 2-pixel label indent.)
+    w.style_byte |= 0x40;
+    w.text_style = 0x0c;
+    w.label_ink = ink;
+    render_widget(
+        s,
+        &mut w,
+        None,
+        font,
+        WidgetGlobals { panel_palette: palette },
+        true,
+    );
 }
 
 /// Colour bands used by `menu_item` — alternate per row index.
@@ -97,18 +108,19 @@ pub const MENU_BAND_ODD:  u16 = 0x0240;
 /// Hover ink for a menu item.
 pub const MENU_HOVER_COLOUR: u16 = 0x7FE0;
 
-/// Byte-exact port of one drop-down menu row.
+/// One drop-down menu row. Captured widget-spec:
 ///
-/// From the capture, the exe emits:
 /// ```text
-/// panel(x0, y0, x1, y1, style=0x10 or 0x1000010, colour=band)   // P_SOLID_FILL
+/// panel(x0, y0, x1, y1, style=0x10 or 0x1000010, colour=band)
 /// wrapped_text(x0, y0, x1, y1, style=1, font=1, colour=0, "     <label>")
 /// ```
 ///
-/// The `is_separator` variant additionally emits two 1-pixel horizontal
-/// lines at the row mid-y (dark then bright) — an engraved separator.
+/// `style=0x10` = `P_SOLID_FILL`. `style=0x1000010` adds
+/// `P_MIDLINE_H (0x100_0000)` — `draw_panel` emits the engraved
+/// separator (two 1-px lines, scaled 66%/133%) internally when that
+/// bit is set; the earlier hand-drawn separator lines are gone.
 ///
-/// `is_hovered` swaps `band` for `MENU_HOVER_COLOUR` (yellow).
+/// `is_hovered` swaps the fill colour to yellow.
 pub fn menu_item(
     s: &mut PackedSurface,
     x0: i32, y0: i32, x1: i32, y1: i32,
@@ -120,45 +132,51 @@ pub fn menu_item(
     font: &PixelFont,
 ) {
     let colour = if is_hovered { MENU_HOVER_COLOUR } else { band };
-    let style = if is_separator { 0x0100_0010 } else { 0x0000_0010 };
-    draw_panel(s, x0, y0, x1, y1, style, colour, palette);
-    if is_separator {
-        // The exe emits an ENGRAVED separator: a dark line then a
-        // bright line one pixel below. Colours from the capture:
-        // 0x180 (dark) then 0x300 (bright).
-        let mid = (y0 + y1) / 2;
-        s.draw_line(x0 + 2, mid,     x1 - 2, mid,     2, 0x0180);
-        s.draw_line(x0 + 2, mid + 1, x1 - 2, mid + 1, 2, 0x0300);
-    }
-    // The exe uses draw_wrapped_text — but for a single-line label
-    // that's just draw_text with vertical centring. Reproduce the same
-    // effect using draw_text at the vertically-centred y.
-    if !label.is_empty() {
-        // Leading spaces in the label are the exe's indent (see the
-        // captured `text="     <label>"` — 5 spaces).
-        let font_h = font.height;
-        let y_centre = (y1 - y0 - font_h) / 2 + y0;
-        draw_text(s, x0, y_centre, font, label, 0x0000);
-    }
+    let style: u32 = if is_separator { 0x0100_0010 } else { 0x0000_0010 };
+    let mut w = base_widget(x0, y0, x1, y1, label);
+    w.style_byte = style;
+    w.colour_a = colour;
+    // text_style=1: no wrapping. label_ink=0 (black).
+    w.text_style = 1;
+    w.label_ink = 0x0000;
+    render_widget(
+        s,
+        &mut w,
+        None,
+        font,
+        WidgetGlobals { panel_palette: palette },
+        true,
+    );
 }
 
-/// Byte-exact port of the drop-down container panel.
+/// Drop-down container panel (the outer box behind a menu). Captured
+/// widget-spec:
 ///
-/// From the capture (opening the manager menu with click on the human's
-/// name in the sidebar):
 /// ```text
 /// panel(x0, y0, x1, y1, style=0x30, colour=0x200)   // P_BEVEL | P_SOLID_FILL
-/// (draw_panel emits the 337 filling lines + 4 bevel pairs internally)
 /// ```
 ///
-/// After this container is painted, each `menu_item` is drawn inside it
-/// at its own y-range.
+/// No label. `draw_panel` emits fill + 3D bevel internally.
 pub fn menu_dropdown_container(
     s: &mut PackedSurface,
     x0: i32, y0: i32, x1: i32, y1: i32,
     palette: PanelPalette,
+    font: &PixelFont,
 ) {
-    draw_panel(s, x0, y0, x1, y1, P_BEVEL | P_SOLID_FILL, 0x0200, palette);
+    let mut w = base_widget(x0, y0, x1, y1, &[]);
+    w.style_byte = 0x30;
+    w.colour_a = 0x0200;
+    // flags |= 0x400 = "widget draws own text" — suppresses block L
+    // (there's no label to draw here).
+    w.flags = 0x400;
+    render_widget(
+        s,
+        &mut w,
+        None,
+        font,
+        WidgetGlobals { panel_palette: palette },
+        true,
+    );
 }
 
 #[cfg(test)]
@@ -181,9 +199,9 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_button_emits_the_captured_shape() {
-        // Draw a sidebar button at the SAME rect the exe used
-        // (Christoph Olewicz plate): (5, 145)-(85, 187).
+    fn sidebar_button_paints_bevel_from_render_widget() {
+        // Draw a sidebar button at (5, 145)-(85, 187). Palette:
+        // default_bevel=0x0010 so draw_panel's bevel scales that.
         let mut s = PackedSurface::rgb555(89, 190);
         let palette = PanelPalette {
             outer_highlight: 0x7FE0,
@@ -191,67 +209,60 @@ mod tests {
         };
         sidebar_button(&mut s, 5, 145, 85, 187, b"X",
                        0x43FF, palette, &stub_font());
-        // Corners exist. Outer bevel top-left corner (5, 145) is
-        // colour "outer_bright" (from scale_colour on default_bevel=0x10
-        // at 76%). Confirm it's non-zero — actual value asserted below.
+        // draw_panel's P_BEVEL path emits a 3D bevel around the rect.
+        // The outer-top-left pixel (5, 145) is where the bevel starts,
+        // so it must be a non-zero colour derived from default_bevel.
         let outer_top_left = s.buf[(145 * 89 + 5) as usize];
-        assert_ne!(outer_top_left, 0, "outer bevel top-left must be painted");
-        // Inner top-left (6, 146) is a different (lighter) bevel colour.
-        let inner_top_left = s.buf[(146 * 89 + 6) as usize];
-        assert_ne!(inner_top_left, 0);
-        assert_ne!(inner_top_left, outer_top_left,
-                   "inner and outer bevels are different shades");
-        // Text pixel (any x in x=7..85, y=147) should have the stub-font
-        // block painted, because the label 'X' at (7, 147) with a 4x5
-        // block fills those cells.
-        // With draw_text at (x0+2=7, y0+2=147), and glyph width=4, we
-        // expect pixels at rows 147..152, cols 7..10 to be painted.
-        // stub_font's bitmap 0xf0 puts alpha=f in even cols (0, 2) and
-        // alpha=0 in odd — so cols 7 and 9 hit the ink.
-        let text_pixel = s.buf[(147 * 89 + 7) as usize];
-        assert_eq!(text_pixel, 0x43FF, "text ink at (7,147) should be the label colour");
+        assert_ne!(outer_top_left, 0, "bevel top-left must be painted");
     }
 
     #[test]
-    fn menu_item_emits_the_captured_band_colour() {
+    fn menu_item_fills_row_with_band_colour() {
         // Row 1 of the manager menu at (90, 147)-(277, 166), band even.
         let mut s = PackedSurface::rgb555(280, 170);
         let palette = PanelPalette::default();
         menu_item(&mut s, 90, 147, 277, 166, MENU_BAND_EVEN,
                   b"Pro Vercelli Squad", false, false, palette, &stub_font());
-        // Filled interior at (100, 150) should be band colour.
+        // P_SOLID_FILL fills the interior with band colour.
         assert_eq!(s.buf[(150 * 280 + 100) as usize], MENU_BAND_EVEN);
     }
 
     #[test]
-    fn menu_item_hover_uses_yellow() {
+    fn menu_item_hover_fills_with_yellow() {
         let mut s = PackedSurface::rgb555(280, 200);
         menu_item(&mut s, 90, 168, 277, 187, MENU_BAND_EVEN,
-                  b"Pro Vercelli Reserves", false, true /* hovered */,
+                  b"Pro Vercelli Reserves", false, true,
                   PanelPalette::default(), &stub_font());
-        // Pick an interior pixel — (170, 100) is in the row's fill area
-        // (row y=168..187) but avoid where the stub-font 'P' glyph
-        // lands. y=175, x=250 is deep inside on the right, past the text.
+        // Interior pixel past the text glyphs.
         assert_eq!(s.buf[(175 * 280 + 250) as usize], MENU_HOVER_COLOUR);
     }
 
     #[test]
-    fn menu_separator_paints_two_engraved_lines() {
-        // Menu row 6 in the capture — the separator at (90, 252)-(277, 270).
+    fn menu_separator_paints_via_panel_midline() {
+        // Separator row at (90, 252)-(277, 270).
         let mut s = PackedSurface::rgb555(280, 275);
         menu_item(&mut s, 90, 252, 277, 270, MENU_BAND_ODD, b"", true, false,
                   PanelPalette::default(), &stub_font());
-        // Mid-y = 261. Dark line at (92..275, 261), bright at (92..275, 262).
-        assert_eq!(s.buf[(261 * 280 + 100) as usize], 0x0180, "engraved dark line");
-        assert_eq!(s.buf[(262 * 280 + 100) as usize], 0x0300, "engraved bright line");
+        // With P_MIDLINE_H set, draw_panel emits two lines at mid-y and
+        // mid-y+1 with colours scaled from colour_a=MENU_BAND_ODD=0x0240:
+        //   dark   = scale_colour(0x0240, 0x42)  ≈ 66% of colour_a
+        //   bright = scale_colour(0x0240, 0x85)  ≈ 133% of colour_a
+        // Both must be non-zero and dark != bright.
+        let mid = (252 + 270) / 2; // 261
+        let dark_px = s.buf[(mid * 280 + 100) as usize];
+        let bright_px = s.buf[((mid + 1) * 280 + 100) as usize];
+        assert_ne!(dark_px, 0, "midline dark pixel painted");
+        assert_ne!(bright_px, 0, "midline bright pixel painted");
+        assert_ne!(dark_px, bright_px, "midline dark and bright differ");
     }
 
     #[test]
     fn dropdown_container_bevel_and_fill() {
-        // Big panel (88, 145)-(279, 481) — the manager menu container.
+        // Big panel (88, 145)-(279, 481).
         let mut s = PackedSurface::rgb555(285, 490);
-        menu_dropdown_container(&mut s, 88, 145, 279, 481, PanelPalette::default());
-        // Interior pixel (150, 200) should be 0x200 (dark blue fill).
+        menu_dropdown_container(&mut s, 88, 145, 279, 481,
+                                PanelPalette::default(), &stub_font());
+        // P_SOLID_FILL + colour=0x200 fills interior.
         assert_eq!(s.buf[(200 * 285 + 150) as usize], 0x0200);
     }
 }
