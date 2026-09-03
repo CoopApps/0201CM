@@ -74,6 +74,35 @@ pub struct Widget {
     pub parent_area: i16,
     /// +0xB70 — cached grid-index for the parent's slot.
     pub cached_grid_index: i16,
+
+    // ------------------------------------------------------------------
+    // Fields added for the FUN_00403a20 port. Named where the exe
+    // logic makes it clear; `unk_0x<off>` with a TODO otherwise. Kept
+    // separate from the pre-existing `left/top/right/bottom` +
+    // `max_columns` + `flags` slots to avoid disturbing the existing
+    // struct layout — those slots may or may not overlap in reality,
+    // but a later pass owns the reconciliation. See MEMORY notes on
+    // widgets-not-screens + layer2-widget-renderer-status.
+    // ------------------------------------------------------------------
+    /// +0x10 — read at `FUN_00403a20:00403c24`
+    /// (`mov edx, [eax + 0x10]`) and immediately compared to `0x190`.
+    /// If `≤ 0x190` the frame lookup short-circuits with this value as
+    /// the pen. Written by `FUN_005d7bd0:005d7d5f` (`param_1[4] = param_6`).
+    /// TODO: purpose not decoded — treat as an opaque "panel code" for now.
+    pub unk_0x10_panel_code: i32,
+    /// +0x1c — coord edge (right-x, per `FUN_00403a20:00403b1e`
+    /// `mov eax, [eax + 0x1c]`; also read at `00403bd1` and `00403c99`).
+    /// Written by `FUN_005d7bd0:005d7d67` (`param_1[7] = param_9`).
+    /// TODO: purpose not decoded — likely the panel's outer-right coord;
+    /// distinct from the +0x0C `right` slot on this Rust struct.
+    pub unk_0x1c_right_edge: i32,
+    /// +0x7a i16 — index of the parent Area for the sibling-area lookup
+    /// walk in `FUN_00403a20:00403abb` (`mov dx, [eax + 0x7a]`), i.e.
+    /// used to reach the Area whose +0x204 pool-base and +0x20e child
+    /// slot are then read. Written by `FUN_005d7bd0:005d7d97` as
+    /// `*(short *)((int)param_1 + 0x7a) = param_22` where `param_22`
+    /// is the area index passed at spawn. `-1` = none (fast bail).
+    pub parent_area_link: i16,
     /// +0xBA9 — column count (1..0x1E).
     pub cols: u8,
     /// +0xBAB..+0xBC9 — column weight bytes.
@@ -125,6 +154,9 @@ impl Default for Widget {
             col_left_x: [0; 8], cell_right_x: [0; 8],
             row_top_y: [0; 8], row_bottom_y: [0; 8],
             parent_area: -1, cached_grid_index: 0,
+            unk_0x10_panel_code: 0,
+            unk_0x1c_right_edge: 0,
+            parent_area_link: -1,
             cols: 0, col_weights: [0; 0x1E],
             rows: 0, row_weights: [0; 0x1E],
             descriptor: WidgetDescriptor::empty(),
@@ -149,28 +181,85 @@ impl WidgetDescriptor {
 ///
 /// Areas are the containers that widgets attach to. An area holds its own
 /// bbox + backdrop + border style + optional gradient pointer + child list.
+///
+/// Byte offsets on the right refer to the exe's raw layout. Field types
+/// (i32 vs i16) match the sizes read from the asm — the coord quad at
+/// +0x00..+0x0F is dword-read by both `FUN_005d7bd0` (writes `*(int *)(iVar3 + 8 + *param_1)`
+/// = area+0x8 as int) and `FUN_00403a20` (reads `[edx + 0xc]`, `[edx + 4]`
+/// as dwords), so all four are `i32`, not `i16`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Area {
-    pub x0: i16,
-    pub y0: i16,
-    pub x1: i16,
-    pub y1: i16,
-    /// Per-child hint (upper bound on children).
+    /// +0x00 — bbox left. i32. Written by `FUN_005d7bd0` param_6 path;
+    /// read by `FUN_00403a20:00403aff` as `mov edx, [ecx + 4]` (wait —
+    /// +4 is y0). Coord is a full dword.
+    pub x0: i32,
+    /// +0x04 — bbox top. i32. Read at `FUN_00403a20:00403aff`
+    /// (`mov edx, dword ptr [ecx + 4]`).
+    pub y0: i32,
+    /// +0x08 — bbox right. i32. Read/written at `FUN_005d7bd0:005d7d2f`
+    /// (`*(int *)(iVar3 + 8 + *param_1) < iVar5`).
+    pub x1: i32,
+    /// +0x0C — bbox bottom. i32. Read/written at `FUN_005d7bd0:005d7d3f`
+    /// and read at `FUN_00403a20:00403afc` (`mov esi, [ecx + 0xc]`).
+    pub y1: i32,
+    /// +0xBAC — child-widget-slot counter (byte). Bumped by
+    /// `FUN_005d7bd0` when a widget attaches; odd → widget +0x184 = 1.
+    /// Currently repurposed as `nchildren_hint` — the byte offset is
+    /// far from +0 in the exe but we bundle it here to keep the Rust
+    /// struct compact.
     pub nchildren_hint: u8,
     /// Optional per-area extra blob copied byte-wise from the caller.
+    /// In the exe this is the +0xBAD / +0xBCB 30-byte palettes.
     pub extra: Vec<u8>,
+    /// Interior colour slot (semantically the pen index used by
+    /// `FUN_005cf570`'s pixel loops).
     pub color_slot: u8,
-    pub gradient_ptr: i32,       // 0 = no gradient
+    /// 0 = no gradient. In the exe this lives inside the palette region;
+    /// we keep it as a decoded scalar for the Rust renderer.
+    pub gradient_ptr: i32,
+    /// +0x18 — panel/border style flags. `FUN_00403a20` tests bits
+    /// `0x100` (line `00403aef`), `0x100000` / `0x200000` (lines
+    /// `00403ce0` / `00403cd7`), `0x400000` / `0x800000` (lines
+    /// `00403c86` / `00403c7e`). Also read as `bh & 1` at `00403bc8`.
+    /// (Same slot as `border_style` in the pre-existing field.)
     pub border_style: u32,
+    /// Background colour (RGB555 packed) applied by the fill path.
     pub bg_color: u32,
-    pub parent_area: i32,        // -1 for root
+    /// Parent-area index (-1 for root).
+    pub parent_area: i32,
+
+    // ------------------------------------------------------------------
+    // Fields added for the FUN_00403a20 port — the frame-lookup helper
+    // that computes the panel/text pen for the current draw. These do
+    // NOT yet correspond to a single semantic name; each carries a
+    // TODO with the exe line that reads it.
+    // ------------------------------------------------------------------
+    /// +0x204 — pointer to Area-pool base in the exe. In the Rust port
+    /// the pool is `Vec<Area>`, so this is a marker only.
+    /// TODO: read by `FUN_00403a20:00403ad9` as `mov edx, [ecx + 0x204]`
+    /// — used as the base address for sibling-area arithmetic. In Rust
+    /// the sibling lookup goes through `GuiRecordPool.areas`.
+    pub unk_0x204_area_pool_base: u32,
+    /// +0x208 — pointer to Widget-pool base in the exe. Same story as
+    /// +0x204 — marker only, real lookup is `GuiRecordPool.widgets`.
+    /// TODO: read by `FUN_00403a20:00403ab2` as `mov eax, [ecx + 0x208]`.
+    pub unk_0x208_widget_pool_base: u32,
+    /// +0x20e — index of the widget that "owns" this area's contents
+    /// (`-1` = none). i16. Written by `FUN_005d7bd0` implicitly via the
+    /// caller; read by `FUN_00403a20:00403a20` as `mov ax, [ecx + 0x20e]`
+    /// (the very first instruction — the fast-path bail is on
+    /// `ax == 0xFFFF`) and again at `00403ae1` for sibling areas.
+    pub child_widget_index: i16,
 }
 
 impl Default for Area {
     fn default() -> Self {
         Self { x0: 0, y0: 0, x1: 0, y1: 0, nchildren_hint: 0,
                extra: Vec::new(), color_slot: 0, gradient_ptr: 0,
-               border_style: 0, bg_color: 0, parent_area: -1 }
+               border_style: 0, bg_color: 0, parent_area: -1,
+               unk_0x204_area_pool_base: 0,
+               unk_0x208_widget_pool_base: 0,
+               child_widget_index: -1 }
     }
 }
 
@@ -356,8 +445,12 @@ impl GuiRecordPool {
         let mut stored_extra = palette_a.clone();
         stored_extra.extend_from_slice(&palette_b);
         self.areas.push(Area {
-            x0, y0, x1, y1, nchildren_hint, extra: stored_extra,
+            x0: x0 as i32, y0: y0 as i32, x1: x1 as i32, y1: y1 as i32,
+            nchildren_hint, extra: stored_extra,
             color_slot, gradient_ptr, border_style, bg_color, parent_area,
+            unk_0x204_area_pool_base: 0,
+            unk_0x208_widget_pool_base: 0,
+            child_widget_index: -1,
         });
         // Exe: `FUN_00549FD0(n-1)` — enroll in area-order list.
         enroll_area_order(self, idx as i16);
