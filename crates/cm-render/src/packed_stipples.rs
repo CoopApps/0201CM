@@ -1,0 +1,202 @@
+//! Stipple palette records dumped verbatim from `cm0102_GDI.exe`.
+//!
+//! Every record is a small mask (width × height bytes, row-major) read by
+//! `FUN_005d7aa0` widget-decoration branches (blocks G..K in the
+//! packed-widget renderer) and blitted via `PackedSurface::draw_stipple`
+//! (port of `FUN_005cd870`). The on-disk layout is
+//! `[u8 width, u8 height, u8 mask[width*height]]`; here we store the mask
+//! separately in a `LazyLock<Vec<StipplePattern>>` keyed by original VA.
+//!
+//! All bytes were extracted with `pefile` from the shipped
+//! `cm0102_GDI.exe`; DAT VAs are relative to `ImageBase = 0x00400000`.
+//! Do **not** hand-edit these — regenerate by dumping the exe again if the
+//! binary changes.
+
+use std::collections::HashMap;
+use std::sync::LazyLock;
+
+use crate::packed::StipplePattern;
+
+/// Original VA of DAT_009b9bcc — {4, 7}, 28 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block G-left edge.
+pub const VA_STIPPLE_G_LEFT: u32 = 0x009b_9bcc;
+/// Original VA of DAT_009b9bec — {4, 7}, 28 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block G-right edge.
+pub const VA_STIPPLE_G_RIGHT: u32 = 0x009b_9bec;
+/// Original VA of DAT_009b9c0c — {7, 4}, 28 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block G-top edge.
+pub const VA_STIPPLE_G_TOP: u32 = 0x009b_9c0c;
+/// Original VA of DAT_009b9c2c — {7, 4}, 28 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block G-bottom edge.
+pub const VA_STIPPLE_G_BOTTOM: u32 = 0x009b_9c2c;
+/// Original VA of DAT_009b9c4c — {7, 7}, 49 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block H.
+pub const VA_STIPPLE_H: u32 = 0x009b_9c4c;
+/// Original VA of DAT_009b9c80 — {6, 11}, 66 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block I.
+pub const VA_STIPPLE_I: u32 = 0x009b_9c80;
+/// Original VA of DAT_009b9cc4 — {7, 10}, 70 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block J.
+pub const VA_STIPPLE_J: u32 = 0x009b_9cc4;
+/// Original VA of DAT_009b9d0c — {7, 10}, 70 mask bytes.
+/// First-seen use: `FUN_005d7aa0` block K.
+pub const VA_STIPPLE_K: u32 = 0x009b_9d0c;
+
+fn build(width: u8, height: u8, mask: &[u8]) -> StipplePattern {
+    assert_eq!(mask.len(), width as usize * height as usize);
+    StipplePattern { width, height, mask: mask.to_vec() }
+}
+
+/// All eight stipple palette records keyed by their original VA.
+/// Bytes are the raw `[mask]` (the `[w, h]` prefix is stripped and
+/// stored in the struct fields).
+pub static STIPPLES: LazyLock<HashMap<u32, StipplePattern>> = LazyLock::new(|| {
+    let mut m = HashMap::new();
+
+    // DAT_009b9bcc — {4, 7}
+    m.insert(VA_STIPPLE_G_LEFT, build(4, 7, &[
+        0x00, 0x00, 0x01, 0x00,
+        0x00, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+    ]));
+
+    // DAT_009b9bec — {4, 7}
+    m.insert(VA_STIPPLE_G_RIGHT, build(4, 7, &[
+        0x01, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x00,
+        0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x01,
+        0x00, 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x01, 0x00,
+    ]));
+
+    // DAT_009b9c0c — {7, 4}
+    m.insert(VA_STIPPLE_G_TOP, build(7, 4, &[
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    ]));
+
+    // DAT_009b9c2c — {7, 4}
+    m.insert(VA_STIPPLE_G_BOTTOM, build(7, 4, &[
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ]));
+
+    // DAT_009b9c4c — {7, 7}
+    m.insert(VA_STIPPLE_H, build(7, 7, &[
+        0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ]));
+
+    // DAT_009b9c80 — {6, 11}
+    m.insert(VA_STIPPLE_I, build(6, 11, &[
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x01, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x00, 0x00, 0x01,
+        0x00, 0x00, 0x00, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ]));
+
+    // DAT_009b9cc4 — {7, 10}
+    m.insert(VA_STIPPLE_J, build(7, 10, &[
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00,
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+        0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ]));
+
+    // DAT_009b9d0c — {7, 10}
+    m.insert(VA_STIPPLE_K, build(7, 10, &[
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+        0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x01, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+    ]));
+
+    m
+});
+
+/// Every VA in the palette, in the order the widget renderer's blocks
+/// reach them (G-left, G-right, G-top, G-bottom, H, I, J, K).
+pub const STIPPLE_VAS: [u32; 8] = [
+    VA_STIPPLE_G_LEFT,
+    VA_STIPPLE_G_RIGHT,
+    VA_STIPPLE_G_TOP,
+    VA_STIPPLE_G_BOTTOM,
+    VA_STIPPLE_H,
+    VA_STIPPLE_I,
+    VA_STIPPLE_J,
+    VA_STIPPLE_K,
+];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Expected (VA, width, height) tuples confirmed by re-dumping
+    /// `cm0102_GDI.exe` with `pefile` at commit time.
+    const EXPECTED_DIMS: &[(u32, u8, u8)] = &[
+        (VA_STIPPLE_G_LEFT,   4, 7),
+        (VA_STIPPLE_G_RIGHT,  4, 7),
+        (VA_STIPPLE_G_TOP,    7, 4),
+        (VA_STIPPLE_G_BOTTOM, 7, 4),
+        (VA_STIPPLE_H,        7, 7),
+        (VA_STIPPLE_I,        6, 11),
+        (VA_STIPPLE_J,        7, 10),
+        (VA_STIPPLE_K,        7, 10),
+    ];
+
+    #[test]
+    fn stipples_match_expected_dimensions() {
+        for &(va, w, h) in EXPECTED_DIMS {
+            let p = STIPPLES.get(&va).unwrap_or_else(|| panic!("missing VA {va:#x}"));
+            assert_eq!(p.width, w, "width mismatch for VA {va:#x}");
+            assert_eq!(p.height, h, "height mismatch for VA {va:#x}");
+        }
+        assert_eq!(STIPPLES.len(), EXPECTED_DIMS.len());
+    }
+
+    #[test]
+    fn stipples_have_correct_mask_length() {
+        for (&va, p) in STIPPLES.iter() {
+            let expected = p.width as usize * p.height as usize;
+            assert_eq!(
+                p.mask.len(),
+                expected,
+                "mask length wrong for VA {va:#x}"
+            );
+        }
+    }
+}

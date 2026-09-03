@@ -319,6 +319,63 @@ impl PackedSurface {
         }
     }
 
+    /// Byte-exact port of `FUN_005cd870` (189 bytes, 68 instructions) —
+    /// blit a stipple mask at `(x, y)` painting `colour` at every mask
+    /// byte != 0. The mask is stored inline in `pattern` as
+    /// `[width, height, mask[width * height]]`. The exe verifies the
+    /// full `w × h` rectangle is on-surface via `FUN_005cd330` and skips
+    /// the blit entirely if any corner is off — matches our
+    /// `clip` contract.
+    ///
+    /// Asm annotations (address / instruction):
+    /// * 0x5cd891 `mov edi,[esp+0x30]` — pattern pointer (arg4)
+    /// * 0x5cd8a3 `mov al,[edi+1]` — h
+    /// * 0x5cd8a8 `mov bl,[edi]` — w
+    /// * 0x5cd8ac..8c1 build (x, y, x+w-1, y+h-1) and call clip
+    /// * 0x5cd8c9 `test eax; je exit` — clip failed
+    /// * 0x5cd8cd..8e5 compute `dst = fb + (clipped_y0 * pitch + clipped_x0)`
+    /// * 0x5cd8ef `mov bp,[esp+0x2c]` — colour (16-bit, arg3)
+    /// * 0x5cd8f4 `lea edx,[edi+2]` — mask start
+    /// * 0x5cd8f7..fd initialise row/col counters
+    /// * 0x5cd8ff..912 inner col loop: if `mask[eax]!=0` write colour
+    /// * 0x5cd914..920 advance dst by (pitch - w) after each row
+    /// * 0x5cd923 `jne` — outer row loop; note `xor eax,eax` at 0x5cd8fd
+    ///   is the loop entry so `eax` resets each row.
+    pub fn draw_stipple(&mut self, x: i32, y: i32, colour: u16, pattern: &StipplePattern) {
+        let w = pattern.width as i32;
+        let h = pattern.height as i32;
+        // 0x5cd8eb `test eax,eax; jl` — h == 0 short-circuits before the row loop.
+        if h == 0 {
+            return;
+        }
+        // 0x5cd8ac..8cb — build FUN_005cd330 args and skip if any corner off-surface.
+        let Some((cx0, cy0, _, _)) = self.clip(x, y, x + w - 1, y + h - 1) else {
+            return;
+        };
+        // 0x5cd8cd..8e5 — dst = &fb[cy0 * pitch + cx0].
+        let pitch = self.pitch_pixels as usize;
+        let mut dst = (cy0 as usize) * pitch + cx0 as usize;
+        let mask = &pattern.mask[..];
+        // 0x5cd8f7 `lea esi,[ebx-1]` — inner test is `eax <= w-1`.
+        // We iterate the pattern in row-major order (mask index == row * w + col).
+        let w_us = w as usize;
+        for row in 0..(h as usize) {
+            // 0x5cd8fd `xor eax,eax` — col index resets each row.
+            // 0x5cd8ff `test esi; jl` — w == 0 skips the col loop entirely.
+            for col in 0..w_us {
+                // 0x5cd903 `cmp byte [edx+eax],0` — write only where the mask byte is non-zero.
+                if mask[row * w_us + col] != 0 {
+                    // 0x5cd909 `mov [ecx], bp` — 16-bit colour write.
+                    self.buf[dst + col] = colour;
+                }
+            }
+            // 0x5cd914..920 — advance dst by full pitch (inner loop's
+            // ecx += 2*w done implicitly by iterating `col`; here we
+            // add the whole pitch instead of just (pitch-w)).
+            dst += pitch;
+        }
+    }
+
     /// Iterate over the surface's rows as slices — used by golden tests
     /// that assert full-frame byte-identity against captured buffers.
     pub fn rows(&self) -> impl Iterator<Item = &[u16]> {
@@ -326,6 +383,18 @@ impl PackedSurface {
         let h = self.height as usize;
         (0..h).map(move |y| &self.buf[y * pitch..y * pitch + self.width as usize])
     }
+}
+
+/// Stipple pattern read by `FUN_005d7aa0` widget-decoration branches and
+/// blitted by `draw_stipple` (port of `FUN_005cd870`). The on-disk record
+/// layout in `cm0102_GDI.exe` is
+/// `[u8 width, u8 height, u8 mask[width * height]]` — the ports keep the
+/// same shape (width/height in bytes, mask row-major).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StipplePattern {
+    pub width: u8,
+    pub height: u8,
+    pub mask: Vec<u8>,
 }
 
 /// Rectangle of pixels saved by `PackedSurface::save_rect`.
@@ -557,6 +626,57 @@ mod tests {
     }
 
     // ---------------- darken ----------------
+
+    // ---------------- draw_stipple ----------------
+
+    #[test]
+    fn stipple_pattern_blits_expected_pixels() {
+        // 3x3 hand-built pattern with a plus-shape: only cells whose
+        // mask byte is non-zero should be painted.
+        let pat = StipplePattern {
+            width: 3,
+            height: 3,
+            mask: vec![
+                0, 1, 0,
+                1, 1, 1,
+                0, 1, 0,
+            ],
+        };
+        let mut s = PackedSurface::rgb555(5, 5);
+        let c = s.pack_rgb(0xff, 0, 0);
+        s.draw_stipple(1, 1, c, &pat);
+        let expected: [u16; 25] = [
+            0, 0, 0, 0, 0,
+            0, 0, c, 0, 0,
+            0, c, c, c, 0,
+            0, 0, c, 0, 0,
+            0, 0, 0, 0, 0,
+        ];
+        assert_eq!(s.buf, expected.to_vec());
+    }
+
+    #[test]
+    fn stipple_clips_to_surface() {
+        // Any part off-surface → whole blit is dropped (matches
+        // `FUN_005cd330`-then-skip in the exe). Surface must stay black.
+        let pat = StipplePattern {
+            width: 3,
+            height: 3,
+            mask: vec![1; 9],
+        };
+        let mut s = PackedSurface::rgb555(4, 4);
+        let c = s.pack_rgb(0xff, 0xff, 0xff);
+        // Right edge would land at x=5 (off-surface, width=4).
+        s.draw_stipple(3, 0, c, &pat);
+        assert!(s.buf.iter().all(|&v| v == 0), "off-right stipple must not draw");
+        // Negative origin.
+        s.draw_stipple(-1, 0, c, &pat);
+        assert!(s.buf.iter().all(|&v| v == 0), "off-left stipple must not draw");
+        // Zero-height early exit (matches `test eax; jl exit` at 0x5cd8eb).
+        let empty = StipplePattern { width: 3, height: 0, mask: vec![] };
+        s.draw_stipple(0, 0, c, &empty);
+        assert!(s.buf.iter().all(|&v| v == 0), "h==0 must not draw");
+    }
 
     #[test]
     fn darken_scales_channels_by_60_percent_555() {

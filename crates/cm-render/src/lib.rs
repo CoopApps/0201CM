@@ -35,6 +35,7 @@ pub mod packed_panel;
 pub mod packed_capture;
 pub mod packed_widget;
 pub mod packed_frame_lookup;
+pub mod packed_stipples;
 pub mod screens_faithful;
 pub mod packed_text;
 pub mod msgbox;
