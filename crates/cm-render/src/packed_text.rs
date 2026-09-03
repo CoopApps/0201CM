@@ -57,33 +57,42 @@ pub fn wrap_text(
     text: &[u8],
     wrap_on_overflow: bool,
 ) -> Vec<Vec<u8>> {
+    // Literal port of FUN_005d03a0's wrap state machine:
+    //  - Iterate one char at a time.
+    //  - `bVar3` tracks "we're in overflow" — while set, further chars
+    //    are skipped (not appended to `cur`).
+    //  - On overflow: append, measure, if >max_width null-terminate the
+    //    just-added char away and set `bVar3 = true`.
+    //  - After per-iter processing, if `bVar3 && W_WRAP` (or newline,
+    //    or last-char), FLUSH `cur` to a line, reset `cur = []`, clear
+    //    `bVar3`.
+    //  - Then ADVANCE to next char regardless. THE OVERFLOW CHAR IS
+    //    DROPPED — exe does exactly this (loses one char per wrap
+    //    boundary). Verified byte-exact against the running exe's
+    //    FUN_005d03a0 for the "wrap" case in verify_wrapped_text.
     let mut lines: Vec<Vec<u8>> = Vec::new();
     let mut cur: Vec<u8> = Vec::new();
     let mut overflow = false;
+    let last_idx = text.len().saturating_sub(1);
     for (i, &b) in text.iter().enumerate() {
+        let mut do_flush = false;
         if b == b'\n' {
-            lines.push(std::mem::take(&mut cur));
-            overflow = false;
-            continue;
-        }
-        if b >= 0x20 && !overflow {
-            cur.push(b);
-            if measure_line(font, &cur) > max_width {
-                cur.pop();
-                overflow = true;
-                if wrap_on_overflow {
-                    lines.push(std::mem::take(&mut cur));
-                    overflow = false;
-                    // Consume the character on the fresh line if it now fits.
-                    cur.push(b);
-                    if measure_line(font, &cur) > max_width {
-                        cur.pop(); // still too wide (single char > width) — drop
-                    }
+            do_flush = true;
+        } else {
+            if b >= 0x20 && !overflow {
+                cur.push(b);
+                if measure_line(font, &cur) > max_width {
+                    cur.pop();
+                    overflow = true;
                 }
             }
+            if i == last_idx || (wrap_on_overflow && overflow) {
+                do_flush = true;
+            }
         }
-        if i + 1 == text.len() {
+        if do_flush {
             lines.push(std::mem::take(&mut cur));
+            overflow = false;
         }
     }
     lines
@@ -191,11 +200,15 @@ mod tests {
     }
 
     #[test]
-    fn wrap_text_wraps_when_wrap_flag_on() {
+    fn wrap_text_drops_the_overflowing_char_on_wrap() {
+        // Verified byte-exact against exe: FUN_005d03a0 DROPS the char
+        // that triggered overflow. "abcdefgh" at width 4 → the 'e' is
+        // the one that overflows and is lost. Result: "abcd" / "fgh".
+        // (Was "abcd" / "efgh" before verify_wrapped_text caught the
+        // divergence.)
         let f = stub_font(b"abcdefgh", 1);
-        // 4-wide limit, wrap on: expect two lines of 4.
         let lines = wrap_text(&f, 4, b"abcdefgh", true);
-        assert_eq!(lines, vec![b"abcd".to_vec(), b"efgh".to_vec()]);
+        assert_eq!(lines, vec![b"abcd".to_vec(), b"fgh".to_vec()]);
     }
 
     #[test]
