@@ -189,36 +189,51 @@ pub fn draw_panel(
                 4
             };
             if thick != 0 {
+                // Exact variable names from the exe's bevel loop
+                // (FUN_005cf570 near LAB after `if ((param_5 & 0x200) == 0)`).
+                // local_44 = column counter, starts at right - thick, increments
+                //            each iteration up to `right`.
+                // iVar14 = row counter, starts at top + thick, becomes iVar12 = iVar14-1
+                //          each iteration, walking down from top+thick-1 to top.
+                // iVar15 = constant shear: `(thick + x0) - (y0 + thick) = x0 - y0`.
+                // iVar13 = CONSTANT: `(bottom - thick) - (right - thick) = bottom - right`.
+                //          Every iteration computes `iVar2 = iVar13 + local_44`, so the
+                //          bottom-edge y coord is `bottom + (col - right)`. Earlier
+                //          revision of this port wrote `let iv2 = iv14 + iv13` — used
+                //          the row counter where the constant belonged — so no bevel
+                //          line landed on the intended pixels. Fixed here + verified
+                //          against exe (verify_panel_against_exe.rs).
                 let mut lc: i32 = 0x42; // per-step scale accumulator
-                let iv15 = (thick + x0) - (y0 + thick); // constant column-vs-row shear
-                let mut iv13 = x1 - thick;
-                let mut iv14 = y0 + thick;
+                let shear = x0 - y0;                        // was iVar15
+                let mut col_counter = x1 - thick;           // was local_44
+                let mut row_counter = y0 + thick;           // was iVar14
+                let bottom_offset = (y1 - thick) - col_counter; // was iVar13 CONSTANT
                 let base = if colour == 0 { palette.default_bevel } else { colour };
                 for _ in 0..thick {
-                    iv13 += 1;
-                    let iv12 = iv14 - 1;
+                    col_counter += 1;
+                    let inner_row = row_counter - 1;        // was iVar12
                     let cv3 = (lc / thick) as i8;
-                    // Two ramps: one going 100+cv3 (brighten) and one
-                    // going 100-cv3 (darken); paired to make a raised or
-                    // sunken bevel.
+                    // Two ramps: 100+cv3 brightens, 100-cv3 darkens. Paired so
+                    // top-left is bright + bottom-right dark → raised look; swap
+                    // for sunken (P_BEVEL_INVERT).
                     let bright = scale_colour(s, base, (cv3.wrapping_add(100) as u8) as u32);
-                    let dark = scale_colour(s, base, (100i8.wrapping_sub(cv3) as u8) as u32);
+                    let dark   = scale_colour(s, base, (100i8.wrapping_sub(cv3) as u8) as u32);
                     let (mut top_left, mut bot_right) = (bright, dark);
                     if (style & P_BEVEL_INVERT) != 0 {
                         std::mem::swap(&mut top_left, &mut bot_right);
                     }
-                    let iv1 = iv15 + iv12;
-                    // Top edge (bright): (iv1, iv12) -> (iv13, iv12)
-                    s.draw_line(iv1, iv12, iv13, iv12, 2, top_left);
-                    // Right edge (bright): (iv1, iv12) -> (iv1, iv13+iv14)
-                    let iv2 = iv14 + iv13;
-                    s.draw_line(iv1, iv12, iv1, iv2, 2, top_left);
-                    // Bottom edge (dark): (iv13, iv2) -> (iv15+iv14, iv2)
-                    s.draw_line(iv13, iv2, iv15 + iv14, iv2, 2, bot_right);
-                    // Left edge (dark): (iv13, iv2) -> (iv13, iv14)
-                    s.draw_line(iv13, iv2, iv13, iv14, 2, bot_right);
+                    let x_left = shear + inner_row;             // was iVar1
+                    let y_bottom = bottom_offset + col_counter; // was iVar2
+                    // 1. TOP edge (bright): horizontal at y=inner_row from x_left to col_counter.
+                    s.draw_line(x_left, inner_row, col_counter, inner_row, 2, top_left);
+                    // 2. LEFT edge (bright): vertical at x=x_left from y=inner_row to y=y_bottom.
+                    s.draw_line(x_left, inner_row, x_left, y_bottom, 2, top_left);
+                    // 3. BOTTOM edge (dark): horizontal at y=y_bottom from col_counter back to shear+row_counter.
+                    s.draw_line(col_counter, y_bottom, shear + row_counter, y_bottom, 2, bot_right);
+                    // 4. RIGHT edge (dark): vertical at x=col_counter from y_bottom to row_counter.
+                    s.draw_line(col_counter, y_bottom, col_counter, row_counter, 2, bot_right);
                     lc += 0x42;
-                    iv14 = iv12;
+                    row_counter = inner_row;
                 }
             }
         } else if (style & P_DASH_VARIANT) == 0 {
