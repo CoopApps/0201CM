@@ -136,21 +136,33 @@ pub fn build_nav_back_next(
              -2i32)                // uVar6 = 0xfffffffe
         };
 
+    // C call: FUN_00549580(uVar3, 0, 0, 0, 0, 0, 0, 0x30, uVar2, uVar4,
+    //                      uVar5, 3, CONCAT22(_, DAT_00acdf74),
+    //                      local_7d0, 0, uVar6, 0, uVar1)
+    // Per FUN_005d76c0 field mapping (see pool_to_render.rs docs):
+    //   arg1 = kind (widget flags dword, +0x0c)
+    //   arg8 = style_byte  (+0x38)
+    //   arg9,10 = colour_a, colour_b  (+0x72, +0x74)
+    //   arg11 = text_style             (+0x3c) — 0x2c label / 0xc button
+    //   arg12 = label_ink              (+0x76) — literal 3 in the C
+    //   arg13 = pattern                (+0x78) — DAT_00acdf74 (gold)
+    //   arg14 = text                    strcpy → +0x80
+    //   arg16 = msg_id                 (+0x08)
     let back = WidgetDescriptor {
         kind: back_kind,
-        grid_x0: 0, grid_y0: 0, grid_x1: 0, grid_y1: 0,   // grid-relative
-        seq: 0,                                              // col 0
+        grid_x0: 0, grid_y0: 0, grid_x1: 0, grid_y1: 0,
+        seq: 0,
         row_index: 0,
-        flags: 0x30,
-        unk9:  back_color_a as i32,   // arg 9  — color_a
-        unk10: back_color_b as i32,   // arg 10 — color_b
-        font_id: back_font,           // arg 11 — aux_a
-        enabled: true,                // arg 12 — font (== 3 in call, TRUE-ish)
-        fg_color: label_ink_word as u32, // arg 13 — aux_b = DAT_00acdf74
-        text: "Back".to_string(),     // arg 14 — text_ptr → local_7d0
-        extra: Vec::new(),            // arg 15 — 0
-        msg_id: back_msg,             // arg 16 — event
-        userdata_id: 0,               // arg 17 — 0
+        style_byte: 0x30,                          // arg8 (C: 0x30)
+        colour_a: back_color_a as u16,             // arg9 (C: uVar2)
+        colour_b: back_color_b as u16,             // arg10 (C: uVar4)
+        text_style: back_font as u32,              // arg11 (C: uVar5)
+        label_ink: 3,                              // arg12 (C: literal 3)
+        pattern: label_ink_word,                   // arg13 (C: DAT_00acdf74)
+        text: "Back".to_string(),                  // arg14 (C: local_7d0)
+        slot_40: 0,                                // arg15
+        msg_id: back_msg,                          // arg16 (C: uVar6)
+        userdata_id: 0,                            // arg17
     };
     pool.spawn_widget(back, area as i16)?;
 
@@ -190,18 +202,18 @@ pub fn build_nav_back_next(
     let next = WidgetDescriptor {
         kind: next_kind,
         grid_x0: 0, grid_y0: 0, grid_x1: 0, grid_y1: 0,
-        seq: 1,                       // col 1  — arg 6 = 1
+        seq: 1,                            // arg6 = 1
         row_index: 0,
-        flags: 0x30,
-        unk9:  next_color_a as i32,
-        unk10: next_color_b as i32,
-        font_id: next_font,
-        enabled: true,
-        fg_color: label_ink_word as u32,
-        text: "Next".to_string(),
-        extra: Vec::new(),
-        msg_id: next_msg,
-        userdata_id: 0,
+        style_byte: 0x30,                  // arg8
+        colour_a: next_color_a as u16,     // arg9
+        colour_b: next_color_b as u16,     // arg10
+        text_style: next_font as u32,      // arg11
+        label_ink: 3,                      // arg12 (C: literal 3)
+        pattern: label_ink_word,           // arg13 (DAT_00acdf74)
+        text: "Next".to_string(),          // arg14
+        slot_40: 0,                        // arg15
+        msg_id: next_msg,                  // arg16
+        userdata_id: 0,                    // arg17
     };
     pool.spawn_widget(next, area as i16)?;
 
@@ -213,42 +225,12 @@ mod tests {
     use super::*;
     use crate::packed::PackedSurface;
     use crate::packed_glyph::PixelFont;
-    use crate::packed_widget::{render_widget, Widget as RWidget, WidgetGlobals};
-    use crate::widget_pool::Widget as PoolWidget;
+    use crate::packed_widget::{render_widget, WidgetGlobals};
 
-    /// Bridge a pool widget's spawn-time descriptor into the render-time
-    /// [`packed_widget::Widget`]. The two structs live in different
-    /// crates (pool = spawner state, render = per-paint state); this
-    /// converter is the minimum needed to prove Layer 3 → Layer 2 wiring.
-    fn to_render_widget(pw: &PoolWidget) -> RWidget {
-        let mut label: Vec<u8> = pw.descriptor.text.as_bytes().to_vec();
-        label.push(0); // NUL-terminate per exe convention
-        RWidget {
-            frame_base: 0,
-            flags: pw.descriptor.flags | pw.flags,
-            // Post-layout rect — for the test we just use the widget's
-            // own left/top/right/bottom (spawn clamps them to 800×600).
-            // In a full pipeline layout engine would set these; the exe
-            // seeds them to the spawn-time grid coords too.
-            x0: pw.left.max(0),
-            y0: pw.top.max(0),
-            x1: pw.right.max(pw.left + 1),
-            y1: pw.bottom.max(pw.top + 1),
-            style_byte: 0x10, // P_SOLID_FILL — minimum to paint
-            text_style: 0x0c,
-            text_kern: -1,
-            saved_bg: None,
-            cached_text: None,
-            colour_a: pw.descriptor.unk9 as u16, // arg9 in the spawn = color_a
-            colour_b: pw.descriptor.unk10 as u16,
-            label_ink: pw.descriptor.fg_color as u16,
-            pattern: 0,
-            frame_idx: -1,
-            label,
-            detached_glyph_cache: 0,
-            alt_hover: 0,
-        }
-    }
+    // Bridge lives in `crate::pool_to_render::to_render_widget` — the
+    // production version copies every style field from the pool widget
+    // to the render widget 1:1.
+    use crate::pool_to_render::to_render_widget;
 
     fn stub_font() -> PixelFont { PixelFont::empty(10) }
 
@@ -285,68 +267,77 @@ mod tests {
 
     #[test]
     fn back_disabled_branch_matches_c_constants() {
-        // back_flag != 0 → kind=2 button, msg_id=-2, font_id=0xc.
+        // back_flag != 0 → kind=2 button, msg_id=-2, text_style=0xc.
         let mut pool = GuiRecordPool::new();
         build_nav_back_next(&mut pool, 1, 0, 0x42, 0x1234).unwrap();
         let back = &pool.widgets[0].descriptor;
         assert_eq!(back.kind, KIND_BUTTON);
         assert_eq!(back.msg_id, -2);
-        assert_eq!(back.font_id, 0x0c);
-        assert_eq!(back.unk9,  0x42);   // color_a from panel byte
-        assert_eq!(back.unk10, 0x42);   // color_b also from panel byte
-        assert_eq!(back.fg_color, 0x1234);
+        assert_eq!(back.text_style, 0x0c);
+        assert_eq!(back.colour_a, 0x42);   // colour_a from panel byte
+        assert_eq!(back.colour_b, 0x42);   // colour_b also from panel byte
+        assert_eq!(back.pattern, 0x1234);  // DAT_00acdf74
     }
 
     #[test]
     fn next_active_branch_matches_c_constants() {
-        // next_flag != 0 → kind=2 button, msg_id=-3, font_id=0xc.
+        // next_flag != 0 → kind=2 button, msg_id=-3, text_style=0xc.
         let mut pool = GuiRecordPool::new();
         build_nav_back_next(&mut pool, 0, 1, 0x42, 0x1234).unwrap();
         let next = &pool.widgets[1].descriptor;
         assert_eq!(next.kind, KIND_BUTTON);
         assert_eq!(next.msg_id, -3);
-        assert_eq!(next.font_id, 0x0c);
-        assert_eq!(next.unk9,  0x42);
-        assert_eq!(next.unk10, 0x42);
-        assert_eq!(next.fg_color, 0x1234);
+        assert_eq!(next.text_style, 0x0c);
+        assert_eq!(next.colour_a, 0x42);
+        assert_eq!(next.colour_b, 0x42);
+        assert_eq!(next.pattern, 0x1234);
     }
 
     #[test]
     fn back_active_branch_matches_c_constants() {
-        // back_flag == 0 → kind=1 label, msg_id=0, font_id=0x2c,
-        // color_b = 0 (uVar4 = 0).
+        // back_flag == 0 → kind=1 label, msg_id=0, text_style=0x2c,
+        // colour_b = 0 (uVar4 = 0).
         let mut pool = GuiRecordPool::new();
         build_nav_back_next(&mut pool, 0, 0, 0x42, 0x1234).unwrap();
         let back = &pool.widgets[0].descriptor;
         assert_eq!(back.kind, KIND_LABEL);
         assert_eq!(back.msg_id, 0);
-        assert_eq!(back.font_id, 0x2c);
-        assert_eq!(back.unk9,  0x42);
-        assert_eq!(back.unk10, 0);
+        assert_eq!(back.text_style, 0x2c);
+        assert_eq!(back.colour_a, 0x42);
+        assert_eq!(back.colour_b, 0);
     }
 
     #[test]
     fn built_pool_renders_through_layer_2_without_panic() {
-        // Populate → convert → render every widget through the ported
-        // Layer 2 dispatcher onto a fresh 800×600 RGB555 surface.
-        // Just proves the wiring is intact: any pixel painted, no panic.
+        // Populate → bridge → render every widget through Layer 2 onto
+        // a fresh 800×600 RGB555 surface. Proves the wiring is intact:
+        // no panic, and the bridge preserves every style field
+        // (`build_nav_back_next` passes style_byte=0x30 = bevel+fill).
+        //
+        // The widgets carry `grid_x0..y1 = 0` (relative to the parent
+        // area's cell grid — the real layout engine's job to expand);
+        // this test doesn't drive the layout engine, so we force each
+        // rect to a small non-empty box before rendering. The bridge
+        // itself is production; only the rect-forcing is test-only.
         let mut pool = GuiRecordPool::new();
         build_nav_back_next(&mut pool, 0, 0, 0x01, 0x0000).unwrap();
         let mut s = PackedSurface::rgb555(800, 600);
         let font = stub_font();
-        for pw in pool.widgets.iter() {
+        for (i, pw) in pool.widgets.iter().enumerate() {
             let mut rw = to_render_widget(pw);
+            // Test-only layout-engine stand-in: give each widget a
+            // distinct 40×20 rect so draw_panel has pixels to touch.
+            rw.x0 = 100 + (i as i32) * 60;
+            rw.y0 = 100;
+            rw.x1 = rw.x0 + 40;
+            rw.y1 = rw.y0 + 20;
             render_widget(
-                &mut s,
-                &mut rw,
-                Some(&pool),
-                &font,
-                WidgetGlobals::default(),
-                true,
+                &mut s, &mut rw, Some(&pool), &font,
+                WidgetGlobals::default(), true,
             );
         }
-        // Some pixel painted (block B fills the widget rect via
-        // draw_panel with style 0x10 = P_SOLID_FILL).
+        // Some pixel painted — the bridge carried style_byte=0x30
+        // through, so draw_panel fills the rect.
         assert!(
             s.buf.iter().any(|&p| p != 0),
             "at least one pixel should be painted"

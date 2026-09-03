@@ -123,8 +123,9 @@ impl GenScreen {
         let mut out = Vec::with_capacity(self.areas.len() + self.objects.len());
         for a in &self.areas {
             let mut d = WidgetDescriptor::empty();
-            d.kind = KIND_ROOT_HOLDER;
-            d.flags = a.flags as u32;
+            // `kind` = widget flags dword. Areas carry the KIND_ROOT_HOLDER
+            // bit OR-ed with any additional flags from the capture.
+            d.kind = KIND_ROOT_HOLDER | a.flags as u32;
             let mut w = Widget::default();
             w.descriptor = d;
             w.left = a.l;
@@ -136,9 +137,8 @@ impl GenScreen {
         }
         for o in &self.objects {
             let mut d = WidgetDescriptor::empty();
-            d.kind = o.ty as u16;
-            d.flags = o.rflags as u32;
-            d.font_id = o.font as u8;
+            d.kind = (o.ty as u32) | (o.rflags as u32);
+            d.text_style = o.font as u32;
             d.text = o.text.to_string();
             let mut w = Widget::default();
             w.descriptor = d;

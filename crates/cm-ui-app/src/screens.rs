@@ -2080,7 +2080,7 @@ fn blank_with_warning(s: &mut Surface, msg: &str) {
 
 /// Colour palette per widget kind — chosen so the four common kinds are
 /// visually distinct at a glance.
-fn kind_colour(kind: u16) -> (u8, u8, u8) {
+fn kind_colour(kind: u32) -> (u8, u8, u8) {
     use cm_render::widget_pool::*;
     match kind {
         KIND_HEADER => (60, 90, 180),      // navy
@@ -2091,7 +2091,7 @@ fn kind_colour(kind: u16) -> (u8, u8, u8) {
     }
 }
 
-fn kind_name(kind: u16) -> &'static str {
+fn kind_name(kind: u32) -> &'static str {
     use cm_render::widget_pool::*;
     match kind {
         KIND_HEADER => "HDR",

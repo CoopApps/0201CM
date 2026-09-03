@@ -26,11 +26,13 @@
 /// * `0x82` = header
 /// * `0x400` = root-holder / branded cell
 ///
-/// These are the values passed as `param_1` to `spawn_widget`.
-pub const KIND_LABEL: u16 = 1;
-pub const KIND_BUTTON: u16 = 2;
-pub const KIND_HEADER: u16 = 0x82;
-pub const KIND_ROOT_HOLDER: u16 = 0x400;
+/// These are the values passed as caller-arg-1 to `spawn_widget` — the
+/// widget flags dword at `+0x0c`. Verified against GDI asm sub_005d76c0
+/// (`+0x0c` = `arg1` at line `005d7904 mov [ebp+0xc], ecx`).
+pub const KIND_LABEL: u32 = 1;
+pub const KIND_BUTTON: u32 = 2;
+pub const KIND_HEADER: u32 = 0x82;
+pub const KIND_ROOT_HOLDER: u32 = 0x400;
 
 /// Widget style bits (from decode observations):
 pub const FLAG_ROOT: u32       = 0x1000;
@@ -51,6 +53,13 @@ pub const ROOT_ORDER_CAP: usize = 0x4AF;
 /// only the ones the layout engine + spawner touch are named. The rest
 /// of the 396 bytes is state for `FUN_005D7BD0` (the populator) that
 /// we don't fully own yet.
+///
+/// The five style fields — `style_byte`, `text_style`, `colour_a`,
+/// `colour_b`, `label_ink`, `pattern` and `label` — mirror the same-named
+/// fields on [`crate::packed_widget::Widget`]. These are the render-time
+/// slots the layer-2 draw code consumes; [`pool_to_render`] copies them
+/// through 1:1. See `d:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/005d7bd0.c`
+/// for the exact `param_1[N] = param_J` writes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Widget {
     /// +0x00..+0x0C — bounding box (post-layout) LTRB.
@@ -58,6 +67,22 @@ pub struct Widget {
     pub top: i32,
     pub right: i32,
     pub bottom: i32,
+    /// +0x38 — style_byte (FUN_005D7BD0 stores param_12 here). Bits:
+    /// 0x10 no-restore, 0x20 hover, 0x40 pressed. Full dword, not a byte.
+    pub style_byte: u32,
+    /// +0x3c — text_style (param_15). Passed as the wrapped-text style.
+    pub text_style: u32,
+    /// +0x72 — primary panel colour (param_13, short).
+    pub colour_a: u16,
+    /// +0x74 — hover panel colour (param_14, short).
+    pub colour_b: u16,
+    /// +0x76 — label ink colour (param_16 low16).
+    pub label_ink: u16,
+    /// +0x78 — panel pattern / decoration colour (param_17, short).
+    pub pattern: u16,
+    /// +0x80.. — label buffer (strcpy from param_18). Kept NUL-terminated
+    /// so the layer-2 render can slice at the first NUL.
+    pub label: Vec<u8>,
     /// +0x14 — dual-role slot. As a leaf widget, `FUN_00403a20`
     /// reads it as a height/width metric (`edi` at `00403b02`,
     /// `00403c6b`, `00403bfa`) — the "max columns before scrollbar
@@ -128,33 +153,83 @@ pub struct Widget {
     pub panel_code_or_z_min: i32,
 }
 
-/// The 18-arg call signature of `FUN_005D7BD0` (the populator called
-/// from `spawn_widget`), bundled here so `spawn_widget` takes one
-/// argument instead of 18.
+/// The 17-arg descriptor bundle passed to [`GuiRecordPool::spawn_widget`]
+/// (the exe's `FUN_00549580`, which internally calls `FUN_005D7BD0` with
+/// these 17 args plus a parent-area index). Fields are named for the
+/// widget-struct offset they land at post-population — see
+/// `d:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/005d7bd0.c` for the
+/// full assignment table.
+///
+/// Correspondence (`caller arg N` → `FUN_005D7BD0.param_(N+4)` → offset):
+///
+/// | field | caller arg | widget offset | 005d7bd0 param |
+/// |-------|-----------:|---------------|----------------|
+/// | `kind` | 1 | +0x0c | param_5 (uint flags dword) |
+/// | `grid_x0` | 2 | +0x10 | param_6 (swap+clamp) |
+/// | `grid_y0` | 3 | +0x14 | param_7 |
+/// | `grid_x1` | 4 | +0x18 | param_8 (clamp 799) |
+/// | `grid_y1` | 5 | +0x1c | param_9 (clamp 599) |
+/// | `seq` | 6 | +0x20 | param_10 |
+/// | `row_index` | 7 | +0x24 | param_11 |
+/// | `style_byte` | 8 | +0x38 | param_12 (renamed from `flags`) |
+/// | `colour_a` | 9 | +0x72 | param_13 (renamed from `unk9`) |
+/// | `colour_b` | 10 | +0x74 | param_14 (renamed from `unk10`) |
+/// | `text_style` | 11 | +0x3c | param_15 (renamed from `font_id`) |
+/// | `label_ink` | 12 | +0x76 | param_16 low16 (renamed from `enabled`) |
+/// | `pattern` | 13 | +0x78 | param_17 (renamed from `fg_color`) |
+/// | `text` | 14 | strcpy→+0x80 | param_18 (char*) |
+/// | `slot_40` | 15 | +0x40 | param_19 (renamed from `extra`) |
+/// | `msg_id` | 16 | +0x08 | param_20 (click cmd; used by dispatcher) |
+/// | `userdata_id` | 17 | +0x48 | param_21 (payload) |
+///
+/// The 18th caller arg (parent_area) is a separate parameter to
+/// `spawn_widget` — not on the descriptor.
+///
+/// The 6 renames on this iteration match the same-named fields on
+/// [`crate::packed_widget::Widget`]. `pool_to_render::to_render_widget`
+/// bridges the two 1:1.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WidgetDescriptor {
-    pub kind: u16,           // param_1
-    pub grid_x0: i32,        // param_2
-    pub grid_y0: i32,        // param_3
-    pub grid_x1: i32,        // param_4
-    pub grid_y1: i32,        // param_5
-    pub seq: i32,            // param_6
-    pub row_index: i32,      // param_7
-    pub flags: u32,          // param_8
-    pub unk9: i32, pub unk10: i32,
-    pub font_id: u8,         // param_11 — typically 0xC
-    pub enabled: bool,       // param_12
-    pub fg_color: u32,       // param_13 — palette slot / RGB565
-    pub text: String,        // param_14 — text_ptr
-    pub extra: Vec<u8>,      // param_15
-    pub msg_id: i32,         // param_16 — click message
-    pub userdata_id: u32,    // param_17 — entity id
+    /// arg1 → +0x0c widget flags word (0x400 icon-owner, 0x800 access-key,
+    /// 0x2000/0x4000/0x20000/0x40000 decoration flags).
+    pub kind: u32,
+    pub grid_x0: i32,        // arg2 → +0x10
+    pub grid_y0: i32,        // arg3 → +0x14
+    pub grid_x1: i32,        // arg4 → +0x18
+    pub grid_y1: i32,        // arg5 → +0x1c
+    pub seq: i32,            // arg6 → +0x20
+    pub row_index: i32,      // arg7 → +0x24
+    /// arg8 → +0x38 (renamed from `flags`). Style_byte per packed_widget:
+    /// 0x10 no-restore, 0x20 hover-swap-gate, 0x40 pressed-indent.
+    pub style_byte: u32,
+    /// arg9 → +0x72 (renamed from `unk9`). Primary panel colour.
+    pub colour_a: u16,
+    /// arg10 → +0x74 (renamed from `unk10`). Hover panel colour.
+    pub colour_b: u16,
+    /// arg11 → +0x3c (renamed from `font_id`). Wrapped-text style word.
+    pub text_style: u32,
+    /// arg12 → +0x76 (renamed from `enabled`). Label ink colour.
+    pub label_ink: u16,
+    /// arg13 → +0x78 (renamed from `fg_color`). Panel pattern / decoration ink.
+    pub pattern: u16,
+    /// arg14 → strcpy → +0x80. Label text.
+    pub text: String,
+    /// arg15 → +0x40 (renamed from `extra`). Int slot (semantics
+    /// unresolved; the exe stashes param_19 here and it's read by later
+    /// draw code).
+    pub slot_40: i32,
+    /// arg16 → +0x08. Click cmd (dispatcher reads low16 as `short cmd`).
+    pub msg_id: i32,
+    /// arg17 → +0x48. Payload / entity id (dispatcher reads as u32).
+    pub userdata_id: u32,
 }
 
 impl Default for Widget {
     fn default() -> Self {
         Self {
             left: 0, top: 0, right: 0, bottom: 0,
+            style_byte: 0, text_style: 0, colour_a: 0, colour_b: 0,
+            label_ink: 0, pattern: 0, label: Vec::new(),
             max_columns_or_z_max: 0, flags: 0,
             col_left_x: [0; 8], cell_right_x: [0; 8],
             row_top_y: [0; 8], row_bottom_y: [0; 8],
@@ -173,9 +248,10 @@ impl Default for Widget {
 impl WidgetDescriptor {
     pub fn empty() -> Self {
         Self { kind: 0, grid_x0: 0, grid_y0: 0, grid_x1: 0, grid_y1: 0,
-               seq: 0, row_index: 0, flags: 0, unk9: 0, unk10: 0,
-               font_id: 0xC, enabled: true, fg_color: 0,
-               text: String::new(), extra: Vec::new(),
+               seq: 0, row_index: 0,
+               style_byte: 0, colour_a: 0, colour_b: 0,
+               text_style: 0x0C, label_ink: 0, pattern: 0,
+               text: String::new(), slot_40: 0,
                msg_id: 0, userdata_id: 0 }
     }
 }
@@ -325,8 +401,9 @@ impl GuiRecordPool {
         //   6. strcpy text into widget+0x80 (up to 0x30 bytes)
         let (mut gx0, mut gx1) = (desc.grid_x0, desc.grid_x1);
         let (mut gy0, mut gy1) = (desc.grid_y0, desc.grid_y1);
-        // Exe: swap gate. Bit 0x400 clear OR bit 0x4000 set.
-        let swap_x_ok = desc.flags & 0x400 == 0 || desc.flags & 0x4000 != 0;
+        // Exe swap gate reads `param_12` (+0x38 = style_byte). Bit 0x400
+        // clear OR bit 0x4000 set → swap allowed.
+        let swap_x_ok = desc.style_byte & 0x400 == 0 || desc.style_byte & 0x4000 != 0;
         if gx1 < gx0 && swap_x_ok { std::mem::swap(&mut gx0, &mut gx1); }
         if gy1 < gy0 && swap_x_ok { std::mem::swap(&mut gy0, &mut gy1); }
         gx0 = gx0.max(0); gy0 = gy0.max(0);
@@ -356,10 +433,26 @@ impl GuiRecordPool {
             }
         }
 
+        // Copy every populated field onto the Widget. This is the port
+        // of FUN_005D7BD0's `param_1[N] = param_J` writes: the render-
+        // time struct (`packed_widget::Widget`) needs the same 6 style
+        // fields to paint faithfully, and `spawn_widget` used to drop
+        // them silently. `pool_to_render::to_render_widget` copies them
+        // through 1:1 downstream.
+        let mut label_buf: Vec<u8> = desc.text.as_bytes().to_vec();
+        label_buf.push(0); // NUL-terminate per FUN_005D7BD0's strcpy.
         let w = Widget {
             parent_area,
-            descriptor: desc,
             left: gx0, top: gy0, right: gx1, bottom: gy1,
+            style_byte: desc.style_byte,
+            text_style: desc.text_style,
+            colour_a: desc.colour_a,
+            colour_b: desc.colour_b,
+            label_ink: desc.label_ink,
+            pattern: desc.pattern,
+            label: label_buf,
+            flags: desc.kind,   // +0x0c widget flags dword lives here
+            descriptor: desc,
             cached_grid_index,
             ..Default::default()
         };
@@ -639,7 +732,7 @@ mod tests {
         let mut p = GuiRecordPool::new();
         let mut d = WidgetDescriptor::empty();
         d.grid_x0 = 100; d.grid_x1 = 50;   // reversed
-        d.flags = 0;                         // swap allowed (bit 0x400 clear)
+        d.style_byte = 0;                    // swap allowed (arg8 &0x400 clear)
         let i = p.spawn_widget(d, -1).unwrap();
         assert_eq!(p.widgets[i as usize].left, 50);
         assert_eq!(p.widgets[i as usize].right, 100);

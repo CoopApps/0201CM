@@ -49,10 +49,10 @@ struct AreaOut {
 }
 struct ObjOut {
     id: u32,
-    ty: u16,
+    ty: i64,
     l: i32, t: i32, r: i32, b: i32,
     rflags: u32,
-    font: u8,
+    font: i64,
     text: String,
 }
 struct TabOut {
@@ -72,16 +72,16 @@ fn classify_widgets(widgets: &[Widget]) -> GeomOut {
         let id = (i + 1) as u32;
         match w.descriptor.kind {
             KIND_HEADER | KIND_LABEL => out.objects.push(ObjOut {
-                id, ty: w.descriptor.kind,
+                id, ty: w.descriptor.kind as i64,
                 l: w.left, t: w.top, r: w.right, b: w.bottom,
-                rflags: w.flags, font: w.descriptor.font_id,
+                rflags: w.flags, font: w.descriptor.text_style as i64,
                 text: w.descriptor.text.clone(),
             }),
             KIND_BUTTON => out.tabs.push(TabOut {
                 id,
                 l: w.left, t: w.top, r: w.right, b: w.bottom,
                 label: w.descriptor.text.clone(),
-                highlighted: (w.descriptor.flags & 0x0800) != 0,
+                highlighted: (w.descriptor.kind & 0x0800) != 0,
             }),
             KIND_ROOT_HOLDER => out.areas.push(AreaOut {
                 id,
@@ -90,9 +90,9 @@ fn classify_widgets(widgets: &[Widget]) -> GeomOut {
                 cnt_a: 1, w_a: 0, cnt_b: 1, w_b: 0,
             }),
             _ => out.objects.push(ObjOut {
-                id, ty: w.descriptor.kind,
+                id, ty: w.descriptor.kind as i64,
                 l: w.left, t: w.top, r: w.right, b: w.bottom,
-                rflags: w.flags, font: w.descriptor.font_id,
+                rflags: w.flags, font: w.descriptor.text_style as i64,
                 text: w.descriptor.text.clone(),
             }),
         }

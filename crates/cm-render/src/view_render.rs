@@ -76,10 +76,12 @@ fn widget_from(mut desc: WidgetDescriptor) -> Widget {
         right: desc.grid_x1,
         bottom: desc.grid_y1,
         // BUGFIX: this was previously dropped (Widget::flags defaulted to 0
-        // regardless of desc.flags), which silently zeroed every widget's
-        // rflags in dump_screen_geometry's output — caught by diffing the
-        // News screen against its Unicorn-captured ground truth.
-        flags: desc.flags,
+        // regardless of desc's flags word), which silently zeroed every
+        // widget's rflags in dump_screen_geometry's output — caught by
+        // diffing the News screen against its Unicorn-captured ground
+        // truth. The widget flags dword is now `desc.kind` (+0x0c) per
+        // FUN_005d76c0.
+        flags: desc.kind,
         descriptor: desc,
         ..Default::default()
     }
@@ -109,8 +111,13 @@ fn tab_button(idx: usize, count: usize, label: &str, highlighted: bool) -> Widge
     tab.grid_x1 = 90 + (idx as i32 + 1) * width - 2;
     tab.grid_y1 = 70;
     tab.text = label.to_string();
-    tab.flags = if highlighted { 0x0800 } else { 0 };
-    widget_from(tab)
+    tab.kind = KIND_BUTTON;
+    // Highlight lives on the Widget.flags rflags dword — set post-build
+    // rather than merged into `kind`, so callers that discriminate on
+    // widget-role (`descriptor.kind == KIND_BUTTON`) keep matching.
+    let mut w = widget_from(tab);
+    if highlighted { w.flags |= 0x0800; }
+    w
 }
 
 // ============================================================================
@@ -1510,8 +1517,8 @@ mod tests {
         for i in 0..5 {
             assert_eq!(widgets[2 + i].descriptor.kind, KIND_BUTTON);
         }
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0);
         assert_within_surface(&widgets);
 
         // Identity round-trip through rebuild_layout for the header.
@@ -1556,7 +1563,7 @@ mod tests {
         assert!(widgets.len() >= 5 + 2 + 2); // 5 tabs + prelude + rows
         assert_within_surface(&widgets);
         // Tab 0 (Table) highlighted because primary_tab == 0x11.
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
     }
 
     // -- 4. Match Report ----------------------------------------------------
@@ -1601,7 +1608,7 @@ mod tests {
         assert!(widgets.len() >= 2 + 2 + 3);
         assert_within_surface(&widgets);
         // Season tab (index 1) highlighted for view_mode == 8.
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
     }
 
     // -- 7. Entity List -----------------------------------------------------
@@ -1614,7 +1621,7 @@ mod tests {
         assert_eq!(widgets.len(), 2 + 6 + 3);
         assert_within_surface(&widgets);
         // Mode 1 (Nations) highlighted at index 0 → widget[2].
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
     }
 
     // -- 8. Hall of Fame ----------------------------------------------------
@@ -1627,7 +1634,7 @@ mod tests {
         assert_eq!(widgets.len(), 4 + 2);
         assert_within_surface(&widgets);
         // Highlighted tab: index 2 (Clubs), now at widget[2].
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
     }
 
     // -- 9. Job Info --------------------------------------------------------
@@ -1667,7 +1674,7 @@ mod tests {
         assert_eq!(widgets.len(), 7);
         assert_within_surface(&widgets);
         // Specific-recipient tab (index 1) highlighted.
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
     }
 
     // -- 12. Competition Specific -------------------------------------------
@@ -1707,7 +1714,7 @@ mod tests {
         assert!(widgets.len() >= NEWS_MIN_WIDGET_COUNT);
         // 2 prelude + 1 tab + 1 row.
         assert_eq!(widgets.len(), 2 + 1 + 1);
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -1719,7 +1726,7 @@ mod tests {
         // 2 prelude + 2 tabs + 2 rows.
         assert_eq!(widgets.len(), 2 + 2 + 2);
         // Second tab (const) highlighted.
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -1739,7 +1746,7 @@ mod tests {
         // 2 prelude + 3 tabs + 3 rows + 1 optional row.
         assert_eq!(widgets.len(), 2 + 3 + 4);
         // "Current terms" tab (index 1) highlighted.
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -1859,7 +1866,7 @@ mod tests {
         assert_eq!(widgets.len(), 2 + 2 + 7);
         assert_within_surface(&widgets);
         // Comparator present → tab index 1 highlighted → widget[3].
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
     }
 
     #[test]
@@ -1883,7 +1890,7 @@ mod tests {
         assert_eq!(widgets.len(), 2 + 2 + 10);
         assert_within_surface(&widgets);
         // Different-club chip highlighted → widget[3].
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
     }
 
     // -- Batch 14 / 15 / 16 impls ------------------------------------------
@@ -1943,7 +1950,7 @@ mod tests {
         assert_eq!(widgets.len(), 2 + 6 + 5);
         // All chips highlighted because each slot_[a..f] is non-zero.
         for i in 0..6 {
-            assert_eq!(widgets[2 + i].descriptor.flags & 0x0800, 0x0800);
+            assert_eq!(widgets[2 + i].flags & 0x0800, 0x0800);
         }
         assert_within_surface(&widgets);
     }
@@ -1966,7 +1973,7 @@ mod tests {
         assert_eq!(widgets.len(), 2 + 3 + 3);
         // Chips: Mode(1)=on, Optional(5)=on, Text A=on.
         for i in 0..3 {
-            assert_eq!(widgets[2 + i].descriptor.flags & 0x0800, 0x0800);
+            assert_eq!(widgets[2 + i].flags & 0x0800, 0x0800);
         }
         assert_within_surface(&widgets);
     }
@@ -1988,7 +1995,7 @@ mod tests {
         // 2 prelude + 1 chip + 4 rows.
         assert_eq!(widgets.len(), 2 + 1 + 4);
         // Helper allocated → chip highlighted.
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2008,7 +2015,7 @@ mod tests {
         // 2 prelude + 1 chip + 4 rows.
         assert_eq!(widgets.len(), 2 + 1 + 4);
         // Source marker is on by default.
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2046,7 +2053,7 @@ mod tests {
         // 2 prelude + 1 chip + 3 rows.
         assert_eq!(widgets.len(), 2 + 1 + 3);
         // screen_flag = 1 → chip highlighted.
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2222,7 +2229,7 @@ mod tests_batch20_22 {
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 5);
         assert_eq!(widgets[0].descriptor.kind, KIND_HEADER);
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2231,7 +2238,7 @@ mod tests_batch20_22 {
         let v = Screen0080BBD0View { focus: 42 };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 4);
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2275,8 +2282,8 @@ mod tests_batch20_22 {
         };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 11);
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0);
         assert_within_surface(&widgets);
     }
 
@@ -2299,7 +2306,7 @@ mod tests_batch20_22 {
         let widgets = PlayerProfileView::default().to_widget_pool();
         assert_eq!(widgets.len(), 17);
         for i in 0..8 {
-            assert_eq!(widgets[2 + i].descriptor.flags & 0x0800, 0);
+            assert_eq!(widgets[2 + i].flags & 0x0800, 0);
         }
         assert_within_surface(&widgets);
     }
@@ -2550,7 +2557,7 @@ mod batch_23_24_25_tests {
         assert_eq!(widgets[0].descriptor.kind, KIND_HEADER);
         assert_eq!(widgets[1].descriptor.kind, KIND_LABEL);
         assert_eq!(widgets[2].descriptor.kind, KIND_BUTTON);
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2561,7 +2568,7 @@ mod batch_23_24_25_tests {
         };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 10);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2570,7 +2577,7 @@ mod batch_23_24_25_tests {
         let v = Screen008e0760View { record: 5, anchor: 7 };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 6);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2605,7 +2612,7 @@ mod batch_23_24_25_tests {
         };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 13);
-        assert_eq!(widgets[5].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[5].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2641,7 +2648,7 @@ mod batch_23_24_25_tests {
         let v = Screen008e26f0View { primary: 99, flag: true };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 6);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 
@@ -2662,7 +2669,7 @@ mod batch_23_24_25_tests {
         };
         let widgets = v.to_widget_pool();
         assert_eq!(widgets.len(), 22);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
         assert_within_surface(&widgets);
     }
 }
@@ -2717,7 +2724,7 @@ mod batch_17_19_tests {
         let v = FixtureNavView { current_comp_id: 3, fixture_ref: 9, is_home_leg: true };
         let widgets = v.to_widget_pool();
         assert_shape(&widgets, 2, 2);
-        assert_eq!(widgets[2].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[2].flags & 0x0800, 0x0800);
     }
 
     #[test]
@@ -2750,7 +2757,7 @@ mod batch_17_19_tests {
         };
         let widgets = v.to_widget_pool();
         assert_shape(&widgets, 2, 3);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
     }
 
     #[test]
@@ -2805,7 +2812,7 @@ mod batch_17_19_tests {
         let v = SetupBootstrapView { offline_flag: true, seed: 42, nonetwork: true };
         let widgets = v.to_widget_pool();
         assert_shape(&widgets, 2, 2);
-        assert_eq!(widgets[3].descriptor.flags & 0x0800, 0x0800);
+        assert_eq!(widgets[3].flags & 0x0800, 0x0800);
     }
 
     #[test]
@@ -2930,29 +2937,42 @@ impl RenderableView for cm_domain::NewsView {
     fn to_widget_pool(&self) -> Vec<Widget> {
         use news_geom::*;
 
-        fn area(x0: i32, y0: i32, x1: i32, y1: i32, flags: u32) -> Widget {
+        fn area(x0: i32, y0: i32, x1: i32, y1: i32, rflags: u32) -> Widget {
             let mut d = WidgetDescriptor::empty();
             d.kind = KIND_ROOT_HOLDER;
             d.grid_x0 = x0; d.grid_y0 = y0; d.grid_x1 = x1; d.grid_y1 = y1;
-            d.flags = flags;
-            widget_from(d)
+            // rflags stored on the widget-level `flags` field so callers
+            // that discriminate widget-role via `descriptor.kind` keep
+            // matching (`kind` stays a pure KIND_* value; the rflags
+            // dword lives alongside it).
+            let mut w = widget_from(d);
+            w.flags = rflags;
+            w
         }
-        fn label(x0: i32, y0: i32, x1: i32, y1: i32, flags: u32, font: u8, text: &str) -> Widget {
-            label_ex(x0, y0, x1, y1, flags, font, text, true)
+        fn label(x0: i32, y0: i32, x1: i32, y1: i32, rflags: u32, font: u8, text: &str) -> Widget {
+            label_ex(x0, y0, x1, y1, rflags, font, text, true)
         }
-        // `enabled` mirrors the real captured `tflags` distinction (12 =
-        // normal, 44 = disabled/greyed) — a SEPARATE field from `rflags`,
-        // which stayed 48 (filled+bevel box) for both "Back" (enabled) and
-        // "Next"/"Next Unread" (disabled) in the live capture. Using
-        // `rflags` alone to decide enabled/disabled (an earlier mistake)
-        // produced the wrong box style for disabled buttons.
-        fn label_ex(x0: i32, y0: i32, x1: i32, y1: i32, flags: u32, font: u8, text: &str, enabled: bool) -> Widget {
+        // `enabled` mirrors the live-captured `tflags` distinction
+        // (12 = normal, 44 = disabled/greyed) — stored on `text_style`
+        // (+0x3c). A SEPARATE field from the widget flags dword
+        // (`w.flags`) which stayed 48 (filled+bevel box) for both
+        // "Back" (enabled) and "Next"/"Next Unread" (disabled) in the
+        // live capture. Using rflags alone to decide enabled/disabled
+        // (an earlier mistake) produced the wrong box style for disabled
+        // buttons.
+        fn label_ex(x0: i32, y0: i32, x1: i32, y1: i32, rflags: u32,
+                    font: u8, text: &str, enabled: bool) -> Widget {
             let mut d = WidgetDescriptor::empty();
             d.kind = KIND_LABEL;
             d.grid_x0 = x0; d.grid_y0 = y0; d.grid_x1 = x1; d.grid_y1 = y1;
-            d.flags = flags; d.font_id = font; d.text = text.to_string();
-            d.enabled = enabled;
-            widget_from(d)
+            // Text style word: font id in the low nibble, disabled bit
+            // (0x20) high — matches the captured `tflags` = 12 or 44 =
+            // 0xC | (0x20 disabled).
+            d.text_style = font as u32 | if enabled { 0 } else { 0x20 };
+            d.text = text.to_string();
+            let mut w = widget_from(d);
+            w.flags = rflags;
+            w
         }
 
         let mut out = Vec::new();
@@ -3021,9 +3041,10 @@ impl RenderableView for cm_domain::NewsView {
             hdl.kind = KIND_LABEL;
             hdl.grid_x0 = HEADLINE_STRIP_L; hdl.grid_y0 = HEADLINE_STRIP_T;
             hdl.grid_x1 = HEADLINE_STRIP_R; hdl.grid_y1 = HEADLINE_STRIP_B;
-            hdl.flags = HEADLINE_STRIP_FLAGS; hdl.font_id = 3; hdl.enabled = true;
+            hdl.kind = KIND_LABEL;
+            hdl.text_style = 3;
             hdl.text = sel.headline.clone();
-            hdl.fg_color = YELLOW_TEXT_MARKER;
+            hdl.label_ink = (YELLOW_TEXT_MARKER & 0xFFFF) as u16;
             out.push(widget_from(hdl));
             out.push(area(STORY_L, STORY_T, STORY_R, STORY_B, STORY_FLAGS));
             out.push(label(STORY_L + 10, STORY_T + 15, STORY_R - 10, STORY_B - 10, STORY_FLAGS, 2, &sel.body));
@@ -3194,8 +3215,10 @@ mod news_view_tests {
         // a separate field (tflags 12 vs 44 in the exe -> `enabled` here).
         assert_eq!(back.flags, 48);
         assert_eq!(next.flags, 48);
-        assert!(back.descriptor.enabled, "Back is enabled");
-        assert!(!next.descriptor.enabled, "Next is disabled");
+        // Enabled/disabled now lives on the text_style word (see
+        // label_ex above — bit 0x20 = disabled).
+        assert_eq!(back.descriptor.text_style & 0x20, 0, "Back is enabled");
+        assert_ne!(next.descriptor.text_style & 0x20, 0, "Next is disabled");
     }
 
     /// Empty items list still renders the static chrome without panicking.

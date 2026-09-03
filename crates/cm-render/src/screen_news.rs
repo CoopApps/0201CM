@@ -323,6 +323,14 @@ pub fn build_news_screen(
 //   KIND_LABEL   — static text (no click)
 //   KIND_BUTTON  — clickable
 
+// Both helpers spawn a text-carrying widget through the standard
+// FUN_00549580 signature. The News screen's asm sites (inside the
+// `sub_0076fdb0` block, per the module doc) do not surface distinct
+// per-widget colour_a/colour_b/pattern values in the capture — the
+// glyph events only prove `label_ink` (arg12 = the captured `col=NNNNN`
+// value). Non-label style slots default to 0 pending a live capture
+// that surfaces them; when it does, the helpers extend rather than
+// change the callers.
 fn spawn_label(
     pool: &mut GuiRecordPool,
     parent_area: u32,
@@ -334,10 +342,16 @@ fn spawn_label(
         kind: KIND_LABEL,
         grid_x0: x0 as i32, grid_y0: y0 as i32,
         grid_x1: x1 as i32, grid_y1: y1 as i32,
-        seq, row_index: 0, flags: 0x30,
-        unk9: 0, unk10: 0, font_id: 0x0C, enabled: true,
-        fg_color: ink as u32, text: text.to_string(),
-        extra: Vec::new(), msg_id, userdata_id: 0,
+        seq, row_index: 0,
+        style_byte: 0x30,          // arg8 — panel bevel + solid fill
+        colour_a: 0, colour_b: 0,  // arg9, arg10 (not observed in capture)
+        text_style: 0x0C,          // arg11 — wrapped-text default
+        label_ink: ink as u16,     // arg12 — the captured `col=NNNNN`
+        pattern: 0,                // arg13 (not observed)
+        text: text.to_string(),    // arg14
+        slot_40: 0,                // arg15
+        msg_id,                    // arg16
+        userdata_id: 0,            // arg17
     };
     pool.spawn_widget(d, parent_area as i16)?;
     Some(())
@@ -354,10 +368,16 @@ fn spawn_button(
         kind: KIND_BUTTON,
         grid_x0: x0 as i32, grid_y0: y0 as i32,
         grid_x1: x1 as i32, grid_y1: y1 as i32,
-        seq, row_index: 0, flags: 0x30,
-        unk9: 0, unk10: 0, font_id: 0x0C, enabled: true,
-        fg_color: ink as u32, text: text.to_string(),
-        extra: Vec::new(), msg_id, userdata_id: 0,
+        seq, row_index: 0,
+        style_byte: 0x30,
+        colour_a: 0, colour_b: 0,
+        text_style: 0x0C,
+        label_ink: ink as u16,
+        pattern: 0,
+        text: text.to_string(),
+        slot_40: 0,
+        msg_id,
+        userdata_id: 0,
     };
     pool.spawn_widget(d, parent_area as i16)?;
     Some(())
@@ -441,8 +461,8 @@ mod tests {
             let w = pool.widgets.iter()
                 .find(|w| w.descriptor.text == "Next Unread")
                 .expect("Next Unread widget");
-            let expect: u32 = if enabled { 10570 } else { 28538 };
-            assert_eq!(w.descriptor.fg_color, expect,
+            let expect: u16 = if enabled { 10570 } else { 28538 };
+            assert_eq!(w.descriptor.label_ink, expect,
                        "Next Unread ink for enabled={enabled}");
         }
     }

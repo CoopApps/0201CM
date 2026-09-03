@@ -114,9 +114,9 @@ fn draw_widget(s: &mut Surface, fonts: &mut Fonts, w: &Widget) {
                 // independently-beveled boxes, which was drawing an extra
                 // seam that doesn't exist in the real image.
                 s.draw_panel(l, t, r, b, 48, COLOR_NAV_BUTTON);
-            } else if w.descriptor.flags & F_SOLID_FILL != 0 {
-                s.draw_panel(l, t, r, b, w.descriptor.flags, COLOR_HEADER);
-            } else if w.descriptor.flags == 2 {
+            } else if w.descriptor.kind & F_SOLID_FILL != 0 {
+                s.draw_panel(l, t, r, b, w.descriptor.kind, COLOR_HEADER);
+            } else if w.descriptor.kind == 2 {
                 use cm_render::view_render::news_geom::STORY_T;
                 let color = if t == STORY_T { COLOR_STORY_PANEL } else { COLOR_FILTER_BAR };
                 s.fill_rect(l, t, r, b, color);
@@ -126,7 +126,7 @@ fn draw_widget(s: &mut Surface, fonts: &mut Fonts, w: &Widget) {
             // F_SOLID_FILL/F_BEVEL/F_BORDER bit set).
         }
         KIND_LABEL => {
-            let font = fonts.slot(w.descriptor.font_id);
+            let font = fonts.slot(w.descriptor.text_style as u8);
             let text = w.descriptor.text.as_str();
             if text.is_empty() {
                 return;
@@ -135,10 +135,15 @@ fn draw_widget(s: &mut Surface, fonts: &mut Fonts, w: &Widget) {
             // widgets whose real color isn't recoverable from rflags alone
             // (currently just the yellow story headline) -- see its set
             // site in view_render.rs for why.
-            let text_color = if w.descriptor.fg_color == 0xFFFF00 {
+            // The yellow-text marker used to be a 32-bit sentinel; after
+            // renaming `fg_color` → `label_ink` (u16), the marker's low
+            // 16 bits alone identify it.
+            let text_color = if w.descriptor.label_ink == 0xFF00 {
                 (240, 220, 40)
-            } else if !w.descriptor.enabled {
-                (120, 120, 120) // disabled (tflags=44 in the exe): Next / Next Unread.
+            } else if (w.descriptor.text_style & 0x20) != 0 {
+                // Disabled bit lives on text_style (tflags=44 → &0x20)
+                // per view_render's label_ex helper.
+                (120, 120, 120)
             } else {
                 (255, 255, 255)
             };
@@ -149,9 +154,9 @@ fn draw_widget(s: &mut Surface, fonts: &mut Fonts, w: &Widget) {
             // guess regardless of font, which is why "centered vertically"
             // was never actually true for the header (font 7 = 45px tall,
             // nowhere near an 8px half-height).
-            let line_h = slot_line_height(w.descriptor.font_id);
+            let line_h = slot_line_height(w.descriptor.text_style as u8);
             let cy = t + ((b - t) - line_h) / 2;
-            match w.descriptor.flags {
+            match w.descriptor.kind {
                 2096 => {
                     // Selected tab: same real fill as unselected (measured
                     // identical), a lighter border stands in for the real

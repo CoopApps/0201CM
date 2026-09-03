@@ -115,7 +115,7 @@ fn render_all_widgets(surface: &mut PackedSurface, pool: &mut GuiRecordPool,
         let d = pool.widgets[i].descriptor.clone();
         let mut w = Widget {
             frame_base: 0,
-            flags: d.flags,
+            flags: d.kind,
             x0: d.grid_x0,
             y0: d.grid_y0,
             x1: d.grid_x1,
@@ -127,7 +127,7 @@ fn render_all_widgets(surface: &mut PackedSurface, pool: &mut GuiRecordPool,
             cached_text: None,
             colour_a: 0x0200,          // panel band ink — approximate
             colour_b: 0,
-            label_ink: d.fg_color as u16,
+            label_ink: d.label_ink,
             pattern: 0,
             frame_idx: -1,
             label: {

@@ -310,7 +310,7 @@ pub struct SidebarButtonSpec {
     pub label: &'static str,
     pub ink: u32,
     pub cmd: i32,
-    pub kind: u16,
+    pub kind: u32,
     pub seq: i32,
 }
 
@@ -399,15 +399,24 @@ pub fn build_menu_bar(
     // Layer-2 concern (see module doc); Layer 5 only spawns the
     // holder widget.
     // -----------------------------------------------------------------
+    // asm 0x0074565f: FUN_00549580(0x400, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0xc,
+    //                              1, 0, mbr, 0, 0, 0, chrome_area).
+    // arg1=0x400 (widget flags dword = KIND_ROOT_HOLDER icon-owner bit);
+    // arg8=1 (style_byte); arg11=0xc (text_style); arg12=1 (label_ink);
+    // arg14=mbr (text). Grid rect kept at chrome extent per pool clamp;
+    // the layout engine re-lays it once running.
     let mbr_holder = WidgetDescriptor {
         kind: KIND_ROOT_HOLDER,
         grid_x0: 0, grid_y0: 0, grid_x1: 0x59, grid_y1: 599,
-        seq: 0, row_index: 0, flags: 1,
-        unk9: 0, unk10: 0, font_id: 0xC, enabled: true,
-        fg_color: 0,
-        text: "game.mbr".to_string(),   // asset path, blit-by-name
-        extra: Vec::new(),
-        msg_id: 0, userdata_id: 0,
+        seq: 0, row_index: 0,
+        style_byte: 1,                          // arg8
+        colour_a: 0, colour_b: 0,               // arg9, arg10
+        text_style: 0xC,                        // arg11
+        label_ink: 1,                           // arg12
+        pattern: 0,                             // arg13
+        text: "game.mbr".to_string(),           // arg14 — asset name
+        slot_40: 0,                             // arg15
+        msg_id: 0, userdata_id: 0,              // arg16, arg17
     };
     pool.spawn_widget(mbr_holder, chrome_area as i16)
         .ok_or(BuildError::WidgetOverflow)?;
@@ -451,17 +460,34 @@ pub fn build_menu_bar(
             (2, -3) if !state.next_enabled => (KIND_LABEL, 0),
             _ => (spec.kind, spec.cmd),
         };
+        // Per-sidebar-button asm site (asm 0x00745a34..~0x00746400 range,
+        // one FUN_00549580 per row). Args observed uniformly across all
+        // 9 rows in the fixture: arg1 = 0x1021 (widget flags dword —
+        // submenu-header/label bit set), arg8 = 0x30 (style_byte —
+        // bevel+fill panel), arg9 = PAL_SIDEBAR_BASE (colour_a, panel
+        // ink), arg11 = 0xc (text_style — wrapped-text default), arg12
+        // = ink (label_ink — the palette-slot value the row prints in),
+        // arg14 = text, arg16 = cmd. arg2..arg7 carry the (x0,y0,x1,y1)
+        // rect + seq slots from the layout grid.
+        // arg1 carries the per-row widget-flags dword. In the C source,
+        // each of the 9 rows spawns via its own FUN_00549580 with the
+        // literal kind byte (KIND_LABEL=1, KIND_BUTTON=2, KIND_HEADER=0x82)
+        // — the fixture's blanket 0x1021 was an earlier misread.
         let d = WidgetDescriptor {
-            kind,
+            kind,                                 // arg1 (per-row kind)
             grid_x0: spec.x0 as i32, grid_y0: spec.y0 as i32,
             grid_x1: spec.x1 as i32, grid_y1: spec.y1 as i32,
-            seq: spec.seq, row_index: spec.seq, flags: 0x1021,
-            unk9: PAL_SIDEBAR_BASE as i32, unk10: 0,
-            font_id: 0xC, enabled: true,
-            fg_color: ink,
-            text,
-            extra: Vec::new(),
-            msg_id: cmd, userdata_id: 0,
+            seq: spec.seq, row_index: spec.seq,
+            style_byte: 0x30,                     // arg8
+            colour_a: PAL_SIDEBAR_BASE as u16,    // arg9
+            colour_b: 0,                          // arg10
+            text_style: 0xC,                      // arg11
+            label_ink: ink as u16,                // arg12
+            pattern: 0,                           // arg13
+            text,                                 // arg14
+            slot_40: 0,                           // arg15
+            msg_id: cmd,                          // arg16
+            userdata_id: 0,                       // arg17
         };
         pool.spawn_widget(d, sidebar_area as i16)
             .ok_or(BuildError::WidgetOverflow)?;
@@ -493,17 +519,27 @@ pub fn build_manager_dropdown(
     for (i, item) in MANAGER_DROPDOWN_ITEMS.iter().enumerate() {
         let flags = if item.separator { 0x1000010 } else { 0x10 };
         let bg = if i & 1 == 0 { 0x0200 } else { 0x0240 };
+        // Per-dropdown-item asm spawn (asm 0x00746490.., one FUN_00549580
+        // per item). Args per fixture: arg1 = KIND_LABEL/BUTTON per
+        // separator/live; arg8 = flags (separator style vs plain);
+        // arg9 = bg (alternating 0x200/0x240 palette); arg11 = 0xc
+        // (text_style); arg12 = 0 (label_ink black per fixture); arg14
+        // = label text; arg16 = item.cmd.
         let d = WidgetDescriptor {
             kind: if item.separator { KIND_LABEL } else { KIND_BUTTON },
             grid_x0: 145, grid_y0: item.y0 as i32,
             grid_x1: 449, grid_y1: item.y1 as i32,
-            seq: i as i32, row_index: i as i32, flags,
-            unk9: bg, unk10: 0,
-            font_id: 0xC, enabled: !item.separator,
-            fg_color: 0,      // label ink = 0 per fixture
-            text: item.label.to_string(),
-            extra: Vec::new(),
-            msg_id: item.cmd, userdata_id: 0,
+            seq: i as i32, row_index: i as i32,
+            style_byte: flags,                       // arg8
+            colour_a: bg as u16,                     // arg9
+            colour_b: 0,                             // arg10
+            text_style: 0xC,                         // arg11
+            label_ink: 0,                            // arg12 (fixture: 0)
+            pattern: 0,                              // arg13
+            text: item.label.to_string(),            // arg14
+            slot_40: 0,                              // arg15
+            msg_id: item.cmd,                        // arg16
+            userdata_id: 0,                          // arg17
         };
         pool.spawn_widget(d, shell as i16)
             .ok_or(BuildError::WidgetOverflow)?;
@@ -634,7 +670,7 @@ mod tests {
         use crate::dispatcher::{dispatch_global, DispatchResult, DispatcherState};
         use crate::packed::PackedSurface;
         use crate::packed_glyph::PixelFont;
-        use crate::packed_widget::{render_widget, Widget as RWidget, WidgetGlobals};
+        use crate::packed_widget::{render_widget, WidgetGlobals};
 
         let mut pool = GuiRecordPool::new();
         let mut state = DispatcherState::default();
@@ -674,30 +710,17 @@ mod tests {
         // region.
         let mut surface = PackedSurface::rgb555(800, 600);
         let font = PixelFont::empty(10);
+        // Layer-3 → Layer-2 bridge — production version, single source
+        // of truth for the mapping.
         for pw in pool.widgets.iter() {
-            let mut label: Vec<u8> = pw.descriptor.text.as_bytes().to_vec();
-            label.push(0);
-            let mut rw = RWidget {
-                frame_base: 0,
-                flags: pw.descriptor.flags | pw.flags,
-                x0: pw.left.max(0),
-                y0: pw.top.max(0),
-                x1: pw.right.max(pw.left + 1),
-                y1: pw.bottom.max(pw.top + 1),
-                style_byte: 0x10,
-                text_style: 0x0c,
-                text_kern: -1,
-                saved_bg: None,
-                cached_text: None,
-                colour_a: pw.descriptor.unk9 as u16,
-                colour_b: pw.descriptor.unk10 as u16,
-                label_ink: pw.descriptor.fg_color as u16,
-                pattern: 0,
-                frame_idx: -1,
-                label,
-                detached_glyph_cache: 0,
-                alt_hover: 0,
-            };
+            let mut rw = crate::pool_to_render::to_render_widget(pw);
+            // Enforce non-empty rect for the paint pass.
+            if rw.x1 <= rw.x0 { rw.x1 = rw.x0 + 1; }
+            if rw.y1 <= rw.y0 { rw.y1 = rw.y0 + 1; }
+            // Style_byte was 0 on some rows in this test's default state
+            // (before Fix 4's arg8=0x30 landed). Fall back to
+            // P_SOLID_FILL so a pixel is guaranteed painted.
+            if rw.style_byte == 0 { rw.style_byte = 0x10; }
             render_widget(
                 &mut surface, &mut rw, Some(&pool), &font,
                 WidgetGlobals::default(), true,
