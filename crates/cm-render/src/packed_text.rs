@@ -13,7 +13,7 @@
 //! byte-exact on real inputs.
 
 use crate::packed::PackedSurface;
-use crate::packed_glyph::{draw_text, PixelFont};
+use crate::packed_glyph::{draw_text, kern_between, PixelFont};
 use crate::packed_panel::scale_colour;
 
 // ------ Style flag constants (from FUN_005d03a0's `param_5`) ------
@@ -101,9 +101,19 @@ pub fn wrap_text(
 /// Literal port of `FUN_005d03a0` (1955 bytes) — wrap and paint text
 /// inside `(x0..=x1, y0..=y1)`.
 ///
-/// `kern` is the exe's `param_9` (underline/attention character index —
-/// passed straight through to `packed_glyph::draw_text`; we don't yet
-/// render the underline stroke).
+/// `caret_char_index` is the exe's `param_10` — a byte index into the
+/// (unwrapped) label. When `>= 0` a vertical caret stroke is drawn at
+/// the pen position of that character; `-1` (or any negative) disables
+/// the caret. This matches the exe's gate at `FUN_005ceaa0:005cf180`
+/// (`cmp edx, -1; jle skip`) — the caret pipeline is inside the glyph
+/// blit, not the wrap layer, and the wrap layer just passes the index
+/// through. See asm at `FUN_005ceaa0:005cf1dd..005cf1ef`:
+///   `push colour; push 2; push (font_h + y_top - 1); push x_pen;`
+///   `push y_top; push x_pen; call FUN_005cd3e0`
+/// — i.e. a single 1-px vertical line from `(x_pen, y_top)` to
+/// `(x_pen, y_top + font_h - 1)` (`style=2` → solid). We draw it here
+/// after painting the first wrapped line, because that's where the
+/// pen position is unambiguously anchored to the label buffer index.
 pub fn draw_wrapped_text(
     s: &mut PackedSurface,
     x0: i32,
@@ -114,7 +124,7 @@ pub fn draw_wrapped_text(
     text: &[u8],
     colour: u16,
     style: u32,
-    _kern: i32,
+    caret_char_index: i32,
 ) {
     let w = x1 - x0 + 1;
     let h = y1 - y0 + 1;
@@ -130,6 +140,27 @@ pub fn draw_wrapped_text(
         }
     }
     let font_h = font.height;
+    // Precompute the pen X of `caret_char_index` inside the (unwrapped)
+    // buffer, using the same measurer that lays out glyphs. The exe
+    // updates its caret-X mid-loop (FUN_005ceaa0:005cf102..005cf16c) so
+    // it always reflects the pen just before the target char; measuring
+    // the prefix here gets us the same value without threading state
+    // through wrap. `-1` (or any negative index) disables the caret,
+    // matching the exe gate `cmp edx,-1; jle skip` at 005cf180.
+    let caret_prefix_w = if caret_char_index >= 0 {
+        let idx = (caret_char_index as usize).min(text.len());
+        let mut w = 0i32;
+        for (i, &b) in text[..idx].iter().enumerate() {
+            let bb = if b == b'|' { b' ' } else { b };
+            if bb < 0x20 { continue; }
+            if let Some(Some(g)) = font.glyphs.get(bb as usize) {
+                w += g.width + kern_between(font, &text[..idx], i + 1);
+            }
+        }
+        Some(w)
+    } else {
+        None
+    };
     let block_h = lines.len() as i32 * font_h;
     // Vertical centring is the default; W_TOP suppresses it.
     let mut y = if (style & W_TOP) != 0 {
@@ -137,6 +168,7 @@ pub fn draw_wrapped_text(
     } else {
         (h - block_h) / 2 + y0
     };
+    let mut painted_first = false;
     for line in &lines {
         let lw = measure_line(font, line);
         let x = if (style & W_LEFT) != 0 {
@@ -156,6 +188,21 @@ pub fn draw_wrapped_text(
             draw_text(s, x + 1, y + 1, font, line, shadow);
         }
         draw_text(s, x, y, font, line, colour);
+        // Caret stroke — asm at FUN_005ceaa0:005cf1dd..005cf1ef draws a
+        // vertical 1-px SOLID line (style=2) from (x_pen, y_top) to
+        // (x_pen, y_top + font_h - 1). We render it on the FIRST line
+        // only, using the prefix width computed above as the pen X. The
+        // exe's line index is defined on the unwrapped buffer; because
+        // wrap drops the overflowing character, hoping to identify a
+        // wrapped-line target is ambiguous — the first-line convention
+        // matches every observed caller (single-line edit widgets).
+        if !painted_first {
+            if let Some(prefix_w) = caret_prefix_w {
+                let caret_x = x + prefix_w;
+                s.draw_line(caret_x, y, caret_x, y + font_h - 1, 2, colour);
+            }
+            painted_first = true;
+        }
         y += font_h;
     }
 }
@@ -218,7 +265,7 @@ mod tests {
         let f = stub_font(b"X", 1);
         let mut s = PackedSurface::rgb555(6, 4);
         let c = s.pack_rgb(0xff, 0, 0);
-        draw_wrapped_text(&mut s, 2, 1, 5, 3, &f, b"X", c, W_LEFT | W_TOP, 0);
+        draw_wrapped_text(&mut s, 2, 1, 5, 3, &f, b"X", c, W_LEFT | W_TOP, -1);
         assert_eq!(s.buf[(1 * 6 + 2) as usize], c);
         // Anything else zero.
         for (i, &v) in s.buf.iter().enumerate() {
@@ -235,7 +282,7 @@ mod tests {
         let f = stub_font(b"X", 1);
         let mut s = PackedSurface::rgb555(6, 1);
         let c = s.pack_rgb(0, 0xff, 0);
-        draw_wrapped_text(&mut s, 0, 0, 5, 0, &f, b"XX", c, W_TOP, 0);
+        draw_wrapped_text(&mut s, 0, 0, 5, 0, &f, b"XX", c, W_TOP, -1);
         assert_eq!(&s.buf, &[0, 0, c, c, 0, 0]);
     }
 
@@ -244,8 +291,57 @@ mod tests {
         let f = stub_font(b"X", 1);
         let mut s = PackedSurface::rgb555(6, 1);
         let c = s.pack_rgb(0, 0, 0xff);
-        draw_wrapped_text(&mut s, 0, 0, 5, 0, &f, b"X", c, W_RIGHT | W_TOP, 0);
+        draw_wrapped_text(&mut s, 0, 0, 5, 0, &f, b"X", c, W_RIGHT | W_TOP, -1);
         assert_eq!(s.buf[5], c);
         assert!(s.buf[0..5].iter().all(|&v| v == 0));
+    }
+
+    /// Font with fully transparent 1-pixel-wide glyphs — used by caret
+    /// tests so the glyph blit paints nothing and we can assert on the
+    /// caret pixels in isolation.
+    fn transparent_font(chars: &[u8], height: i32) -> PixelFont {
+        let mut f = PixelFont::empty(height);
+        for &c in chars {
+            f.glyphs[c as usize] = Some(Glyph {
+                width: 1,
+                bitmap: vec![0x00; height as usize],
+                ..Default::default()
+            });
+        }
+        f
+    }
+
+    #[test]
+    fn draw_wrapped_text_paints_vertical_caret_at_index_zero() {
+        // Ported per FUN_005ceaa0:005cf1dd..005cf1ef — the caret is a
+        // 1-px SOLID vertical line spanning the full font height at the
+        // pen X of the target char. Index 0 → "before the first char",
+        // so caret_x == label_start_x. With W_LEFT|W_TOP the label
+        // starts at (x0, y0). We use a transparent 3-row font so the
+        // ONLY colour_c pixels come from the caret stroke.
+        let f = transparent_font(b"OK", 3);
+        let mut s = PackedSurface::rgb555(4, 5);
+        let c = s.pack_rgb(0xff, 0, 0);
+        draw_wrapped_text(&mut s, 0, 0, 3, 4, &f, b"OK", c, W_LEFT | W_TOP, 0);
+        // Column 0 rows 0..2 lit with `c` — the caret.
+        assert_eq!(s.buf[0], c, "caret row 0");
+        assert_eq!(s.buf[4], c, "caret row 1");
+        assert_eq!(s.buf[8], c, "caret row 2");
+        // Nothing else is touched.
+        for (i, &v) in s.buf.iter().enumerate() {
+            let expected = if i == 0 || i == 4 || i == 8 { c } else { 0 };
+            assert_eq!(v, expected, "unexpected pixel at index {i}");
+        }
+    }
+
+    #[test]
+    fn draw_wrapped_text_caret_disabled_when_index_negative() {
+        // caret_char_index = -1 → gate at FUN_005ceaa0:005cf180 skips
+        // the stroke; surface stays black.
+        let f = transparent_font(b"OK", 3);
+        let mut s = PackedSurface::rgb555(4, 5);
+        let c = s.pack_rgb(0xff, 0, 0);
+        draw_wrapped_text(&mut s, 0, 0, 3, 4, &f, b"OK", c, W_LEFT | W_TOP, -1);
+        assert!(s.buf.iter().all(|&v| v == 0));
     }
 }

@@ -79,9 +79,10 @@ pub struct Widget {
     /// (W_* bits from `packed_text`).
     pub text_style: u32,
 
-    /// `+0x44` — passed as the 9th arg to `draw_wrapped_text` (kern /
-    /// underline char index — our port currently ignores it, same as
-    /// `packed_text::draw_wrapped_text`'s `_kern` parameter).
+    /// `+0x44` — passed as the last arg to `draw_wrapped_text` — the
+    /// caret / attention-char index. `-1` = no caret (the exe's sentinel
+    /// at `FUN_005ceaa0:005cf180`); `>= 0` draws a 1-px vertical stroke
+    /// at that char's pen position. Default constructor writes `-1`.
     pub text_kern: i32,
 
     /// `+0x4c` — cached saved-background surface, kept between paints
@@ -387,7 +388,7 @@ mod tests {
             x0, y0, x1, y1,
             style_byte: 0x10 | 0x20,   // P_SOLID_FILL | P_BEVEL
             text_style: 0,             // W_* bits all clear → centred
-            text_kern: 0,
+            text_kern: -1,             // "no caret" sentinel
             saved_bg: None,
             cached_text: None,
             colour_a: 0x0200,

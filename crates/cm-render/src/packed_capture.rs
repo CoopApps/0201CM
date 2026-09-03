@@ -202,7 +202,9 @@ fn dispatch(s: &mut PackedSurface, call: &Call) {
         }
         Call::WrappedText { x0, y0, x1, y1, style, colour, text, font } => {
             let f = font.into_font();
-            draw_wrapped_text(s, *x0, *y0, *x1, *y1, &f, text, *colour, *style, 0);
+            // Capture-replay never carries an edit caret — pass -1 (the
+            // exe's "no caret" sentinel: FUN_005ceaa0:005cf180).
+            draw_wrapped_text(s, *x0, *y0, *x1, *y1, &f, text, *colour, *style, -1);
         }
         Call::Restore { x, y, width, height, data_b64 } => {
             let data = decode_u16s(data_b64);

@@ -385,6 +385,87 @@ impl PackedSurface {
     }
 }
 
+/// Byte-exact port of `FUN_005ce2d0` (349 bytes, 117 instructions) —
+/// scales `colour` by `intensity_pct` / 100 per RGB channel and repacks
+/// in the surface's pixel format. `intensity_pct > 100` brightens,
+/// `< 100` darkens. Skipped (returns 0) when the exe's global
+/// `DAT_00ad6b44` gate is non-zero — see [`packed_widget_globals`].
+///
+/// The exe reads channel masks from a pixel-format descriptor
+/// (`param_4`, defaulting to `DAT_00acde98` when NULL); we take them
+/// straight off the `PackedSurface`, which carries the same mask set.
+/// The RGB565 vs RGB555 dispatch is `fmt[+0x14] == 0x7e0`; we key off
+/// `surface.green_mask == 0x7e0`, which is exactly what the exe writes
+/// into that slot for the software surface.
+///
+/// The divide-by-100 is the exe's `imul 0x51eb851f; sar edx, 5` magic —
+/// signed multiplicative inverse of 100 for a 32-bit dividend, with the
+/// sign-bit round-to-zero correction (`add edx, edx>>31`).
+///
+/// Every asm site cited inline. Address prefix is the byte offset inside
+/// `FUN_005ce2d0`.
+pub fn colour_scale(surface: &PackedSurface, colour: u16, intensity_pct: u32) -> u16 {
+    // 005ce2d0..005ce2de: gate on DAT_00ad6b44 — return 0 if non-zero.
+    if crate::packed_widget_globals::DAT_00AD6B44 != 0 {
+        return 0;
+    }
+    // 005ce2df..005ce2ec: pick the pixel-format descriptor. We already
+    // have the mask set on the surface — the exe's `mov esi, 0xacde98`
+    // default branch would give us the very same masks the surface
+    // carries, so we can just read them here.
+    let rm = surface.red_mask as u32;
+    let gm = surface.green_mask as u32;
+    let bm = surface.blue_mask as u32;
+    let is_565 = surface.green_mask == 0x7e0;
+    // 005ce2f1..005ce2f8: ecx = colour & 0xffff.
+    let c = colour as u32;
+    // 005ce2fe..005ce30a: r = ((rm & c) << 8) / (rm + 1) — normalise
+    // red channel to 0..255.
+    let red_norm = ((rm & c) << 8) / (rm + 1);
+    // 005ce30c..005ce322: g = ((gm & c) << 8) / (gm + 1).
+    let green_norm = ((gm & c) << 8) / (gm + 1);
+    // 005ce32a..005ce33c: b = ((bm & c) << 8) / (bm + 1). ecx here is
+    // reloaded to hold `intensity_pct & 0xff` — the exe truncates the
+    // intensity to a byte before multiplying.
+    let blue_norm = ((bm & c) << 8) / (bm + 1);
+    let intensity = intensity_pct & 0xff;
+    // 005ce33e..005ce39e: for each channel byte:
+    //   scaled = ((byte * intensity) as i32).imul(0x51eb851f) >> 32 sar 5
+    //          + (that >> 31)  == byte * intensity / 100 with round-to-zero.
+    // The exe reloads bytes from stack locals; we've kept them in u32s.
+    let div100 = |v: u32| -> i32 {
+        let prod = (v as i32) as i64 * (intensity as i32) as i64;
+        // imul 0x51eb851f gives full 64-bit signed product; the exe uses
+        // (prod_hi >> 5) + ((prod_hi >> 5) >> 31) which is exactly
+        // prod_hi:prod_lo / 100 rounded toward zero. Straight /100 in
+        // Rust is the same for the small values here.
+        let base = (prod / 100) as i32;
+        base
+    };
+    let red = div100(red_norm);
+    let green = div100(green_norm);
+    let blue = div100(blue_norm);
+    // 005ce3a0..005ce3c6: clamp each channel to 0xff.
+    let clamp = |v: i32| -> u32 {
+        if v > 0xff { 0xff } else { v as u32 }
+    };
+    let r = clamp(red);
+    let g = clamp(green);
+    let b = clamp(blue);
+    // 005ce3cb..005ce406 (RGB565 branch) vs 005ce407..005ce42c (RGB555).
+    if is_565 {
+        // 005ce3e4..005ce406: pack ((r & 0xf8) << 8) | ((g & 0xfc) << 3)
+        //                        | (b >> 3).
+        let a = (r & 0xf8) << 5 | (g & 0xfc);
+        ((a << 3) | (b >> 3)) as u16
+    } else {
+        // 005ce407..005ce42c: pack ((r & 0xf8) << 7) | ((g & 0xf8) << 2)
+        //                        | (b >> 3).
+        let a = (r & 0xf8) << 5 | (g & 0xf8);
+        ((a << 2) | (b >> 3)) as u16
+    }
+}
+
 /// Stipple pattern read by `FUN_005d7aa0` widget-decoration branches and
 /// blitted by `draw_stipple` (port of `FUN_005cd870`). The on-disk record
 /// layout in `cm0102_GDI.exe` is
@@ -447,6 +528,56 @@ fn range_incl(a: i32, b: i32) -> RangeInclusive<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ---------------- colour_scale ----------------
+
+    /// Extract 0..255 red/green/blue from an RGB555 packed word using
+    /// exactly the exe's normalisation formula, so we can compare
+    /// mid-precision values without re-deriving the pack maths.
+    fn unpack555(v: u16) -> (u32, u32, u32) {
+        let v = v as u32;
+        let r = ((v & 0x7c00) << 8) / (0x7c00 + 1);
+        let g = ((v & 0x03e0) << 8) / (0x03e0 + 1);
+        let b = ((v & 0x001f) << 8) / (0x001f + 1);
+        (r, g, b)
+    }
+
+    #[test]
+    fn colour_scale_at_100_pct_is_identity_within_pack_precision() {
+        let s = PackedSurface::rgb555(1, 1);
+        // Mid-grey in RGB555 (r=g=b≈128).
+        let mid = s.pack_rgb(0x80, 0x80, 0x80);
+        let out = colour_scale(&s, mid, 100);
+        // Values round through the /100 magic and back through the
+        // 5-bit pack; expect the same 5-bit-quantised colour.
+        assert_eq!(out, mid);
+    }
+
+    #[test]
+    fn colour_scale_darkens_at_50_pct() {
+        let s = PackedSurface::rgb555(1, 1);
+        let mid = s.pack_rgb(0x80, 0x80, 0x80);
+        let out = colour_scale(&s, mid, 50);
+        let (r, g, b) = unpack555(out);
+        let (rm, gm, bm) = unpack555(mid);
+        // Every channel should have dropped to about half; allow one
+        // step of 5-bit quantisation slop.
+        for (o, i) in [(r, rm), (g, gm), (b, bm)] {
+            let half = i / 2;
+            assert!(o <= half + 10, "channel {o} not <= {half}+10 (from {i})");
+        }
+    }
+
+    #[test]
+    fn colour_scale_brightens_at_200_pct_and_clamps() {
+        let s = PackedSurface::rgb555(1, 1);
+        // Mid-grey doubled should saturate the top of each 5-bit slot.
+        let mid = s.pack_rgb(0x80, 0x80, 0x80);
+        let out = colour_scale(&s, mid, 200);
+        // 0x80 * 2 = 0x100, clamped to 0xff, then (0xff & 0xf8) << 5 etc.
+        // Expected pack: r=g=b saturated top-5-bit -> 0x7fff.
+        assert_eq!(out, 0x7fff);
+    }
 
     // ---------------- pack_rgb ----------------
 

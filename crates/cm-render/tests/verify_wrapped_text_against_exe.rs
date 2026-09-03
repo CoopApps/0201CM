@@ -99,7 +99,7 @@ fn draw_wrapped_text_matches_fun_005d03a0_byte_exact() {
         draw_wrapped_text(&mut s,
                           case.x0 - sh_x, case.y0 - sh_y,
                           case.x1 - sh_x, case.y1 - sh_y,
-                          &font, case.text.as_bytes(), case.colour, case.style, 0);
+                          &font, case.text.as_bytes(), case.colour, case.style, -1);
         if s.buf == after_expected {
             passes.push(case.label.clone());
         } else {
