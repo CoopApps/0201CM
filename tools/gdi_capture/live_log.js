@@ -25,8 +25,20 @@ function u32(a) { return a.toUInt32(); }
 function u16(a) { return a.toUInt32() & 0xffff; }
 
 function readStr(p) {
+    // readCString returns junk after the first non-NUL boundary when the
+    // exe's text buffer isn't NUL-terminated within 256 bytes (some
+    // callsites reuse a shared scratch buffer). Read as raw bytes and
+    // slice at the first 0x00 ourselves — matches the C string convention
+    // the exe's own draw fns follow.
     if (p.isNull()) return '';
-    try { return p.readCString(256); } catch (_) { return ''; }
+    try {
+        const bytes = p.readByteArray(256);
+        if (!bytes) return '';
+        const arr = new Uint8Array(bytes);
+        let end = 0;
+        while (end < arr.length && arr[end] !== 0) end++;
+        return String.fromCharCode.apply(null, arr.subarray(0, end));
+    } catch (_) { return ''; }
 }
 
 // Return-address in the caller's code — read from ESP on entry. Gives
