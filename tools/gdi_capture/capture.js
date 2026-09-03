@@ -68,32 +68,37 @@ function readMeta(screen) {
     };
 }
 
-// Minimal base64 encoder — Frida's Node buffer isn't available.
+// Base64 encoder — writes into a preallocated char array then joins.
+// String += in a per-byte loop is O(n^2) in V8 for large inputs and
+// stalls on the 960 KB framebuffer snapshot; this version is O(n).
+const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 function b64encode(bytes) {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     const view = new Uint8Array(bytes);
-    let out = '';
+    const outLen = Math.ceil(view.length / 3) * 4;
+    const out = new Array(outLen);
+    let o = 0;
     let i = 0;
     for (; i + 2 < view.length; i += 3) {
         const b1 = view[i], b2 = view[i + 1], b3 = view[i + 2];
-        out += alphabet[b1 >> 2];
-        out += alphabet[((b1 & 3) << 4) | (b2 >> 4)];
-        out += alphabet[((b2 & 15) << 2) | (b3 >> 6)];
-        out += alphabet[b3 & 63];
+        out[o++] = B64_ALPHABET[b1 >> 2];
+        out[o++] = B64_ALPHABET[((b1 & 3) << 4) | (b2 >> 4)];
+        out[o++] = B64_ALPHABET[((b2 & 15) << 2) | (b3 >> 6)];
+        out[o++] = B64_ALPHABET[b3 & 63];
     }
     if (i < view.length) {
         const b1 = view[i];
         const b2 = i + 1 < view.length ? view[i + 1] : 0;
-        out += alphabet[b1 >> 2];
-        out += alphabet[((b1 & 3) << 4) | (b2 >> 4)];
+        out[o++] = B64_ALPHABET[b1 >> 2];
+        out[o++] = B64_ALPHABET[((b1 & 3) << 4) | (b2 >> 4)];
         if (i + 1 < view.length) {
-            out += alphabet[(b2 & 15) << 2];
-            out += '=';
+            out[o++] = B64_ALPHABET[(b2 & 15) << 2];
+            out[o++] = '=';
         } else {
-            out += '==';
+            out[o++] = '=';
+            out[o++] = '=';
         }
     }
-    return out;
+    return out.join('');
 }
 
 function readAscii(ptr_) {
