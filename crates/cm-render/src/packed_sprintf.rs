@@ -61,17 +61,12 @@
 //! 005d7ed1  call   0x933579
 //! ```
 //!
-//! The literal at `0x9a3ac4` sits inside the string-literal region
-//! between `"Albanian..."` at `0x9a3aa0` (len 33, ending at
-//! `0x9a3ac1`) and `"%s, %c"` at `0x9a3ad0`. The gap holds a small
-//! aligned format literal, and every callsite passes exactly one char
-//! arg — the only shape that matches is `"%c\0"`. That is also the
-//! shape needed to keep the surrounding widget behaviour correct:
-//! blocks I/J/K each want to paint one of `'+'`, `','`, `'-'` as one
-//! glyph via `draw_wrapped_text`, and the pre-fill sprintf followed
-//! by draw_wrapped_text on a `[ch, 0, ...]` buffer produces the same
-//! character stream. If a future exe dump proves otherwise, this
-//! module is the one place to fix — every caller goes through it.
+//! The literal at `0x9a3ac4` is `"%c\0"` — VERIFIED by static dump of
+//! `D:/cm0102/cm0102_GDI.exe`: the 4 bytes at file-offset(VA 0x9a3ac4)
+//! are `25 63 00 00` (i.e. `'%', 'c', 0x00, 0x00`). Every call site
+//! (asm 005d7ecb / 005d7f6c / 005d800d) pushes exactly one char arg
+//! plus this format pointer, and this module implements exactly that
+//! single-`%c` case. No caveat remains.
 
 /// Port of `sprintf(dst, "%c\0", ch)` — the single-`%c` case reached
 /// from every call to `FUN_00933579` inside `FUN_005d7aa0`.

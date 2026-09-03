@@ -93,6 +93,66 @@ impl PixelFormat {
     }
 }
 
+// ---------------------------------------------------------------------
+// Widget-icon single-slot cache (FUN_005d7aa0 block D + FUN_005cdb50).
+//
+// The exe caches one icon at a time in a global slot:
+//   * DAT_00acda6c  u16 hold-counter (NOT a valid flag — it counts
+//                   how many widgets are currently referencing the
+//                   cached bitmap; the miss path only replaces the
+//                   cache when it reaches 0).
+//   * DAT_00acda70  260-byte filename buffer of the cached icon.
+//   * DAT_00acdb74  pointer to the cached IconBitmap.
+//
+// Semantics (asm 005d7b17..005d7bdd):
+//   Hit  (filename matches): reuse cache, `inc DAT_00acda6c`.
+//   Miss (filename differs):
+//     1. `load_icon_bitmap(filename, NULL)` (block D always passes
+//        NULL for cache_slot — asm 005d7b7f `push 0`).
+//     2. Stash the returned bitmap in `widget.cached_text`.
+//     3. If `DAT_00acda6c == 0` (cache free):
+//          drop the old cached bitmap, copy filename into
+//          DAT_00acda70, install the new bitmap in DAT_00acdb74,
+//          set DAT_00acda6c = 1.
+//        Else keep the widget's private bitmap, don't touch cache.
+//
+// The exe never DECREMENTS the counter (searched every text ref to
+// 0xacda6c) — it's a one-shot install lock, not a refcount. Once set
+// to 1 the cache never reinstalls again in the exe's lifetime. Our
+// port matches that (add a `reset_widget_icon_cache()` helper for
+// tests only).
+// ---------------------------------------------------------------------
+
+use crate::packed_icon_loader::IconBitmap;
+use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::Mutex;
+
+/// `DAT_00acda6c` — widget-icon cache hold-counter.
+/// BSS-zero on shipped exe → cache is free at startup.
+pub static DAT_00ACDA6C: AtomicU16 = AtomicU16::new(0);
+
+/// `DAT_00acda70` — 260-byte filename buffer of the cached icon.
+/// BSS-zero on shipped exe.
+pub static DAT_00ACDA70: Mutex<[u8; 260]> = Mutex::new([0u8; 260]);
+
+/// `DAT_00acdb74` — pointer to the cached IconBitmap. BSS-zero.
+/// The Rust port owns the bitmap directly (rather than pointer +
+/// external allocation).
+pub static DAT_00ACDB74: Mutex<Option<IconBitmap>> = Mutex::new(None);
+
+/// Test-only: reset the widget-icon cache slot so tests don't leak
+/// state across test-runner threads.
+#[cfg(test)]
+pub fn reset_widget_icon_cache() {
+    DAT_00ACDA6C.store(0, Ordering::SeqCst);
+    *DAT_00ACDA70.lock().unwrap() = [0u8; 260];
+    *DAT_00ACDB74.lock().unwrap() = None;
+}
+
+#[cfg(not(test))]
+#[allow(dead_code)]
+fn _unused_ordering() { let _ = Ordering::SeqCst; }
+
 /// Bytes of `DAT_00acde98` after `FUN_005cc4f0` (GDI init) has run —
 /// RGB555 masks. Every primitive that reads `[0xacde98+0x10..+0x18]` on
 /// the NULL-fmt_ref branch sees these three words.
