@@ -60,6 +60,7 @@
 //! end without dragging the screen-stack manager into this commit.
 
 use crate::screen_nav_back_next::build_nav_back_next;
+use crate::screen_news::{build_news_screen, NewsScreenState};
 use crate::widget_pool::GuiRecordPool;
 
 // ============================================================================
@@ -297,6 +298,28 @@ pub fn post_dispatch_sidebar_update(_pool: &mut GuiRecordPool, _state: &mut Disp
 }
 
 // ============================================================================
+// Default state accessors for LIVE builder routes
+// ============================================================================
+
+/// Minimum-viable `NewsScreenState` for the cmd-1000 live route.
+///
+/// Real Layer-6 wiring will thread a per-seat state; this default
+/// mirrors what `screen_news`'s own tests use so the route produces
+/// the same 9 areas + tab/label widgets the fixture captured.
+fn default_news_state() -> NewsScreenState {
+    NewsScreenState {
+        header_title: String::new(),
+        active_tab: 0,
+        filter_text: String::new(),
+        next_unread_enabled: false,
+        items: Vec::new(),
+        selected_body: String::new(),
+        back_disabled: true,
+        next_enabled: false,
+    }
+}
+
+// ============================================================================
 // Global dispatcher — port of FUN_007491e0
 // ============================================================================
 
@@ -363,12 +386,16 @@ pub fn dispatch_global(
             fn_addr: "FUN_00822940",
             note: "Save — Enter File Name dialog",
         },
-        // 1000 = 0x3e8 (`007491e0:0x00749a5f`) — News page open
-        1000 => DispatchResult::TodoBuilder {
-            cmd: 1000,
-            fn_addr: "FUN_0076f2f0",
-            note: "News (news.c) — cmd 0x3e8",
-        },
+        // 1000 = 0x3e8 (`007491e0:0x00749a5f`) — News page open.
+        //
+        // LIVE ROUTE (Layer 5 commit): resolve cmd 1000 by calling the
+        // ported Layer-3 builder `build_news_screen`. Default state is
+        // used since this dispatcher has no game-state handle — Layer 6
+        // will thread a real `NewsScreenState` here.
+        1000 => {
+            let _ = build_news_screen(pool, &default_news_state());
+            DispatchResult::Handled
+        }
         // 0x418 (`007491e0:0x00749aef`) — Latest Scores
         0x418 => DispatchResult::TodoBuilder {
             cmd: 0x418,
