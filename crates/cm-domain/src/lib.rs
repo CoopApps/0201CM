@@ -21,6 +21,7 @@ pub mod cash;
 pub mod club_records;
 pub mod dispute;
 pub mod fifa_rankings;
+pub mod game_rng;
 pub mod fog_of_war;
 pub mod scouting;
 pub mod friendly;
