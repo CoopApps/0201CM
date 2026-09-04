@@ -71,20 +71,24 @@ pub mod off {
 
     // ---- slot table 0x0000..0x2FFF (16 × 0x300) is left at zero by ctor's rep-stos-block ----
 
-    // ---- header 0x3000..0x306f ----
-    /// `+0x3000`  dword — deferred-push name pointer.  GDI L78.
-    pub const DEFERRED_NAME: usize = 0x3000;
-    /// `+0x3004`  dword — deferred-push arg 1.  GDI L79.
-    pub const DEFERRED_ARG1: usize = 0x3004;
-    /// `+0x3008`  dword — deferred-push arg 2.  GDI L80.
-    pub const DEFERRED_ARG2: usize = 0x3008;
-    /// `+0x300c`  dword — deferred-push arg 3.  GDI L81.
-    pub const DEFERRED_ARG3: usize = 0x300c;
-    /// `+0x3010`  dword — deferred-push arg 4.  GDI L82.
-    pub const DEFERRED_ARG4: usize = 0x3010;
-    /// `+0x3014`  dword — bag-values ptr.  GDI L83.
+    // ---- header 0x3000..0x306f — the PENDING-PUSH block ----
+    // Written as a unit by `FUN_007e6a20` == GDI `sub_007e6420` (thiscall,
+    // `ret 0x1c`, 7 stack args → see `ScreenManager::stage_pending_push`)
+    // and consumed by `push_screen` (`FUN_007e6570` C L27-40 + L170-175)
+    // when the current slot is empty.
+    /// `+0x3000`  dword — pending-push screen id (`FUN_007e6a20` param_2).  GDI ctor L78.
+    pub const PENDING_PUSH_SCREEN_ID: usize = 0x3000;
+    /// `+0x3004`  dword — pending-push param_3 (event fn).  GDI ctor L79.
+    pub const PENDING_PUSH_PARAM_3: usize = 0x3004;
+    /// `+0x3008`  dword — pending-push param_4 (modal flag).  GDI ctor L80.
+    pub const PENDING_PUSH_PARAM_4: usize = 0x3008;
+    /// `+0x300c`  dword — pending-push param_5 (cleanup fn ptr).  GDI ctor L81.
+    pub const PENDING_PUSH_CLEANUP: usize = 0x300c;
+    /// `+0x3010`  dword — pending-push param_6.  GDI ctor L82.
+    pub const PENDING_PUSH_PARAM_6: usize = 0x3010;
+    /// `+0x3014`  dword — bag-values ptr (`FUN_007e6a20` param_7).  GDI ctor L83.
     pub const BAG_VALUES: usize = 0x3014;
-    /// `+0x3018`  word — bag-count.  GDI L84.
+    /// `+0x3018`  word — bag-count (`FUN_007e6a20` param_8).  GDI ctor L84.
     pub const BAG_COUNT: usize = 0x3018;
     /// `+0x301a`  dword — aux.  GDI L75.
     pub const AUX_0X301A: usize = 0x301a;
@@ -313,13 +317,22 @@ pub mod entry {
 /// raw i32 value (case label in the decomp); docs describe the case body's
 /// side effect.
 ///
-/// **Cases not yet wired.** The switch bodies read/write record-chain fields
-/// (`+0x1F8` next-ptr, `+500`/`0x1F4` prev-ptr, `+0x14` 0x3c-slot bag, `+0x10`
-/// modal-flag, `+0xC` cleanup2) that `push_screen` (commit 5) will fully decode,
-/// and call several unported externals (`FUN_007eaac0`, `FUN_007e7b50`,
-/// `FUN_00933d24` — record free helper). This enum is defined now so the
-/// dispatch scaffold in commit 4d can declare its exit type; the actual switch
-/// body port lands with commit 5.
+/// **Where the 14 case bodies live.** All fourteen are implemented:
+///
+/// * `Case0`, `-1`, `-2`, `-3`, `-4`, `-7`, `-10`, `-11` —
+///   [`ScreenManager::pump_dispatch_case`] (chain-only manipulation on
+///   `ScreenRecord.{prev,next,param_4}` + the slot `ACTIVE_FLAG`, cleanup1
+///   through `ScrmanHooks::invoke_cleanup1`, bag-free through
+///   `ScrmanHooks::on_bag_free`).
+/// * `-5`, `-6`, `-8`, `-9`, `-12`, `-13` —
+///   [`ScreenManager::pump_dispatch_case_wired`]: the case-specific chain
+///   mutation, then the shared `LAB_007e52a2` tail
+///   ([`ScreenManager::dispatch_external_tail`] = free current record +
+///   `FUN_007eaac0` end-marker broadcast over the `NetSocket`).
+///   `pump_dispatch_case` (the socket-less dispatcher used by
+///   `pump_with_hooks`) does NOT apply these six bodies — their tail needs
+///   the network singleton — and only reports them through
+///   `ScrmanHooks::on_external_case`; `pump_with_net` is the exe-shaped pump.
 ///
 /// The pump's final return value is `local_434 == -5` (C L686), i.e. the
 /// pump exits `true` iff the last dispatch produced `CaseNeg5`.
@@ -414,25 +427,31 @@ impl PumpDispatchResult {
 // - `+0x04` — cleanup fn ptr (called on teardown, args: local_438)
 // - `+0x08` — event fn ptr (called on input events)
 //
-// Slots 0x0c..0x300 are TBD — decoded incrementally by commits 4c + 5.
+// The full 0x300-byte layout is documented on `ScreenRecord` (decoded from
+// `push_screen`'s writes): the record carries exactly three code pointers
+// (`+0x04` cleanup, `+0x08` event, `+0x0C` cleanup2); `+0x00` is the
+// screen id, not a vtable.
 
-/// Vtable for a `ScreenRecord`. Slots decoded from pump call sites in
-/// `FUN_007e4940` (C lines 117, 179, 277, 417) and `push_screen`.
+/// Rust-side grouping of the three callable slots a `ScreenRecord` holds.
+/// The exe stores them as raw fn pointers at `+0x04` / `+0x08` / `+0x0C`
+/// (`push_screen` C L107 / L109 / L108); the pump invokes them at
+/// `FUN_007e4940` C L117 (cleanup), L179 (event) and L622/L654 (cleanup2).
 ///
-/// Only the first three slots are used by the 4a preamble (indirectly — the
-/// preamble does not call any of them; commit 4c wires them at dispatch).
-/// Remaining vtable slots stay `unk_*` until push_screen decodes them.
+/// The authoritative storage is `ScreenRecord.cleanup` (+0x04),
+/// `ScreenRecord.param_3` (+0x08, the event fn — the pump's `vtable[2]`)
+/// and `ScreenRecord.param_6` (+0x0C, cleanup2); invocation goes through
+/// `ScrmanHooks` because the values are exe code addresses. This struct is
+/// retained so tests can attach typed callbacks; it adds no exe field.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ScreenRecordVTable {
-    /// `+0x00` — per-frame handler. Called every pump tick on the current record.
+    /// Typed stand-in for `+0x04` (cleanup). Mirrors `ScreenRecord.cleanup`.
     pub per_frame: Option<fn(&mut ScreenManager)>,
-    /// `+0x04` — cleanup handler. Called on screen teardown; takes one stack arg
-    /// (the `local_438` state slot from the pump).
+    /// Typed stand-in for `+0x0C` (cleanup2, `param_6`); takes the pump's
+    /// `local_438` state slot.
     pub cleanup: Option<fn(&mut ScreenManager, u32)>,
-    /// `+0x08` — event handler. Called on input events; returns an i32 code
-    /// consumed by the pump's -1..-13 dispatch table.
+    /// Typed stand-in for `+0x08` (event, `param_3`); returns the i32 the
+    /// pump switches on (`PumpDispatchResult::from_raw`).
     pub event: Option<fn(&mut ScreenManager, u32) -> i32>,
-    // TODO(commit 4c/5): fill remaining slots as push_screen decodes them.
 }
 
 /// Rust-native handle for a `ScreenRecord`. In the exe, records are addressed
@@ -443,8 +462,8 @@ pub struct ScreenRecordVTable {
 pub type RecordId = u32;
 
 /// One entry in a `ScreenRecord`'s 0x3c-slot bag at record `+0x14..+0x1F4`
-/// (60 × 8 bytes). Populated by `FUN_007e7130` (see `push_screen`'s deferred
-/// replay path); freed on eviction if `owned == true`.
+/// (60 × 8 bytes). Populated by `FUN_007e7130` (see `push_screen`'s
+/// pending-push bag replay, step 9); freed on eviction if `owned == true`.
 ///
 /// Byte-layout in the exe (matches `push_screen`'s eviction loop C L79-84 and
 /// `FUN_007e7130`'s stores at `+0x14 + i*8` / `+0x18 + i*8`):
@@ -526,7 +545,7 @@ impl ScreenRecord {
 ///
 /// The exe returns `undefined4`: `1` on the "new record pushed" happy path
 /// (C L184), `0` when it rewinds to an existing record (C L67-70), when the
-/// deferred/args validation trips (`screen_id == 0 || param_3 == 0`; C L41),
+/// pending-push/args validation trips (`screen_id == 0 || param_3 == 0`; C L41),
 /// or when eviction is blocked by a modal head record (C L102).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PushScreenResult {
@@ -551,25 +570,57 @@ impl PushScreenResult {
 }
 
 // ------------------------------------------------------------
-// DAT_00acde98 — 8-dword static table copied into a stack buffer at pump entry.
-// Symbol table (data_symbols.json) types this as `undefined4` — untyped 32-bit
-// values. Not decoded yet; the pump reads element [5] to compare against 0x7e0
-// (= 2016 decimal — plausibly a season year, but unverified).
+// DAT_00acde98 — the surface PIXEL-FORMAT descriptor (8 dwords), copied
+// into a stack buffer at pump entry.
 // ------------------------------------------------------------
 
-/// Snapshot of the `DAT_00acde98` static table read at pump entry.
+/// The 8 dwords at `0x00acde98` as the pump sees them.
 ///
-/// The exe copies 8 dwords starting at absolute address `0x00acde98` (asm
-/// `mov esi, 0xacde98; rep movsd 8`) into a stack buffer, then reads element
-/// [5] (offset 0x14 within the copy) for the mode comparison. Real values
-/// need extraction from the exe's .data section — for 4a the placeholder is
-/// all-zero, and callers wanting a nonzero mode-flag override via
-/// `pump_preamble_with_mode_table`.
+/// **Location.** VA `0x00acde98` is `.data` RVA `0x6cde98`, past the
+/// section's `SizeOfRawData = 0x152000` (VirtualSize `0x45585c`) — it is
+/// BSS, so `pefile` reads nothing back and the loader zero-fills it. There
+/// is no static image to inline; the contents are RUNTIME-written.
 ///
-/// TODO(later commit): extract real bytes from cm0102_GDI.exe and inline.
-pub const DAT_ACDE98: [u32; 8] = [0; 8];
+/// **Writer.** The only stores into the 32-byte window in the whole GDI
+/// `.text` are in the renderer init `FUN_005cc4f0` (GDI `sub_005cc4f0`):
+/// ```text
+/// 005cc9e7  mov dword ptr [0xacdea8], 0x7c00    ; [4] = red_mask   (+0x10)
+/// 005cc9f1  mov dword ptr [0xacdeac], 0x3e0     ; [5] = green_mask (+0x14)
+/// 005cc9fb  mov dword ptr [0xacdeb0], 0x1f      ; [6] = blue_mask  (+0x18)
+/// ```
+/// Every other reference to the window is a read (`mov esi, 0xacde98` in
+/// `sub_005cd930`, `sub_005ce240`, `sub_005ce2d0`, `sub_005ce430` and the
+/// pump `sub_007e4340`), so dwords [0..=3] and [7] keep their loader zero.
+/// This is the same record `packed_widget_globals::DAT_00ACDE98` exposes
+/// as a `PixelFormat` (masks at +0x10/+0x14/+0x18); the two are asserted
+/// equal in `dat_acde98_is_the_pixel_format_record`.
+///
+/// **Reader.** GDI pump `sub_007e4340`:
+/// ```text
+/// 007e434c  mov  ecx, 8
+/// 007e4351  mov  esi, 0xacde98
+/// 007e4356  lea  edi, [esp + 0x28]
+/// 007e4369  rep movsd                     ; local_420[0..8] = DAT_00acde98[0..8]
+/// 007e436b  mov  edi, [esp + 0x3c]        ; local_420[5] = green_mask
+/// 007e4364  mov  eax, 0x7e0
+/// 007e4373  cmp  edi, eax ; sete cl       ; flag = (green_mask == 0x7e0)
+/// ```
+/// So the pump's "mode flag" is simply **"the surface is RGB565"**, which
+/// is `0` on the GDI build (RGB555 masks).
+pub const DAT_ACDE98: [u32; 8] = [
+    0x0000_0000, // +0x00  loader-zero (no writer in .text)
+    0x0000_0000, // +0x04  loader-zero
+    0x0000_0000, // +0x08  loader-zero
+    0x0000_0000, // +0x0c  loader-zero
+    0x0000_7c00, // +0x10  red_mask    — sub_005cc4f0:005cc9e7
+    0x0000_03e0, // +0x14  green_mask  — sub_005cc4f0:005cc9f1
+    0x0000_001f, // +0x18  blue_mask   — sub_005cc4f0:005cc9fb
+    0x0000_0000, // +0x1c  loader-zero
+];
 
-/// The 0x7e0 constant the pump compares against.
+/// The 0x7e0 constant the pump compares `DAT_ACDE98[5]` (the green mask)
+/// against: `0x07e0` is the RGB565 green mask, so the derived flag means
+/// "surface is RGB565".
 pub const PUMP_MODE_MATCH: u32 = 0x7e0;
 
 /// Snapshot of `DAT_009afdec` (the "current-loading screen filename" global)
@@ -694,6 +745,169 @@ fn decompose_utc(unix_secs: i64) -> (i32, i32, i32, i32, i32, i32) {
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as i32;
     let year = (y + if m <= 2 { 1 } else { 0 }) as i32;
     (year, m, d, hour, minute, second)
+}
+
+// ============================================================
+// FUN_00935f4b (cm0102.exe) == sub_0093578b (GDI, 220 bytes / 75 insns) —
+// the wall-clock snapshot the pump takes at C L57.
+// ============================================================
+
+/// Win32 `SYSTEMTIME` — 16 bytes, the layout `GetLocalTime` /
+/// `GetSystemTime` fill and `sub_0093578b` indexes by `[ebp-0x10+N]`.
+#[repr(C)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
+pub struct SystemTime16 {
+    pub year: u16,          // +0x0  ([ebp-0x10] local / [ebp-0x20] system)
+    pub month: u16,         // +0x2  ([ebp-0xe]        / [ebp-0x1e])
+    pub day_of_week: u16,   // +0x4
+    pub day: u16,           // +0x6  ([ebp-0xa]        / [ebp-0x1a])
+    pub hour: u16,          // +0x8  ([ebp-0x8]        / [ebp-0x18])
+    pub minute: u16,        // +0xa  ([ebp-0x6]        / [ebp-0x16])
+    pub second: u16,        // +0xc  ([ebp-0x4])
+    pub milliseconds: u16,  // +0xe
+}
+
+/// The two statics `sub_0093578b` keeps: `DAT_00dc8200` (16 bytes — the
+/// last `GetSystemTime` result, compared field-wise at 009357a8..009357e7
+/// and refreshed by the four `movsd` at 0093582a..0093582d) and
+/// `DAT_00dc81f8` (the cached DST flag, read at 009357e9 / written at
+/// 0093582f). Both BSS-zero at load.
+static TZ_SNAPSHOT_CACHE: std::sync::Mutex<(SystemTime16, i32)> =
+    std::sync::Mutex::new((SystemTime16 { year: 0, month: 0, day_of_week: 0, day: 0,
+                                          hour: 0, minute: 0, second: 0, milliseconds: 0 }, 0));
+
+/// Win32 clock reads used by `sub_0093578b` through the import table:
+/// `[0x955110]` = `GetLocalTime`, `[0x955108]` = `GetSystemTime`,
+/// `[0x95510c]` = `GetTimeZoneInformation` (all kernel32).
+#[cfg(windows)]
+mod win_clock {
+    use super::SystemTime16;
+
+    /// Win32 `TIME_ZONE_INFORMATION` (172 bytes). `sub_0093578b` reads
+    /// `DaylightDate.wMonth` (`[ebp-0x32]` = +0x9a) and `DaylightBias`
+    /// (`[ebp-0x24]` = +0xa8).
+    #[repr(C)]
+    pub struct TimeZoneInformation {
+        pub bias: i32,                    // +0x00
+        pub standard_name: [u16; 32],     // +0x04
+        pub standard_date: SystemTime16,  // +0x44
+        pub standard_bias: i32,           // +0x54
+        pub daylight_name: [u16; 32],     // +0x58
+        pub daylight_date: SystemTime16,  // +0x98
+        pub daylight_bias: i32,           // +0xa8
+    }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        pub fn GetLocalTime(lp: *mut SystemTime16);
+        pub fn GetSystemTime(lp: *mut SystemTime16);
+        pub fn GetTimeZoneInformation(lp: *mut TimeZoneInformation) -> u32;
+    }
+
+    pub fn local_time() -> SystemTime16 {
+        let mut st = SystemTime16::default();
+        // SAFETY: `st` is a valid, writable 16-byte SYSTEMTIME.
+        unsafe { GetLocalTime(&mut st) };
+        st
+    }
+
+    pub fn system_time() -> SystemTime16 {
+        let mut st = SystemTime16::default();
+        // SAFETY: as above.
+        unsafe { GetSystemTime(&mut st) };
+        st
+    }
+
+    /// `(return code, DaylightDate.wMonth, DaylightBias)`.
+    pub fn time_zone_information() -> (u32, u16, i32) {
+        let mut tzi: TimeZoneInformation = unsafe { std::mem::zeroed() };
+        // SAFETY: `tzi` is a valid, writable 172-byte TIME_ZONE_INFORMATION.
+        let rc = unsafe { GetTimeZoneInformation(&mut tzi) };
+        (rc, tzi.daylight_date.month, tzi.daylight_bias)
+    }
+}
+
+/// Port of `FUN_00935f4b` == GDI `sub_0093578b`: read the wall clock, refresh
+/// the cached DST flag when the UTC minute has changed, and encode the LOCAL
+/// time through [`cm_mktime`]. Returns the i32 the exe stores through its
+/// out-pointer (`00935859..00935863`; the pump passes `&local_428`).
+///
+/// ```text
+/// 00935794  lea eax,[ebp-0x10] ; push eax ; call [0x955110]   ; GetLocalTime(&local)
+/// 0093579e  lea eax,[ebp-0x20] ; push eax ; call [0x955108]   ; GetSystemTime(&sys)
+/// 009357a8  mov ax,[ebp-0x16] ; cmp ax,[0xdc820a] ; jne REFRESH   ; sys.minute
+/// 009357b5  mov ax,[ebp-0x18] ; cmp ax,[0xdc8208] ; jne REFRESH   ; sys.hour
+/// 009357c2  mov ax,[ebp-0x1a] ; cmp ax,[0xdc8206] ; jne REFRESH   ; sys.day
+/// 009357cf  mov ax,[ebp-0x1e] ; cmp ax,[0xdc8202] ; jne REFRESH   ; sys.month
+/// 009357dc  mov ax,[ebp-0x20] ; cmp ax,[0xdc8200] ; jne REFRESH   ; sys.year
+/// 009357e9  mov eax,[0xdc81f8] ; jmp ENCODE                       ; cached dst flag
+/// REFRESH:
+/// 009357f0  lea eax,[ebp-0xcc] ; push eax ; call [0x95510c]   ; GetTimeZoneInformation(&tzi)
+/// 009357fd  cmp eax,-1 ; je  → eax = -1                        ; TIME_ZONE_ID_INVALID
+/// 00935802  cmp eax,2  ; jne → eax = 0                         ; != TIME_ZONE_ID_DAYLIGHT
+/// 00935807  cmp word [ebp-0x32],0 ; je → 0                     ; tzi.DaylightDate.wMonth == 0
+/// 0093580e  cmp dword [ebp-0x24],0 ; je → 0                    ; tzi.DaylightBias == 0
+/// 00935814  push 1 ; pop eax                                   ; else 1
+/// 00935820  lea esi,[ebp-0x20] ; mov edi,0xdc8200 ; movsd ×4   ; DAT_00dc8200 = sys (16 bytes)
+/// 0093582f  mov [0xdc81f8], eax                                ; DAT_00dc81f8 = dst flag
+/// ENCODE:
+/// 00935835  push eax                                           ; dst
+/// 00935836  movzx eax, word [ebp-0x4]  ; push  ; local.second
+/// 0093583b  movzx eax, word [ebp-0x6]  ; push  ; local.minute
+/// 00935840  movzx eax, word [ebp-0x8]  ; push  ; local.hour
+/// 00935845  movzx eax, word [ebp-0xa]  ; push  ; local.day
+/// 0093584a  movzx eax, word [ebp-0xe]  ; push  ; local.month
+/// 0093584f  movzx eax, word [ebp-0x10] ; push  ; local.year
+/// 00935854  call 0x93acf0                                      ; cm_mktime(y,m,d,h,mi,s,dst)
+/// 00935859  mov ecx,[ebp+8] ; test ecx,ecx ; je ; mov [ecx],eax ; *out = result
+/// ```
+///
+/// On non-Windows hosts the three kernel32 reads have no counterpart; the
+/// fallback decomposes the UTC clock (`decompose_utc`) and passes `dst = 0`,
+/// which is exactly what the Windows path yields for a UTC machine with no
+/// daylight rule.
+pub fn fun_00935f4b_time_snapshot() -> i32 {
+    #[cfg(windows)]
+    {
+        let local = win_clock::local_time();          // 00935794..00935798
+        let sys = win_clock::system_time();           // 0093579e..009357a2
+        let mut cache = TZ_SNAPSHOT_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        // 009357a8..009357e7: five-field compare against DAT_00dc8200.
+        let hit = sys.minute == cache.0.minute
+            && sys.hour == cache.0.hour
+            && sys.day == cache.0.day
+            && sys.month == cache.0.month
+            && sys.year == cache.0.year;
+        let dst: i32 = if hit {
+            cache.1                                    // 009357e9
+        } else {
+            // 009357f0..0093581d
+            let (rc, daylight_month, daylight_bias) = win_clock::time_zone_information();
+            let flag = if rc == 0xFFFF_FFFF {
+                -1
+            } else if rc == 2 && daylight_month != 0 && daylight_bias != 0 {
+                1
+            } else {
+                0
+            };
+            cache.0 = sys;                             // 0093582a..0093582d
+            cache.1 = flag;                            // 0093582f
+            flag
+        };
+        // 00935835..00935854
+        cm_mktime(local.year as i32, local.month as i32, local.day as i32,
+                  local.hour as i32, local.minute as i32, local.second as i32, dst)
+    }
+    #[cfg(not(windows))]
+    {
+        let unix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        let (y, m, d, h, mi, s) = decompose_utc(unix);
+        let _ = &TZ_SNAPSHOT_CACHE;
+        cm_mktime(y, m, d, h, mi, s, 0)
+    }
 }
 
 // ============================================================
@@ -862,7 +1076,8 @@ impl NetworkBuffer {
 ///
 /// The sub-object is ~1.24 MB (span `+0x3070..+0x1326d0` = 0x12F661 bytes; the ctor only
 /// touches fields in the `+0x00` and `+0x12e99e..+0x12f55d` bands and leaves the huge middle
-/// zero — later population code, not yet ported, fills the pools that live there).
+/// zero — the pools that live there belong to the session subsystem and are written by its
+/// own routines, never by the ScreenManager ctor, so ctor parity is complete here).
 ///
 /// Because the sub-object lives *inline* in the ScreenManager arena in the exe, this Rust
 /// struct is a **tracking marker** (holds only the `mode` arg); the actual bytes are the
@@ -1040,16 +1255,24 @@ pub struct ScreenManager {
     /// into per-slot `ScreenRecord`s at record byte-offset +0x2c. There is no
     /// scrman arena slot for it, so we keep it as a struct field.
     ///
-    /// **Encoding note.** The exe's `FUN_00935f4b` returns the result of
-    /// `FUN_0093b4b0(y,m,d,h,mi,s,dst)` — a custom-epoch (`0x7c558180 +
-    /// DAT_00ac4c88`-based) i32 count of seconds. That encoder relies on two
-    /// unported `.data` constants (`DAT_00ac4c88`, `DAT_00ac4c90`), so this
-    /// port stores a **Unix-epoch** i32 instead — semantically-equivalent
-    /// monotonic seconds (with wraparound in 2038 like the exe). The exact
-    /// encoding is deferred with the mktime port.
+    /// **Encoding.** The exe's `FUN_00935f4b` returns
+    /// `FUN_0093b4b0(y,m,d,h,mi,s,dst)` — a custom-epoch i32 second count
+    /// (`0x7c558180 + DAT_00ac4c88`-based). Both are ported byte-exact:
+    /// [`cm_mktime`] with the dumped `CM_MKTIME_*` constants, fed by
+    /// [`fun_00935f4b_time_snapshot`] (GDI `sub_0093578b`: `GetLocalTime`
+    /// + `GetSystemTime` + cached `GetTimeZoneInformation` DST flag).
     ///
     /// Zeroed until the first `snapshot_time_now` call.
     last_time_snapshot: i32,
+    /// Rust-side owner of the pending-push cleanup fn (`+0x300c`,
+    /// `FUN_007e6a20` param_5). The arena dword holds a 0/1 presence marker
+    /// (exe code pointers do not round-trip through a 64-bit host), the
+    /// callable lives here. `None` after ctor/reset.
+    pending_cleanup: Option<fn(&mut ScreenManager)>,
+    /// Rust-side owner of the pending-push bag values (`+0x3014`, the
+    /// `FUN_007e6a20` param_7 array of `BAG_COUNT` dwords). Empty after
+    /// ctor/reset.
+    pending_bag: Vec<u32>,
     /// Live pool of `ScreenRecord`s. Keyed by `RecordId` (the exe stored raw
     /// heap pointers where we store ids; the arena mirrors the id at slot
     /// +0x06/+0x0a/+0x0e and record +0x1F4/+0x1F8). Post-ctor: empty.
@@ -1099,9 +1322,10 @@ pub trait ScrmanHooks {
         }
     }
 
-    /// Cleanup2 hook — the `record + 0x0C` fn ptr called during
-    /// finalization walk (C L622-624, L654-656). Rust-side `cleanup2`
-    /// slot isn't yet stored on `ScreenRecord`; hook-driven for now.
+    /// Cleanup2 hook — the `record + 0x0C` fn ptr called during the
+    /// finalization walk (C L622-624, L654-656). The value is stored on
+    /// `ScreenRecord.param_6` as the exe wrote it (a code address), so the
+    /// call itself is routed through this hook.
     fn invoke_cleanup2(&mut self, _mgr: &mut ScreenManager, _record_id: RecordId) {}
 
     /// Default case (C L221-226): `if local_438 != -1 && slot+0xb == 0`
@@ -1119,12 +1343,12 @@ pub trait ScrmanHooks {
         }
     }
 
-    /// Fires for the seven cases whose full body needs externals not yet
-    /// ported (-5 restore-uVar4 + LAB_007e52a2 broadcast, -6 sibling-lift,
-    /// -7 finalization exit gate, -8 fanout, -9 prev-chain-unwind, -10
-    /// (also invoked in addition to bag-free), -12 net-error, -13 pop-to-oldest).
-    /// The dispatch mutations for these cases are *not* applied; the hook
-    /// receives the code and can either substitute state or record it.
+    /// Observer for the cases that end in the `LAB_007e52a2` network tail
+    /// (-5, -6, -8, -9, -12, -13) plus -7 (finalization gate) and -10
+    /// (fires after bag-free). In `pump_dispatch_case_wired` it fires AFTER
+    /// the body has been applied; in the socket-less `pump_dispatch_case`
+    /// the six net-tail bodies are not applied (no `NetSocket`) and this is
+    /// the only signal.
     fn on_external_case(&mut self, _mgr: &mut ScreenManager, _code: PumpDispatchResult) {}
 }
 
@@ -1158,6 +1382,8 @@ impl ScreenManager {
             bytes, net_buf, session_a, session_b,
             mode_table_snapshot: [0; 8],
             last_time_snapshot: 0,
+            pending_cleanup: None,
+            pending_bag: Vec::new(),
             records: BTreeMap::new(),
             next_record_id: 1,
             loading_filename: Vec::new(),
@@ -1191,9 +1417,50 @@ impl ScreenManager {
         self.session_b = SessionSubObject::new(1);
         self.mode_table_snapshot = [0; 8];
         self.last_time_snapshot = 0;
+        self.pending_cleanup = None;
+        self.pending_bag.clear();
         self.records.clear();
         self.next_record_id = 1;
         self.apply_ctor_writes();
+    }
+
+    /// Port of `FUN_007e6a20` == GDI `sub_007e6420` (75 bytes, thiscall,
+    /// `ret 0x1c` = 7 stack args) — stage a pending push. `push_screen`
+    /// consumes the block when the current slot is empty (C L27-40) and
+    /// replays the bag values into the new record (C L170-175).
+    ///
+    /// ```text
+    /// 007e6420  mov eax, [esp+4]  ; 007e6428  mov [ecx+0x3000], eax   ; screen id
+    /// 007e6424  mov edx, [esp+8]  ; 007e6432  mov [ecx+0x3004], edx   ; param_3
+    /// 007e642e  mov eax, [esp+0xc]; 007e643c  mov [ecx+0x3008], eax   ; param_4
+    /// 007e6438  mov edx, [esp+0x10];007e6446  mov [ecx+0x300c], edx   ; cleanup fn
+    /// 007e6442  mov eax, [esp+0x14];007e6450  mov [ecx+0x3010], eax   ; param_6
+    /// 007e644c  mov edx, [esp+0x18];007e645b  mov [ecx+0x3014], edx   ; bag values ptr
+    /// 007e6456  mov ax,  [esp+0x1c];007e6461  mov [ecx+0x3018], ax    ; bag count (word)
+    /// ```
+    ///
+    /// The two pointer-valued slots (`+0x300c` cleanup fn, `+0x3014` bag
+    /// array) are stored in the arena as presence markers (1 / 0) and owned
+    /// Rust-side (`pending_cleanup`, `pending_bag`); every other slot is
+    /// written verbatim.
+    pub fn stage_pending_push(
+        &mut self,
+        screen_id: u32,
+        param_3: i32,
+        param_4: i32,
+        cleanup: Option<fn(&mut ScreenManager)>,
+        param_6: i32,
+        bag_values: Vec<u32>,
+    ) {
+        self.set_u32(off::PENDING_PUSH_SCREEN_ID, screen_id);             // 007e6428
+        self.set_u32(off::PENDING_PUSH_PARAM_3, param_3 as u32);          // 007e6432
+        self.set_u32(off::PENDING_PUSH_PARAM_4, param_4 as u32);          // 007e643c
+        self.set_u32(off::PENDING_PUSH_CLEANUP, cleanup.is_some() as u32); // 007e6446
+        self.set_u32(off::PENDING_PUSH_PARAM_6, param_6 as u32);          // 007e6450
+        self.set_u32(off::BAG_VALUES, (!bag_values.is_empty()) as u32);   // 007e645b
+        self.set_u16(off::BAG_COUNT, bag_values.len() as u16);            // 007e6461
+        self.pending_cleanup = cleanup;
+        self.pending_bag = bag_values;
     }
 
     /// Snapshot of the last DAT_00acde98 copy performed by `pump_preamble`.
@@ -1217,18 +1484,14 @@ impl ScreenManager {
     ///    at bytes 0x13256a and 0x13256c. (Asm coalesces to one dword-clear at
     ///    0x13256a; byte-equivalent.)
     ///
-    /// Delegates the `pump_mode_table_source` to a parameter so tests can
-    /// exercise the mode-flag branch. Callers pass `DAT_ACDE98` for parity
-    /// with the exe.
+    /// Takes the 8-dword table as a parameter so tests can exercise the
+    /// RGB565 branch of the flag; production callers pass [`DAT_ACDE98`]
+    /// (the pixel-format record `FUN_005cc4f0` installs).
     ///
-    /// **Deferred to later sub-commits:**
-    /// - `FUN_00935f4b(&local_428)` — timezone snapshot (C L57). Sub-commit 4b.
-    /// - Per-slot depth loop C L58..89 — reads slot depths (loop bound only,
-    ///   depths themselves not mutated) and clears entry fields in each
-    ///   slot's entry chain. Requires `ScreenRecord` field layout past +0x0c
-    ///   which push_screen (commit 5) will provide. Sub-commit 4c.
-    /// - Network prologue C L91..96. Sub-commit 4b.
-    /// - Main dispatch loop C L97+. Sub-commits 4c + 4d.
+    /// The remainder of the pump entry lives in: [`Self::snapshot_time_now`]
+    /// (C L57), [`Self::pump_entry_prep`] (C L58-89), [`Self::net_poll_recv`]
+    /// (C L91-96, called from `pump_with_net`) and the dispatch loop in
+    /// [`Self::pump_with_net`] / [`Self::pump_with_hooks`] (C L97+).
     pub(crate) fn pump_preamble_with_mode_table(&mut self, mode_table: &[u32; 8]) {
         // C L35-36 / asm 007e435a: pump-active flag = 1 (as two shorts).
         self.set_u16(off::PUMP_ACTIVE_LO, 1);           // param_1[0x1834] = 1
@@ -1268,9 +1531,9 @@ impl ScreenManager {
 
         // Record the copy as evidence for the test.
         self.mode_table_snapshot = local_420;
-
-        // C L57 `FUN_00935f4b(&local_428)` — DEFERRED (4b).
-        // C L58-89 per-slot loop — DEFERRED (4c).
+        // C L57 `FUN_00935f4b(&local_428)` → `snapshot_time_now`;
+        // C L58-89 per-slot loop → `pump_entry_prep` (both called by
+        // `pump_prologue` / `pump_with_*`).
     }
 
     /// Convenience wrapper — invokes `pump_preamble_with_mode_table` with the
@@ -1280,35 +1543,13 @@ impl ScreenManager {
         self.pump_preamble_with_mode_table(&DAT_ACDE98);
     }
 
-    /// Port of `FUN_00935f4b(&local_428)` — C L57 of the pump.
-    ///
-    /// The exe reads the current wall-clock (`GetLocalTime` + `GetSystemTime`),
-    /// refreshes a DST cache (`GetTimeZoneInformation` → `DAT_00dc82b0`),
-    /// caches the components (`DAT_00dc82b8..DAT_00dc82c4`), then encodes the
-    /// local time into an i32 via `FUN_0093b4b0` — a custom mktime-analogue
-    /// using globals `DAT_00ac4c88` (per-year offset) and `DAT_00ac4c90` (DST
-    /// bias). The result feeds `local_428` on the pump's stack and is later
-    /// stamped into every ScreenRecord at `+0x2c` (C L79 `psVar18[0x16]`).
-    ///
-    /// **Rust port.** `std::time::SystemTime::now().duration_since(UNIX_EPOCH)`
-    /// replaces the Win32 clock reads (Rust std delegates to the same OS API
-    /// on Windows). The DST cache + custom epoch encoder are **deferred** —
-    /// unported constants (`DAT_00ac4c88`, `DAT_00ac4c90`) would need to be
-    /// extracted from the `.data` section, and the pump consumers so far only
-    /// read the stamped `+0x2c` field as an opaque monotonic id.
-    ///
-    /// See `last_time_snapshot` field doc for the encoding-difference caveat.
+    /// C L57 of the pump: `FUN_00935f4b(&local_428)` — see
+    /// [`fun_00935f4b_time_snapshot`] for the byte-cited port (GDI
+    /// `sub_0093578b`). The result is `local_428` on the pump's stack, later
+    /// stamped into every active slot entry at `+0x2c` by `pump_entry_prep`
+    /// (C L77 `psVar18[0x16]`).
     pub fn snapshot_time_now(&mut self) {
-        let unix = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs() as i64)
-            .unwrap_or(0);
-        let (y, m, d, h, mi, s) = decompose_utc(unix);
-        // Feed dst_flag=0 (force off): the exe reads local time which already
-        // includes the OS's DST bias; we're feeding UTC so applying the
-        // constant DST bias again would double-count. Result is byte-exact for
-        // UTC-input semantics.
-        self.last_time_snapshot = cm_mktime(y, m, d, h, mi, s, 0);
+        self.last_time_snapshot = fun_00935f4b_time_snapshot();
     }
 
     /// Value written by the most recent `snapshot_time_now()`. Zero until the
@@ -1316,25 +1557,15 @@ impl ScreenManager {
     #[inline]
     pub fn last_time_snapshot(&self) -> i32 { self.last_time_snapshot }
 
-    /// Pump prologue — combines commit 4a's `pump_preamble` with commit 4b's
-    /// `snapshot_time_now`. Covers C lines 35..57 of `FUN_007e4940`.
-    ///
-    /// **Deferred (STOP-AND-REPORT).** The network prologue at C L91..96
-    /// (`while (net_mode != 0) { FUN_00762e80(net_buf_ptr, &tag) }`) is
-    /// **not** included. `FUN_00762e80` has no C decomp in `ghidra_out/`
-    /// (only 762730/7d0/7f0/8e0/950/b60/b90 exist); the GDI-side equivalent
-    /// `sub_00762ac0` is a 601-instruction winsock-heavy function (calls
-    /// `sub_89a970` accept + `sub_89aeb0` recv + peer table at `+0x4ba`).
-    /// Porting it requires winsock init / socket registration / peer-table
-    /// infra that this workspace does not yet have. That path is deferred to
-    /// a follow-up commit; the pump prologue this ships is offline-safe (no
-    /// net poll).
+    /// Pump prologue — `pump_preamble` (C L35-56) + `snapshot_time_now`
+    /// (C L57). The per-slot fan-out (C L58-89) is [`Self::pump_entry_prep`]
+    /// and the network recv prologue (C L91-96,
+    /// `while (net_mode != 0) { FUN_00762e80(net_buf_ptr, &tag) }`) is
+    /// [`Self::net_poll_recv`]; `pump_with_net` calls all three in exe order,
+    /// `pump_with_hooks` (socket-less) calls the first two.
     pub fn pump_prologue(&mut self) {
         self.pump_preamble();
         self.snapshot_time_now();
-        // Per-slot timestamp fan-out (C L58..89) uses ScreenRecord fields past
-        // +0x0c that push_screen (commit 5) will decode — deferred to 4c.
-        // Network prologue (C L91..96) — deferred, see doc-comment above.
     }
 
     /// Per-slot per-entry init loop — C L58-89 of `FUN_007e4940`
@@ -1440,7 +1671,7 @@ impl ScreenManager {
     #[inline] pub fn slot_tail_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_TAIL_ID) }
     /// Slot `current` RecordId — the active record. `slot+0x0e`.
     #[inline] pub fn slot_current_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_CURRENT_ID) }
-    /// Slot `alt-head` RecordId — read by the deferred-args predicate. `slot+0x02`.
+    /// Slot `alt-head` RecordId — read by the pending-push empty-slot predicate. `slot+0x02`.
     #[inline] pub fn slot_alt_head_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_ALT_HEAD_ID) }
     /// Slot record-count. `slot+0x14`.
     #[inline] pub fn slot_count(&self, s: usize) -> u16 { self.get_u16(s * SLOT_STRIDE + off::SLOT_COUNT_WORD) }
@@ -1492,8 +1723,9 @@ impl ScreenManager {
     ///
     /// **Behavior** (line numbers refer to C `/d/cm0102-carve/ghidra_out/cm0102.exe/decompiled/007e6570.c`):
     /// 1. C L27-40: if current slot is empty (head==0 && alt-head==0) AND
-    ///    `DEFERRED_NAME != 0`, reload the args from the persistent
-    ///    `+0x3000..+0x3010` block; remember to replay the bag at the end.
+    ///    `PENDING_PUSH_SCREEN_ID != 0`, reload the args from the pending-push
+    ///    block `+0x3000..+0x3010` (staged by `stage_pending_push` =
+    ///    `FUN_007e6a20`); remember to replay the bag at the end.
     /// 2. C L41-49: error if `screen_id == 0 || param_3 == 0`.
     /// 3. C L52-70: if slot has a `current` and `param_4 != 0`, walk the
     ///    forward chain from `current` for a record whose `screen_id` matches;
@@ -1509,11 +1741,14 @@ impl ScreenManager {
     ///    + name copy from `DAT_009afdec`) and link it as the new tail.
     /// 8. C L165-176: bump slot counters, reset flag/sentinel words, set
     ///    `slot+0x16 = 1` running.
-    /// 9. C L177-183: if deferred path AND `BAG_COUNT > 0`, replay bag values
-    ///    into the new record via `FUN_007e7130` semantics.
+    /// 9. C L170-175: if the pending-push path was taken AND `BAG_COUNT > 0`,
+    ///    replay `bag_values[i]` into the new record via
+    ///    `FUN_007e7130(i, value, 0)`.
     ///
-    /// `FUN_007e7130`'s core (populate bag entry `i` with `value_bytes`) is
-    /// inlined as `set_slot_bag` — memcpy of a heap-allocated Vec.
+    /// `FUN_007e7130` with a non-zero copy flag (populate bag entry `i` with
+    /// a heap copy of a C string) is `set_slot_bag`; with copy flag 0 (C
+    /// L40-46) it stores the raw value and `owned = 0` — that is the replay
+    /// form, see step 9.
     pub fn push_screen(
         &mut self,
         mut screen_id: u32,
@@ -1526,23 +1761,26 @@ impl ScreenManager {
         assert!(slot_idx < SLOT_COUNT, "current_slot out of range");
         let slot_base = slot_idx * SLOT_STRIDE;
 
-        // ---- Step 1: C L27-40 deferred-args branch. ----
-        let mut deferred = false;
-        let cleanup = cleanup;
+        // ---- Step 1: C L27-40 pending-push branch. ----
+        let mut pending = false;
+        let mut cleanup = cleanup;
         let empty_slot = self.slot_alt_head_id(slot_idx).is_none()
                       && self.slot_head_id(slot_idx).is_none();
-        if empty_slot && self.get_u32(off::DEFERRED_NAME) != 0 {
-            // Only param_3/4/6 come back as raw u32/i32; the deferred cleanup fn
-            // ptr can't round-trip through arena bytes safely on 64-bit hosts, so
-            // we keep the caller's `cleanup`. Real callers set both together via
-            // the (not-yet-ported) deferred-push helper.
-            screen_id = self.get_u32(off::DEFERRED_NAME);              // param_2
-            param_3   = self.get_u32(off::DEFERRED_ARG1) as i32;       // param_3
-            param_4   = self.get_u32(off::DEFERRED_ARG2) as i32;       // param_4
-            let _param_5 = self.get_u32(off::DEFERRED_ARG3);           // param_5 fn (see note)
-            param_6   = self.get_u32(off::DEFERRED_ARG4) as i32;       // param_6
-            deferred = true;
-            let _ = cleanup;  // acknowledged (kept as caller-passed)
+        if empty_slot && self.get_u32(off::PENDING_PUSH_SCREEN_ID) != 0 {
+            screen_id = self.get_u32(off::PENDING_PUSH_SCREEN_ID);          // C L34 param_2
+            param_3   = self.get_u32(off::PENDING_PUSH_PARAM_3) as i32;     // C L29 param_3
+            param_4   = self.get_u32(off::PENDING_PUSH_PARAM_4) as i32;     // C L30 param_4
+            // C L31 param_5 = +0x300c: the arena dword is the presence
+            // marker `stage_pending_push` wrote; the callable is the
+            // Rust-side `pending_cleanup` (an exe code pointer cannot be
+            // reconstituted from 4 arena bytes on this host).
+            cleanup = if self.get_u32(off::PENDING_PUSH_CLEANUP) != 0 {
+                self.pending_cleanup
+            } else {
+                None
+            };
+            param_6   = self.get_u32(off::PENDING_PUSH_PARAM_6) as i32;     // C L32 param_6
+            pending = true;                                                  // C L33 bVar4
         }
 
         // ---- Step 2: C L41-49 validation. ----
@@ -1681,24 +1919,44 @@ impl ScreenManager {
         }
         self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);        // L169
 
-        // ---- Step 9: C L177-183 deferred bag replay. ----
-        if deferred {
+        // ---- Step 9: C L170-175 pending-push bag replay. ----
+        //   if (bVar4 && 0 < BAG_COUNT)
+        //     for (i = 0; i < BAG_COUNT; i++)
+        //       FUN_007e7130(i, *(bag_values_ptr + i*4), 0);
+        if pending {
             let count = self.get_u16(off::BAG_COUNT) as usize;
-            let ptr_bag = self.get_u32(off::BAG_VALUES);
-            if count > 0 && ptr_bag != 0 {
-                // FUN_007e7130 semantics: for each i in 0..count, populate slot bag[i]
-                // with a copy of bag[i]. We can't dereference the raw u32 pointer
-                // without infra to resolve it into a slice, so store the raw i32 as
-                // a 4-byte payload — matches the exe's "if src ptr == 0 do zero-copy"
-                // case in FUN_007e7130 and lets tests observe the write pattern.
-                for i in 0..count {
-                    let val = self.get_u32(off::BAG_VALUES + i * 4);
-                    self.set_slot_bag(slot_idx, i, val.to_le_bytes().to_vec());
+            if count > 0 {
+                // `bag_values_ptr` (+0x3014) is the array `stage_pending_push`
+                // owns as `pending_bag`; entries past its length read as 0,
+                // matching a short array being indexed by BAG_COUNT.
+                let values: Vec<u32> = (0..count)
+                    .map(|i| self.pending_bag.get(i).copied().unwrap_or(0))
+                    .collect();
+                for (i, val) in values.into_iter().enumerate() {
+                    self.replay_slot_bag_raw(slot_idx, i, val);
                 }
             }
         }
 
         PushScreenResult::NewRecordPushed
+    }
+
+    /// `FUN_007e7130(i, value, copy_flag = 0)` — the replay form used by
+    /// `push_screen` step 9 (C L35-46 of `007e7130.c`): if entry `i` is
+    /// `owned`, free the old payload and clear the flag; then store `value`
+    /// verbatim with `owned = 0` (the exe stores the raw dword as the
+    /// entry's pointer field; we keep its 4 little-endian bytes).
+    pub fn replay_slot_bag_raw(&mut self, slot_idx: usize, i: usize, value: u32) {
+        assert!(i < 0x3c, "slot bag idx");                       // C L27 range check
+        if let Some(cid) = self.slot_current_id(slot_idx) {
+            if let Some(rec) = self.records.get_mut(&cid) {
+                // C L35-39: owned → FUN_00933d24(old); owned = 0.
+                rec.slot_bag[i].value = None;
+                rec.slot_bag[i].owned = false;
+                // C L40-46: copy_flag == 0 → store raw, owned = 0.
+                rec.slot_bag[i] = SlotBagEntry { value: Some(value.to_le_bytes().to_vec()), owned: false };
+            }
+        }
     }
 
     /// Set slot bag entry `i` on the current record to owned `bytes`.
@@ -1735,28 +1993,26 @@ impl ScreenManager {
     // - Finalization walk shape (L613-680): per-slot head→next chain with
     //   cleanup2 hook per record, then trailing state writes L681-685.
     //
-    // What this commit trait-hooks (unported externals):
-    // - Cases **-5, -6, -8, -9, -12, -13** — LAB_007e52a2 broadcast /
-    //   network-error / prev-chain unwind. `ScrmanHooks::on_external_case`
-    //   fires so the harness can observe them; chain manipulation is not
-    //   applied because it needs FUN_00933d24 + FUN_007eaac0 semantics we
-    //   don't yet own.
-    // - Cleanup1 (record+0x04, vtable[1]) — default impl calls the Rust-side
+    // What routes through `ScrmanHooks` (exe code pointers / externals):
+    // - Cleanup1 (record+0x04) — default impl calls the Rust-side
     //   `ScreenRecord.cleanup` fn ptr; hook override is available for tests.
-    // - Cleanup2 (record+0x0C, "cleanup2") — hook-only, no default.
-    // - Event handler (record+0x08, vtable[2]) — hook-only, no default; the
+    // - Cleanup2 (record+0x0C, `param_6`) — hook-only, no default.
+    // - Event handler (record+0x08, `param_3`) — hook-only, no default; the
     //   pump body drives on the returned i32 (mapped through
     //   `PumpDispatchResult::from_raw`).
+    // - Cases **-5, -6, -8, -9, -12, -13** in THIS socket-less dispatcher —
+    //   their `LAB_007e52a2` tail (free current + `FUN_007eaac0` end-marker
+    //   broadcast) needs the network singleton, so `pump_dispatch_case` only
+    //   fires `on_external_case`; the bodies are applied by
+    //   `pump_dispatch_case_wired` (4b-net) via `dispatch_external_tail`.
     //
-    // What this commit defers (documented STOP-AND-REPORT):
-    // - L91-96 network-recv prologue (needs FUN_00762e80 — 4b-net).
-    // - L358-379 select-next-slot-from-peer branch (needs FUN_0054dc60 +
-    //   FUN_00549210 + winsock peer table).
-    // - L497-509 all-slots-quiescent detection (needs correct entry ACKED
-    //   walk under real per-frame calls — the shape is here but the exit
-    //   condition uses hooks.should_exit).
-    // - L516-611 finalization "Processing... Please Wait" broadcast (needs
-    //   FUN_00762b90 net-send + string table copy).
+    // Where the rest of `FUN_007e4940` lives (4b-net):
+    // - L91-96 network-recv prologue → `net_poll_recv` (from `pump_with_net`).
+    // - L358-379 select-next-slot-from-peer → `PeerInputDispatch::flush_session`.
+    // - L497-509 all-slots-quiescent detection → `pump_with_net`'s
+    //   ACTIVE_FLAG scan (see its doc for the approximation note).
+    // - L516-611 finalization "Processing... Please Wait" broadcast →
+    //   `broadcast_end_marker` (called before `pump_finalize`).
 
     /// Apply one dispatch case's body. Returns `true` iff the pump should
     /// exit its loop (only `CaseNeg7` returns `true`; all other cases keep
@@ -1826,7 +2082,8 @@ impl ScreenManager {
             PumpDispatchResult::CaseNeg10 => {
                 // C L233-287: cleanup1, then walk down current->prev chain
                 // freeing each record's owned bag entries + the record itself.
-                // Complex; delegate the walk to hooks + do the bag-free default.
+                // Bag-free goes through `on_bag_free` (default drops payloads);
+                // the record free is the shared tail in the wired dispatcher.
                 if let Some(cid) = current {
                     hooks.invoke_cleanup1(self, cid);
                     hooks.on_bag_free(self, cid);
@@ -1841,7 +2098,9 @@ impl ScreenManager {
             | PumpDispatchResult::CaseNeg9
             | PumpDispatchResult::CaseNeg12
             | PumpDispatchResult::CaseNeg13 => {
-                // Body needs unported externals; observe via hook only.
+                // Socket-less dispatcher: the LAB_007e52a2 tail needs a
+                // `NetSocket`, so only the observer fires here. The bodies
+                // are applied by `pump_dispatch_case_wired`.
                 hooks.on_external_case(self, code);
             }
             PumpDispatchResult::CaseNeg7 => {
@@ -1859,7 +2118,8 @@ impl ScreenManager {
     /// trailing state writes at C L681-685.
     ///
     /// The exe's finalization also broadcasts a "Processing... Please Wait"
-    /// packet (L516-611) via FUN_00762b90; that is deferred (needs 4b-net).
+    /// packet (L516-611) via FUN_00762b90 — `pump_with_net` does that through
+    /// `broadcast_end_marker` immediately before calling this.
     ///
     /// Instruction count for L613-680: ~68 lines of C (per-slot loop with
     /// nested cleanup2 walk + FUN_005493b0 gate + FUN_007e6e00 tick).
@@ -1891,12 +2151,15 @@ impl ScreenManager {
     /// - CaseNeg7 (explicit finalization gate, C L514)
     /// - CaseNeg5 (soft-abort path — matches C L686 `return local_434 == -5`)
     /// - Empty current (nothing to dispatch on)
-    /// - A safety cap of 4096 iterations (real pump has more complex exit
-    ///   condition at L497-509; deferred).
+    /// - A safety cap of 4096 iterations (the exe's L497-509 quiescence exit
+    ///   is in `pump_with_net`).
+    ///
+    /// This is the socket-less pump: no L91-96 recv prologue, no peer
+    /// dispatch, and the six net-tail cases only observed. `pump_with_net`
+    /// is the exe-shaped variant.
     pub fn pump_with_hooks(&mut self, hooks: &mut dyn ScrmanHooks) -> PumpDispatchResult {
         self.pump_prologue();
         self.pump_entry_prep();
-        // Network prologue L91-96 — DEFERRED (4b-net).
 
         let mut last_code = PumpDispatchResult::Case0;
         let mut iter = 0u32;
@@ -2015,11 +2278,11 @@ impl ScreenManager {
         self.set_u32(off::AUX_0X301A, 0);          // 0x7e4051
         self.set_u32(off::AUX_0X301E, 0);          // 0x7e4057
         self.set_u32(off::AUX_0X3022, 0);          // 0x7e405d
-        self.set_u32(off::DEFERRED_NAME, 0);       // 0x7e4063
-        self.set_u32(off::DEFERRED_ARG1, 0);       // 0x7e4069
-        self.set_u32(off::DEFERRED_ARG2, 0);       // 0x7e406f
-        self.set_u32(off::DEFERRED_ARG3, 0);       // 0x7e4075
-        self.set_u32(off::DEFERRED_ARG4, 0);       // 0x7e407b
+        self.set_u32(off::PENDING_PUSH_SCREEN_ID, 0); // 0x7e4063
+        self.set_u32(off::PENDING_PUSH_PARAM_3, 0);   // 0x7e4069
+        self.set_u32(off::PENDING_PUSH_PARAM_4, 0);   // 0x7e406f
+        self.set_u32(off::PENDING_PUSH_CLEANUP, 0);   // 0x7e4075
+        self.set_u32(off::PENDING_PUSH_PARAM_6, 0);   // 0x7e407b
         self.set_u32(off::BAG_VALUES, 0);          // 0x7e4081
         self.set_u16(off::BAG_COUNT, 0);           // 0x7e4087
 
@@ -2131,7 +2394,7 @@ impl Default for ScreenManager {
 // app-side wires to real BSD sockets.
 //
 // What is BYTE-EXACT ported here (from cited decomps):
-//   * `FUN_00933d24`     — 8 lines: forwards to a heap-free stub.
+//   * `FUN_00933d24`     — 8 lines: forwards to the CRT heap-free wrapper.
 //                          Ported as a no-op (Rust `drop` handles it).
 //   * `FUN_00762b90` header/loop control flow — 4-byte size prefix +
 //     payload, peer-slot loop over the 16-word peer table, sentinel
@@ -2331,7 +2594,7 @@ impl ScreenManager {
     //     return;
     //   }
     //
-    // Whole thing forwards to a heap-free stub the app-side owns.
+    // Whole thing forwards to the CRT heap-free wrapper (`FUN_0093435a`).
     // Rust's `drop` handles the actual free through our BTreeMap
     // record pool, so this port is a documentation-only no-op.
     //
@@ -2594,10 +2857,10 @@ impl ScreenManager {
         freed
     }
 
-    /// Wired pump dispatcher — same as `pump_dispatch_case` but with
-    /// real bodies for cases -5/-6/-8/-9/-12/-13 (no more trait-hook
-    /// stub).  The `hooks.on_external_case` observer still fires
-    /// after the body applies, so tests can count.
+    /// Wired pump dispatcher — same as `pump_dispatch_case` but with the
+    /// bodies of cases -5/-6/-8/-9/-12/-13 applied (chain mutation + the
+    /// `LAB_007e52a2` net tail).  The `hooks.on_external_case` observer
+    /// still fires after the body applies, so tests can count.
     ///
     /// Case-specific behaviour (before the shared tail):
     ///   * `-5` — soft-abort: shared tail; pump loop exits on
@@ -2672,8 +2935,8 @@ impl ScreenManager {
     }
 
     /// Wired pump — same shape as `pump_with_hooks` but drives
-    /// through the wired case bodies (net path enabled).  All 4
-    /// deferred regions are now called:
+    /// through the wired case bodies (net path enabled).  The four
+    /// regions `pump_with_hooks` leaves out are all called:
     ///   * L91-96 recv prologue → `net_poll_recv`.
     ///   * L358-379 select-next-slot-from-peer → `dispatch_peer_input`.
     ///   * L497-509 all-slots-quiescent → early break when every slot
@@ -2755,7 +3018,7 @@ mod tests {
         for i in 1..SLOT_COUNT {
             assert_eq!(m.slot_depth(i), 0, "slot {} depth", i);
         }
-        // The initial screen pointer stub points into session A.
+        // The initial screen pointer marker points into session A.
         assert_eq!(m.get_u32(off::INITIAL_SCREEN_PTR), off::SESSION_A as u32);
     }
 
@@ -3072,10 +3335,9 @@ mod tests {
         assert_eq!(m.get_u16(off::PUMP_WORD_0X13256C), 0);
     }
 
-    /// The preamble scope in 4a does NOT mutate slot depths — the depth table
-    /// is loop-bound-read by the deferred per-slot loop (commit 4c), never
-    /// written. Verify preservation for both post-ctor state and arbitrary
-    /// pre-set depths.
+    /// The preamble does NOT mutate slot depths — the depth table is only
+    /// read as the loop bound by `pump_entry_prep`, never written. Verify
+    /// preservation for both post-ctor state and arbitrary pre-set depths.
     #[test]
     fn pump_preamble_preserves_slot_depths() {
         let mut m = ScreenManager::new();
@@ -3109,7 +3371,7 @@ mod tests {
     }
 
     /// Repeated calls advance (or hold equal to) the previous value —
-    /// evidences a real monotonic OS clock read, not a zero stub.
+    /// evidences a real monotonic OS clock read, not a constant.
     #[test]
     fn snapshot_time_now_monotonic() {
         let mut m = ScreenManager::new();
@@ -3389,36 +3651,108 @@ mod tests {
         assert_eq!(CLEANUP_HITS.load(Ordering::SeqCst), 1, "cleanup fired once");
     }
 
-    /// Deferred-args branch: with slot empty, DEFERRED_NAME set, and
-    /// BAG_COUNT > 0, the new record's slot bag is populated from BAG_VALUES.
+    /// Pending-push branch (C L27-40 + L170-175): with the slot empty and
+    /// a push staged by `stage_pending_push` (= `FUN_007e6a20`), the new
+    /// record takes its args from the `+0x3000` block and its bag is
+    /// replayed from the staged values with `owned = 0`.
     #[test]
-    fn push_screen_populates_slot_bag_when_deferred() {
+    fn push_screen_consumes_pending_push_block() {
+        static PENDING_CLEANUP_HITS: AtomicU64 = AtomicU64::new(0);
+        fn pending_cleanup(_m: &mut ScreenManager) { PENDING_CLEANUP_HITS.fetch_add(1, Ordering::SeqCst); }
+
         let mut m = ScreenManager::new();
         let slot = m.current_slot() as usize;
 
-        // Pre-load persistent state at +0x3000..+0x3018 that C L27-40 reads.
-        m.set_u32(off::DEFERRED_NAME, 0xCAFE);
-        m.set_u32(off::DEFERRED_ARG1, 7);   // param_3
-        m.set_u32(off::DEFERRED_ARG2, 0);   // param_4
-        m.set_u32(off::DEFERRED_ARG3, 0);   // param_5 fn (0)
-        m.set_u32(off::DEFERRED_ARG4, 0);   // param_6
-        // Bag: two values at a stub non-null ptr.
-        m.set_u32(off::BAG_VALUES, 0xDEAD);   // non-null sentinel triggers replay
-        m.set_u16(off::BAG_COUNT, 2);
+        // FUN_007e6a20(this, 0xCAFE, 7, 0, cleanup, 9, [0x1111, 0x2222], 2)
+        m.stage_pending_push(0xCAFE, 7, 0, Some(pending_cleanup), 9, vec![0x1111, 0x2222]);
+        // Arena mirrors: 007e6428..007e6461.
+        assert_eq!(m.get_u32(off::PENDING_PUSH_SCREEN_ID), 0xCAFE);
+        assert_eq!(m.get_u32(off::PENDING_PUSH_PARAM_3), 7);
+        assert_eq!(m.get_u32(off::PENDING_PUSH_PARAM_4), 0);
+        assert_eq!(m.get_u32(off::PENDING_PUSH_CLEANUP), 1, "cleanup presence marker");
+        assert_eq!(m.get_u32(off::PENDING_PUSH_PARAM_6), 9);
+        assert_eq!(m.get_u32(off::BAG_VALUES), 1, "bag presence marker");
+        assert_eq!(m.get_u16(off::BAG_COUNT), 2);
 
-        // Call with sentinel args that the deferred branch WILL overwrite —
-        // slot is empty so the deferred branch triggers.
+        // Call with sentinel args that the pending branch overwrites —
+        // slot is empty so C L27 fires.
         let r = m.push_screen(0, 0, None, 0, 0);
         assert_eq!(r, PushScreenResult::NewRecordPushed);
 
         let id = m.slot_current_id(slot).unwrap();
         let rec = m.record(id).unwrap();
-        assert_eq!(rec.screen_id, 0xCAFE, "screen_id from DEFERRED_NAME");
-        assert_eq!(rec.param_3, 7, "param_3 from DEFERRED_ARG1");
-        // Bag entries 0..2 populated.
-        assert!(rec.slot_bag[0].value.is_some(), "bag[0] populated");
-        assert!(rec.slot_bag[1].value.is_some(), "bag[1] populated");
+        assert_eq!(rec.screen_id, 0xCAFE, "screen_id from +0x3000");
+        assert_eq!(rec.param_3, 7, "param_3 from +0x3004");
+        assert_eq!(rec.param_6, 9, "param_6 from +0x3010");
+        assert!(rec.cleanup.is_some(), "cleanup fn from +0x300c (Rust-side owner)");
+        // Bag replay: FUN_007e7130(i, value, 0) → raw dword, owned = 0.
+        assert_eq!(rec.slot_bag[0].value.as_deref(), Some(&0x1111u32.to_le_bytes()[..]));
+        assert_eq!(rec.slot_bag[1].value.as_deref(), Some(&0x2222u32.to_le_bytes()[..]));
+        assert!(!rec.slot_bag[0].owned && !rec.slot_bag[1].owned, "replayed entries are not owned");
         assert!(rec.slot_bag[2].value.is_none(), "bag[2] untouched");
+
+        // The staged cleanup is the record's +0x04: it fires when the next
+        // push makes this record the old current (C L117-121).
+        m.push_screen(2, 1, None, 0, 0);
+        assert_eq!(PENDING_CLEANUP_HITS.load(Ordering::SeqCst), 1);
+    }
+
+    /// `stage_pending_push` with no bag / no cleanup writes zeros — the
+    /// same bytes the ctor leaves — so a subsequent push with a non-empty
+    /// slot ignores the block (C L27 requires an EMPTY slot).
+    #[test]
+    fn pending_push_is_ignored_when_slot_not_empty() {
+        let mut m = ScreenManager::new();
+        m.push_screen(1, 1, None, 0, 0);
+        m.stage_pending_push(0xCAFE, 7, 0, None, 0, Vec::new());
+        assert_eq!(m.get_u32(off::PENDING_PUSH_CLEANUP), 0);
+        assert_eq!(m.get_u32(off::BAG_VALUES), 0);
+        assert_eq!(m.get_u16(off::BAG_COUNT), 0);
+        let slot = m.current_slot() as usize;
+        m.push_screen(2, 1, None, 0, 0);
+        let rec = m.record(m.slot_current_id(slot).unwrap()).unwrap();
+        assert_eq!(rec.screen_id, 2, "caller args win when the slot is non-empty");
+    }
+
+    /// `DAT_ACDE98` is the pixel-format record `FUN_005cc4f0` installs —
+    /// the three masks at +0x10/+0x14/+0x18 must agree with
+    /// `packed_widget_globals::DAT_00ACDE98`, and the pump's derived flag
+    /// (`[5] == 0x7e0`) is 0 on the RGB555 GDI build.
+    #[test]
+    fn dat_acde98_is_the_pixel_format_record() {
+        let fmt = crate::packed_widget_globals::DAT_00ACDE98;
+        assert_eq!(DAT_ACDE98[4], fmt.red_mask as u32,   "+0x10 red_mask");
+        assert_eq!(DAT_ACDE98[5], fmt.green_mask as u32, "+0x14 green_mask");
+        assert_eq!(DAT_ACDE98[6], fmt.blue_mask as u32,  "+0x18 blue_mask");
+        for i in [0usize, 1, 2, 3, 7] {
+            assert_eq!(DAT_ACDE98[i], 0, "dword [{i}] has no writer in .text → loader zero");
+        }
+        let mut m = ScreenManager::new();
+        m.pump_preamble();
+        assert_eq!(m.get_u32(off::PUMP_MODE_FLAG_A), 0, "RGB555 → not-565 flag");
+        assert_eq!(m.get_u32(off::PUMP_MODE_FLAG_B), 0);
+    }
+
+    /// `fun_00935f4b_time_snapshot` encodes the LOCAL wall clock through
+    /// `cm_mktime`: on Windows, re-deriving it from `GetLocalTime` with the
+    /// cached DST flag reproduces the value (same minute), and the
+    /// five-field cache makes a second call within the minute a cache hit.
+    #[cfg(windows)]
+    #[test]
+    fn time_snapshot_matches_local_clock_through_cm_mktime() {
+        let v1 = fun_00935f4b_time_snapshot();
+        let local = win_clock::local_time();
+        let dst = TZ_SNAPSHOT_CACHE.lock().unwrap_or_else(|e| e.into_inner()).1;
+        let expect = cm_mktime(local.year as i32, local.month as i32, local.day as i32,
+                               local.hour as i32, local.minute as i32, local.second as i32, dst);
+        // Allow the clock to have ticked one second between the two reads.
+        assert!((expect - v1).abs() <= 1, "snapshot {v1} vs recomputed {expect}");
+        let sys_cached = TZ_SNAPSHOT_CACHE.lock().unwrap_or_else(|e| e.into_inner()).0;
+        let sys_now = win_clock::system_time();
+        assert_eq!((sys_cached.year, sys_cached.month, sys_cached.day, sys_cached.hour),
+                   (sys_now.year, sys_now.month, sys_now.day, sys_now.hour),
+                   "DAT_00dc8200 holds the last GetSystemTime");
+        assert!(matches!(dst, -1 | 0 | 1), "DAT_00dc81f8 is one of -1/0/1");
     }
 
     /// Struct layout evidence: field roles at their exe byte offsets match
