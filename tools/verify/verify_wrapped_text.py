@@ -24,6 +24,11 @@ CASES = [
     {"label": "right align",  "x0": 100, "y0": 0,  "x1": 300, "y1": 30, "style": 0x40,  "font": 3, "colour": 0x03e0, "text": "Right me",  "prefill": "black"},
     {"label": "wrap",         "x0": 0,   "y0": 0,  "x1": 100, "y1": 60, "style": 0x101, "font": 3, "colour": 0x7fff, "text": "This is a longer piece of text", "prefill": "black"},
     {"label": "single word",  "x0": 0,   "y0": 0,  "x1": 300, "y1": 30, "style": 0x2,   "font": 3, "colour": 0x7fff, "text": "Arsenal",   "prefill": "black"},
+    # --- W_SHADOW (0x20): ink is sampled from the rect centre, not `colour` ---
+    {"label": "shadow grey",  "x0": 0,   "y0": 0,  "x1": 300, "y1": 30, "style": 0x23,  "font": 3, "colour": 0x7fff, "text": "Shadow me", "prefill": "grey"},
+    {"label": "shadow black", "x0": 0,   "y0": 30, "x1": 300, "y1": 60, "style": 0x20,  "font": 3, "colour": 0x7c00, "text": "Shadow black", "prefill": "black"},
+    {"label": "shadow wrap",  "x0": 0,   "y0": 0,  "x1": 120, "y1": 79, "style": 0x120, "font": 3, "colour": 0x03e0, "text": "Wrapped shadow text here", "prefill": "grey"},
+    {"label": "shadow right", "x0": 100, "y0": 20, "x1": 390, "y1": 60, "style": 0x60,  "font": 3, "colour": 0x0000, "text": "Right shadow", "prefill": "grey"},
 ]
 
 SCRIPT_TMPL = """
