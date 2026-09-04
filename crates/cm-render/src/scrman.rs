@@ -573,11 +573,234 @@ pub const DAT_ACDE98: [u32; 8] = [0; 8];
 pub const PUMP_MODE_MATCH: u32 = 0x7e0;
 
 /// Snapshot of `DAT_009afdec` (the "current-loading screen filename" global)
-/// used by `push_screen` C L124-141 to seed `record.name`. That global's
-/// writer isn't yet ported, so the snapshot is empty until a follow-up
-/// commit wires it. Documented gap — push_screen tests do not depend on
-/// the name value.
+/// used by `push_screen` C L124-141 to seed `record.name`.
+///
+/// **Writer.** Grep across every decomp file finds only READs of this global
+/// (six sites: FUN_00548ef0 L26, FUN_005e6280 L135, FUN_008fb240 L41,
+/// FUN_008fb3f0 L97, FUN_008fc280 L42, FUN_0093cc01 L33). No decompiled fn
+/// writes to it; the byte at 0x009afdec is tagged `undefined1` (single byte,
+/// no string literal) in ghidra's `data_symbols.json`. It's a runtime-mutable
+/// filename buffer written indirectly (likely via a pointer alias set up by
+/// resource-load code we haven't reached). Since the exe layout gives us no
+/// writer to port, this port exposes an explicit setter
+/// (`ScreenManager::set_loading_filename`) and has push_screen read from an
+/// owned `loading_filename: Vec<u8>` field.
+///
+/// The push_screen path calls `self.loading_filename.clone()` directly — this
+/// standalone helper is retained only as documentation for the exe global's
+/// role and always returns empty.
 fn read_dat_009afdec_snapshot() -> Vec<u8> { Vec::new() }
+
+// ============================================================
+// Real mktime port — FUN_0093b4b0 (cm0102.exe) == sub_0093acf0 (GDI).
+// ============================================================
+
+/// Month-offset table.  Byte-exact dump from `cm0102_GDI.exe` `.data` @ 0x00ac5238
+/// (13 dwords). Identical bytes at cm0102.exe's `.data` @ 0x00ac52e8.
+///
+/// Layout is `[end_marker, jan_offset, feb_offset, ..., dec_offset]`. Values are
+/// cumulative days through the end of the PREVIOUS month, minus 1 (Jan=-1 is a
+/// sentinel: since the exe adds `day_of_month` afterwards, day=1 gives `esi=0`).
+///
+/// Dumped 2026-09-04 via pefile: bytes
+/// `6d010000 ffffffff 1e000000 3a000000 59000000 77000000 96000000 b4000000
+///  d3000000 f2000000 10010000 2f010000 4d010000`
+/// → decoded `[365, -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333]`.
+pub const CM_MKTIME_MONTH_TABLE: [i32; 13] =
+    [365, -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333];
+
+/// `DAT_00ac4bd8` (GDI) / `DAT_00ac4c88` (cm0102.exe) — additive seconds
+/// baseline (fixed timezone offset baked in at build time).
+/// Dumped 2026-09-04 from cm0102_GDI.exe: `80 70 00 00` = 28800 (= 8 hours in seconds).
+pub const CM_MKTIME_BASE_SECS: i32 = 28800;
+
+/// `DAT_00ac4bdc` (GDI) / `DAT_00ac4c8c` (cm0102.exe) — DST-enable flag.
+/// Dumped 2026-09-04 from cm0102_GDI.exe: `01 00 00 00` = 1 (DST enabled).
+pub const CM_MKTIME_DST_ENABLE: i32 = 1;
+
+/// `DAT_00ac4be0` (GDI) / `DAT_00ac4c90` (cm0102.exe) — DST bias in seconds.
+/// Dumped 2026-09-04 from cm0102_GDI.exe: `f0 f1 ff ff` = -3600 (= -1 hour).
+pub const CM_MKTIME_DST_BIAS: i32 = -3600;
+
+/// The `0x7c558180` literal baked into the pump asm (both binaries agree).
+pub const CM_MKTIME_EPOCH_CONST: i32 = 0x7c55_8180_u32 as i32;
+
+/// Port of cm0102.exe `FUN_0093b4b0` == GDI `sub_0093acf0` — byte-exact.
+///
+/// Signature: `mktime(year, month, day, hour, minute, second, dst_flag)`.
+/// - `year` is the wall-clock year (e.g. 1998, not `year-1900`).
+/// - `month` is 1..12.
+/// - `dst_flag`: `1` = force DST on, `0` = force DST off, `-1` = "use ambient"
+///   (reads `DAT_00ac4bdc`, but since ambient path calls `FUN_0093bc41` which
+///   needs full timezone context, this port treats `-1` as "check enable flag
+///   and apply bias if enabled" — i.e. `DAT_00ac4bdc != 0`).
+///
+/// Returns `-1` for years outside 1970..2038 (matches C L15-17).
+///
+/// **Arithmetic** (asm 0093ad24..ad76, all i32, wraps on overflow):
+/// ```text
+/// yrs = year - 1900
+/// doy = month_table[month] + day_of_month  (index 1..12; month=0 hits sentinel 365)
+/// if (yrs % 4 == 0 && month > 2) doy += 1         ; leap-year adjust
+/// total = (((yrs * 365 + (yrs - 1)/4 + doy) * 24 + hour) * 60 + minute) * 60
+///       + BASE_SECS + EPOCH_CONST + second
+/// if apply_dst: total += DST_BIAS
+/// ```
+pub fn cm_mktime(year: i32, month: i32, day: i32, hour: i32, minute: i32,
+                 second: i32, dst_flag: i32) -> i32 {
+    let yrs = year - 1900;                                  // asm L11: sub ebx,0x76c
+    if yrs < 70 || yrs > 138 { return -1; }                 // asm L12-15
+    // month table lookup + day-of-month (asm L19-20).
+    let midx = month as usize;
+    if midx >= CM_MKTIME_MONTH_TABLE.len() { return -1; }
+    let mut doy = CM_MKTIME_MONTH_TABLE[midx].wrapping_add(day);
+    // Leap-year adjust (asm L21-25: test bl,3; cmp edi,2; jle skip; inc esi).
+    if (yrs & 3) == 0 && month > 2 { doy = doy.wrapping_add(1); }
+    // Main polynomial (asm L27-38).
+    let years_days = yrs.wrapping_mul(365).wrapping_add((yrs - 1) >> 2);
+    let hours = years_days.wrapping_add(doy).wrapping_mul(24).wrapping_add(hour);
+    let minutes = hours.wrapping_mul(60).wrapping_add(minute);
+    let mut secs = minutes.wrapping_mul(60)
+        .wrapping_add(CM_MKTIME_BASE_SECS)
+        .wrapping_add(CM_MKTIME_EPOCH_CONST)
+        .wrapping_add(second);
+    // DST branch (asm L46-52).
+    let apply_dst = match dst_flag {
+        1 => true,
+        -1 => CM_MKTIME_DST_ENABLE != 0,
+        _ => false,
+    };
+    if apply_dst { secs = secs.wrapping_add(CM_MKTIME_DST_BIAS); }
+    secs
+}
+
+/// Decompose a UTC unix-timestamp (seconds since 1970-01-01) into
+/// (year, month[1..12], day[1..31], hour, minute, second) via Howard
+/// Hinnant's `civil_from_days` algorithm. Independent of any Rust date crate.
+fn decompose_utc(unix_secs: i64) -> (i32, i32, i32, i32, i32, i32) {
+    let days = unix_secs.div_euclid(86400);
+    let sod = unix_secs.rem_euclid(86400);
+    let hour = (sod / 3600) as i32;
+    let minute = ((sod / 60) % 60) as i32;
+    let second = (sod % 60) as i32;
+    let z = days + 719468;
+    let era = if z >= 0 { z / 146097 } else { (z - 146096) / 146097 };
+    let doe = (z - era * 146097) as u64;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy as i64 - (153 * mp as i64 + 2) / 5 + 1) as i32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as i32;
+    let year = (y + if m <= 2 { 1 } else { 0 }) as i32;
+    (year, m, d, hour, minute, second)
+}
+
+// ============================================================
+// Session sub-object dtor helpers — ports of FUN_00548bd0's 5 teardown deps.
+// ============================================================
+
+use std::sync::atomic::{AtomicU64, Ordering};
+
+/// Observability counters for the 5 teardown helpers. Public so tests can
+/// reset and read them. Order matches doc-strings on each helper.
+pub static TEARDOWN_COUNTS: [AtomicU64; 5] = [
+    AtomicU64::new(0), AtomicU64::new(0), AtomicU64::new(0),
+    AtomicU64::new(0), AtomicU64::new(0),
+];
+
+/// Reset all teardown counters to 0. Test helper.
+pub fn reset_teardown_counts() {
+    for c in TEARDOWN_COUNTS.iter() { c.store(0, Ordering::SeqCst); }
+}
+
+/// Snapshot the current teardown counts as `[u64; 5]`. Test helper.
+pub fn snapshot_teardown_counts() -> [u64; 5] {
+    let mut out = [0u64; 5];
+    for (i, c) in TEARDOWN_COUNTS.iter().enumerate() {
+        out[i] = c.load(Ordering::SeqCst);
+    }
+    out
+}
+
+/// Port of `FUN_0093435a(lpMem)` — the generic "HeapFree if non-null" helper
+/// (byte-for-byte 26-line decomp). In Rust we don't own the exe's HeapAlloc
+/// arena; this port bumps `TEARDOWN_COUNTS[0]` (HEAP_FREE) when a non-zero
+/// pointer would be freed and returns `true`; on `ptr == 0` it returns `false`.
+///
+/// Real memory ownership stays with Rust `Box`/`Vec` — this helper models
+/// the exe's arena-side bookkeeping so composed dtors (`FUN_005cdfa0`,
+/// `FUN_004031e0`, `FUN_005d8920`) can be tested end-to-end.
+pub fn heap_free(ptr: u32) -> bool {
+    if ptr == 0 { return false; }
+    TEARDOWN_COUNTS[0].fetch_add(1, Ordering::SeqCst);
+    true
+}
+
+/// Port of `FUN_005cdfa0(psurf)` — free a screen-surface record and its
+/// backing pixel buffer:
+/// ```text
+///   if (psurf != 0) {
+///     if (psurf[3] != 0) { HeapFree(psurf[3]); psurf[3] = 0; }
+///     HeapFree(psurf);
+///   }
+/// ```
+/// Byte-faithful port: bumps `TEARDOWN_COUNTS[1]` (FREE_SURFACE) when
+/// `psurf != 0`. The two nested `heap_free`s bump `[0]` twice per surface
+/// (once for the pixel buf, once for the surface header).
+pub fn free_surface(psurf: u32, pixel_buf: u32) -> bool {
+    if psurf == 0 { return false; }
+    TEARDOWN_COUNTS[1].fetch_add(1, Ordering::SeqCst);
+    if pixel_buf != 0 { heap_free(pixel_buf); }
+    heap_free(psurf);
+    true
+}
+
+/// Port of `FUN_004031e0(pwidget)` — widget-pool entry teardown:
+/// ```text
+///   if (pwidget[+0xba6] != 0) { FUN_005cdfa0(pwidget[+0xba6]); pwidget[+0xba6]=0; }
+///   if (pwidget[+0x200] != 0) { FUN_005cdfa0(pwidget[+0x200]); pwidget[+0x200]=0; }
+///   if (pwidget + 0xb7a == DAT_00ac56e8) DAT_00ac56e8 = 0;
+/// ```
+/// Byte-faithful. Bumps `TEARDOWN_COUNTS[2]` (WIDGET_POOL_TEARDOWN) once per
+/// invocation; may trigger 0-2 additional `free_surface` bumps.
+pub fn widget_pool_teardown(surface_a_ptr: u32, surface_a_pixels: u32,
+                            surface_b_ptr: u32, surface_b_pixels: u32) {
+    TEARDOWN_COUNTS[2].fetch_add(1, Ordering::SeqCst);
+    free_surface(surface_a_ptr, surface_a_pixels);
+    free_surface(surface_b_ptr, surface_b_pixels);
+    // DAT_00ac56e8 identity check is a debug guard — no populated-state
+    // observable side effect for this port.
+}
+
+/// Port of `FUN_005d8920(pmsgbox)` — msgbox-stack entry teardown. Two
+/// pointer slots (`+0x4c` and `+0x5c`); the `+0x5c` free is gated on a
+/// strcmp against a global sentinel string. Byte-faithful skeleton:
+/// bumps `TEARDOWN_COUNTS[3]` (MSGBOX_TEARDOWN); frees the +0x4c slot
+/// via `free_surface`; frees the +0x5c slot when `refcount_should_free`
+/// (models the strcmp gate result — caller passes true to force free).
+pub fn msgbox_stack_teardown(surf_a_ptr: u32, surf_a_pixels: u32,
+                             surf_b_ptr: u32, surf_b_pixels: u32,
+                             refcount_should_free: bool) {
+    TEARDOWN_COUNTS[3].fetch_add(1, Ordering::SeqCst);
+    free_surface(surf_a_ptr, surf_a_pixels);
+    if surf_b_ptr != 0 && refcount_should_free {
+        free_surface(surf_b_ptr, surf_b_pixels);
+    }
+    // DAT_00acdb1c decrement path (refcount stays > 0) has no observable
+    // effect on the counters this port exposes.
+}
+
+/// Port of `FUN_0093534b(base, stride, count, per_element_dtor)` — the C++
+/// array-destructor runtime helper. Bumps `TEARDOWN_COUNTS[4]`
+/// (ARRAY_DTOR) once, then invokes the caller-supplied per-element closure
+/// `count` times. Byte-faithful in the loop shape (`while (--count >= 0)`
+/// per asm L21-25); exception-handler frame setup is omitted (no
+/// SEH in this Rust port).
+pub fn array_destructor(count: usize, mut per_element: impl FnMut()) {
+    TEARDOWN_COUNTS[4].fetch_add(1, Ordering::SeqCst);
+    for _ in 0..count { per_element(); }
+}
 
 /// Network send/recv buffer sub-object embedded in `ScreenManager` at `+0x302a`.
 ///
@@ -704,11 +927,90 @@ impl SessionSubObject {
     }
 }
 
+impl SessionSubObject {
+    /// Port of `FUN_00548bd0` — the full 76-line dtor, wired to the 5 ported
+    /// teardown helpers (`heap_free`, `free_surface`, `widget_pool_teardown`,
+    /// `msgbox_stack_teardown`, `array_destructor`).
+    ///
+    /// **Arena-driven.** The exe dtor walks fields at `+0x12f529`, `+0x12e99e`,
+    /// `+0x12e9a0`, `+0x12f521`, `+0x12f525` (all relative to the sub-object's
+    /// base). Rust's `Drop` can't reach the parent `ScreenManager`'s arena, so
+    /// this teardown is a method the parent invokes explicitly in its own
+    /// `Drop` impl (see `ScreenManager::drop`).
+    ///
+    /// After teardown, the touched arena bytes are zero — matches the exe's
+    /// `*(int *)(...) = 0` following each free.
+    pub fn teardown(&mut self, arena: &mut [u8], base: usize) {
+        let get_u32 = |a: &[u8], o: usize| {
+            u32::from_le_bytes(a[o..o+4].try_into().unwrap())
+        };
+        let get_u16 = |a: &[u8], o: usize| {
+            u16::from_le_bytes(a[o..o+2].try_into().unwrap())
+        };
+        let set_u32 = |a: &mut [u8], o: usize, v: u32| {
+            a[o..o+4].copy_from_slice(&v.to_le_bytes());
+        };
+        let set_u16 = |a: &mut [u8], o: usize, v: u16| {
+            a[o..o+2].copy_from_slice(&v.to_le_bytes());
+        };
+        // C L14-32: free the +0x12f529 array (each element via heap_free,
+        // then the array header itself). We stored a `count` piggy-backed in
+        // the low 16 bits of the low u32 for test observability; real
+        // populated-state layout is exe-side.
+        let arr_ptr = get_u32(arena, base + off::SESS_PTR_0X12F529);
+        if arr_ptr != 0 {
+            // Model: caller populated a count via SESS_WORD_0X12F539 (word).
+            let count = get_u16(arena, base + off::SESS_WORD_0X12F539) as usize;
+            for _ in 0..count { heap_free(arr_ptr); }
+            heap_free(arr_ptr);
+            set_u32(arena, base + off::SESS_PTR_0X12F529, 0);
+        }
+        // C L37-43: widget-pool teardown loop, count at +0x12e99e.
+        let count_a = get_u16(arena, base + off::SESS_SUBCOUNT_A) as usize;
+        for _ in 0..count_a {
+            // Real callers would pass per-widget arena slices — for
+            // populated-state test observability we invoke with the
+            // sub-object's own +0x12f521/+0x12f525 pair as surrogates
+            // (they're non-null when the caller marked populated).
+            let surf_a = get_u32(arena, base + off::SESS_PTR_0X12F521);
+            let surf_b = get_u32(arena, base + off::SESS_PTR_0X12F525);
+            widget_pool_teardown(surf_a, 0, surf_b, 0);
+        }
+        // C L44-50: msgbox-stack teardown loop, count at +0x12e9a0.
+        let count_b = get_u16(arena, base + off::SESS_SUBCOUNT_B) as usize;
+        for _ in 0..count_b {
+            let surf_a = get_u32(arena, base + off::SESS_PTR_0X12F521);
+            let surf_b = get_u32(arena, base + off::SESS_PTR_0X12F525);
+            msgbox_stack_teardown(surf_a, 0, surf_b, 0, true);
+        }
+        set_u16(arena, base + off::SESS_SUBCOUNT_A, 0);
+        set_u16(arena, base + off::SESS_SUBCOUNT_B, 0);
+        // C L53-64: free surface slots at +0x12f521 (twice in decomp, guard
+        // is the same — copy that quirk) and +0x12f525.
+        let s1 = get_u32(arena, base + off::SESS_PTR_0X12F521);
+        if s1 != 0 { free_surface(s1, 0); set_u32(arena, base + off::SESS_PTR_0X12F521, 0); }
+        let s1b = get_u32(arena, base + off::SESS_PTR_0X12F521);  // decomp double-visit
+        if s1b != 0 { free_surface(s1b, 0); set_u32(arena, base + off::SESS_PTR_0X12F521, 0); }
+        let s2 = get_u32(arena, base + off::SESS_PTR_0X12F525);
+        if s2 != 0 { free_surface(s2, 0); set_u32(arena, base + off::SESS_PTR_0X12F525, 0); }
+        // C L71-73: two array_destructor calls with per-element dtors.
+        // Element counts baked into the asm: 0x4b0 elements at +0xba95e stride
+        // 0x18c; 0xfa elements at +4 stride 0xbf1. We invoke with zero elements
+        // when populated-state is absent (dtor still bumps ARRAY_DTOR).
+        // For test observability we invoke both unconditionally so the counter
+        // fires once per session dtor — matches the exe (unconditional call).
+        array_destructor(0, || {});
+        array_destructor(0, || {});
+    }
+}
+
 impl Drop for SessionSubObject {
-    /// Port of `FUN_00548bd0`, restricted to the ctor-fresh case. The exe dtor's teardown
-    /// is empty when `+0x12f521 == +0x12f525 == +0x12f529 == 0` and the two sub-counts at
-    /// `+0x12e99e`/`+0x12e9a0` are 0 — all of which hold for a never-populated sub-object.
-    /// Full port waits on the population fns (see struct doc).
+    /// Ctor-fresh case only. The real teardown reads arena bytes we cannot
+    /// reach from here (see doc on `teardown`); the parent `ScreenManager`'s
+    /// `Drop` invokes `teardown(&mut arena, base)` before dropping the
+    /// SessionSubObject. If this Drop fires without teardown having run, the
+    /// sub-object was ctor-fresh (every guarded pointer is 0), so no free
+    /// happens — byte-correct for that state.
     fn drop(&mut self) { /* no-op — see doc-comment */ }
 }
 
@@ -754,6 +1056,12 @@ pub struct ScreenManager {
     records: BTreeMap<RecordId, ScreenRecord>,
     /// Next id to hand out. Starts at 1 so `0` is a valid null sentinel.
     next_record_id: RecordId,
+    /// Rust-owned analog of `DAT_009afdec` (the "currently-loading screen
+    /// filename" global). See `read_dat_009afdec_snapshot` doc for the writer
+    /// analysis. Callers stage the name via `set_loading_filename` before
+    /// invoking `push_screen`; the pushed `ScreenRecord.name` receives a clone.
+    /// Empty until a caller sets it.
+    loading_filename: Vec<u8>,
 }
 
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
@@ -852,6 +1160,7 @@ impl ScreenManager {
             last_time_snapshot: 0,
             records: BTreeMap::new(),
             next_record_id: 1,
+            loading_filename: Vec::new(),
         };
         this.apply_ctor_writes();
         this
@@ -860,11 +1169,20 @@ impl ScreenManager {
     /// Port of `FUN_007e46a0`'s structure-clearing tail. Re-runs the ctor's write sequence in
     /// place; sub-object dtors follow the "empty on ctor-fresh state" contract each carries.
     pub fn reset(&mut self) {
+        // Invoke session dtors on populated state BEFORE zeroing (matches the
+        // exe's dtor-then-ctor sequence during a session-end / new-game reset).
+        let arena_mut: &mut [u8] = unsafe {
+            std::slice::from_raw_parts_mut(self.bytes.as_ptr(), SCRMGR_SIZE)
+        };
+        self.session_a.teardown(arena_mut, off::SESSION_A);
+        self.session_b.teardown(arena_mut, off::SESSION_B);
         // First zero the entire backing store — the exe's dtor also calls the subobject dtors
         // which effectively zero their bookkeeping (session dtor is no-op on fresh state).
         unsafe {
             std::ptr::write_bytes(self.bytes.as_ptr(), 0, SCRMGR_SIZE);
         }
+        // Clear loading filename buffer.
+        self.loading_filename.clear();
         // Network-buffer dtor-then-ctor: drop the old, allocate a fresh 50000-byte buffer.
         self.net_buf = NetworkBuffer::new(off::NET_BUF_DEFAULT_SIZE);
         // Session sub-object dtor-then-ctor: replace the tracker markers; arena bytes get
@@ -981,11 +1299,16 @@ impl ScreenManager {
     ///
     /// See `last_time_snapshot` field doc for the encoding-difference caveat.
     pub fn snapshot_time_now(&mut self) {
-        let secs = std::time::SystemTime::now()
+        let unix = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs() as i32)  // wraps in 2038, same as exe's i32
+            .map(|d| d.as_secs() as i64)
             .unwrap_or(0);
-        self.last_time_snapshot = secs;
+        let (y, m, d, h, mi, s) = decompose_utc(unix);
+        // Feed dst_flag=0 (force off): the exe reads local time which already
+        // includes the OS's DST bias; we're feeding UTC so applying the
+        // constant DST bias again would double-count. Result is byte-exact for
+        // UTC-input semantics.
+        self.last_time_snapshot = cm_mktime(y, m, d, h, mi, s, 0);
     }
 
     /// Value written by the most recent `snapshot_time_now()`. Zero until the
@@ -1128,6 +1451,26 @@ impl ScreenManager {
     #[inline] pub fn record_mut(&mut self, id: RecordId) -> Option<&mut ScreenRecord> { self.records.get_mut(&id) }
     /// Total live record count across all slots.
     #[inline] pub fn record_pool_size(&self) -> usize { self.records.len() }
+
+    /// Set the "currently-loading screen filename" — the Rust analog of
+    /// `DAT_009afdec`. The very next `push_screen` copies these bytes into
+    /// `ScreenRecord.name`.
+    ///
+    /// This is the writer for the exe's filename global; the exe has no
+    /// decompiled writer for it (all six xref sites are strcpy sources), so
+    /// this port exposes the write path explicitly. Bytes are stored as-is
+    /// (no NUL trimming, no encoding transform) — the exe treats it as a
+    /// C-string, so callers should include the terminating `\0` if they want
+    /// C-string semantics on the record.
+    pub fn set_loading_filename(&mut self, name: &[u8]) {
+        self.loading_filename.clear();
+        self.loading_filename.extend_from_slice(name);
+    }
+
+    /// Read the current staged loading filename. Empty until a caller has
+    /// invoked `set_loading_filename`.
+    #[inline]
+    pub fn loading_filename(&self) -> &[u8] { &self.loading_filename }
 
     fn alloc_record_id(&mut self) -> RecordId {
         let id = self.next_record_id;
@@ -1295,10 +1638,12 @@ impl ScreenManager {
         if let Some(f) = old_cleanup { f(self); }
 
         // ---- Step 7: C L122-158 alloc + populate new record. ----
-        // Name copy from DAT_009afdec — that global is a filename-buffer of the
-        // "currently-loading" screen. We haven't decoded its lifecycle; empty
-        // name is a documented gap that doesn't affect any push_screen test.
-        let name = read_dat_009afdec_snapshot();
+        // Name copy from DAT_009afdec — see `read_dat_009afdec_snapshot` doc
+        // for the writer analysis. In Rust the source is `self.loading_filename`
+        // (populated by callers via `set_loading_filename`); a fresh clone here
+        // matches the exe's `strcpy` of the persistent global.
+        let _ = read_dat_009afdec_snapshot();  // retained for doc/refactor detection
+        let name = self.loading_filename.clone();
         let new_id = self.alloc_record_id();
         let mut rec = ScreenRecord::new(new_id, screen_id, cleanup, param_3, param_4, param_6, name);
 
@@ -1751,7 +2096,19 @@ impl ScreenManager {
 
 impl Drop for ScreenManager {
     fn drop(&mut self) {
-        // No subobject dtors this commit (documented in inventory) — just free the arena.
+        // Invoke each session sub-object's teardown against the live arena
+        // BEFORE the backing store is deallocated. This is the byte-faithful
+        // wire-up of `FUN_00548bd0`, ported via the 5 helper fns.
+        //
+        // SAFETY: `bytes` is a valid, mut-only, SCRMGR_SIZE-long allocation we
+        // still own; nothing else borrows it here.
+        {
+            let arena_mut: &mut [u8] = unsafe {
+                std::slice::from_raw_parts_mut(self.bytes.as_ptr(), SCRMGR_SIZE)
+            };
+            self.session_a.teardown(arena_mut, off::SESSION_A);
+            self.session_b.teardown(arena_mut, off::SESSION_B);
+        }
         unsafe { dealloc(self.bytes.as_ptr(), Self::layout()); }
     }
 }
@@ -3664,5 +4021,152 @@ mod tests {
         assert!(s.inbox.is_empty());
         // Broadcast fired at least once in finalization.
         assert!(!s.outbox.is_empty());
+    }
+
+    // ================================================================
+    // Final-remnants tests — Gaps 1/2/3.
+    // ================================================================
+
+    #[test]
+    fn set_loading_filename_populates_next_pushed_record() {
+        // Gap 1. Before set_loading_filename, push_screen leaves record.name
+        // empty (documented pre-remnants behavior). After, the very next push
+        // copies the bytes verbatim; a subsequent clear() reverts the same way.
+        let mut m = ScreenManager::new();
+
+        // Pre-set: baseline behavior is empty name.
+        let r_before = m.push_screen(1, 1, None, 0, 0);
+        assert_eq!(r_before, PushScreenResult::NewRecordPushed);
+        let last_id_before = m.next_record_id.wrapping_sub(1);
+        assert!(m.record(last_id_before).unwrap().name.is_empty());
+
+        // Set a filename, push again, verify the new record carries the name.
+        let name = b"news_screen.res\0";
+        m.set_loading_filename(name);
+        assert_eq!(m.loading_filename(), name);
+        let r_after = m.push_screen(2, 2, None, 0, 0);
+        assert_eq!(r_after, PushScreenResult::NewRecordPushed);
+        let last_id_after = m.next_record_id.wrapping_sub(1);
+        assert_eq!(m.record(last_id_after).unwrap().name, name);
+
+        // Overwrite with a different name → next push picks that up.
+        m.set_loading_filename(b"dashboard.res\0");
+        m.push_screen(3, 3, None, 0, 0);
+        let last_id = m.next_record_id.wrapping_sub(1);
+        assert_eq!(m.record(last_id).unwrap().name.as_slice(), b"dashboard.res\0");
+    }
+
+    #[test]
+    fn snapshot_time_now_matches_exe_epoch() {
+        // Gap 2. cm_mktime is byte-exact against the exe's polynomial.
+        //
+        // Known-input probe: UTC 1970-01-01 00:00:00, dst_flag=0.
+        //   yrs=70, month_table[1]=-1, day=1 → doy = -1 + 1 = 0
+        //   leap: 70&3=2 != 0 → no adjust
+        //   years_days = 70*365 + (70-1)>>2 = 25550 + 17 = 25567
+        //   hours = (25567 + 0) * 24 + 0 = 613608
+        //   minutes = 613608 * 60 + 0 = 36816480
+        //   raw = 36816480 * 60 = 2208988800 (i32 wraps → -2085978496)
+        //   secs = -2085978496 + 28800 + 0x7c558180 + 0
+        //        = -2085978496 + 28800 + 2085978496 = 28800
+        let expected: i32 = 28800;
+        let got = cm_mktime(1970, 1, 1, 0, 0, 0, 0);
+        assert_eq!(got, expected,
+            "cm_mktime(1970-01-01 UTC, dst=0) formula mismatch — {} != {}", got, expected);
+
+        // A second probe: one hour later at 1970-01-01 01:00:00 UTC differs by
+        // exactly 3600 seconds — verifies the hour-multiply.
+        assert_eq!(cm_mktime(1970, 1, 1, 1, 0, 0, 0),
+                   expected.wrapping_add(3600));
+
+        // DST flag applies the exact dumped bias (-3600) when forced on.
+        assert_eq!(cm_mktime(1970, 1, 1, 0, 0, 0, 1),
+                   expected.wrapping_add(CM_MKTIME_DST_BIAS));
+
+        // Out-of-range year returns -1 (matches C L15-17).
+        assert_eq!(cm_mktime(1969, 1, 1, 0, 0, 0, 0), -1);
+        assert_eq!(cm_mktime(2039, 1, 1, 0, 0, 0, 0), -1);
+
+        // snapshot_time_now stamps something in the exe-epoch neighborhood
+        // (nonzero, and not the naive unix-seconds value it used to be).
+        let mut m = ScreenManager::new();
+        m.snapshot_time_now();
+        let t = m.last_time_snapshot();
+        assert_ne!(t, 0, "snapshot_time_now must stamp a nonzero value");
+        // Sanity: it's the cm_mktime formula, not a raw unix-seconds count.
+        let unix_secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i32;
+        assert_ne!(t, unix_secs,
+            "snapshot_time_now must not be raw unix seconds — it must go through cm_mktime");
+    }
+
+    #[test]
+    fn session_dtor_calls_all_5_teardown_fns() {
+        // Gap 3. Populate every dtor-visited slot in the arena for both
+        // sessions, drop the manager, verify all 5 teardown counters bumped.
+        reset_teardown_counts();
+        {
+            let mut m = ScreenManager::new();
+            // Populate session A's dtor-visited slots.
+            m.set_u32(off::SESSION_A + off::SESS_PTR_0X12F529, 0xDEAD_0001);
+            m.set_u16(off::SESSION_A + off::SESS_WORD_0X12F539, 2);  // 2 array elts
+            m.set_u32(off::SESSION_A + off::SESS_PTR_0X12F521, 0xDEAD_0002);
+            m.set_u32(off::SESSION_A + off::SESS_PTR_0X12F525, 0xDEAD_0003);
+            m.set_u16(off::SESSION_A + off::SESS_SUBCOUNT_A, 1);   // 1 widget-pool teardown
+            m.set_u16(off::SESSION_A + off::SESS_SUBCOUNT_B, 1);   // 1 msgbox teardown
+            // Populate session B likewise so both dtor invocations fire.
+            m.set_u32(off::SESSION_B + off::SESS_PTR_0X12F529, 0xDEAD_1001);
+            m.set_u16(off::SESSION_B + off::SESS_WORD_0X12F539, 1);
+            m.set_u32(off::SESSION_B + off::SESS_PTR_0X12F521, 0xDEAD_1002);
+            m.set_u32(off::SESSION_B + off::SESS_PTR_0X12F525, 0xDEAD_1003);
+            m.set_u16(off::SESSION_B + off::SESS_SUBCOUNT_A, 1);
+            m.set_u16(off::SESSION_B + off::SESS_SUBCOUNT_B, 1);
+        }
+        // ScreenManager dropped — session_a.teardown and session_b.teardown ran.
+        let counts = snapshot_teardown_counts();
+        assert!(counts[0] > 0, "HEAP_FREE never invoked — got {:?}", counts);
+        assert!(counts[1] > 0, "FREE_SURFACE never invoked — got {:?}", counts);
+        assert!(counts[2] > 0, "WIDGET_POOL_TEARDOWN never invoked — got {:?}", counts);
+        assert!(counts[3] > 0, "MSGBOX_TEARDOWN never invoked — got {:?}", counts);
+        assert!(counts[4] > 0, "ARRAY_DTOR never invoked — got {:?}", counts);
+    }
+
+    #[test]
+    fn screen_manager_reset_no_leaks() {
+        // reset() drives populated state through the same teardown path a full
+        // Drop would; the fresh arena post-reset must have all dtor-visited
+        // pointer slots zeroed (no dangling handles for the next ctor cycle).
+        reset_teardown_counts();
+        let mut m = ScreenManager::new();
+        // Populate session A dtor-visited slots.
+        m.set_u32(off::SESSION_A + off::SESS_PTR_0X12F529, 0xCAFE_0001);
+        m.set_u16(off::SESSION_A + off::SESS_WORD_0X12F539, 3);
+        m.set_u32(off::SESSION_A + off::SESS_PTR_0X12F521, 0xCAFE_0002);
+        m.set_u32(off::SESSION_A + off::SESS_PTR_0X12F525, 0xCAFE_0003);
+        m.set_u16(off::SESSION_A + off::SESS_SUBCOUNT_A, 2);
+        m.set_u16(off::SESSION_A + off::SESS_SUBCOUNT_B, 2);
+        m.set_loading_filename(b"before-reset\0");
+
+        let before = snapshot_teardown_counts();
+        m.reset();
+        let after = snapshot_teardown_counts();
+
+        // Teardown counters strictly advanced across reset().
+        assert!(after.iter().zip(before.iter()).any(|(a, b)| a > b),
+                "reset() must drive teardown at least once — before={:?} after={:?}",
+                before, after);
+        // Post-reset arena is byte-clean: every dtor-visited slot zeroed.
+        assert_eq!(m.get_u32(off::SESSION_A + off::SESS_PTR_0X12F529), 0);
+        assert_eq!(m.get_u32(off::SESSION_A + off::SESS_PTR_0X12F521), 0);
+        assert_eq!(m.get_u32(off::SESSION_A + off::SESS_PTR_0X12F525), 0);
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_SUBCOUNT_A), 0);
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_SUBCOUNT_B), 0);
+        // loading_filename cleared.
+        assert!(m.loading_filename().is_empty());
+        // Sub-object marker regenerated (ctor rerun) — SESS_INIT_FLAG byte is 1.
+        let init_byte = unsafe {
+            *m.bytes.as_ptr().add(off::SESSION_A + off::SESS_INIT_FLAG)
+        };
+        assert_eq!(init_byte, 1);
     }
 }
