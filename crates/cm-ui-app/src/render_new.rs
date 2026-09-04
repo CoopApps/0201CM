@@ -22,10 +22,12 @@ use cm_render::packed::PackedSurface;
 use cm_render::packed_glyph::PixelFont;
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
+use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
 use cm_render::widget_pool::GuiRecordPool;
 use cm_render::Surface;
 
+use crate::game_state::{ManagerName, SelectLeaguesState, StartSeasonState};
 use crate::Screen;
 
 /// Screen variants that route through the new pipeline.
@@ -232,4 +234,216 @@ pub fn try_render_rich_state(
     }
     blit_packed_to_surface(&packed, out);
     true
+}
+
+/// Pre-boot fast path (Setup / SelectLeagues / StartSeason / EnterName /
+/// SelectClub).
+///
+/// These are the 5 screens shown BEFORE the game world is initialised —
+/// no dispatcher route reaches them (no menu cmd), so this function
+/// pattern-matches on the `Screen` variant directly, feeds its state
+/// into a [`screen_pre_boot`] builder, and paints through
+/// [`render_widget`]. Same fold pattern as
+/// [`try_render_rich_state`], just for the pre-game flow.
+///
+/// Returns `true` when a builder ran. `false` sends the caller back to
+/// the old per-screen renderer — reserved for safety, no path exercises
+/// it after this fold.
+pub fn try_render_pre_boot(
+    screen: &Screen,
+    manager: Option<&ManagerName>,
+    out: &mut Surface,
+    font: &PixelFont,
+) -> bool {
+    let mut pool = GuiRecordPool::new();
+    let ok = match screen {
+        Screen::Setup => screen_pre_boot::build_setup(&mut pool).is_some(),
+        Screen::SelectLeagues(state) => build_leagues_from_app(&mut pool, state),
+        Screen::StartSeason { season, .. } => build_season_from_app(&mut pool, season),
+        Screen::EnterName => {
+            let empty = ManagerName::default();
+            let m = manager.unwrap_or(&empty);
+            let fields = screen_pre_boot::NameFields {
+                first: &m.first,
+                second: &m.second,
+                nickname: &m.nickname,
+                focus: m.focus,
+                is_valid: m.is_valid(),
+            };
+            screen_pre_boot::build_enter_name(&mut pool, &fields).is_some()
+        }
+        Screen::SelectClub { clubs, scroll } => build_club_from_app(&mut pool, clubs, *scroll),
+        _ => return false,
+    };
+    if !ok {
+        return false;
+    }
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    let n = pool.widgets.len();
+    for i in 0..n {
+        let mut rw = to_render_widget(&pool.widgets[i]);
+        rw.frame_idx = -1;
+        render_widget(&mut packed, &mut rw, Some(&pool), font, WidgetGlobals::default(), true);
+    }
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+fn build_leagues_from_app(pool: &mut GuiRecordPool, state: &SelectLeaguesState) -> bool {
+    // Secondary league table — same six countries screens.rs::
+    // secondary_league_label lists.
+    fn sec_label(country: &str) -> Option<&'static str> {
+        match country {
+            "England" => Some("Conference"),
+            "Germany" => Some("Regionalliga"),
+            "Italy" => Some("Serie C2 A/B/C"),
+            "Portugal" => Some("Segunda B"),
+            "Spain" => Some("Segunda B"),
+            "Sweden" => Some("Superettan"),
+            _ => None,
+        }
+    }
+    let rows: Vec<screen_pre_boot::LeaguesRow> = state
+        .order
+        .iter()
+        .filter_map(|&i| state.slots.iter().find(|s| s.index == i))
+        .map(|s| screen_pre_boot::LeaguesRow {
+            country: &s.primary_name,
+            selected: s.selected,
+            background_marker: s.background_marker,
+            secondary_label: sec_label(&s.primary_name),
+            secondary_active: s.extra,
+        })
+        .collect();
+    screen_pre_boot::build_select_leagues(
+        pool,
+        &rows,
+        screen_pre_boot::LeaguesOptions {
+            use_real_players: state.options.use_real_players,
+            attribute_masking: state.options.attribute_masking,
+        },
+        0,
+    )
+    .is_some()
+}
+
+fn build_season_from_app(pool: &mut GuiRecordPool, season: &StartSeasonState) -> bool {
+    let labels: Vec<String> = season.rows.iter().map(|r| r.year_label.clone()).collect();
+    screen_pre_boot::build_start_season(pool, &labels, season.selected).is_some()
+}
+
+fn build_club_from_app(
+    pool: &mut GuiRecordPool,
+    clubs: &[cm_domain::ManagerClubChoice],
+    scroll: usize,
+) -> bool {
+    let mut last_div = String::new();
+    let rows: Vec<screen_pre_boot::ClubRow> = clubs
+        .iter()
+        .map(|c| {
+            let div_new = c.division_name != last_div;
+            last_div = c.division_name.clone();
+            screen_pre_boot::ClubRow {
+                club_name: &c.club_name,
+                division_name: &c.division_name,
+                division_new: div_new,
+            }
+        })
+        .collect();
+    screen_pre_boot::build_select_club(pool, &rows, scroll).is_some()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game_state::{self, ManagerName, SelectLeaguesState, StartSeasonState};
+    use cm_render::packed_glyph::PixelFont;
+
+    fn font() -> PixelFont {
+        // Empty pixel font — enough for widget dispatch smoke tests
+        // (rects + descriptors go into the pool without needing glyph
+        // bitmaps).
+        PixelFont::empty(14)
+    }
+
+    #[test]
+    fn dispatch_setup_populates_widgets() {
+        let mut out = Surface::new();
+        let f = font();
+        let ok = try_render_pre_boot(&Screen::Setup, None, &mut out, &f);
+        assert!(ok);
+    }
+
+    #[test]
+    fn dispatch_select_leagues_populates_widgets() {
+        let state = SelectLeaguesState::from_slots(game_state::real_34_slots());
+        let mut out = Surface::new();
+        let f = font();
+        let ok = try_render_pre_boot(
+            &Screen::SelectLeagues(state), None, &mut out, &f,
+        );
+        assert!(ok);
+    }
+
+    #[test]
+    fn dispatch_start_season_populates_widgets() {
+        let leagues = SelectLeaguesState::from_slots(game_state::real_34_slots());
+        let season = StartSeasonState::from_leagues(&leagues);
+        let screen = Screen::StartSeason { leagues, season };
+        let mut out = Surface::new();
+        let f = font();
+        let ok = try_render_pre_boot(&screen, None, &mut out, &f);
+        assert!(ok);
+    }
+
+    #[test]
+    fn dispatch_enter_name_populates_widgets() {
+        let mut m = ManagerName::default();
+        m.first = "Alex".into();
+        m.second = "Ferguson".into();
+        let mut out = Surface::new();
+        let f = font();
+        let ok = try_render_pre_boot(&Screen::EnterName, Some(&m), &mut out, &f);
+        assert!(ok);
+    }
+
+    #[test]
+    fn dispatch_select_club_populates_widgets() {
+        let clubs = vec![cm_domain::ManagerClubChoice {
+            club_id: 1,
+            club_name: "Arsenal".into(),
+            division_id: 1,
+            division_name: "Premier".into(),
+        }];
+        let screen = Screen::SelectClub { clubs, scroll: 0 };
+        let mut out = Surface::new();
+        let f = font();
+        let ok = try_render_pre_boot(&screen, None, &mut out, &f);
+        assert!(ok);
+    }
+
+    #[test]
+    fn app_renders_all_screens_including_pre_boot_without_panic() {
+        // Smoke: sanity that every pre-boot Screen variant reaches the
+        // fast path. Rich-state + AutoRoute screens still need live
+        // domain state so they stay out of this smoke, but pre-boot is
+        // pure-state.
+        let f = font();
+        let mut out = Surface::new();
+        for s in &[
+            Screen::Setup,
+            Screen::SelectLeagues(SelectLeaguesState::from_slots(
+                game_state::real_34_slots(),
+            )),
+            Screen::EnterName,
+            Screen::SelectClub { clubs: Vec::new(), scroll: 0 },
+        ] {
+            assert!(try_render_pre_boot(s, None, &mut out, &f));
+        }
+        let leagues = SelectLeaguesState::from_slots(game_state::real_34_slots());
+        let season = StartSeasonState::from_leagues(&leagues);
+        assert!(try_render_pre_boot(
+            &Screen::StartSeason { leagues, season }, None, &mut out, &f,
+        ));
+    }
 }

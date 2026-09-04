@@ -196,36 +196,22 @@ impl App {
                 return;
             }
         }
+        // Pre-boot fast path — Setup / SelectLeagues / StartSeason /
+        // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
+        // now paints through the byte-exact `packed_widget` pipeline
+        // (see `screen_pre_boot` for exe fn cites per screen).
+        {
+            let manager = self.game.as_ref().map(|g| &g.manager);
+            let font = self.fonts.pixel_slot(3);
+            if render_new::try_render_pre_boot(&self.screen, manager, &mut self.frame, font) {
+                // Pre-boot screens don't have an in-game menu bar, but
+                // this fold keeps them plain — the overlay only paints
+                // when a game is loaded (see `overlay_menu_bar`).
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         match &self.screen {
-            Screen::Setup => {
-                let p = match self.pressed {
-                    Pressed::Setup(i) => Some(i),
-                    _ => None,
-                };
-                screens::setup(&mut self.frame, &mut self.fonts, self.bg.as_ref(), p);
-            }
-            Screen::SelectLeagues(state) => {
-                let p = match self.pressed {
-                    Pressed::Leagues(c) => Some(c),
-                    _ => None,
-                };
-                screens::select_leagues(&mut self.frame, &mut self.fonts, self.bg.as_ref(), state, p);
-            }
-            Screen::StartSeason { leagues: _, season } => {
-                let p = match self.pressed {
-                    Pressed::Season(c) => Some(c),
-                    _ => None,
-                };
-                screens::start_season(&mut self.frame, &mut self.fonts, self.bg.as_ref(), season, p);
-            }
-            Screen::EnterName => {
-                let empty = game_state::ManagerName::default();
-                let manager = self.game.as_ref().map(|g| &g.manager).unwrap_or(&empty);
-                screens::enter_name(&mut self.frame, &mut self.fonts, self.bg.as_ref(), manager);
-            }
-            Screen::SelectClub { clubs, scroll } => {
-                screens::select_club(&mut self.frame, &mut self.fonts, self.bg.as_ref(), clubs, *scroll);
-            }
             Screen::News { view, selected, scroll, tab } => {
                 screens::news(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *selected, *scroll, *tab);
                 self.overlay_menu_bar();
@@ -272,6 +258,21 @@ impl App {
                     "AutoRoute cmd 0x{cmd:x}: dispatcher did not build a pool"
                 ));
                 self.overlay_menu_bar();
+            }
+            // Pre-boot variants (Setup / SelectLeagues / StartSeason /
+            // EnterName / SelectClub) always paint via
+            // `render_new::try_render_pre_boot` above, so these arms
+            // are unreachable in practice. Fall back to a blank frame
+            // if a bug ever routes here.
+            Screen::Setup
+            | Screen::SelectLeagues(_)
+            | Screen::StartSeason { .. }
+            | Screen::EnterName
+            | Screen::SelectClub { .. } => {
+                self.frame.fill(0, 0, 0);
+                self.status = Some(
+                    "pre-boot fast path refused to build a pool".into()
+                );
             }
         }
     }
