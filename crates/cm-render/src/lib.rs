@@ -39,6 +39,7 @@ pub mod packed_stipples;
 pub mod packed_icon_loader;
 pub mod packed_widget_globals;
 pub mod pool_to_render;
+pub mod scrman;
 pub mod screen_menu_bar;
 pub mod screen_nav_back_next;
 pub mod screen_news;
