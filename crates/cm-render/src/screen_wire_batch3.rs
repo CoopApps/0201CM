@@ -25,13 +25,12 @@
 //!
 //! # Colour / font substrate constants
 //!
-//! * `HEADER_INK` = `0x0000` (black) — matches the News header title
-//!   colour that the same widget renderer paints.
-//! * `TAB_INK_ACTIVE` = `32736`, `TAB_INK_INACTIVE` = `29596` — from
-//!   `screen_news`'s captured values (both News and batch3 use the
-//!   same panel palette).
-//! * `FONT_HEADER` = 7 (from `LAB_00701070` push at `0x007010d7`,
-//!   arg11 `font` in the item spec).
+//! * `HEADER_LABEL_INK` = 7 — JSON pos 11 value (dumper labelled "font"
+//!   but audit 4375e51 maps caller-arg 12 → `label_ink` u16 @ +0x76).
+//! * `HEADER_TEXT_STYLE` = 12 — JSON pos 10 value (dumper labelled
+//!   "aux_a" but audit maps caller-arg 11 → `text_style` u32 @ +0x3c).
+//! * `BUTTON_LABEL_INK` = 3 — default button label_ink from auto-gen
+//!   emissions across batch3 dialogs.
 //!
 //! Every rect below is either directly from the analysis JSON (cited
 //! by push-VA) or from a decompile line the port cites explicitly.
@@ -48,9 +47,17 @@ use cm_domain::screen_batch3::{
 // Shared style constants (see module doc)
 // ============================================================================
 
-const HEADER_INK: i32 = 0x0000;
-const LABEL_INK: i32 = 29596;
-const FONT_HEADER: u8 = 7;
+// WidgetDescriptor field map per audit commit 4375e51 (see
+// `reports/screen_to_rust_batch3_diff.md`):
+//   - JSON pos 10 ("aux_a") → `text_style` (u32 @ +0x3c)
+//   - JSON pos 11 ("font")  → `label_ink`  (u16 @ +0x76)
+// The FONT/INK label names in the JSON dumper were misleading; the
+// audit's caller-arg-to-field map is what the render side actually
+// reads. `screens_auto.rs` (auto-generated from the same JSONs) emits
+// text_style=12, label_ink=7 for these panels; we now match.
+const HEADER_LABEL_INK: u16 = 7;    // JSON pos 11 value (mislabeled "font")
+const HEADER_TEXT_STYLE: u32 = 12;  // JSON pos 10 value (mislabeled "aux_a")
+const BUTTON_LABEL_INK: u16 = 3;    // default button label_ink from auto-gen
 const BORDER_STYLE_PANEL: u32 = 0x30;
 const COLOR_SLOT_PANEL: u8 = 7;
 
@@ -118,8 +125,8 @@ impl WireToPool for LatestScoresView {
             pool, root as i16,
             100, 10, 790, 46,                      // ; args l,t,r,b (0x7010fa..0x7010ee)
             "Latest Scores",                       // ; text prefix (post-comment-strip)
-            HEADER_INK,                            // arg8 col=0
-            FONT_HEADER,                           // arg11 font=7 (0x7010d7)
+            HEADER_LABEL_INK,                      // pos 11 (mislabeled "font")
+            HEADER_TEXT_STYLE,                     // pos 10 (mislabeled "aux_a")
         )?;
 
         // Widget 3 — sidebar. FUN_00745540(mode=4, aux=0). The sidebar
@@ -211,7 +218,7 @@ impl WireToPool for ManagerHistoryView {
         // Title label (JSON widget[6] item @ 0x85a50d).
         spawn_titlebar(
             pool, hdr as i16, 100, 25, 790, 55,    // inset header band
-            &title_text, HEADER_INK, FONT_HEADER,
+            &title_text, HEADER_LABEL_INK, HEADER_TEXT_STYLE,
         )?;
 
         // Area 3 — spawn_area @ 0x85a542 (footer / nav container).
@@ -272,17 +279,17 @@ impl WireToPool for GoHolidayDialog {
         // s_Go_on_holiday_009740f8 (see FUN_005276f0 caller sites).
         spawn_titlebar(
             pool, root as i16, 210, 210, 590, 240,
-            "Go on Holiday?", HEADER_INK, FONT_HEADER,
+            "Go on Holiday?", HEADER_LABEL_INK, HEADER_TEXT_STYLE,
         )?;
 
         // Two buttons: Yes/No from FUN_00822940(1) / FUN_00822940(0).
         spawn_button(
             pool, root as i16, 250, 350, 370, 385,
-            "Yes", LABEL_INK, /* msg */ 1, 0,
+            "Yes", BUTTON_LABEL_INK, /* msg */ 1, 0,
         )?;
         spawn_button(
             pool, root as i16, 430, 350, 550, 385,
-            "No", LABEL_INK, /* msg */ 0, 1,
+            "No", BUTTON_LABEL_INK, /* msg */ 0, 1,
         )?;
 
         // Sidebar substrate (mode 4 from decompile line ~48).
@@ -317,7 +324,7 @@ impl WireToPool for FifaRankingsView {
         )?;
         spawn_titlebar(
             pool, root as i16, 100, 25, 790, 55,
-            "FIFA Rankings", HEADER_INK, FONT_HEADER,
+            "FIFA Rankings", HEADER_LABEL_INK, HEADER_TEXT_STYLE,
         )?;
         // Content-pane placeholder (rows go here once LAB_004a26d0 is decoded).
         let body = pool.spawn_area(
@@ -357,7 +364,7 @@ impl WireToPool for UefaCoefficientsView {
         )?;
         spawn_titlebar(
             pool, root as i16, 100, 25, 790, 55,
-            "UEFA Coefficients", HEADER_INK, FONT_HEADER,
+            "UEFA Coefficients", HEADER_LABEL_INK, HEADER_TEXT_STYLE,
         )?;
         let body = pool.spawn_area(
             100, 80, 790, 555, 0, Vec::new(),
@@ -383,8 +390,11 @@ fn spawn_titlebar(
     pool: &mut GuiRecordPool,
     parent_area: i16,
     x0: i16, y0: i16, x1: i16, y1: i16,
-    text: &str, ink: i32, font: u8,
+    text: &str, label_ink: u16, text_style: u32,
 ) -> Option<()> {
+    // Per audit 4375e51: text_style ← JSON pos 10, label_ink ← JSON pos 11.
+    // Previous port had these two field assignments swapped (see
+    // `reports/screen_to_rust_batch3_diff.md`).
     let d = WidgetDescriptor {
         kind: KIND_LABEL,
         grid_x0: x0 as i32, grid_y0: y0 as i32,
@@ -392,8 +402,8 @@ fn spawn_titlebar(
         seq: 0, row_index: 0,
         style_byte: 0x30,             // arg8 flags — from JSON push
         colour_a: 0, colour_b: 0,
-        text_style: font as u32,      // arg11 font
-        label_ink: ink as u16,
+        text_style,                   // pos 10 (was mislabeled "aux_a")
+        label_ink,                    // pos 11 (was mislabeled "font")
         pattern: 0,
         text: text.to_string(),
         slot_40: 0,
@@ -407,8 +417,11 @@ fn spawn_button(
     pool: &mut GuiRecordPool,
     parent_area: i16,
     x0: i16, y0: i16, x1: i16, y1: i16,
-    text: &str, ink: i32, msg_id: i32, seq: i32,
+    text: &str, label_ink: u16, msg_id: i32, seq: i32,
 ) -> Option<()> {
+    // Per audit 4375e51: text_style is JSON pos 10 (fixed at 12 = 0x0C
+    // for panel buttons across the batch3 auto emissions); label_ink is
+    // JSON pos 11.
     let d = WidgetDescriptor {
         kind: KIND_BUTTON,
         grid_x0: x0 as i32, grid_y0: y0 as i32,
@@ -416,8 +429,8 @@ fn spawn_button(
         seq, row_index: 0,
         style_byte: 0x30,
         colour_a: 0, colour_b: 0,
-        text_style: 0x0C,
-        label_ink: ink as u16,
+        text_style: 0x0C,             // pos 10 fixed for these buttons
+        label_ink,                    // pos 11 caller-supplied
         pattern: 0,
         text: text.to_string(),
         slot_40: 0,
@@ -451,10 +464,10 @@ fn spawn_navbar_stub(
     back: bool, next: bool,
 ) -> Option<()> {
     if back {
-        spawn_button(pool, parent_area, 338, 555, 500, 585, "Back", LABEL_INK, -2, 0)?;
+        spawn_button(pool, parent_area, 338, 555, 500, 585, "Back", BUTTON_LABEL_INK, -2, 0)?;
     }
     if next {
-        spawn_button(pool, parent_area, 685, 555, 790, 585, "Next", LABEL_INK, -3, 1)?;
+        spawn_button(pool, parent_area, 685, 555, 790, 585, "Next", BUTTON_LABEL_INK, -3, 1)?;
     }
     Some(())
 }
@@ -495,7 +508,10 @@ mod tests {
         assert_eq!(title.descriptor.grid_y0, 10);
         assert_eq!(title.descriptor.grid_x1, 790);
         assert_eq!(title.descriptor.grid_y1, 46);
-        assert_eq!(title.descriptor.text_style, FONT_HEADER as u32);
+        // Per audit 4375e51 field-swap: text_style is JSON pos 10 (=12),
+        // label_ink is JSON pos 11 (=7). Pre-fix this asserted text_style==7.
+        assert_eq!(title.descriptor.text_style, HEADER_TEXT_STYLE);
+        assert_eq!(title.descriptor.label_ink, HEADER_LABEL_INK);
     }
 
     #[test]

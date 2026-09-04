@@ -628,16 +628,18 @@ pub fn dispatch_global(
             note: "game options",
         },
         // 0x42b (`007491e0:0x0074a65b`) — Game Settings; also clears
-        // DAT_00dbbf7a if it matched. Port the clear.
+        // DAT_00dbbf7a if it matched. Port the clear + LIVE ROUTE.
+        //
+        // LIVE ROUTE (screen_to_rust auto-transliteration): the paint
+        // callback for FUN_004ec550 is LAB_004ec590 (batch14
+        // Screen4Ec550View entry). `build_screen_4ec590` transliterates
+        // that LAB's widget-analysis JSON directly.
         0x42b => {
             if state.pending_cmd_fallback == 0x42b {
                 state.pending_cmd_fallback = 0;
             }
-            DispatchResult::TodoBuilder {
-                cmd: 0x42b,
-                fn_addr: "FUN_004ec550",
-                note: "Game Settings",
-            }
+            let _ = crate::screens_auto::build_screen_4ec590(pool);
+            DispatchResult::Handled
         }
         // 0x42c (`007491e0:0x0074a6a5`) — settings sub-screen
         0x42c => {
@@ -709,14 +711,19 @@ pub fn dispatch_club(
             // Exe: `if (widget_slot != -1 && payload == -1) return 0;`
             // then FUN_007116b0(payload, local_50); if guard passes,
             // FUN_00701240(payload). Model the early-return.
+            //
+            // LIVE ROUTE (screen_to_rust auto-transliteration): the
+            // FUN_00701240 paint callback is LAB_007013d0 (batch7
+            // MatchReportView entry, per reports/layer3_view_wiring_status.md
+            // §batch7). `build_screen_7013d0` transliterates that LAB's
+            // widget-analysis JSON. The FUN_007116b0 guard is a screen-
+            // stack predicate that this port does not yet model — the
+            // observed path assumes it passes.
             if widget_slot != -1 && (payload as i32) == -1 {
                 return DispatchResult::Unhandled;
             }
-            DispatchResult::TodoBuilder {
-                cmd: 0x7d3,
-                fn_addr: "FUN_007116b0+FUN_00701240",
-                note: "match/club detail",
-            }
+            let _ = crate::screens_auto::build_screen_7013d0(pool);
+            DispatchResult::Handled
         }
         // 0x7d5 (`0074bf60:0x0074c2c1`) — Club Dashboard
         0x7d5 => DispatchResult::TodoBuilder {
@@ -1053,6 +1060,33 @@ mod tests {
         let slot = widget_with_cmd(&mut pool, 0x42b);
         let _ = dispatch_global(&mut pool, &mut state, slot);
         assert_eq!(state.pending_cmd_fallback, 0);
+    }
+
+    #[test]
+    fn dispatcher_cmd_0x42b_game_settings_produces_widgets() {
+        // 0x42b routes to build_screen_4ec590 (LAB of FUN_004ec550).
+        let mut pool = GuiRecordPool::new();
+        let mut state = DispatcherState::default();
+        let slot = widget_with_cmd(&mut pool, 0x42b);
+        let before = pool.widgets.len();
+        let r = dispatch_global(&mut pool, &mut state, slot);
+        assert_eq!(r, DispatchResult::Handled);
+        assert!(pool.widgets.len() > before,
+            "cmd 0x42b must spawn at least one widget");
+    }
+
+    #[test]
+    fn dispatcher_cmd_0x7d3_match_report_produces_widgets() {
+        // 0x7d3 routes to build_screen_7013d0 (LAB of FUN_00701240).
+        // Passes the payload guard (payload = 0, not -1).
+        let mut pool = GuiRecordPool::new();
+        let mut state = DispatcherState::default();
+        let slot = widget_with_cmd(&mut pool, 0x7d3);
+        let before = pool.widgets.len();
+        let r = dispatch_club(&mut pool, &mut state, slot);
+        assert_eq!(r, DispatchResult::Handled);
+        assert!(pool.widgets.len() > before,
+            "cmd 0x7d3 must spawn at least one widget");
     }
 
     #[test]
