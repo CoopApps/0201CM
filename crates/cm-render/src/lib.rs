@@ -46,6 +46,7 @@ pub mod screen_news;
 pub mod screen_wire_batch3;
 pub mod screens_auto;
 pub mod dispatcher;
+pub mod dispatcher_club_toolbar;
 pub mod screens_faithful;
 pub mod packed_text;
 pub mod packed_sprintf;
