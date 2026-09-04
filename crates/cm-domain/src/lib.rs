@@ -19316,7 +19316,7 @@ impl RuntimeSaveGame {
                         } else {
                             crate::injury::InjurySeverity::Major
                         };
-                        self.injuries.add_injury(*pid, severity);
+                        self.injuries.add_injury_stamped(*pid, severity, self.elapsed_days);
                     }
                     // Post-match gate + TV/prize income (kill #8d).
                     self.finance.record_match_income(home_id, away_id, false);
