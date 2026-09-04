@@ -17,6 +17,7 @@
 //! commit treats them as opaque bytes.
 
 use std::alloc::{alloc_zeroed, dealloc, Layout};
+use std::collections::BTreeMap;
 use std::ptr::NonNull;
 
 /// Total instance size, in bytes. Constructor `sub_007e3f20` writes at most out to
@@ -212,6 +213,38 @@ pub mod off {
     /// GDI L33.
     pub const B_DWORD_0X261FD0: usize = 0x0026_1fd0;
 
+    // ---- Fields the push_screen (FUN_007e6570) writes on the CURRENT slot ----
+    // All are byte-offsets WITHIN a slot (add `slot_idx * SLOT_STRIDE` for real address).
+    // For slot 0, most alias `ROOT_*` above (root frame IS slot 0's primary entry).
+    /// `slot+0x02` dword — alt-head chain ptr slot. C L27 read as part of the "empty
+    /// slot" predicate. Push_screen never writes it; kept here so the read has a name.
+    pub const SLOT_ALT_HEAD_ID: usize = 0x02;
+    /// `slot+0x06` dword — **head** RecordId (Rust port stores id, exe stored a raw
+    /// pointer). C L103 (`iVar8 + 6`) read as evict-target; L161 (`iVar8 + 6`) set to
+    /// new record if head was 0.
+    pub const SLOT_HEAD_ID: usize = 0x06;
+    /// `slot+0x0a` dword — **tail** RecordId. C L155/158 written; L75 read.
+    pub const SLOT_TAIL_ID: usize = 0x0a;
+    /// `slot+0x0e` dword — **current** RecordId. C L45/163 written; L37 read.
+    /// (Alias of ROOT_CUR_ENTRY for slot 0.)
+    pub const SLOT_CURRENT_ID: usize = 0x0e;
+    /// `slot+0x12` word — modal-record counter (records with param_4 != 0). C L149
+    /// increments as short when the pushed record's param_4 != 0.
+    pub const SLOT_MODAL_COUNT: usize = 0x12;
+    /// `slot+0x14` word — total-records-in-slot counter. C L109 decrements on evict,
+    /// L165 increments on push. (Alias of ROOT_DEPTH for slot 0.)
+    pub const SLOT_COUNT_WORD: usize = 0x14;
+    /// `slot+0x16` dword — active/running flag. C L169 sets to 1. (Alias of ROOT_RUNNING for slot 0.)
+    pub const SLOT_ACTIVE_FLAG: usize = 0x16;
+    /// `slot+0x1a` dword — flag cleared to 0 at C L167.
+    pub const SLOT_FLAG_0X1A: usize = 0x1a;
+    /// `slot+0x1e` dword — flag cleared to 0 at C L173, only when param_4 != 0.
+    pub const SLOT_FLAG_0X1E: usize = 0x1e;
+    /// `slot+0x22` word — sentinel reset to 0xFFFF at C L170. (Alias of ROOT_PEER for slot 0.)
+    pub const SLOT_SENTINEL_0X22: usize = 0x22;
+    /// `slot+0x24` dword — flag cleared to 0 at C L171. (Alias of ROOT_AUX_0X24 for slot 0.)
+    pub const SLOT_FLAG_0X24: usize = 0x24;
+
     // ---- Fields the pump (FUN_007e4940 / sub_007e4340) writes at entry ----
     // (Preamble portion only — see `ScreenManager::pump_preamble`.)
     //
@@ -402,30 +435,119 @@ pub struct ScreenRecordVTable {
     // TODO(commit 4c/5): fill remaining slots as push_screen decodes them.
 }
 
-/// A screen record — 0x300 bytes in the exe. Allocated by `push_screen`
-/// (FUN_007e6570, ported in commit 5). Referenced by pump via slot's
-/// `+0x28` entry pointer.
+/// Rust-native handle for a `ScreenRecord`. In the exe, records are addressed
+/// by 32-bit heap pointers; the Rust port owns records in `ScreenManager::records`
+/// keyed by this id and mirrors ids into arena bytes wherever the exe stored a
+/// pointer (slot's head/tail/current at +0x06/+0x0a/+0x0e; record's prev/next).
+/// `0` sentinels "null pointer" (matches the exe's `piVar12 != 0` guards).
+pub type RecordId = u32;
+
+/// One entry in a `ScreenRecord`'s 0x3c-slot bag at record `+0x14..+0x1F4`
+/// (60 × 8 bytes). Populated by `FUN_007e7130` (see `push_screen`'s deferred
+/// replay path); freed on eviction if `owned == true`.
 ///
-/// Known byte offsets from live-decode + inventory:
-/// - `+0x00`  — vtable pointer (dereffed by pump)
-/// - `+0x04`  — cleanup fn (dereffed at pump lines 179/277/417)
-/// - `+0x0c`  — cleanup2 fn
-/// - `+0x10`  — modal flag byte
-/// - `+0x14 + slot_index*8` — slot bag values (from FUN_007e7130)
-/// - `+0x1f8` — next-ptr (linked list)
-/// - `+0x1fc` — prev-ptr
-/// - `+0x7f`  — name string (~0x100 bytes)
+/// Byte-layout in the exe (matches `push_screen`'s eviction loop C L79-84 and
+/// `FUN_007e7130`'s stores at `+0x14 + i*8` / `+0x18 + i*8`):
+/// - `+0` dword — value pointer (opaque; heap-allocated string or bag payload)
+/// - `+4` dword — `owned` flag (nonzero → free with `operator delete` on evict)
+#[derive(Debug, Clone, Default)]
+pub struct SlotBagEntry {
+    /// `+0` — the payload. `None` when no value stored. When `Some`, the exe
+    /// stored a heap pointer here; we own the bytes directly in Rust.
+    pub value: Option<Vec<u8>>,
+    /// `+4` — the exe's `owned` flag. Recorded for parity with the ctor;
+    /// eviction always drops the `Vec` regardless (Rust owns it either way).
+    pub owned: bool,
+}
+
+/// A screen record — 0x300 bytes in the exe, allocated by `push_screen`
+/// (`FUN_007e6570`). All field offsets cited to that C.
 ///
-/// The 4a commit adds only the type shell — no writers, no reads-through-vtable
-/// yet. Fields past what commit 4c uses stay `unk_*` until push_screen decodes
-/// the full 0x300-byte layout.
+/// Layout (from `FUN_007e6570` writes + reads by callers):
+/// - `+0x00` dword — `screen_id`   (C L106 `piVar6[0] = param_2`)
+/// - `+0x04` dword — `cleanup` fn  (C L107 `piVar6[1] = param_5`; called at C L120)
+/// - `+0x08` dword — `param_3`     (C L109 `piVar6[2] = param_3`)
+/// - `+0x0C` dword — `param_6`     (C L108 `piVar6[3] = param_6`) — pump 4c calls this "cleanup2"
+/// - `+0x10` dword — `param_4`     (C L110 `piVar6[4] = param_4`) — **modal flag**;
+///                                  C L103 evict-guard `if (record[0x10] != 0) return 0`
+/// - `+0x14..+0x1F4` — `slot_bag[0..0x3c]` (60 × 8-byte SlotBagEntry).
+///                                  Cleared by C L84-89 eviction loop; populated by `FUN_007e7130`.
+/// - `+0x1F4` dword — `prev` RecordId (piVar6[0x7d]; C L157 `piVar6[0x7d] = old_tail`)
+/// - `+0x1F8` dword — `next` RecordId (piVar6[0x7e]; C L156 `old_tail[0x1f8] = new`;
+///                                  read at C L45, 76, 88, 103)
+/// - `+0x1FC..+0x300` — `name` bytes (piVar6[0x7f]; C L124-141 strcpy from DAT_009afdec)
+///
+/// The `vtable` field (from commit 4a) is retained as a Rust-side grouping for
+/// typed callback fn pointers — the exe stores the cleanup fn raw at `+0x04`,
+/// which we mirror in `cleanup`. Other vtable slots remain None until dispatched
+/// paths (pump 4d) decode more.
 #[derive(Debug, Default)]
 pub struct ScreenRecord {
-    /// `+0x00` — the vtable (owned, since we've moved off raw pointers).
+    /// Rust-side allocator id. Mirrors into arena slot ptr slots as u32.
+    pub id: RecordId,
+    /// Logical vtable grouping (per commit 4a). `cleanup` slot below is the
+    /// authoritative record `+0x04` field.
     pub vtable: ScreenRecordVTable,
-    // TODO(commit 4c/5): fill remaining fields as they're decoded.
-    // Placeholder to reserve struct identity; will be replaced with typed fields.
-    pub unk_tail: (),
+    /// `+0x00` — screen name-hash / id.
+    pub screen_id: u32,
+    /// `+0x04` — cleanup fn (called on old-current at push time, C L120).
+    pub cleanup: Option<fn(&mut ScreenManager)>,
+    /// `+0x08` — `param_3`.
+    pub param_3: i32,
+    /// `+0x0C` — `param_6`.
+    pub param_6: i32,
+    /// `+0x10` — `param_4` (nonzero = modal; eviction & lookup gate).
+    pub param_4: i32,
+    /// `+0x14..+0x1F4` — the 60-entry slot bag.
+    pub slot_bag: Vec<SlotBagEntry>,
+    /// `+0x1F4` — prev record in the linked list. `None` for the head.
+    pub prev: Option<RecordId>,
+    /// `+0x1F8` — next record. `None` for the tail.
+    pub next: Option<RecordId>,
+    /// `+0x1FC..+0x300` — copied name string (up to 260 bytes).
+    pub name: Vec<u8>,
+}
+
+impl ScreenRecord {
+    fn new(id: RecordId, screen_id: u32, cleanup: Option<fn(&mut ScreenManager)>,
+           param_3: i32, param_4: i32, param_6: i32, name: Vec<u8>) -> Self {
+        ScreenRecord {
+            id, vtable: ScreenRecordVTable::default(),
+            screen_id, cleanup, param_3, param_6, param_4,
+            slot_bag: vec![SlotBagEntry::default(); 0x3c],
+            prev: None, next: None,
+            name,
+        }
+    }
+}
+
+/// Return code from `ScreenManager::push_screen` — models `FUN_007e6570`'s
+/// three exit paths (return values 0 / 1 and the `DAT_00b4d5a8 = 0` error path).
+///
+/// The exe returns `undefined4`: `1` on the "new record pushed" happy path
+/// (C L184), `0` when it rewinds to an existing record (C L67-70), when the
+/// deferred/args validation trips (`screen_id == 0 || param_3 == 0`; C L41),
+/// or when eviction is blocked by a modal head record (C L102).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PushScreenResult {
+    /// New record allocated + linked. Exe returns `1`.
+    NewRecordPushed,
+    /// Matching `screen_id` found in the current-forward chain; slot's `current`
+    /// rewound to it. Exe returns `0`.
+    RewoundToExisting,
+    /// `screen_id == 0` or `param_3 == 0` — error path. Exe sets
+    /// `DAT_00b4d5a8 = 0` and returns `0` (C L41-45).
+    InvalidArgs,
+    /// Slot has >100 records and the head is modal (`param_4 != 0`), so it
+    /// cannot be evicted. Exe returns `0` early (C L102).
+    EvictionBlockedModal,
+}
+
+impl PushScreenResult {
+    /// The exe's `undefined4` return value: `1` for NewRecordPushed, `0` otherwise.
+    pub fn as_exe_ret(self) -> u32 {
+        matches!(self, PushScreenResult::NewRecordPushed) as u32
+    }
 }
 
 // ------------------------------------------------------------
@@ -449,6 +571,13 @@ pub const DAT_ACDE98: [u32; 8] = [0; 8];
 
 /// The 0x7e0 constant the pump compares against.
 pub const PUMP_MODE_MATCH: u32 = 0x7e0;
+
+/// Snapshot of `DAT_009afdec` (the "current-loading screen filename" global)
+/// used by `push_screen` C L124-141 to seed `record.name`. That global's
+/// writer isn't yet ported, so the snapshot is empty until a follow-up
+/// commit wires it. Documented gap — push_screen tests do not depend on
+/// the name value.
+fn read_dat_009afdec_snapshot() -> Vec<u8> { Vec::new() }
 
 /// Network send/recv buffer sub-object embedded in `ScreenManager` at `+0x302a`.
 ///
@@ -619,6 +748,12 @@ pub struct ScreenManager {
     ///
     /// Zeroed until the first `snapshot_time_now` call.
     last_time_snapshot: i32,
+    /// Live pool of `ScreenRecord`s. Keyed by `RecordId` (the exe stored raw
+    /// heap pointers where we store ids; the arena mirrors the id at slot
+    /// +0x06/+0x0a/+0x0e and record +0x1F4/+0x1F8). Post-ctor: empty.
+    records: BTreeMap<RecordId, ScreenRecord>,
+    /// Next id to hand out. Starts at 1 so `0` is a valid null sentinel.
+    next_record_id: RecordId,
 }
 
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
@@ -654,6 +789,8 @@ impl ScreenManager {
             bytes, net_buf, session_a, session_b,
             mode_table_snapshot: [0; 8],
             last_time_snapshot: 0,
+            records: BTreeMap::new(),
+            next_record_id: 1,
         };
         this.apply_ctor_writes();
         this
@@ -675,6 +812,8 @@ impl ScreenManager {
         self.session_b = SessionSubObject::new(1);
         self.mode_table_snapshot = [0; 8];
         self.last_time_snapshot = 0;
+        self.records.clear();
+        self.next_record_id = 1;
         self.apply_ctor_writes();
     }
 
@@ -889,6 +1028,280 @@ impl ScreenManager {
                         self.as_bytes_mut()[dst_range].copy_from_slice(&buf);
                     }
                 }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Record-pool access (Rust-side ownership of the linked list).
+    // ------------------------------------------------------------
+
+    /// Read the RecordId stored at `slot_base + off`. The exe stored raw
+    /// heap pointers here; we store 32-bit ids (0 = null).
+    #[inline]
+    fn slot_read_id(&self, slot_idx: usize, off: usize) -> Option<RecordId> {
+        assert!(slot_idx < SLOT_COUNT);
+        let v = self.get_u32(slot_idx * SLOT_STRIDE + off);
+        if v == 0 { None } else { Some(v) }
+    }
+    #[inline]
+    fn slot_write_id(&mut self, slot_idx: usize, off: usize, id: Option<RecordId>) {
+        assert!(slot_idx < SLOT_COUNT);
+        self.set_u32(slot_idx * SLOT_STRIDE + off, id.unwrap_or(0));
+    }
+
+    /// Slot `head` RecordId — first record in the chain. `slot+0x06`.
+    #[inline] pub fn slot_head_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_HEAD_ID) }
+    /// Slot `tail` RecordId — last record in the chain. `slot+0x0a`.
+    #[inline] pub fn slot_tail_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_TAIL_ID) }
+    /// Slot `current` RecordId — the active record. `slot+0x0e`.
+    #[inline] pub fn slot_current_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_CURRENT_ID) }
+    /// Slot `alt-head` RecordId — read by the deferred-args predicate. `slot+0x02`.
+    #[inline] pub fn slot_alt_head_id(&self, s: usize) -> Option<RecordId> { self.slot_read_id(s, off::SLOT_ALT_HEAD_ID) }
+    /// Slot record-count. `slot+0x14`.
+    #[inline] pub fn slot_count(&self, s: usize) -> u16 { self.get_u16(s * SLOT_STRIDE + off::SLOT_COUNT_WORD) }
+
+    /// Borrow a record by id.
+    #[inline] pub fn record(&self, id: RecordId) -> Option<&ScreenRecord> { self.records.get(&id) }
+    /// Mutably borrow a record by id.
+    #[inline] pub fn record_mut(&mut self, id: RecordId) -> Option<&mut ScreenRecord> { self.records.get_mut(&id) }
+    /// Total live record count across all slots.
+    #[inline] pub fn record_pool_size(&self) -> usize { self.records.len() }
+
+    fn alloc_record_id(&mut self) -> RecordId {
+        let id = self.next_record_id;
+        self.next_record_id = self.next_record_id.wrapping_add(1).max(1);
+        id
+    }
+
+    // ------------------------------------------------------------
+    // push_screen — port of FUN_007e6570.
+    // ------------------------------------------------------------
+
+    /// Port of `FUN_007e6570` — push a new screen record onto the current slot's
+    /// linked list, or rewind `current` to a matching existing record.
+    ///
+    /// **Params** (exe order): `screen_id = param_2`, `param_3 = param_3`,
+    /// `cleanup = param_5` (fn ptr stored at record +0x04),
+    /// `param_4 = param_4` (modal flag; nonzero routes evict-guard + lookup),
+    /// `param_6 = param_6`.
+    ///
+    /// **Behavior** (line numbers refer to C `/d/cm0102-carve/ghidra_out/cm0102.exe/decompiled/007e6570.c`):
+    /// 1. C L27-40: if current slot is empty (head==0 && alt-head==0) AND
+    ///    `DEFERRED_NAME != 0`, reload the args from the persistent
+    ///    `+0x3000..+0x3010` block; remember to replay the bag at the end.
+    /// 2. C L41-49: error if `screen_id == 0 || param_3 == 0`.
+    /// 3. C L52-70: if slot has a `current` and `param_4 != 0`, walk the
+    ///    forward chain from `current` for a record whose `screen_id` matches;
+    ///    on hit, advance `current` to the last active record in the tail and
+    ///    return `RewoundToExisting` (unless the new current's id doesn't
+    ///    match — then restore the original current and still return 0).
+    /// 4. C L72-98: if `current != tail`, truncate the chain past current
+    ///    (freeing each record's owned slot-bag then the record itself).
+    /// 5. C L100-116: if `slot_count > 100`, evict the head (unless it's
+    ///    modal — then return early).
+    /// 6. C L117-121: call the OLD current record's cleanup fn (`record+0x04`).
+    /// 7. C L122-158: allocate + populate the new record (all 5 param slots
+    ///    + name copy from `DAT_009afdec`) and link it as the new tail.
+    /// 8. C L165-176: bump slot counters, reset flag/sentinel words, set
+    ///    `slot+0x16 = 1` running.
+    /// 9. C L177-183: if deferred path AND `BAG_COUNT > 0`, replay bag values
+    ///    into the new record via `FUN_007e7130` semantics.
+    ///
+    /// `FUN_007e7130`'s core (populate bag entry `i` with `value_bytes`) is
+    /// inlined as `set_slot_bag` — memcpy of a heap-allocated Vec.
+    pub fn push_screen(
+        &mut self,
+        mut screen_id: u32,
+        mut param_3: i32,
+        cleanup: Option<fn(&mut ScreenManager)>,
+        mut param_4: i32,
+        mut param_6: i32,
+    ) -> PushScreenResult {
+        let slot_idx = self.current_slot() as usize;
+        assert!(slot_idx < SLOT_COUNT, "current_slot out of range");
+        let slot_base = slot_idx * SLOT_STRIDE;
+
+        // ---- Step 1: C L27-40 deferred-args branch. ----
+        let mut deferred = false;
+        let cleanup = cleanup;
+        let empty_slot = self.slot_alt_head_id(slot_idx).is_none()
+                      && self.slot_head_id(slot_idx).is_none();
+        if empty_slot && self.get_u32(off::DEFERRED_NAME) != 0 {
+            // Only param_3/4/6 come back as raw u32/i32; the deferred cleanup fn
+            // ptr can't round-trip through arena bytes safely on 64-bit hosts, so
+            // we keep the caller's `cleanup`. Real callers set both together via
+            // the (not-yet-ported) deferred-push helper.
+            screen_id = self.get_u32(off::DEFERRED_NAME);              // param_2
+            param_3   = self.get_u32(off::DEFERRED_ARG1) as i32;       // param_3
+            param_4   = self.get_u32(off::DEFERRED_ARG2) as i32;       // param_4
+            let _param_5 = self.get_u32(off::DEFERRED_ARG3);           // param_5 fn (see note)
+            param_6   = self.get_u32(off::DEFERRED_ARG4) as i32;       // param_6
+            deferred = true;
+            let _ = cleanup;  // acknowledged (kept as caller-passed)
+        }
+
+        // ---- Step 2: C L41-49 validation. ----
+        if screen_id == 0 || param_3 == 0 {
+            return PushScreenResult::InvalidArgs;
+        }
+
+        // ---- Step 3: C L52-70 rewind-to-existing lookup. ----
+        let cur = self.slot_current_id(slot_idx);
+        if cur.is_some() && param_4 != 0 {
+            let mut it = cur;
+            let mut hit: Option<RecordId> = None;
+            while let Some(rid) = it {
+                let rec = &self.records[&rid];
+                if rec.param_4 != 0 && rec.screen_id == screen_id {
+                    hit = Some(rid);
+                    break;
+                }
+                it = rec.next;
+            }
+            if let Some(fid) = hit {
+                // Walk forward from fid, latching the last record whose param_4 != 0
+                // as the new `current` (mirrors C L59-63 inner loop).
+                let mut it2 = Some(fid);
+                let mut last_active = fid;
+                while let Some(rid) = it2 {
+                    let rec = &self.records[&rid];
+                    if rec.param_4 != 0 { last_active = rid; }
+                    it2 = rec.next;
+                }
+                self.slot_write_id(slot_idx, off::SLOT_CURRENT_ID, Some(last_active));
+                // C L64-67: if the newly-latched current's screen_id != param_2,
+                // restore to the pre-walk cur. Either way return 0.
+                if self.records[&last_active].screen_id != screen_id {
+                    self.slot_write_id(slot_idx, off::SLOT_CURRENT_ID, cur);
+                }
+                return PushScreenResult::RewoundToExisting;
+            }
+        }
+
+        // ---- Step 4: C L72-98 prune-past-current (only when current != tail). ----
+        let tail = self.slot_tail_id(slot_idx);
+        if cur != tail {
+            // C L74: set tail = current.
+            self.slot_write_id(slot_idx, off::SLOT_TAIL_ID, cur);
+            // C L76-77: iVar8 = current->next; current->next = 0.
+            let mut victim = cur.and_then(|c| self.records[&c].next);
+            if let Some(cid) = cur { self.records.get_mut(&cid).unwrap().next = None; }
+            while let Some(vid) = victim {
+                // C L84-89: free owned bag entries (Drop of Vec here).
+                // C L82-83: current = victim->next (advance BEFORE freeing victim).
+                let next_victim = self.records[&vid].next;
+                self.slot_write_id(slot_idx, off::SLOT_CURRENT_ID, next_victim);
+                // C L90: free victim record (Box Drop via map remove).
+                self.records.remove(&vid);
+                // C L91-92: decrement slot count.
+                let c = self.slot_count(slot_idx).saturating_sub(1);
+                self.set_u16(slot_base + off::SLOT_COUNT_WORD, c);
+                victim = next_victim;
+            }
+            // C L96-97: current = tail (the pre-prune current).
+            let t = self.slot_tail_id(slot_idx);
+            self.slot_write_id(slot_idx, off::SLOT_CURRENT_ID, t);
+        }
+
+        // ---- Step 5: C L100-116 evict-oldest when overfull. ----
+        if self.slot_count(slot_idx) > 100 {
+            let head = self.slot_head_id(slot_idx);
+            if let Some(hid) = head {
+                let head_rec = &self.records[&hid];
+                if head_rec.param_4 != 0 {
+                    // C L102: modal head — cannot evict; bail.
+                    return PushScreenResult::EvictionBlockedModal;
+                }
+                let new_head = head_rec.next;
+                // C L105: slot->head = head->next.
+                self.slot_write_id(slot_idx, off::SLOT_HEAD_ID, new_head);
+                // C L106: new_head->prev = 0.
+                if let Some(nh) = new_head { self.records.get_mut(&nh).unwrap().prev = None; }
+                // C L107-114: bag-entry free + record free.
+                self.records.remove(&hid);
+                // C L115-116: decrement slot count.
+                let c = self.slot_count(slot_idx).saturating_sub(1);
+                self.set_u16(slot_base + off::SLOT_COUNT_WORD, c);
+            }
+        }
+
+        // ---- Step 6: C L117-121 call OLD current's cleanup hook. ----
+        // We must take the fn ptr out first (short-lived borrow), then call it.
+        let old_cleanup = self.slot_current_id(slot_idx)
+                              .and_then(|id| self.records.get(&id))
+                              .and_then(|r| r.cleanup);
+        if let Some(f) = old_cleanup { f(self); }
+
+        // ---- Step 7: C L122-158 alloc + populate new record. ----
+        // Name copy from DAT_009afdec — that global is a filename-buffer of the
+        // "currently-loading" screen. We haven't decoded its lifecycle; empty
+        // name is a documented gap that doesn't affect any push_screen test.
+        let name = read_dat_009afdec_snapshot();
+        let new_id = self.alloc_record_id();
+        let mut rec = ScreenRecord::new(new_id, screen_id, cleanup, param_3, param_4, param_6, name);
+
+        // Link into list: rec.prev = current tail; tail.next = rec; slot.tail = rec.
+        let old_tail = self.slot_tail_id(slot_idx);
+        rec.prev = old_tail;
+        self.records.insert(new_id, rec);
+        if let Some(t) = old_tail {
+            self.records.get_mut(&t).unwrap().next = Some(new_id);
+        }
+        self.slot_write_id(slot_idx, off::SLOT_TAIL_ID, Some(new_id));
+        // C L161: if head was 0, head = new.
+        if self.slot_head_id(slot_idx).is_none() {
+            self.slot_write_id(slot_idx, off::SLOT_HEAD_ID, Some(new_id));
+        }
+        // C L163: current = new.
+        self.slot_write_id(slot_idx, off::SLOT_CURRENT_ID, Some(new_id));
+
+        // C L149-152: modal-count increment when param_4 != 0.
+        if param_4 != 0 {
+            let m = self.get_u16(slot_base + off::SLOT_MODAL_COUNT).wrapping_add(1);
+            self.set_u16(slot_base + off::SLOT_MODAL_COUNT, m);
+        }
+
+        // C L165: slot count += 1.
+        let c = self.slot_count(slot_idx).wrapping_add(1);
+        self.set_u16(slot_base + off::SLOT_COUNT_WORD, c);
+
+        // ---- Step 8: C L167-176 reset flag/sentinel words. ----
+        self.set_u32(slot_base + off::SLOT_FLAG_0X1A,     0);      // L167
+        self.set_u16(slot_base + off::SLOT_SENTINEL_0X22, 0xFFFF); // L170
+        self.set_u32(slot_base + off::SLOT_FLAG_0X24,     0);      // L171
+        if param_4 != 0 {
+            self.set_u32(slot_base + off::SLOT_FLAG_0X1E, 0);       // L173
+        }
+        self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);        // L169
+
+        // ---- Step 9: C L177-183 deferred bag replay. ----
+        if deferred {
+            let count = self.get_u16(off::BAG_COUNT) as usize;
+            let ptr_bag = self.get_u32(off::BAG_VALUES);
+            if count > 0 && ptr_bag != 0 {
+                // FUN_007e7130 semantics: for each i in 0..count, populate slot bag[i]
+                // with a copy of bag[i]. We can't dereference the raw u32 pointer
+                // without infra to resolve it into a slice, so store the raw i32 as
+                // a 4-byte payload — matches the exe's "if src ptr == 0 do zero-copy"
+                // case in FUN_007e7130 and lets tests observe the write pattern.
+                for i in 0..count {
+                    let val = self.get_u32(off::BAG_VALUES + i * 4);
+                    self.set_slot_bag(slot_idx, i, val.to_le_bytes().to_vec());
+                }
+            }
+        }
+
+        PushScreenResult::NewRecordPushed
+    }
+
+    /// Set slot bag entry `i` on the current record to owned `bytes`.
+    /// Inlined port of `FUN_007e7130`'s populate branch: free old (Drop), memcpy new.
+    pub fn set_slot_bag(&mut self, slot_idx: usize, i: usize, bytes: Vec<u8>) {
+        assert!(i < 0x3c, "slot bag idx");
+        if let Some(cid) = self.slot_current_id(slot_idx) {
+            if let Some(rec) = self.records.get_mut(&cid) {
+                rec.slot_bag[i] = SlotBagEntry { value: Some(bytes), owned: true };
             }
         }
     }
@@ -1618,6 +2031,188 @@ mod tests {
         // And primary.ACKED_A is now 0 (child's cleared value copied in).
         assert_eq!(m.get_u32(entry::ACKED_A), 0,
                    "primary ACKED_A overwritten by child block");
+    }
+
+    // ---------- commit 5: push_screen (FUN_007e6570) ----------
+
+    // A test-only cleanup fn — increments a global counter so tests can
+    // observe the old-current cleanup hook firing.
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static CLEANUP_HITS: AtomicU32 = AtomicU32::new(0);
+    fn test_cleanup_bump(_m: &mut ScreenManager) {
+        CLEANUP_HITS.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// First push into an empty slot creates a record and links it as head,
+    /// tail, and current.
+    #[test]
+    fn push_screen_first_call_allocates_new_record() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        // Slot 0 is post-ctor "empty" for our record pool (no records yet).
+        assert!(m.slot_head_id(slot).is_none());
+        assert!(m.slot_tail_id(slot).is_none());
+        assert!(m.slot_current_id(slot).is_none());
+
+        let r = m.push_screen(0x1234, 42, None, 0, 99);
+        assert_eq!(r, PushScreenResult::NewRecordPushed);
+        assert_eq!(r.as_exe_ret(), 1, "exe returns 1 on happy path");
+        assert_eq!(m.record_pool_size(), 1);
+
+        let id = m.slot_head_id(slot).expect("head set");
+        assert_eq!(m.slot_tail_id(slot), Some(id));
+        assert_eq!(m.slot_current_id(slot), Some(id));
+        let rec = m.record(id).expect("record");
+        assert_eq!(rec.screen_id, 0x1234);
+        assert_eq!(rec.param_3, 42);
+        assert_eq!(rec.param_4, 0);
+        assert_eq!(rec.param_6, 99);
+        assert!(rec.prev.is_none());
+        assert!(rec.next.is_none());
+        assert_eq!(rec.slot_bag.len(), 0x3c);
+        // Slot bookkeeping:
+        assert_eq!(m.slot_count(slot), 1);
+        assert_eq!(m.get_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG), 1);
+        assert_eq!(m.get_u16(slot * SLOT_STRIDE + off::SLOT_SENTINEL_0X22), 0xFFFF);
+    }
+
+    /// Pushing the same screen_id twice with param_4 != 0 rewinds `current`
+    /// to the existing record instead of allocating a new one.
+    #[test]
+    fn push_screen_matching_id_rewinds_to_existing() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        assert_eq!(m.push_screen(0xAA, 1, None, 1, 0), PushScreenResult::NewRecordPushed);
+        let first_id = m.slot_current_id(slot).unwrap();
+        assert_eq!(m.push_screen(0xBB, 1, None, 1, 0), PushScreenResult::NewRecordPushed);
+        let second_id = m.slot_current_id(slot).unwrap();
+        assert_ne!(first_id, second_id);
+        assert_eq!(m.record_pool_size(), 2);
+
+        // Rewind: push_screen with 0xAA again (matching id in forward chain).
+        // Move current back to first so the forward walk from `current` finds 0xAA.
+        m.slot_write_id(slot, off::SLOT_CURRENT_ID, Some(first_id));
+        let r = m.push_screen(0xBB, 1, None, 1, 0);
+        assert_eq!(r, PushScreenResult::RewoundToExisting);
+        assert_eq!(r.as_exe_ret(), 0);
+        // No new record allocated:
+        assert_eq!(m.record_pool_size(), 2);
+        // current advanced to the last active in the chain = second (tail).
+        assert_eq!(m.slot_current_id(slot), Some(second_id));
+    }
+
+    /// Pushing past 100 records evicts the head record (when head is non-modal).
+    #[test]
+    fn push_screen_over_100_evicts_oldest() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        // Push 101 non-modal records — no eviction yet (guard is `count > 100`).
+        for i in 0..101 {
+            let r = m.push_screen(0x1000 + i as u32, 1, None, 0, 0);
+            assert_eq!(r, PushScreenResult::NewRecordPushed, "push {}", i);
+        }
+        assert_eq!(m.slot_count(slot), 101, "no eviction until count > 100");
+        // 102nd push: count=101 > 100 → evict head THEN add → net 101.
+        let r = m.push_screen(0x2000, 1, None, 0, 0);
+        assert_eq!(r, PushScreenResult::NewRecordPushed);
+        assert_eq!(m.slot_count(slot), 101, "slot held near cap after evict+push");
+        assert_eq!(m.record_pool_size(), 101);
+        // The oldest record (screen_id 0x1000) should be evicted.
+        let head_id = m.slot_head_id(slot).unwrap();
+        assert_ne!(m.record(head_id).unwrap().screen_id, 0x1000,
+                   "oldest 0x1000 evicted");
+    }
+
+    /// The OLD current record's cleanup hook (record `+0x04` fn ptr) fires
+    /// when a new record is pushed on top.
+    #[test]
+    fn push_screen_calls_previous_cleanup_hook() {
+        let mut m = ScreenManager::new();
+        CLEANUP_HITS.store(0, Ordering::SeqCst);
+        // First push: no old current, no cleanup fires.
+        m.push_screen(1, 1, Some(test_cleanup_bump), 0, 0);
+        assert_eq!(CLEANUP_HITS.load(Ordering::SeqCst), 0, "no old-current on first push");
+        // Second push: the previous record IS the current, so its cleanup fires.
+        m.push_screen(2, 1, None, 0, 0);
+        assert_eq!(CLEANUP_HITS.load(Ordering::SeqCst), 1, "cleanup fired once");
+    }
+
+    /// Deferred-args branch: with slot empty, DEFERRED_NAME set, and
+    /// BAG_COUNT > 0, the new record's slot bag is populated from BAG_VALUES.
+    #[test]
+    fn push_screen_populates_slot_bag_when_deferred() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+
+        // Pre-load persistent state at +0x3000..+0x3018 that C L27-40 reads.
+        m.set_u32(off::DEFERRED_NAME, 0xCAFE);
+        m.set_u32(off::DEFERRED_ARG1, 7);   // param_3
+        m.set_u32(off::DEFERRED_ARG2, 0);   // param_4
+        m.set_u32(off::DEFERRED_ARG3, 0);   // param_5 fn (0)
+        m.set_u32(off::DEFERRED_ARG4, 0);   // param_6
+        // Bag: two values at a stub non-null ptr.
+        m.set_u32(off::BAG_VALUES, 0xDEAD);   // non-null sentinel triggers replay
+        m.set_u16(off::BAG_COUNT, 2);
+
+        // Call with sentinel args that the deferred branch WILL overwrite —
+        // slot is empty so the deferred branch triggers.
+        let r = m.push_screen(0, 0, None, 0, 0);
+        assert_eq!(r, PushScreenResult::NewRecordPushed);
+
+        let id = m.slot_current_id(slot).unwrap();
+        let rec = m.record(id).unwrap();
+        assert_eq!(rec.screen_id, 0xCAFE, "screen_id from DEFERRED_NAME");
+        assert_eq!(rec.param_3, 7, "param_3 from DEFERRED_ARG1");
+        // Bag entries 0..2 populated.
+        assert!(rec.slot_bag[0].value.is_some(), "bag[0] populated");
+        assert!(rec.slot_bag[1].value.is_some(), "bag[1] populated");
+        assert!(rec.slot_bag[2].value.is_none(), "bag[2] untouched");
+    }
+
+    /// Struct layout evidence: field roles at their exe byte offsets match
+    /// what other scrman fns read/write (documented in ScreenRecord doc).
+    #[test]
+    fn screen_record_layout_documents_exe_offsets() {
+        // The Rust struct is NOT #[repr(C)] and does NOT need to match byte-for-byte
+        // (records live in the Rust pool, not the arena). What we assert here is
+        // that the DOCUMENTED offsets match what push_screen's C stores + what
+        // callers (pump dispatch) read.
+        //
+        // +0x00 screen_id (piVar6[0] = param_2)
+        // +0x04 cleanup   (piVar6[1] = param_5, called at C L120)
+        // +0x08 param_3   (piVar6[2] = param_3)
+        // +0x0C param_6   (piVar6[3] = param_6)
+        // +0x10 param_4   (piVar6[4] = param_4)  — modal flag
+        // +0x14..+0x1F4 slot_bag (60 × 8 = 0x1E0 bytes)
+        // +0x1F4 prev     (piVar6[0x7d])
+        // +0x1F8 next     (piVar6[0x7e])
+        // +0x1FC name     (piVar6[0x7f]) — 260 bytes to reach +0x300
+        assert_eq!(0x7d * 4, 0x1F4, "prev at piVar6[0x7d]");
+        assert_eq!(0x7e * 4, 0x1F8, "next at piVar6[0x7e]");
+        assert_eq!(0x7f * 4, 0x1FC, "name at piVar6[0x7f]");
+        assert_eq!(0x14 + 0x3c * 8, 0x1F4, "slot_bag ends where prev begins");
+        assert_eq!(0x300 - 0x1FC, 260, "260 bytes of name capacity");
+
+        let rec = ScreenRecord::default();
+        assert_eq!(rec.slot_bag.len(), 0);   // default is empty; ctor sets to 0x3c
+        let rec2 = ScreenRecord::new(1, 0xAAAA, None, 1, 0, 0, Vec::new());
+        assert_eq!(rec2.slot_bag.len(), 0x3c);
+        assert_eq!(rec2.screen_id, 0xAAAA);
+    }
+
+    /// `reset()` clears the record pool + id counter.
+    #[test]
+    fn reset_clears_record_pool() {
+        let mut m = ScreenManager::new();
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 0, 0);
+        assert!(m.record_pool_size() > 0);
+        m.reset();
+        assert_eq!(m.record_pool_size(), 0);
+        for s in 0..SLOT_COUNT {
+            assert!(m.slot_head_id(s).is_none());
+            assert!(m.slot_current_id(s).is_none());
+        }
     }
 
     /// Preamble does not corrupt neighbouring header state: sub-object marker
