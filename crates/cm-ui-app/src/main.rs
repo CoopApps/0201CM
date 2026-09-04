@@ -6,6 +6,7 @@
 //! logic (colours, bevels, `.fnt` text, layout) is already lifted and lives in cm-render.
 
 mod game_state;
+mod render_new;
 mod screens;
 
 use std::num::NonZeroU32;
@@ -156,6 +157,26 @@ struct App {
 impl App {
     /// Re-render whatever screen is current into the frame.
     fn render(&mut self) {
+        // New-pipeline fast path: if the current screen has a live
+        // dispatcher route (see `render_new::cmd_for_screen`), build
+        // the widget pool via `dispatch_global` and paint every widget
+        // through the byte-exact `packed_widget` renderer. On success
+        // we skip the old per-screen render entirely — the overlay
+        // menu bar still runs so the sidebar stays visible.
+        if let Some(cmd) = render_new::cmd_for_screen(&self.screen) {
+            // The new pipeline needs a `PixelFont`; the app's `Fonts`
+            // (the .fnt-JSON loader) feeds the old renderer. Text
+            // glyphs will be blank until a PixelFont loader is wired,
+            // but panels / bevels / backgrounds all draw. This is a
+            // deliberate first-cut: no fabricated widget spawns, and
+            // no fake glyphs — Layer-2 draws exactly what the pool
+            // says, and nothing else.
+            let font = cm_render::packed_glyph::PixelFont::empty(11);
+            if render_new::try_render_via_pool(cmd, &mut self.frame, &font) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         match &self.screen {
             Screen::Setup => {
                 let p = match self.pressed {

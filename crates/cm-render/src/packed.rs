@@ -383,6 +383,60 @@ impl PackedSurface {
         let h = self.height as usize;
         (0..h).map(move |y| &self.buf[y * pitch..y * pitch + self.width as usize])
     }
+
+    /// Unpack one packed pixel into (r,g,b) 0..255 channels, using the
+    /// surface's own channel masks. This is the same normalisation
+    /// arithmetic `colour_scale` uses (`((c & mask) << 8) / (mask + 1)`) —
+    /// it works for any mask layout, so 555 and 565 share one path.
+    #[inline]
+    pub fn unpack(&self, packed: u16) -> (u8, u8, u8) {
+        let rm = self.red_mask as u32;
+        let gm = self.green_mask as u32;
+        let bm = self.blue_mask as u32;
+        let c = packed as u32;
+        let r = (((c & rm) << 8) / (rm + 1)) & 0xff;
+        let g = (((c & gm) << 8) / (gm + 1)) & 0xff;
+        let b = (((c & bm) << 8) / (bm + 1)) & 0xff;
+        (r as u8, g as u8, b as u8)
+    }
+
+    /// Present-buffer for softbuffer: 0x00RRGGBB per pixel, one u32 per
+    /// pixel. Fills the first `width * height` entries of `out` (extra
+    /// slack for a wider window is left untouched — the app clips
+    /// itself when the window is larger than the surface).
+    pub fn to_argb(&self, out: &mut [u32]) {
+        let w = self.width as usize;
+        let h = self.height as usize;
+        let pitch = self.pitch_pixels as usize;
+        debug_assert!(out.len() >= w * h);
+        for y in 0..h {
+            let row = &self.buf[y * pitch..y * pitch + w];
+            let out_row = &mut out[y * w..y * w + w];
+            for (o, &p) in out_row.iter_mut().zip(row.iter()) {
+                let (r, g, b) = self.unpack(p);
+                *o = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+            }
+        }
+    }
+
+    /// Present-buffer for a wgpu/pixels RGBA8 window.
+    pub fn to_rgba(&self, out: &mut [u8]) {
+        let w = self.width as usize;
+        let h = self.height as usize;
+        let pitch = self.pitch_pixels as usize;
+        debug_assert_eq!(out.len(), w * h * 4);
+        for y in 0..h {
+            let row = &self.buf[y * pitch..y * pitch + w];
+            for (x, &p) in row.iter().enumerate() {
+                let (r, g, b) = self.unpack(p);
+                let o = (y * w + x) * 4;
+                out[o] = r;
+                out[o + 1] = g;
+                out[o + 2] = b;
+                out[o + 3] = 0xff;
+            }
+        }
+    }
 }
 
 /// Byte-exact port of `FUN_005ce2d0` (349 bytes, 117 instructions) —
