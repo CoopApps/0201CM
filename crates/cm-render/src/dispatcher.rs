@@ -61,6 +61,7 @@
 
 use crate::screen_nav_back_next::build_nav_back_next;
 use crate::screen_news::{build_news_screen, NewsScreenState};
+use crate::screen_wire_batch3::WireToPool;
 use crate::widget_pool::GuiRecordPool;
 
 // ============================================================================
@@ -397,11 +398,15 @@ pub fn dispatch_global(
             DispatchResult::Handled
         }
         // 0x418 (`007491e0:0x00749aef`) — Latest Scores
-        0x418 => DispatchResult::TodoBuilder {
-            cmd: 0x418,
-            fn_addr: "FUN_00700f20",
-            note: "Match/Latest Scores (match.c)",
-        },
+        //
+        // LIVE ROUTE (Layer 3-wiring commit): instantiate the ported
+        // LatestScoresView with default slot values and hand it to
+        // its to_widget_pool impl (LAB_00701070 port).
+        0x418 => {
+            let v = cm_domain::screen_batch3::LatestScoresView::default();
+            let _ = v.to_widget_pool(pool);
+            DispatchResult::Handled
+        }
         // 0x42e (`007491e0:0x00749b31`) — unresolved manager sub-screen
         0x42e => DispatchResult::TodoBuilder {
             cmd: 0x42e,
@@ -481,18 +486,20 @@ pub fn dispatch_global(
             fn_addr: "FUN_008e3700",
             note: "tactic/team",
         },
-        // 0x3ec (`007491e0:0x00749f3d`) — Player & Staff Search
-        0x3ec => DispatchResult::TodoBuilder {
-            cmd: 0x3ec,
-            fn_addr: "FUN_00859250",
-            note: "Player & Staff Search (staff.c)",
-        },
-        // 0x3ef (`007491e0:0x00749f81`)
-        0x3ef => DispatchResult::TodoBuilder {
-            cmd: 0x3ef,
-            fn_addr: "FUN_006986a0",
-            note: "manager/job screen",
-        },
+        // 0x3ec (`007491e0:0x00749f3d`) — Manager History (staff.c)
+        // LIVE ROUTE (Layer 3-wiring commit).
+        0x3ec => {
+            let v = cm_domain::screen_batch3::ManagerHistoryView::default();
+            let _ = v.to_widget_pool(pool);
+            DispatchResult::Handled
+        }
+        // 0x3ef (`007491e0:0x00749f81`) — Go on Holiday dialog.
+        // LIVE ROUTE.
+        0x3ef => {
+            let d = cm_domain::screen_batch3::GoHolidayDialog { opened: true };
+            let _ = d.to_widget_pool(pool);
+            DispatchResult::Handled
+        }
         // 0x3f0 (`007491e0:0x00749fbf`) — Return-from-Holiday dialog
         0x3f0 => DispatchResult::TodoBuilder {
             cmd: 0x3f0,
@@ -516,18 +523,20 @@ pub fn dispatch_global(
             fn_addr: "FUN_00771810",
             note: "unresolved (takes widget payload)",
         },
-        // 0x3f3 (`007491e0:0x0074a107`) — FIFA rankings
-        0x3f3 => DispatchResult::TodoBuilder {
-            cmd: 0x3f3,
-            fn_addr: "FUN_004a2190",
-            note: "FIFA rankings (already ported as Screen::FifaRankings — Layer 3 wire-up pending)",
-        },
-        // 0x40c (`007491e0:0x0074a137`)
-        0x40c => DispatchResult::TodoBuilder {
-            cmd: 0x40c,
-            fn_addr: "FUN_004a28c0",
-            note: "competition sub-screen",
-        },
+        // 0x3f3 (`007491e0:0x0074a107`) — FIFA rankings. LIVE ROUTE
+        // (substrate only — row content awaits LAB_004a26d0 decode).
+        0x3f3 => {
+            let v = cm_domain::screen_batch3::FifaRankingsView::default();
+            let _ = v.to_widget_pool(pool);
+            DispatchResult::Handled
+        }
+        // 0x40c (`007491e0:0x0074a137`) — UEFA Coefficients. LIVE ROUTE
+        // (substrate only — row content awaits FUN_004a2900 decode).
+        0x40c => {
+            let v = cm_domain::screen_batch3::UefaCoefficientsView::default();
+            let _ = v.to_widget_pool(pool);
+            DispatchResult::Handled
+        }
         // 0x3f4 (`007491e0:0x0074a175`) — shared list/table entry 1
         0x3f4 => DispatchResult::TodoBuilder {
             cmd: 0x3f4,
@@ -993,6 +1002,34 @@ mod tests {
                 cmd,
                 r
             );
+        }
+    }
+
+    #[test]
+    fn dispatcher_cmd_0x418_latest_scores_produces_widgets() {
+        let mut pool = GuiRecordPool::new();
+        let mut state = DispatcherState::default();
+        let slot = widget_with_cmd(&mut pool, 0x418);
+        let before_widgets = pool.widgets.len();
+        let r = dispatch_global(&mut pool, &mut state, slot);
+        assert_eq!(r, DispatchResult::Handled);
+        // LatestScoresView::to_widget_pool adds 1 title + 1 back = 2
+        // widgets (2 areas + 1 sidebar).
+        assert!(pool.widgets.len() > before_widgets,
+            "cmd 0x418 must spawn at least one widget");
+        assert!(pool.widgets.iter().any(|w| w.descriptor.text == "Latest Scores"),
+            "Latest Scores title label must be present");
+    }
+
+    #[test]
+    fn dispatcher_batch3_cmds_all_handled() {
+        for &cmd in &[0x418i32, 0x3EC, 0x3EF, 0x3F3, 0x40C] {
+            let mut pool = GuiRecordPool::new();
+            let mut state = DispatcherState::default();
+            let slot = widget_with_cmd(&mut pool, cmd);
+            let r = dispatch_global(&mut pool, &mut state, slot);
+            assert_eq!(r, DispatchResult::Handled,
+                "cmd 0x{:x} expected Handled, got {:?}", cmd, r);
         }
     }
 

@@ -43,6 +43,7 @@ pub mod scrman;
 pub mod screen_menu_bar;
 pub mod screen_nav_back_next;
 pub mod screen_news;
+pub mod screen_wire_batch3;
 pub mod dispatcher;
 pub mod screens_faithful;
 pub mod packed_text;

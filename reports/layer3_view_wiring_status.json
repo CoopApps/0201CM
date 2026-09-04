@@ -1,0 +1,1015 @@
+[
+  {
+    "batch": 3,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch3.rs",
+    "views": [
+      "LatestScoresView",
+      "ManagerHistoryView",
+      "FifaRankingsView",
+      "UefaCoefficientsView"
+    ],
+    "entries": [
+      {
+        "addr": "004a2190",
+        "labs": [
+          "004a26d0",
+          "004a2880"
+        ],
+        "present": true,
+        "size": 307,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "004a28c0",
+        "labs": [],
+        "present": true,
+        "size": 242,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "006986a0",
+        "labs": [
+          "00698e70"
+        ],
+        "present": true,
+        "size": 139,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "00700f20",
+        "labs": [
+          "00701070",
+          "00701170"
+        ],
+        "present": true,
+        "size": 991,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00859250",
+        "labs": [
+          "008596b0",
+          "00876680"
+        ],
+        "present": true,
+        "size": 3422,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 4,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch4.rs",
+    "views": [
+      "SendAbuseView"
+    ],
+    "entries": [
+      {
+        "addr": "00698140",
+        "labs": [
+          "00698160",
+          "00698480"
+        ],
+        "present": true,
+        "size": 140,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00771810",
+        "labs": [
+          "007719b0"
+        ],
+        "present": true,
+        "size": 457,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "007dfac0",
+        "labs": [],
+        "present": true,
+        "size": 1157,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "007e7790",
+        "labs": [],
+        "present": true,
+        "size": 679,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 4
+  },
+  {
+    "batch": 5,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch5.rs",
+    "views": [
+      "AwardsView",
+      "CompetitionDashboardView"
+    ],
+    "entries": [
+      {
+        "addr": "00415010",
+        "labs": [
+          "004150e0",
+          "00417390"
+        ],
+        "present": true,
+        "size": 703,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00493e10",
+        "labs": [
+          "00494640",
+          "0049bf20",
+          "0049df30"
+        ],
+        "present": true,
+        "size": 2471,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "0074bf60",
+        "labs": [
+          "0074caec"
+        ],
+        "present": true,
+        "size": 10375,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 3
+  },
+  {
+    "batch": 6,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch6.rs",
+    "views": [
+      "ContractView",
+      "ClubHistoryView",
+      "CompetitionSpecificView"
+    ],
+    "entries": [
+      {
+        "addr": "0046ba80",
+        "labs": [
+          "0046bdf0",
+          "00470aa0"
+        ],
+        "present": true,
+        "size": 2278,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00476df0",
+        "labs": [
+          "00476ef0"
+        ],
+        "present": true,
+        "size": 929,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00494250",
+        "labs": [
+          "00494640",
+          "0049bf20",
+          "0049df30"
+        ],
+        "present": true,
+        "size": 2252,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      }
+    ],
+    "citations": 3
+  },
+  {
+    "batch": 7,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch7.rs",
+    "views": [
+      "MatchReportView"
+    ],
+    "entries": [
+      {
+        "addr": "00701240",
+        "labs": [
+          "007013d0",
+          "00701c20",
+          "00701fd0"
+        ],
+        "present": true,
+        "size": 903,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "007116b0",
+        "labs": [
+          "00711833",
+          "0094c46b"
+        ],
+        "present": true,
+        "size": 2471,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 2
+  },
+  {
+    "batch": 8,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch8.rs",
+    "views": [
+      "EntityListView",
+      "FindDialogView",
+      "WrittenHistoryView",
+      "SelectedLeaguesView",
+      "HallOfFameView"
+    ],
+    "entries": [
+      {
+        "addr": "0058a550",
+        "labs": [
+          "0058a740",
+          "0058c930"
+        ],
+        "present": true,
+        "size": 1258,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "0058cde0",
+        "labs": [
+          "0058d000",
+          "0058f420"
+        ],
+        "present": true,
+        "size": 1489,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "005dc5e0",
+        "labs": [
+          "005dcc50",
+          "005dce60"
+        ],
+        "present": true,
+        "size": 354,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "008053d0",
+        "labs": [
+          "00806640",
+          "00810ce0",
+          "00810e90"
+        ],
+        "present": true,
+        "size": 2482,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "0080fac0",
+        "labs": [
+          "008105f0"
+        ],
+        "present": true,
+        "size": 269,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 9,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch9.rs",
+    "views": [],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 10,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch10.rs",
+    "views": [
+      "Award417780View",
+      "Screen425e70View",
+      "Screen470bf0View",
+      "Screen472bf0View"
+    ],
+    "entries": [
+      {
+        "addr": "00417780",
+        "labs": [
+          "00417870"
+        ],
+        "present": true,
+        "size": 727,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00425e70",
+        "labs": [],
+        "present": true,
+        "size": 256,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "0046ad30",
+        "labs": [
+          "0046af77",
+          "0046b53d",
+          "0046b56b",
+          "0046b596",
+          "0046b5bb",
+          "0046b981",
+          "00474760",
+          "004751b0",
+          "004757c0",
+          "00944c0b"
+        ],
+        "present": true,
+        "size": 14238,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00470bf0",
+        "labs": [],
+        "present": true,
+        "size": 1181,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "00472bf0",
+        "labs": [
+          "00472c4b",
+          "00472d8a",
+          "004746b0"
+        ],
+        "present": true,
+        "size": 1631,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 11,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch11.rs",
+    "views": [
+      "ClubSubScreenAView",
+      "ClubCompSetupBView",
+      "ClubCompSetupCView",
+      "ContractOfferView",
+      "ContractOfferDirectView"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 12,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch12.rs",
+    "views": [
+      "ClubSquadView",
+      "RelatedClubListView",
+      "ClubRivalsView",
+      "FilterDialogView"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 13,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch13.rs",
+    "views": [
+      "CompLookupView",
+      "TwoKeyLookupView",
+      "ContractNegotiationView",
+      "ContractOfferView",
+      "ContractOfferComparatorView"
+    ],
+    "entries": [
+      {
+        "addr": "004a17f0",
+        "labs": [],
+        "present": false,
+        "class": "hard"
+      },
+      {
+        "addr": "004e2b80",
+        "labs": [
+          "004e2c70",
+          "004e2f80",
+          "0094612b"
+        ],
+        "present": true,
+        "size": 725,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "004e3300",
+        "labs": [
+          "004e3797",
+          "004e38d0",
+          "004e42b0"
+        ],
+        "present": true,
+        "size": 7549,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "004e4580",
+        "labs": [
+          "004e6680",
+          "004e6b40",
+          "00946148"
+        ],
+        "present": true,
+        "size": 3129,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "004e4960",
+        "labs": [
+          "004e4e04",
+          "004e6680",
+          "004e6b40",
+          "00946168"
+        ],
+        "present": true,
+        "size": 4191,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 14,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch14.rs",
+    "views": [
+      "Screen4Eb240View",
+      "Screen4Ebf60View",
+      "Screen4Ec550View",
+      "Screen4Fd1b0View",
+      "Screen548170View"
+    ],
+    "entries": [
+      {
+        "addr": "004eb240",
+        "labs": [
+          "004eba20"
+        ],
+        "present": true,
+        "size": 727,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "004ebf60",
+        "labs": [
+          "004ebfa0",
+          "004ec240"
+        ],
+        "present": true,
+        "size": 198,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "004ec550",
+        "labs": [
+          "004ec590",
+          "004fd0d0"
+        ],
+        "present": true,
+        "size": 204,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "004fd1b0",
+        "labs": [
+          "004fd1f0"
+        ],
+        "present": true,
+        "size": 203,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00548170",
+        "labs": [
+          "00548560",
+          "005488f0",
+          "00947086"
+        ],
+        "present": true,
+        "size": 3450,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 15,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch15.rs",
+    "views": [
+      "Screen574960View",
+      "Screen5792A0View",
+      "Screen57B9C0View",
+      "Screen57BB30View",
+      "Screen5928E0View"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 16,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch16.rs",
+    "views": [
+      "HistoryRecordsView",
+      "ManageObj51fView",
+      "ManageObj588View",
+      "ManageObj67eView",
+      "MatchAreaScreenView"
+    ],
+    "entries": [
+      {
+        "addr": "005dab70",
+        "labs": [
+          "005dad10",
+          "005db600",
+          "005db7c0"
+        ],
+        "present": true,
+        "size": 886,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00696fa0",
+        "labs": [
+          "006972b0"
+        ],
+        "present": true,
+        "size": 603,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "00697390",
+        "labs": [
+          "00697440"
+        ],
+        "present": true,
+        "size": 602,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00697c30",
+        "labs": [
+          "00697dc0",
+          "0094bf7b"
+        ],
+        "present": true,
+        "size": 1413,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "006fd6c0",
+        "labs": [
+          "006fd7b0"
+        ],
+        "present": true,
+        "size": 738,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 17,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch17.rs",
+    "views": [
+      "MatchDetailView",
+      "FixtureNavView",
+      "TrivialRegistrationView",
+      "MediaArticleView",
+      "SmallFourSlotView"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 18,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch18.rs",
+    "views": [
+      "TwoSelectorListView",
+      "LoaderGatedDialogView",
+      "DualSelectorScratchView",
+      "SeatScreenView",
+      "TwoPointerView"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 19,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch19.rs",
+    "views": [
+      "PersonBannerView",
+      "SearchResultDetailView",
+      "SetupBootstrapView",
+      "FiveZeroSlotView"
+    ],
+    "entries": [
+      {
+        "addr": "007cdb80",
+        "labs": [
+          "007cdc70"
+        ],
+        "present": true,
+        "size": 1033,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "007e7820",
+        "labs": [
+          "007e7897"
+        ],
+        "present": true,
+        "size": 4003,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "007faec0",
+        "labs": [
+          "007fb050",
+          "0095005e"
+        ],
+        "present": true,
+        "size": 1517,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00803e00",
+        "labs": [
+          "00804020",
+          "00804340",
+          "00808ae0",
+          "008096e0"
+        ],
+        "present": true,
+        "size": 1893,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "00808a70",
+        "labs": [
+          "00808ae0",
+          "008096e0"
+        ],
+        "present": true,
+        "size": 282,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 20,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch20.rs",
+    "views": [
+      "HumanManagerSetupView",
+      "Screen0080BBD0View",
+      "Screen0080CC20View",
+      "Screen008109C0View",
+      "Screen00810CA0View"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 21,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch21.rs",
+    "views": [
+      "SimpleScreen00877190View",
+      "TacticScreenView"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 22,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch22.rs",
+    "views": [
+      "TrainingPanelView",
+      "PlayerProfileView"
+    ],
+    "entries": [
+      {
+        "addr": "0088a850",
+        "labs": [
+          "004544e0",
+          "005a2af0",
+          "005a2bb0",
+          "006d1770",
+          "0088aaa0",
+          "0088aaa4",
+          "0088aaf5",
+          "0088ab18",
+          "0088aba1",
+          "0088acc0",
+          "0088acc4",
+          "0088aead",
+          "0088aeb1",
+          "0088b011",
+          "0088b015",
+          "0088b019",
+          "0088b04f",
+          "0088b06d",
+          "0088b08a",
+          "0088b0a8",
+          "0088b0b0",
+          "0088b19e",
+          "0088b23c",
+          "0088b2a9",
+          "0088b2da",
+          "0088b2f7",
+          "0088b7d1",
+          "0088b7d5",
+          "0088b80b",
+          "0088bb26",
+          "0088bf2c",
+          "0088bf30",
+          "0088bf51",
+          "0088c2d4",
+          "0088c36b",
+          "0088c378",
+          "0088c9fd",
+          "0088cadb",
+          "0088d60f",
+          "0088da1f",
+          "0088da5d",
+          "0088dc32",
+          "0088dcf4",
+          "0088dd07",
+          "0088dd65",
+          "0088def0",
+          "00890e50",
+          "00893500",
+          "0095239e"
+        ],
+        "present": true,
+        "size": 89583,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "008a20a0",
+        "labs": [
+          "008a2180",
+          "008a5030",
+          "008a63e0",
+          "0095261b"
+        ],
+        "present": true,
+        "size": 788,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "008a6420",
+        "labs": [
+          "008a6580",
+          "009526ae"
+        ],
+        "present": true,
+        "size": 1561,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "008d6310",
+        "labs": [],
+        "present": true,
+        "size": 1622,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "008d6510",
+        "labs": [],
+        "present": true,
+        "size": 1650,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 23,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch23.rs",
+    "views": [
+      "Screen008dd030View",
+      "Screen008df0c0View",
+      "Screen008e0760View"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 24,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch24.rs",
+    "views": [
+      "ContractOfferView",
+      "SmallThreeSlotView",
+      "WageOfferView",
+      "TwoSlot0710View",
+      "TwoSlot0B60View"
+    ],
+    "entries": [
+      {
+        "addr": "008dfb10",
+        "labs": [
+          "00953a6b"
+        ],
+        "present": true,
+        "size": 960,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "008dfc20",
+        "labs": [
+          "008e01d0",
+          "00953a8b"
+        ],
+        "present": true,
+        "size": 677,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "008dfdf0",
+        "labs": [
+          "008e9e60",
+          "00953acb"
+        ],
+        "present": true,
+        "size": 3360,
+        "has_lab_analysis": true,
+        "entry_analyzed": false,
+        "class": "easy"
+      },
+      {
+        "addr": "008e0710",
+        "labs": [],
+        "present": true,
+        "size": 247,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      },
+      {
+        "addr": "008e0b60",
+        "labs": [
+          "008e0f30"
+        ],
+        "present": true,
+        "size": 248,
+        "has_lab_analysis": false,
+        "entry_analyzed": false,
+        "class": "medium"
+      }
+    ],
+    "citations": 5
+  },
+  {
+    "batch": 25,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch25.rs",
+    "views": [
+      "Screen008e26a0View",
+      "Screen008e26f0View",
+      "Screen008e3320View",
+      "Screen008e50e0View"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 26,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch26.rs",
+    "views": [
+      "Screen008e6cc0View",
+      "Screen008e7270View",
+      "Screen008e78d0View",
+      "Screen008e8590View"
+    ],
+    "entries": [],
+    "citations": 0
+  },
+  {
+    "batch": 27,
+    "path": "D:\\cm0102-rs\\crates\\cm-domain\\src\\screen_batch27.rs",
+    "views": [
+      "GenericEightSlotView",
+      "RecallLoanView",
+      "GuardedLoaderView"
+    ],
+    "entries": [],
+    "citations": 0
+  }
+]
