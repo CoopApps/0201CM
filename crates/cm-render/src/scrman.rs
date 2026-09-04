@@ -759,6 +759,67 @@ pub struct ScreenManager {
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
 unsafe impl Send for ScreenManager {}
 
+/// External calls the pump makes into the rest of the exe. Callers own
+/// the state these calls mutate (network buffer / UI / peer table) and
+/// inject one at pump time via `ScreenManager::pump_with_hooks`.
+///
+/// The default impls are the *safe no-op* the offline test harness uses;
+/// the app-side hook wires them to real winsock / UI / vtable calls.
+///
+/// **Which cases route here?**
+/// - `invoke_event` — every dispatch iteration (vtable[2] on current record).
+/// - `invoke_cleanup1` — Cases -1, -2, -3, -9, -10 (record `+0x04`).
+/// - `invoke_cleanup2` — pump_finalize per record (record `+0x0C`).
+/// - `on_default_cleanup` — Case 0 (FUN_007eaac0 gate).
+/// - `on_bag_free` — Case -10 (default impl drops `Vec` payloads).
+/// - `on_external_case` — Cases -5, -6, -7, -8, -9, -10, -12, -13 (observed).
+pub trait ScrmanHooks {
+    /// Vtable[2] on the current record — the source of the dispatch code
+    /// (C L179: `local_434 = (**(code**)(current+8))(local_438)`). Returns
+    /// the raw i32 the pump switches on.
+    ///
+    /// `local_438` is the `sVar3` peer-event index (0xFFFFFFFF when no
+    /// pending peer event); pass through unchanged.
+    fn invoke_event(&mut self, mgr: &mut ScreenManager, record_id: RecordId, local_438: u32) -> i32;
+
+    /// Vtable[1] on a record — the cleanup1 hook (C L117-118, L235, L292,
+    /// L300, L309, L382). The default reads `ScreenRecord.cleanup` (which
+    /// mirrors exe record+0x04) and calls it; override to intercept.
+    fn invoke_cleanup1(&mut self, mgr: &mut ScreenManager, record_id: RecordId) {
+        if let Some(f) = mgr.record(record_id).and_then(|r| r.cleanup) {
+            f(mgr);
+        }
+    }
+
+    /// Cleanup2 hook — the `record + 0x0C` fn ptr called during
+    /// finalization walk (C L622-624, L654-656). Rust-side `cleanup2`
+    /// slot isn't yet stored on `ScreenRecord`; hook-driven for now.
+    fn invoke_cleanup2(&mut self, _mgr: &mut ScreenManager, _record_id: RecordId) {}
+
+    /// Default case (C L221-226): `if local_438 != -1 && slot+0xb == 0`
+    /// call `FUN_007eaac0(0, 0)`. External-only; wire in the hook.
+    fn on_default_cleanup(&mut self, _mgr: &mut ScreenManager) {}
+
+    /// Case -10 bag-free walk (C L251-262): for each of the 60 bag entries
+    /// on `record_id`, if `entry.owned` was set, call `FUN_00933d24` (free).
+    /// Rust's `Vec<u8>` Drop handles the free automatically; the hook fires
+    /// so tests can count the walk.
+    fn on_bag_free(&mut self, mgr: &mut ScreenManager, record_id: RecordId) {
+        // Default impl: drop bag payloads (matches exe semantics).
+        if let Some(rec) = mgr.record_mut(record_id) {
+            for e in rec.slot_bag.iter_mut() { e.value = None; e.owned = false; }
+        }
+    }
+
+    /// Fires for the seven cases whose full body needs externals not yet
+    /// ported (-5 restore-uVar4 + LAB_007e52a2 broadcast, -6 sibling-lift,
+    /// -7 finalization exit gate, -8 fanout, -9 prev-chain-unwind, -10
+    /// (also invoked in addition to bag-free), -12 net-error, -13 pop-to-oldest).
+    /// The dispatch mutations for these cases are *not* applied; the hook
+    /// receives the code and can either substitute state or record it.
+    fn on_external_case(&mut self, _mgr: &mut ScreenManager, _code: PumpDispatchResult) {}
+}
+
 impl ScreenManager {
     /// The Layout used to alloc/dealloc `bytes`.
     fn layout() -> Layout {
@@ -1304,6 +1365,225 @@ impl ScreenManager {
                 rec.slot_bag[i] = SlotBagEntry { value: Some(bytes), owned: true };
             }
         }
+    }
+
+    // ------------------------------------------------------------
+    // Commit 4d — pump dispatch cases + finalization + public pump().
+    // ------------------------------------------------------------
+    //
+    // The exe's pump (`FUN_007e4940`, 688-line decomp) is a tight loop that
+    // (a) selects the current slot + record, (b) calls the current record's
+    // vtable[2] event handler for a dispatch code, (c) applies one of 14
+    // case bodies to mutate the slot's linked list, (d) tallies completion,
+    // (e) on -7 or all-slots-complete falls into finalization. The full
+    // control flow depends on ~15 unported externals (FUN_007eaac0 default-
+    // cleanup, FUN_00933d24 bag-free, FUN_005493b0 pre-call gate, FUN_00762b90
+    // network-send, FUN_005d1c30 error msgbox, FUN_007e7b50 aux free, and
+    // several vtable calls into per-screen event handlers).
+    //
+    // What this commit ports byte-faithfully:
+    // - Case bodies for **-1, -2, -3, -4, -11** (chain-only manipulation on
+    //   the Rust-side ScreenRecord.{prev,next,param_4} + slot ACTIVE_FLAG).
+    // - Case **default (0)** external-call condition (guard exact).
+    // - Case **-10** cleanup + bag-free entry point (bag-free delegated to hook).
+    // - Case **-7** pump-exit → finalization gate.
+    // - Finalization walk shape (L613-680): per-slot head→next chain with
+    //   cleanup2 hook per record, then trailing state writes L681-685.
+    //
+    // What this commit trait-hooks (unported externals):
+    // - Cases **-5, -6, -8, -9, -12, -13** — LAB_007e52a2 broadcast /
+    //   network-error / prev-chain unwind. `ScrmanHooks::on_external_case`
+    //   fires so the harness can observe them; chain manipulation is not
+    //   applied because it needs FUN_00933d24 + FUN_007eaac0 semantics we
+    //   don't yet own.
+    // - Cleanup1 (record+0x04, vtable[1]) — default impl calls the Rust-side
+    //   `ScreenRecord.cleanup` fn ptr; hook override is available for tests.
+    // - Cleanup2 (record+0x0C, "cleanup2") — hook-only, no default.
+    // - Event handler (record+0x08, vtable[2]) — hook-only, no default; the
+    //   pump body drives on the returned i32 (mapped through
+    //   `PumpDispatchResult::from_raw`).
+    //
+    // What this commit defers (documented STOP-AND-REPORT):
+    // - L91-96 network-recv prologue (needs FUN_00762e80 — 4b-net).
+    // - L358-379 select-next-slot-from-peer branch (needs FUN_0054dc60 +
+    //   FUN_00549210 + winsock peer table).
+    // - L497-509 all-slots-quiescent detection (needs correct entry ACKED
+    //   walk under real per-frame calls — the shape is here but the exit
+    //   condition uses hooks.should_exit).
+    // - L516-611 finalization "Processing... Please Wait" broadcast (needs
+    //   FUN_00762b90 net-send + string table copy).
+
+    /// Apply one dispatch case's body. Returns `true` iff the pump should
+    /// exit its loop (only `CaseNeg7` returns `true`; all other cases keep
+    /// spinning per the exe's `LAB_007e5550` completion tally).
+    ///
+    /// **NB**: this method assumes `current_slot()` has been set to the slot
+    /// whose record chain is being manipulated (matches C L102 `param_1[0x182b]`).
+    pub fn pump_dispatch_case(
+        &mut self,
+        code: PumpDispatchResult,
+        local_438: u32,
+        hooks: &mut dyn ScrmanHooks,
+    ) -> bool {
+        let slot = self.current_slot() as usize;
+        if slot >= SLOT_COUNT { return true; }
+        let slot_base = slot * SLOT_STRIDE;
+        let current = self.slot_current_id(slot);
+
+        match code {
+            PumpDispatchResult::Case0 => {
+                // C L221-226: default case. Guard exact.
+                if local_438 != 0xFFFF_FFFF
+                    && self.get_u32(slot_base + off::SLOT_ACTIVE_FLAG) == 0
+                {
+                    hooks.on_default_cleanup(self);
+                }
+            }
+            PumpDispatchResult::CaseNeg1 => {
+                // C L307-318: cleanup1 then if slot.head != 0, current = head; active=1.
+                if let Some(cid) = current { hooks.invoke_cleanup1(self, cid); }
+                if let Some(hid) = self.slot_head_id(slot) {
+                    self.slot_write_id(slot, off::SLOT_CURRENT_ID, Some(hid));
+                    self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);
+                }
+            }
+            PumpDispatchResult::CaseNeg2 => {
+                // C L298-306: cleanup1 then follow current.prev (`+500` = 0x1F4).
+                // Guard: current.param_4 must be zero (non-modal).
+                if let Some(cid) = current { hooks.invoke_cleanup1(self, cid); }
+                let (prev, cur_modal) = current
+                    .and_then(|c| self.records.get(&c))
+                    .map(|r| (r.prev, r.param_4 != 0))
+                    .unwrap_or((None, false));
+                if let Some(pid) = prev {
+                    if !cur_modal {
+                        self.slot_write_id(slot, off::SLOT_CURRENT_ID, Some(pid));
+                        self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);
+                    }
+                }
+            }
+            PumpDispatchResult::CaseNeg3 => {
+                // C L290-297: cleanup1 then follow current.next (`+0x1F8`).
+                // Guard: iVar8 != 0 (no param_4 check for -3 in decomp).
+                if let Some(cid) = current { hooks.invoke_cleanup1(self, cid); }
+                let next = current
+                    .and_then(|c| self.records.get(&c))
+                    .and_then(|r| r.next);
+                if let Some(nid) = next {
+                    self.slot_write_id(slot, off::SLOT_CURRENT_ID, Some(nid));
+                    self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);
+                }
+            }
+            PumpDispatchResult::CaseNeg4 | PumpDispatchResult::CaseNeg11 => {
+                // C L227-232: just set slot ACTIVE_FLAG=1.
+                self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);
+            }
+            PumpDispatchResult::CaseNeg10 => {
+                // C L233-287: cleanup1, then walk down current->prev chain
+                // freeing each record's owned bag entries + the record itself.
+                // Complex; delegate the walk to hooks + do the bag-free default.
+                if let Some(cid) = current {
+                    hooks.invoke_cleanup1(self, cid);
+                    hooks.on_bag_free(self, cid);
+                }
+                hooks.on_external_case(self, code);
+                // Set ACTIVE_FLAG so LAB_007e5550 sees completion (C L275-276).
+                self.set_u32(slot_base + off::SLOT_ACTIVE_FLAG, 1);
+            }
+            PumpDispatchResult::CaseNeg5
+            | PumpDispatchResult::CaseNeg6
+            | PumpDispatchResult::CaseNeg8
+            | PumpDispatchResult::CaseNeg9
+            | PumpDispatchResult::CaseNeg12
+            | PumpDispatchResult::CaseNeg13 => {
+                // Body needs unported externals; observe via hook only.
+                hooks.on_external_case(self, code);
+            }
+            PumpDispatchResult::CaseNeg7 => {
+                // C L514: `if bVar1 || local_434 == -7 goto LAB_007e5613`
+                // → falls into finalization. Signal exit.
+                hooks.on_external_case(self, code);
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Finalization pass — walks each populated slot's linked-list from head
+    /// to tail calling cleanup2 on every record (C L613-680). Then applies
+    /// trailing state writes at C L681-685.
+    ///
+    /// The exe's finalization also broadcasts a "Processing... Please Wait"
+    /// packet (L516-611) via FUN_00762b90; that is deferred (needs 4b-net).
+    ///
+    /// Instruction count for L613-680: ~68 lines of C (per-slot loop with
+    /// nested cleanup2 walk + FUN_005493b0 gate + FUN_007e6e00 tick).
+    pub fn pump_finalize(&mut self, hooks: &mut dyn ScrmanHooks) {
+        // L613-680: per-slot walk. We port the SHAPE (head→next chain,
+        // cleanup2 per record); FUN_005493b0 / FUN_007e6e00 are trait-hooked.
+        for slot in 0..SLOT_COUNT {
+            if self.slot_depth(slot) == 0 { continue; }
+            let mut it = self.slot_head_id(slot);
+            while let Some(rid) = it {
+                hooks.invoke_cleanup2(self, rid);
+                it = self.records.get(&rid).and_then(|r| r.next);
+            }
+        }
+        // L681-685 trailing state writes (byte-exact from asm).
+        self.set_u16(off::CURRENT_SLOT, 0);          // L681
+        self.set_u16(off::PUMP_WORD_0X13256A, 1);    // L682 `[0x992b5] = 1`
+        self.set_u16(off::PUMP_WORD_0X13256C, 0);    // L683
+        self.set_u16(off::PUMP_ACTIVE_LO, 0);        // L684
+        self.set_u16(off::PUMP_ACTIVE_HI, 0);        // L685
+    }
+
+    /// Full pump tick — assembles prologue + entry-prep + dispatch loop +
+    /// finalization. Returns the last dispatch code (`CaseNeg5` per C L686
+    /// signals the "return true" path; `CaseNeg7` reaches finalization via
+    /// the explicit exit gate).
+    ///
+    /// The loop drives once per current record and exits on:
+    /// - CaseNeg7 (explicit finalization gate, C L514)
+    /// - CaseNeg5 (soft-abort path — matches C L686 `return local_434 == -5`)
+    /// - Empty current (nothing to dispatch on)
+    /// - A safety cap of 4096 iterations (real pump has more complex exit
+    ///   condition at L497-509; deferred).
+    pub fn pump_with_hooks(&mut self, hooks: &mut dyn ScrmanHooks) -> PumpDispatchResult {
+        self.pump_prologue();
+        self.pump_entry_prep();
+        // Network prologue L91-96 — DEFERRED (4b-net).
+
+        let mut last_code = PumpDispatchResult::Case0;
+        let mut iter = 0u32;
+        loop {
+            iter += 1;
+            if iter > 4096 { break; }
+            let slot = self.current_slot() as usize;
+            if slot >= SLOT_COUNT { break; }
+            let cid = match self.slot_current_id(slot) {
+                Some(c) => c,
+                None => break,
+            };
+            let raw = hooks.invoke_event(self, cid, 0xFFFF_FFFF);
+            last_code = PumpDispatchResult::from_raw(raw);
+            let exit = self.pump_dispatch_case(last_code, 0xFFFF_FFFF, hooks);
+            if exit { break; }
+            if last_code == PumpDispatchResult::CaseNeg5 { break; }
+        }
+
+        self.pump_finalize(hooks);
+        last_code
+    }
+
+    /// Convenience no-op driver: pumps with a hook that immediately returns
+    /// -7 (finalization exit), so the loop runs prologue → 1 dispatch → finalize.
+    /// Real callers use `pump_with_hooks` with an app-provided ScrmanHooks impl.
+    pub fn pump(&mut self) -> PumpDispatchResult {
+        struct ExitImmediately;
+        impl ScrmanHooks for ExitImmediately {
+            fn invoke_event(&mut self, _: &mut ScreenManager, _: RecordId, _: u32) -> i32 { -7 }
+        }
+        self.pump_with_hooks(&mut ExitImmediately)
     }
 
     /// Immutable view of the network-buffer sub-object at `+0x302a`.
@@ -2213,6 +2493,301 @@ mod tests {
             assert!(m.slot_head_id(s).is_none());
             assert!(m.slot_current_id(s).is_none());
         }
+    }
+
+    // ---------- commit 4d: pump dispatch cases + pump_finalize + pump() ----------
+
+    /// Test hook: scriptable event returns + counters for cleanup1/cleanup2/
+    /// on_default_cleanup / on_bag_free / on_external_case.
+    #[derive(Default)]
+    struct TestHooks {
+        scripted_codes: Vec<i32>,
+        cleanup1_hits: Vec<RecordId>,
+        cleanup2_hits: Vec<RecordId>,
+        default_hits: u32,
+        bag_free_hits: Vec<RecordId>,
+        external_hits: Vec<PumpDispatchResult>,
+        event_calls: Vec<(RecordId, u32)>,
+    }
+    impl ScrmanHooks for TestHooks {
+        fn invoke_event(&mut self, _m: &mut ScreenManager, rid: RecordId, l438: u32) -> i32 {
+            self.event_calls.push((rid, l438));
+            if self.scripted_codes.is_empty() { -7 }
+            else { self.scripted_codes.remove(0) }
+        }
+        fn invoke_cleanup1(&mut self, _m: &mut ScreenManager, rid: RecordId) {
+            self.cleanup1_hits.push(rid);
+        }
+        fn invoke_cleanup2(&mut self, _m: &mut ScreenManager, rid: RecordId) {
+            self.cleanup2_hits.push(rid);
+        }
+        fn on_default_cleanup(&mut self, _m: &mut ScreenManager) { self.default_hits += 1; }
+        fn on_bag_free(&mut self, _m: &mut ScreenManager, rid: RecordId) {
+            self.bag_free_hits.push(rid);
+        }
+        fn on_external_case(&mut self, _m: &mut ScreenManager, c: PumpDispatchResult) {
+            self.external_hits.push(c);
+        }
+    }
+
+    /// Case -1: pop-to-root — after dispatch, current == slot head + ACTIVE_FLAG=1.
+    #[test]
+    fn pump_case_neg1_pops_to_slot_root() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 0, 0);
+        m.push_screen(3, 1, None, 0, 0);
+        let head = m.slot_head_id(slot).unwrap();
+        let tail = m.slot_current_id(slot).unwrap();
+        assert_ne!(head, tail);
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 0);
+        let mut hooks = TestHooks::default();
+        let exit = m.pump_dispatch_case(PumpDispatchResult::CaseNeg1, 0xFFFF_FFFF, &mut hooks);
+        assert!(!exit, "-1 does not exit");
+        assert_eq!(m.slot_current_id(slot), Some(head), "current pulled to head");
+        assert_eq!(m.get_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG), 1, "ACTIVE_FLAG=1");
+        assert_eq!(hooks.cleanup1_hits, vec![tail], "cleanup1 fired on old current");
+    }
+
+    /// Case -2: pop via prev — current moves to prev, ACTIVE_FLAG=1.
+    #[test]
+    fn pump_case_neg2_pops_via_prev() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 0, 0);
+        let first = m.slot_head_id(slot).unwrap();
+        let second = m.slot_current_id(slot).unwrap();
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 0);
+        let mut hooks = TestHooks::default();
+        let exit = m.pump_dispatch_case(PumpDispatchResult::CaseNeg2, 0xFFFF_FFFF, &mut hooks);
+        assert!(!exit);
+        assert_eq!(m.slot_current_id(slot), Some(first), "current moved to prev");
+        assert_eq!(m.get_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG), 1);
+        assert_eq!(hooks.cleanup1_hits, vec![second]);
+    }
+
+    /// Case -2 modal guard: if current.param_4 != 0, do NOT pop.
+    #[test]
+    fn pump_case_neg2_modal_current_blocks_pop() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 1 /* param_4 modal */, 0);
+        let modal = m.slot_current_id(slot).unwrap();
+        let mut hooks = TestHooks::default();
+        m.pump_dispatch_case(PumpDispatchResult::CaseNeg2, 0xFFFF_FFFF, &mut hooks);
+        // Modal blocks: current stays.
+        assert_eq!(m.slot_current_id(slot), Some(modal), "modal blocks -2 pop");
+    }
+
+    /// Case -3: pop via next — current moves to next.
+    #[test]
+    fn pump_case_neg3_pops_via_next() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 0, 0);
+        let first = m.slot_head_id(slot).unwrap();
+        let second = m.slot_tail_id(slot).unwrap();
+        // Move current back to first so `next` walks forward.
+        m.slot_write_id(slot, off::SLOT_CURRENT_ID, Some(first));
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 0);
+        let mut hooks = TestHooks::default();
+        m.pump_dispatch_case(PumpDispatchResult::CaseNeg3, 0xFFFF_FFFF, &mut hooks);
+        assert_eq!(m.slot_current_id(slot), Some(second));
+        assert_eq!(m.get_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG), 1);
+        assert_eq!(hooks.cleanup1_hits, vec![first]);
+    }
+
+    /// Case -4 and -11 both set ACTIVE_FLAG=1 with no chain change.
+    #[test]
+    fn pump_case_neg4_and_neg11_set_active_flag() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 0);
+        let mut hooks = TestHooks::default();
+        m.pump_dispatch_case(PumpDispatchResult::CaseNeg4, 0xFFFF_FFFF, &mut hooks);
+        assert_eq!(m.get_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG), 1);
+        assert!(hooks.cleanup1_hits.is_empty(), "-4 does not call cleanup1");
+
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 0);
+        m.pump_dispatch_case(PumpDispatchResult::CaseNeg11, 0xFFFF_FFFF, &mut hooks);
+        assert_eq!(m.get_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG), 1);
+    }
+
+    /// Case -10: cleanup1 + on_bag_free hook + on_external_case fires.
+    #[test]
+    fn pump_case_neg10_calls_cleanup_and_bag_free() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        let cur = m.slot_current_id(slot).unwrap();
+        // Seed a bag entry so the default on_bag_free clears it.
+        m.set_slot_bag(slot, 0, b"payload".to_vec());
+        assert!(m.record(cur).unwrap().slot_bag[0].value.is_some());
+        let mut hooks = TestHooks::default();
+        m.pump_dispatch_case(PumpDispatchResult::CaseNeg10, 0xFFFF_FFFF, &mut hooks);
+        assert_eq!(hooks.cleanup1_hits, vec![cur]);
+        assert_eq!(hooks.bag_free_hits, vec![cur]);
+        assert_eq!(hooks.external_hits, vec![PumpDispatchResult::CaseNeg10]);
+        // The TestHooks override doesn't drop payloads (it only counts) — the
+        // *default* on_bag_free impl does. Verify with a hook that uses defaults.
+        struct DefaultOnly;
+        impl ScrmanHooks for DefaultOnly {
+            fn invoke_event(&mut self, _: &mut ScreenManager, _: RecordId, _: u32) -> i32 { -7 }
+        }
+        let mut m2 = ScreenManager::new();
+        let slot2 = m2.current_slot() as usize;
+        m2.push_screen(1, 1, None, 0, 0);
+        let cur2 = m2.slot_current_id(slot2).unwrap();
+        m2.set_slot_bag(slot2, 0, b"payload".to_vec());
+        assert!(m2.record(cur2).unwrap().slot_bag[0].value.is_some());
+        let mut h = DefaultOnly;
+        m2.pump_dispatch_case(PumpDispatchResult::CaseNeg10, 0xFFFF_FFFF, &mut h);
+        assert!(m2.record(cur2).unwrap().slot_bag[0].value.is_none(),
+                "default on_bag_free drops payload");
+    }
+
+    /// Case 0 (default): FUN_007eaac0 hook fires iff `local_438 != -1 && slot.ACTIVE_FLAG == 0`.
+    #[test]
+    fn pump_case_default_fires_hook_only_when_guarded() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 0);
+        let mut hooks = TestHooks::default();
+
+        // local_438 = -1 (0xFFFFFFFF) → guard fails, no hit.
+        m.pump_dispatch_case(PumpDispatchResult::Case0, 0xFFFF_FFFF, &mut hooks);
+        assert_eq!(hooks.default_hits, 0, "guard rejects local_438 == -1");
+
+        // local_438 = 0, slot ACTIVE_FLAG = 0 → guard passes, hit.
+        m.pump_dispatch_case(PumpDispatchResult::Case0, 0, &mut hooks);
+        assert_eq!(hooks.default_hits, 1, "guard passes with local_438=0");
+
+        // local_438 = 0, slot ACTIVE_FLAG = 1 → guard fails, no additional hit.
+        m.set_u32(slot * SLOT_STRIDE + off::SLOT_ACTIVE_FLAG, 1);
+        m.pump_dispatch_case(PumpDispatchResult::Case0, 0, &mut hooks);
+        assert_eq!(hooks.default_hits, 1, "ACTIVE_FLAG=1 blocks hook");
+    }
+
+    /// Case -7: exit signal — dispatch returns true.
+    #[test]
+    fn pump_case_neg7_exits() {
+        let mut m = ScreenManager::new();
+        let mut hooks = TestHooks::default();
+        let exit = m.pump_dispatch_case(PumpDispatchResult::CaseNeg7, 0xFFFF_FFFF, &mut hooks);
+        assert!(exit, "-7 signals loop exit");
+        assert_eq!(hooks.external_hits, vec![PumpDispatchResult::CaseNeg7]);
+    }
+
+    /// External-only cases still fire the hook without mutating chain state.
+    #[test]
+    fn pump_external_only_cases_observe_via_hook() {
+        for &c in &[PumpDispatchResult::CaseNeg5, PumpDispatchResult::CaseNeg6,
+                    PumpDispatchResult::CaseNeg8, PumpDispatchResult::CaseNeg9,
+                    PumpDispatchResult::CaseNeg12, PumpDispatchResult::CaseNeg13] {
+            let mut m = ScreenManager::new();
+            let slot = m.current_slot() as usize;
+            m.push_screen(1, 1, None, 0, 0);
+            m.push_screen(2, 1, None, 0, 0);
+            let cur_before = m.slot_current_id(slot);
+            let mut hooks = TestHooks::default();
+            m.pump_dispatch_case(c, 0xFFFF_FFFF, &mut hooks);
+            assert_eq!(hooks.external_hits, vec![c], "code {:?}", c);
+            // Chain unchanged (these cases hooks-only in this port).
+            assert_eq!(m.slot_current_id(slot), cur_before, "code {:?}", c);
+        }
+    }
+
+    /// pump_finalize walks each slot's head→next chain calling cleanup2, then
+    /// writes the trailing state (CURRENT_SLOT=0, PUMP_ACTIVE=0, etc.).
+    #[test]
+    fn pump_finalize_walks_slot_and_clears_state() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 0, 0);
+        m.push_screen(3, 1, None, 0, 0);
+        // Slot 0 has depth 1 post-ctor, so it will be walked.
+        // Bump SLOT_DEPTH to reflect our records (finalize gates on slot_depth > 0).
+        assert!(m.slot_depth(slot) >= 1);
+        let head = m.slot_head_id(slot).unwrap();
+        let mid = m.record(head).unwrap().next.unwrap();
+        let tail = m.record(mid).unwrap().next.unwrap();
+
+        // Preload pump-active so we can see finalize clear it.
+        m.pump_preamble();
+        assert_eq!(m.pump_active(), 1);
+
+        let mut hooks = TestHooks::default();
+        m.pump_finalize(&mut hooks);
+        assert_eq!(hooks.cleanup2_hits, vec![head, mid, tail], "head→next chain walk");
+        // Trailing state writes:
+        assert_eq!(m.current_slot(), 0);
+        assert_eq!(m.pump_active(), 0);
+        assert_eq!(m.get_u16(off::PUMP_WORD_0X13256A), 1);
+        assert_eq!(m.get_u16(off::PUMP_WORD_0X13256C), 0);
+    }
+
+    /// pump() convenience: prologue runs, ExitImmediately drives one dispatch
+    /// that returns -7 (finalization exit), and finalize clears pump_active.
+    #[test]
+    fn pump_full_tick_runs_prologue_and_finalize() {
+        let mut m = ScreenManager::new();
+        m.push_screen(1, 1, None, 0, 0);
+        assert_eq!(m.pump_active(), 0);
+
+        let code = m.pump();
+        // The convenience hook returns -7 → dispatch exits → finalize runs.
+        assert_eq!(code, PumpDispatchResult::CaseNeg7);
+        // Finalize cleared pump_active back to 0:
+        assert_eq!(m.pump_active(), 0);
+        // Snapshot time was written by prologue:
+        assert!(m.last_time_snapshot() > 0);
+    }
+
+    /// pump_with_hooks: scripted event codes drive the loop, chain manipulation
+    /// occurs, finalization runs cleanup2 on each record.
+    #[test]
+    fn pump_with_hooks_scripted_drive_end_to_end() {
+        let mut m = ScreenManager::new();
+        let slot = m.current_slot() as usize;
+        m.push_screen(1, 1, None, 0, 0);
+        m.push_screen(2, 1, None, 0, 0);
+        m.push_screen(3, 1, None, 0, 0);
+        let head = m.slot_head_id(slot).unwrap();
+
+        // Script: -1 (pop-to-root) then -7 (exit).
+        let mut hooks = TestHooks {
+            scripted_codes: vec![-1, -7],
+            ..Default::default()
+        };
+        let last = m.pump_with_hooks(&mut hooks);
+        assert_eq!(last, PumpDispatchResult::CaseNeg7);
+        assert_eq!(hooks.event_calls.len(), 2, "two event calls: -1 then -7");
+        // -1 pulled current to head (before -7 arrived + finalize):
+        // (finalize doesn't touch SLOT_CURRENT_ID; only CURRENT_SLOT global)
+        assert_eq!(m.slot_current_id(slot), Some(head), "after -1, current == head");
+        // Finalize walked the chain:
+        assert_eq!(hooks.cleanup2_hits.len(), 3, "3 records visited by finalize");
+    }
+
+    /// pump_with_hooks safety cap: if the hook never returns -5/-7, the loop
+    /// eventually bails at 4096 iterations rather than looping forever.
+    #[test]
+    fn pump_with_hooks_safety_cap_terminates() {
+        let mut m = ScreenManager::new();
+        m.push_screen(1, 1, None, 0, 0);
+        struct AlwaysZero;
+        impl ScrmanHooks for AlwaysZero {
+            fn invoke_event(&mut self, _: &mut ScreenManager, _: RecordId, _: u32) -> i32 { 0 }
+        }
+        let mut h = AlwaysZero;
+        let last = m.pump_with_hooks(&mut h);
+        // Case0 never exits — loop hit the safety cap; last_code = Case0.
+        assert_eq!(last, PumpDispatchResult::Case0);
     }
 
     /// Preamble does not corrupt neighbouring header state: sub-object marker
