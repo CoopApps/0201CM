@@ -18,8 +18,11 @@
 //! `crates/cm-render/tests/dispatch_pool_render.rs`.
 
 use cm_render::dispatcher::{dispatch_club, dispatch_global, DispatchResult, DispatcherState};
+use cm_render::font::Fonts;
 use cm_render::packed::PackedSurface;
 use cm_render::packed_glyph::PixelFont;
+use cm_render::packed_panel::{draw_panel, PanelPalette, P_BEVEL, P_DARKEN, P_SOLID_FILL, P_VGRADIENT};
+use cm_render::packed_text::{draw_wrapped_text, W_LEFT, W_TOP, W_WRAP};
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
 use cm_render::screen_pre_boot;
@@ -29,6 +32,144 @@ use cm_render::Surface;
 
 use crate::game_state::{ManagerName, SelectLeaguesState, StartSeasonState};
 use crate::Screen;
+
+/// Everything `draw_sidebar_packed` needs to paint the persistent in-game
+/// sidebar. Built by `App::render` from `world` + `game` (only present once
+/// a game is loaded); pre-boot passes `None` and no sidebar is drawn.
+pub struct SidebarCtx {
+    pub bar: cm_domain::menu::MenuBar,
+    pub open: Option<usize>,
+    pub date: cm_domain::GameDate,
+    pub phase: u8,
+}
+
+/// Draw a horizontal filled triangle centred in `rect` — left-pointing when
+/// `left`, else right-pointing — directly into the packed surface. Byte-for-
+/// byte the same span layout as `screens::draw_triangle` (real capture:
+/// ~8×7 px, `hh = 4`), but writing packed `colour` via clipped horizontal
+/// `draw_line` spans instead of `Surface::fill_rect`.
+fn draw_triangle_packed(s: &mut PackedSurface, rect: (i32, i32, i32, i32), left: bool, colour: u16) {
+    let (l, t, r, b) = rect;
+    let hh = 4i32;
+    let cx = (l + r) / 2;
+    let cy = (t + b) / 2;
+    for dy in -hh..=hh {
+        let w = hh - dy.abs();
+        let (x0, x1) = if left {
+            let xr = cx + hh / 2;
+            (xr - w, xr)
+        } else {
+            let xl = cx - hh / 2;
+            (xl, xl + w)
+        };
+        // style=2 → solid horizontal span, pixels x0..=x1 at row cy+dy.
+        s.draw_line(x0, cy + dy, x1, cy + dy, 2, colour);
+    }
+}
+
+/// Port of `screens::menu_sidebar` onto the packed (byte-exact) pipeline.
+///
+/// Mirrors every draw of the `Surface` reference implementation, translated
+/// to the packed primitives:
+///   * old `F_VGRADIENT` (0x8) → `P_VGRADIENT`; `F_BEVEL` (0x20) → `P_BEVEL`;
+///     `F_SOLID_FILL` (0x10) → `P_SOLID_FILL`; `F_TRANSPARENT` (0x2, dim-60%)
+///     → `P_DARKEN` (same bit).
+///   * old text `F_NOVCENTER` (0x2) → `W_TOP`; `F_LEFT` (0x1) → `W_LEFT`.
+///   * colours are the same RGB triples (`palette()`), packed through the
+///     surface's own `pack_rgb`.
+///
+/// `open` highlights the open top-level entry and draws its drop-down to the
+/// right of the sidebar column.
+pub fn draw_sidebar_packed(
+    surface: &mut PackedSurface,
+    fonts: &mut Fonts,
+    bar: &cm_domain::menu::MenuBar,
+    open: Option<usize>,
+    date: &cm_domain::GameDate,
+    phase: u8,
+) {
+    use crate::screens::{menu_nav_rects, menu_top_rect, MENU_DROPDOWN_W, MENU_ITEM_H, SIDEBAR};
+
+    let pal = PanelPalette::from_palette_reload(surface);
+    // palette() RGB triples, packed in the surface's own format.
+    let sidebar_blue = surface.pack_rgb(0, 0, 132);
+    let btn_blue = surface.pack_rgb(0, 0, 132);
+    let highlight_fg = surface.pack_rgb(255, 255, 0); // yellow
+    let near_white = surface.pack_rgb(231, 227, 231);
+    let turquoise = surface.pack_rgb(132, 255, 255); // measured manager-identity ink
+    let grey = surface.pack_rgb(132, 130, 132);
+    let grey_disabled = surface.pack_rgb(120, 120, 120);
+
+    // Sidebar column (vertical gradient).
+    draw_panel(surface, SIDEBAR.0, SIDEBAR.1, SIDEBAR.2, SIDEBAR.3, P_VGRADIENT, sidebar_blue, 0, pal);
+
+    // Date/ticker cell — F_BEVEL only (gradient shows through).
+    draw_panel(surface, 0, 10, SIDEBAR.2, 56, P_BEVEL, sidebar_blue, 0, pal);
+    {
+        let (line1, line2) = cm_domain::sidebar_date_label(date, phase);
+        let f = fonts.pixel_slot(1); // arial_narrow_10
+        let mut t1 = line1.into_bytes();
+        t1.push(0);
+        let mut t2 = line2.into_bytes();
+        t2.push(0);
+        draw_wrapped_text(surface, 2, 19, SIDEBAR.2 - 2, 34, f, &t1, highlight_fg, W_TOP, -1);
+        draw_wrapped_text(surface, 2, 34, SIDEBAR.2 - 2, 49, f, &t2, highlight_fg, W_TOP, -1);
+    }
+
+    // ◀ ▶ nav arrows — F_BEVEL box + yellow triangle.
+    for (i, &(l, t, r, b)) in menu_nav_rects().iter().enumerate() {
+        draw_panel(surface, l, t, r, b, P_BEVEL, sidebar_blue, 0, pal);
+        draw_triangle_packed(surface, (l, t, r, b), i == 0, highlight_fg);
+    }
+
+    // Top-level entries.
+    let last_ix = bar.menus.len().saturating_sub(1);
+    for (i, top) in bar.menus.iter().enumerate() {
+        let (l, t, r, b) = menu_top_rect(i);
+        let is_open = open == Some(i);
+        draw_panel(surface, l, t, r, b, P_BEVEL, sidebar_blue, 0, pal);
+        let ink = if is_open {
+            highlight_fg
+        } else if i == 1 {
+            turquoise
+        } else if i == last_ix && top.label == "Game Options" {
+            highlight_fg
+        } else {
+            near_white
+        };
+        let f = fonts.pixel_slot(2); // arial_narrow_11
+        let mut txt = top.label.clone().into_bytes();
+        txt.push(0);
+        // style 0 + W_WRAP: horizontally + vertically centred, wrapped —
+        // matches `draw_wrapped_center`.
+        draw_wrapped_text(surface, l, t, r, b, f, &txt, ink, W_WRAP, -1);
+    }
+
+    // Open drop-down to the right of the sidebar column.
+    if let Some(i) = open {
+        if let Some(top) = bar.menus.get(i) {
+            if !top.items.is_empty() {
+                let (_, ty, _, _) = menu_top_rect(i);
+                let x0 = SIDEBAR.2 + 1;
+                let x1 = x0 + MENU_DROPDOWN_W;
+                let h = top.items.len() as i32 * MENU_ITEM_H;
+                let y0 = ty.min(SIDEBAR.3 - h - 4);
+                draw_panel(surface, x0, y0, x1, y0 + h + 4, P_SOLID_FILL | P_BEVEL, btn_blue, 0, pal);
+                let f = fonts.pixel_slot(1);
+                for (j, item) in top.items.iter().enumerate() {
+                    let iy = y0 + 2 + j as i32 * MENU_ITEM_H;
+                    if item.separator_before && j > 0 {
+                        draw_panel(surface, x0 + 4, iy, x1 - 4, iy + 1, P_DARKEN | P_BEVEL, grey, 0, pal);
+                    }
+                    let ink = if item.enabled { highlight_fg } else { grey_disabled };
+                    let mut txt = item.label.clone().into_bytes();
+                    txt.push(0);
+                    draw_wrapped_text(surface, x0 + 8, iy, x1 - 6, iy + MENU_ITEM_H, f, &txt, ink, W_LEFT, -1);
+                }
+            }
+        }
+    }
+}
 
 /// Screen variants that route through the new pipeline.
 ///
@@ -160,10 +301,21 @@ pub fn blit_packed_to_surface(packed: &PackedSurface, out: &mut Surface) {
 /// blit into the app's `Surface`. Returns `true` when the dispatcher
 /// handled the cmd; on `false` the caller should fall back to the old
 /// per-screen render.
-pub fn try_render_via_pool(cmd: i16, out: &mut Surface, font: &PixelFont) -> bool {
+pub fn try_render_via_pool(
+    cmd: i16,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    sidebar: Option<&SidebarCtx>,
+) -> bool {
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
-    if !dispatch_and_render(cmd, &mut packed, font) {
-        return false;
+    {
+        let font = fonts.pixel_slot(3);
+        if !dispatch_and_render(cmd, &mut packed, font) {
+            return false;
+        }
+    }
+    if let Some(ctx) = sidebar {
+        draw_sidebar_packed(&mut packed, fonts, &ctx.bar, ctx.open, &ctx.date, ctx.phase);
     }
     blit_packed_to_surface(&packed, out);
     true
@@ -191,7 +343,8 @@ pub fn try_render_via_pool(cmd: i16, out: &mut Surface, font: &PixelFont) -> boo
 pub fn try_render_rich_state(
     screen: &Screen,
     out: &mut Surface,
-    font: &PixelFont,
+    fonts: &mut Fonts,
+    sidebar: Option<&SidebarCtx>,
 ) -> bool {
     let mut pool = GuiRecordPool::new();
     let ok = match screen {
@@ -226,11 +379,17 @@ pub fn try_render_rich_state(
         return false;
     }
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
-    let n = pool.widgets.len();
-    for i in 0..n {
-        let mut rw = to_render_widget(&pool.widgets[i]);
-        rw.frame_idx = -1;
-        render_widget(&mut packed, &mut rw, Some(&pool), font, WidgetGlobals::default(), true);
+    {
+        let font = fonts.pixel_slot(3);
+        let n = pool.widgets.len();
+        for i in 0..n {
+            let mut rw = to_render_widget(&pool.widgets[i]);
+            rw.frame_idx = -1;
+            render_widget(&mut packed, &mut rw, Some(&pool), font, WidgetGlobals::default(), true);
+        }
+    }
+    if let Some(ctx) = sidebar {
+        draw_sidebar_packed(&mut packed, fonts, &ctx.bar, ctx.open, &ctx.date, ctx.phase);
     }
     blit_packed_to_surface(&packed, out);
     true
@@ -445,5 +604,127 @@ mod tests {
         assert!(try_render_pre_boot(
             &Screen::StartSeason { leagues, season }, None, &mut out, &f,
         ));
+    }
+
+    /// ACCEPTANCE PROOF (ignored by default; run with
+    /// `cargo test -p app --lib sidebar_column_diff -- --ignored --nocapture`).
+    ///
+    /// Render the persistent sidebar through the packed pipeline
+    /// (`draw_sidebar_packed`) into a fresh 800×600 RGB555 surface, then diff
+    /// the SIDEBAR COLUMN ONLY (x in 0..90, all y) against the real exe News
+    /// framebuffer `fixtures/news_after.pixels.bin`. The sidebar overwrites
+    /// the whole column, so the column pixels are independent of screen
+    /// content — this isolates the sidebar port.
+    ///
+    /// Prints the differing-pixel count and the first 10 `(x,y,exp,got)`.
+    /// Text pixels are EXPECTED to differ (the real save's date/manager name
+    /// differ from these placeholders); the gradient / bevels / arrows should
+    /// match. Requires the real `.fnt` fonts (CM_FONT_DIR or D:/cm0102/Data).
+    #[test]
+    #[ignore]
+    fn sidebar_column_diff_vs_news_after() {
+        use cm_domain::menu::{MenuBar, MenuTop};
+        use cm_domain::GameDate;
+        use cm_render::font::Fonts;
+
+        // Real News-sidebar top-level entries (single human): Continue Game,
+        // manager identity, Competitions, Nations & Clubs, Find, Game Options.
+        let entry = |label: &str| MenuTop { label: label.into(), command: None, items: Vec::new() };
+        let bar = MenuBar {
+            menus: vec![
+                MenuTop { label: "Continue Game".into(), command: Some(1), items: Vec::new() },
+                entry("Christoph Olewicz"),
+                entry("Competitions"),
+                entry("Nations & Clubs"),
+                entry("Find"),
+                entry("Game Options"),
+            ],
+        };
+        let date = GameDate { year: 2001, month: 10, day: 10 };
+        let phase = 2; // EVE-ish placeholder
+
+        let dir = std::env::var("CM_FONT_DIR").unwrap_or_else(|_| "D:/cm0102/Data".to_string());
+        let mut fonts = Fonts::new(dir);
+
+        let mut packed = PackedSurface::rgb555(800, 600);
+        draw_sidebar_packed(&mut packed, &mut fonts, &bar, None, &date, phase);
+
+        // Load the real exe framebuffer (800×600 RGB555, u16 LE).
+        let fix = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/news_after.pixels.bin");
+        let bytes = std::fs::read(&fix)
+            .unwrap_or_else(|e| panic!("read {:?}: {}", fix, e));
+        assert_eq!(bytes.len(), 800 * 600 * 2, "fixture must be 800×600 u16");
+        let expected: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .collect();
+
+        let mut diffs = 0usize;
+        let mut first: Vec<(i32, i32, u16, u16)> = Vec::new();
+        for y in 0..600i32 {
+            for x in 0..90i32 {
+                let idx = (y * 800 + x) as usize;
+                let exp = expected[idx];
+                let got = packed.buf[idx];
+                if exp != got {
+                    diffs += 1;
+                    if first.len() < 10 {
+                        first.push((x, y, exp, got));
+                    }
+                }
+            }
+        }
+        // Split diffs: gradient LSB-dither (|exp-got|<=1) vs structural (>1),
+        // bucketed by y-band. Interpretation (measured 2026-09):
+        //   * gradient 0..10 and below-entries 370..600: 0 structural diffs —
+        //     the P_VGRADIENT column matches the exe exactly except for a
+        //     1-LSB ordered dither the exe applies to the blue fade (a
+        //     checkerboard of 0x0f/0x10) that this exact-arithmetic port does
+        //     not reproduce (~12k px, all |diff|<=1).
+        //   * date cell + entries: text content differs (placeholder date /
+        //     manager name vs the real save) — expected per the task.
+        //   * nav arrows: the ported `draw_triangle` geometry (5×9 triangle
+        //     centred at y=73) is smaller/higher than the exe's ~9px triangle
+        //     centred ~y=76; the bevel box + yellow ink (0x7fe0) match.
+        let mut lsb = 0usize;
+        let bands = [
+            ("gradient 0..10", 0, 10),
+            ("date cell 10..57", 10, 57),
+            ("nav arrows 57..90", 57, 90),
+            ("entries 90..370", 90, 370),
+            ("below entries 370..600", 370, 600),
+        ];
+        let mut band_struct = [0usize; 5];
+        for y in 0..600i32 {
+            for x in 0..90i32 {
+                let i = (y * 800 + x) as usize;
+                let (e, g) = (expected[i] as i32, packed.buf[i] as i32);
+                if e != g {
+                    if (e - g).abs() <= 1 {
+                        lsb += 1;
+                    } else {
+                        for (k, &(_, lo, hi)) in bands.iter().enumerate() {
+                            if y >= lo && y < hi {
+                                band_struct[k] += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        println!("sidebar-column diff: {diffs} / {} pixels differ", 90 * 600);
+        for (x, y, exp, got) in &first {
+            println!("  ({x},{y}) exp=0x{exp:04x} got=0x{got:04x}");
+        }
+        println!("  of which {lsb} are |exp-got|<=1 (gradient LSB dither)");
+        println!("  structural diffs (>1 LSB) by y-band:");
+        for (k, &(name, _, _)) in bands.iter().enumerate() {
+            println!("    {name}: {}", band_struct[k]);
+        }
+        // Guard the finding that matters: the pure-gradient bands must match
+        // the exe structurally (only the sub-LSB dither may differ).
+        assert_eq!(band_struct[0], 0, "top gradient band must match structurally");
+        assert_eq!(band_struct[4], 0, "bottom gradient band must match structurally");
     }
 }

@@ -169,15 +169,24 @@ impl App {
         // through the byte-exact `packed_widget` renderer. On success
         // we skip the old per-screen render entirely — the overlay
         // menu bar still runs so the sidebar stays visible.
+        // The persistent in-game sidebar now draws through the SAME packed
+        // pipeline as screen content (inside `try_render_*`, before the blit)
+        // rather than being painted onto the old `Surface` afterwards. Build
+        // its context here from `world` + `game` (only present once a game is
+        // loaded); pre-boot passes `None` and draws no sidebar.
+        let sidebar = match (self.world.as_ref(), self.game.as_ref()) {
+            (Some(world), Some(game)) => Some(render_new::SidebarCtx {
+                bar: cm_domain::menu::MenuBar::in_game(world, &game.save),
+                open: self.menu_open,
+                date: game.save.date.clone(),
+                phase: game.save.simulation.phase,
+            }),
+            _ => None,
+        };
         if let Some(cmd) = render_new::cmd_for_screen(&self.screen) {
-            // Feed the real .fnt-derived `PixelFont` for slot 3 (the
-            // table-body arial_14 — CM's default text font, used by
-            // most widget draws through the traditional-font branch of
-            // FUN_005ceaa0). `Fonts::pixel_slot` lazily loads and caches
-            // the underlying `.fnt` from `CM_FONT_DIR` and hands over
-            // the byte-exact PixelFont conversion.
-            let font = self.fonts.pixel_slot(3);
-            if render_new::try_render_via_pool(cmd, &mut self.frame, font) {
+            // `try_render_via_pool` pulls slot 3 (table-body arial_14) for
+            // widget draws and slots 1/2 for the sidebar internally.
+            if render_new::try_render_via_pool(cmd, &mut self.frame, &mut self.fonts, sidebar.as_ref()) {
                 self.overlay_menu_bar();
                 return;
             }
@@ -190,8 +199,9 @@ impl App {
         // and paints through `packed_widget::render_widget` — the same
         // byte-exact Layer 2 that the AutoRoute path uses.
         {
-            let font = self.fonts.pixel_slot(3);
-            if render_new::try_render_rich_state(&self.screen, &mut self.frame, font) {
+            if render_new::try_render_rich_state(
+                &self.screen, &mut self.frame, &mut self.fonts, sidebar.as_ref(),
+            ) {
                 self.overlay_menu_bar();
                 return;
             }
@@ -277,16 +287,15 @@ impl App {
         }
     }
 
-    /// Draw the persistent menu bar (game_mbr / FUN_00745540) and any status
-    /// line on top of the current in-game screen's sidebar column.
+    /// Draw the transient status line on top of the current screen.
+    ///
+    /// The persistent sidebar (game_mbr / FUN_00745540) is NO LONGER painted
+    /// here — it now draws through the packed pipeline inside
+    /// `render_new::try_render_via_pool` / `try_render_rich_state` (see
+    /// `render_new::draw_sidebar_packed`), so screen content + sidebar go out
+    /// through ONE renderer instead of two. Only the status line remains on
+    /// the old `Surface`.
     fn overlay_menu_bar(&mut self) {
-        if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
-            let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
-            screens::menu_sidebar(
-                &mut self.frame, &mut self.fonts, &bar, self.menu_open, &game.save.date,
-                game.save.simulation.phase,
-            );
-        }
         if let Some(msg) = self.status.clone() {
             screens::status_line(&mut self.frame, &mut self.fonts, &msg);
         }

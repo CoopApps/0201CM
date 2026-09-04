@@ -1097,8 +1097,8 @@ pub fn news_visible_indices(view: &cm_domain::NewsView, tab: NewsTab) -> Vec<usi
 pub const SIDEBAR: (i32, i32, i32, i32) = (0, 0, 89, 599);
 const MENU_TOP_Y: i32 = 92;
 const MENU_ENTRY_H: i32 = 46;
-const MENU_ITEM_H: i32 = 26;
-const MENU_DROPDOWN_W: i32 = 232;
+pub const MENU_ITEM_H: i32 = 26;
+pub const MENU_DROPDOWN_W: i32 = 232;
 
 /// What a click in the sidebar / open drop-down resolves to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1110,13 +1110,13 @@ pub enum SidebarHit {
 }
 
 /// Rect of top-level entry `i` in the sidebar column.
-fn menu_top_rect(i: usize) -> (i32, i32, i32, i32) {
+pub fn menu_top_rect(i: usize) -> (i32, i32, i32, i32) {
     let t = MENU_TOP_Y + i as i32 * MENU_ENTRY_H;
     (2, t, SIDEBAR.2 - 2, t + MENU_ENTRY_H - 2)
 }
 
 /// The two nav-arrow rects (◀ prev, ▶ next).
-fn menu_nav_rects() -> [(i32, i32, i32, i32); 2] {
+pub fn menu_nav_rects() -> [(i32, i32, i32, i32); 2] {
     [(4, 60, 43, 86), (46, 60, 85, 86)]
 }
 
