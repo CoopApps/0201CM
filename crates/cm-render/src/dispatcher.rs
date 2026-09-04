@@ -445,11 +445,11 @@ pub fn dispatch_global(
             note: "manager (club)",
         },
         // 0x3f2 (`007491e0:0x00749d2f`)
-        0x3f2 => DispatchResult::TodoBuilder {
-            cmd: 0x3f2,
-            fn_addr: "FUN_00698140",
-            note: "manager sub-screen",
-        },
+        0x3f2 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_698160
+            let _ = crate::screens_auto::build_screen_698160(pool);
+            DispatchResult::Handled
+        }
         // 0x420 (`007491e0:0x00749d75`) — manager screen (nation payload)
         0x420 => DispatchResult::TodoBuilder {
             cmd: 0x420,
@@ -518,11 +518,11 @@ pub fn dispatch_global(
         }
         // 0x414 (`007491e0:0x0074a0af`) — takes widget payload; if
         // `widget_slot == -1` passes 0, else pool[slot]+0x48.
-        0x414 => DispatchResult::TodoBuilder {
-            cmd: 0x414,
-            fn_addr: "FUN_00771810",
-            note: "unresolved (takes widget payload)",
-        },
+        0x414 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_7719b0
+            let _ = crate::screens_auto::build_screen_7719b0(pool);
+            DispatchResult::Handled
+        }
         // 0x3f3 (`007491e0:0x0074a107`) — FIFA rankings. LIVE ROUTE
         // (substrate only — row content awaits LAB_004a26d0 decode).
         0x3f3 => {
@@ -538,47 +538,47 @@ pub fn dispatch_global(
             DispatchResult::Handled
         }
         // 0x3f4 (`007491e0:0x0074a175`) — shared list/table entry 1
-        0x3f4 => DispatchResult::TodoBuilder {
-            cmd: 0x3f4,
-            fn_addr: "FUN_0058a550(1,...)",
-            note: "shared list/table view (FUN_00652ca0 param)",
-        },
+        0x3f4 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58a740
+            let _ = crate::screens_auto::build_screen_58a740(pool);
+            DispatchResult::Handled
+        }
         // 0x3f5 (`007491e0:0x0074a1b3`) — shared list/table entry 2
-        0x3f5 => DispatchResult::TodoBuilder {
-            cmd: 0x3f5,
-            fn_addr: "FUN_0058a550(2,...)",
-            note: "shared list/table view",
-        },
+        0x3f5 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58a740
+            let _ = crate::screens_auto::build_screen_58a740(pool);
+            DispatchResult::Handled
+        }
         // 0x3f6 (`007491e0:0x0074a1f1`) — shared list/table entry 3
-        0x3f6 => DispatchResult::TodoBuilder {
-            cmd: 0x3f6,
-            fn_addr: "FUN_0058a550(3,...)",
-            note: "shared list/table view",
-        },
+        0x3f6 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58a740
+            let _ = crate::screens_auto::build_screen_58a740(pool);
+            DispatchResult::Handled
+        }
         // 0x3f7 (`007491e0:0x0074a22f`) — shared list/table entry 4
-        0x3f7 => DispatchResult::TodoBuilder {
-            cmd: 0x3f7,
-            fn_addr: "FUN_0058a550(4,...)",
-            note: "shared list/table view (variant)",
-        },
+        0x3f7 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58a740
+            let _ = crate::screens_auto::build_screen_58a740(pool);
+            DispatchResult::Handled
+        }
         // 0x3f8 (`007491e0:0x0074a26d`) — shared list/table entry 5
-        0x3f8 => DispatchResult::TodoBuilder {
-            cmd: 0x3f8,
-            fn_addr: "FUN_0058a550(5,...)",
-            note: "shared list/table view (variant)",
-        },
+        0x3f8 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58a740
+            let _ = crate::screens_auto::build_screen_58a740(pool);
+            DispatchResult::Handled
+        }
         // 0x3f9 (`007491e0:0x0074a2ab`) — shared list/table entry 6
-        0x3f9 => DispatchResult::TodoBuilder {
-            cmd: 0x3f9,
-            fn_addr: "FUN_0058a550(6,...)",
-            note: "shared list/table view",
-        },
+        0x3f9 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58a740
+            let _ = crate::screens_auto::build_screen_58a740(pool);
+            DispatchResult::Handled
+        }
         // 0x3fa (`007491e0:0x0074a2e9`)
-        0x3fa => DispatchResult::TodoBuilder {
-            cmd: 0x3fa,
-            fn_addr: "FUN_0058cde0",
-            note: "unresolved (takes widget payload)",
-        },
+        0x3fa => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_58d000
+            let _ = crate::screens_auto::build_screen_58d000(pool);
+            DispatchResult::Handled
+        }
         // 0x429 (`007491e0:0x0074a325`)
         0x429 => DispatchResult::TodoBuilder {
             cmd: 0x429,
@@ -604,11 +604,11 @@ pub fn dispatch_global(
             note: "Add Manager (network) or Add Manager (local)",
         },
         // 0x3fc (`007491e0:0x0074a575`) — Player Waiting sidebar cmd
-        0x3fc => DispatchResult::TodoBuilder {
-            cmd: 0x3fc,
-            fn_addr: "FUN_00808a70",
-            note: "Player Waiting screen",
-        },
+        0x3fc => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_808ae0
+            let _ = crate::screens_auto::build_screen_808ae0(pool);
+            DispatchResult::Handled
+        }
         // 0x421 (`007491e0:0x0074a5b3`) — Chat Message
         0x421 => DispatchResult::TodoBuilder {
             cmd: 0x421,
@@ -616,11 +616,11 @@ pub fn dispatch_global(
             note: "Chat / scrman.c",
         },
         // 0x431 (`007491e0:0x0074a5f7`) — Start New Game / Select Leagues
-        0x431 => DispatchResult::TodoBuilder {
-            cmd: 0x431,
-            fn_addr: "FUN_008053d0",
-            note: "Start New Game / Select League(s) (Setup.c)",
-        },
+        0x431 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_810ce0
+            let _ = crate::screens_auto::build_screen_810ce0(pool);
+            DispatchResult::Handled
+        }
         // 0x42a (`007491e0:0x0074a629`)
         0x42a => DispatchResult::TodoBuilder {
             cmd: 0x42a,
@@ -640,11 +640,11 @@ pub fn dispatch_global(
             }
         }
         // 0x42c (`007491e0:0x0074a6a5`) — settings sub-screen
-        0x42c => DispatchResult::TodoBuilder {
-            cmd: 0x42c,
-            fn_addr: "FUN_004fd1b0",
-            note: "settings sub-screen",
-        },
+        0x42c => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_4fd1f0
+            let _ = crate::screens_auto::build_screen_4fd1f0(pool);
+            DispatchResult::Handled
+        }
         // 0x42f (`007491e0:0x0074a6d7`) — Restart Game confirm dialog
         0x42f => DispatchResult::TodoBuilder {
             cmd: 0x42f,
@@ -699,11 +699,11 @@ pub fn dispatch_club(
             note: "Player profile (via FUN_007cf040 guard)",
         },
         // 0x7d1 (`0074bf60:0x0074c216`) — Club overview / summary
-        0x7d1 => DispatchResult::TodoBuilder {
-            cmd: 0x7d1,
-            fn_addr: "FUN_00476df0",
-            note: "Club overview / summary (club_s)",
-        },
+        0x7d1 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_476ef0
+            let _ = crate::screens_auto::build_screen_476ef0(pool);
+            DispatchResult::Handled
+        }
         // 0x7d3 (`0074bf60:0x0074c25a`) — via FUN_007116b0 guard
         0x7d3 => {
             // Exe: `if (widget_slot != -1 && payload == -1) return 0;`
@@ -731,83 +731,83 @@ pub fn dispatch_club(
             note: "Club Dashboard (other-club / non-managed)",
         },
         // 0x7d4 (`0074bf60:0x0074c38d`) — Club honours / Awards
-        0x7d4 => DispatchResult::TodoBuilder {
-            cmd: 0x7d4,
-            fn_addr: "FUN_00415010",
-            note: "Club honours / Awards (award)",
-        },
+        0x7d4 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_4150e0
+            let _ = crate::screens_auto::build_screen_4150e0(pool);
+            DispatchResult::Handled
+        }
         // 0x7d7 (`0074bf60:0x0074c3d5`) — Squad Senior
-        0x7d7 => DispatchResult::TodoBuilder {
-            cmd: 0x7d7,
-            fn_addr: "FUN_00859250(_,1,1,0,0)",
-            note: "Squad — Senior",
-        },
+        0x7d7 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7e7 (`0074bf60:0x0074c41d`) — Squad Senior variant 2
-        0x7e7 => DispatchResult::TodoBuilder {
-            cmd: 0x7e7,
-            fn_addr: "FUN_00859250(_,1,1,0,2)",
-            note: "Squad — Senior (variant 2)",
-        },
+        0x7e7 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7d8 (`0074bf60:0x0074c465`) — Squad Reserves
-        0x7d8 => DispatchResult::TodoBuilder {
-            cmd: 0x7d8,
-            fn_addr: "FUN_00859250(_,2,1,0,0)",
-            note: "Squad — Reserves",
-        },
+        0x7d8 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7e5 (`0074bf60:0x0074c078`) — Player-in-club profile
-        0x7e5 => DispatchResult::TodoBuilder {
-            cmd: 0x7e5,
-            fn_addr: "FUN_00493e10 (with division/nation resolve)",
-            note: "Player-in-club profile",
-        },
+        0x7e5 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_494640
+            let _ = crate::screens_auto::build_screen_494640(pool);
+            DispatchResult::Handled
+        }
         // 0x7e6 (`0074bf60:0x0074c1e0`) — club/player detail
-        0x7e6 => DispatchResult::TodoBuilder {
-            cmd: 0x7e6,
-            fn_addr: "FUN_0046ba80",
-            note: "club/player detail",
-        },
+        0x7e6 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_46bdf0
+            let _ = crate::screens_auto::build_screen_46bdf0(pool);
+            DispatchResult::Handled
+        }
         // 0x7da (`0074bf60:0x0074c4b0`) — Squad youth/U21
-        0x7da => DispatchResult::TodoBuilder {
-            cmd: 0x7da,
-            fn_addr: "FUN_00859250(_,3,1,0,0)",
-            note: "Squad list mode 3 (youth/U21)",
-        },
+        0x7da => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7d9 (`0074bf60:0x0074c4d2`) — Squad list mode 2
-        0x7d9 => DispatchResult::TodoBuilder {
-            cmd: 0x7d9,
-            fn_addr: "FUN_00859250(_,2,1,0,0)",
-            note: "Squad list mode 2",
-        },
+        0x7d9 => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7db (`0074bf60:0x0074caf1`) — Squad list mode 4
-        0x7db => DispatchResult::TodoBuilder {
-            cmd: 0x7db,
-            fn_addr: "FUN_00859250(_,4,1,0,0)",
-            note: "Squad list mode 4",
-        },
+        0x7db => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7dc (`0074bf60:0x0074c514`) — Staff list page 2
-        0x7dc => DispatchResult::TodoBuilder {
-            cmd: 0x7dc,
-            fn_addr: "FUN_00859250(_,1,2,0,0)",
-            note: "Staff list page 2",
-        },
+        0x7dc => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7dd (`0074bf60:0x0074c576`) — Staff list
-        0x7dd => DispatchResult::TodoBuilder {
-            cmd: 0x7dd,
-            fn_addr: "FUN_00859250(_,2,2,0,0)",
-            note: "Staff list",
-        },
+        0x7dd => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7df (`0074bf60:0x0074c556`) — Staff list variant 3
-        0x7df => DispatchResult::TodoBuilder {
-            cmd: 0x7df,
-            fn_addr: "FUN_00859250(_,3,2,0,0)",
-            note: "Staff list variant 3",
-        },
+        0x7df => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7de (`0074bf60:0x0074caec`) — Staff list variant 2
-        0x7de => DispatchResult::TodoBuilder {
-            cmd: 0x7de,
-            fn_addr: "FUN_00859250(_,_,2,0,0)",
-            note: "Staff list variant 2 (goto LAB_0074caec with uVar12=2)",
-        },
+        0x7de => {
+            // LIVE ROUTE (screen_to_rust auto-transliteration): build_screen_8596b0
+            let _ = crate::screens_auto::build_screen_8596b0(pool);
+            DispatchResult::Handled
+        }
         // 0x7e0 (`0074bf60:0x0074c5f8`) — Network (handled in 007e4940)
         0x7e0 => DispatchResult::TodoBuilder {
             cmd: 0x7e0,
@@ -927,10 +927,10 @@ mod tests {
         state.pending_cmd_fallback = 0x431;
         let slot = widget_with_cmd(&mut pool, 0);
         let r = dispatch_global(&mut pool, &mut state, slot);
-        assert!(matches!(
-            r,
-            DispatchResult::TodoBuilder { cmd: 0x431, .. }
-        ));
+        // 0x431 is now a live route (Setup select-leagues via
+        // build_screen_810ce0). Before this commit it was TodoBuilder;
+        // the fallback resolution still fires, we just get Handled now.
+        assert!(matches!(r, DispatchResult::Handled));
     }
 
     #[test]
