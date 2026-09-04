@@ -117,13 +117,63 @@ pub mod off {
     /// `+0x306c`  dword — network mode flag.  GDI L30.
     pub const NET_MODE: usize = 0x306c;
 
-    // ---- 0x3070..0x1326d0: first session sub-object (opaque, ctor arg = 0) ----
-    /// `+0x3070`  first session sub-object base.  GDI L22 `lea ecx, [esi + 0x3070]`.
+    // ---- 0x3070..0x1326d0: first session sub-object (ctor arg = 0) ----
+    /// `+0x3070`  first session sub-object base.  GDI ctor L22 `lea ecx, [esi + 0x3070]`
+    /// then `call sub_00548d50` with `param_2 = 0`.
     pub const SESSION_A: usize = 0x3070;
 
-    // ---- 0x1326d1..0x261fd3: second session sub-object (opaque, ctor arg = 1) ----
-    /// `+0x1326d1`  second session sub-object base.  GDI L27 `lea ecx, [esi + 0x1326d1]`.
+    // ---- 0x1326d1..0x261fd3: second session sub-object (ctor arg = 1) ----
+    /// `+0x1326d1`  second session sub-object base.  GDI ctor L27 `lea ecx, [esi + 0x1326d1]`
+    /// then `call sub_00548d50` with `param_2 = 1`.
     pub const SESSION_B: usize = 0x1_326d1;
+
+    // ---- Session sub-object field offsets, relative to the sub-object's own base ----
+    // All cited to `sub_00548d50` (GDI) == `FUN_00548b40` (cm0102.exe). The asm ends in
+    // `ret 4` — one stack-arg `__thiscall(u32 param_2)` — and holds 24 instructions.
+    //
+    // Fields marked `PTR` are 32-bit pointers/handles in the exe; the ctor zeroes them,
+    // and the dtor guards `if (ptr != 0) free(ptr)` on them — see `SessionSubObject::drop`.
+    /// `+0x00000` dword — asm L18 `[eax] = ecx (=0)`. First slot of the sub-object.
+    pub const SESS_HEAD_DW: usize = 0x0_0000;
+    /// `+0x12e99e` word — asm L21. Sub-count for exe dtor's `FUN_004031e0` loop.
+    pub const SESS_SUBCOUNT_A: usize = 0x0_12e99e;
+    /// `+0x12e9a0` word — asm L22. Sub-count for exe dtor's `FUN_005d8920` loop.
+    pub const SESS_SUBCOUNT_B: usize = 0x0_12e9a0;
+    /// `+0x12f4fe` byte — asm L26.
+    pub const SESS_BYTE_0X12F4FE: usize = 0x0_12f4fe;
+    /// `+0x12f4ff` word — asm L25, `= 0xffff`. **Sentinel.**
+    pub const SESS_WORD_FFFF_A: usize = 0x0_12f4ff;
+    /// `+0x12f501` word — asm L27, `= 0xffff`. **Sentinel.**
+    pub const SESS_WORD_FFFF_B: usize = 0x0_12f501;
+    /// `+0x12f503` word — asm L28, `= 0xffff`. **Sentinel.**
+    pub const SESS_WORD_FFFF_C: usize = 0x0_12f503;
+    /// `+0x12f505` dword PTR — asm L13.
+    pub const SESS_PTR_0X12F505: usize = 0x0_12f505;
+    /// `+0x12f521` dword PTR — asm L12; freed via `FUN_005cdfa0` by the dtor.
+    pub const SESS_PTR_0X12F521: usize = 0x0_12f521;
+    /// `+0x12f525` dword PTR — asm L11; freed via `FUN_005cdfa0` by the dtor.
+    pub const SESS_PTR_0X12F525: usize = 0x0_12f525;
+    /// `+0x12f529` dword PTR — asm L20; freed via `FUN_0093435a` (list-of-lists) by the dtor.
+    pub const SESS_PTR_0X12F529: usize = 0x0_12f529;
+    /// `+0x12f535` dword — asm L16.
+    pub const SESS_DW_0X12F535: usize = 0x0_12f535;
+    /// `+0x12f539` word — asm L23.
+    pub const SESS_WORD_0X12F539: usize = 0x0_12f539;
+    /// `+0x12f53b` word — asm L24.
+    pub const SESS_WORD_0X12F53B: usize = 0x0_12f53b;
+    /// `+0x12f53d` dword — asm L15.
+    pub const SESS_DW_0X12F53D: usize = 0x0_12f53d;
+    /// `+0x12f541` dword — asm L9 `[eax + 0x12f541] = edx (=param_2)`. **Mode arg** (0 or 1).
+    pub const SESS_MODE: usize = 0x0_12f541;
+    /// `+0x12f545` dword — asm L17.
+    pub const SESS_DW_0X12F545: usize = 0x0_12f545;
+    /// `+0x12f555` dword — asm L14.
+    pub const SESS_DW_0X12F555: usize = 0x0_12f555;
+    /// `+0x12f55d` byte — asm L19 `= 1`. **Init flag** — the only non-sentinel non-zero.
+    pub const SESS_INIT_FLAG: usize = 0x0_12f55d;
+
+    /// Highest byte the session ctor touches, exclusive: `+0x12f55d + 1`.
+    pub const SESS_CTOR_HIGH_WATER: usize = 0x0_12f55e;
 
     // ---- Fields the ScreenManager ctor directly clears inside SESSION_B (layering quirk) ----
     /// GDI L35.
@@ -206,6 +256,86 @@ impl NetworkBuffer {
     pub fn set_write_off(&mut self, v: u32) { self.write_off = v; }
 }
 
+/// Session sub-object embedded in `ScreenManager` at `+0x3070` (mode 0) and `+0x1326d1` (mode 1).
+///
+/// Port of cm0102.exe `FUN_00548b40` == GDI `sub_00548d50` — a pure 24-instruction field-only
+/// initializer (`ret 4` epilogue confirms one `__thiscall` stack arg, the `mode` flag).
+///
+/// The sub-object is ~1.24 MB (span `+0x3070..+0x1326d0` = 0x12F661 bytes; the ctor only
+/// touches fields in the `+0x00` and `+0x12e99e..+0x12f55d` bands and leaves the huge middle
+/// zero — later population code, not yet ported, fills the pools that live there).
+///
+/// Because the sub-object lives *inline* in the ScreenManager arena in the exe, this Rust
+/// struct is a **tracking marker** (holds only the `mode` arg); the actual bytes are the
+/// arena's own bytes, initialised by `apply_ctor_writes` which writes exactly what the
+/// asm writes at exactly the asm's offsets, at the given arena base.
+///
+/// **Dtor (`FUN_00548bd0`) is intentionally NOT ported.** Its teardown paths all guard
+/// `if (ptr != 0) free(ptr)` on the very pointer fields this ctor initialises to 0
+/// (`+0x12f521`, `+0x12f525`, `+0x12f529`), so on a ctor-fresh sub-object every guard is
+/// false — full teardown would drag in unported infra (`FUN_005cdfa0`, `FUN_0093435a`,
+/// `FUN_004031e0`, `FUN_005d8920`, `FUN_0093534b` array-dtor) that will be needed once
+/// the population fns land. `Drop` here is a no-op, which is byte-correct for the
+/// never-populated state a boot ScreenManager holds.
+pub struct SessionSubObject {
+    /// The `param_2` arg — main session vs. secondary. Stored at the sub-object's
+    /// `+0x12f541` in the arena (see `off::SESS_MODE`).
+    mode: u32,
+}
+
+impl SessionSubObject {
+    /// Port of `FUN_00548b40(mode)` — records the mode arg. The actual field writes
+    /// happen when `apply_ctor_writes(arena, base)` is called (the exe's ctor writes
+    /// directly into what is, for us, the enclosing arena).
+    pub fn new(mode: u32) -> Self { SessionSubObject { mode } }
+
+    /// The mode arg (0 or 1 in the ScreenManager's two calls).
+    #[inline]
+    pub fn mode(&self) -> u32 { self.mode }
+
+    /// Apply the 20 field writes of `sub_00548d50` to `arena[base..]`. Order matches asm:
+    /// mode-write first (L9), then dword zeros (L11-L18), byte-init (L19), remaining dword/word
+    /// zeros (L20-L24), then the three 0xFFFF sentinels + zero-byte (L25-L28).
+    pub fn apply_ctor_writes(&self, arena: &mut [u8], base: usize) {
+        let set_u32 = |a: &mut [u8], o: usize, v: u32| {
+            a[o..o + 4].copy_from_slice(&v.to_le_bytes());
+        };
+        let set_u16 = |a: &mut [u8], o: usize, v: u16| {
+            a[o..o + 2].copy_from_slice(&v.to_le_bytes());
+        };
+        let set_u8 = |a: &mut [u8], o: usize, v: u8| { a[o] = v; };
+
+        // ---- asm order (sub_00548d50 lines 9..28) ----
+        set_u32(arena, base + off::SESS_MODE, self.mode);           // L9   +0x12f541 = param_2
+        set_u32(arena, base + off::SESS_PTR_0X12F525, 0);           // L11  +0x12f525
+        set_u32(arena, base + off::SESS_PTR_0X12F521, 0);           // L12  +0x12f521
+        set_u32(arena, base + off::SESS_PTR_0X12F505, 0);           // L13  +0x12f505
+        set_u32(arena, base + off::SESS_DW_0X12F555,  0);           // L14  +0x12f555
+        set_u32(arena, base + off::SESS_DW_0X12F53D,  0);           // L15  +0x12f53d
+        set_u32(arena, base + off::SESS_DW_0X12F535,  0);           // L16  +0x12f535
+        set_u32(arena, base + off::SESS_DW_0X12F545,  0);           // L17  +0x12f545
+        set_u32(arena, base + off::SESS_HEAD_DW,      0);           // L18  +0x0000
+        set_u8 (arena, base + off::SESS_INIT_FLAG,    1);           // L19  +0x12f55d = 1
+        set_u32(arena, base + off::SESS_PTR_0X12F529, 0);           // L20  +0x12f529
+        set_u16(arena, base + off::SESS_SUBCOUNT_A,   0);           // L21  +0x12e99e
+        set_u16(arena, base + off::SESS_SUBCOUNT_B,   0);           // L22  +0x12e9a0
+        set_u16(arena, base + off::SESS_WORD_0X12F539, 0);          // L23  +0x12f539
+        set_u16(arena, base + off::SESS_WORD_0X12F53B, 0);          // L24  +0x12f53b
+        set_u16(arena, base + off::SESS_WORD_FFFF_A,  0xffff);      // L25  +0x12f4ff = ffff
+        set_u8 (arena, base + off::SESS_BYTE_0X12F4FE, 0);          // L26  +0x12f4fe
+        set_u16(arena, base + off::SESS_WORD_FFFF_B,  0xffff);      // L27  +0x12f501 = ffff
+        set_u16(arena, base + off::SESS_WORD_FFFF_C,  0xffff);      // L28  +0x12f503 = ffff
+    }
+}
+
+impl Drop for SessionSubObject {
+    /// Port of `FUN_00548bd0`, restricted to the ctor-fresh case. The exe dtor's teardown
+    /// is empty when `+0x12f521 == +0x12f525 == +0x12f529 == 0` and the two sub-counts at
+    /// `+0x12e99e`/`+0x12e9a0` are 0 — all of which hold for a never-populated sub-object.
+    /// Full port waits on the population fns (see struct doc).
+    fn drop(&mut self) { /* no-op — see doc-comment */ }
+}
+
 /// The ScreenManager class. All field access byte-cited to the exe.
 pub struct ScreenManager {
     /// Heap-owned backing store; layout matches the exe byte-for-byte.
@@ -215,6 +345,11 @@ pub struct ScreenManager {
     /// mirror this struct's `write_off` / `size`; `+0x302a` (buf-ptr) stays 0 there
     /// (host pointer widths differ from the 32-bit exe) — reads go through `net_buf()`.
     net_buf: NetworkBuffer,
+    /// First session sub-object at `+0x3070` — ctor arg = 0. Tracks the mode; the actual
+    /// 20 field writes live inline in `bytes`, applied by `apply_ctor_writes`.
+    session_a: SessionSubObject,
+    /// Second session sub-object at `+0x1326d1` — ctor arg = 1.
+    session_b: SessionSubObject,
 }
 
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
@@ -228,9 +363,12 @@ impl ScreenManager {
 
     /// Port of cm0102.exe `FUN_007e4520` / GDI `sub_007e3f20` — the ctor.
     ///
-    /// External sub-object ctors invoked: `FUN_00763590(this+0x302a, 50000)` (network buffer,
-    /// this commit). Session sub-object ctors `FUN_00548b40 x2` at `+0x3070` / `+0x1326d1`
-    /// remain documented-TODO (follow-up commit); their memory ranges stay zero.
+    /// External sub-object ctors invoked in asm order:
+    /// 1. `FUN_00763590(this+0x302a, 50000)`  — network buffer (commit 2).
+    /// 2. `FUN_00548b40(this+0x3070, 0)`      — session A (commit 3, this commit).
+    /// 3. `FUN_00548b40(this+0x1326d1, 1)`    — session B (commit 3, this commit).
+    ///
+    /// Then the ScreenManager's own header writes.
     pub fn new() -> Self {
         // GDI L21-25: implicit `alloc_zeroed` (the class's operator new zeroes memory before
         // the ctor runs when it's part of a larger allocation; we replicate explicitly).
@@ -240,22 +378,28 @@ impl ScreenManager {
         };
         // Network-buffer sub-object ctor call (matches `FUN_00763590(esi+0x302a, 50000)`).
         let net_buf = NetworkBuffer::new(off::NET_BUF_DEFAULT_SIZE);
-        let mut this = ScreenManager { bytes, net_buf };
+        // Session sub-object ctor calls (matches `FUN_00548b40(esi+..., mode)`).
+        let session_a = SessionSubObject::new(0);
+        let session_b = SessionSubObject::new(1);
+        let mut this = ScreenManager { bytes, net_buf, session_a, session_b };
         this.apply_ctor_writes();
         this
     }
 
     /// Port of `FUN_007e46a0`'s structure-clearing tail. Re-runs the ctor's write sequence in
-    /// place; safe because the exe's destructor is a "tear-down subobjects then zero header"
-    /// sequence, and re-initializing subobjects is out of this commit's scope.
+    /// place; sub-object dtors follow the "empty on ctor-fresh state" contract each carries.
     pub fn reset(&mut self) {
         // First zero the entire backing store — the exe's dtor also calls the subobject dtors
-        // which effectively zero their bookkeeping. Session sub-object dtors are still TODO.
+        // which effectively zero their bookkeeping (session dtor is no-op on fresh state).
         unsafe {
             std::ptr::write_bytes(self.bytes.as_ptr(), 0, SCRMGR_SIZE);
         }
         // Network-buffer dtor-then-ctor: drop the old, allocate a fresh 50000-byte buffer.
         self.net_buf = NetworkBuffer::new(off::NET_BUF_DEFAULT_SIZE);
+        // Session sub-object dtor-then-ctor: replace the tracker markers; arena bytes get
+        // re-populated by apply_ctor_writes below.
+        self.session_a = SessionSubObject::new(0);
+        self.session_b = SessionSubObject::new(1);
         self.apply_ctor_writes();
     }
 
@@ -266,8 +410,29 @@ impl ScreenManager {
     #[inline]
     pub fn net_buf_mut(&mut self) -> &mut NetworkBuffer { &mut self.net_buf }
 
+    /// First session sub-object marker (base `+0x3070`, ctor `mode = 0`).
+    #[inline]
+    pub fn session_a(&self) -> &SessionSubObject { &self.session_a }
+    /// Second session sub-object marker (base `+0x1326d1`, ctor `mode = 1`).
+    #[inline]
+    pub fn session_b(&self) -> &SessionSubObject { &self.session_b }
+
     /// The exact write sequence of `sub_007e3f20`. Each line cites the GDI asm address.
     fn apply_ctor_writes(&mut self) {
+        // ---- external sub-object ctors (GDI 0x7e3f41..0x7e3f6f) ----
+        //   sub_7631d0(this+0x302a, 0xc350)  — network buffer, applied by `fn new()` above.
+        //   sub_548d50(this+0x3070, 0)       — session A: apply its 20 writes into arena.
+        //   sub_548d50(this+0x1326d1, 1)     — session B: apply its 20 writes into arena.
+        //
+        // Copy the mode arg out before mutably borrowing `bytes` to avoid overlapping borrows.
+        let sess_a_mode = self.session_a.mode;
+        let sess_b_mode = self.session_b.mode;
+        {
+            let arena = self.as_bytes_mut();
+            SessionSubObject::new(sess_a_mode).apply_ctor_writes(arena, off::SESSION_A);
+            SessionSubObject::new(sess_b_mode).apply_ctor_writes(arena, off::SESSION_B);
+        }
+
         // ---- header dwords/words (GDI 0x7e3f74..0x7e3fe1) ----
         self.set_u32(off::NET_MODE, 0);            // 0x7e3f74
         self.set_u32(off::PUMP_ACTIVE, 0);         // 0x7e3f7a
@@ -306,7 +471,7 @@ impl ScreenManager {
         // The exe stores the absolute pointer; when a follow-up commit adds subobject support,
         // this will become a genuine `*mut u8` write. For now we stash the byte-offset which
         // is enough for byte-diff parity of everything except that one pointer field.
-        self.set_u32(off::INITIAL_SCREEN_PTR, off::SESSION_A as u32); // marker until commit 3
+        self.set_u32(off::INITIAL_SCREEN_PTR, off::SESSION_A as u32); // pointer TBD (host width)
 
         self.set_u16(off::SLOT_DEPTH_TABLE, 1);    // 0x7e4021 slot-0 depth=1
         self.set_u16(off::ROOT_SCREEN_ID, 0);      // 0x7e402a
@@ -555,7 +720,121 @@ mod tests {
     /// Instance is at least large enough for every field the ctor writes.
     #[test]
     fn instance_size_covers_ctor_writes() {
-        // Highest ctor write is [+0x261fd0] dword, ends at 0x261fd4.
+        // Highest ctor write is session B's `+0x12f55d + 1` = arena `+0x261c2f`; the
+        // ScreenManager header itself also writes up to `+0x261fd4` (dword).
         assert!(SCRMGR_SIZE >= 0x0026_1fd4);
+        assert!(SCRMGR_SIZE >= off::SESSION_B + off::SESS_CTOR_HIGH_WATER);
+    }
+
+    // ---------- SessionSubObject (commit 3) ----------
+
+    /// Hand-compute the sub-object bytes as `sub_00548d50(mode)` would leave them, in an
+    /// isolated buffer big enough for the whole span. Compare byte-for-byte to what
+    /// `SessionSubObject::apply_ctor_writes` produces at base 0. The reference matrix comes
+    /// from re-reading each `mov` in the asm.
+    fn hand_computed_session_bytes(mode: u32) -> Vec<u8> {
+        let mut buf = vec![0u8; off::SESS_CTOR_HIGH_WATER];
+        // Sentinels — three 0xFFFF words:
+        buf[off::SESS_WORD_FFFF_A]     = 0xff; buf[off::SESS_WORD_FFFF_A + 1] = 0xff;
+        buf[off::SESS_WORD_FFFF_B]     = 0xff; buf[off::SESS_WORD_FFFF_B + 1] = 0xff;
+        buf[off::SESS_WORD_FFFF_C]     = 0xff; buf[off::SESS_WORD_FFFF_C + 1] = 0xff;
+        // Init flag byte = 1:
+        buf[off::SESS_INIT_FLAG]       = 0x01;
+        // Mode dword = param_2 (little-endian):
+        buf[off::SESS_MODE..off::SESS_MODE + 4].copy_from_slice(&mode.to_le_bytes());
+        buf
+    }
+
+    #[test]
+    fn session_ctor_mode_0_matches_exe() {
+        let sess = SessionSubObject::new(0);
+        assert_eq!(sess.mode(), 0);
+        let mut arena = vec![0u8; off::SESS_CTOR_HIGH_WATER];
+        sess.apply_ctor_writes(&mut arena, 0);
+        let expected = hand_computed_session_bytes(0);
+        assert_eq!(arena, expected, "mode-0 sub-object bytes must match asm-derived reference");
+    }
+
+    #[test]
+    fn session_ctor_mode_1_matches_exe() {
+        let sess = SessionSubObject::new(1);
+        assert_eq!(sess.mode(), 1);
+        let mut arena = vec![0u8; off::SESS_CTOR_HIGH_WATER];
+        sess.apply_ctor_writes(&mut arena, 0);
+        let expected = hand_computed_session_bytes(1);
+        assert_eq!(arena, expected, "mode-1 sub-object bytes must match asm-derived reference");
+    }
+
+    /// `ScreenManager::new()` now populates BOTH session sub-objects inline at the exe's
+    /// offsets. Verify the mode field, the init-flag byte, and the sentinel words at both.
+    #[test]
+    fn screen_manager_ctor_populates_both_sessions() {
+        let m = ScreenManager::new();
+        assert_eq!(m.session_a().mode(), 0);
+        assert_eq!(m.session_b().mode(), 1);
+
+        // SESSION_A byte-checks in the arena — the fields sub_00548d50 leaves nonzero:
+        assert_eq!(m.get_u32(off::SESSION_A + off::SESS_MODE),         0,
+                   "session A mode dword");
+        assert_eq!(m.as_bytes()[off::SESSION_A + off::SESS_INIT_FLAG], 1,
+                   "session A init-flag byte");
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_WORD_FFFF_A), 0xffff);
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_WORD_FFFF_B), 0xffff);
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_WORD_FFFF_C), 0xffff);
+
+        // SESSION_B byte-checks — same shape, mode = 1:
+        assert_eq!(m.get_u32(off::SESSION_B + off::SESS_MODE),         1,
+                   "session B mode dword");
+        assert_eq!(m.as_bytes()[off::SESSION_B + off::SESS_INIT_FLAG], 1,
+                   "session B init-flag byte");
+        assert_eq!(m.get_u16(off::SESSION_B + off::SESS_WORD_FFFF_A), 0xffff);
+        assert_eq!(m.get_u16(off::SESSION_B + off::SESS_WORD_FFFF_B), 0xffff);
+        assert_eq!(m.get_u16(off::SESSION_B + off::SESS_WORD_FFFF_C), 0xffff);
+
+        // Pointer fields the ctor zeros — must be 0 (they were 0 from alloc_zeroed but the
+        // ctor writes 0 explicitly, so we're checking the write, not the alloc).
+        assert_eq!(m.get_u32(off::SESSION_B + off::SESS_PTR_0X12F521), 0);
+        assert_eq!(m.get_u32(off::SESSION_B + off::SESS_PTR_0X12F525), 0);
+        assert_eq!(m.get_u32(off::SESSION_B + off::SESS_PTR_0X12F529), 0);
+    }
+
+    /// The session sub-object writes must not clobber the ScreenManager's own header /
+    /// far-region writes — verify a spot-check field that lives between session-B ctor writes
+    /// (ends at arena +0x261c2f) and end-of-arena is still set by the outer ctor.
+    #[test]
+    fn session_ctor_does_not_clobber_scrmgr_header() {
+        let m = ScreenManager::new();
+        // Header writes still intact:
+        assert_eq!(m.root_running(), 1);
+        assert_eq!(m.root_peer(), 0xFFFF);
+        assert_eq!(m.target_slot(), 0xFFFF);
+        assert_eq!(m.slot_depth(0), 1);
+        // Far-region ScreenManager writes (past session B's high-water at +0x261c2f):
+        assert_eq!(m.get_u32(off::B_DWORD_0X261D32), 0);
+        assert_eq!(m.get_u32(off::B_DWORD_0X261FD0), 0);
+    }
+
+    /// After `reset()`, both session sub-objects are re-ctor'd: mode marker + arena bytes.
+    #[test]
+    fn reset_reruns_both_session_ctors() {
+        let mut m = ScreenManager::new();
+
+        // Trash the session-A and session-B mode + init-flag arena bytes, and the tracker.
+        m.set_u32(off::SESSION_A + off::SESS_MODE, 0xDEAD_BEEF);
+        m.set_u32(off::SESSION_B + off::SESS_MODE, 0xDEAD_BEEF);
+        m.as_bytes_mut()[off::SESSION_A + off::SESS_INIT_FLAG] = 0;
+        m.as_bytes_mut()[off::SESSION_B + off::SESS_INIT_FLAG] = 0;
+        // Trash a sentinel too:
+        m.set_u16(off::SESSION_A + off::SESS_WORD_FFFF_A, 0);
+
+        m.reset();
+
+        assert_eq!(m.session_a().mode(), 0);
+        assert_eq!(m.session_b().mode(), 1);
+        assert_eq!(m.get_u32(off::SESSION_A + off::SESS_MODE), 0);
+        assert_eq!(m.get_u32(off::SESSION_B + off::SESS_MODE), 1);
+        assert_eq!(m.as_bytes()[off::SESSION_A + off::SESS_INIT_FLAG], 1);
+        assert_eq!(m.as_bytes()[off::SESSION_B + off::SESS_INIT_FLAG], 1);
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_WORD_FFFF_A), 0xffff);
     }
 }
