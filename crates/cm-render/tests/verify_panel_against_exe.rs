@@ -33,6 +33,10 @@ struct Case {
     x0: i32, y0: i32, x1: i32, y1: i32,
     style: u32,
     colour: u16,
+    /// 7th arg of FUN_005cf570 (circle-outline colour). Cases captured
+    /// before the field existed passed 0 to the exe, so 0 is the default.
+    #[serde(default)]
+    pattern: u16,
     before_b64: String,
     after_b64: String,
 }
@@ -56,6 +60,18 @@ fn draw_panel_matches_fun_005cf570_byte_exact() {
     let fx: Fixture = serde_json::from_str(&text).expect("parse fixture");
     let (w, h) = (fx.scratch.width, fx.scratch.height);
     let (sh_x, sh_y) = (fx.scratch.x0, fx.scratch.y0);
+    // Palette globals read live from the running exe (DAT_00ad6b24 +
+    // DAT_00ad6b3c) must equal what the ported palette-reload
+    // (FUN_005cdfa0) derives for the RGB555 surface.
+    let live = PanelPalette {
+        outer_highlight: fx.palette.outer_highlight,
+        default_bevel: fx.palette.default_bevel,
+    };
+    let derived = PanelPalette::from_palette_reload(&PackedSurface::rgb555(1, 1));
+    assert_eq!(derived.outer_highlight, live.outer_highlight,
+               "DAT_00ad6b24: FUN_005cdfa0 port vs live exe");
+    assert_eq!(derived.default_bevel, live.default_bevel,
+               "DAT_00ad6b3c: FUN_005cdfa0 port vs live exe");
     let mut failures: Vec<String> = Vec::new();
     let mut passes: Vec<String> = Vec::new();
     for case in &fx.cases {
@@ -65,17 +81,11 @@ fn draw_panel_matches_fun_005cf570_byte_exact() {
             buf: before, width: w, height: h, pitch_pixels: w,
             red_mask: 0x7c00, green_mask: 0x03e0, blue_mask: 0x001f,
         };
-        // Palette globals captured from the running exe (DAT_00ad6b24 +
-        // DAT_00ad6b3c). Threaded through so P_OUTER_HIGHLIGHT and the
-        // default-bevel-colour case (colour == 0) match the exe.
         draw_panel(&mut s,
                    case.x0 - sh_x, case.y0 - sh_y,
                    case.x1 - sh_x, case.y1 - sh_y,
-                   case.style, case.colour,
-                   PanelPalette {
-                       outer_highlight: fx.palette.outer_highlight,
-                       default_bevel: fx.palette.default_bevel,
-                   });
+                   case.style, case.colour, case.pattern,
+                   live);
         if s.buf == after_expected {
             passes.push(case.label.clone());
         } else {

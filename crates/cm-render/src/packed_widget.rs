@@ -680,6 +680,7 @@ pub fn render_widget(
         widget.y1,
         effective_style,
         panel_colour,
+        widget.pattern,          // 005d7c26 `mov dx, [ebp+0x78]` → 7th arg
         globals.panel_palette,
     );
 

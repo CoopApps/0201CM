@@ -29,9 +29,19 @@ P_SOLID_FRAME    = 0x00000200
 P_RIGHT_EDGE     = 0x00000400
 P_OUTER_HIGHLIGHT= 0x00000800
 P_DASH_VARIANT   = 0x00002000
+P_ALT_PRIMITIVE  = 0x00010000
 P_MIDLINE_H      = 0x01000000
 
 CASES = [
+    # --- FUN_005d0ce0 circle paths (7th arg "pattern" = outline colour) ---
+    {"label": "circle fill (alt)",          "x0": 10, "y0": 10, "x1": 60, "y1": 60, "style": P_SOLID_FILL|P_ALT_PRIMITIVE,               "colour": 0x7c00, "pattern": 0x0000, "prefill": None},
+    {"label": "circle outline solid",       "x0": 70, "y0": 5,  "x1": 130,"y1": 65, "style": P_BEVEL|P_ALT_PRIMITIVE,                    "colour": 0x03e0, "pattern": 0x001f, "prefill": None},
+    {"label": "circle outline dashed",      "x0": 140,"y0": 10, "x1": 195,"y1": 70, "style": P_BEVEL|P_ALT_PRIMITIVE|P_DASH_VARIANT,     "colour": 0x03e0, "pattern": 0x7fff, "prefill": None},
+    {"label": "circle fill + outline",      "x0": 10, "y0": 10, "x1": 70, "y1": 70, "style": P_SOLID_FILL|P_BEVEL|P_ALT_PRIMITIVE,       "colour": 0x7c00, "pattern": 0x03e0, "prefill": None},
+    {"label": "circle tall rect (x-clip)",  "x0": 10, "y0": 5,  "x1": 40, "y1": 75, "style": P_SOLID_FILL|P_BEVEL|P_ALT_PRIMITIVE,       "colour": 0x001f, "pattern": 0x7fff, "prefill": "fill_grey"},
+    {"label": "circle wide rect",           "x0": 5,  "y0": 5,  "x1": 190,"y1": 40, "style": P_SOLID_FILL|P_ALT_PRIMITIVE,               "colour": 0x7fff, "pattern": 0x0000, "prefill": None},
+    {"label": "circle even height dashed",  "x0": 100,"y0": 20, "x1": 150,"y1": 61, "style": P_BEVEL|P_ALT_PRIMITIVE|P_DASH_VARIANT,     "colour": 0x0000, "pattern": 0x7c00, "prefill": "fill_grey"},
+    {"label": "circle tiny 5x5",            "x0": 3,  "y0": 3,  "x1": 7,  "y1": 7,  "style": P_SOLID_FILL|P_BEVEL|P_ALT_PRIMITIVE,       "colour": 0x7c00, "pattern": 0x03e0, "prefill": None},
     # rect (relative to scratch origin); coords are absolute in exe.
     {"label": "solid fill",            "x0": 10, "y0": 10, "x1": 60, "y1": 40, "style": P_SOLID_FILL,           "colour": 0x7c00, "prefill": None},
     {"label": "vgradient",             "x0": 70, "y0": 10, "x1": 130,"y1": 60, "style": P_VGRADIENT,            "colour": 0x7c00, "prefill": None},
@@ -87,7 +97,7 @@ rpc.exports = {
         if (c.prefill === 'fill_grey') rectFn(__X0__,__Y0__,__X1__,__Y1__,0,0x4210);
         else if (c.prefill === 'fill_red') rectFn(__X0__,__Y0__,__X1__,__Y1__,0,0x7c00);
         const before = readScratch();
-        panelFn(c.x0, c.y0, c.x1, c.y1, c.style, c.colour, 0);
+        panelFn(c.x0, c.y0, c.x1, c.y1, c.style, c.colour, c.pattern || 0);
         const after = readScratch();
         restoreFn(__X0__,__Y0__,orig);
         return {before, after};

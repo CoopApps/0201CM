@@ -59,6 +59,10 @@ pub enum Call {
     Panel {
         x0: i32, y0: i32, x1: i32, y1: i32,
         style: u32, colour: u16,
+        /// `FUN_005cf570`'s 7th argument (`[esp+0x80]`) — the circle-outline
+        /// colour for `P_BEVEL | P_ALT_PRIMITIVE`. Older captures predate
+        /// the field and default to 0.
+        #[serde(default)] pattern: u16,
         #[serde(default)] outer_highlight: u16,
         #[serde(default)] default_bevel: u16,
     },
@@ -189,12 +193,12 @@ fn dispatch(s: &mut PackedSurface, call: &Call) {
         Call::Darken { x0, y0, x1, y1 } => {
             s.darken_rect(*x0, *y0, *x1, *y1);
         }
-        Call::Panel { x0, y0, x1, y1, style, colour, outer_highlight, default_bevel } => {
+        Call::Panel { x0, y0, x1, y1, style, colour, pattern, outer_highlight, default_bevel } => {
             let pal = PanelPalette {
                 outer_highlight: *outer_highlight,
                 default_bevel: *default_bevel,
             };
-            draw_panel(s, *x0, *y0, *x1, *y1, *style, *colour, pal);
+            draw_panel(s, *x0, *y0, *x1, *y1, *style, *colour, *pattern, pal);
         }
         Call::Text { x, y, colour, text, font } => {
             let f = font.into_font();
