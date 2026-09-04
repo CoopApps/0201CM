@@ -51,6 +51,7 @@ pub mod screens_faithful;
 pub mod packed_text;
 pub mod packed_sprintf;
 pub mod msgbox;
+pub mod news_action_classify;
 pub mod palette;
 pub mod panel;
 pub mod primitives;
