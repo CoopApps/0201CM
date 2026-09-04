@@ -201,7 +201,107 @@ pub mod off {
     pub const B_DWORD_0X261FCC: usize = 0x0026_1fcc;
     /// GDI L33.
     pub const B_DWORD_0X261FD0: usize = 0x0026_1fd0;
+
+    // ---- Fields the pump (FUN_007e4940 / sub_007e4340) writes at entry ----
+    // (Preamble portion only — see `ScreenManager::pump_preamble`.)
+    //
+    // Note: `+0x3068` and `+0x306a` overlap PUMP_ACTIVE (dword). The pump treats
+    // them as two shorts (`param_1[0x1834] = 1; param_1[0x1835] = 0;`, C lines
+    // 35-36) — bytes 01 00 00 00, byte-identical to `set_u32(PUMP_ACTIVE, 1)`.
+    /// `+0x3068` word — pump-active low half. C L35 / asm 007e435a.
+    pub const PUMP_ACTIVE_LO: usize = 0x3068;
+    /// `+0x306a` word — pump-active high half. C L36.
+    pub const PUMP_ACTIVE_HI: usize = 0x306a;
+    /// `+0x261c2a` dword — flag = (mode_table[5] == 0x7e0). C L45 / asm 007e4378.
+    pub const PUMP_MODE_FLAG_A: usize = 0x0026_1c2a;
+    /// `+0x1325c9` dword — same predicate, second slot. C L53 / asm 007e439d.
+    pub const PUMP_MODE_FLAG_B: usize = 0x0013_25c9;
+    /// `+0x13256a` word — cleared at pump entry. C L55 (`param_1[0x992b5] = 0`) /
+    /// asm 007e43a8 `mov dword ptr [ebp + 0x13256a], ebx (=0)` (dword-write
+    /// covering both 0x13256a and 0x13256c).
+    pub const PUMP_WORD_0X13256A: usize = 0x0013_256a;
+    /// `+0x13256c` word — cleared at pump entry. C L56.
+    pub const PUMP_WORD_0X13256C: usize = 0x0013_256c;
 }
+
+// ------------------------------------------------------------
+// ScreenRecord — the per-entry structure a slot list holds.
+// ------------------------------------------------------------
+//
+// Full struct layout lives in `push_screen` (FUN_007e6570, ported in commit 5)
+// which allocates 0x300 bytes and populates the fields. The pump reads:
+// - `+0x00` — vtable ptr (dispatched by `pump` per-frame handler)
+// - `+0x04` — cleanup fn ptr (called on teardown, args: local_438)
+// - `+0x08` — event fn ptr (called on input events)
+//
+// Slots 0x0c..0x300 are TBD — decoded incrementally by commits 4c + 5.
+
+/// Vtable for a `ScreenRecord`. Slots decoded from pump call sites in
+/// `FUN_007e4940` (C lines 117, 179, 277, 417) and `push_screen`.
+///
+/// Only the first three slots are used by the 4a preamble (indirectly — the
+/// preamble does not call any of them; commit 4c wires them at dispatch).
+/// Remaining vtable slots stay `unk_*` until push_screen decodes them.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ScreenRecordVTable {
+    /// `+0x00` — per-frame handler. Called every pump tick on the current record.
+    pub per_frame: Option<fn(&mut ScreenManager)>,
+    /// `+0x04` — cleanup handler. Called on screen teardown; takes one stack arg
+    /// (the `local_438` state slot from the pump).
+    pub cleanup: Option<fn(&mut ScreenManager, u32)>,
+    /// `+0x08` — event handler. Called on input events; returns an i32 code
+    /// consumed by the pump's -1..-13 dispatch table.
+    pub event: Option<fn(&mut ScreenManager, u32) -> i32>,
+    // TODO(commit 4c/5): fill remaining slots as push_screen decodes them.
+}
+
+/// A screen record — 0x300 bytes in the exe. Allocated by `push_screen`
+/// (FUN_007e6570, ported in commit 5). Referenced by pump via slot's
+/// `+0x28` entry pointer.
+///
+/// Known byte offsets from live-decode + inventory:
+/// - `+0x00`  — vtable pointer (dereffed by pump)
+/// - `+0x04`  — cleanup fn (dereffed at pump lines 179/277/417)
+/// - `+0x0c`  — cleanup2 fn
+/// - `+0x10`  — modal flag byte
+/// - `+0x14 + slot_index*8` — slot bag values (from FUN_007e7130)
+/// - `+0x1f8` — next-ptr (linked list)
+/// - `+0x1fc` — prev-ptr
+/// - `+0x7f`  — name string (~0x100 bytes)
+///
+/// The 4a commit adds only the type shell — no writers, no reads-through-vtable
+/// yet. Fields past what commit 4c uses stay `unk_*` until push_screen decodes
+/// the full 0x300-byte layout.
+#[derive(Debug, Default)]
+pub struct ScreenRecord {
+    /// `+0x00` — the vtable (owned, since we've moved off raw pointers).
+    pub vtable: ScreenRecordVTable,
+    // TODO(commit 4c/5): fill remaining fields as they're decoded.
+    // Placeholder to reserve struct identity; will be replaced with typed fields.
+    pub unk_tail: (),
+}
+
+// ------------------------------------------------------------
+// DAT_00acde98 — 8-dword static table copied into a stack buffer at pump entry.
+// Symbol table (data_symbols.json) types this as `undefined4` — untyped 32-bit
+// values. Not decoded yet; the pump reads element [5] to compare against 0x7e0
+// (= 2016 decimal — plausibly a season year, but unverified).
+// ------------------------------------------------------------
+
+/// Snapshot of the `DAT_00acde98` static table read at pump entry.
+///
+/// The exe copies 8 dwords starting at absolute address `0x00acde98` (asm
+/// `mov esi, 0xacde98; rep movsd 8`) into a stack buffer, then reads element
+/// [5] (offset 0x14 within the copy) for the mode comparison. Real values
+/// need extraction from the exe's .data section — for 4a the placeholder is
+/// all-zero, and callers wanting a nonzero mode-flag override via
+/// `pump_preamble_with_mode_table`.
+///
+/// TODO(later commit): extract real bytes from cm0102_GDI.exe and inline.
+pub const DAT_ACDE98: [u32; 8] = [0; 8];
+
+/// The 0x7e0 constant the pump compares against.
+pub const PUMP_MODE_MATCH: u32 = 0x7e0;
 
 /// Network send/recv buffer sub-object embedded in `ScreenManager` at `+0x302a`.
 ///
@@ -350,6 +450,13 @@ pub struct ScreenManager {
     session_a: SessionSubObject,
     /// Second session sub-object at `+0x1326d1` — ctor arg = 1.
     session_b: SessionSubObject,
+    /// Snapshot of the last DAT_00acde98 8-dword copy performed by
+    /// `pump_preamble`. The exe stores this on the pump's stack (`local_420`)
+    /// — no persistent scrman slot exists — but we retain it as evidence for
+    /// testing the copy landed.
+    ///
+    /// Zeroed until the first `pump_preamble` call.
+    mode_table_snapshot: [u32; 8],
 }
 
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
@@ -381,7 +488,10 @@ impl ScreenManager {
         // Session sub-object ctor calls (matches `FUN_00548b40(esi+..., mode)`).
         let session_a = SessionSubObject::new(0);
         let session_b = SessionSubObject::new(1);
-        let mut this = ScreenManager { bytes, net_buf, session_a, session_b };
+        let mut this = ScreenManager {
+            bytes, net_buf, session_a, session_b,
+            mode_table_snapshot: [0; 8],
+        };
         this.apply_ctor_writes();
         this
     }
@@ -400,7 +510,92 @@ impl ScreenManager {
         // re-populated by apply_ctor_writes below.
         self.session_a = SessionSubObject::new(0);
         self.session_b = SessionSubObject::new(1);
+        self.mode_table_snapshot = [0; 8];
         self.apply_ctor_writes();
+    }
+
+    /// Snapshot of the last DAT_00acde98 copy performed by `pump_preamble`.
+    /// Zero-initialised; see field doc.
+    #[inline]
+    pub fn mode_table_snapshot(&self) -> &[u32; 8] { &self.mode_table_snapshot }
+
+    /// Preamble portion of `FUN_007e4940` (GDI `sub_007e4340`), C lines 35..56
+    /// / asm 007e435a..007e43ae.
+    ///
+    /// Ports the trivial part of the pump entry:
+    /// 1. `param_1[0x1834] = 1;` — pump-active low word (byte-equivalent to
+    ///    `PUMP_ACTIVE = 1` since it overlaps the same dword).
+    /// 2. `param_1[0x1835] = 0;` — pump-active high word.
+    /// 3. `for i in 0..8 { local_420[i] = DAT_00acde98[i]; }` — 8-dword copy.
+    /// 4. `*(uint *)(param_1 + 0x130e15) = (uint)(local_40c == 0x7e0);`
+    ///    dword-flag at byte offset 0x261c2a.
+    /// 5. Same copy repeated (byte-for-byte, kept in the port for parity).
+    /// 6. `*(uint *)((int)param_1 + 0x1325c9) = (uint)(local_40c == 0x7e0);`
+    /// 7. `param_1[0x992b5] = 0; param_1[0x992b6] = 0;` — two words cleared
+    ///    at bytes 0x13256a and 0x13256c. (Asm coalesces to one dword-clear at
+    ///    0x13256a; byte-equivalent.)
+    ///
+    /// Delegates the `pump_mode_table_source` to a parameter so tests can
+    /// exercise the mode-flag branch. Callers pass `DAT_ACDE98` for parity
+    /// with the exe.
+    ///
+    /// **Deferred to later sub-commits:**
+    /// - `FUN_00935f4b(&local_428)` — timezone snapshot (C L57). Sub-commit 4b.
+    /// - Per-slot depth loop C L58..89 — reads slot depths (loop bound only,
+    ///   depths themselves not mutated) and clears entry fields in each
+    ///   slot's entry chain. Requires `ScreenRecord` field layout past +0x0c
+    ///   which push_screen (commit 5) will provide. Sub-commit 4c.
+    /// - Network prologue C L91..96. Sub-commit 4b.
+    /// - Main dispatch loop C L97+. Sub-commits 4c + 4d.
+    pub(crate) fn pump_preamble_with_mode_table(&mut self, mode_table: &[u32; 8]) {
+        // C L35-36 / asm 007e435a: pump-active flag = 1 (as two shorts).
+        self.set_u16(off::PUMP_ACTIVE_LO, 1);           // param_1[0x1834] = 1
+        self.set_u16(off::PUMP_ACTIVE_HI, 0);           // param_1[0x1835] = 0
+
+        // C L37-43 / asm 007e434c..007e4369: 8-dword copy DAT_00acde98 → local_420.
+        // No scrman field is written by the copy itself; we record the snapshot
+        // for testability (the real pump uses local_420 as scratch).
+        let mut local_420: [u32; 8] = [0; 8];
+        for i in 0..8 {                                 // rep movsd, ecx=8
+            local_420[i] = mode_table[i];
+        }
+        // Read at [esp+0x3c] == local_420[5] (byte offset 0x14 into copy).
+        let local_40c = local_420[5];
+
+        // C L45 / asm 007e4378: dword flag at +0x261c2a = (local_40c == 0x7e0).
+        let flag_a: u32 = if local_40c == PUMP_MODE_MATCH { 1 } else { 0 };
+        self.set_u32(off::PUMP_MODE_FLAG_A, flag_a);
+
+        // C L46-52 / asm 007e437e..007e438c: identical second copy. Kept for
+        // asm parity even though the result is byte-identical to the first.
+        let mut local_420_b: [u32; 8] = [0; 8];
+        for i in 0..8 {
+            local_420_b[i] = mode_table[i];
+        }
+        let local_40c_b = local_420_b[5];
+
+        // C L53 / asm 007e439d: dword flag at +0x1325c9 = same predicate.
+        let flag_b: u32 = if local_40c_b == PUMP_MODE_MATCH { 1 } else { 0 };
+        self.set_u32(off::PUMP_MODE_FLAG_B, flag_b);
+
+        // C L55-56 / asm 007e43a4..007e43a8: clear the two words at +0x13256a
+        // and +0x13256c. Asm actually writes one dword covering both; we do
+        // two u16 writes for symmetry with the C decomp, byte-equivalent.
+        self.set_u16(off::PUMP_WORD_0X13256A, 0);
+        self.set_u16(off::PUMP_WORD_0X13256C, 0);
+
+        // Record the copy as evidence for the test.
+        self.mode_table_snapshot = local_420;
+
+        // C L57 `FUN_00935f4b(&local_428)` — DEFERRED (4b).
+        // C L58-89 per-slot loop — DEFERRED (4c).
+    }
+
+    /// Convenience wrapper — invokes `pump_preamble_with_mode_table` with the
+    /// exe's real DAT_00acde98 static table.
+    #[allow(dead_code)]
+    pub(crate) fn pump_preamble(&mut self) {
+        self.pump_preamble_with_mode_table(&DAT_ACDE98);
     }
 
     /// Immutable view of the network-buffer sub-object at `+0x302a`.
@@ -836,5 +1031,124 @@ mod tests {
         assert_eq!(m.as_bytes()[off::SESSION_A + off::SESS_INIT_FLAG], 1);
         assert_eq!(m.as_bytes()[off::SESSION_B + off::SESS_INIT_FLAG], 1);
         assert_eq!(m.get_u16(off::SESSION_A + off::SESS_WORD_FFFF_A), 0xffff);
+    }
+
+    // ---------- ScreenRecord + pump preamble (commit 4a) ----------
+
+    /// The vtable has exactly the 3 decoded slots exposed as fields, and
+    /// defaults to all-None. Its size shouldn't grow past those slots in 4a.
+    #[test]
+    fn screen_record_vtable_default_is_all_none() {
+        let vt = ScreenRecordVTable::default();
+        assert!(vt.per_frame.is_none(), "per_frame default");
+        assert!(vt.cleanup.is_none(),   "cleanup default");
+        assert!(vt.event.is_none(),     "event default");
+        // Sanity: constructing a ScreenRecord from the default vtable works
+        // and produces the expected default-initialised shell.
+        let rec = ScreenRecord::default();
+        assert!(rec.vtable.per_frame.is_none());
+    }
+
+    /// `pump_preamble` sets the PUMP_ACTIVE flag (byte-wise, via the two-short
+    /// write pattern the decomp performs).
+    #[test]
+    fn pump_preamble_sets_pump_active() {
+        let mut m = ScreenManager::new();
+        assert_eq!(m.pump_active(), 0, "post-ctor pump_active must be 0");
+        m.pump_preamble();
+        // Both the low and high halves individually:
+        assert_eq!(m.get_u16(off::PUMP_ACTIVE_LO), 1);
+        assert_eq!(m.get_u16(off::PUMP_ACTIVE_HI), 0);
+        // Combined dword view via the existing accessor:
+        assert_eq!(m.pump_active(), 1, "dword view: 01 00 00 00 = 1");
+    }
+
+    /// `pump_preamble_with_mode_table` copies the caller-supplied table into
+    /// the snapshot, evidencing the exe's `rep movsd` copy.
+    #[test]
+    fn pump_preamble_copies_mode_table() {
+        let mut m = ScreenManager::new();
+        assert_eq!(m.mode_table_snapshot(), &[0u32; 8], "pre-call snapshot is zero");
+
+        let sentinel: [u32; 8] = [
+            0xDEAD_0001, 0xDEAD_0002, 0xDEAD_0003, 0xDEAD_0004,
+            0xDEAD_0005, 0xDEAD_0006, 0xDEAD_0007, 0xDEAD_0008,
+        ];
+        m.pump_preamble_with_mode_table(&sentinel);
+        assert_eq!(m.mode_table_snapshot(), &sentinel, "all 8 dwords copied");
+    }
+
+    /// When `mode_table[5] == 0x7e0`, both flag slots go to 1.
+    #[test]
+    fn pump_preamble_mode_flag_hit() {
+        let mut m = ScreenManager::new();
+        let mut tbl = [0u32; 8];
+        tbl[5] = PUMP_MODE_MATCH;    // 0x7e0 — the value asm compares against
+        m.pump_preamble_with_mode_table(&tbl);
+        assert_eq!(m.get_u32(off::PUMP_MODE_FLAG_A), 1);
+        assert_eq!(m.get_u32(off::PUMP_MODE_FLAG_B), 1);
+    }
+
+    /// When `mode_table[5] != 0x7e0`, both flag slots go to 0.
+    #[test]
+    fn pump_preamble_mode_flag_miss() {
+        let mut m = ScreenManager::new();
+        let mut tbl = [0u32; 8];
+        tbl[5] = 0x7e1;              // one past — should miss
+        m.pump_preamble_with_mode_table(&tbl);
+        assert_eq!(m.get_u32(off::PUMP_MODE_FLAG_A), 0);
+        assert_eq!(m.get_u32(off::PUMP_MODE_FLAG_B), 0);
+    }
+
+    /// `pump_preamble` clears the two words at +0x13256a and +0x13256c.
+    /// Pre-set them nonzero to verify the clear actually runs.
+    #[test]
+    fn pump_preamble_clears_words_0x13256a_0x13256c() {
+        let mut m = ScreenManager::new();
+        m.set_u16(off::PUMP_WORD_0X13256A, 0xAAAA);
+        m.set_u16(off::PUMP_WORD_0X13256C, 0xBBBB);
+        m.pump_preamble();
+        assert_eq!(m.get_u16(off::PUMP_WORD_0X13256A), 0);
+        assert_eq!(m.get_u16(off::PUMP_WORD_0X13256C), 0);
+    }
+
+    /// The preamble scope in 4a does NOT mutate slot depths — the depth table
+    /// is loop-bound-read by the deferred per-slot loop (commit 4c), never
+    /// written. Verify preservation for both post-ctor state and arbitrary
+    /// pre-set depths.
+    #[test]
+    fn pump_preamble_preserves_slot_depths() {
+        let mut m = ScreenManager::new();
+        // Post-ctor: slot 0 depth = 1, others = 0. Preserve through preamble.
+        m.pump_preamble();
+        assert_eq!(m.slot_depth(0), 1, "slot-0 depth preserved");
+        for i in 1..SLOT_COUNT {
+            assert_eq!(m.slot_depth(i), 0, "slot {} depth preserved", i);
+        }
+
+        // Pre-set arbitrary depths and re-run.
+        for i in 0..SLOT_COUNT {
+            m.set_u16(off::SLOT_DEPTH_TABLE + i * 2, (i as u16) + 3);
+        }
+        m.pump_preamble();
+        for i in 0..SLOT_COUNT {
+            assert_eq!(m.slot_depth(i), (i as u16) + 3, "arbitrary slot {} preserved", i);
+        }
+    }
+
+    /// Preamble does not corrupt neighbouring header state: sub-object marker
+    /// modes, root flags, session sentinels all stay put.
+    #[test]
+    fn pump_preamble_does_not_clobber_ctor_state() {
+        let mut m = ScreenManager::new();
+        m.pump_preamble();
+        // Ctor invariants:
+        assert_eq!(m.root_running(), 1);
+        assert_eq!(m.root_peer(),    0xFFFF);
+        assert_eq!(m.target_slot(),  0xFFFF);
+        assert_eq!(m.session_a().mode(), 0);
+        assert_eq!(m.session_b().mode(), 1);
+        assert_eq!(m.get_u16(off::SESSION_A + off::SESS_WORD_FFFF_A), 0xffff);
+        assert_eq!(m.get_u16(off::SESSION_B + off::SESS_WORD_FFFF_A), 0xffff);
     }
 }
