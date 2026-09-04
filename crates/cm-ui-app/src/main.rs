@@ -182,6 +182,20 @@ impl App {
                 return;
             }
         }
+        // Category B rich-state fast path (News / Dashboard / League
+        // Table / Player Profile / Club Fixtures / Selected Leagues /
+        // Widget Pool Debug). These carry a live cm-domain View and
+        // route through `render_new::try_render_rich_state`, which
+        // feeds the View into a `screen_rich_state::*` pool builder
+        // and paints through `packed_widget::render_widget` — the same
+        // byte-exact Layer 2 that the AutoRoute path uses.
+        {
+            let font = self.fonts.pixel_slot(3);
+            if render_new::try_render_rich_state(&self.screen, &mut self.frame, font) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         match &self.screen {
             Screen::Setup => {
                 let p = match self.pressed {

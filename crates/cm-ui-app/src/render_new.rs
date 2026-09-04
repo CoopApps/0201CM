@@ -22,6 +22,7 @@ use cm_render::packed::PackedSurface;
 use cm_render::packed_glyph::PixelFont;
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
+use cm_render::screen_rich_state;
 use cm_render::widget_pool::GuiRecordPool;
 use cm_render::Surface;
 
@@ -161,6 +162,73 @@ pub fn try_render_via_pool(cmd: i16, out: &mut Surface, font: &PixelFont) -> boo
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     if !dispatch_and_render(cmd, &mut packed, font) {
         return false;
+    }
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+/// Category B rich-state fast path.
+///
+/// The seven rich-state `Screen` variants carry live cm-domain View
+/// payloads that `dispatch_global` / `dispatch_club` do not accept
+/// (their builders take default views, so the AutoRoute path renders
+/// empty substrates). This function pattern-matches on those variants
+/// directly, feeds the live View into a
+/// [`cm_render::screen_rich_state`] builder to populate a fresh
+/// [`GuiRecordPool`], and paints it through [`render_widget`].
+///
+/// Returns `true` when a builder ran (Screen was a rich-state variant
+/// AND its pool spawn didn't overflow); `false` sends the caller to the
+/// old per-screen `screens::` renderer.
+///
+/// Provenance: every rect + colour spawned by the builders is either
+/// from a live exe capture (News → `screen_news`) or from the
+/// pre-fold layout in `crates/cm-ui-app/src/screens.rs` (see
+/// [`cm_render::screen_rich_state`] module doc). No fabricated
+/// geometry.
+pub fn try_render_rich_state(
+    screen: &Screen,
+    out: &mut Surface,
+    font: &PixelFont,
+) -> bool {
+    let mut pool = GuiRecordPool::new();
+    let ok = match screen {
+        Screen::News { view, .. } => {
+            screen_rich_state::build_news_from_view(&mut pool, view).is_some()
+        }
+        Screen::Dashboard { view, squad_scroll } => {
+            screen_rich_state::build_dashboard_from_view(&mut pool, view, *squad_scroll).is_some()
+        }
+        Screen::LeagueTable { view, scroll } => {
+            screen_rich_state::build_league_table_from_view(&mut pool, view, *scroll).is_some()
+        }
+        Screen::PlayerProfile { view } => {
+            screen_rich_state::build_player_profile_from_view(&mut pool, view).is_some()
+        }
+        Screen::ClubFixtures { view, scroll } => {
+            screen_rich_state::build_club_fixtures_from_view(&mut pool, view, *scroll).is_some()
+        }
+        Screen::SelectedLeagues { rows, options } => {
+            screen_rich_state::build_selected_leagues_from_view(
+                &mut pool, rows, options.as_ref(),
+            ).is_some()
+        }
+        Screen::WidgetPoolDebug { label, widgets } => {
+            screen_rich_state::build_widget_pool_debug_from_view(
+                &mut pool, label, widgets,
+            ).is_some()
+        }
+        _ => return false,
+    };
+    if !ok {
+        return false;
+    }
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    let n = pool.widgets.len();
+    for i in 0..n {
+        let mut rw = to_render_widget(&pool.widgets[i]);
+        rw.frame_idx = -1;
+        render_widget(&mut packed, &mut rw, Some(&pool), font, WidgetGlobals::default(), true);
     }
     blit_packed_to_surface(&packed, out);
     true
