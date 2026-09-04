@@ -457,6 +457,21 @@ pub struct ScreenManager {
     ///
     /// Zeroed until the first `pump_preamble` call.
     mode_table_snapshot: [u32; 8],
+    /// Last timestamp produced by `snapshot_time_now()` — the exe stores this
+    /// value on the pump's stack (`local_428` at C L57) and later fans it out
+    /// into per-slot `ScreenRecord`s at record byte-offset +0x2c. There is no
+    /// scrman arena slot for it, so we keep it as a struct field.
+    ///
+    /// **Encoding note.** The exe's `FUN_00935f4b` returns the result of
+    /// `FUN_0093b4b0(y,m,d,h,mi,s,dst)` — a custom-epoch (`0x7c558180 +
+    /// DAT_00ac4c88`-based) i32 count of seconds. That encoder relies on two
+    /// unported `.data` constants (`DAT_00ac4c88`, `DAT_00ac4c90`), so this
+    /// port stores a **Unix-epoch** i32 instead — semantically-equivalent
+    /// monotonic seconds (with wraparound in 2038 like the exe). The exact
+    /// encoding is deferred with the mktime port.
+    ///
+    /// Zeroed until the first `snapshot_time_now` call.
+    last_time_snapshot: i32,
 }
 
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
@@ -491,6 +506,7 @@ impl ScreenManager {
         let mut this = ScreenManager {
             bytes, net_buf, session_a, session_b,
             mode_table_snapshot: [0; 8],
+            last_time_snapshot: 0,
         };
         this.apply_ctor_writes();
         this
@@ -511,6 +527,7 @@ impl ScreenManager {
         self.session_a = SessionSubObject::new(0);
         self.session_b = SessionSubObject::new(1);
         self.mode_table_snapshot = [0; 8];
+        self.last_time_snapshot = 0;
         self.apply_ctor_writes();
     }
 
@@ -596,6 +613,58 @@ impl ScreenManager {
     #[allow(dead_code)]
     pub(crate) fn pump_preamble(&mut self) {
         self.pump_preamble_with_mode_table(&DAT_ACDE98);
+    }
+
+    /// Port of `FUN_00935f4b(&local_428)` — C L57 of the pump.
+    ///
+    /// The exe reads the current wall-clock (`GetLocalTime` + `GetSystemTime`),
+    /// refreshes a DST cache (`GetTimeZoneInformation` → `DAT_00dc82b0`),
+    /// caches the components (`DAT_00dc82b8..DAT_00dc82c4`), then encodes the
+    /// local time into an i32 via `FUN_0093b4b0` — a custom mktime-analogue
+    /// using globals `DAT_00ac4c88` (per-year offset) and `DAT_00ac4c90` (DST
+    /// bias). The result feeds `local_428` on the pump's stack and is later
+    /// stamped into every ScreenRecord at `+0x2c` (C L79 `psVar18[0x16]`).
+    ///
+    /// **Rust port.** `std::time::SystemTime::now().duration_since(UNIX_EPOCH)`
+    /// replaces the Win32 clock reads (Rust std delegates to the same OS API
+    /// on Windows). The DST cache + custom epoch encoder are **deferred** —
+    /// unported constants (`DAT_00ac4c88`, `DAT_00ac4c90`) would need to be
+    /// extracted from the `.data` section, and the pump consumers so far only
+    /// read the stamped `+0x2c` field as an opaque monotonic id.
+    ///
+    /// See `last_time_snapshot` field doc for the encoding-difference caveat.
+    pub fn snapshot_time_now(&mut self) {
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i32)  // wraps in 2038, same as exe's i32
+            .unwrap_or(0);
+        self.last_time_snapshot = secs;
+    }
+
+    /// Value written by the most recent `snapshot_time_now()`. Zero until the
+    /// first call.
+    #[inline]
+    pub fn last_time_snapshot(&self) -> i32 { self.last_time_snapshot }
+
+    /// Pump prologue — combines commit 4a's `pump_preamble` with commit 4b's
+    /// `snapshot_time_now`. Covers C lines 35..57 of `FUN_007e4940`.
+    ///
+    /// **Deferred (STOP-AND-REPORT).** The network prologue at C L91..96
+    /// (`while (net_mode != 0) { FUN_00762e80(net_buf_ptr, &tag) }`) is
+    /// **not** included. `FUN_00762e80` has no C decomp in `ghidra_out/`
+    /// (only 762730/7d0/7f0/8e0/950/b60/b90 exist); the GDI-side equivalent
+    /// `sub_00762ac0` is a 601-instruction winsock-heavy function (calls
+    /// `sub_89a970` accept + `sub_89aeb0` recv + peer table at `+0x4ba`).
+    /// Porting it requires winsock init / socket registration / peer-table
+    /// infra that this workspace does not yet have. That path is deferred to
+    /// a follow-up commit; the pump prologue this ships is offline-safe (no
+    /// net poll).
+    pub fn pump_prologue(&mut self) {
+        self.pump_preamble();
+        self.snapshot_time_now();
+        // Per-slot timestamp fan-out (C L58..89) uses ScreenRecord fields past
+        // +0x0c that push_screen (commit 5) will decode — deferred to 4c.
+        // Network prologue (C L91..96) — deferred, see doc-comment above.
     }
 
     /// Immutable view of the network-buffer sub-object at `+0x302a`.
@@ -1134,6 +1203,62 @@ mod tests {
         for i in 0..SLOT_COUNT {
             assert_eq!(m.slot_depth(i), (i as u16) + 3, "arbitrary slot {} preserved", i);
         }
+    }
+
+    // ---------- commit 4b: timezone snapshot + prologue ordering ----------
+
+    /// `snapshot_time_now` writes a non-zero i32 into `last_time_snapshot`
+    /// (any Unix wall-clock read since 1970 is > 0).
+    #[test]
+    fn snapshot_time_now_writes_nonzero() {
+        let mut m = ScreenManager::new();
+        assert_eq!(m.last_time_snapshot(), 0, "pre-call snapshot must be 0");
+        m.snapshot_time_now();
+        assert!(m.last_time_snapshot() > 0, "post-call snapshot must be > 0");
+    }
+
+    /// Repeated calls advance (or hold equal to) the previous value —
+    /// evidences a real monotonic OS clock read, not a zero stub.
+    #[test]
+    fn snapshot_time_now_monotonic() {
+        let mut m = ScreenManager::new();
+        m.snapshot_time_now();
+        let t1 = m.last_time_snapshot();
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        m.snapshot_time_now();
+        let t2 = m.last_time_snapshot();
+        assert!(t2 >= t1, "second snapshot >= first ({} vs {})", t2, t1);
+        assert!(t2 - t1 >= 1, "second snapshot at least 1s later");
+    }
+
+    /// `reset()` zeroes the snapshot back to 0.
+    #[test]
+    fn reset_clears_time_snapshot() {
+        let mut m = ScreenManager::new();
+        m.snapshot_time_now();
+        assert!(m.last_time_snapshot() > 0);
+        m.reset();
+        assert_eq!(m.last_time_snapshot(), 0, "reset must clear the snapshot");
+    }
+
+    /// `pump_prologue` runs preamble THEN snapshots time — verify both
+    /// side-effects land and the ordering is real (preamble sets pump_active,
+    /// snapshot writes last_time_snapshot).
+    #[test]
+    fn pump_prologue_runs_preamble_then_time() {
+        let mut m = ScreenManager::new();
+        assert_eq!(m.pump_active(), 0);
+        assert_eq!(m.last_time_snapshot(), 0);
+
+        m.pump_prologue();
+
+        // Preamble side-effect:
+        assert_eq!(m.pump_active(), 1, "preamble must set pump_active=1");
+        // Timezone snapshot side-effect:
+        assert!(m.last_time_snapshot() > 0, "prologue must snapshot time");
+        // Ctor invariants still hold — prologue doesn't corrupt state:
+        assert_eq!(m.root_running(), 1);
+        assert_eq!(m.target_slot(), 0xFFFF);
     }
 
     /// Preamble does not corrupt neighbouring header state: sub-object marker
