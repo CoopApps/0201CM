@@ -100,6 +100,12 @@ enum Screen {
         label: String,
         widgets: Vec<cm_render::widget_pool::Widget>,
     },
+    /// A cmd handled by `dispatch_global` / `dispatch_club` via one of
+    /// the LIVE `build_screen_*` routes (see `render_new::is_dispatch_handled`).
+    /// Rendered by the new pipeline (`render_new::try_render_via_pool`).
+    /// Widens the Layer 2 fold from a curated 2 screens to every cmd
+    /// the ported dispatchers can build a pool for.
+    AutoRoute { cmd: i16 },
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -164,15 +170,14 @@ impl App {
         // we skip the old per-screen render entirely — the overlay
         // menu bar still runs so the sidebar stays visible.
         if let Some(cmd) = render_new::cmd_for_screen(&self.screen) {
-            // The new pipeline needs a `PixelFont`; the app's `Fonts`
-            // (the .fnt-JSON loader) feeds the old renderer. Text
-            // glyphs will be blank until a PixelFont loader is wired,
-            // but panels / bevels / backgrounds all draw. This is a
-            // deliberate first-cut: no fabricated widget spawns, and
-            // no fake glyphs — Layer-2 draws exactly what the pool
-            // says, and nothing else.
-            let font = cm_render::packed_glyph::PixelFont::empty(11);
-            if render_new::try_render_via_pool(cmd, &mut self.frame, &font) {
+            // Feed the real .fnt-derived `PixelFont` for slot 3 (the
+            // table-body arial_14 — CM's default text font, used by
+            // most widget draws through the traditional-font branch of
+            // FUN_005ceaa0). `Fonts::pixel_slot` lazily loads and caches
+            // the underlying `.fnt` from `CM_FONT_DIR` and hands over
+            // the byte-exact PixelFont conversion.
+            let font = self.fonts.pixel_slot(3);
+            if render_new::try_render_via_pool(cmd, &mut self.frame, font) {
                 self.overlay_menu_bar();
                 return;
             }
@@ -244,6 +249,16 @@ impl App {
                     &mut self.frame, &mut self.fonts, widgets, label,
                 );
             }
+            Screen::AutoRoute { cmd } => {
+                // The new pipeline is expected to have handled this via
+                // `render_new::cmd_for_screen` above. If we fell through
+                // the dispatcher refused the cmd unexpectedly — show a
+                // hint. The overlay menu bar still runs.
+                self.status = Some(format!(
+                    "AutoRoute cmd 0x{cmd:x}: dispatcher did not build a pool"
+                ));
+                self.overlay_menu_bar();
+            }
         }
     }
 
@@ -295,7 +310,8 @@ impl App {
             | Screen::LeagueTable { .. }
             | Screen::PlayerProfile { .. }
             | Screen::ClubFixtures { .. }
-            | Screen::WidgetPoolDebug { .. } => Pressed::None,
+            | Screen::WidgetPoolDebug { .. }
+            | Screen::AutoRoute { .. } => Pressed::None,
         }
     }
 
@@ -313,6 +329,7 @@ impl App {
                 | Screen::LeagueTable { .. }
                 | Screen::PlayerProfile { .. }
                 | Screen::ClubFixtures { .. }
+                | Screen::AutoRoute { .. }
         ) {
             if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                 let bar = cm_domain::menu::MenuBar::in_game(world, &game.save);
@@ -548,6 +565,10 @@ impl App {
             Screen::WidgetPoolDebug { .. } => {
                 // Debug view — clicks are inert.
             }
+            Screen::AutoRoute { .. } => {
+                // Auto-transliterated screen — no hand-authored click
+                // handlers yet; the sidebar handles menu clicks above.
+            }
         }
         if news_note {
             self.status = Some("That news control is not yet implemented".into());
@@ -758,11 +779,20 @@ impl App {
                 self.status = Some("Exit: quit the window (unsaved progress is guarded)".into());
             }
             other => {
-                self.status = Some(format!(
-                    "'{}' not yet implemented ({})",
-                    cm_domain::menu::describe_command(other),
-                    format_args!("cmd 0x{other:x}"),
-                ));
+                // If this cmd routes through the ported dispatcher
+                // (`dispatch_global` or `dispatch_club`) to one of the
+                // LIVE `build_screen_*` targets, hand it to the new
+                // pipeline — this is what widens the Layer 2 fold from
+                // a curated 2 screens to ~30+.
+                if render_new::is_dispatch_handled(other as i16) {
+                    self.screen = Screen::AutoRoute { cmd: other as i16 };
+                } else {
+                    self.status = Some(format!(
+                        "'{}' not yet implemented ({})",
+                        cm_domain::menu::describe_command(other),
+                        format_args!("cmd 0x{other:x}"),
+                    ));
+                }
             }
         }
     }
@@ -1133,6 +1163,7 @@ impl ApplicationHandler for App {
                                 | Screen::LeagueTable { .. }
                                 | Screen::PlayerProfile { .. }
                                 | Screen::ClubFixtures { .. }
+                                | Screen::AutoRoute { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);

@@ -67,6 +67,36 @@ impl Font {
         Ok(Font::parse(&std::fs::read(path)?, line_height))
     }
 
+    /// Convert to the new-pipeline `PixelFont` used by `packed_glyph::draw_text`.
+    ///
+    /// Mapping (from the exe's 5-int per-glyph record and this crate's own
+    /// four-int `Glyph`):
+    /// * `advance` (exe field1 = cell width) → `PixelFont::Glyph::width`
+    /// * `bmw`     (exe field2 = bytes-per-row) → `Glyph::kern_a` (unused by
+    ///   draw or kern, but kept so a round-trip matches disk)
+    /// * `lb`      (exe field3 = curr's kern-when-next) → `Glyph::kern_b`
+    /// * `rb`      (exe field4 = prev's kern-when-previous) → `Glyph::kern_c`
+    /// * `bitmap`  → `Glyph::bitmap` verbatim (bmw × height, high-nibble-first,
+    ///   ceil(width/2) bytes per row — same encoding both sides use).
+    ///
+    /// The `Font::height` is the bitmap height (rows), which is what
+    /// `PixelFont::height` and `packed_glyph::draw_glyph` want as `h`.
+    pub fn to_pixel_font(&self) -> crate::packed_glyph::PixelFont {
+        let mut out = crate::packed_glyph::PixelFont::empty(self.height as i32);
+        for (cp, g) in &self.glyphs {
+            let i = *cp as usize;
+            if i >= 256 { continue; }
+            out.glyphs[i] = Some(crate::packed_glyph::Glyph {
+                width: g.advance,
+                kern_a: g.bmw as i32,
+                kern_b: g.lb,
+                kern_c: g.rb,
+                bitmap: g.bitmap.clone(),
+            });
+        }
+        out
+    }
+
     #[inline]
     fn glyph(&self, cp: u32) -> &Glyph {
         self.glyphs.get(&cp).or_else(|| self.glyphs.get(&0x20)).expect("font has no space glyph")
@@ -124,11 +154,12 @@ pub fn slot_line_height(slot: u8) -> i32 {
 pub struct Fonts {
     dir: PathBuf,
     cache: HashMap<u8, Font>,
+    pixel_cache: HashMap<u8, crate::packed_glyph::PixelFont>,
 }
 
 impl Fonts {
     pub fn new(dir: impl Into<PathBuf>) -> Self {
-        Self { dir: dir.into(), cache: HashMap::new() }
+        Self { dir: dir.into(), cache: HashMap::new(), pixel_cache: HashMap::new() }
     }
 
     pub fn slot(&mut self, slot: u8) -> &Font {
@@ -139,6 +170,18 @@ impl Fonts {
             self.cache.insert(slot, f);
         }
         &self.cache[&slot]
+    }
+
+    /// Same slot lookup as [`Self::slot`], but returns the new-pipeline
+    /// `PixelFont` used by `packed_glyph::draw_text`. Loads and converts
+    /// the underlying `.fnt` on first request; subsequent calls reuse
+    /// the cached conversion.
+    pub fn pixel_slot(&mut self, slot: u8) -> &crate::packed_glyph::PixelFont {
+        if !self.pixel_cache.contains_key(&slot) {
+            let pf = self.slot(slot).to_pixel_font();
+            self.pixel_cache.insert(slot, pf);
+        }
+        &self.pixel_cache[&slot]
     }
 }
 

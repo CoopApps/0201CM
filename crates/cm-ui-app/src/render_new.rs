@@ -17,7 +17,7 @@
 //! One integration test lives in
 //! `crates/cm-render/tests/dispatch_pool_render.rs`.
 
-use cm_render::dispatcher::{dispatch_global, DispatchResult, DispatcherState};
+use cm_render::dispatcher::{dispatch_club, dispatch_global, DispatchResult, DispatcherState};
 use cm_render::packed::PackedSurface;
 use cm_render::packed_glyph::PixelFont;
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
@@ -37,16 +37,59 @@ pub fn cmd_for_screen(screen: &Screen) -> Option<i16> {
     Some(match screen {
         Screen::LatestScores { .. } => 0x418,
         Screen::FifaRankings { .. } => 0x3f3,
-        // Every other Screen variant either has no dispatcher-live arm
-        // yet (News uses `1000` but the app already draws it via the
-        // richer Layer-3 NewsView path; leave that on the old renderer
-        // until the app carries the ported NewsScreenState) or has no
-        // corresponding dispatcher route at all (Setup / SelectLeagues /
-        // StartSeason / EnterName / SelectClub / Dashboard / LeagueTable
-        // / PlayerProfile / ClubFixtures / SelectedLeagues /
-        // WidgetPoolDebug).
+        // `AutoRoute` is the widened-fold path — any cmd the ported
+        // dispatchers can build a pool for lands here. `cmd_for_screen`
+        // passes the cmd through; `dispatch_and_render` tries
+        // `dispatch_global` first then `dispatch_club`.
+        Screen::AutoRoute { cmd } => *cmd,
+        // Rich-state screens (News / Dashboard / LeagueTable /
+        // PlayerProfile / ClubFixtures / SelectedLeagues /
+        // WidgetPoolDebug) still carry `View` payloads that the
+        // dispatchers do not yet accept — porting `to_widget_pool`
+        // impls for those views into the fast path is the next
+        // widening step. Category A pre-boot (Setup / SelectLeagues /
+        // StartSeason / EnterName / SelectClub) has no dispatcher
+        // route at all. Both stay on the old renderer.
         _ => return None,
     })
+}
+
+/// The set of cmds that `dispatch_global` or `dispatch_club` builds
+/// a pool for via one of the LIVE `build_screen_*` routes (i.e. arms
+/// that return `DispatchResult::Handled` from a live builder, not a
+/// `TodoBuilder` stub). Sourced from a static audit of
+/// `crates/cm-render/src/dispatcher.rs` — one entry per `Handled` arm.
+///
+/// `dispatch_menu_command` consults this to know whether an unmapped
+/// menu cmd should route to `Screen::AutoRoute` (new pipeline) or
+/// fall back to the "not yet implemented" status message.
+pub fn is_dispatch_handled(cmd: i16) -> bool {
+    matches!(
+        cmd,
+        // dispatch_global LIVE routes:
+        1000        // News (0x3e8)
+        | 0x418     // Latest Scores
+        | 0x3f2     // build_screen_698160
+        | 0x3ec     // Manager History
+        | 0x3ef     // Go on Holiday dialog
+        | 0x414     // build_screen_7719b0
+        | 0x3f3     // FIFA rankings
+        | 0x40c     // UEFA Coefficients
+        | 0x3f4 | 0x3f5 | 0x3f6 | 0x3f7 | 0x3f8 | 0x3f9  // shared list/table 1..6
+        | 0x3fa     // build_screen_58d000
+        | 0x3fc     // Player Waiting sidebar
+        | 0x431     // Select Leagues
+        | 0x42b     // Game Settings
+        | 0x42c     // settings sub-screen
+        // dispatch_club LIVE routes:
+        | 0x7d1     // Club overview
+        | 0x7d3     // Match report
+        | 0x7d4     // Club honours
+        | 0x7d7 | 0x7e7 | 0x7d8 | 0x7da | 0x7d9 | 0x7db
+        | 0x7dc | 0x7dd | 0x7df | 0x7de   // Squad + Staff lists
+        | 0x7e5     // Player-in-club profile
+        | 0x7e6     // build_screen_46bdf0
+    )
 }
 
 /// Build a widget pool by driving `dispatch_global` with `cmd` as the
@@ -63,7 +106,13 @@ pub fn dispatch_and_render(cmd: i16, packed: &mut PackedSurface, font: &PixelFon
     let mut pool = GuiRecordPool::new();
     let mut state = DispatcherState::default();
     state.pending_cmd_fallback = cmd;
-    let result = dispatch_global(&mut pool, &mut state, -1);
+    let mut result = dispatch_global(&mut pool, &mut state, -1);
+    // Club-context cmds (0x7d0..=0x7e7) live on `dispatch_club`; fall
+    // through when `dispatch_global` reports `Unhandled` so the
+    // widened fold reaches every LIVE builder in either dispatcher.
+    if matches!(result, DispatchResult::Unhandled) {
+        result = dispatch_club(&mut pool, &mut state, -1);
+    }
     let handled = matches!(
         result,
         DispatchResult::Handled | DispatchResult::NavBack | DispatchResult::NavNext

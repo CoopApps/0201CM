@@ -396,13 +396,19 @@ mod tests {
         font.glyphs[b' ' as usize] = Some(sp);
         let mut s = PackedSurface::rgb555(10, 1);
         let c = s.pack_rgb(0xff, 0, 0);
+        let mut s = PackedSurface::rgb555(12, 1);
         let end = draw_text(&mut s, 0, 0, &font, b".|.", c);
-        // pen path: 0 -> +1 (.) -> +3 (| == space) -> +1 (.) = 5.
-        assert_eq!(end, 5);
-        // Pixel 0 and 4 should be `c`; the rest zero.
+        // Pen walk (per FUN_005ceaa0's outer loop + FUN_005cf4d0 kern):
+        //   space_width = 3 ⇒ kern base = (3*3)/4 = 2 per pair (kern_b/c
+        //   are all 0 in this synthetic font).
+        //   i=0 draw '.' at 0, advance 1, +kern 2 = 3
+        //   i=1 draw ' ' at 3, advance 3, +kern 2 = 8
+        //   i=2 draw '.' at 8, advance 1, +kern 0 (end) = 9
+        assert_eq!(end, 9);
+        // Only pixels 0 and 8 should be `c`; the rest zero.
         assert_eq!(s.buf[0], c);
-        assert_eq!(s.buf[4], c);
-        assert!(s.buf[1..4].iter().all(|&v| v == 0));
-        assert!(s.buf[5..].iter().all(|&v| v == 0));
+        assert_eq!(s.buf[8], c);
+        assert!(s.buf[1..8].iter().all(|&v| v == 0));
+        assert!(s.buf[9..].iter().all(|&v| v == 0));
     }
 }
