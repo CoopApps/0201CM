@@ -9,7 +9,6 @@
 //! (see `reports/scrman_module_inventory.md`). Every field access here cites its byte offset.
 //!
 //! **Not** included in this commit (documented deps in the inventory):
-//! - Network buffer sub-object at `+0x302a` (needs `FUN_00763590` port)
 //! - Two session sub-objects at `+0x3070` and `+0x1326d1` (need `FUN_00548b40` port)
 //! - The pump / push_screen / pop / peek / net-op family
 //!
@@ -85,9 +84,21 @@ pub mod off {
     /// `+0x3026`  dword — aux.  GDI L37.
     pub const AUX_0X3026: usize = 0x3026;
 
-    /// `+0x302a`  network-buffer sub-object base (buf-ptr, then `+0x302e` write-off, `+0x3032` size).
-    /// Constructor via `sub_007631d0(this, 50000)` in GDI. **Not initialized by this commit.**
+    /// `+0x302a`  network-buffer sub-object base — 12 bytes: buf-ptr, write-off, size.
+    /// Constructor via `sub_007631d0(this, 50000)` in GDI == `FUN_00763590(this, 50000)` in cm0102.exe.
     pub const NET_SUBOBJ: usize = 0x302a;
+    /// `+0x302a` dword — heap pointer to the allocated buffer (`operator new(size)`).
+    /// Kept as a 32-bit reflection in the arena; the owning allocation lives in the
+    /// Rust-side `NetworkBuffer` (host pointer widths differ from the 32-bit exe, so this
+    /// slot carries a marker only — see `ScreenManager::net_buf()`).
+    pub const NET_BUF_PTR: usize = 0x302a;
+    /// `+0x302e` dword — write offset within the buffer (init 0). Decomp: `param_1[1] = 0`.
+    pub const NET_BUF_WRITE_OFF: usize = 0x302e;
+    /// `+0x3032` dword — buffer size in bytes (init `param_2`; ctor arg is 50000).
+    /// Decomp: `param_1[2] = param_2`.
+    pub const NET_BUF_SIZE: usize = 0x3032;
+    /// Size arg passed by ScreenManager's ctor: 50000 (0xC350).
+    pub const NET_BUF_DEFAULT_SIZE: u32 = 50_000;
 
     /// `+0x3036 + slot*2`  16 words — per-slot depth counter.  GDI L48-60 zero-loop.
     /// Slot-0 initialized to 1 at GDI L64.
@@ -142,11 +153,68 @@ pub mod off {
     pub const B_DWORD_0X261FD0: usize = 0x0026_1fd0;
 }
 
+/// Network send/recv buffer sub-object embedded in `ScreenManager` at `+0x302a`.
+///
+/// Port of cm0102.exe `FUN_00763590(this, size)` — 3-field POD ctor:
+/// ```text
+///   param_1[1] = 0;                       // +0x04 write-offset
+///   param_1[2] = param_2;                 // +0x08 size
+///   pvVar1     = operator new(param_2);   // heap buffer
+///   *param_1   = pvVar1;                  // +0x00 buf-ptr
+///   if (pvVar1 == 0) { <fatal error>; abort; }
+/// ```
+/// The Rust port owns the buffer as a `Box<[u8]>` so `Drop` handles the exe's dtor role
+/// (a paired `operator delete` on `+0x00`). The scrman inventory's tentative pairing
+/// with `FUN_007627f0` is misleading — that function operates on an unrelated 800KB
+/// object (offset `+0xc3a5e`), not this 12-byte buffer.
+pub struct NetworkBuffer {
+    /// `+0x00` — heap-allocated buffer, zero-initialised (matches `operator new` for
+    /// byte-arrays; the exe reads only up to `write_off`, so leading zeros are safe).
+    buf: Box<[u8]>,
+    /// `+0x04` — write offset (index of next byte to write).
+    write_off: u32,
+    /// `+0x08` — total buffer size in bytes (constant after ctor).
+    size: u32,
+}
+
+impl NetworkBuffer {
+    /// Port of `FUN_00763590`. `size` is the ctor arg (`param_2`); ScreenManager passes 50000.
+    ///
+    /// Rust's allocator aborts on OOM, mapping naturally to the exe's `FUN_009349c4(0xffffffff)`
+    /// no-return fatal path on `pvVar1 == 0`.
+    pub fn new(size: u32) -> Self {
+        // Order mirrors the decomp: write_off then size, then allocation.
+        let write_off: u32 = 0;
+        let bytes = vec![0u8; size as usize].into_boxed_slice();
+        NetworkBuffer { buf: bytes, write_off, size }
+    }
+
+    /// `+0x08` field.
+    #[inline]
+    pub fn size(&self) -> u32 { self.size }
+    /// `+0x04` field.
+    #[inline]
+    pub fn write_off(&self) -> u32 { self.write_off }
+    /// `+0x00` field (as a Rust slice).
+    #[inline]
+    pub fn buf(&self) -> &[u8] { &self.buf }
+    /// Mutable buffer view — for follow-up commits porting the net-send/recv fns.
+    #[inline]
+    pub fn buf_mut(&mut self) -> &mut [u8] { &mut self.buf }
+    /// Mutable write-offset for those same follow-up commits.
+    #[inline]
+    pub fn set_write_off(&mut self, v: u32) { self.write_off = v; }
+}
+
 /// The ScreenManager class. All field access byte-cited to the exe.
 pub struct ScreenManager {
     /// Heap-owned backing store; layout matches the exe byte-for-byte.
     /// Boxed to avoid a ~2.4 MB stack blowup on `new()`.
     bytes: NonNull<u8>,
+    /// Sub-object owner for `+0x302a`. Byte-slots at `+0x302e` / `+0x3032` in `bytes`
+    /// mirror this struct's `write_off` / `size`; `+0x302a` (buf-ptr) stays 0 there
+    /// (host pointer widths differ from the 32-bit exe) — reads go through `net_buf()`.
+    net_buf: NetworkBuffer,
 }
 
 // SAFETY: bytes are owned; no interior aliasing while `&mut self` is held.
@@ -160,9 +228,9 @@ impl ScreenManager {
 
     /// Port of cm0102.exe `FUN_007e4520` / GDI `sub_007e3f20` — the ctor.
     ///
-    /// External sub-object ctors (`FUN_00763590`, `FUN_00548b40 x2`) are **not** invoked;
-    /// their memory ranges are left zero (safe: the pump reads none of those fields before
-    /// the first push, and the state fields we own are correctly defaulted below).
+    /// External sub-object ctors invoked: `FUN_00763590(this+0x302a, 50000)` (network buffer,
+    /// this commit). Session sub-object ctors `FUN_00548b40 x2` at `+0x3070` / `+0x1326d1`
+    /// remain documented-TODO (follow-up commit); their memory ranges stay zero.
     pub fn new() -> Self {
         // GDI L21-25: implicit `alloc_zeroed` (the class's operator new zeroes memory before
         // the ctor runs when it's part of a larger allocation; we replicate explicitly).
@@ -170,7 +238,9 @@ impl ScreenManager {
             let p = alloc_zeroed(Self::layout());
             NonNull::new(p).expect("scrmgr alloc")
         };
-        let mut this = ScreenManager { bytes };
+        // Network-buffer sub-object ctor call (matches `FUN_00763590(esi+0x302a, 50000)`).
+        let net_buf = NetworkBuffer::new(off::NET_BUF_DEFAULT_SIZE);
+        let mut this = ScreenManager { bytes, net_buf };
         this.apply_ctor_writes();
         this
     }
@@ -180,13 +250,21 @@ impl ScreenManager {
     /// sequence, and re-initializing subobjects is out of this commit's scope.
     pub fn reset(&mut self) {
         // First zero the entire backing store — the exe's dtor also calls the subobject dtors
-        // which effectively zero their bookkeeping. Since we're skipping subobject dtors this
-        // commit, the safest analogue is a full re-zero.
+        // which effectively zero their bookkeeping. Session sub-object dtors are still TODO.
         unsafe {
             std::ptr::write_bytes(self.bytes.as_ptr(), 0, SCRMGR_SIZE);
         }
+        // Network-buffer dtor-then-ctor: drop the old, allocate a fresh 50000-byte buffer.
+        self.net_buf = NetworkBuffer::new(off::NET_BUF_DEFAULT_SIZE);
         self.apply_ctor_writes();
     }
+
+    /// Immutable view of the network-buffer sub-object at `+0x302a`.
+    #[inline]
+    pub fn net_buf(&self) -> &NetworkBuffer { &self.net_buf }
+    /// Mutable view for follow-up commits porting net-send/recv.
+    #[inline]
+    pub fn net_buf_mut(&mut self) -> &mut NetworkBuffer { &mut self.net_buf }
 
     /// The exact write sequence of `sub_007e3f20`. Each line cites the GDI asm address.
     fn apply_ctor_writes(&mut self) {
@@ -251,6 +329,13 @@ impl ScreenManager {
         self.set_u32(off::DEFERRED_ARG4, 0);       // 0x7e407b
         self.set_u32(off::BAG_VALUES, 0);          // 0x7e4081
         self.set_u16(off::BAG_COUNT, 0);           // 0x7e4087
+
+        // ---- network-buffer arena reflections (`FUN_00763590` writes at scrman +0x302a) ----
+        // `+0x302a` (buf-ptr) stays 0 in the arena — host pointer widths differ from 32-bit;
+        // the live pointer is owned by `self.net_buf`, accessible via `net_buf()`.
+        self.set_u32(off::NET_BUF_PTR, 0);
+        self.set_u32(off::NET_BUF_WRITE_OFF, self.net_buf.write_off);
+        self.set_u32(off::NET_BUF_SIZE,      self.net_buf.size);
     }
 
     // ------------------------------------------------------------
@@ -413,6 +498,58 @@ mod tests {
         assert_eq!(m.get_u32(off::B_DWORD_0X261FD0), 0);
         assert_eq!(m.get_u32(off::B_DWORD_0X261D32), 0);
         assert_eq!(m.as_bytes()[0x9_1234], 0);
+    }
+
+    /// `NetworkBuffer::new(size)` matches the exe's `FUN_00763590` field defaults:
+    ///   `[0]` buf-ptr (non-null after alloc), `[1]` write-off = 0, `[2]` size = size arg.
+    #[test]
+    fn network_buffer_ctor_matches_exe() {
+        // ScreenManager's canonical 50000-byte call.
+        let nb = NetworkBuffer::new(off::NET_BUF_DEFAULT_SIZE);
+        assert_eq!(nb.size(), 50_000);
+        assert_eq!(nb.write_off(), 0);
+        assert_eq!(nb.buf().len(), 50_000);
+        assert!(nb.buf().iter().all(|&b| b == 0), "buffer must start zeroed");
+
+        // A different size arg — replicates the same 3-field write pattern with `param_2`.
+        let nb2 = NetworkBuffer::new(1);
+        assert_eq!(nb2.size(), 1);
+        assert_eq!(nb2.write_off(), 0);
+        assert_eq!(nb2.buf().len(), 1);
+    }
+
+    /// `ScreenManager::new()` now populates the network-buffer sub-object (not zero) and
+    /// mirrors the sub-object's write-off + size into the arena at `+0x302e` / `+0x3032`.
+    #[test]
+    fn screen_manager_ctor_populates_net_buffer() {
+        let m = ScreenManager::new();
+        assert_eq!(m.net_buf().size(), 50_000);
+        assert_eq!(m.net_buf().write_off(), 0);
+        assert_eq!(m.net_buf().buf().len(), 50_000);
+        // Arena mirror: any code reading via exe offsets sees what `FUN_00763590` would leave.
+        assert_eq!(m.get_u32(off::NET_BUF_WRITE_OFF), 0);
+        assert_eq!(m.get_u32(off::NET_BUF_SIZE), 50_000);
+        // Ptr slot is intentionally zero in the arena — see `net_buf()` doc.
+        assert_eq!(m.get_u32(off::NET_BUF_PTR), 0);
+    }
+
+    /// After `reset()`, the network buffer is re-constructed: fresh 50000-byte alloc,
+    /// offsets re-initialised to their `FUN_00763590` defaults.
+    #[test]
+    fn reset_reruns_network_buffer_ctor() {
+        let mut m = ScreenManager::new();
+        m.net_buf_mut().set_write_off(1234);
+        m.net_buf_mut().buf_mut()[0] = 0xAB;
+        assert_eq!(m.net_buf().write_off(), 1234);
+        assert_eq!(m.net_buf().buf()[0], 0xAB);
+
+        m.reset();
+
+        assert_eq!(m.net_buf().size(), 50_000);
+        assert_eq!(m.net_buf().write_off(), 0);
+        assert_eq!(m.net_buf().buf()[0], 0);
+        assert_eq!(m.get_u32(off::NET_BUF_WRITE_OFF), 0);
+        assert_eq!(m.get_u32(off::NET_BUF_SIZE), 50_000);
     }
 
     /// Instance is at least large enough for every field the ctor writes.
