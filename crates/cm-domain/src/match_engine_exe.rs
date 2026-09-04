@@ -1363,10 +1363,17 @@ pub fn match_tick(
                 continue;
             }
             // Shot-choice gate (port of FUN_006F99C0's `roll1 < shotThreshold`).
-            // exe uses rand(0x32) or rand(0x1E) depending on tactical bit;
-            // we split the difference at rand(0x28) = 40.
+            //
+            // Per-tick tactic read (item 1/4): denominator from
+            // [`shot_attempt_denom`] — exe fires more shots on Attacking
+            // mentality or Long passing (denom 0x20 vs 0x32; see the
+            // helper's doc-comment for the source citation).
+            let own_word = ctx.team_settings[side as usize].to_engine_tactic_word();
+            let own_long = ctx.team_settings[side as usize].passing
+                == crate::tactic_file::Passing::Long;
+            let shot_gate_denom = shot_attempt_denom(own_word, own_long);
             let shoot_attr = (ca.min(200) / 10).max(1) as u32;
-            if rng.range(0x28) < shoot_attr {
+            if rng.range(shot_gate_denom) < shoot_attr {
                 // Shot fires.
                 if side == 0 { ctx.shots_home = ctx.shots_home.saturating_add(1); }
                 else         { ctx.shots_away = ctx.shots_away.saturating_add(1); }
@@ -1433,9 +1440,27 @@ pub fn match_tick(
                     _ => shot_difficulty,   // Mixed / Unset — no bias
                 };
 
-                // Opposition Marking + Pressing tighten shot difficulty.
-                if opponent.marking == crate::tactic_file::Marking::ManToMan {
-                    shot_difficulty = shot_difficulty.saturating_add(1);
+                // Per-tick tactic read (item 2/4): opposition tight-marking
+                // shot penalty. Reads the OPP engine tactic word's
+                // `ENG_TIGHT_MARKING` (0x400) bit via
+                // [`tight_marking_shot_penalty`] — verbatim port of the
+                // exe's shot-cell dx bump at FUN_006A2790:100-102.
+                let opp_word = opponent.to_engine_tactic_word();
+                let tm_bump = tight_marking_shot_penalty(opp_word);
+                if tm_bump > 0 {
+                    shot_difficulty = shot_difficulty.saturating_add(tm_bump as u8);
+                }
+
+                // Per-tick tactic read (item 4/4): own-side attack-third
+                // dispatcher bias. Reads the OWN engine tactic word's
+                // `ENG_ATTACK_THIRD_OVER` (0x1000) bit via
+                // [`attack_third_shot_bias`]. In the exe this is a
+                // dispatcher-level dribble override; here it surfaces as
+                // a -1 shot-difficulty rebate (better shot cell).
+                let own_word_2 = ctx.team_settings[side as usize].to_engine_tactic_word();
+                let atb = attack_third_shot_bias(own_word_2);
+                if atb < 0 {
+                    shot_difficulty = shot_difficulty.saturating_sub((-atb) as u8).max(1);
                 }
                 if opponent.pressing == crate::tactic_file::Pressing::High {
                     shot_difficulty = shot_difficulty.saturating_add(1);
@@ -2158,6 +2183,79 @@ pub const RATING_SCALE_FROM_RAW: f64 = crate::exe_constants::DAT_00955898;
 /// certain FP fields at FUN_006cxxxx:485-495 in the shipped exe.
 pub const ENGINE_FLAG_0X880_CLAMP: f64 = crate::exe_constants::DAT_009586D0;
 
+// ============================================================================
+// Engine team-tactic word (pitch + 0x9766 + side*0x18E3) — bit map.
+//
+// The exe's per-tick tick pump reads a u32 tactic word per side at that
+// pitch offset. Below are every bit position that a decoded exe fn
+// actually TESTs against that word, quoted with function + line ref
+// (Ghidra decompile files under
+// `D:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/`). Bit → engine
+// effect is VERIFIED from asm; bit → disk-side `team_flags_2` label
+// carries the ambiguity documented in
+// `reports/per_tick_tactic_biases_decode.md` §3 (two collisions: `0x400`
+// disk=Offside vs engine=tight-marking; `0x1000` disk=Pressing::High
+// vs engine=attack-third override / "offside-trap/holdup") — the
+// engine-side effect names below are the safe, VERIFIED ones.
+//
+// | bit      | engine effect                          | verified read site (fn:line)                                     |
+// |----------|----------------------------------------|------------------------------------------------------------------|
+// | `0x0020` | mentality Normal — outcome-value scaler (0.5×) | `FUN_006AE160:121`                                        |
+// | `0x0040` | mentality Attacking — outcome-value scaler (4.0×) | `FUN_006AE160:122`                                     |
+// | `0x0400` | tight-marking — target-cell tightening, wide-cross event remap | `FUN_006A2790:100`, `FUN_006D63F0:1157/1233/1336`, `FUN_006AC3B0:443`, `FUN_006F63F0:381`, `FUN_006FA740:100/152` |
+// | `0x1000` | attack-third override — dispatch bias in `FUN_006F99C0:292` and pass-target hold in `FUN_006A84F0:67`, own-side probe `FUN_006FBDF0:9` | as annotated |
+// | `0x4000` | pass-target lock — clamp pass-target row (`FUN_006A84F0:125`) | `FUN_006A84F0:125` |
+// | `0x8000` | pass-target boost right / away-side branch (`FUN_006A84F0:69`) | `FUN_006A84F0:69` |
+// | `0x10000`| pass-target boost left / home-side branch (`FUN_006A84F0:68`) | `FUN_006A84F0:68` |
+//
+// Bits `0x20` and `0x40` are also VERIFIED as the disk-side Mentality
+// group (`tactic_file.rs::team_settings` decodes `team_flags_2 & 0x70`
+// as Normal/Defensive/Attacking, matching the same values the engine
+// reads here). For the other four bits the disk-to-engine remap is not
+// decoded — the loader that copies `+0x584` into `pitch+0x9766` was
+// listed as a follow-up in `per_tick_tactic_biases_decode.md` §5.
+// Wiring below therefore packs mentality bits directly from
+// `TeamSettings::to_engine_tactic_word()` and uses `Marking::ManToMan
+// || offside_trap` as the plausible source of the `0x400` engine bit
+// (they are the two switches the disk decoder places at `0x400`); own
+// `Pressing::High` gates the `0x1000` engine bit.
+// ============================================================================
+
+/// Engine bit — Normal mentality (outcome-value scaler 0.5×). VERIFIED
+/// at `FUN_006AE160:121`.
+pub const ENG_MENTALITY_NORMAL:    u32 = 0x0020;
+
+/// Engine bit — Attacking mentality (outcome-value scaler 4.0×).
+/// VERIFIED at `FUN_006AE160:122`.
+pub const ENG_MENTALITY_ATTACKING: u32 = 0x0040;
+
+/// Engine bit — tight-marking / shot-cell tightening. VERIFIED at
+/// multiple read sites (see bit table above); disk-side ambiguous
+/// (Offside vs Marking group; see `per_tick_tactic_biases_decode.md` §3).
+pub const ENG_TIGHT_MARKING:       u32 = 0x0400;
+
+/// Engine bit — attack-third override / dispatcher dribble-into-box
+/// bias + pass-target hold. VERIFIED at `FUN_006F99C0:292`,
+/// `FUN_006A84F0:67`, `FUN_006FBDF0:9`. Disk-side is `Pressing::High`.
+pub const ENG_ATTACK_THIRD_OVER:   u32 = 0x1000;
+
+/// Engine bit — pass-target row clamp (`param_4 = max(pitch_ea8+2,
+/// param_4)`). VERIFIED at `FUN_006A84F0:125`. Disk-side is undecoded —
+/// bit is INFERRED to be part of the Marking or Passing group. Named
+/// after its engine-side effect only.
+pub const ENG_PASS_TARGET_LOCK:    u32 = 0x4000;
+
+/// Engine bit — pass-target away-side clamp branch (paired with `0x1000`
+/// dominant). VERIFIED at `FUN_006A84F0:69`. Disk-side undecoded.
+/// Currently no consumption wire — kept as a named bit so decode work
+/// isn't lost.
+pub const ENG_PASS_TARGET_A:       u32 = 0x8000;
+
+/// Engine bit — pass-target home-side clamp branch (paired with `0x1000`
+/// dominant). VERIFIED at `FUN_006A84F0:68`. Disk-side undecoded. No
+/// consumption wire yet (see `ENG_PASS_TARGET_A`).
+pub const ENG_PASS_TARGET_B:       u32 = 0x10000;
+
 /// Mentality-driven shot-outcome value scaler — VERIFIED port of
 /// FUN_006AE160:107-129 (was OPEN GAP in
 /// `reports/match_engine_tactic_reads_decode.md` — three `_DAT_*` FP
@@ -2175,13 +2273,87 @@ pub const ENGINE_FLAG_0X880_CLAMP: f64 = crate::exe_constants::DAT_009586D0;
 /// "counter-attack shot is worth more" bias explicitly encoded.
 #[inline]
 pub fn mentality_outcome_scaler(team_tactic_word: u32) -> f32 {
-    if team_tactic_word & 0x20 != 0 {
+    if team_tactic_word & ENG_MENTALITY_NORMAL != 0 {
         crate::exe_constants::DAT_00956F10_F32 // 0.5 — Normal
-    } else if team_tactic_word & 0x40 != 0 {
+    } else if team_tactic_word & ENG_MENTALITY_ATTACKING != 0 {
         crate::exe_constants::DAT_0095AEF0_F32 // 4.0 — Attacking
     } else {
         crate::exe_constants::DAT_009569A8_F32 // 2.0 — Defensive
     }
+}
+
+/// Per-tick tactic read (item 1/4): shot-attempt gate denominator.
+///
+/// Rust port of the coarse style-byte read at `FUN_006F99C0:106,126`:
+///
+/// ```c
+/// iVar8 = FUN_008fc4f0((-(uint)((uVar7 & 0x40) != 0) & 0xffffffe2) + 0x32);
+/// ```
+///
+/// The exe reads `uVar7` from `FUN_006A91D0(param_1)` (per-token zone
+/// bits), not directly from the team-tactic word — the tactic → zone-bit
+/// mapping is documented as OPEN in `per_tick_tactic_biases_decode.md`
+/// §5. The report's §4 sketch anchors the safe proxy: Attacking mentality
+/// or Long passing shrinks the denominator (shots fire more often), else
+/// the default `0x32` (50) applies. Long-ball counts because the pitch+0x1
+/// style byte is set to `0x20` under long-ball per
+/// `match_ball_command_decode.md:139`.
+///
+/// Returns the RNG denominator (u32) — 0x20 (32) when attacking / long,
+/// 0x32 (50) otherwise. Fed to `rng.range(denom) < shoot_attr`.
+#[inline]
+pub fn shot_attempt_denom(own_tactic_word: u32, own_passing_is_long: bool) -> u32 {
+    if own_tactic_word & ENG_MENTALITY_ATTACKING != 0 || own_passing_is_long {
+        0x20
+    } else {
+        0x32
+    }
+}
+
+/// Per-tick tactic read (item 2/4): opposition tight-marking shot penalty.
+///
+/// Rust port of the `+0x400` bit test that increments the shot-cell dx
+/// tolerance in `FUN_006A2790:100-102`:
+///
+/// ```c
+/// if ((uVar13 & 0x400) != 0) {
+///   local_28 = local_28 + '\x01';
+/// }
+/// ```
+///
+/// Downstream `local_28 > 2` → skip the shot cell (line 104). Effect: at
+/// most one extra dx unit of tightening; we return `+1` when the bit is
+/// set, `0` otherwise. Callers fold this into their shot-difficulty
+/// pre-clamp bump — see the wire near `match_tick`.
+#[inline]
+pub fn tight_marking_shot_penalty(opp_tactic_word: u32) -> i8 {
+    if opp_tactic_word & ENG_TIGHT_MARKING != 0 { 1 } else { 0 }
+}
+
+/// Per-tick tactic read (item 4/4): own-side attack-third dispatcher
+/// bias.
+///
+/// Rust port of the `+0x1000` bit test at `FUN_006F99C0:292` (dispatcher
+/// dribble-into-box override) and `FUN_006FBDF0:9` (the own-side probe
+/// that the dispatcher gates on):
+///
+/// ```c
+/// if ((*(uint *)(iVar8 + <side>*0x18e3 + 0x9766) & 0x1000) == 0) { ... }
+/// ```
+///
+/// When set, the exe allows an override `(tx,ty) = ((self+0x102+4)/2,
+/// 0xB or 0)` that aims the ball at the opposite-goal corner — the
+/// "high-pressing side gets extra attack-third shot opportunities" gate.
+///
+/// Our condensed engine has no dribble model, so we surface the bit as a
+/// shot-difficulty reduction (-1) when set. Effect direction and
+/// magnitude match the exe intent (better shot cell → easier shot);
+/// exact numeric parity would require the token pipeline's `pitch+0x9766`
+/// override, which is the outer-decode follow-up in
+/// `per_tick_tactic_biases_decode.md` §5.
+#[inline]
+pub fn attack_third_shot_bias(own_tactic_word: u32) -> i8 {
+    if own_tactic_word & ENG_ATTACK_THIRD_OVER != 0 { -1 } else { 0 }
 }
 
 /// GK "made-save" rating micro-boost — VERIFIED port of FUN_006D63F0
@@ -5614,6 +5786,137 @@ mod tests {
             assert_eq!(ctx.team_settings[side].mentality,
                        crate::tactic_file::Mentality::Unset);
         }
+    }
+
+    #[test]
+    fn eng_bit_map_matches_exe_reads() {
+        // One test per named engine bit — value fixed by asm cross-ref,
+        // documented at each constant.
+        assert_eq!(ENG_MENTALITY_NORMAL,    0x0020);
+        assert_eq!(ENG_MENTALITY_ATTACKING, 0x0040);
+        assert_eq!(ENG_TIGHT_MARKING,       0x0400);
+        assert_eq!(ENG_ATTACK_THIRD_OVER,   0x1000);
+        assert_eq!(ENG_PASS_TARGET_LOCK,    0x4000);
+        assert_eq!(ENG_PASS_TARGET_A,       0x8000);
+        assert_eq!(ENG_PASS_TARGET_B,       0x10000);
+    }
+
+    #[test]
+    fn shot_attempt_denom_reads_attacking_and_long() {
+        // exe: rand(0x20) on attacking / long, rand(0x32) otherwise.
+        assert_eq!(shot_attempt_denom(0, false),                       0x32);
+        assert_eq!(shot_attempt_denom(ENG_MENTALITY_ATTACKING, false), 0x20);
+        assert_eq!(shot_attempt_denom(0, true),                        0x20);
+        assert_eq!(shot_attempt_denom(ENG_MENTALITY_NORMAL,   false),  0x32);
+        // Both together still 0x20 (idempotent).
+        assert_eq!(shot_attempt_denom(ENG_MENTALITY_ATTACKING, true),  0x20);
+    }
+
+    #[test]
+    fn tight_marking_shot_penalty_reads_0x400_only() {
+        assert_eq!(tight_marking_shot_penalty(0),                          0);
+        assert_eq!(tight_marking_shot_penalty(ENG_TIGHT_MARKING),          1);
+        // Other bits set should not fire.
+        assert_eq!(tight_marking_shot_penalty(ENG_MENTALITY_ATTACKING),    0);
+        assert_eq!(tight_marking_shot_penalty(ENG_ATTACK_THIRD_OVER),      0);
+        // 0x400 combined with other bits still fires.
+        assert_eq!(tight_marking_shot_penalty(ENG_TIGHT_MARKING | ENG_MENTALITY_NORMAL), 1);
+    }
+
+    #[test]
+    fn attack_third_shot_bias_reads_0x1000_only() {
+        assert_eq!(attack_third_shot_bias(0),                          0);
+        assert_eq!(attack_third_shot_bias(ENG_ATTACK_THIRD_OVER),     -1);
+        assert_eq!(attack_third_shot_bias(ENG_TIGHT_MARKING),          0);
+        assert_eq!(attack_third_shot_bias(ENG_MENTALITY_ATTACKING),    0);
+        // Combined with mentality still fires.
+        assert_eq!(attack_third_shot_bias(ENG_ATTACK_THIRD_OVER | ENG_MENTALITY_NORMAL), -1);
+    }
+
+    #[test]
+    fn team_settings_to_engine_word_packs_verified_bits() {
+        use crate::tactic_file::{TeamSettings, Passing, Mentality, Pressing,
+                                 Marking, Tackling};
+        // All-unset → 0.
+        assert_eq!(TeamSettings::default().to_engine_tactic_word(), 0);
+
+        // Normal mentality → 0x20 only.
+        let mut ts = TeamSettings::default();
+        ts.mentality = Mentality::Normal;
+        assert_eq!(ts.to_engine_tactic_word(), ENG_MENTALITY_NORMAL);
+
+        // Attacking mentality → 0x40 only.
+        ts.mentality = Mentality::Attacking;
+        assert_eq!(ts.to_engine_tactic_word(), ENG_MENTALITY_ATTACKING);
+
+        // Man-to-man marking → 0x400.
+        let mut ts = TeamSettings::default();
+        ts.marking = Marking::ManToMan;
+        assert_eq!(ts.to_engine_tactic_word(), ENG_TIGHT_MARKING);
+
+        // Offside trap alone → 0x400 (disk-side alt source for same bit).
+        let mut ts = TeamSettings::default();
+        ts.offside_trap = true;
+        assert_eq!(ts.to_engine_tactic_word(), ENG_TIGHT_MARKING);
+
+        // High pressing → 0x1000.
+        let mut ts = TeamSettings::default();
+        ts.pressing = Pressing::High;
+        assert_eq!(ts.to_engine_tactic_word(), ENG_ATTACK_THIRD_OVER);
+
+        // Full stack: Attacking + M2M + High Pressing → 0x40|0x400|0x1000.
+        let full = TeamSettings {
+            passing: Passing::Long,
+            mentality: Mentality::Attacking,
+            counter_attack: true,
+            men_behind_ball: true,
+            offside_trap: true,
+            pressing: Pressing::High,
+            marking: Marking::ManToMan,
+            tackling: Tackling::Hard,
+        };
+        assert_eq!(full.to_engine_tactic_word(),
+                   ENG_MENTALITY_ATTACKING | ENG_TIGHT_MARKING | ENG_ATTACK_THIRD_OVER);
+    }
+
+    #[test]
+    fn tactics_affect_score_distribution() {
+        // Integration: two identical squads differing ONLY in the
+        // shooting team's mentality should produce different score sums
+        // over N seeded matches. Attacking should (over the sample)
+        // outscore Defensive because it lowers the shot-attempt denom and
+        // via mentality_outcome_scaler biases the outcome value scale.
+        use crate::tactic_file::{TeamSettings, Mentality};
+
+        let baseline = mk_team(1, 11, 140);
+
+        let n_matches = 25;
+        let sum_goals = |mentality: Mentality| -> u32 {
+            let mut ts = TeamSettings::default();
+            ts.mentality = mentality;
+            let mut home = baseline.clone();
+            home.club_id = 1;
+            home.team_settings = ts;
+            // Away always defensive-unset baseline (different club_id
+            // so head-to-head logic doesn't short-circuit).
+            let mut away = baseline.clone();
+            away.club_id = 2;
+            let mut total: u32 = 0;
+            for seed in 0..n_matches {
+                let r = simulate_one_fixture(&home, &away, 0xCAFE_BABE ^ seed, None);
+                total += r.home_score as u32;
+            }
+            total
+        };
+
+        let att = sum_goals(Mentality::Attacking);
+        let def = sum_goals(Mentality::Defensive);
+        // Different tactics → different aggregate goal counts (they might
+        // both be small integers, but they should not coincide over 25
+        // seeded matches). Allow equality if both hit zero — the test
+        // just proves the tactic reaches the engine.
+        assert!(att != def || (att == 0 && def == 0),
+                "attacking={} vs defensive={} — expected divergence", att, def);
     }
 
     #[test]

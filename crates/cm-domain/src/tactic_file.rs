@@ -619,6 +619,49 @@ impl Default for TeamSettings {
     }
 }
 
+impl TeamSettings {
+    /// Pack this team's settings into the engine-side u32 the match
+    /// tick reads at `pitch + 0x9766 + side*0x18E3`. See the bit-map
+    /// table above [`crate::match_engine_exe::mentality_outcome_scaler`]
+    /// for source references.
+    ///
+    /// VERIFIED bits packed here:
+    ///   - `ENG_MENTALITY_NORMAL    (0x0020)` from Mentality::Normal
+    ///   - `ENG_MENTALITY_ATTACKING (0x0040)` from Mentality::Attacking
+    ///
+    /// INFERRED bits packed here (disk-to-engine remap not fully
+    /// decoded; disk-side collisions are documented at the constant):
+    ///   - `ENG_TIGHT_MARKING     (0x0400)` when Marking::ManToMan OR
+    ///     offside_trap is set — both are the disk-side switches the
+    ///     decode places at bit `0x400`; either one plausibly sets the
+    ///     engine bit.
+    ///   - `ENG_ATTACK_THIRD_OVER (0x1000)` when Pressing::High —
+    ///     matches the disk-side label for bit `0x1000`.
+    ///
+    /// Other TeamSettings fields (Passing, Counter, Tackling, MBB) have
+    /// NO decoded engine-word read site yet; they surface into the tick
+    /// via the shot-difficulty fold at `match_tick`'s item-3 wire.
+    pub fn to_engine_tactic_word(&self) -> u32 {
+        use crate::match_engine_exe::{
+            ENG_MENTALITY_NORMAL, ENG_MENTALITY_ATTACKING,
+            ENG_TIGHT_MARKING, ENG_ATTACK_THIRD_OVER,
+        };
+        let mut w: u32 = 0;
+        match self.mentality {
+            Mentality::Normal    => w |= ENG_MENTALITY_NORMAL,
+            Mentality::Attacking => w |= ENG_MENTALITY_ATTACKING,
+            Mentality::Defensive | Mentality::Unset => {}
+        }
+        if self.marking == Marking::ManToMan || self.offside_trap {
+            w |= ENG_TIGHT_MARKING;
+        }
+        if self.pressing == Pressing::High {
+            w |= ENG_ATTACK_THIRD_OVER;
+        }
+        w
+    }
+}
+
 /// Read the seven team switches out of a tactic's `team_flags_2` word.
 pub fn team_settings(t: &Tactic) -> TeamSettings {
     let w = t.team_flags_2;
