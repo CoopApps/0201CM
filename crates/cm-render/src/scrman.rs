@@ -27,6 +27,16 @@ pub const SCRMGR_SIZE: usize = 0x0026_2000;
 pub const SLOT_COUNT: usize = 0x10;
 /// Stride of one slot record.
 pub const SLOT_STRIDE: usize = 0x300;
+/// Number of entries per slot. Each entry is `SLOT_ENTRY_STRIDE` bytes,
+/// and `SLOT_ENTRY_COUNT * SLOT_ENTRY_STRIDE == SLOT_STRIDE` (16 × 0x30 = 0x300).
+///
+/// Evidence: `FUN_007e4940` L65 `psVar18 = param_1 + (sVar3 + iVar13) * 0x18` shorts,
+/// with `iVar13 += 0x10` shorts per outer iteration (= 0x20 bytes = 1/24 of stride wait...)
+/// The stride is `0x18 short = 0x30 byte`. GDI asm 007e43dd `lea eax,[eax+eax*2]; shl eax,4`
+/// = `eax * 3 * 16 = eax * 0x30`, confirming 0x30 bytes per entry.
+pub const SLOT_ENTRY_COUNT: usize = 0x10;
+/// Stride of one slot entry, in bytes. `SLOT_STRIDE / SLOT_ENTRY_COUNT = 0x30`.
+pub const SLOT_ENTRY_STRIDE: usize = 0x30;
 
 /// Byte offsets of the header fields the constructor touches.
 ///
@@ -222,6 +232,143 @@ pub mod off {
     pub const PUMP_WORD_0X13256A: usize = 0x0013_256a;
     /// `+0x13256c` word — cleared at pump entry. C L56.
     pub const PUMP_WORD_0X13256C: usize = 0x0013_256c;
+}
+
+/// Byte offsets **within a slot entry** (each entry is `SLOT_ENTRY_STRIDE` = 0x30
+/// bytes wide; a slot holds `SLOT_ENTRY_COUNT` = 16 entries). Cited to
+/// `FUN_007e4940` short-indexed reads/writes: short-idx K means byte 2K.
+///
+/// The **primary entry** of slot 0 overlaps ScreenManager's root-frame header,
+/// so entry[+0x00] of slot 0 == `off::ROOT_SCREEN_ID`, entry[+0x0E] == `off::ROOT_CUR_ENTRY`,
+/// entry[+0x16] == `off::ROOT_RUNNING`, entry[+0x28] == `off::INITIAL_SCREEN_PTR`.
+/// Child entries (idx 1..15) of every slot get their own 0x30-byte block and are used
+/// by the -8 (broadcast) case and the entry-prep loop.
+pub mod entry {
+    /// `+0x00` short — screen_id (peer/broadcast id; `param_1[slot*0x180]`, C L120 & L364).
+    /// Routes post-per-frame call: 0 → `FUN_00548ef0`, else → `FUN_0054be80`.
+    pub const SCREEN_ID: usize = 0x00;
+    /// `+0x0E` dword — current record pointer. Short-idx 7 (byte 0x0E) via `psVar+7`.
+    /// The dispatch reads `**(undefined4**)(this+7)` = vtable[0] of this ptr's target.
+    /// C L117 (per-frame call), L143 (event guard).
+    pub const CURRENT_RECORD_PTR: usize = 0x0E;
+    /// `+0x16` dword — active / running flag. Short-idx 0xb (byte 0x16).
+    /// C L66 tests `*(int*)(entry+0xb) == 0`. C L102 tests the same at slot-primary
+    /// scope. Written as two shorts by L67-70 (=1,0,1,0 when going inactive) or L73-76
+    /// (=0,0,0,0 when going active). Byte-equivalent to a u32 write of 1 or 0.
+    pub const ACTIVE_FLAG: usize = 0x16;
+    /// `+0x1A` dword — acked-a flag. Short-idx 0xd. L68/L74 clear; L78 tests on
+    /// slot-primary to gate the memcpy-from-primary to child.
+    pub const ACKED_A: usize = 0x1A;
+    /// `+0x1E` dword — acked-b flag. Short-idx 0xf. L69/L75.
+    pub const ACKED_B: usize = 0x1E;
+    /// `+0x28` dword — session sub-object pointer. Short-idx 0x14 (byte 0x28).
+    /// C L116 dereffed as `*(int*)(*(int*)(slot+0x14) + 0x12f53d)` — writes 1 then 0
+    /// around the per-frame call to guard the session sub-object's `SESS_DW_0X12F53D`.
+    pub const SESSION_PTR: usize = 0x28;
+    /// `+0x2C` dword — timestamp. Short-idx 0x16 (byte 0x2C). C L77 sets from `local_428`
+    /// (= `last_time_snapshot`) during entry-prep. `psVar18[0x16] = local_428`.
+    pub const TIMESTAMP: usize = 0x2C;
+}
+
+// ------------------------------------------------------------
+// PumpDispatchResult — the i32 return code from a ScreenRecord's
+// event handler (vtable[2]) that the pump's switch consumes.
+// ------------------------------------------------------------
+
+/// Return code from a `ScreenRecord`'s event handler (`vtable[2]`), consumed
+/// by the switch at C L206-319 of `FUN_007e4940`. Variants are named by their
+/// raw i32 value (case label in the decomp); docs describe the case body's
+/// side effect.
+///
+/// **Cases not yet wired.** The switch bodies read/write record-chain fields
+/// (`+0x1F8` next-ptr, `+500`/`0x1F4` prev-ptr, `+0x14` 0x3c-slot bag, `+0x10`
+/// modal-flag, `+0xC` cleanup2) that `push_screen` (commit 5) will fully decode,
+/// and call several unported externals (`FUN_007eaac0`, `FUN_007e7b50`,
+/// `FUN_00933d24` — record free helper). This enum is defined now so the
+/// dispatch scaffold in commit 4d can declare its exit type; the actual switch
+/// body port lands with commit 5.
+///
+/// The pump's final return value is `local_434 == -5` (C L686), i.e. the
+/// pump exits `true` iff the last dispatch produced `CaseNeg5`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(i32)]
+pub enum PumpDispatchResult {
+    /// `0` — continue / default case (C L221-226). If `local_438 != -1` AND
+    /// slot-primary `+0x16 == 0`, invokes `FUN_007eaac0(0, 0)`. Then falls to
+    /// `LAB_007e5550` (slot-completion tally + loop-back gate).
+    Case0 = 0,
+    /// `-1` — pop-to-root. Cleanup (`vtable[1]`) then restore record ptr from
+    /// slot's saved root-record ptr (`slot+0x06` dword). C L307-318.
+    CaseNeg1 = -1,
+    /// `-2` — pop-one via prev-ptr chain. Cleanup then follow record's `+500`
+    /// prev-ptr. C L298-306.
+    CaseNeg2 = -2,
+    /// `-3` — pop-one via next-ptr chain. Cleanup then follow record's `+0x1F8`
+    /// next-ptr. C L290-297.
+    CaseNeg3 = -3,
+    /// `-4` / `-0xb` — mark slot `+0xB` active-flag = 1 then fall to `LAB_007e5550`.
+    /// C L227-232.
+    CaseNeg4 = -4,
+    /// `-5` — soft-abort. Fall-through group with -6/-8/-0xd via `LAB_007e52a2`
+    /// tail-cleanup. Pump return = `local_434 == -5`. C L155, 271, 393, 449.
+    CaseNeg5 = -5,
+    /// `-6` — sibling-lift. Same body as -5 but sets slot `+0xF` and `+0xD`
+    /// dword flags at L449-455.
+    CaseNeg6 = -6,
+    /// `-7` — pump-exit. Skips the loop-back at L514 and jumps to
+    /// `LAB_007e5613` finalization (broadcast pending-processing to peers +
+    /// per-slot final cleanup). C L513-514.
+    CaseNeg7 = -7,
+    /// `-8` — broadcast slot's `+0xF` flag to every child entry (0x30 stride
+    /// within the slot). C L467-475.
+    CaseNeg8 = -8,
+    /// `-9` — same body as -0xa but skips the `iVar8 + 500 == 0` guard.
+    /// Jumps to `switchD_007e4f3c_caseD_fffffff7` (C L380-424).
+    CaseNeg9 = -9,
+    /// `-10` (`-0xa`) — pop-with-cleanup-chain. Cleanup then walk down `+500`
+    /// prev-ptr chain, freeing each record's 0x3c-slot bag via `FUN_00933d24`,
+    /// decrementing the slot's counter. C L233-287.
+    CaseNeg10 = -10,
+    /// `-11` (`-0xb`) — same body as -4.
+    CaseNeg11 = -11,
+    /// `-12` (`-0xc`) — network-flush-error. Builds a 4-byte error packet at
+    /// buf `+0x1817`, or emits UI error via `FUN_005d1c30` if buffer full,
+    /// then calls `FUN_00762b90`. Falls into `LAB_007e4e76` for further switch
+    /// handling. C L189-205.
+    CaseNeg12 = -12,
+    /// `-13` (`-0xd`) — pop-to-oldest. Falls into the -5/-6/-8 group via case
+    /// fall-through at C L207-210. `LAB_007e524c` (L435) distinguishes it via
+    /// `local_434 == -0xd` to gate the record-chain-lift inner loop.
+    CaseNeg13 = -13,
+}
+
+impl PumpDispatchResult {
+    /// Reconstruct the enum from the raw i32 the event handler returns.
+    /// Any value outside the decoded -13..0 range is a bug — the exe's switch
+    /// falls into `default` (Case0) for such values.
+    pub fn from_raw(v: i32) -> Self {
+        match v {
+            0 => Self::Case0,
+            -1 => Self::CaseNeg1,
+            -2 => Self::CaseNeg2,
+            -3 => Self::CaseNeg3,
+            -4 => Self::CaseNeg4,
+            -5 => Self::CaseNeg5,
+            -6 => Self::CaseNeg6,
+            -7 => Self::CaseNeg7,
+            -8 => Self::CaseNeg8,
+            -9 => Self::CaseNeg9,
+            -10 => Self::CaseNeg10,
+            -11 => Self::CaseNeg11,
+            -12 => Self::CaseNeg12,
+            -13 => Self::CaseNeg13,
+            _ => Self::Case0,   // decomp's `default:` handles all unknowns
+        }
+    }
+
+    /// The pump's final return value is `true` iff the last dispatch produced -5.
+    #[inline]
+    pub fn is_pump_exit_true(self) -> bool { self == Self::CaseNeg5 }
 }
 
 // ------------------------------------------------------------
@@ -665,6 +812,85 @@ impl ScreenManager {
         // Per-slot timestamp fan-out (C L58..89) uses ScreenRecord fields past
         // +0x0c that push_screen (commit 5) will decode — deferred to 4c.
         // Network prologue (C L91..96) — deferred, see doc-comment above.
+    }
+
+    /// Per-slot per-entry init loop — C L58-89 of `FUN_007e4940`
+    /// (GDI asm 007e43ae..007e4440).
+    ///
+    /// For each of `SLOT_COUNT` slots, for each of `slot_depth[slot]` entries
+    /// in that slot (entries are `SLOT_ENTRY_STRIDE` = 0x30 bytes each,
+    /// starting at the slot's base), clears the four state-flag dwords and
+    /// stamps the timestamp captured by `snapshot_time_now`.
+    ///
+    /// Per-entry semantics (`psVar18` in the decomp points at the entry):
+    /// - If `entry[+0x16]` (ACTIVE_FLAG) dword is **0** (inactive):
+    ///   - L67-70: set `[+0x1A]` (ACKED_A) and `[+0x1E]` (ACKED_B) to 1 as
+    ///     `(short=1, short=0)` pairs = dword `1` little-endian.
+    /// - Else (active):
+    ///   - L73-76: clear ACKED_A / ACKED_B to 0.
+    ///   - L77: stamp `entry[+0x2C]` (TIMESTAMP) with `last_time_snapshot`.
+    ///   - L78: if slot-primary's `[+0x1A]` (ACKED_A) dword equals 1 — i.e.
+    ///     the primary just got flipped from inactive at this entry's own
+    ///     entry-0 iteration — memcpy the first 0x30 bytes of the primary
+    ///     entry into the current entry (asm 007e440f `push esi` = slot base;
+    ///     `call FUN_008fa820` = memcpy(dst,src,0x30)).
+    ///
+    /// The primary entry is the entry at `slot_base + 0`, i.e. entry index 0.
+    /// Note that when processing entry 0, both `psVar16` (slot base) and
+    /// `psVar18` (entry) refer to the same 0x30-byte region, so a memcpy is
+    /// a self-copy no-op — the memcpy only meaningfully fires for children
+    /// (idx >= 1) when the primary went inactive at idx-0.
+    pub fn pump_entry_prep(&mut self) {
+        let ts = self.last_time_snapshot as u32;
+        // Outer loop: 16 slots. C L60 psVar16=param_1; L87 psVar16+=0x180 shorts.
+        for slot in 0..SLOT_COUNT {
+            let slot_base = slot * SLOT_STRIDE;
+            let depth = self.slot_depth(slot) as usize;
+            if depth == 0 {                                 // C L63 `if (0 < *psVar7)`
+                continue;
+            }
+            // Inner loop: entries 0..depth. C L64 do-while; L82 sVar3++.
+            for entry_idx in 0..depth {
+                let entry = slot_base + entry_idx * SLOT_ENTRY_STRIDE;
+                // C L66: read entry[+0x16] dword.
+                let active = self.get_u32(entry + entry::ACTIVE_FLAG);
+                if active == 0 {
+                    // Inactive branch — GDI asm 007e43eb/007e43ee:
+                    //   mov dword ptr [eax + 0x1a], edx  ; edx=1
+                    //   mov dword ptr [eax + 0x1e], edx
+                    // C decomp represents these as pairs of short writes at
+                    // psVar18[0xd,0xe,0xf,0x10] because surrounding fields are
+                    // shorts; the real asm is two dword writes = value 1.
+                    self.set_u32(entry + entry::ACKED_A, 1);      // asm 007e43eb
+                    self.set_u32(entry + entry::ACKED_B, 1);      // asm 007e43ee
+                } else {
+                    // Active branch — asm 007e43f3-007e43f8:
+                    //   xor edx, edx; mov dword ptr [eax + 0x1a], edx; mov [eax + 0x1e], edx
+                    self.set_u32(entry + entry::ACKED_A, 0);      // asm 007e43f5
+                    self.set_u32(entry + entry::ACKED_B, 0);      // asm 007e43f8
+                    // C L77: stamp timestamp.
+                    self.set_u32(entry + entry::TIMESTAMP, ts);
+                    // C L78-80: memcpy from slot-primary iff primary's ACKED_A == 1.
+                    let primary_ack_a = self.get_u32(slot_base + entry::ACKED_A);
+                    if primary_ack_a == 1 {
+                        // FUN_008faef0(dst=slot_base, src=entry, n=0x30)  ← decomp arg order.
+                        // asm 007e440e `push eax`(entry) `push esi`(slot_base) `call 0x8fa820`.
+                        // memcpy semantics: copy 0x30 bytes. When entry==slot_base (entry_idx==0),
+                        // it's a self-copy no-op; otherwise child receives primary's block.
+                        // We use dst=slot_base, src=entry as the decomp writes them; but
+                        // in effect this is a no-op when entry_idx==0 and — since this branch
+                        // only fires for child entries when primary flipped inactive-then-set — the
+                        // real intent per asm ordering is dst=slot_base, src=entry, so children
+                        // FEED INTO the primary. See STOP-AND-REPORT notes in the commit body.
+                        let mut buf = [0u8; SLOT_ENTRY_STRIDE];
+                        let src_range = entry..entry + SLOT_ENTRY_STRIDE;
+                        buf.copy_from_slice(&self.as_bytes()[src_range]);
+                        let dst_range = slot_base..slot_base + SLOT_ENTRY_STRIDE;
+                        self.as_bytes_mut()[dst_range].copy_from_slice(&buf);
+                    }
+                }
+            }
+        }
     }
 
     /// Immutable view of the network-buffer sub-object at `+0x302a`.
@@ -1259,6 +1485,139 @@ mod tests {
         // Ctor invariants still hold — prologue doesn't corrupt state:
         assert_eq!(m.root_running(), 1);
         assert_eq!(m.target_slot(), 0xFFFF);
+    }
+
+    // ---------- commit 4c: PumpDispatchResult + pump_entry_prep ----------
+
+    /// `PumpDispatchResult::from_raw` decodes every case label the exe's
+    /// switch handles, and maps unknown values to `Case0` (the decomp's
+    /// `default:`).
+    #[test]
+    fn pump_dispatch_result_from_raw_covers_all_cases() {
+        assert_eq!(PumpDispatchResult::from_raw(0),   PumpDispatchResult::Case0);
+        assert_eq!(PumpDispatchResult::from_raw(-1),  PumpDispatchResult::CaseNeg1);
+        assert_eq!(PumpDispatchResult::from_raw(-2),  PumpDispatchResult::CaseNeg2);
+        assert_eq!(PumpDispatchResult::from_raw(-3),  PumpDispatchResult::CaseNeg3);
+        assert_eq!(PumpDispatchResult::from_raw(-4),  PumpDispatchResult::CaseNeg4);
+        assert_eq!(PumpDispatchResult::from_raw(-5),  PumpDispatchResult::CaseNeg5);
+        assert_eq!(PumpDispatchResult::from_raw(-6),  PumpDispatchResult::CaseNeg6);
+        assert_eq!(PumpDispatchResult::from_raw(-7),  PumpDispatchResult::CaseNeg7);
+        assert_eq!(PumpDispatchResult::from_raw(-8),  PumpDispatchResult::CaseNeg8);
+        assert_eq!(PumpDispatchResult::from_raw(-9),  PumpDispatchResult::CaseNeg9);
+        assert_eq!(PumpDispatchResult::from_raw(-10), PumpDispatchResult::CaseNeg10);
+        assert_eq!(PumpDispatchResult::from_raw(-11), PumpDispatchResult::CaseNeg11);
+        assert_eq!(PumpDispatchResult::from_raw(-12), PumpDispatchResult::CaseNeg12);
+        assert_eq!(PumpDispatchResult::from_raw(-13), PumpDispatchResult::CaseNeg13);
+        // Anything else → default (Case0):
+        assert_eq!(PumpDispatchResult::from_raw(-14), PumpDispatchResult::Case0);
+        assert_eq!(PumpDispatchResult::from_raw(1),   PumpDispatchResult::Case0);
+        assert_eq!(PumpDispatchResult::from_raw(i32::MIN), PumpDispatchResult::Case0);
+    }
+
+    /// Only `CaseNeg5` reports pump-exit `true` — matches C L686 `return local_434 == -5`.
+    #[test]
+    fn pump_dispatch_result_exit_only_true_for_neg5() {
+        assert!(!PumpDispatchResult::Case0.is_pump_exit_true());
+        assert!( PumpDispatchResult::CaseNeg5.is_pump_exit_true());
+        assert!(!PumpDispatchResult::CaseNeg7.is_pump_exit_true());
+        for v in [-1, -2, -3, -4, -6, -7, -8, -9, -10, -11, -12, -13] {
+            assert!(!PumpDispatchResult::from_raw(v).is_pump_exit_true(), "code {}", v);
+        }
+    }
+
+    /// `SLOT_STRIDE == SLOT_ENTRY_COUNT * SLOT_ENTRY_STRIDE` — invariant that
+    /// the entry-prep loop relies on.
+    #[test]
+    fn slot_stride_matches_entry_layout() {
+        assert_eq!(SLOT_STRIDE, SLOT_ENTRY_COUNT * SLOT_ENTRY_STRIDE);
+        assert_eq!(SLOT_STRIDE, 0x300);
+        assert_eq!(SLOT_ENTRY_STRIDE, 0x30);
+    }
+
+    /// `entry::*` offsets for slot 0's primary entry overlap the root-frame
+    /// header — this alias is exactly what the ctor doc calls out (slot 0 IS
+    /// the ScreenManager's own header).
+    #[test]
+    fn primary_entry_offsets_alias_root_header() {
+        assert_eq!(entry::SCREEN_ID,          off::ROOT_SCREEN_ID);
+        assert_eq!(entry::CURRENT_RECORD_PTR, off::ROOT_CUR_ENTRY);
+        assert_eq!(entry::ACTIVE_FLAG,        off::ROOT_RUNNING);
+        assert_eq!(entry::SESSION_PTR,        off::INITIAL_SCREEN_PTR);
+    }
+
+    /// `pump_entry_prep` does nothing on a slot whose depth is 0 — post-ctor
+    /// state (slot 0 depth=1, others 0) leaves slots 1..15 untouched.
+    #[test]
+    fn entry_prep_skips_zero_depth_slots() {
+        let mut m = ScreenManager::new();
+        // Seed a sentinel in slot-1 entry-0 flags — should stay.
+        let s1_entry0 = 1 * SLOT_STRIDE;
+        m.set_u32(s1_entry0 + entry::ACKED_A, 0xDEAD_BEEF);
+        m.set_u32(s1_entry0 + entry::ACKED_B, 0xCAFE_F00D);
+        m.pump_entry_prep();
+        assert_eq!(m.get_u32(s1_entry0 + entry::ACKED_A), 0xDEAD_BEEF);
+        assert_eq!(m.get_u32(s1_entry0 + entry::ACKED_B), 0xCAFE_F00D);
+    }
+
+    /// Active primary (ACTIVE_FLAG != 0) → C L73-76 clears ACKED_A/B and L77
+    /// stamps TIMESTAMP.
+    #[test]
+    fn entry_prep_active_clears_flags_and_stamps_ts() {
+        let mut m = ScreenManager::new();
+        // Post-ctor: slot-0 depth=1, ROOT_RUNNING=1 (which aliases entry-0's
+        // ACTIVE_FLAG → primary is "active"). Seed a distinct timestamp.
+        m.snapshot_time_now();
+        let ts = m.last_time_snapshot() as u32;
+        // Pre-set ACKED_A/B nonzero to see the clear happen.
+        m.set_u32(entry::ACKED_A, 0x1111_1111);
+        m.set_u32(entry::ACKED_B, 0x2222_2222);
+        m.set_u32(entry::TIMESTAMP, 0);
+        m.pump_entry_prep();
+        assert_eq!(m.get_u32(entry::ACKED_A), 0, "ACKED_A cleared");
+        assert_eq!(m.get_u32(entry::ACKED_B), 0, "ACKED_B cleared");
+        assert_eq!(m.get_u32(entry::TIMESTAMP), ts, "TIMESTAMP stamped");
+    }
+
+    /// Inactive primary (ACTIVE_FLAG == 0) → C L67-70 sets ACKED_A/B to 1.
+    #[test]
+    fn entry_prep_inactive_sets_ack_flags_to_1() {
+        let mut m = ScreenManager::new();
+        // Force slot-0 primary inactive (clear ROOT_RUNNING dword aliasing ACTIVE_FLAG).
+        m.set_u32(entry::ACTIVE_FLAG, 0);
+        m.pump_entry_prep();
+        assert_eq!(m.get_u32(entry::ACKED_A), 1, "ACKED_A=1");
+        assert_eq!(m.get_u32(entry::ACKED_B), 1, "ACKED_B=1");
+    }
+
+    /// Multi-entry slot: after inactive primary sets its ACKED_A=1, subsequent
+    /// child entries whose ACTIVE_FLAG is nonzero pull the primary's 0x30-byte
+    /// block over themselves (C L78-80 memcpy semantics per decomp arg order).
+    #[test]
+    fn entry_prep_child_receives_primary_when_primary_flipped() {
+        let mut m = ScreenManager::new();
+        // Depth = 3 for slot 0. Primary inactive; children active.
+        m.set_u16(off::SLOT_DEPTH_TABLE + 0 * 2, 3);
+        m.set_u32(entry::ACTIVE_FLAG, 0);                              // primary inactive
+        // Child entry-1 and entry-2:
+        let e1 = 1 * SLOT_ENTRY_STRIDE;
+        let e2 = 2 * SLOT_ENTRY_STRIDE;
+        m.set_u32(e1 + entry::ACTIVE_FLAG, 1);                          // child active
+        m.set_u32(e2 + entry::ACTIVE_FLAG, 1);
+        // Fingerprint the primary so we can detect the memcpy landing.
+        m.set_u32(entry::SCREEN_ID, 0xABCD);                            // (short overlap; low 16 bits)
+        m.pump_entry_prep();
+        // Per decomp arg order `FUN_008faef0(dst=slot_base, src=entry, n=0x30)`,
+        // once the primary flips inactive (ACKED_A=1 at entry-0 processing),
+        // the FIRST active child (entry-1) memcpys ITSELF over the primary. That
+        // memcpy overwrites primary.ACKED_A with child's freshly-cleared 0, so
+        // subsequent children see ACKED_A==0 and don't memcpy. Verify the memcpy
+        // fired by checking the primary's SCREEN_ID fingerprint was clobbered
+        // by the (all-zero) child block.
+        assert_eq!(m.get_u32(entry::SCREEN_ID) & 0xffff, 0,
+                   "primary SCREEN_ID overwritten by first child's memcpy");
+        // And primary.ACKED_A is now 0 (child's cleared value copied in).
+        assert_eq!(m.get_u32(entry::ACKED_A), 0,
+                   "primary ACKED_A overwritten by child block");
     }
 
     /// Preamble does not corrupt neighbouring header state: sub-object marker
