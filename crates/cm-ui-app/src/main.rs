@@ -677,31 +677,30 @@ impl App {
                 }
             }
             Screen::SelectClub { clubs, scroll, selected } => {
-                // Match the faithful renderer's geometry exactly:
-                //   list rows y=153+i*22 for i in 0..17, height 20;
-                //   two columns split at x=434 (LEFT ends 433, RIGHT starts 435);
-                //   Back (100..617, 555..590), Next (619..790, 555..590).
+                // Nav bar rows / list rows are mutually exclusive; use
+                // an `if / else if` chain so deferred flags like
+                // `install_club` reach the handler at the end of
+                // `on_release` instead of being swallowed by an early
+                // `return`.
                 if y >= 555 && y <= 590 {
                     if x >= 100 && x <= 617 {
+                        // Back → back to Nationality picker.
                         self.screen = Screen::SelectNationality {
                             scroll: 0, selected: None,
                             filter: NationalityFilter::MajorNations,
                             filter_open: false,
                         };
-                        return;
-                    }
-                    if x >= 619 && x <= 790 {
-                        // Next commits the picked club — same effect
-                        // the old direct-pick path had, only gated on
-                        // a prior click.
+                    } else if x >= 619 && x <= 790 {
+                        // Next commits the picked club — deferred so
+                        // the manager install runs after the match
+                        // releases the borrow on `self.screen`.
                         if let Some(id) = *selected {
-                            install_club = clubs.iter().find(|c| c.club_id == id).cloned();
+                            install_club = clubs.iter()
+                                .find(|c| c.club_id == id).cloned();
                         }
-                        return;
                     }
-                }
-                // List entries — 17 rows × 2 cols starting y=153.
-                if x >= 112 && x <= 756 && y >= 153 && y <= 527 {
+                } else if x >= 112 && x <= 756 && y >= 153 && y <= 527 {
+                    // List entries — 17 rows × 2 cols starting y=153.
                     let row = ((y - 153) / 22) as usize;
                     if row < 17 {
                         let col_left = x <= 433;
@@ -716,52 +715,44 @@ impl App {
                 }
             }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
-                // (1) Dropdown open: clicks INSIDE the menu pick a
-                // filter; clicks anywhere else close it.
+                // The arms are mutually exclusive — an `if / else if`
+                // chain instead of early `return`s so deferred flags
+                // like `goto_select_club` still reach the handler at
+                // the end of `on_release`.
                 if *filter_open {
-                    // "All Nations" row (657,170)-(778,188)
+                    // (1) Dropdown open: rows pick a filter, anywhere
+                    //     else dismisses.
                     if x >= 657 && x <= 778 && y >= 170 && y <= 188 {
                         *filter = NationalityFilter::AllNations;
                         *filter_open = false;
                         *scroll = 0;
-                        // Persisted selection still valid — nation ids
-                        // survive the filter swap.
-                        return;
-                    }
-                    // "Major Nations" row (657,190)-(778,208)
-                    if x >= 657 && x <= 778 && y >= 190 && y <= 208 {
+                    } else if x >= 657 && x <= 778 && y >= 190 && y <= 208 {
                         *filter = NationalityFilter::MajorNations;
                         *filter_open = false;
                         *scroll = 0;
-                        return;
+                    } else {
+                        *filter_open = false;
                     }
-                    // Anywhere else → dismiss.
-                    *filter_open = false;
-                    return;
-                }
-                // (2) Filter button (655,145)-(780,165) → toggle dropdown.
-                if x >= 655 && x <= 780 && y >= 145 && y <= 165 {
+                } else if x >= 655 && x <= 780 && y >= 145 && y <= 165 {
+                    // (2) Filter button toggle.
                     *filter_open = true;
-                    return;
-                }
-                // (3) Back / Next.
-                if y >= 555 && y <= 590 {
+                } else if y >= 555 && y <= 590 {
+                    // (3) Back / Next.
                     if x >= 100 && x <= 617 {
                         self.screen = Screen::EnterName;
-                        return;
-                    }
-                    if x >= 619 && x <= 790 && selected.is_some() {
+                    } else if x >= 619 && x <= 790 && selected.is_some() {
                         if let (Some(game), Some(nid)) =
                             (self.game.as_mut(), *selected)
                         {
                             game.manager.nationality = Some(nid);
                         }
+                        // Fall through so the deferred handler at the
+                        // bottom of `on_release` builds the club list
+                        // and switches the screen.
                         goto_select_club = true;
-                        return;
                     }
-                }
-                // (4) List entries — 16 rows × 2 cols starting at y=178.
-                if x >= 112 && x <= 756 && y >= 178 && y <= 527 {
+                } else if x >= 112 && x <= 756 && y >= 178 && y <= 527 {
+                    // (4) List entries — 16 rows × 2 cols starting at y=178.
                     let row = ((y - 178) / 22) as usize;
                     if row < 16 {
                         let col_left = x <= 433;
