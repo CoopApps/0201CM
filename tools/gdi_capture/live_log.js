@@ -139,7 +139,7 @@ Interceptor.attach(VA.PANEL, {
     onEnter(a) {
         send({ op: 'panel', from: caller(this.context),
                x0: i32(a[0]), y0: i32(a[1]), x1: i32(a[2]), y1: i32(a[3]),
-               style: u32(a[4]).toString(16), colour: u16(a[5]) });
+               style: u32(a[4]).toString(16), colour: u16(a[5]), pattern: u16(a[6]) });
     },
 });
 Interceptor.attach(VA.WRAPPED, {

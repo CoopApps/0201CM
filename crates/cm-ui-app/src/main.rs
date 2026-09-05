@@ -158,6 +158,11 @@ struct App {
     /// Transient status line shown under the content (e.g. "not yet
     /// implemented" for menu commands without a ported screen).
     status: Option<String>,
+    /// Seed for the Setup screen's rotating photo background — hashed
+    /// into a photo index in `screen_setup_faithful::render_setup`. The
+    /// exe picks a new one on each screen open; we do the same by
+    /// bumping this whenever we return to Setup.
+    setup_photo_seed: u64,
 }
 
 impl App {
@@ -206,7 +211,22 @@ impl App {
                 return;
             }
         }
-        // Pre-boot fast path — Setup / SelectLeagues / StartSeason /
+        // Setup screen — dedicated faithful direct-draw renderer. The
+        // Setup screen has too much structural detail (blue vgradient
+        // sidebar, red title bar, darken-buttons over a rotating photo)
+        // for the generic widget pool to reproduce pixel-accurately, so
+        // this bypasses the pool and transcribes the exe's paint
+        // sequence directly. See `screen_setup_faithful` for the
+        // provenance and hardcoded coord table.
+        {
+            if render_new::try_render_setup_faithful(
+                &self.screen, &mut self.frame, &mut self.fonts, self.setup_photo_seed,
+            ) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
+        // Pre-boot fast path — SelectLeagues / StartSeason /
         // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
         // now paints through the byte-exact `packed_widget` pipeline
         // (see `screen_pre_boot` for exe fn cites per screen).
@@ -1071,6 +1091,12 @@ impl Default for App {
             game: None,
             menu_open: None,
             status: None,
+            setup_photo_seed: {
+                use std::time::{SystemTime, UNIX_EPOCH};
+                SystemTime::now().duration_since(UNIX_EPOCH)
+                    .map(|d| d.as_nanos() as u64)
+                    .unwrap_or(0)
+            },
         }
     }
 }

@@ -27,6 +27,7 @@ use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
 use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
+use cm_render::screen_setup_faithful;
 use cm_render::widget_pool::GuiRecordPool;
 use cm_render::Surface;
 
@@ -408,6 +409,30 @@ pub fn try_render_rich_state(
 /// Returns `true` when a builder ran. `false` sends the caller back to
 /// the old per-screen renderer — reserved for safety, no path exercises
 /// it after this fold.
+/// Fast path for `Screen::Setup` ONLY — the faithful direct-draw
+/// renderer from `screen_setup_faithful`. Bypasses the widget pool
+/// entirely: coords and colours are transcribed from the live exe
+/// paint capture (fixtures/setup_screen/exe_paint.jsonl). Also blits a
+/// random `.RGN` photo as the base layer to match the exe's cycling
+/// backdrop.
+///
+/// Returns `true` when it ran. `false` sends the caller to
+/// `try_render_pre_boot` for the fallback widget-pool path.
+pub fn try_render_setup_faithful(
+    screen: &Screen,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+) -> bool {
+    if !matches!(screen, Screen::Setup) {
+        return false;
+    }
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_setup_faithful::render_setup(&mut packed, fonts, photo_seed);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
 pub fn try_render_pre_boot(
     screen: &Screen,
     manager: Option<&ManagerName>,
@@ -648,6 +673,12 @@ mod tests {
 
         let mut packed = PackedSurface::rgb555(800, 600);
         draw_sidebar_packed(&mut packed, &mut fonts, &bar, None, &date, phase);
+
+        if let Ok(p) = std::env::var("SIDEBAR_DUMP") {
+            use std::io::Write;
+            let mut f = std::fs::File::create(&p).unwrap();
+            for &px in &packed.buf { f.write_all(&px.to_le_bytes()).unwrap(); }
+        }
 
         // Load the real exe framebuffer (800×600 RGB555, u16 LE).
         let fix = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
