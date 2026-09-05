@@ -46,6 +46,8 @@ pub mod screen_news;
 pub mod screen_pre_boot;
 pub mod screen_rich_state;
 pub mod screen_setup_faithful;
+pub mod screen_pre_boot_chrome;
+pub mod screen_leagues_faithful;
 pub mod screen_wire_batch3;
 pub mod screens_auto;
 pub mod dispatcher;

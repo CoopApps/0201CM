@@ -239,6 +239,18 @@ impl App {
                 return;
             }
         }
+        // Select Leagues screen — dedicated faithful direct-draw renderer,
+        // same pattern as Setup. See `screen_leagues_faithful`.
+        {
+            let has_manager = self.game.is_some();
+            if render_new::try_render_leagues_faithful(
+                &self.screen, &mut self.frame, &mut self.fonts,
+                self.setup_photo_seed, has_manager,
+            ) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         // Pre-boot fast path — SelectLeagues / StartSeason /
         // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
         // now paints through the byte-exact `packed_widget` pipeline

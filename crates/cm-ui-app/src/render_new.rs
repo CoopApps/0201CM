@@ -25,6 +25,7 @@ use cm_render::packed_panel::{draw_panel, PanelPalette, P_BEVEL, P_DARKEN, P_SOL
 use cm_render::packed_text::{draw_wrapped_text, W_LEFT, W_TOP, W_WRAP};
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
+use cm_render::screen_leagues_faithful;
 use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
 use cm_render::screen_setup_faithful;
@@ -429,6 +430,57 @@ pub fn try_render_setup_faithful(
     }
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_setup_faithful::render_setup(&mut packed, fonts, state);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+/// Fast path for `Screen::SelectLeagues` — the faithful direct-draw
+/// renderer from `screen_leagues_faithful`. Same pattern as Setup: coords
+/// and colours transcribed from live Frida capture
+/// (`fixtures/leagues_screen/exe_paint_fb.jsonl.gz`).
+pub fn try_render_leagues_faithful(
+    screen: &Screen,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+    has_manager: bool,
+) -> bool {
+    let Screen::SelectLeagues(sl) = screen else { return false };
+    // Map SelectLeaguesState → LeaguesRow[] in the exe's display order.
+    fn sec_label(country: &str) -> Option<&'static str> {
+        match country.trim() {
+            "England" => Some("Conference Division"),
+            "Germany" => Some("Regional Divisions"),
+            "Italy" => Some("Serie C2 A, B, C"),
+            "Portugal" => Some("Segunda B"),
+            "Spain" => Some("Segunda B"),
+            "Sweden" => Some("Superettan"),
+            _ => None,
+        }
+    }
+    let rows: Vec<screen_leagues_faithful::LeaguesRow> = sl.order.iter()
+        .filter_map(|&i| sl.slots.iter().find(|s| s.index == i))
+        .map(|s| screen_leagues_faithful::LeaguesRow {
+            country: &s.primary_name,
+            selected: s.selected,
+            background_marker: s.background_marker,
+            secondary_label: sec_label(&s.primary_name),
+            secondary_active: s.extra,
+        })
+        .collect();
+    let state = screen_leagues_faithful::LeaguesState {
+        photo_seed,
+        has_manager,
+        use_real_players: sl.options.use_real_players,
+        attribute_masking: sl.options.attribute_masking,
+        rows: &rows,
+        scroll: 0,
+        back_enabled: true,
+        next_enabled: sl.selected_count() > 0,
+        pressed: None,
+    };
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_leagues_faithful::render_leagues(&mut packed, fonts, &state);
     blit_packed_to_surface(&packed, out);
     true
 }
