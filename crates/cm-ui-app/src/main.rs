@@ -219,10 +219,21 @@ impl App {
         // sequence directly. See `screen_setup_faithful` for the
         // provenance and hardcoded coord table.
         {
-            let has_manager = self.game.is_some();
+            // Build the state parcel — Setup is top-level, so Back/Next
+            // are always disabled here; `pressed` extracts the currently
+            // mouse-down content button (0..8) when in the Setup arm.
+            let state = cm_render::screen_setup_faithful::SetupState {
+                photo_seed: self.setup_photo_seed,
+                has_manager: self.game.is_some(),
+                back_enabled: false,
+                next_enabled: false,
+                pressed: match self.pressed {
+                    Pressed::Setup(i) => Some(i),
+                    _ => None,
+                },
+            };
             if render_new::try_render_setup_faithful(
-                &self.screen, &mut self.frame, &mut self.fonts, self.setup_photo_seed,
-                has_manager,
+                &self.screen, &mut self.frame, &mut self.fonts, &state,
             ) {
                 self.overlay_menu_bar();
                 return;

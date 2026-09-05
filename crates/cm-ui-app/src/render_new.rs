@@ -422,14 +422,13 @@ pub fn try_render_setup_faithful(
     screen: &Screen,
     out: &mut Surface,
     fonts: &mut Fonts,
-    photo_seed: u64,
-    has_manager: bool,
+    state: &screen_setup_faithful::SetupState,
 ) -> bool {
     if !matches!(screen, Screen::Setup) {
         return false;
     }
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
-    screen_setup_faithful::render_setup(&mut packed, fonts, photo_seed, has_manager);
+    screen_setup_faithful::render_setup(&mut packed, fonts, state);
     blit_packed_to_surface(&packed, out);
     true
 }

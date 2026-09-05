@@ -137,18 +137,48 @@ fn blit_photo(surface: &mut PackedSurface, photo_seed: u64) {
     }
 }
 
+/// Runtime state parameters for the Setup screen render.
+pub struct SetupState {
+    /// Which RGN to blit as the base photo layer (hash → photo index).
+    pub photo_seed: u64,
+    /// `true` when a manager is present — enables the "Add Manager" entry.
+    pub has_manager: bool,
+    /// `true` when the Back button leads somewhere — Setup is top-level
+    /// so this is always `false` for now; sub-screens would pass `true`.
+    pub back_enabled: bool,
+    /// `true` when the Next button leads somewhere — same as above,
+    /// Setup is top-level so `false`.
+    pub next_enabled: bool,
+    /// Which of the 9 content buttons is currently pressed (mouse down
+    /// on it) — the panel gets `P_BEVEL_INVERT` so it looks pushed-in.
+    /// 0..=8 in `BUTTONS` order (Start New Game .. Web Sites). Also
+    /// accepts index 9 = Back, 10 = Next.
+    pub pressed: Option<usize>,
+}
+
+impl Default for SetupState {
+    fn default() -> Self {
+        Self { photo_seed: 0, has_manager: false, back_enabled: false,
+               next_enabled: false, pressed: None }
+    }
+}
+
+/// Content-button index for the Back button in `SetupState::pressed`.
+pub const BUTTON_BACK: usize = 9;
+/// Content-button index for the Next button in `SetupState::pressed`.
+pub const BUTTON_NEXT: usize = 10;
+
 /// Main entry: paint the Setup Game screen.
-///
-/// `photo_seed` selects which RGN to blit as the base photo layer.
-/// `has_manager` — when `true` the "Add Manager" entry is enabled (bright
-/// bevel + cyan text); when `false` it appears faded, matching the exe's
-/// initial-state disabled look.
 pub fn render_setup(
     surface: &mut PackedSurface,
     fonts: &mut Fonts,
-    photo_seed: u64,
-    has_manager: bool,
+    state: &SetupState,
 ) {
+    let photo_seed = state.photo_seed;
+    let has_manager = state.has_manager;
+    let back_enabled = state.back_enabled;
+    let next_enabled = state.next_enabled;
+    let pressed = state.pressed;
     let palette = PanelPalette::default();
 
     // 1. Photo base layer (behind everything).
@@ -225,29 +255,54 @@ pub fn render_setup(
         (4, 278, 611, "Web Sites"),
     ];
     let body_font = fonts.pixel_slot(F_BODY).clone();
-    for (row, x0, x1, label) in BUTTONS.iter().copied() {
+    for (idx, (row, x0, x1, label)) in BUTTONS.iter().copied().enumerate() {
         let y0 = BTN_ROWS[row];
         let y1 = BTN_END_Y[row];
-        draw_panel(surface, x0, y0, x1, y1,
-            P_BEVEL | P_DARKEN, BLUE_BUTTON, 0, palette);
+        // Pressed button → invert the bevel so it looks pushed in.
+        let mut style = P_BEVEL | P_DARKEN;
+        if pressed == Some(idx) {
+            style |= P_BEVEL_INVERT;
+        }
+        draw_panel(surface, x0, y0, x1, y1, style, BLUE_BUTTON, 0, palette);
         let bytes = c_string(label.as_bytes());
         draw_wrapped_text(surface, x0, y0, x1, y1,
             &body_font, &bytes, INK_CYAN, TS_CENTRE, -1);
     }
 
-    // 7. Bottom bar — Back + Next. Grey fill + grey-scaled bevel via
-    //    P_SOLID_FILL | P_BEVEL with the grey colour.
-    draw_panel(surface, 100, 555, 617, 590,
-        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
-    let back_bytes = c_string(b"Back");
-    draw_wrapped_text(surface, 100, 555, 617, 590,
-        &body_font, &back_bytes, INK_CYAN, TS_CENTRE, -1);
+    // 7. Bottom bar — Back + Next.
+    //
+    // When a button is DISABLED (nothing to go back / forward to), the
+    // exe renders it faded — no fill, no bevel, dim ink — matching the
+    // "Add Manager" disabled look. When enabled it gets the grey fill +
+    // grey-scaled bevel. Pressed inverts the bevel like the content buttons.
+    render_nav_button(surface, &body_font, 100, 555, 617, 590, "Back",
+                      back_enabled, pressed == Some(BUTTON_BACK));
+    render_nav_button(surface, &body_font, 619, 555, 790, 590, "Next",
+                      next_enabled, pressed == Some(BUTTON_NEXT));
+}
 
-    draw_panel(surface, 619, 555, 790, 590,
-        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
-    let next_bytes = c_string(b"Next");
-    draw_wrapped_text(surface, 619, 555, 790, 590,
-        &body_font, &next_bytes, INK_CYAN, TS_CENTRE, -1);
+/// Back / Next button. Enabled = grey panel + cyan text + optional
+/// invert-on-press. Disabled = no panel, dim cyan text (looks faded,
+/// matching the Add Manager disabled entry style).
+fn render_nav_button(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    x0: i32, y0: i32, x1: i32, y1: i32,
+    label: &str,
+    enabled: bool,
+    pressed: bool,
+) {
+    let palette = PanelPalette::default();
+    let ink = if enabled { INK_CYAN } else { CYAN_DIM };
+    if enabled {
+        let mut style = P_SOLID_FILL | P_BEVEL;
+        if pressed {
+            style |= P_BEVEL_INVERT;
+        }
+        draw_panel(surface, x0, y0, x1, y1, style, GREY_BAR, 0, palette);
+    }
+    let bytes = c_string(label.as_bytes());
+    draw_wrapped_text(surface, x0, y0, x1, y1, font, &bytes, ink, TS_CENTRE, -1);
 }
 
 /// A single sidebar entry. Uses P_SAMPLE_BG so the fill AND bevel
@@ -296,8 +351,9 @@ mod tests {
     fn render_setup_produces_pixels() {
         let mut surface = PackedSurface::rgb555(800, 600);
         let mut fonts = Fonts::new("D:/cm0102/Data");
+        let state = SetupState::default();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            render_setup(&mut surface, &mut fonts, 0, false);
+            render_setup(&mut surface, &mut fonts, &state);
         }));
         if result.is_ok() {
             let top = surface.buf[40];
