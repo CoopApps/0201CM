@@ -733,8 +733,9 @@ impl App {
                                 .map(|v| (v.nationality_name(), v.id()))
                                 .collect();
                             nations.sort_by(|a, b| a.0.cmp(&b.0));
-                            if let Some((_, nid)) = nations.get(visible_idx) {
+                            if let Some((name, nid)) = nations.get(visible_idx) {
                                 *selected = Some(*nid);
+                                eprintln!("[nationality] picked {name:?} -> nation_id {nid}");
                             }
                         }
                     }
