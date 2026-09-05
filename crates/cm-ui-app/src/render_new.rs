@@ -499,7 +499,8 @@ pub fn try_render_nationality_faithful(
     photo_seed: u64,
     has_manager: bool,
 ) -> bool {
-    let Screen::SelectNationality { scroll, selected } = screen else { return false };
+    let Screen::SelectNationality { scroll, selected, filter, filter_open } = screen
+        else { return false };
     let Some(world) = world else { return false };
     // Continent id → 3-letter code — matches `rust-db/core/continents.json`
     // rows 0..5 (Africa=0, Asia=1, Europe=2, N.America=3, Oceania=4,
@@ -513,21 +514,13 @@ pub fn try_render_nationality_faithful(
         }
     }
     // Build the sorted display list. `list_data[i] = (name, code, nation_id)`.
-    // continent_id() reads the verified +0x71 byte (Africa=0..S.America=5)
-    // — NOT actual_region (+0x76), which is a finer 14-value grouping and
-    // caused the earlier "Honduras in Oceania" bug.
-    //
-    // Filter out non-real nationalities:
-    //   * `state_of_development == 0` drops the extinct/historical
-    //     dummy records (West Germany, East Germany, Soviet Union, CIS,
-    //     Basque, Czechoslovakia, ...) — they all have devel=0 AND
-    //     continent_id=0xFE (a sentinel), while every real nation from
-    //     Andorra (devel=1) up has devel>=1.
-    //   * `continent_id in 0..=5` is a belt-and-braces check — a real
-    //     picker entry needs a valid FIFA confederation.
+    // continent_id() reads the verified +0x71 byte (Africa=0..S.America=5).
+    // The active filter selects which nations qualify — see
+    // `crate::filter_nations::nation_passes` for the rules.
+    let filter = *filter;
     let mut list_data: Vec<(String, &'static str, u32)> = world.core.nations.iter()
         .map(|n| cm_domain::typed_records::NationView::new(n))
-        .filter(|v| v.state_of_development() > 0 && (0..=5).contains(&v.continent_id()))
+        .filter(|v| crate::nation_passes(v, filter))
         .map(|v| (v.nationality_name().to_string(),
                   continent_code(v.continent_id()),
                   v.id()))
@@ -547,6 +540,13 @@ pub fn try_render_nationality_faithful(
     // Map the persisted nation_id (in `selected`) to the list index.
     let selected_idx: Option<usize> = selected
         .and_then(|nid| display.iter().position(|(_, _, id)| *id == nid));
+    // Dropdown options are fixed (order matches the exe capture: All
+    // Nations first, Major Nations second).
+    let filter_options: &[&str] = &["All Nations", "Major Nations"];
+    let filter_highlight = match filter {
+        crate::NationalityFilter::AllNations   => 0,
+        crate::NationalityFilter::MajorNations => 1,
+    };
     let state = screen_nationality_faithful::NationalityState {
         photo_seed,
         has_manager,
@@ -555,6 +555,10 @@ pub fn try_render_nationality_faithful(
         selected: selected_idx,
         back_enabled: true,
         next_enabled: selected.is_some(),
+        filter_label: filter.label(),
+        filter_open: *filter_open,
+        filter_options,
+        filter_highlight,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_nationality_faithful::render_nationality(&mut packed, fonts, &state);

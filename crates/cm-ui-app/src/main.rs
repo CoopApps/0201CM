@@ -33,12 +33,14 @@ enum Screen {
     /// (and the name being typed) lives in `App.game`, not here.
     EnterName,
     /// Select Nationality — the manager picks which nationality they are.
-    /// Sits between EnterName and SelectClub in the exe's flow. State =
-    /// scroll position + currently-selected nation id (None until user
-    /// picks a row).
+    /// Sits between EnterName and SelectClub in the exe's flow.
     SelectNationality {
         scroll: usize,
         selected: Option<u32>,
+        /// Which subset the picker is currently showing.
+        filter: NationalityFilter,
+        /// `true` while the Filter dropdown is popped open.
+        filter_open: bool,
     },
     /// Pick the club to manage — every playable club in the chosen country's
     /// manageable divisions.
@@ -114,6 +116,52 @@ enum Screen {
     /// Widens the Layer 2 fold from a curated 2 screens to every cmd
     /// the ported dispatchers can build a pool for.
     AutoRoute { cmd: i16 },
+}
+
+/// The subset the Nationality picker is currently showing. Matches the
+/// exe's Filter dropdown: the two options are "All Nations" (every
+/// nation record with a valid name + continent) and "Major Nations"
+/// (the 100-odd FIFA/UEFA-recognised entries — `state_of_development >
+/// 0 && continent_id ∈ 0..=5`). Major Nations is the exe's default.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NationalityFilter {
+    MajorNations,
+    AllNations,
+}
+
+impl NationalityFilter {
+    pub fn label(self) -> &'static str {
+        match self {
+            NationalityFilter::MajorNations => "Major Nations",
+            NationalityFilter::AllNations   => "All Nations",
+        }
+    }
+}
+
+/// Shared filter predicate — decides whether a nation qualifies for
+/// display given the picker's current filter. Render, click and wheel
+/// paths ALL call this so the visible list, hit indices, and scroll
+/// range agree.
+pub fn nation_passes(
+    v: &cm_domain::typed_records::NationView,
+    filter: NationalityFilter,
+) -> bool {
+    if v.nationality_name().is_empty() { return false; }
+    match filter {
+        NationalityFilter::MajorNations => {
+            // Real FIFA nations: valid continent id AND non-zero
+            // state-of-development. Drops West Germany, East Germany,
+            // Soviet Union, CIS, Basque, Czechoslovakia (all devel=0
+            // AND continent=0xFE).
+            v.state_of_development() > 0 && (0..=5).contains(&v.continent_id())
+        }
+        NationalityFilter::AllNations => {
+            // Loosest sensible rule — still require SOMETHING sensible
+            // so we don't paint blank rows. A valid continent (0..=5)
+            // is the minimum; anything else is a data artefact.
+            (0..=5).contains(&v.continent_id())
+        }
+    }
 }
 
 /// A generic "some control is being pressed" indicator so the render pass can draw the
@@ -605,6 +653,8 @@ impl App {
                                 self.screen = Screen::SelectNationality {
                                     scroll: 0,
                                     selected: None,
+                                    filter: NationalityFilter::MajorNations,
+                                    filter_open: false,
                                 };
                             }
                         }
@@ -620,17 +670,42 @@ impl App {
                     None => {}
                 }
             }
-            Screen::SelectNationality { scroll, selected } => {
-                // Match the render's list rects + Back / Next.
+            Screen::SelectNationality { scroll, selected, filter, filter_open } => {
+                // (1) Dropdown open: clicks INSIDE the menu pick a
+                // filter; clicks anywhere else close it.
+                if *filter_open {
+                    // "All Nations" row (657,170)-(778,188)
+                    if x >= 657 && x <= 778 && y >= 170 && y <= 188 {
+                        *filter = NationalityFilter::AllNations;
+                        *filter_open = false;
+                        *scroll = 0;
+                        // Persisted selection still valid — nation ids
+                        // survive the filter swap.
+                        return;
+                    }
+                    // "Major Nations" row (657,190)-(778,208)
+                    if x >= 657 && x <= 778 && y >= 190 && y <= 208 {
+                        *filter = NationalityFilter::MajorNations;
+                        *filter_open = false;
+                        *scroll = 0;
+                        return;
+                    }
+                    // Anywhere else → dismiss.
+                    *filter_open = false;
+                    return;
+                }
+                // (2) Filter button (655,145)-(780,165) → toggle dropdown.
+                if x >= 655 && x <= 780 && y >= 145 && y <= 165 {
+                    *filter_open = true;
+                    return;
+                }
+                // (3) Back / Next.
                 if y >= 555 && y <= 590 {
                     if x >= 100 && x <= 617 {
                         self.screen = Screen::EnterName;
                         return;
                     }
                     if x >= 619 && x <= 790 && selected.is_some() {
-                        // Persist the nationality onto the manager
-                        // BEFORE moving on — it's permanent for the
-                        // life of the manager.
                         if let (Some(game), Some(nid)) =
                             (self.game.as_mut(), *selected)
                         {
@@ -640,24 +715,22 @@ impl App {
                         return;
                     }
                 }
-                // List entries — 16 rows × 2 cols starting at y=178.
+                // (4) List entries — 16 rows × 2 cols starting at y=178.
                 if x >= 112 && x <= 756 && y >= 178 && y <= 527 {
                     let row = ((y - 178) / 22) as usize;
                     if row < 16 {
                         let col_left = x <= 433;
                         let visible_idx = *scroll + row * 2
                             + if col_left { 0 } else { 1 };
-                        // Translate visible-list index → real nation_id
-                        // by rebuilding the same sorted+filtered list the
-                        // render uses. MUST match render_new.rs exactly
-                        // or clicks will bind the wrong nationality.
+                        // Rebuild the same sorted+filtered list the
+                        // render uses via the shared `nation_passes`
+                        // predicate — click index MUST match render.
                         if let Some(world) = self.world.as_ref() {
+                            let f = *filter;
                             let mut nations: Vec<(String, u32)> = world.core.nations.iter()
                                 .map(|n| cm_domain::typed_records::NationView::new(n))
-                                .filter(|v| v.state_of_development() > 0
-                                            && (0..=5).contains(&v.continent_id()))
+                                .filter(|v| nation_passes(v, f))
                                 .map(|v| (v.nationality_name(), v.id()))
-                                .filter(|(n, _)| !n.is_empty())
                                 .collect();
                             nations.sort_by(|a, b| a.0.cmp(&b.0));
                             if let Some((_, nid)) = nations.get(visible_idx) {
@@ -1309,19 +1382,18 @@ impl ApplicationHandler for App {
                         };
                         changed = true;
                     }
-                    Screen::SelectNationality { scroll, .. } => {
+                    Screen::SelectNationality { scroll, filter, .. } => {
                         // 2-col grid × 16 rows = 32 entries per screen.
                         // Wheel steps 2 entries (one row) at a time.
-                        // Count against the FILTERED list — the extinct
-                        // nations are dropped from render, so scrolling
-                        // past the end of the visible list is wrong.
+                        // Count against the CURRENTLY-FILTERED list so
+                        // scroll-max lines up with whatever the render
+                        // is showing.
                         const VISIBLE_ENTRIES: usize = 32;
+                        let f = *filter;
                         let total = self.world.as_ref().map(|w| {
                             w.core.nations.iter()
                                 .map(|n| cm_domain::typed_records::NationView::new(n))
-                                .filter(|v| v.state_of_development() > 0
-                                            && (0..=5).contains(&v.continent_id())
-                                            && !v.nationality_name().is_empty())
+                                .filter(|v| nation_passes(v, f))
                                 .count()
                         }).unwrap_or(0);
                         let max = total.saturating_sub(VISIBLE_ENTRIES);

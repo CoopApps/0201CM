@@ -18,7 +18,7 @@ use crate::font::Fonts;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{
     draw_panel, PanelPalette,
-    P_BEVEL, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
+    P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
 };
 use crate::packed_text::{draw_wrapped_text, W_LEFT};
 use crate::screen_pre_boot_chrome::{
@@ -38,25 +38,42 @@ pub struct NationalityRow<'a> {
 pub struct NationalityState<'a> {
     pub photo_seed: u64,
     pub has_manager: bool,
-    /// All picker rows in the exe's display order (alphabetical).
-    /// The exe list holds ~200 nationalities; only 16 visible rows fit
-    /// per column, i.e. 32 entries visible at a time.
     pub rows: &'a [NationalityRow<'a>],
-    /// First visible entry index (0 = start of list). Advances by 2 per
-    /// wheel tick since the visible window is 2 entries wide per row.
     pub scroll: usize,
-    /// Index into `rows` of the currently-selected entry (None until
-    /// the user picks one). The selected cell renders with the same
-    /// highlight recipe as a Leagues SELECTED toggle: yellow rect frame
-    /// + orange text (`INK_HIGHLIGHT`) + outer-highlight ring.
     pub selected: Option<usize>,
     pub back_enabled: bool,
     pub next_enabled: bool,
+    /// Current label on the Filter button ("Major Nations", "All
+    /// Nations", …) — displayed on the button itself.
+    pub filter_label: &'a str,
+    /// When `true`, the Filter dropdown menu is popped open — the
+    /// button renders sunken and the two menu rows sit under it.
+    pub filter_open: bool,
+    /// The dropdown menu options top-to-bottom (typically "All
+    /// Nations" and "Major Nations"). Only rendered while
+    /// `filter_open` is true.
+    pub filter_options: &'a [&'a str],
+    /// Which of `filter_options` is currently "hovered" / would be
+    /// picked by a click — one row per open menu is highlighted with
+    /// a brighter green shade.
+    pub filter_highlight: usize,
 }
 
 /// Highlighted-cell orange text — matches the Leagues screen selection.
 /// `0x7e00 = (31, 16, 0)`.
 const INK_HIGHLIGHT: u16 = 0x7e00;
+
+/// Dropdown menu base fill (green). `0x0200 = (0, 16, 0)`. From op #497
+/// / #573 in the exe capture.
+const MENU_GREEN: u16 = 0x0200;
+/// Dropdown menu highlighted-row fill. `0x0240 = (0, 18, 0)` — one
+/// shade brighter than `MENU_GREEN`. From op #573.
+const MENU_GREEN_HI: u16 = 0x0240;
+/// Filter-dropdown rects — decoded from the capture's op #497 / #550 /
+/// #573 (fixtures/nationality_filter/structure.txt).
+const FILTER_MENU:    (i32, i32, i32, i32) = (655, 168, 780, 210);
+const FILTER_ROW1:    (i32, i32, i32, i32) = (657, 170, 778, 188);
+const FILTER_ROW2:    (i32, i32, i32, i32) = (657, 190, 778, 208);
 
 // -----------------------------------------------------------------------
 // Layout (from the exe capture)
@@ -109,8 +126,21 @@ pub fn render_nationality(
     let body_font = fonts.pixel_slot(F_BODY).clone();
 
     // Filter button (op #579 — grey P_SOLID_FILL|P_BEVEL, cyan label).
+    // When the dropdown is open the exe changes the style bits to
+    // include P_BEVEL_INVERT so the button reads as pressed/sunken
+    // (op #464 in fixtures/nationality_filter/structure.txt).
+    let filter_style = if state.filter_open {
+        P_SOLID_FILL | P_BEVEL | P_BEVEL_INVERT
+    } else {
+        P_SOLID_FILL | P_BEVEL
+    };
     draw_panel(surface, FILTER.0, FILTER.1, FILTER.2, FILTER.3,
-        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        filter_style, GREY_BAR, 0, palette);
+    // Label: the exe shows the CURRENT filter label on the button
+    // when closed (…never actually — the button just says "Filter" in
+    // the capture). Match the exe: show "Filter" whether open or
+    // closed. The dropdown row highlights the current option.
+    let _ = state.filter_label;
     draw_wrapped_text(surface, FILTER.0, FILTER.1, FILTER.2, FILTER.3,
         &small_font, &c_string(b"Filter"), INK_CYAN, TS_CENTRE, -1);
 
@@ -180,6 +210,45 @@ pub fn render_nationality(
     // Bottom arrow.
     draw_panel(surface, SB_X0, SB_BOT_ARROW.0, SB_X1, SB_BOT_ARROW.1,
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+
+    // Filter dropdown menu — painted LAST so it lands on top of everything.
+    if state.filter_open {
+        draw_filter_dropdown(surface, &small_font,
+            state.filter_options, state.filter_highlight);
+    }
+}
+
+/// Paint the green "Filter" dropdown menu (op #497/#550/#573 in the
+/// exe capture). The current filter is highlighted with a slightly
+/// brighter green (`MENU_GREEN_HI`); the other rows use `MENU_GREEN`.
+/// Text is BLACK on green in font 1, with a leading whitespace pad for
+/// the exe's left-indent look.
+fn draw_filter_dropdown(
+    surface: &mut PackedSurface,
+    small_font: &crate::packed_glyph::PixelFont,
+    options: &[&str],
+    highlight: usize,
+) {
+    let palette = PanelPalette::default();
+    // Container — solid green + bevel (op #497 s=0x130 ≈ SOLID_FILL |
+    // BEVEL with a shrink flag; we approximate with SOLID_FILL|BEVEL).
+    draw_panel(surface, FILTER_MENU.0, FILTER_MENU.1, FILTER_MENU.2, FILTER_MENU.3,
+        P_SOLID_FILL | P_BEVEL, MENU_GREEN, 0, palette);
+    // Row rects — up to 2 for now (All Nations / Major Nations).
+    const ROW_RECTS: [(i32, i32, i32, i32); 2] = [FILTER_ROW1, FILTER_ROW2];
+    for (i, label) in options.iter().enumerate() {
+        if i >= ROW_RECTS.len() { break; }
+        let (x0, y0, x1, y1) = ROW_RECTS[i];
+        let fill = if i == highlight { MENU_GREEN_HI } else { MENU_GREEN };
+        draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL, fill, 0, palette);
+        // Label — BLACK text (c=0), font 1, LEFT-aligned (leading
+        // spaces in the exe act as indent, hardcoded here).
+        let mut buf = b"      ".to_vec();
+        buf.extend_from_slice(label.as_bytes());
+        buf.push(0);
+        draw_wrapped_text(surface, x0, y0, x1, y1,
+            small_font, &buf, 0x0000, TS_CENTRE | W_LEFT, -1);
+    }
 }
 
 #[cfg(test)]
@@ -191,10 +260,15 @@ mod tests {
         let mut surface = PackedSurface::rgb555(800, 600);
         let mut fonts = Fonts::new("D:/cm0102/Data");
         let rows: Vec<NationalityRow> = vec![];
+        let opts: &[&str] = &["All Nations", "Major Nations"];
         let state = NationalityState {
             photo_seed: 0, has_manager: false,
             rows: &rows, scroll: 0, selected: None,
             back_enabled: true, next_enabled: false,
+            filter_label: "Major Nations",
+            filter_open: false,
+            filter_options: opts,
+            filter_highlight: 1,
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_nationality(&mut surface, &mut fonts, &state);
