@@ -162,17 +162,16 @@ pub fn render_nationality(
         };
         let is_selected = state.selected == Some(list_idx);
         if is_selected {
-            // Selection highlight — same recipe as the Leagues SELECTED
-            // toggle: outer-highlight ring around the name + continent
-            // cells + a yellow rect frame just outside. The nationality
-            // row is much wider than a Leagues pill, so the frame goes
-            // TWO pixels thick (two concentric rects) to stay unmissable
-            // from a normal viewing distance.
-            draw_panel(surface, name_x0, y0, cont_x1, y1,
+            // Selection highlight — the exe frames JUST the country
+            // NAME cell (not the continent code beside it). Same recipe
+            // as the Leagues SELECTED toggle: outer-highlight ring +
+            // yellow rect frame just outside, 2 pixels thick so it
+            // reads clearly against the darkened container.
+            draw_panel(surface, name_x0, y0, name_x1, y1,
                 P_OUTER_HIGHLIGHT, INK_HIGHLIGHT, INK_HIGHLIGHT, palette);
-            surface.draw_rectangle(name_x0 - 2, y0 - 2, cont_x1 + 2, y1 + 2,
+            surface.draw_rectangle(name_x0 - 2, y0 - 2, name_x1 + 2, y1 + 2,
                                     2, INK_YELLOW);
-            surface.draw_rectangle(name_x0 - 1, y0 - 1, cont_x1 + 1, y1 + 1,
+            surface.draw_rectangle(name_x0 - 1, y0 - 1, name_x1 + 1, y1 + 1,
                                     2, INK_YELLOW);
         }
         let (name_ink, cont_ink) = if is_selected {

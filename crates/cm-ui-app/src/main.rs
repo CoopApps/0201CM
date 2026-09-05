@@ -1437,6 +1437,8 @@ impl ApplicationHandler for App {
                         // In-game screens (News / Dashboard) hit-test internally
                         // via their own click enums rather than the Pressed
                         // mechanism, so they always process a release.
+                        // SelectNationality also owns its own hit-testing (list
+                        // rows + Filter dropdown + Back/Next), so it goes here.
                         let in_game = matches!(
                             self.screen,
                             Screen::Dashboard { .. }
@@ -1448,6 +1450,7 @@ impl ApplicationHandler for App {
                                 | Screen::PlayerProfile { .. }
                                 | Screen::ClubFixtures { .. }
                                 | Screen::AutoRoute { .. }
+                                | Screen::SelectNationality { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
