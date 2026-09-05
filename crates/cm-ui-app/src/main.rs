@@ -621,17 +621,21 @@ impl App {
                 }
             }
             Screen::SelectNationality { scroll, selected } => {
-                // Match the render's list rects (110..780 × 178..535,
-                // 16 rows × 2 cols, 22-px stride) plus Back / Next.
+                // Match the render's list rects + Back / Next.
                 if y >= 555 && y <= 590 {
                     if x >= 100 && x <= 617 {
-                        // Back → previous step (Enter Name).
                         self.screen = Screen::EnterName;
                         return;
                     }
                     if x >= 619 && x <= 790 && selected.is_some() {
-                        // Next → Select Club (nationality persisted on
-                        // the game later; for now just advance).
+                        // Persist the nationality onto the manager
+                        // BEFORE moving on — it's permanent for the
+                        // life of the manager.
+                        if let (Some(game), Some(nid)) =
+                            (self.game.as_mut(), *selected)
+                        {
+                            game.manager.nationality = Some(nid);
+                        }
                         goto_select_club = true;
                         return;
                     }
@@ -641,10 +645,24 @@ impl App {
                     let row = ((y - 178) / 22) as usize;
                     if row < 16 {
                         let col_left = x <= 433;
-                        let idx = *scroll + row * 2 + (if col_left { 0 } else { 1 });
-                        // Selection is by list index for now — later we
-                        // can round-trip to the real nation id.
-                        *selected = Some(idx as u32);
+                        let visible_idx = *scroll + row * 2
+                            + if col_left { 0 } else { 1 };
+                        // Translate visible-list index → real nation_id
+                        // by rebuilding the same sorted list the render
+                        // uses. Kept simple: replay the sort here.
+                        if let Some(world) = self.world.as_ref() {
+                            let mut nations: Vec<(String, u32)> = world.core.nations.iter()
+                                .map(|n| {
+                                    let v = cm_domain::typed_records::NationView::new(n);
+                                    (v.nationality_name(), v.id())
+                                })
+                                .filter(|(n, _)| !n.is_empty())
+                                .collect();
+                            nations.sort_by(|a, b| a.0.cmp(&b.0));
+                            if let Some((_, nid)) = nations.get(visible_idx) {
+                                *selected = Some(*nid);
+                            }
+                        }
                     }
                 }
             }
@@ -1514,6 +1532,7 @@ fn dump(path: &str, which: &str) {
                     password: String::new(),
                     password_confirm: String::new(),
                     focus: 1,
+                    nationality: None,
                 };
                 screens::enter_name(&mut frame, &mut fonts, bg.as_ref(), &manager);
             }

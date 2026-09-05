@@ -501,40 +501,50 @@ pub fn try_render_nationality_faithful(
 ) -> bool {
     let Screen::SelectNationality { scroll, selected } = screen else { return false };
     let Some(world) = world else { return false };
-    // Map region id → 3-letter code (matches continents.json rows 0..5).
-    fn region_code(r: i32) -> &'static str {
-        match r {
+    // Continent id → 3-letter code — matches `rust-db/core/continents.json`
+    // rows 0..5 (Africa=0, Asia=1, Europe=2, N.America=3, Oceania=4,
+    // S.America=5). Anything outside 0..=5 is a data gap (some records
+    // have no continent set) — render as spaces so the row stays clean.
+    fn continent_code(c: i32) -> &'static str {
+        match c {
             0 => "AFR", 1 => "ASI", 2 => "EUR",
             3 => "NAM", 4 => "OCE", 5 => "SAM",
-            _ => "   ",
+            _ => "",
         }
     }
-    // Build the visible-row list, alphabetical by nationality_name.
-    // NationView decodes the adjective + region byte from the raw record.
-    let mut rows: Vec<(String, &'static str)> = world.core.nations.iter()
+    // Build the sorted display list. `list_data[i] = (name, code, nation_id)`.
+    // continent_id() reads the verified +0x71 byte (Africa=0..S.America=5)
+    // — NOT actual_region (+0x76), which is a finer 14-value grouping and
+    // caused the earlier "Honduras in Oceania" bug.
+    let mut list_data: Vec<(String, &'static str, u32)> = world.core.nations.iter()
         .map(|n| {
             let v = cm_domain::typed_records::NationView::new(n);
             (v.nationality_name().to_string(),
-             region_code(v.actual_region() as i32))
+             continent_code(v.continent_id()),
+             v.id())
         })
-        .filter(|(n, _)| !n.is_empty())
+        .filter(|(n, _, _)| !n.is_empty())
         .collect();
-    rows.sort_by(|a, b| a.0.cmp(&b.0));
+    list_data.sort_by(|a, b| a.0.cmp(&b.0));
     // Present with the exe's two-space left-indent.
-    let padded: Vec<(String, &'static str)> = rows.into_iter()
-        .map(|(name, cont)| (format!("  {name}"), cont))
+    let display: Vec<(String, &'static str, u32)> = list_data.into_iter()
+        .map(|(name, cont, nid)| (format!("  {name}"), cont, nid))
         .collect();
-    let refs: Vec<screen_nationality_faithful::NationalityRow> = padded.iter()
-        .map(|(name, cont)| screen_nationality_faithful::NationalityRow {
+    let refs: Vec<screen_nationality_faithful::NationalityRow> = display.iter()
+        .map(|(name, cont, _)| screen_nationality_faithful::NationalityRow {
             name: name.as_str(),
             continent: cont,
         })
         .collect();
+    // Map the persisted nation_id (in `selected`) to the list index.
+    let selected_idx: Option<usize> = selected
+        .and_then(|nid| display.iter().position(|(_, _, id)| *id == nid));
     let state = screen_nationality_faithful::NationalityState {
         photo_seed,
         has_manager,
         rows: &refs,
         scroll: *scroll,
+        selected: selected_idx,
         back_enabled: true,
         next_enabled: selected.is_some(),
     };

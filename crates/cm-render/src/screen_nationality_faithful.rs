@@ -16,7 +16,10 @@
 
 use crate::font::Fonts;
 use crate::packed::PackedSurface;
-use crate::packed_panel::{draw_panel, PanelPalette, P_BEVEL, P_DARKEN, P_SOLID_FILL};
+use crate::packed_panel::{
+    draw_panel, PanelPalette,
+    P_BEVEL, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
+};
 use crate::packed_text::{draw_wrapped_text, W_LEFT};
 use crate::screen_pre_boot_chrome::{
     c_string, draw_chrome, ChromeState,
@@ -42,9 +45,18 @@ pub struct NationalityState<'a> {
     /// First visible entry index (0 = start of list). Advances by 2 per
     /// wheel tick since the visible window is 2 entries wide per row.
     pub scroll: usize,
+    /// Index into `rows` of the currently-selected entry (None until
+    /// the user picks one). The selected cell renders with the same
+    /// highlight recipe as a Leagues SELECTED toggle: yellow rect frame
+    /// + orange text (`INK_HIGHLIGHT`) + outer-highlight ring.
+    pub selected: Option<usize>,
     pub back_enabled: bool,
     pub next_enabled: bool,
 }
+
+/// Highlighted-cell orange text — matches the Leagues screen selection.
+/// `0x7e00 = (31, 16, 0)`.
+const INK_HIGHLIGHT: u16 = 0x7e00;
 
 // -----------------------------------------------------------------------
 // Layout (from the exe capture)
@@ -107,10 +119,10 @@ pub fn render_nationality(
         P_DARKEN, 0, 0, palette);
 
     // Rows — 2 columns of entries.
-    let visible = state.rows.iter().skip(state.scroll).take(VISIBLE_ENTRIES);
-    for (i, row) in visible.enumerate() {
-        let row_idx = i / 2;
-        let is_left = i % 2 == 0;
+    let visible = state.rows.iter().enumerate().skip(state.scroll).take(VISIBLE_ENTRIES);
+    for (visible_i, (list_idx, row)) in visible.enumerate() {
+        let row_idx = visible_i / 2;
+        let is_left = visible_i % 2 == 0;
         let y0 = ROW_FIRST_Y + (row_idx as i32) * ROW_STRIDE;
         let y1 = y0 + ROW_HEIGHT;
         let (name_x0, name_x1, cont_x0, cont_x1) = if is_left {
@@ -118,16 +130,29 @@ pub fn render_nationality(
         } else {
             (NAME_R.0, NAME_R.1, CONT_R.0, CONT_R.1)
         };
-        // Name — LEFT-aligned cyan (font 3), leading whitespace in the
-        // captured strings acts as the indent.
+        let is_selected = state.selected == Some(list_idx);
+        if is_selected {
+            // Outer-highlight ring + yellow rect frame spanning name +
+            // continent cells (same recipe as Leagues SELECTED toggle).
+            draw_panel(surface, name_x0, y0, cont_x1, y1,
+                P_OUTER_HIGHLIGHT, INK_HIGHLIGHT, INK_HIGHLIGHT, palette);
+            surface.draw_rectangle(name_x0 - 1, y0 - 1, cont_x1 + 1, y1 + 1,
+                                    2, INK_YELLOW);
+        }
+        let (name_ink, cont_ink) = if is_selected {
+            (INK_HIGHLIGHT, INK_HIGHLIGHT)
+        } else {
+            (INK_CYAN, INK_YELLOW)
+        };
+        // Name — LEFT-aligned (leading whitespace in the string acts as
+        // the indent), font 3.
         draw_wrapped_text(surface, name_x0, y0, name_x1, y1,
             &body_font, &c_string(row.name.as_bytes()),
-            INK_CYAN, TS_CENTRE | W_LEFT, -1);
-        // Continent code — centred yellow (font 2 in the exe; using
-        // slot 1 = arial_narrow_10 is close enough visually).
+            name_ink, TS_CENTRE | W_LEFT, -1);
+        // Continent code — centred, font 1 (small).
         draw_wrapped_text(surface, cont_x0, y0, cont_x1, y1,
             &small_font, &c_string(row.continent.as_bytes()),
-            INK_YELLOW, TS_CENTRE, -1);
+            cont_ink, TS_CENTRE, -1);
     }
 
     // Scrollbar (op #277-368).
@@ -168,7 +193,7 @@ mod tests {
         let rows: Vec<NationalityRow> = vec![];
         let state = NationalityState {
             photo_seed: 0, has_manager: false,
-            rows: &rows, scroll: 0,
+            rows: &rows, scroll: 0, selected: None,
             back_enabled: true, next_enabled: false,
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

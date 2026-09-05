@@ -335,6 +335,11 @@ pub struct ManagerName {
     /// Which field has keyboard focus:
     /// 0 = first, 1 = second, 2 = password, 3 = password_confirm.
     pub focus: u8,
+    /// Nationality — nation_id chosen on the Select Nationality screen.
+    /// **Permanent** for the life of the manager (the exe writes it to
+    /// the person record and never lets you change it). `None` while
+    /// the user hasn't picked yet.
+    pub nationality: Option<u32>,
 }
 
 impl ManagerName {
