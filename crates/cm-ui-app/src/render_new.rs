@@ -574,19 +574,24 @@ pub fn try_render_club_preview_faithful(
     let attr_by_id: std::collections::BTreeMap<u32, &cm_domain::DomainStaffType10> =
         world.staff.type10.iter().map(|a| (a.id, a)).collect();
     for person in &world.staff.type6 {
-        if person.current_club_id() == Some(choice.club_id) {
-            let link = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body)
-                .player_data_id().map(|l| l as u32).unwrap_or(person.id);
-            let bits = attr_by_id.get(&link)
-                .map(|a| a.position_eligibility_bits())
-                .unwrap_or(0);
-            rows.push(Row {
-                name: surname_initial(world, person),
-                position: position_code(bits),
-                age: person.age_at(2001, start_day),
-                marker: ' ',
-            });
-        }
+        if person.current_club_id() != Some(choice.club_id) { continue; }
+        // Only PLAYERS (or player-coaches). Non-player staff — pure
+        // coaches, physios, chairmen, scouts — have no `player_data_id`
+        // link on their person record, per `FUN_00537870`'s "type-6 →
+        // type-10 attribute pointer" wiring. `PlayerView::is_player()`
+        // is a `player_data_id().is_some()` shorthand for exactly this.
+        let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
+        if !pv.is_player() { continue; }
+        let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
+        let bits = attr_by_id.get(&link)
+            .map(|a| a.position_eligibility_bits())
+            .unwrap_or(0);
+        rows.push(Row {
+            name: surname_initial(world, person),
+            position: position_code(bits),
+            age: person.age_at(2001, start_day),
+            marker: ' ',
+        });
     }
     // Sort by position group (GK → SW → D → DM → M → AM → F → S), then
     // alphabetical within each group.
