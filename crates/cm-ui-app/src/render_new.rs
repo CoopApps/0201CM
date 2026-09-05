@@ -29,6 +29,7 @@ use cm_render::screen_leagues_faithful;
 use cm_render::screen_name_faithful;
 use cm_render::screen_nationality_faithful;
 use cm_render::screen_season_faithful;
+use cm_render::screen_team_faithful;
 use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
 use cm_render::screen_setup_faithful;
@@ -488,6 +489,91 @@ pub fn try_render_leagues_faithful(
     true
 }
 
+/// Fast path for `Screen::SelectClub` (subheader = "Select Team").
+/// The club list already exists on the screen state; this function
+/// enriches each row with the nation 3-letter code (looked up from
+/// `world.core.nations`) and a division short code (mapped from the
+/// division long name), then hands it to the faithful renderer.
+pub fn try_render_team_faithful(
+    screen: &Screen,
+    world: Option<&cm_domain::World>,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+    has_manager: bool,
+) -> bool {
+    let Screen::SelectClub { clubs, scroll, selected } = screen else { return false };
+    let Some(world) = world else { return false };
+
+    // Build a club_id → nation 3-letter code map ONCE for the render.
+    // ClubView::nation_id gives the nation id; NationView::three_letter_name
+    // gives the code.
+    let nation_code_of = |club_id: u32| -> String {
+        world.core.clubs.iter().find_map(|rec| {
+            let cv = cm_domain::typed_records::ClubView::new(rec);
+            if cv.id() == club_id {
+                let nid = cv.nation_id()?;
+                world.core.nations.iter()
+                    .map(|n| cm_domain::typed_records::NationView::new(n))
+                    .find(|nv| nv.id() as i32 == nid)
+                    .map(|nv| nv.three_letter_name().to_uppercase())
+            } else { None }
+        }).unwrap_or_default()
+    };
+    // Division long name → 3-letter code. The exe uses PRM / D1 / D2 /
+    // D3 / CON for England, DIVn for other simple structures. Fallback
+    // to the first 3 uppercase chars of the long name.
+    fn division_code(long_name: &str) -> String {
+        // Table of well-known English tier long names → codes captured
+        // from the exe on 2026-09-05.
+        let l = long_name.to_ascii_lowercase();
+        if l.contains("premier")         { return "PRM".into(); }
+        if l.contains("division one")    { return "D1".into(); }
+        if l.contains("division two")    { return "D2".into(); }
+        if l.contains("division three")  { return "D3".into(); }
+        if l.contains("conference")      { return "CON".into(); }
+        // Fallback — first three ASCII-alpha letters of the long name.
+        let mut out = String::new();
+        for c in long_name.chars() {
+            if c.is_ascii_alphabetic() { out.push(c.to_ascii_uppercase()); }
+            if out.len() == 3 { break; }
+        }
+        out
+    }
+
+    // Precompute the enriched rows to keep &str refs alive on the stack.
+    let enriched: Vec<(String, String, String, u32)> = clubs.iter()
+        .map(|c| (
+            format!("  {}", c.club_name),          // exe indents with two spaces
+            nation_code_of(c.club_id),
+            division_code(&c.division_name),
+            c.club_id,
+        ))
+        .collect();
+    let refs: Vec<screen_team_faithful::TeamRow> = enriched.iter()
+        .map(|(n, nc, dc, id)| screen_team_faithful::TeamRow {
+            name: n.as_str(),
+            nation: nc.as_str(),
+            division: dc.as_str(),
+            club_id: *id,
+        })
+        .collect();
+
+    let state = screen_team_faithful::TeamState {
+        photo_seed,
+        has_manager,
+        rows: &refs,
+        scroll: *scroll,
+        selected: *selected,
+        back_enabled: true,
+        next_enabled: selected.is_some(),
+    };
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_team_faithful::render_team(&mut packed, fonts, &state);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
 /// Fast path for `Screen::SelectNationality`. Reads the nationality
 /// list from the loaded `World` (213 nations, `nationality_name` +
 /// `actual_region` mapped to a 3-letter continent code).
@@ -651,7 +737,7 @@ pub fn try_render_pre_boot(
             };
             screen_pre_boot::build_enter_name(&mut pool, &fields).is_some()
         }
-        Screen::SelectClub { clubs, scroll } => build_club_from_app(&mut pool, clubs, *scroll),
+        Screen::SelectClub { clubs, scroll, .. } => build_club_from_app(&mut pool, clubs, *scroll),
         _ => return false,
     };
     if !ok {

@@ -43,10 +43,13 @@ enum Screen {
         filter_open: bool,
     },
     /// Pick the club to manage — every playable club in the chosen country's
-    /// manageable divisions.
+    /// manageable divisions. The exe subheader calls this "Select Team".
     SelectClub {
         clubs: Vec<cm_domain::ManagerClubChoice>,
         scroll: usize,
+        /// club_id of the currently-picked entry (`None` until the user
+        /// clicks one). Enables Next when set.
+        selected: Option<u32>,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -342,6 +345,19 @@ impl App {
                 return;
             }
         }
+        // Select Team (subheader) — the club picker; needs the World
+        // for club → nation code + club record lookups.
+        {
+            let has_manager = self.game.is_some();
+            if render_new::try_render_team_faithful(
+                &self.screen, self.world.as_ref(),
+                &mut self.frame, &mut self.fonts,
+                self.setup_photo_seed, has_manager,
+            ) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         // Pre-boot fast path — SelectLeagues / StartSeason /
         // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
         // now paints through the byte-exact `packed_widget` pipeline
@@ -457,12 +473,11 @@ impl App {
                 Some(c) => Pressed::Name(c),
                 None => Pressed::None,
             },
-            Screen::SelectClub { clubs, scroll } => {
-                match screens::select_club_hit(x, y, *scroll, clubs.len()) {
-                    Some(c) => Pressed::Club(c),
-                    None => Pressed::None,
-                }
-            }
+            // SelectClub uses its own geometry (matching the faithful
+            // `screen_team_faithful` renderer); the on_release handler
+            // owns the hit-test, so we always return None here and rely
+            // on the in-game bypass to let the release fire.
+            Screen::SelectClub { .. } => Pressed::None,
             // Nationality has no press-invert state yet — content buttons
             // are grid rows without a bevel to invert.
             Screen::SelectNationality { .. } => Pressed::None,
@@ -661,13 +676,43 @@ impl App {
                     }
                 }
             }
-            Screen::SelectClub { clubs, scroll } => {
-                match screens::select_club_hit(x, y, *scroll, clubs.len()) {
-                    Some(screens::ClubClick::Pick(i)) => {
-                        install_club = clubs.get(i).cloned();
+            Screen::SelectClub { clubs, scroll, selected } => {
+                // Match the faithful renderer's geometry exactly:
+                //   list rows y=153+i*22 for i in 0..17, height 20;
+                //   two columns split at x=434 (LEFT ends 433, RIGHT starts 435);
+                //   Back (100..617, 555..590), Next (619..790, 555..590).
+                if y >= 555 && y <= 590 {
+                    if x >= 100 && x <= 617 {
+                        self.screen = Screen::SelectNationality {
+                            scroll: 0, selected: None,
+                            filter: NationalityFilter::MajorNations,
+                            filter_open: false,
+                        };
+                        return;
                     }
-                    Some(screens::ClubClick::Back) => self.screen = Screen::EnterName,
-                    None => {}
+                    if x >= 619 && x <= 790 {
+                        // Next commits the picked club — same effect
+                        // the old direct-pick path had, only gated on
+                        // a prior click.
+                        if let Some(id) = *selected {
+                            install_club = clubs.iter().find(|c| c.club_id == id).cloned();
+                        }
+                        return;
+                    }
+                }
+                // List entries — 17 rows × 2 cols starting y=153.
+                if x >= 112 && x <= 756 && y >= 153 && y <= 527 {
+                    let row = ((y - 153) / 22) as usize;
+                    if row < 17 {
+                        let col_left = x <= 433;
+                        let visible_idx = *scroll + row * 2
+                            + if col_left { 0 } else { 1 };
+                        if let Some(c) = clubs.get(visible_idx) {
+                            *selected = Some(c.club_id);
+                            eprintln!("[team] picked {:?} -> club_id {}",
+                                       c.club_name, c.club_id);
+                        }
+                    }
                 }
             }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
@@ -1090,7 +1135,7 @@ impl App {
             clubs.len(),
             nations.join(", ")
         );
-        self.screen = Screen::SelectClub { clubs, scroll: 0 };
+        self.screen = Screen::SelectClub { clubs, scroll: 0, selected: None };
     }
 
     /// Build a NEW working game IN MEMORY from the locked master database and
@@ -1340,9 +1385,17 @@ impl ApplicationHandler for App {
                 };
                 let mut changed = false;
                 match &mut self.screen {
-                    Screen::SelectClub { clubs, scroll } => {
-                        let max = clubs.len().saturating_sub(screens::CLUB_ROWS_VISIBLE);
-                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
+                    Screen::SelectClub { clubs, scroll, .. } => {
+                        // 2-col grid × 17 rows = 34 entries per screen.
+                        // Wheel steps 2 entries (one row) at a time to
+                        // match the faithful renderer's row-major layout.
+                        const VISIBLE_ENTRIES: usize = 34;
+                        let max = clubs.len().saturating_sub(VISIBLE_ENTRIES);
+                        *scroll = if dy > 0.0 {
+                            scroll.saturating_sub(2)
+                        } else {
+                            (*scroll + 2).min(max)
+                        };
                         changed = true;
                     }
                     Screen::Dashboard { view: cm_domain::DashboardView::Club(d), squad_scroll } => {
@@ -1451,6 +1504,7 @@ impl ApplicationHandler for App {
                                 | Screen::ClubFixtures { .. }
                                 | Screen::AutoRoute { .. }
                                 | Screen::SelectNationality { .. }
+                                | Screen::SelectClub { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
