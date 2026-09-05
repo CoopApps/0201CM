@@ -1928,22 +1928,36 @@ pub enum SeasonClick {
 }
 
 pub fn season_hit(state: &StartSeasonState, x: i32, y: i32) -> Option<SeasonClick> {
-    use cm_render::layout::rebuild_layout;
-    let nav = rebuild_layout((100, 555, 790, 590), 1, &[3, 1], &[1], false);
-    if in_rect(x, y, nav.cell(0, 0)) {
-        return Some(SeasonClick::Back);
+    // Back / Next on the bottom bar — must match the faithful renderer's
+    // rects: Back = (100..617, 555..590), Next = (619..790, 555..590).
+    if y >= 555 && y <= 590 {
+        if x >= 100 && x <= 617 {
+            return Some(SeasonClick::Back);
+        }
+        if x >= 619 && x <= 790 {
+            return Some(SeasonClick::Next);
+        }
     }
-    if in_rect(x, y, nav.cell(1, 0)) {
-        return Some(SeasonClick::Next);
-    }
-    // Season list = rebuild_layout((110, ~270, 780, 535), 2, [1,1,1], N rows)
-    let n = state.rows.len().max(1);
-    let list = rebuild_layout((110, 270, 780, 535), 2, &[1, 1, 1], &vec![1; n], false);
-    for r in 0..n {
-        if y >= list.row_top[r] && y <= list.row_bottom[r]
-            && x >= list.col_left[0] && x <= list.col_right[2]
-        {
-            return Some(SeasonClick::Select(r));
+    // Content buttons — match screen_season_faithful.rs's grid EXACTLY.
+    // Rows [145, 211, 276, 341, 406], row heights end [209, 274, 339, 404, 469].
+    // Cols: left (110..444), right (446..780). Odd-tail button centred
+    // at (278..611) on its row (same as Setup's Web Sites).
+    const ROW_Y0: [i32; 5] = [145, 211, 276, 341, 406];
+    const ROW_Y1: [i32; 5] = [209, 274, 339, 404, 469];
+    let n = state.rows.len();
+    for i in 0..n {
+        let row = i / 2;
+        if row >= ROW_Y0.len() { break; }
+        let is_odd_tail = i == n - 1 && n % 2 == 1;
+        let (x0, x1) = if is_odd_tail {
+            (278, 611)
+        } else if i % 2 == 0 {
+            (110, 444)
+        } else {
+            (446, 780)
+        };
+        if y >= ROW_Y0[row] && y <= ROW_Y1[row] && x >= x0 && x <= x1 {
+            return Some(SeasonClick::Select(i));
         }
     }
     None
