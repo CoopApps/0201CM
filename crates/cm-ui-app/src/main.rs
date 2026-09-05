@@ -648,14 +648,15 @@ impl App {
                         let visible_idx = *scroll + row * 2
                             + if col_left { 0 } else { 1 };
                         // Translate visible-list index → real nation_id
-                        // by rebuilding the same sorted list the render
-                        // uses. Kept simple: replay the sort here.
+                        // by rebuilding the same sorted+filtered list the
+                        // render uses. MUST match render_new.rs exactly
+                        // or clicks will bind the wrong nationality.
                         if let Some(world) = self.world.as_ref() {
                             let mut nations: Vec<(String, u32)> = world.core.nations.iter()
-                                .map(|n| {
-                                    let v = cm_domain::typed_records::NationView::new(n);
-                                    (v.nationality_name(), v.id())
-                                })
+                                .map(|n| cm_domain::typed_records::NationView::new(n))
+                                .filter(|v| v.state_of_development() > 0
+                                            && (0..=5).contains(&v.continent_id()))
+                                .map(|v| (v.nationality_name(), v.id()))
                                 .filter(|(n, _)| !n.is_empty())
                                 .collect();
                             nations.sort_by(|a, b| a.0.cmp(&b.0));
@@ -1311,9 +1312,18 @@ impl ApplicationHandler for App {
                     Screen::SelectNationality { scroll, .. } => {
                         // 2-col grid × 16 rows = 32 entries per screen.
                         // Wheel steps 2 entries (one row) at a time.
+                        // Count against the FILTERED list — the extinct
+                        // nations are dropped from render, so scrolling
+                        // past the end of the visible list is wrong.
                         const VISIBLE_ENTRIES: usize = 32;
-                        let total = self.world.as_ref()
-                            .map(|w| w.core.nations.len()).unwrap_or(0);
+                        let total = self.world.as_ref().map(|w| {
+                            w.core.nations.iter()
+                                .map(|n| cm_domain::typed_records::NationView::new(n))
+                                .filter(|v| v.state_of_development() > 0
+                                            && (0..=5).contains(&v.continent_id())
+                                            && !v.nationality_name().is_empty())
+                                .count()
+                        }).unwrap_or(0);
                         let max = total.saturating_sub(VISIBLE_ENTRIES);
                         *scroll = if dy > 0.0 {
                             scroll.saturating_sub(2)

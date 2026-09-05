@@ -516,13 +516,21 @@ pub fn try_render_nationality_faithful(
     // continent_id() reads the verified +0x71 byte (Africa=0..S.America=5)
     // — NOT actual_region (+0x76), which is a finer 14-value grouping and
     // caused the earlier "Honduras in Oceania" bug.
+    //
+    // Filter out non-real nationalities:
+    //   * `state_of_development == 0` drops the extinct/historical
+    //     dummy records (West Germany, East Germany, Soviet Union, CIS,
+    //     Basque, Czechoslovakia, ...) — they all have devel=0 AND
+    //     continent_id=0xFE (a sentinel), while every real nation from
+    //     Andorra (devel=1) up has devel>=1.
+    //   * `continent_id in 0..=5` is a belt-and-braces check — a real
+    //     picker entry needs a valid FIFA confederation.
     let mut list_data: Vec<(String, &'static str, u32)> = world.core.nations.iter()
-        .map(|n| {
-            let v = cm_domain::typed_records::NationView::new(n);
-            (v.nationality_name().to_string(),
-             continent_code(v.continent_id()),
-             v.id())
-        })
+        .map(|n| cm_domain::typed_records::NationView::new(n))
+        .filter(|v| v.state_of_development() > 0 && (0..=5).contains(&v.continent_id()))
+        .map(|v| (v.nationality_name().to_string(),
+                  continent_code(v.continent_id()),
+                  v.id()))
         .filter(|(n, _, _)| !n.is_empty())
         .collect();
     list_data.sort_by(|a, b| a.0.cmp(&b.0));
