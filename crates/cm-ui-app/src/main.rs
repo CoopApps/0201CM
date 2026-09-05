@@ -219,8 +219,10 @@ impl App {
         // sequence directly. See `screen_setup_faithful` for the
         // provenance and hardcoded coord table.
         {
+            let has_manager = self.game.is_some();
             if render_new::try_render_setup_faithful(
                 &self.screen, &mut self.frame, &mut self.fonts, self.setup_photo_seed,
+                has_manager,
             ) {
                 self.overlay_menu_bar();
                 return;
