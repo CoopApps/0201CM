@@ -49,6 +49,7 @@ pub mod screen_setup_faithful;
 pub mod screen_pre_boot_chrome;
 pub mod screen_leagues_faithful;
 pub mod screen_season_faithful;
+pub mod screen_name_faithful;
 pub mod screen_wire_batch3;
 pub mod screens_auto;
 pub mod dispatcher;

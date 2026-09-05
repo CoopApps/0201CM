@@ -26,6 +26,7 @@ use cm_render::packed_text::{draw_wrapped_text, W_LEFT, W_TOP, W_WRAP};
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
 use cm_render::screen_leagues_faithful;
+use cm_render::screen_name_faithful;
 use cm_render::screen_season_faithful;
 use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
@@ -482,6 +483,40 @@ pub fn try_render_leagues_faithful(
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_leagues_faithful::render_leagues(&mut packed, fonts, &state);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+/// Fast path for `Screen::EnterName` — direct-draw from
+/// `screen_name_faithful`. Four field rows (First / Second / Password /
+/// Re-Type). Re-Type dims while Password is empty.
+pub fn try_render_name_faithful(
+    screen: &Screen,
+    manager: Option<&ManagerName>,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+    has_manager: bool,
+) -> bool {
+    if !matches!(screen, Screen::EnterName) { return false; }
+    let empty = ManagerName::default();
+    let m = manager.unwrap_or(&empty);
+    let state = screen_name_faithful::NameState {
+        photo_seed,
+        has_manager,
+        first: &m.first,
+        second: &m.second,
+        // The port's `ManagerName` uses `nickname` for the third field;
+        // treat it as the password for the exe-parity render (state
+        // ownership is a bigger refactor for later).
+        password: &m.nickname,
+        retype: "",
+        focus: m.focus,
+        cancel_enabled: true,
+        next_enabled: m.is_valid(),
+    };
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_name_faithful::render_name(&mut packed, fonts, &state);
     blit_packed_to_surface(&packed, out);
     true
 }

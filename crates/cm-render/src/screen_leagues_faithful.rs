@@ -148,6 +148,8 @@ pub fn render_leagues(
         photo_seed: state.photo_seed,
         has_manager: state.has_manager,
         sub_title: "Select League(s)",
+        left_nav_label: "Back",
+        right_nav_label: "Next",
         back_enabled: state.back_enabled,
         next_enabled: state.next_enabled,
     });

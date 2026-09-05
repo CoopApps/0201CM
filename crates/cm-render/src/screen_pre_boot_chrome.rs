@@ -78,9 +78,14 @@ pub struct ChromeState<'a> {
     pub has_manager: bool,
     /// Subheader title: "Setup Game", "Select League(s)", "Enter Name" etc.
     pub sub_title: &'a str,
-    /// Enable state for the bottom Back button.
+    /// Left-nav button label — "Back" on most pre-boot screens, "Cancel"
+    /// on Enter Name (op #202 in the exe capture).
+    pub left_nav_label: &'a str,
+    /// Right-nav button label — almost always "Next".
+    pub right_nav_label: &'a str,
+    /// Enable state for the left nav (Back / Cancel).
     pub back_enabled: bool,
-    /// Enable state for the bottom Next button.
+    /// Enable state for the right nav (Next).
     pub next_enabled: bool,
 }
 
@@ -119,12 +124,13 @@ pub fn draw_chrome(
     draw_wrapped_text(surface, 100, 80, 790, 125,
         &sub_font, &sub, INK_YELLOW, TS_CENTRE, -1);
 
-    // 5. Bottom Back + Next.
+    // 5. Bottom nav — labels are configurable so Enter Name can render
+    //    "Cancel" instead of "Back", etc.
     let body_font = fonts.pixel_slot(F_BODY).clone();
-    draw_nav_button(surface, &body_font, 100, 555, 617, 590, "Back",
-                    state.back_enabled);
-    draw_nav_button(surface, &body_font, 619, 555, 790, 590, "Next",
-                    state.next_enabled);
+    draw_nav_button(surface, &body_font, 100, 555, 617, 590,
+                    state.left_nav_label, state.back_enabled);
+    draw_nav_button(surface, &body_font, 619, 555, 790, 590,
+                    state.right_nav_label, state.next_enabled);
 }
 
 // -----------------------------------------------------------------------
