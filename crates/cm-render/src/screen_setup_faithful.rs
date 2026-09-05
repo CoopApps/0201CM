@@ -48,7 +48,7 @@ use crate::packed_panel::{
     draw_panel, PanelPalette,
     P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_SAMPLE_BG, P_SOLID_FILL,
 };
-use crate::packed_text::{draw_wrapped_text, W_WRAP};
+use crate::packed_text::{draw_wrapped_text, W_SHADOW, W_WRAP};
 
 // -----------------------------------------------------------------------
 // Colour constants (all RGB555; every one is from the captured paint ops)
@@ -66,9 +66,9 @@ const CYAN_PATTERN: u16 = 0x739c;
 /// Version box, Restart / Exit sidebar buttons, and "Setup Game" subheader.
 const YELLOW_PATTERN: u16 = 0x7fe0;
 
-/// Dimmed cyan for the disabled "Add Manager" entry. Half-brightness of
-/// CYAN_PATTERN — matches the exe's greyed-out look.
-const CYAN_DIM: u16 = 0x3def; // ~14/14/15 packed
+// (Previously CYAN_DIM was used for disabled labels; now the disabled
+// look comes from `W_SHADOW`-embossed text — the ink is derived from
+// the background pixel, so no fixed dim constant is needed.)
 
 /// Grey bottom-bar (Back/Next) fill. `0x4210 = (16, 16, 16)`.
 const GREY_BAR: u16 = 0x4210;
@@ -202,7 +202,7 @@ pub fn render_setup(
     //    (b=19 blue), shadow = 0x0004. Not white — a scaled blue.
 
     //    Version box: SUNKEN sample-bg bevel + yellow text.
-    sidebar_entry(surface, fonts, 5, 10, 85, 53, "Version\n3.9.60",
+    sidebar_entry(surface, fonts, 5, 10, 85, 53, "Version\n4.0.00",
                   INK_YELLOW, /*sunken*/ true, /*enabled*/ true);
 
     //    <<< / >>> arrows: raised sample-bg bevel + cyan text (literal).
@@ -211,11 +211,22 @@ pub fn render_setup(
     sidebar_entry(surface, fonts, 46, 55, 85, 98, ">>>",
                   INK_CYAN, false, true);
 
-    //    Add Manager: dimmer text + no bevel when disabled.
-    sidebar_entry(surface, fonts, 5, 100, 85, 143, "Add\nManager",
-                  if has_manager { INK_CYAN } else { CYAN_DIM },
-                  /*sunken*/ false,
-                  /*enabled*/ has_manager);
+    //    Add Manager: same embossed disabled look as Back/Next when
+    //    there's no manager yet — panel stays visible so the button
+    //    doesn't vanish; the text just reads as "pressed in".
+    if has_manager {
+        sidebar_entry(surface, fonts, 5, 100, 85, 143, "Add\nManager",
+                      INK_CYAN, false, true);
+    } else {
+        // Draw the sample-bg panel (see-through blue bevel) then the
+        // embossed label — matches Back/Next disabled state.
+        draw_panel(surface, 5, 100, 85, 143,
+            P_SAMPLE_BG | P_SOLID_FILL | P_BEVEL, 0, 0, palette);
+        let font = fonts.pixel_slot(F_SMALL).clone();
+        let bytes = c_string(b"Add\nManager");
+        draw_wrapped_text(surface, 5, 100, 85, 143,
+            &font, &bytes, 0, TS_WRAP | W_SHADOW, -1);
+    }
 
     //    Restart Game + Exit Game — yellow text.
     sidebar_entry(surface, fonts, 5, 145, 85, 187, "Restart\nGame",
@@ -288,9 +299,13 @@ pub fn render_setup(
 }
 
 /// Back / Next button. Panel is ALWAYS drawn (grey fill + grey-scaled
-/// bevel). Only the text ink changes between enabled (bright cyan) and
-/// disabled (dim cyan). Bevels do not invert on press — the exe's nav
-/// buttons navigate instantly, no pressed-state animation.
+/// bevel). Enabled → bright cyan text on the grey. Disabled → EMBOSSED
+/// text via `W_SHADOW`: ink is derived from the pixel underneath each
+/// glyph, drawn at +1,+1 lighter and at 0,0 darker so the label reads
+/// as "pressed into" the grey panel — exactly the exe's classic
+/// disabled look (the user's description: "overlay the usual white text
+/// with another grey slightly smaller so it leaves a border"). Bevels
+/// do not invert on press — nav buttons navigate instantly.
 fn render_nav_button(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
@@ -301,9 +316,16 @@ fn render_nav_button(
     let palette = PanelPalette::default();
     draw_panel(surface, x0, y0, x1, y1,
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
-    let ink = if enabled { INK_CYAN } else { CYAN_DIM };
     let bytes = c_string(label.as_bytes());
-    draw_wrapped_text(surface, x0, y0, x1, y1, font, &bytes, ink, TS_CENTRE, -1);
+    if enabled {
+        draw_wrapped_text(surface, x0, y0, x1, y1, font, &bytes,
+                          INK_CYAN, TS_CENTRE, -1);
+    } else {
+        // W_SHADOW ignores the ink arg and derives the emboss from the
+        // background pixel. Pass 0 as a documentation cue.
+        draw_wrapped_text(surface, x0, y0, x1, y1, font, &bytes,
+                          0, TS_CENTRE | W_SHADOW, -1);
+    }
 }
 
 /// A single sidebar entry. Uses P_SAMPLE_BG so the fill AND bevel
