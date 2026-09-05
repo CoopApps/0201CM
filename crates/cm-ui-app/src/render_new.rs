@@ -27,6 +27,7 @@ use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
 use cm_render::screen_leagues_faithful;
 use cm_render::screen_name_faithful;
+use cm_render::screen_nationality_faithful;
 use cm_render::screen_season_faithful;
 use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
@@ -483,6 +484,62 @@ pub fn try_render_leagues_faithful(
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_leagues_faithful::render_leagues(&mut packed, fonts, &state);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+/// Fast path for `Screen::SelectNationality`. Reads the nationality
+/// list from the loaded `World` (213 nations, `nationality_name` +
+/// `actual_region` mapped to a 3-letter continent code).
+pub fn try_render_nationality_faithful(
+    screen: &Screen,
+    world: Option<&cm_domain::World>,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+    has_manager: bool,
+) -> bool {
+    let Screen::SelectNationality { scroll, selected } = screen else { return false };
+    let Some(world) = world else { return false };
+    // Map region id → 3-letter code (matches continents.json rows 0..5).
+    fn region_code(r: i32) -> &'static str {
+        match r {
+            0 => "AFR", 1 => "ASI", 2 => "EUR",
+            3 => "NAM", 4 => "OCE", 5 => "SAM",
+            _ => "   ",
+        }
+    }
+    // Build the visible-row list, alphabetical by nationality_name.
+    // NationView decodes the adjective + region byte from the raw record.
+    let mut rows: Vec<(String, &'static str)> = world.core.nations.iter()
+        .map(|n| {
+            let v = cm_domain::typed_records::NationView::new(n);
+            (v.nationality_name().to_string(),
+             region_code(v.actual_region() as i32))
+        })
+        .filter(|(n, _)| !n.is_empty())
+        .collect();
+    rows.sort_by(|a, b| a.0.cmp(&b.0));
+    // Present with the exe's two-space left-indent.
+    let padded: Vec<(String, &'static str)> = rows.into_iter()
+        .map(|(name, cont)| (format!("  {name}"), cont))
+        .collect();
+    let refs: Vec<screen_nationality_faithful::NationalityRow> = padded.iter()
+        .map(|(name, cont)| screen_nationality_faithful::NationalityRow {
+            name: name.as_str(),
+            continent: cont,
+        })
+        .collect();
+    let state = screen_nationality_faithful::NationalityState {
+        photo_seed,
+        has_manager,
+        rows: &refs,
+        scroll: *scroll,
+        back_enabled: true,
+        next_enabled: selected.is_some(),
+    };
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_nationality_faithful::render_nationality(&mut packed, fonts, &state);
     blit_packed_to_surface(&packed, out);
     true
 }

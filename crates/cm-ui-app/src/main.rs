@@ -32,6 +32,14 @@ enum Screen {
     /// After initialisation: the manager enters their name. The working game
     /// (and the name being typed) lives in `App.game`, not here.
     EnterName,
+    /// Select Nationality — the manager picks which nationality they are.
+    /// Sits between EnterName and SelectClub in the exe's flow. State =
+    /// scroll position + currently-selected nation id (None until user
+    /// picks a row).
+    SelectNationality {
+        scroll: usize,
+        selected: Option<u32>,
+    },
     /// Pick the club to manage — every playable club in the chosen country's
     /// manageable divisions.
     SelectClub {
@@ -274,6 +282,18 @@ impl App {
                 return;
             }
         }
+        // Select Nationality — needs the World for the nation list.
+        {
+            let has_manager = self.game.is_some();
+            if render_new::try_render_nationality_faithful(
+                &self.screen, self.world.as_ref(),
+                &mut self.frame, &mut self.fonts,
+                self.setup_photo_seed, has_manager,
+            ) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         // Pre-boot fast path — SelectLeagues / StartSeason /
         // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
         // now paints through the byte-exact `packed_widget` pipeline
@@ -346,6 +366,7 @@ impl App {
             | Screen::SelectLeagues(_)
             | Screen::StartSeason { .. }
             | Screen::EnterName
+            | Screen::SelectNationality { .. }
             | Screen::SelectClub { .. } => {
                 self.frame.fill(0, 0, 0);
                 self.status = Some(
@@ -394,6 +415,9 @@ impl App {
                     None => Pressed::None,
                 }
             }
+            // Nationality has no press-invert state yet — content buttons
+            // are grid rows without a bevel to invert.
+            Screen::SelectNationality { .. } => Pressed::None,
             Screen::Dashboard { .. }
             | Screen::News { .. }
             | Screen::FifaRankings { .. }
@@ -575,9 +599,13 @@ impl App {
                         }
                         screens::NameClick::Next => {
                             if game.manager.is_valid() {
-                                // Advance to Select Club: build the pick list
-                                // from the chosen country's manageable divisions.
-                                goto_select_club = true;
+                                // Advance to Select Nationality (the
+                                // exe's screen order — Nationality sits
+                                // between name and club).
+                                self.screen = Screen::SelectNationality {
+                                    scroll: 0,
+                                    selected: None,
+                                };
                             }
                         }
                     }
@@ -590,6 +618,34 @@ impl App {
                     }
                     Some(screens::ClubClick::Back) => self.screen = Screen::EnterName,
                     None => {}
+                }
+            }
+            Screen::SelectNationality { scroll, selected } => {
+                // Match the render's list rects (110..780 × 178..535,
+                // 16 rows × 2 cols, 22-px stride) plus Back / Next.
+                if y >= 555 && y <= 590 {
+                    if x >= 100 && x <= 617 {
+                        // Back → previous step (Enter Name).
+                        self.screen = Screen::EnterName;
+                        return;
+                    }
+                    if x >= 619 && x <= 790 && selected.is_some() {
+                        // Next → Select Club (nationality persisted on
+                        // the game later; for now just advance).
+                        goto_select_club = true;
+                        return;
+                    }
+                }
+                // List entries — 16 rows × 2 cols starting at y=178.
+                if x >= 112 && x <= 756 && y >= 178 && y <= 527 {
+                    let row = ((y - 178) / 22) as usize;
+                    if row < 16 {
+                        let col_left = x <= 433;
+                        let idx = *scroll + row * 2 + (if col_left { 0 } else { 1 });
+                        // Selection is by list index for now — later we
+                        // can round-trip to the real nation id.
+                        *selected = Some(idx as u32);
+                    }
                 }
             }
             Screen::News { view, selected, scroll, tab } => {
@@ -1231,6 +1287,20 @@ impl ApplicationHandler for App {
                             state.scroll.saturating_sub(1)
                         } else {
                             (state.scroll + 1).min(max)
+                        };
+                        changed = true;
+                    }
+                    Screen::SelectNationality { scroll, .. } => {
+                        // 2-col grid × 16 rows = 32 entries per screen.
+                        // Wheel steps 2 entries (one row) at a time.
+                        const VISIBLE_ENTRIES: usize = 32;
+                        let total = self.world.as_ref()
+                            .map(|w| w.core.nations.len()).unwrap_or(0);
+                        let max = total.saturating_sub(VISIBLE_ENTRIES);
+                        *scroll = if dy > 0.0 {
+                            scroll.saturating_sub(2)
+                        } else {
+                            (*scroll + 2).min(max)
                         };
                         changed = true;
                     }
