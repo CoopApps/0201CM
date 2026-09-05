@@ -704,7 +704,9 @@ impl App {
             let identity = cm_domain::ManagerIdentity {
                 first: game.manager.first.clone(),
                 second: game.manager.second.clone(),
-                nickname: game.manager.nickname.clone(),
+                // Nickname is collected on a later screen — Enter Name
+                // now takes password + password_confirm instead.
+                nickname: String::new(),
             };
             let human = game.save.add_manager(identity);
             game.save.install_manager_at_club(human, choice.club_id, club_nation);
@@ -1053,7 +1055,7 @@ impl App {
         let mut manager = game_state::ManagerName::default();
         manager.first = "Alex".into();
         manager.second = "Ferguson".into();
-        manager.nickname = "Fergie".into();
+        // Password fields default empty (no save protection).
         self.game = Some(GameInstance { save, manager, saved_path: None, dirty: false });
         self.open_news();
         eprintln!("[boot] jumped straight to the News page (Arsenal / Fergie)");
@@ -1439,7 +1441,8 @@ fn dump(path: &str, which: &str) {
                 let manager = game_state::ManagerName {
                     first: "Alex".into(),
                     second: "Ferguson".into(),
-                    nickname: "Fergie".into(),
+                    password: String::new(),
+                    password_confirm: String::new(),
                     focus: 1,
                 };
                 screens::enter_name(&mut frame, &mut fonts, bg.as_ref(), &manager);

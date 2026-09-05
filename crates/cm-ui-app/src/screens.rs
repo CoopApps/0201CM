@@ -35,13 +35,15 @@ pub enum NameClick {
 /// (F_TRANSPARENT | F_BEVEL) — the standard blue-bordered input box — split
 /// into 3 columns weight {8,1,12}: label / gap / typed text. Disassembled
 /// area rects: (150,217)-(740,277), (150,279)-(740,339), (150,341)-(740,401).
-const NAME_ROWS: [(i32, i32); 3] = [(217, 277), (279, 339), (341, 401)];
-const NAME_LABELS: [&str; 3] = ["   First Name", "   Second Name", "   Nickname"];
+const NAME_ROWS: [(i32, i32); 4] = [(217, 277), (279, 339), (341, 401), (403, 463)];
+const NAME_LABELS: [&str; 4] = ["   First Name", "   Second Name",
+                                "   Password (Optional)", "   Re-Type"];
 
 /// The edit-text sub-rect (column 2) of a row — where the caret/typed text go
-/// and where a click focuses the field.
-fn name_field_rects() -> [(i32, i32, i32, i32); 3] {
-    let mut out = [(0, 0, 0, 0); 3];
+/// and where a click focuses the field. 4 rows: First / Second / Password /
+/// Re-Type (matches ManagerName::focus 0..=3).
+fn name_field_rects() -> [(i32, i32, i32, i32); 4] {
+    let mut out = [(0, 0, 0, 0); 4];
     for (i, &(t, b)) in NAME_ROWS.iter().enumerate() {
         let lo = rebuild_layout((150, t, 740, b), 2, &[8, 1, 12], &[1], false);
         out[i] = (lo.col_left[2], lo.row_top[0], lo.col_right[2], lo.row_bottom[0]);

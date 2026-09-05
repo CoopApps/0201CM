@@ -506,11 +506,8 @@ pub fn try_render_name_faithful(
         has_manager,
         first: &m.first,
         second: &m.second,
-        // The port's `ManagerName` uses `nickname` for the third field;
-        // treat it as the password for the exe-parity render (state
-        // ownership is a bigger refactor for later).
-        password: &m.nickname,
-        retype: "",
+        password: &m.password,
+        retype: &m.password_confirm,
         focus: m.focus,
         cancel_enabled: true,
         next_enabled: m.is_valid(),
@@ -560,12 +557,16 @@ pub fn try_render_pre_boot(
         Screen::SelectLeagues(state) => build_leagues_from_app(&mut pool, state),
         Screen::StartSeason { season, .. } => build_season_from_app(&mut pool, season),
         Screen::EnterName => {
+            // Fallback widget-pool path — unreachable in normal flow now
+            // that `try_render_name_faithful` runs first. The old
+            // NameFields struct still expects `nickname`; pass empty
+            // (nickname is collected on a later screen).
             let empty = ManagerName::default();
             let m = manager.unwrap_or(&empty);
             let fields = screen_pre_boot::NameFields {
                 first: &m.first,
                 second: &m.second,
-                nickname: &m.nickname,
+                nickname: "",
                 focus: m.focus,
                 is_valid: m.is_valid(),
             };

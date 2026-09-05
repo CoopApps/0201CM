@@ -314,16 +314,26 @@ pub fn real_34_slots() -> Vec<PickerSlot> {
     real_picker_slots()
 }
 
-/// The three fields entered on the "Enter Name" screen (draw 0x00809cc0,
-/// event 0x0080a450). Geometry + fields verified from the manager-creation
-/// flow decode. The exe's screen also has optional Password/Re-Type rows;
-/// this port collects the manager's identity as first / second / nickname.
+/// The four fields entered on the "Enter Name" screen (draw
+/// `0x00809cc0`, event `0x0080a450`). Layout verified against the live
+/// exe capture (`fixtures/name_screen/exe_paint_fb.jsonl.gz`).
+///
+/// **Password protects the save.** When a non-empty `password` is set,
+/// the resulting save file is locked and requires this string to load
+/// (the exe's per-save protection). Re-Type must match to prevent
+/// typo-lockout; the Next button is gated on this.
 #[derive(Debug, Clone, Default)]
 pub struct ManagerName {
     pub first: String,
     pub second: String,
-    pub nickname: String,
-    /// Which field has keyboard focus (0=first, 1=second, 2=nickname).
+    /// Save-file password. Empty = no password.
+    pub password: String,
+    /// Re-Type Password. Must equal `password` to enable Next when a
+    /// password is being set. Disabled (dimmed) while `password` is
+    /// empty — matches the exe's disabled-row render at op #149.
+    pub password_confirm: String,
+    /// Which field has keyboard focus:
+    /// 0 = first, 1 = second, 2 = password, 3 = password_confirm.
     pub focus: u8,
 }
 
@@ -332,19 +342,23 @@ impl ManagerName {
         match i {
             0 => &self.first,
             1 => &self.second,
-            _ => &self.nickname,
+            2 => &self.password,
+            _ => &self.password_confirm,
         }
     }
     fn field_mut(&mut self, i: u8) -> &mut String {
         match i {
             0 => &mut self.first,
             1 => &mut self.second,
-            _ => &mut self.nickname,
+            2 => &mut self.password,
+            _ => &mut self.password_confirm,
         }
     }
     /// Append a typed character to the focused field (max 26 like the exe).
     pub fn type_char(&mut self, c: char) {
         let f = self.focus;
+        // Re-Type is disabled while there's no password to confirm.
+        if f == 3 && self.password.is_empty() { return; }
         if self.field(f).chars().count() < 26 && !c.is_control() {
             self.field_mut(f).push(c);
         }
@@ -353,9 +367,20 @@ impl ManagerName {
         let f = self.focus;
         self.field_mut(f).pop();
     }
-    /// Next validates: first and second names non-empty (the exe's rule).
+    /// Next validates: first + second non-empty (the exe's base rule at
+    /// `FUN_0080a450`), AND if a password is being set, `password_confirm`
+    /// must match. An empty password just means the save is unprotected —
+    /// still lets Next through.
     pub fn is_valid(&self) -> bool {
-        !self.first.trim().is_empty() && !self.second.trim().is_empty()
+        if self.first.trim().is_empty() || self.second.trim().is_empty() {
+            return false;
+        }
+        // Password path: empty is fine (no protection); non-empty
+        // requires the confirm to match exactly.
+        if !self.password.is_empty() && self.password != self.password_confirm {
+            return false;
+        }
+        true
     }
 }
 
