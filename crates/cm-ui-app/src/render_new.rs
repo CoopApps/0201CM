@@ -541,14 +541,34 @@ pub fn try_render_team_faithful(
         out
     }
 
-    // Precompute the enriched rows to keep &str refs alive on the stack.
+    // Look up each club's SHORT name — the exe shows "Tottenham" not
+    // "Tottenham Hotspur", "Sheff Wed" not "Sheffield Wednesday". Falls
+    // back to the domain-supplied long name for records that have no
+    // short name set (defensive — every English club has one).
+    let short_name_of = |club_id: u32, long: &str| -> String {
+        world.core.clubs.iter().find_map(|rec| {
+            let cv = cm_domain::typed_records::ClubView::new(rec);
+            if cv.id() == club_id {
+                let s = cv.secondary_name();
+                if !s.trim().is_empty() { Some(s) } else { None }
+            } else { None }
+        }).unwrap_or_else(|| long.to_string())
+    };
+
+    // Build the enriched rows. The state's `clubs` Vec has already been
+    // sorted alphabetically by short name in `App::goto_select_club`, so
+    // the hit-test `clubs[visible_idx]` and this render's row order line
+    // up automatically.
     let enriched: Vec<(String, String, String, u32)> = clubs.iter()
-        .map(|c| (
-            format!("  {}", c.club_name),          // exe indents with two spaces
-            nation_code_of(c.club_id),
-            division_code(&c.division_name),
-            c.club_id,
-        ))
+        .map(|c| {
+            let short = short_name_of(c.club_id, &c.club_name);
+            (
+                format!("  {}", short),          // exe indents with two spaces
+                nation_code_of(c.club_id),
+                division_code(&c.division_name),
+                c.club_id,
+            )
+        })
         .collect();
     let refs: Vec<screen_team_faithful::TeamRow> = enriched.iter()
         .map(|(n, nc, dc, id)| screen_team_faithful::TeamRow {

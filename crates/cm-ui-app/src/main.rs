@@ -1120,7 +1120,30 @@ impl App {
             .as_ref()
             .map(|o| o.selected_nations.clone())
             .unwrap_or_default();
-        let clubs = world.manageable_clubs_for_nations(&nations);
+        let mut clubs = world.manageable_clubs_for_nations(&nations);
+
+        // The exe's Select Team screen mixes clubs from every
+        // manageable division ALPHABETICALLY (Arsenal PRM, Aston Villa
+        // PRM, Barnet CON, Barnsley D1, Birmingham D1 …). The upstream
+        // `manageable_clubs_for_nations` groups by division; re-sort
+        // the list flat here using the SHORT (secondary) name so
+        // "Tottenham" sorts after "Sheff Wed" (not after "Tottenham
+        // Hotspur" which would place it later in a full-name sort).
+        let short_name_of = |club_id: u32, fallback: &str| -> String {
+            world.core.clubs.iter().find_map(|rec| {
+                let cv = cm_domain::typed_records::ClubView::new(rec);
+                if cv.id() == club_id {
+                    let s = cv.secondary_name();
+                    if !s.trim().is_empty() { Some(s) } else { None }
+                } else { None }
+            }).unwrap_or_else(|| fallback.to_string())
+        };
+        clubs.sort_by(|a, b| {
+            let an = short_name_of(a.club_id, &a.club_name);
+            let bn = short_name_of(b.club_id, &b.club_name);
+            an.cmp(&bn)
+        });
+
         eprintln!(
             "[club] {} playable clubs across {}'s manageable divisions",
             clubs.len(),
