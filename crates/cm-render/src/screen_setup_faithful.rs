@@ -46,7 +46,7 @@ use crate::image::Image;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{
     draw_panel, PanelPalette,
-    P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_SOLID_FILL, P_VGRADIENT,
+    P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_SAMPLE_BG, P_SOLID_FILL, P_VGRADIENT,
 };
 use crate::packed_text::{draw_wrapped_text, W_WRAP};
 
@@ -72,6 +72,12 @@ const CYAN_DIM: u16 = 0x3def; // ~14/14/15 packed
 
 /// Grey bottom-bar (Back/Next) fill. `0x4210 = (16, 16, 16)`.
 const GREY_BAR: u16 = 0x4210;
+
+/// Blue button base. `0x0010 = (0, 0, 16)` — matches the exe's captured
+/// `c=0x0010` on the 9 button panels. Passed as `colour` to draw_panel;
+/// the P_BEVEL loop scales this up/down to give the (0x001a highlight,
+/// 0x0005 shadow) 3D-bevel effect the ground-truth pixels show.
+const BLUE_BUTTON: u16 = 0x0010;
 
 /// Sidebar gradient top colour. Sampled from the ground-truth
 /// framebuffer at (40, 0) = `0x0010` (b=16).
@@ -152,56 +158,59 @@ pub fn render_setup(
     //    photo only shows through the content area / darken()s.
     draw_panel(surface, 0, 0, 89, 599, P_VGRADIENT, SIDEBAR_TOP, 0, palette);
 
-    // 3. Sidebar entries — bevel only, NO fill, so the gradient shows
-    //    through inside each one (user note: "they are see through so
-    //    you see the gradient behind").
-    //
-    //    Version box: sunken bevel (yellow), text "Version\n3.9.60".
+    // 3. Sidebar entries — every one uses P_SAMPLE_BG so the fill AND
+    //    the bevel derive from the pixel at (x0, y0). Since the sidebar
+    //    is a navy vgradient underneath, every entry ends up filled with
+    //    that local blue and bevelled with a brighter/darker variant of
+    //    that same blue. Effect: see-through + coherent 3D border.
+    //    Ground-truth pixel check on Restart Game: highlight = 0x0013
+    //    (b=19 blue), shadow = 0x0004. Not white — a scaled blue.
+
+    //    Version box: SUNKEN sample-bg bevel + yellow text.
     sidebar_entry(surface, fonts, 5, 10, 85, 53, "Version\n3.9.60",
-                  INK_YELLOW, YELLOW_PATTERN, /*sunken*/ true, /*enabled*/ true);
+                  INK_YELLOW, /*sunken*/ true, /*enabled*/ true);
 
-    //    <<< / >>> arrows: raised cyan bevel, LITERAL text (not glyphs).
+    //    <<< / >>> arrows: raised sample-bg bevel + cyan text (literal).
     sidebar_entry(surface, fonts, 5, 55, 44, 98, "<<<",
-                  INK_CYAN, CYAN_PATTERN, false, true);
+                  INK_CYAN, false, true);
     sidebar_entry(surface, fonts, 46, 55, 85, 98, ">>>",
-                  INK_CYAN, CYAN_PATTERN, false, true);
+                  INK_CYAN, false, true);
 
-    //    Add Manager: FADED when no manager has been added yet — text
-    //    dimmer and no bevel to convey "disabled". When enabled it
-    //    looks like the other cyan entries.
+    //    Add Manager: dimmer text + no bevel when disabled.
     sidebar_entry(surface, fonts, 5, 100, 85, 143, "Add\nManager",
                   if has_manager { INK_CYAN } else { CYAN_DIM },
-                  CYAN_PATTERN,
                   /*sunken*/ false,
                   /*enabled*/ has_manager);
 
-    //    Restart Game (yellow accent).
+    //    Restart Game + Exit Game — yellow text.
     sidebar_entry(surface, fonts, 5, 145, 85, 187, "Restart\nGame",
-                  INK_YELLOW, YELLOW_PATTERN, false, true);
-
-    //    Exit Game (yellow accent).
+                  INK_YELLOW, false, true);
     sidebar_entry(surface, fonts, 5, 189, 85, 232, "Exit\nGame",
-                  INK_YELLOW, YELLOW_PATTERN, false, true);
+                  INK_YELLOW, false, true);
 
-    // 4. Title bar (100,10)-(790,70): RED fill + CYAN bevel + title text.
-    //    Two-pass approach: fill first, then bevel with cyan colour so
-    //    the bevel doesn't disappear into the red fill.
-    accented_bar(surface, 100, 10, 790, 70, RED_TITLE, CYAN_PATTERN);
+    // 4. Title bar (100,10)-(790,70). Ground-truth bevel is RED-scaled
+    //    (0x7c00 highlight, 0x2800 shadow) — the exe passes the fill red
+    //    as the bevel base and the primitive scales it up (bright edge)
+    //    and down (dark edge). One draw_panel call does both.
+    draw_panel(surface, 100, 10, 790, 70,
+        P_SOLID_FILL | P_BEVEL, RED_TITLE, 0, palette);
     let title_font = fonts.pixel_slot(F_TITLE).clone();
     let title_bytes = c_string(b"Championship Manager 2001/02");
     draw_wrapped_text(surface, 100, 10, 790, 70,
         &title_font, &title_bytes, INK_CYAN, TS_CENTRE, -1);
 
-    // 5. Setup Game subheader (100,80)-(790,125): darken (photo shows)
-    //    + yellow text. No bevel — the exe capture has s=0x2 (P_DARKEN
-    //    only) for this band.
+    // 5. "Setup Game" subheader (100,80)-(790,125): P_DARKEN only, no
+    //    bevel, yellow text.
     draw_panel(surface, 100, 80, 790, 125, P_DARKEN, 0, YELLOW_PATTERN, palette);
     let sub_font = fonts.pixel_slot(F_SUB).clone();
     let sub_bytes = c_string(b"Setup Game");
     draw_wrapped_text(surface, 100, 80, 790, 125,
         &sub_font, &sub_bytes, INK_YELLOW, TS_CENTRE, -1);
 
-    // 6. 9 buttons. Each is darken + cyan-bevel + label.
+    // 6. 9 buttons. Ground-truth bevel is BLUE-scaled (0x001a highlight,
+    //    0x0005 shadow) — the exe passes the fill blue 0x0010 as the
+    //    bevel base, plus P_DARKEN so the photo bleeds through inside.
+    //    Single-pass draw_panel with P_BEVEL | P_DARKEN.
     const BTN_ROWS: [i32; 5] = [145, 211, 276, 341, 406];
     const BTN_END_Y: [i32; 5] = [209, 274, 339, 404, 469];
     const BUTTONS: [(usize, i32, i32, &str); 9] = [
@@ -219,73 +228,57 @@ pub fn render_setup(
     for (row, x0, x1, label) in BUTTONS.iter().copied() {
         let y0 = BTN_ROWS[row];
         let y1 = BTN_END_Y[row];
-        surface.darken_rect(x0, y0, x1, y1);
-        // Bevel only pass — cyan-tinted, no fill so the darkened photo
-        // shows through the interior.
-        draw_panel(surface, x0, y0, x1, y1, P_BEVEL, CYAN_PATTERN, 0, palette);
+        draw_panel(surface, x0, y0, x1, y1,
+            P_BEVEL | P_DARKEN, BLUE_BUTTON, 0, palette);
         let bytes = c_string(label.as_bytes());
         draw_wrapped_text(surface, x0, y0, x1, y1,
             &body_font, &bytes, INK_CYAN, TS_CENTRE, -1);
     }
 
-    // 7. Bottom bar — Back + Next.
-    //    Grey fill + cyan bevel each (accented_bar handles it).
-    accented_bar(surface, 100, 555, 617, 590, GREY_BAR, CYAN_PATTERN);
+    // 7. Bottom bar — Back + Next. Grey fill + grey-scaled bevel via
+    //    P_SOLID_FILL | P_BEVEL with the grey colour.
+    draw_panel(surface, 100, 555, 617, 590,
+        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     let back_bytes = c_string(b"Back");
     draw_wrapped_text(surface, 100, 555, 617, 590,
         &body_font, &back_bytes, INK_CYAN, TS_CENTRE, -1);
 
-    accented_bar(surface, 619, 555, 790, 590, GREY_BAR, CYAN_PATTERN);
+    draw_panel(surface, 619, 555, 790, 590,
+        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     let next_bytes = c_string(b"Next");
     draw_wrapped_text(surface, 619, 555, 790, 590,
         &body_font, &next_bytes, INK_CYAN, TS_CENTRE, -1);
 }
 
-/// A single sidebar entry. Draws JUST a bevel (no fill) + text, so the
-/// vgradient shows through the interior. `sunken=true` renders an
-/// inverted (sunken/inset) bevel — used for the Version box. `enabled`
-/// controls whether the bevel is drawn at all — disabled entries look
-/// like ghost text on the gradient.
+/// A single sidebar entry. Uses P_SAMPLE_BG so the fill AND bevel
+/// derive from the gradient pixel at (x0, y0) — the entry looks like a
+/// bevelled cut-out of the gradient itself, coherent with the
+/// see-through effect the user described. `sunken=true` renders the
+/// inverted (inset) bevel used for the Version box. `enabled=false`
+/// skips the panel entirely — text sits directly on the gradient
+/// (the exe's greyed/disabled sidebar look).
 fn sidebar_entry(
     surface: &mut PackedSurface,
     fonts: &mut Fonts,
     x0: i32, y0: i32, x1: i32, y1: i32,
     label: &str,
     ink: u16,
-    accent: u16,
     sunken: bool,
     enabled: bool,
 ) {
     let palette = PanelPalette::default();
     if enabled {
-        let mut style = P_BEVEL;
+        let mut style = P_SAMPLE_BG | P_SOLID_FILL | P_BEVEL;
         if sunken {
             style |= P_BEVEL_INVERT;
         }
-        draw_panel(surface, x0, y0, x1, y1, style, accent, 0, palette);
+        // `colour` is a placeholder — P_SAMPLE_BG replaces it with the
+        // pixel at (x0, y0), which is the gradient blue at that row.
+        draw_panel(surface, x0, y0, x1, y1, style, 0, 0, palette);
     }
     let font = fonts.pixel_slot(F_SMALL).clone();
     let bytes = c_string(label.as_bytes());
     draw_wrapped_text(surface, x0, y0, x1, y1, &font, &bytes, ink, TS_WRAP, -1);
-}
-
-/// A solid-fill accent bar (title / Back / Next): fills with `fill` then
-/// bevels with `bevel_colour`. Two `draw_panel` passes are needed because
-/// the exe's panel primitive draws bevels using `colour` (the fill
-/// colour) — a same-colour bevel is invisible. Splitting gives us the
-/// cyan-on-red / cyan-on-grey look the exe screenshot shows.
-fn accented_bar(
-    surface: &mut PackedSurface,
-    x0: i32, y0: i32, x1: i32, y1: i32,
-    fill: u16,
-    bevel_colour: u16,
-) {
-    let palette = PanelPalette::default();
-    // Pass 1: solid fill in `fill`.
-    draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL, fill, 0, palette);
-    // Pass 2: bevel using `bevel_colour` as the base — thickens the
-    // 3D-bevel edge in cyan.
-    draw_panel(surface, x0, y0, x1, y1, P_BEVEL, bevel_colour, 0, palette);
 }
 
 fn c_string(bytes: &[u8]) -> Vec<u8> {
