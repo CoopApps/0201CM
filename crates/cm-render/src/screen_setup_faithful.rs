@@ -46,7 +46,7 @@ use crate::image::Image;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{
     draw_panel, PanelPalette,
-    P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_SAMPLE_BG, P_SOLID_FILL, P_VGRADIENT,
+    P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_SAMPLE_BG, P_SOLID_FILL,
 };
 use crate::packed_text::{draw_wrapped_text, W_WRAP};
 
@@ -184,9 +184,14 @@ pub fn render_setup(
     // 1. Photo base layer (behind everything).
     blit_photo(surface, photo_seed);
 
-    // 2. Sidebar navy vgradient. Painted OVER the photo strip so the
-    //    photo only shows through the content area / darken()s.
-    draw_panel(surface, 0, 0, 89, 599, P_VGRADIENT, SIDEBAR_TOP, 0, palette);
+    // 2. Sidebar navy vgradient. The exe's panel primitive P_VGRADIENT
+    //    uses integer-truncated per-row bucketing (`local_54 / span`),
+    //    which bands every ~6 rows over a 600-tall gradient. The exe's
+    //    ACTUAL sidebar gradient isn't drawn through the hooked panel
+    //    primitive at all (capture shows PANEL c=0 s=1 = solid black),
+    //    so a separate helper draws a smooth per-pixel gradient. Paint
+    //    it directly here to match: b channel ramps 16 → 0 linearly.
+    draw_smooth_vgradient(surface, 0, 0, 89, 599, SIDEBAR_TOP);
 
     // 3. Sidebar entries — every one uses P_SAMPLE_BG so the fill AND
     //    the bevel derive from the pixel at (x0, y0). Since the sidebar
@@ -271,36 +276,32 @@ pub fn render_setup(
 
     // 7. Bottom bar — Back + Next.
     //
-    // When a button is DISABLED (nothing to go back / forward to), the
-    // exe renders it faded — no fill, no bevel, dim ink — matching the
-    // "Add Manager" disabled look. When enabled it gets the grey fill +
-    // grey-scaled bevel. Pressed inverts the bevel like the content buttons.
-    render_nav_button(surface, &body_font, 100, 555, 617, 590, "Back",
-                      back_enabled, pressed == Some(BUTTON_BACK));
-    render_nav_button(surface, &body_font, 619, 555, 790, 590, "Next",
-                      next_enabled, pressed == Some(BUTTON_NEXT));
+    // Both are ALWAYS painted with the grey panel + bevel — they never
+    // disappear regardless of state. Disabled just changes the text ink
+    // to CYAN_DIM (the label reads "greyed out" over the same grey
+    // panel). Bevels DO NOT invert on press — a click on Back / Next
+    // navigates immediately without a visible pressed state.
+    let _ = pressed; // nav buttons don't respond to `pressed` state
+    let _ = BUTTON_BACK; let _ = BUTTON_NEXT;
+    render_nav_button(surface, &body_font, 100, 555, 617, 590, "Back", back_enabled);
+    render_nav_button(surface, &body_font, 619, 555, 790, 590, "Next", next_enabled);
 }
 
-/// Back / Next button. Enabled = grey panel + cyan text + optional
-/// invert-on-press. Disabled = no panel, dim cyan text (looks faded,
-/// matching the Add Manager disabled entry style).
+/// Back / Next button. Panel is ALWAYS drawn (grey fill + grey-scaled
+/// bevel). Only the text ink changes between enabled (bright cyan) and
+/// disabled (dim cyan). Bevels do not invert on press — the exe's nav
+/// buttons navigate instantly, no pressed-state animation.
 fn render_nav_button(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
     x0: i32, y0: i32, x1: i32, y1: i32,
     label: &str,
     enabled: bool,
-    pressed: bool,
 ) {
     let palette = PanelPalette::default();
+    draw_panel(surface, x0, y0, x1, y1,
+        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     let ink = if enabled { INK_CYAN } else { CYAN_DIM };
-    if enabled {
-        let mut style = P_SOLID_FILL | P_BEVEL;
-        if pressed {
-            style |= P_BEVEL_INVERT;
-        }
-        draw_panel(surface, x0, y0, x1, y1, style, GREY_BAR, 0, palette);
-    }
     let bytes = c_string(label.as_bytes());
     draw_wrapped_text(surface, x0, y0, x1, y1, font, &bytes, ink, TS_CENTRE, -1);
 }
@@ -334,6 +335,37 @@ fn sidebar_entry(
     let font = fonts.pixel_slot(F_SMALL).clone();
     let bytes = c_string(label.as_bytes());
     draw_wrapped_text(surface, x0, y0, x1, y1, &font, &bytes, ink, TS_WRAP, -1);
+}
+
+/// Smooth per-pixel vertical gradient from `top_colour` at y0 to black at y1.
+/// Each pixel's brightness is `(y1 - y) / (y1 - y0)` — no integer-bucket
+/// banding, so the fall from top blue to bottom black reads as smooth in
+/// the 5-bit-per-channel RGB555 output. Independent per-channel scale
+/// keeps hue constant.
+fn draw_smooth_vgradient(
+    surface: &mut PackedSurface,
+    x0: i32, y0: i32, x1: i32, y1: i32,
+    top_colour: u16,
+) {
+    let r_top = ((top_colour >> 10) & 0x1f) as u32;
+    let g_top = ((top_colour >>  5) & 0x1f) as u32;
+    let b_top = ( top_colour        & 0x1f) as u32;
+    let span = (y1 - y0).max(1) as u32;
+    for y in y0..=y1 {
+        // fade goes 1.0 → 0.0 linearly across the span, computed in a
+        // scale factor of `span` so integer maths never rounds a whole
+        // channel to zero prematurely.
+        let fade = (span - (y - y0) as u32).min(span); // span at top, 0 at bottom
+        let r = ((r_top * fade) / span) as u16;
+        let g = ((g_top * fade) / span) as u16;
+        let b = ((b_top * fade) / span) as u16;
+        let c = (r << 10) | (g << 5) | b;
+        for x in x0..=x1 {
+            if let Some((cx, cy, _, _)) = surface.clip(x, y, x, y) {
+                surface.buf[(cy * surface.pitch_pixels + cx) as usize] = c;
+            }
+        }
+    }
 }
 
 fn c_string(bytes: &[u8]) -> Vec<u8> {
