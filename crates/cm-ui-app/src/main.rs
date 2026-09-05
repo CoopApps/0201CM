@@ -1196,6 +1196,19 @@ impl ApplicationHandler for App {
                         *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
                         changed = true;
                     }
+                    Screen::SelectLeagues(state) => {
+                        // 34 total, 16 visible → max scroll = 18.
+                        // Match the same-signed convention above (wheel-up
+                        // = show earlier rows).
+                        const VISIBLE: usize = 16;
+                        let max = state.slots.len().saturating_sub(VISIBLE);
+                        state.scroll = if dy > 0.0 {
+                            state.scroll.saturating_sub(1)
+                        } else {
+                            (state.scroll + 1).min(max)
+                        };
+                        changed = true;
+                    }
                     _ => {}
                 }
                 if changed {

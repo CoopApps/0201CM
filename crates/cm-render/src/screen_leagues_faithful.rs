@@ -19,7 +19,7 @@ use crate::packed_panel::{
     draw_panel, PanelPalette,
     P_BEVEL, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
 };
-use crate::packed_text::draw_wrapped_text;
+use crate::packed_text::{draw_wrapped_text, W_LEFT};
 use crate::screen_pre_boot_chrome::{
     c_string, draw_chrome, ChromeState,
     F_BODY, F_SMALL, GREY_BAR, INK_CYAN, INK_YELLOW, TS_CENTRE, YELLOW_PATTERN,
@@ -160,7 +160,10 @@ pub fn render_leagues(
     // Op #79-80: darken the whole (110..525, 145..165) band.
     draw_panel(surface, LIST_X0, OPTS_Y0, 525, OPTS_Y1, P_DARKEN, 0, 0, palette);
 
-    // Real Players label (op #81-82).
+    // Real Players label (op #81-82). Text only — the captured
+    // PANEL c=0x4210 s=0x1 has bit 0 set which triggers NO fill path
+    // in the panel primitive; it's a no-op. So the darkened container
+    // shows through and only the text lands.
     label_cell(surface, &small_font, RP_LBL.0, RADIO_Y0, RP_LBL.1, RADIO_Y1,
                "  Use Real Players:", INK_CYAN);
     // Yes/No pair — one is highlighted (op #84-93 pattern).
@@ -169,7 +172,7 @@ pub fn render_leagues(
     radio_option(surface, &small_font, RP_NO.0, RADIO_Y0, RP_NO.1, RADIO_Y1,
                  "No", !state.use_real_players);
 
-    // Attribute Masking label (op #95-96).
+    // Attribute Masking label + radios — same layout as Real Players.
     label_cell(surface, &small_font, AM_LBL.0, RADIO_Y0, AM_LBL.1, RADIO_Y1,
                "  Attribute Masking:", INK_CYAN);
     radio_option(surface, &small_font, AM_YES.0, RADIO_Y0, AM_YES.1, RADIO_Y1,
@@ -192,10 +195,13 @@ pub fn render_leagues(
     for (i, row) in visible.enumerate() {
         let y0 = ROW_FIRST_Y + (i as i32) * ROW_STRIDE;
         let y1 = y0 + ROW_HEIGHT;
-        // Country name — cyan text, no fill (op #178-179).
+        // Country name — LEFT-aligned cyan text on the darkened container
+        // (op #178-179: PANEL c=0 p=0x739c s=0x1 is a no-op, so no fill;
+        // WRAP text is padded with two leading spaces which reads as a
+        // left indent).
         draw_wrapped_text(surface, COL_COUNTRY.0, y0, COL_COUNTRY.1, y1,
             &body_font, &c_string(row.country.as_bytes()),
-            INK_CYAN, TS_CENTRE, -1);
+            INK_CYAN, TS_CENTRE | W_LEFT, -1);
         // SELECTED toggle — highlighted when on.
         toggle_cell(surface, &small_font, COL_SELECTED.0, y0, COL_SELECTED.1, y1,
                     "SELECTED", row.selected);
@@ -247,8 +253,11 @@ pub fn render_leagues(
 // Sub-cell primitives
 // -----------------------------------------------------------------------
 
-/// Right-aligned option label (grey fill, cyan text) — used for
-/// "  Use Real Players:" and "  Attribute Masking:".
+/// Options-bar label ("  Use Real Players:", "  Attribute Masking:").
+/// No panel fill — the captured PANEL c=0x4210 s=0x1 has bit 0 which
+/// hits none of the fill paths in draw_panel; the darkened container
+/// underneath shows through. Text is cyan and the leading whitespace in
+/// the label acts as the left indent.
 fn label_cell(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
@@ -256,15 +265,15 @@ fn label_cell(
     label: &str,
     ink: u16,
 ) {
-    let palette = PanelPalette::default();
-    // Op capture: PANEL c=0x4210 p=0x739c s=0x1 → P_SOLID_FILL grey.
-    draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL, GREY_BAR, 0, palette);
     draw_wrapped_text(surface, x0, y0, x1, y1, font,
         &c_string(label.as_bytes()), ink, TS_CENTRE, -1);
 }
 
-/// One "Yes" / "No" radio pill — highlighted variant has a yellow rect
-/// frame around it and orange text; off variant is grey text on grey.
+/// One "Yes" / "No" radio pill. Selected: yellow rectangle frame
+/// (P_OUTER_HIGHLIGHT ring + explicit rect s=2) with orange text on the
+/// darkened container. Not-selected: just grey text on the darkened
+/// container. Neither variant fills the interior grey — the captured
+/// style=0x1/0x801 has no fill flag set.
 fn radio_option(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
@@ -274,18 +283,15 @@ fn radio_option(
 ) {
     let palette = PanelPalette::default();
     if active {
-        // Op #84-90 pattern for the highlighted variant:
-        //   PANEL c=0x4210 p=0x7e00 s=0x801   (SOLID_FILL | OUTER_HIGHLIGHT)
-        //   rect (x0-1..x1+1, y0-1..y1+1) c=0x7fe0 s=2  (yellow outline)
-        //   WRAP … c=0x7e00 orange
+        // Outer highlight ring around the pill (matches captured s=0x801
+        // = OUTER_HIGHLIGHT | bit-0-no-op).
         draw_panel(surface, x0, y0, x1, y1,
-            P_SOLID_FILL | P_OUTER_HIGHLIGHT, GREY_BAR, INK_HIGHLIGHT, palette);
+            P_OUTER_HIGHLIGHT, INK_HIGHLIGHT, INK_HIGHLIGHT, palette);
+        // Yellow rect frame just outside (op #85: rect s=2 yellow).
         surface.draw_rectangle(x0 - 1, y0 - 1, x1 + 1, y1 + 1, 2, YELLOW_PATTERN);
         draw_wrapped_text(surface, x0, y0, x1, y1, font,
             &c_string(label.as_bytes()), INK_HIGHLIGHT, TS_CENTRE, -1);
     } else {
-        // Op #92-93: grey panel + grey text.
-        draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL, GREY_BAR, 0, palette);
         draw_wrapped_text(surface, x0, y0, x1, y1, font,
             &c_string(label.as_bytes()), INK_DISABLED, TS_CENTRE, -1);
     }
@@ -309,7 +315,9 @@ fn action_button(
 }
 
 /// A per-row toggle cell (SELECTED / BACKGROUND / secondary label). ON
-/// = yellow-highlighted like the Yes radios; OFF = flat grey text.
+/// = orange text + yellow rect frame + outer-highlight ring; OFF = flat
+/// grey text. Neither variant fills grey — the darkened container
+/// under the row shows through in both cases (user requirement).
 fn toggle_cell(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
@@ -318,17 +326,15 @@ fn toggle_cell(
     active: bool,
 ) {
     if active {
-        // Same highlighted pattern as the Yes radio.
         let palette = PanelPalette::default();
+        // Outer highlight ring only — no fill.
         draw_panel(surface, x0, y0, x1, y1,
-            P_SOLID_FILL | P_OUTER_HIGHLIGHT, GREY_BAR, INK_HIGHLIGHT, palette);
+            P_OUTER_HIGHLIGHT, INK_HIGHLIGHT, INK_HIGHLIGHT, palette);
+        // Yellow rect frame just outside the pill.
         surface.draw_rectangle(x0 - 1, y0 - 1, x1 + 1, y1 + 1, 2, YELLOW_PATTERN);
         draw_wrapped_text(surface, x0, y0, x1, y1, font,
             &c_string(label.as_bytes()), INK_HIGHLIGHT, TS_CENTRE, -1);
     } else {
-        // Off: op #181-182 pattern — PANEL c=0 p=0x4210 s=0x1 (no fill)
-        // + grey text. The exe leaves the darkened container showing
-        // through the "no fill" panel.
         draw_wrapped_text(surface, x0, y0, x1, y1, font,
             &c_string(label.as_bytes()), INK_DISABLED, TS_CENTRE, -1);
     }

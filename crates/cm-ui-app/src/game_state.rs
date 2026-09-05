@@ -85,12 +85,15 @@ pub struct SelectLeaguesState {
     /// the screen title to "Selected League(s)" and disables toggles). Kept
     /// for parity; we only enter this state when the user hits Next.
     pub post_selection: bool,
+    /// First visible row index for the country list (mouse-wheel driven).
+    pub scroll: usize,
 }
 
 impl SelectLeaguesState {
     pub fn from_slots(slots: Vec<PickerSlot>) -> Self {
         let order = (0..slots.len() as u8).collect();
-        Self { slots, order, options: LoadOptions::default(), post_selection: false }
+        Self { slots, order, options: LoadOptions::default(),
+               post_selection: false, scroll: 0 }
     }
 
     /// Count of slots with the primary SELECTED bit set — port of `DAT_00acdf04`.

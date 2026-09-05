@@ -474,7 +474,7 @@ pub fn try_render_leagues_faithful(
         use_real_players: sl.options.use_real_players,
         attribute_masking: sl.options.attribute_masking,
         rows: &rows,
-        scroll: 0,
+        scroll: sl.scroll,
         back_enabled: true,
         next_enabled: sl.selected_count() > 0,
         pressed: None,
