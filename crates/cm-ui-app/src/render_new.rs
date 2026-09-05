@@ -26,6 +26,7 @@ use cm_render::packed_text::{draw_wrapped_text, W_LEFT, W_TOP, W_WRAP};
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
 use cm_render::screen_leagues_faithful;
+use cm_render::screen_season_faithful;
 use cm_render::screen_pre_boot;
 use cm_render::screen_rich_state;
 use cm_render::screen_setup_faithful;
@@ -481,6 +482,33 @@ pub fn try_render_leagues_faithful(
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_leagues_faithful::render_leagues(&mut packed, fonts, &state);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+/// Fast path for `Screen::StartSeason` — direct-draw from
+/// `screen_season_faithful`. Two-column button grid on the same layout
+/// as Setup; odd-tail button is centred on the row.
+pub fn try_render_season_faithful(
+    screen: &Screen,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+    has_manager: bool,
+) -> bool {
+    let Screen::StartSeason { season, .. } = screen else { return false };
+    let labels: Vec<&str> = season.rows.iter().map(|r| r.year_label.as_str()).collect();
+    let state = screen_season_faithful::SeasonState {
+        photo_seed,
+        has_manager,
+        rows: &labels,
+        selected: season.selected,
+        back_enabled: true,
+        next_enabled: true,
+        pressed: None,
+    };
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_season_faithful::render_season(&mut packed, fonts, &state);
     blit_packed_to_surface(&packed, out);
     true
 }

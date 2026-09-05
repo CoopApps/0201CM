@@ -251,6 +251,17 @@ impl App {
                 return;
             }
         }
+        // Start Season — same faithful pattern (screen_season_faithful).
+        {
+            let has_manager = self.game.is_some();
+            if render_new::try_render_season_faithful(
+                &self.screen, &mut self.frame, &mut self.fonts,
+                self.setup_photo_seed, has_manager,
+            ) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         // Pre-boot fast path — SelectLeagues / StartSeason /
         // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
         // now paints through the byte-exact `packed_widget` pipeline
