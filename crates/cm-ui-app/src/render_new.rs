@@ -490,27 +490,94 @@ pub fn try_render_leagues_faithful(
     true
 }
 
-/// Fast path for `Screen::ClubPreview` — minimal "club info + Take
-/// Control" screen used between Select Team and News. Full club info
-/// port (tabs, squad table, fixture list, …) lands in follow-ups.
+/// Fast path for `Screen::ClubPreview` — the club's Squad tab, opened
+/// from Select Team. Includes the in-game title bar, top / bottom tab
+/// bars, sub-toolbar, player list drawn from real DB data, and the
+/// Take Control button.
 pub fn try_render_club_preview_faithful(
     screen: &Screen,
+    world: Option<&cm_domain::World>,
     out: &mut Surface,
     fonts: &mut Fonts,
-    photo_seed: u64,
-    has_manager: bool,
+    _photo_seed: u64,
+    _has_manager: bool,
 ) -> bool {
     let Screen::ClubPreview { choice } = screen else { return false };
-    let subtitle = format!("{} · {}", choice.division_name, "England");
-    let state = screen_club_preview_faithful::ClubPreviewState {
-        photo_seed,
-        has_manager,
+    let Some(world) = world else { return false };
+
+    // Position bit-map → short code. `position_eligibility_bits` is a
+    // bitmask; we pick the most-significant camp (GK / D / DM / M / F)
+    // and append a rough side hint. Simplified — the exe's exact "D
+    // RLC / F LC / S C" splits require per-side tests we don't need
+    // yet; this reads well enough for the screen.
+    fn position_code(bits: u16) -> String {
+        if bits == 0                { return String::new(); }
+        if bits & 0x001 != 0        { return "GK".into(); }
+        if bits & 0x080 != 0        { return "F R".into(); }
+        if bits & 0x200 != 0        { return "F L".into(); }
+        if bits & 0x040 != 0        { return "DM".into(); }
+        if bits & (0x008 | 0x010 | 0x020) != 0 { return "D".into(); }
+        if bits & (0x002 | 0x004) != 0 { return "SW".into(); }
+        if bits & 0x800 != 0        { return "M".into(); }
+        String::new()
+    }
+
+    // Build the squad list from world.staff.type6 filtered by club id.
+    // `age_at` uses the current save date — but there's no save yet on
+    // the preview screen, so we compute against the shipped start of
+    // 10 August 2001.
+    let start_day = cm_domain::day_of_year(2001, 8, 10);
+    struct Row {
+        name: String,
+        position: String,
+        age: Option<u8>,
+        marker: char,
+    }
+    let mut rows: Vec<Row> = Vec::new();
+    let attr_by_id: std::collections::BTreeMap<u32, &cm_domain::DomainStaffType10> =
+        world.staff.type10.iter().map(|a| (a.id, a)).collect();
+    for person in &world.staff.type6 {
+        if person.current_club_id() == Some(choice.club_id) {
+            let link = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body)
+                .player_data_id().map(|l| l as u32).unwrap_or(person.id);
+            let bits = attr_by_id.get(&link)
+                .map(|a| a.position_eligibility_bits())
+                .unwrap_or(0);
+            rows.push(Row {
+                name: world.person_display_name(person),
+                position: position_code(bits),
+                age: person.age_at(2001, start_day),
+                marker: ' ',
+            });
+        }
+    }
+    // Alphabetical by surname (exe default sort).
+    rows.sort_by(|a, b| a.name.cmp(&b.name));
+
+    // Owned strings + views passed by ref to the renderer.
+    let display: Vec<(String, String, Option<u8>, char)> = rows.into_iter()
+        .map(|r| (r.name, r.position, r.age, r.marker))
+        .collect();
+    let refs: Vec<cm_render::screen_club_squad_faithful::SquadPlayer> = display.iter()
+        .map(|(n, p, a, m)| cm_render::screen_club_squad_faithful::SquadPlayer {
+            name: n.as_str(),
+            position: p.as_str(),
+            age: *a,
+            marker: *m,
+        })
+        .collect();
+
+    let state = cm_render::screen_club_squad_faithful::SquadState {
         club_name: &choice.club_name,
-        subtitle: &subtitle,
+        players: &refs,
+        scroll: 0,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
-    screen_club_preview_faithful::render_club_preview(&mut packed, fonts, &state);
+    cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
     blit_packed_to_surface(&packed, out);
+    // Keep the import alive — screen_club_preview_faithful is retained
+    // for the older placeholder variant while we're bootstrapping.
+    let _ = screen_club_preview_faithful::TAKE_CONTROL_RECT;
     true
 }
 

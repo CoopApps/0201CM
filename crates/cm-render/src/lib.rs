@@ -53,6 +53,7 @@ pub mod screen_name_faithful;
 pub mod screen_nationality_faithful;
 pub mod screen_team_faithful;
 pub mod screen_club_preview_faithful;
+pub mod screen_club_squad_faithful;
 pub mod screen_wire_batch3;
 pub mod screens_auto;
 pub mod dispatcher;

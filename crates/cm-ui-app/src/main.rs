@@ -367,12 +367,13 @@ impl App {
                 return;
             }
         }
-        // Club preview (Take Control button) — minimal screen shown
-        // between Select Team and News. See screen_club_preview_faithful.
+        // Club preview — the Squad tab of the picked club with Take
+        // Control button. See screen_club_squad_faithful.
         {
             let has_manager = self.game.is_some();
             if render_new::try_render_club_preview_faithful(
-                &self.screen, &mut self.frame, &mut self.fonts,
+                &self.screen, self.world.as_ref(),
+                &mut self.frame, &mut self.fonts,
                 self.setup_photo_seed, has_manager,
             ) {
                 self.overlay_menu_bar();
