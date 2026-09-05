@@ -499,37 +499,74 @@ pub fn try_render_club_preview_faithful(
     world: Option<&cm_domain::World>,
     out: &mut Surface,
     fonts: &mut Fonts,
-    _photo_seed: u64,
+    photo_seed: u64,
     _has_manager: bool,
 ) -> bool {
+    let _photo_seed = photo_seed;
     let Screen::ClubPreview { choice } = screen else { return false };
     let Some(world) = world else { return false };
 
     // Position bit-map → short code. `position_eligibility_bits` is a
-    // bitmask; we pick the most-significant camp (GK / D / DM / M / F)
-    // and append a rough side hint. Simplified — the exe's exact "D
-    // RLC / F LC / S C" splits require per-side tests we don't need
-    // yet; this reads well enough for the screen.
-    fn position_code(bits: u16) -> String {
-        if bits == 0                { return String::new(); }
-        if bits & 0x001 != 0        { return "GK".into(); }
-        if bits & 0x080 != 0        { return "F R".into(); }
-        if bits & 0x200 != 0        { return "F L".into(); }
-        if bits & 0x040 != 0        { return "DM".into(); }
-        if bits & (0x008 | 0x010 | 0x020) != 0 { return "D".into(); }
-        if bits & (0x002 | 0x004) != 0 { return "SW".into(); }
-        if bits & 0x800 != 0        { return "M".into(); }
-        String::new()
+    // bitmask (port of `FUN_005a2030`). Map to the exe's short codes.
+    // The finer L/R/C split within a category is decoded but not yet
+    // ported; this returns the coarse category, which reads clean:
+    //   0x001                 → GK
+    //   0x002 / 0x004         → SW (sweeper)
+    //   0x008 / 0x010 / 0x020 → D  (defender)
+    //   0x040                 → DM
+    //   0x800                 → M  (midfielder, wide)
+    //   0x080 / 0x200         → F  (forward — wide/attacking bits)
+    //   default               → F  (best guess for an attacker)
+    fn position_code(bits: u16) -> &'static str {
+        if bits == 0 { return ""; }
+        if bits & 0x001 != 0 { return "GK"; }
+        if bits & (0x002 | 0x004) != 0 { return "SW"; }
+        if bits & 0x040 != 0 { return "DM"; }
+        if bits & (0x008 | 0x010 | 0x020) != 0 { return "D"; }
+        if bits & 0x800 != 0 { return "M"; }
+        if bits & (0x080 | 0x200) != 0 { return "F"; }
+        ""
+    }
+    /// Sort order for the default Squad view — GK first, then SW, D,
+    /// DM, M, AM, F, S, others last. Mirrors the exe's grouping.
+    fn position_group(code: &str) -> u8 {
+        match code {
+            "GK" => 0, "SW" => 1, "D" => 2, "DM" => 3,
+            "M" => 4, "AM" => 5, "F" => 6, "S" => 7,
+            _ => 8,
+        }
     }
 
-    // Build the squad list from world.staff.type6 filtered by club id.
-    // `age_at` uses the current save date — but there's no save yet on
-    // the preview screen, so we compute against the shipped start of
-    // 10 August 2001.
+    // Build "Surname, F" — the exe's row-label convention (see the
+    // capture: 'Rose, M', 'Bagnall, S', ...). First-name and second-
+    // name ids resolve into the first/second name pools loaded at boot.
+    fn surname_initial(world: &cm_domain::World,
+                       person: &cm_domain::DomainStaffType6) -> String {
+        let first = world.references.first_names
+            .get(person.first_name_id() as usize)
+            .map(|n| n.text.as_str())
+            .unwrap_or("");
+        let second = world.references.second_names
+            .get(person.second_name_id() as usize)
+            .map(|n| n.text.as_str())
+            .unwrap_or("");
+        let initial = first.chars().next().unwrap_or(' ');
+        if second.is_empty() {
+            format!("{first}")
+        } else if initial == ' ' {
+            second.to_string()
+        } else {
+            format!("{second}, {initial}")
+        }
+    }
+
+    // Build the squad list from world.staff.type6 filtered by club id
+    // (the exe's genuine data source — type-6 person records with
+    // body+0x35 = club id link).
     let start_day = cm_domain::day_of_year(2001, 8, 10);
     struct Row {
         name: String,
-        position: String,
+        position: &'static str,
         age: Option<u8>,
         marker: char,
     }
@@ -544,24 +581,28 @@ pub fn try_render_club_preview_faithful(
                 .map(|a| a.position_eligibility_bits())
                 .unwrap_or(0);
             rows.push(Row {
-                name: world.person_display_name(person),
+                name: surname_initial(world, person),
                 position: position_code(bits),
                 age: person.age_at(2001, start_day),
                 marker: ' ',
             });
         }
     }
-    // Alphabetical by surname (exe default sort).
-    rows.sort_by(|a, b| a.name.cmp(&b.name));
+    // Sort by position group (GK → SW → D → DM → M → AM → F → S), then
+    // alphabetical within each group.
+    rows.sort_by(|a, b|
+        position_group(a.position).cmp(&position_group(b.position))
+            .then(a.name.cmp(&b.name)));
 
-    // Owned strings + views passed by ref to the renderer.
-    let display: Vec<(String, String, Option<u8>, char)> = rows.into_iter()
+    // Owned strings kept on the stack so the renderer's borrows stay
+    // valid. position is a &'static str already; name is a heap String.
+    let display: Vec<(String, &'static str, Option<u8>, char)> = rows.into_iter()
         .map(|r| (r.name, r.position, r.age, r.marker))
         .collect();
     let refs: Vec<cm_render::screen_club_squad_faithful::SquadPlayer> = display.iter()
         .map(|(n, p, a, m)| cm_render::screen_club_squad_faithful::SquadPlayer {
             name: n.as_str(),
-            position: p.as_str(),
+            position: p,
             age: *a,
             marker: *m,
         })
@@ -571,6 +612,7 @@ pub fn try_render_club_preview_faithful(
         club_name: &choice.club_name,
         players: &refs,
         scroll: 0,
+        photo_seed: _photo_seed,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);

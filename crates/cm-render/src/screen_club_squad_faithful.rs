@@ -36,6 +36,7 @@
 //! and leave the left strip black.
 
 use crate::font::Fonts;
+use crate::image::Image;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{
     draw_panel, PanelPalette,
@@ -93,6 +94,10 @@ pub struct SquadState<'a> {
     pub players: &'a [SquadPlayer<'a>],
     /// First-visible row (0 = top).
     pub scroll: usize,
+    /// Seed for the rotating RGN photo background (per-screen fresh
+    /// seed). `0` skips the blit — useful for tests/CI without the
+    /// game's Data directory.
+    pub photo_seed: u64,
 }
 
 // -----------------------------------------------------------------------
@@ -179,6 +184,16 @@ pub fn render_squad(
     let title_font = fonts.pixel_slot(F_TITLE).clone();
     let body_font  = fonts.pixel_slot(F_BODY).clone();
     let small_font = fonts.pixel_slot(F_SMALL).clone();
+
+    // ---- Photo background — matches the pre-boot chrome pattern
+    //      (P_DARKEN'd panels show a darkened photo through them).
+    blit_photo(surface, state.photo_seed);
+
+    // ---- Left sidebar strip (0..89) — dark navy gradient placeholder.
+    //      In-game the exe paints its menu bar here (FUN_00745540); we
+    //      just paint a dark navy strip so the club screen isn't
+    //      broken by the photo showing through the left column.
+    draw_panel(surface, 0, 0, 89, 599, P_SOLID_FILL, 0x1082, 0, palette);
 
     // ---- In-game TITLE BAR (100,10)-(790,70) — purple fill + dark-blue bevel.
     draw_panel(surface, 100, 10, 790, 70,
@@ -316,6 +331,45 @@ pub fn render_squad(
     }
 }
 
+/// 565 → 555 conversion. Same shape as `screen_pre_boot_chrome`.
+fn c565_to_555(v: u16) -> u16 {
+    let r = (v >> 11) & 0x1f;
+    let g = ((v >> 5) & 0x3f) >> 1;
+    let b = v & 0x1f;
+    (r << 10) | (g << 5) | b
+}
+
+/// Blit a random RGN photo as base layer. Same file table + hash as
+/// pre-boot chrome; missing directory (test env) leaves surface alone.
+fn blit_photo(surface: &mut PackedSurface, photo_seed: u64) {
+    if photo_seed == 0 { return; }
+    let dir = std::path::Path::new("D:/cm0102/pictures");
+    let entries: Vec<_> = match std::fs::read_dir(dir) {
+        Ok(rd) => rd.filter_map(|e| e.ok())
+                    .filter(|e| {
+                        let p = e.path();
+                        p.extension().and_then(|s| s.to_str())
+                            .map(|s| s.eq_ignore_ascii_case("rgn"))
+                            .unwrap_or(false)
+                    })
+                    .map(|e| e.path())
+                    .collect(),
+        Err(_) => return,
+    };
+    if entries.is_empty() { return; }
+    let path = &entries[(photo_seed % entries.len() as u64) as usize];
+    let Ok(img) = Image::load_rgn(path) else { return };
+    let w = surface.width.min(img.w as i32);
+    let h = surface.height.min(img.h as i32);
+    for y in 0..h {
+        for x in 0..w {
+            let src = img.px[(y as usize) * img.w + (x as usize)];
+            let dst_idx = (y * surface.pitch_pixels + x) as usize;
+            surface.buf[dst_idx] = c565_to_555(src);
+        }
+    }
+}
+
 /// Format age line for a player row — "Rose, M · 24" style. Kept
 /// separate so callers can plug it into a Sort-By-Age view later.
 pub fn name_with_age(name: &str, age: Option<u8>) -> String {
@@ -338,6 +392,7 @@ mod tests {
             club_name: "Chester City",
             players: &players,
             scroll: 0,
+            photo_seed: 0,
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_squad(&mut surface, &mut fonts, &state);
