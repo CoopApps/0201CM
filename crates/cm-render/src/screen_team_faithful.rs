@@ -142,15 +142,11 @@ pub fn render_team(
         } else {
             (NAME_R, NAT_R, DIV_R)
         };
-        let is_selected = state.selected == Some(row.club_id);
-        if is_selected {
-            // Yellow 1-px frame around the NAME cell only — same
-            // recipe the Nationality picker uses.
-            surface.draw_rectangle(name_x.0 - 1, y0 - 1,
-                                    name_x.1 + 1, y1 + 1,
-                                    2, INK_YELLOW);
-        }
         // NAME — font 3, LEFT-aligned (leading spaces = indent).
+        // NB: Select Team is INSTANT-COMMIT — a click on a row
+        // navigates straight to that club's dashboard. There's no
+        // highlight state to draw (the exe never previews a picked
+        // club; it goes there immediately).
         draw_wrapped_text(surface, name_x.0, y0, name_x.1, y1,
             &body_font, &c_string(row.name.as_bytes()),
             INK_CYAN, TS_CENTRE | W_LEFT, -1);

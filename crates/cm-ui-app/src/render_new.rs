@@ -586,7 +586,12 @@ pub fn try_render_team_faithful(
         scroll: *scroll,
         selected: *selected,
         back_enabled: true,
-        next_enabled: selected.is_some(),
+        // Select Team is instant-commit — clicking a row navigates
+        // straight to the club dashboard, so there's no persistent
+        // "picked" state to gate Next on. The exe still renders Next
+        // in bright cyan (not embossed) — mirror that by passing true;
+        // the click handler treats a Next click as a no-op.
+        next_enabled: true,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_team_faithful::render_team(&mut packed, fonts, &state);

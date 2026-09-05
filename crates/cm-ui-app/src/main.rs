@@ -676,40 +676,33 @@ impl App {
                     }
                 }
             }
-            Screen::SelectClub { clubs, scroll, selected } => {
-                // Nav bar rows / list rows are mutually exclusive; use
-                // an `if / else if` chain so deferred flags like
-                // `install_club` reach the handler at the end of
-                // `on_release` instead of being swallowed by an early
-                // `return`.
+            Screen::SelectClub { clubs, scroll, selected: _ } => {
+                // Select Team is INSTANT-COMMIT: clicking a club name
+                // takes you straight to that club's dashboard — no
+                // preview/highlight, no Next button. Matches the exe's
+                // FUN_0080b2b0 handler (single click → install). Back
+                // still returns to the Nationality picker.
                 if y >= 555 && y <= 590 {
                     if x >= 100 && x <= 617 {
-                        // Back → back to Nationality picker.
                         self.screen = Screen::SelectNationality {
                             scroll: 0, selected: None,
                             filter: NationalityFilter::MajorNations,
                             filter_open: false,
                         };
-                    } else if x >= 619 && x <= 790 {
-                        // Next commits the picked club — deferred so
-                        // the manager install runs after the match
-                        // releases the borrow on `self.screen`.
-                        if let Some(id) = *selected {
-                            install_club = clubs.iter()
-                                .find(|c| c.club_id == id).cloned();
-                        }
                     }
+                    // Next area is dead — nothing to commit; the exe
+                    // renders both nav buttons but Next is a no-op on
+                    // this screen.
                 } else if x >= 112 && x <= 756 && y >= 153 && y <= 527 {
-                    // List entries — 17 rows × 2 cols starting y=153.
                     let row = ((y - 153) / 22) as usize;
                     if row < 17 {
                         let col_left = x <= 433;
                         let visible_idx = *scroll + row * 2
                             + if col_left { 0 } else { 1 };
                         if let Some(c) = clubs.get(visible_idx) {
-                            *selected = Some(c.club_id);
                             eprintln!("[team] picked {:?} -> club_id {}",
                                        c.club_name, c.club_id);
+                            install_club = Some(c.clone());
                         }
                     }
                 }
