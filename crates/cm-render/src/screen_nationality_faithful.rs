@@ -163,25 +163,16 @@ pub fn render_nationality(
         let is_selected = state.selected == Some(list_idx);
         if is_selected {
             // Selection highlight — the exe frames JUST the country
-            // NAME cell (not the continent code beside it). Same recipe
-            // as the Leagues SELECTED toggle: outer-highlight ring +
-            // yellow rect frame just outside, 2 pixels thick so it
-            // reads clearly against the darkened container.
-            draw_panel(surface, name_x0, y0, name_x1, y1,
-                P_OUTER_HIGHLIGHT, INK_HIGHLIGHT, INK_HIGHLIGHT, palette);
-            surface.draw_rectangle(name_x0 - 2, y0 - 2, name_x1 + 2, y1 + 2,
-                                    2, INK_YELLOW);
+            // NAME cell (not the continent code) with a SINGLE-pixel
+            // yellow outline. No text-colour change: the country name
+            // stays white (INK_CYAN, near-white) so the row still reads
+            // cleanly; only the frame signals the selection.
             surface.draw_rectangle(name_x0 - 1, y0 - 1, name_x1 + 1, y1 + 1,
                                     2, INK_YELLOW);
         }
-        let (name_ink, cont_ink) = if is_selected {
-            // Selected: name in orange (matches the Leagues highlight
-            // text ink) but keep the continent code yellow so both
-            // pieces of information stay visible against the frame.
-            (INK_HIGHLIGHT, INK_YELLOW)
-        } else {
-            (INK_CYAN, INK_YELLOW)
-        };
+        // Row text — SAME colours whether the row is selected or not.
+        // The yellow frame is the only affordance for "picked".
+        let (name_ink, cont_ink) = (INK_CYAN, INK_YELLOW);
         // Name — LEFT-aligned (leading whitespace in the string acts as
         // the indent), font 3.
         draw_wrapped_text(surface, name_x0, y0, name_x1, y1,
