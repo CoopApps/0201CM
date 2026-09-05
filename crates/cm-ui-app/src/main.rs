@@ -51,6 +51,15 @@ enum Screen {
         /// clicks one). Enables Next when set.
         selected: Option<u32>,
     },
+    /// Club-info PREVIEW — reached from Select Team. The exe shows the
+    /// full club screen (with all its tabs) but with a Take Control
+    /// button in the top-right corner. Clicking Take Control installs
+    /// the manager and jumps to News. The full club-tabs port is a
+    /// separate follow-up; this variant carries the picked club id so
+    /// the Take Control button knows what to take control of.
+    ClubPreview {
+        choice: cm_domain::ManagerClubChoice,
+    },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
     News {
@@ -358,6 +367,18 @@ impl App {
                 return;
             }
         }
+        // Club preview (Take Control button) — minimal screen shown
+        // between Select Team and News. See screen_club_preview_faithful.
+        {
+            let has_manager = self.game.is_some();
+            if render_new::try_render_club_preview_faithful(
+                &self.screen, &mut self.frame, &mut self.fonts,
+                self.setup_photo_seed, has_manager,
+            ) {
+                self.overlay_menu_bar();
+                return;
+            }
+        }
         // Pre-boot fast path — SelectLeagues / StartSeason /
         // EnterName / SelectClub. Closes the Layer 2 fold: EVERY screen
         // now paints through the byte-exact `packed_widget` pipeline
@@ -431,7 +452,8 @@ impl App {
             | Screen::StartSeason { .. }
             | Screen::EnterName
             | Screen::SelectNationality { .. }
-            | Screen::SelectClub { .. } => {
+            | Screen::SelectClub { .. }
+            | Screen::ClubPreview { .. } => {
                 self.frame.fill(0, 0, 0);
                 self.status = Some(
                     "pre-boot fast path refused to build a pool".into()
@@ -481,6 +503,9 @@ impl App {
             // Nationality has no press-invert state yet — content buttons
             // are grid rows without a bevel to invert.
             Screen::SelectNationality { .. } => Pressed::None,
+            // ClubPreview owns its own hit-test (Take Control button +
+            // Back nav) — no per-widget press tracking.
+            Screen::ClubPreview { .. } => Pressed::None,
             Screen::Dashboard { .. }
             | Screen::News { .. }
             | Screen::FifaRankings { .. }
@@ -563,7 +588,11 @@ impl App {
         let mut open_fixtures: Option<u32> = None;
         // Deferred: Enter Name -> Select Club (needs self.world + self.game).
         let mut goto_select_club = false;
-        // Deferred: club picked on Select Club -> install + Dashboard.
+        // Deferred: club picked on Select Team -> show ClubPreview.
+        let mut goto_club_preview: Option<cm_domain::ManagerClubChoice> = None;
+        // Deferred: ClubPreview Back -> reopen the Select Team list.
+        let mut goto_reopen_select_team = false;
+        // Deferred: Take Control -> install manager + Dashboard/News.
         let mut install_club: Option<cm_domain::ManagerClubChoice> = None;
         // Deferred: a News control without a ported target was clicked.
         let mut news_note = false;
@@ -702,9 +731,22 @@ impl App {
                         if let Some(c) = clubs.get(visible_idx) {
                             eprintln!("[team] picked {:?} -> club_id {}",
                                        c.club_name, c.club_id);
-                            install_club = Some(c.clone());
+                            // Deferred: switch to ClubPreview after the
+                            // match releases the &mut self.screen borrow.
+                            goto_club_preview = Some(c.clone());
                         }
                     }
+                }
+            }
+            Screen::ClubPreview { choice } => {
+                // Take Control button — top-right, above the title bar.
+                // From screen_club_preview_faithful::TAKE_CONTROL_RECT.
+                if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    install_club = Some(choice.clone());
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    // Back → return to Select Team. The list still has
+                    // the same clubs so no reload needed.
+                    goto_reopen_select_team = true;
                 }
             }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
@@ -857,6 +899,12 @@ impl App {
             self.start_new_game(&leagues, &season);
         }
         if goto_select_club {
+            self.goto_select_club();
+        }
+        if let Some(choice) = goto_club_preview {
+            self.screen = Screen::ClubPreview { choice };
+        }
+        if goto_reopen_select_team {
             self.goto_select_club();
         }
         if let Some(choice) = install_club {
@@ -1512,6 +1560,7 @@ impl ApplicationHandler for App {
                                 | Screen::AutoRoute { .. }
                                 | Screen::SelectNationality { .. }
                                 | Screen::SelectClub { .. }
+                                | Screen::ClubPreview { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);

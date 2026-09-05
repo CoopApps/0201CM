@@ -26,6 +26,7 @@ use cm_render::packed_text::{draw_wrapped_text, W_LEFT, W_TOP, W_WRAP};
 use cm_render::packed_widget::{render_widget, WidgetGlobals};
 use cm_render::pool_to_render::to_render_widget;
 use cm_render::screen_leagues_faithful;
+use cm_render::screen_club_preview_faithful;
 use cm_render::screen_name_faithful;
 use cm_render::screen_nationality_faithful;
 use cm_render::screen_season_faithful;
@@ -485,6 +486,30 @@ pub fn try_render_leagues_faithful(
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     screen_leagues_faithful::render_leagues(&mut packed, fonts, &state);
+    blit_packed_to_surface(&packed, out);
+    true
+}
+
+/// Fast path for `Screen::ClubPreview` — minimal "club info + Take
+/// Control" screen used between Select Team and News. Full club info
+/// port (tabs, squad table, fixture list, …) lands in follow-ups.
+pub fn try_render_club_preview_faithful(
+    screen: &Screen,
+    out: &mut Surface,
+    fonts: &mut Fonts,
+    photo_seed: u64,
+    has_manager: bool,
+) -> bool {
+    let Screen::ClubPreview { choice } = screen else { return false };
+    let subtitle = format!("{} · {}", choice.division_name, "England");
+    let state = screen_club_preview_faithful::ClubPreviewState {
+        photo_seed,
+        has_manager,
+        club_name: &choice.club_name,
+        subtitle: &subtitle,
+    };
+    let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
+    screen_club_preview_faithful::render_club_preview(&mut packed, fonts, &state);
     blit_packed_to_surface(&packed, out);
     true
 }
