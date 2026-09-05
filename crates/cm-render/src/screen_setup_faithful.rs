@@ -66,9 +66,15 @@ const CYAN_PATTERN: u16 = 0x739c;
 /// Version box, Restart / Exit sidebar buttons, and "Setup Game" subheader.
 const YELLOW_PATTERN: u16 = 0x7fe0;
 
-// (Previously CYAN_DIM was used for disabled labels; now the disabled
-// look comes from `W_SHADOW`-embossed text — the ink is derived from
-// the background pixel, so no fixed dim constant is needed.)
+/// Mid-brightness cyan for the "faded but legible" Add Manager label
+/// when no manager is present. Half-brightness of INK_CYAN (14/14/14 vs
+/// 28/28/28) so it reads as clearly less prominent than the Restart /
+/// Exit labels but still stands out against the navy gradient.
+/// Back/Next use `W_SHADOW` emboss instead because their grey background
+/// gives that flag proper contrast to work with — Add Manager sits on
+/// a sample-bg panel whose colour matches the gradient, killing emboss
+/// contrast, so we use a flat dim ink there.
+const CYAN_FADED: u16 = 0x39ce; // 14/14/14
 
 /// Grey bottom-bar (Back/Next) fill. `0x4210 = (16, 16, 16)`.
 const GREY_BAR: u16 = 0x4210;
@@ -211,22 +217,16 @@ pub fn render_setup(
     sidebar_entry(surface, fonts, 46, 55, 85, 98, ">>>",
                   INK_CYAN, false, true);
 
-    //    Add Manager: same embossed disabled look as Back/Next when
-    //    there's no manager yet — panel stays visible so the button
-    //    doesn't vanish; the text just reads as "pressed in".
-    if has_manager {
-        sidebar_entry(surface, fonts, 5, 100, 85, 143, "Add\nManager",
-                      INK_CYAN, false, true);
-    } else {
-        // Draw the sample-bg panel (see-through blue bevel) then the
-        // embossed label — matches Back/Next disabled state.
-        draw_panel(surface, 5, 100, 85, 143,
-            P_SAMPLE_BG | P_SOLID_FILL | P_BEVEL, 0, 0, palette);
-        let font = fonts.pixel_slot(F_SMALL).clone();
-        let bytes = c_string(b"Add\nManager");
-        draw_wrapped_text(surface, 5, 100, 85, 143,
-            &font, &bytes, 0, TS_WRAP | W_SHADOW, -1);
-    }
+    //    Add Manager: bevel panel always visible; text goes from bright
+    //    cyan (enabled) → mid-brightness cyan (disabled). W_SHADOW
+    //    emboss doesn't work here because the sampled panel colour IS
+    //    the gradient — sampled ink matches its own background, giving
+    //    no contrast. Instead, draw a flat mid-cyan for the disabled
+    //    label so it reads as "faded but still legible".
+    sidebar_entry(surface, fonts, 5, 100, 85, 143, "Add\nManager",
+                  if has_manager { INK_CYAN } else { CYAN_FADED },
+                  /*sunken*/ false,
+                  /*enabled*/ true);
 
     //    Restart Game + Exit Game — yellow text.
     sidebar_entry(surface, fonts, 5, 145, 85, 187, "Restart\nGame",
