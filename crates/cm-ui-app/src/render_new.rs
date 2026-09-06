@@ -536,14 +536,18 @@ pub fn try_render_club_preview_faithful(
         if a.apt_goalkeeper >= 15 {
             return "GK".into();
         }
-        // (name, aptitude, allows_sides).
-        // GK/SW/central positions historically show without sides in
-        // the exe. WB is inherently side-dependent (no central wing
-        // back) — it needs R or L, never C.
-        let cats: [(&str, i8); 7] = [
+        // Display categories the exe actually paints. NB `apt_wing_back`
+        // exists in the DB but is NOT a UI code — the match engine
+        // consumes it internally to decide who can fill a wing-back
+        // slot in a tactic; the squad screen shows those players by
+        // their D and/or M aptitudes and lets the manager infer the WB
+        // ability. This mirrors real CM 01/02 output.
+        // (Corrected 2026-09-06 — Paul Robertson at Leigh RMI shows
+        // "D/M L" in the GDI exe with WB=20; earlier code fabricated
+        // a "WB" display code from the aptitude name alone.)
+        let cats: [(&str, i8); 6] = [
             ("SW", a.apt_sweeper),
             ("D",  a.apt_defender),
-            ("WB", a.apt_wing_back),
             ("DM", a.apt_def_midfielder),
             ("M",  a.apt_midfielder),
             ("AM", a.apt_att_midfielder),
@@ -597,34 +601,25 @@ pub fn try_render_club_preview_faithful(
         }
 
         // Join categories in the fixed defensive→attacking order.
-        // Filter out any that don't have compatible sides — a "WB" with
-        // no R and no L wouldn't display (it needs a wing).
-        let has_wing = r_eligible || l_eligible;
-        let head_parts: Vec<&str> = qualifying_cats.iter().copied()
-            .filter(|c| !(*c == "WB" && !has_wing))
-            .collect();
-        if head_parts.is_empty() {
-            // WB survived on its own without wing eligibility — fall
-            // back to WB as the head anyway; the exe still shows it.
-            return "WB".into();
-        }
-        let head = head_parts.join("/");
-        // Side letters. WB never gets C; other categories can.
-        let allow_c = !head_parts.contains(&"WB");
+        let head = qualifying_cats.join("/");
         let mut sides = String::new();
-        if r_eligible                { sides.push('R'); }
-        if l_eligible                { sides.push('L'); }
-        if c_eligible && allow_c     { sides.push('C'); }
+        if r_eligible { sides.push('R'); }
+        if l_eligible { sides.push('L'); }
+        if c_eligible { sides.push('C'); }
         if sides.is_empty() { head } else { format!("{head} {sides}") }
     }
-    /// Sort order for the default Squad view — GK first, then SW, D,
-    /// WB, DM, M, AM, F, S, others last. Mirrors the exe's grouping.
+    /// Sort order for the default Squad view — GK first, then the
+    /// exe's actual 7 outfield display codes in defensive→attacking
+    /// order. Multi-role players are grouped by their FIRST head code
+    /// (e.g. "D/M L" sorts as D), matching the exe's grouping.
     fn position_group(code: &str) -> u8 {
-        let head = code.split(' ').next().unwrap_or("");
+        // Split off sides, then take the first "/"-separated head.
+        let head_block = code.split(' ').next().unwrap_or("");
+        let head = head_block.split('/').next().unwrap_or("");
         match head {
-            "GK" => 0, "SW" => 1, "D" => 2, "WB" => 3, "DM" => 4,
-            "M" => 5, "AM" => 6, "F" => 7, "S" => 8,
-            _ => 9,
+            "GK" => 0, "SW" => 1, "D" => 2, "DM" => 3,
+            "M"  => 4, "AM" => 5, "F" => 6, "S" => 7,
+            _ => 8,
         }
     }
 
