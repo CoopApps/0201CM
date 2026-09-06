@@ -62,6 +62,10 @@ const TAB_FILL: u16 = 0x100c;
 const BLUE: u16 = 0x0010;
 /// Bright cyan for enabled bottom-tab labels. `0x43ff`.
 const CYAN_BRIGHT: u16 = 0x43ff;
+/// Orange for the ▷ triangles on enabled bottom tabs. Same colour the
+/// Leagues screen used for the highlighted radio (`0x7e00` = 31/16/0),
+/// reads as bright red-orange.
+const TRIANGLE_ORANGE: u16 = 0x7e00;
 /// White for special player names (loan / on-list markers). `0x7fff`.
 const WHITE: u16 = 0x7fff;
 
@@ -343,7 +347,7 @@ pub fn render_squad(
         // y_centre+5), diagonals converging to a tip at (x1-5, y_centre).
         if tab.enabled {
             let cy = (BTB_Y0 + BTB_Y1) / 2;
-            draw_hollow_triangle(surface, tab.x1 - 10, cy, 5, CYAN_BRIGHT);
+            draw_hollow_triangle(surface, tab.x1 - 10, cy, 5, TRIANGLE_ORANGE);
         }
     }
 

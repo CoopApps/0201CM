@@ -522,10 +522,18 @@ pub fn try_render_club_preview_faithful(
     // 15 bar. Everything runs from the typed struct fields, which are
     // populated during rust-db import.
     fn position_code(a: &cm_domain::DomainStaffType10) -> String {
-        const T: i8 = 15;
-        // Pick the primary category by the highest apt with >=T. GK
-        // outranks everything if applicable (a keeper is a keeper).
-        if a.apt_goalkeeper >= T { return "GK".into(); }
+        // Same sliding-threshold logic as FUN_005a2030's
+        // `position_eligibility_bits`: start at 15, walk down until
+        // something qualifies (`threshold > 9`). No player ends up
+        // uncoded — the exe never shows a blank position column.
+        if a.apt_goalkeeper >= 10 && a.apt_goalkeeper >= 15 {
+            return "GK".into();
+        }
+        // The exe distinguishes F (wide/attacking-mid-ish forward) from
+        // S (central striker) at DRAW time — same underlying "Attacker"
+        // aptitude, but shown as "S" when the player only plays central
+        // and "F" when they can also play wide. That split lives in
+        // the sides branch below.
         let cats: [(&str, i8); 7] = [
             ("SW", a.apt_sweeper),
             ("D",  a.apt_defender),
@@ -536,19 +544,38 @@ pub fn try_render_club_preview_faithful(
             ("F",  a.apt_attacker),
         ];
         let mut best: Option<(&str, i8)> = None;
-        for &(name, v) in &cats {
-            if v >= T && best.map_or(true, |(_, b)| v > b) {
-                best = Some((name, v));
+        let mut t: i8 = 15;
+        while t > 9 && best.is_none() {
+            // At this threshold: try GK first (it outranks outfield if
+            // eligible), then the highest-scoring outfield >= t.
+            if a.apt_goalkeeper >= t { return "GK".into(); }
+            for &(name, v) in &cats {
+                if v >= t && best.map_or(true, |(_, b)| v > b) {
+                    best = Some((name, v));
+                }
             }
+            t -= 1;
         }
-        let Some((cat, _)) = best else { return String::new(); };
-        // Side letters — R / L / C. GK / SW / WB don't get sides in the
-        // exe capture (they always play centrally), match that.
+        // If NOTHING scored >= 10 anywhere (extremely rare — a truly
+        // rubbish player), fall back to the argmax across all categories.
+        let (cat, qualifying_t) = best.unwrap_or_else(|| {
+            let mut cat = "F";
+            let mut best_v = i8::MIN;
+            for &(name, v) in &cats {
+                if v > best_v { cat = name; best_v = v; }
+            }
+            (cat, 10)
+        });
+        // Side letters — R / L / C. GK / SW / WB always play centrally
+        // in the exe's convention; skip sides for them.
         if cat == "SW" || cat == "WB" { return cat.into(); }
+        // Use the SAME threshold that qualified the category, so if the
+        // category only just cleared 10, sides down to 10 also count.
+        let t = qualifying_t;
         let mut sides = String::new();
-        if a.apt_right_side >= T { sides.push('R'); }
-        if a.apt_left_side  >= T { sides.push('L'); }
-        if a.apt_central    >= T { sides.push('C'); }
+        if a.apt_right_side >= t { sides.push('R'); }
+        if a.apt_left_side  >= t { sides.push('L'); }
+        if a.apt_central    >= t { sides.push('C'); }
         if sides.is_empty() { cat.into() } else { format!("{cat} {sides}") }
     }
     /// Sort order for the default Squad view — GK first, then SW, D,
@@ -616,6 +643,15 @@ pub fn try_render_club_preview_faithful(
     rows.sort_by(|a, b|
         position_group(&a.position).cmp(&position_group(&b.position))
             .then(a.name.cmp(&b.name)));
+    // Diagnostic — helps identify wrong-club leakage the user asked
+    // about (e.g. Foday/Ovie showing on Chester).
+    eprintln!("[squad] {} (club_id={}): {} players",
+        choice.club_name, choice.club_id, rows.len());
+    for r in &rows {
+        eprintln!("  {:24} {:6}  age={}",
+                  r.name, r.position,
+                  r.age.map(|a| format!("{a}")).unwrap_or_else(|| "?".into()));
+    }
 
     // Owned strings kept on the stack so the renderer's borrows stay
     // valid across the render_squad call.
@@ -631,15 +667,30 @@ pub fn try_render_club_preview_faithful(
         })
         .collect();
 
+    // Division SHORT name for the fourth bottom-tab label. The exe
+    // shows "Prem" / "Div 1" / "Div 2" / "Div 3" / "Conference" for
+    // English tiers — read directly from `club_competitions.short_name`
+    // (the +0x38 field on the club_comp record) via the choice's
+    // division_id. Falls back to the long name if the short field is
+    // empty (defensive — every English tier ships with one).
+    let short_division: String = world.references.club_competitions.iter()
+        .find(|c| c.id == choice.division_id)
+        .map(|c| if c.short_name.trim().is_empty() {
+            c.long_name.clone()
+        } else {
+            c.short_name.clone()
+        })
+        .unwrap_or_else(|| choice.division_name.clone());
+
     let state = cm_render::screen_club_squad_faithful::SquadState {
         club_name: &choice.club_name,
         players: &refs,
         scroll: 0,
         photo_seed,
         has_manager,
-        // Live division long name — Chester -> "Conference",
-        // Arsenal -> "Premier League", etc. Never hardcoded.
-        division_name: &choice.division_name,
+        // Live division short name — Chester -> "Conference",
+        // Arsenal -> "Prem", etc. Never hardcoded.
+        division_name: &short_division,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
