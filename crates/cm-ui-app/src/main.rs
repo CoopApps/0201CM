@@ -517,37 +517,39 @@ impl App {
         let label = overlay.label.clone();
         use cm_render::pack565;
         use cm_render::panel::{F_SOLID_FILL, F_BEVEL};
-        const Y0: i32 = 575;
+        // Geometry taken from the reference screenshot of the exe's
+        // "Loading database" bar: thin strip (~18 px), spans full
+        // width, progress well starts around x=180, blue fill is a
+        // bright saturated blue.
+        const Y0: i32 = 582;
         const Y1: i32 = 599;
         const X0: i32 = 0;
         const X1: i32 = cm_render::Surface::W as i32 - 1;
-        // draw_panel takes an (r,g,b) tuple; set() takes packed u16.
-        let grey_rgb  = (0xc0u8, 0xc0u8, 0xc0u8);
-        let ink_rgb   = (0x20u8, 0x20u8, 0x20u8);
-        let grey_dark = pack565(0x80, 0x80, 0x80);
-        let blue      = pack565(0x00, 0x00, 0xc0);
-        // Grey bar with light bevel across the width.
-        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, grey_rgb);
-        // Progress well on the right — sunken grey_dark strip.
-        const P_X0: i32 = 245;
-        const P_X1: i32 = X1 - 8;
-        const P_Y0: i32 = Y0 + 5;
-        const P_Y1: i32 = Y1 - 5;
+        let silver_rgb = (0xd0u8, 0xd0u8, 0xd0u8);
+        let ink_rgb    = (0x30u8, 0x30u8, 0x30u8);
+        let grey_dark  = pack565(0x90, 0x90, 0x90);
+        let blue       = pack565(0x00, 0x00, 0xff);   // saturated
+        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, silver_rgb);
+        // Progress well.
+        const P_X0: i32 = 180;
+        const P_X1: i32 = X1 - 6;
+        const P_Y0: i32 = Y0 + 3;
+        const P_Y1: i32 = Y1 - 3;
         for y in P_Y0..=P_Y1 {
             for x in P_X0..P_X1 {
                 self.frame.set(x, y, grey_dark);
             }
         }
-        // Blue progress fill inside the well.
         let fill_w = ((P_X1 - P_X0) as f32 * progress) as i32;
         for y in P_Y0 + 1..P_Y1 {
             for x in P_X0 + 1..(P_X0 + fill_w).min(P_X1 - 1) {
                 self.frame.set(x, y, blue);
             }
         }
-        // Label — same helper status_line uses.
-        let font = self.fonts.slot(3);
-        self.frame.draw_text_box(12, Y0, 240, Y1, 0x1, font, ink_rgb, &label);
+        // Label — smaller font slot (2 = system 12pt) to match the
+        // exe's thin bar text.
+        let font = self.fonts.slot(2);
+        self.frame.draw_text_box(8, Y0, 175, Y1, 0x1, font, ink_rgb, &label);
     }
 
     /// Progress the loading overlay: bump animation, fire the pending
