@@ -626,13 +626,19 @@ pub fn try_render_club_preview_faithful(
     let attr_by_id: std::collections::BTreeMap<u32, &cm_domain::DomainStaffType10> =
         world.staff.type10.iter().map(|a| (a.id, a)).collect();
     for person in &world.staff.type6 {
-        if person.current_club_id() != Some(choice.club_id) { continue; }
+        let cc = person.current_club_id();
+        if cc != Some(choice.club_id) { continue; }
         let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
         if !pv.is_player() { continue; }
         let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
         let pos = attr_by_id.get(&link).map(|a| position_code(a)).unwrap_or_default();
+        let name = surname_initial(world, person);
+        // Diagnostic prints the raw ids so we can cross-check against
+        // the rust-db JSON when the render disagrees with the exe.
+        eprintln!("[squad-in] person_id={} first_name_id={} second_name_id={} current_club_id={:?} name={:?}",
+                   person.id, person.first_name_id(), person.second_name_id(), cc, name);
         rows.push(Row {
-            name: surname_initial(world, person),
+            name,
             position: pos,
             age: person.age_at(2001, start_day),
             marker: ' ',
