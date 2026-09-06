@@ -223,6 +223,14 @@ pub struct SquadState<'a> {
     /// drawn on the row of the currently-active mode.
     pub cursor_x: i32,
     pub cursor_y: i32,
+    /// `true` when the club-jump dropdown (triangle box in the top-
+    /// left of the title bar) is open. Contents are supplied by the
+    /// app in `jump_items` — every club in the current division
+    /// alphabetically, plus the national team.
+    pub jump_menu_open: bool,
+    /// Labels for the jump menu, in the order the exe paints them.
+    /// Empty when the menu is closed.
+    pub jump_items: &'a [&'a str],
 }
 
 // -----------------------------------------------------------------------
@@ -345,9 +353,18 @@ pub fn render_squad(
     title_bytes.push(0);
     draw_wrapped_text(surface, 100, 10, 790, 70,
         &title_font, &title_bytes, bar_ink, TS_CENTRE, -1);
-    // Small badge placeholder — same kit colours.
-    draw_panel(surface, 105, 15, 120, 35,
+    // Small badge / jump-menu trigger — same kit colours plus a small
+    // right-pointing triangle in the middle, matching the exe's
+    // corner box that opens the club-jump dropdown. Rect from the
+    // GDI capture: (105, 15)-(120, 35).
+    let (jbx0, jby0, jbx1, jby1) = JUMP_BUTTON_RECT;
+    draw_panel(surface, jbx0, jby0, jbx1, jby1,
         P_SOLID_FILL | P_BEVEL, bar_fill, bar_ink, palette);
+    // Triangle glyph — hollow-ish arrow indicating a dropdown.
+    let cy = (jby0 + jby1) / 2;
+    surface.draw_line(jbx0 + 4, cy - 3, jbx0 + 4, cy + 3, 2, bar_ink);
+    surface.draw_line(jbx0 + 4, cy - 3, jbx0 + 9, cy,     2, bar_ink);
+    surface.draw_line(jbx0 + 4, cy + 3, jbx0 + 9, cy,     2, bar_ink);
 
     // ---- Take Control button (660,4)-(785,24) — dark-blue fill,
     //      purple bevel, purple text.
@@ -533,6 +550,23 @@ pub fn render_squad(
         draw_view_dropdown(surface, &small_font, state.view,
                            state.cursor_x, state.cursor_y);
     }
+    // Club-jump dropdown — corner-triangle box opens a menu of every
+    // club in the current division alphabetically + the national
+    // team. Rendered LAST so it overlays even the View dropdown when
+    // both are somehow open (only one flag is settable at a time via
+    // the click handler, but drawing order matters for correctness).
+    if state.jump_menu_open && !state.jump_items.is_empty() {
+        let items = &state.jump_items[..state.jump_items.len().min(JUMP_MENU_MAX)];
+        let rect = jump_menu_rect(items.len());
+        // Find which item matches the currently-viewed club so it gets
+        // the tick — done by label match; the app supplies items in
+        // the same order it will hit-test them.
+        let selected = items.iter().position(|s| *s == state.club_name);
+        crate::menu_dropdown::draw_dropdown(
+            surface, &small_font, rect, items, selected,
+            (state.cursor_x, state.cursor_y),
+        );
+    }
 }
 
 /// View pull-down. 7 rows (Traditional / Contract / Selection / Stats /
@@ -576,6 +610,39 @@ pub fn view_dropdown_hit(x: i32, y: i32) -> Option<SquadView> {
 /// The View button rect on the sub-toolbar. Clicks here toggle
 /// `view_menu_open`.
 pub const VIEW_BUTTON_RECT: (i32, i32, i32, i32) = (110, 125, 255, 145);
+
+/// Corner triangle box inside the title bar. Clicks here toggle
+/// `jump_menu_open`. Measured from the GDI capture — sits just inside
+/// the left edge of the title panel.
+pub const JUMP_BUTTON_RECT: (i32, i32, i32, i32) = (105, 15, 120, 35);
+
+/// The jump-menu dropdown rect. Measured from the GDI capture
+/// (club_screen_now.png): x=123..247, y=17.., row height 20 px. The
+/// vertical extent grows with `items.len()` up to a cap of 25 rows
+/// (~500 px tall) — matches the exe scrolling internally when a
+/// division has more than that.
+const JUMP_MENU_X0:    i32 = 123;
+const JUMP_MENU_WIDTH: i32 = 124;
+const JUMP_MENU_Y0:    i32 = 17;
+const JUMP_MENU_ROW_H: i32 = 20;
+const JUMP_MENU_MAX:   usize = 25;
+
+fn jump_menu_rect(item_count: usize) -> crate::menu_dropdown::DropdownRect {
+    let rows = item_count.min(JUMP_MENU_MAX) as i32;
+    let _ = rows;   // rows currently equals items.len() for the visible slice
+    crate::menu_dropdown::DropdownRect {
+        x0: JUMP_MENU_X0,
+        y0: JUMP_MENU_Y0,
+        width: JUMP_MENU_WIDTH,
+        row_h: JUMP_MENU_ROW_H,
+    }
+}
+
+/// Hit-test the jump-menu dropdown. Returns the item index the cursor
+/// is over (0-based), capped at `items.len()`.
+pub fn jump_menu_hit(x: i32, y: i32, item_count: usize) -> Option<usize> {
+    jump_menu_rect(item_count).hit(item_count.min(JUMP_MENU_MAX), x, y)
+}
 
 /// Draw a hollow right-pointing ▷ triangle. Left edge is a vertical
 /// line at `(x_left, cy-h)..(x_left, cy+h)`; the top/bottom diagonals

@@ -65,6 +65,12 @@ enum Screen {
         view: cm_render::screen_club_squad_faithful::SquadView,
         /// Whether the View dropdown is currently open.
         view_menu_open: bool,
+        /// Whether the club-jump dropdown (triangle box in the top-
+        /// left of the title bar) is currently open. When true, the
+        /// renderer paints a menu listing every club in the current
+        /// division alphabetically + the national team of the
+        /// division's nation.
+        jump_menu_open: bool,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -921,27 +927,68 @@ impl App {
                     }
                 }
             }
-            Screen::ClubPreview { choice, view, view_menu_open, .. } => {
+            Screen::ClubPreview { choice, view, view_menu_open, jump_menu_open, .. } => {
                 use cm_render::screen_club_squad_faithful::{
                     view_dropdown_hit, VIEW_BUTTON_RECT,
+                    jump_menu_hit, JUMP_BUTTON_RECT,
                 };
-                // Dropdown priority: if it's open, ANY click resolves it.
+                // Dropdown priority: whichever is open catches the click.
                 if *view_menu_open {
                     if let Some(new_mode) = view_dropdown_hit(x, y) {
                         *view = new_mode;
                     }
-                    // Any click (row or outside) closes the dropdown —
-                    // same behaviour as the exe.
                     *view_menu_open = false;
+                } else if *jump_menu_open {
+                    // Rebuild the same jump list the renderer used, in
+                    // the same order — click index MUST match render.
+                    let picked = if let Some(world) = self.world.as_ref() {
+                        let mut clubs: Vec<(String, u32)> = world.core.clubs.iter()
+                            .filter_map(|rec| {
+                                let cv = cm_domain::typed_records::ClubView::new(rec);
+                                let did = cv.division_id().map(|v| v as u32)?;
+                                if did != choice.division_id { return None; }
+                                let short = cv.secondary_name();
+                                let name = if short.trim().is_empty() { cv.primary_name() } else { short };
+                                Some((name, cv.id()))
+                            })
+                            .collect();
+                        clubs.sort_by(|a, b| a.0.cmp(&b.0));
+                        // Nation team appended at the bottom.
+                        if let Some(comp) = world.references.club_competitions.iter()
+                            .find(|c| c.id == choice.division_id)
+                        {
+                            let nid = comp.nation_id;
+                            if let Some(nv) = world.core.nations.iter()
+                                .map(|n| cm_domain::typed_records::NationView::new(n))
+                                .find(|v| v.id() as i32 == nid)
+                            {
+                                clubs.push((nv.nationality_name(),
+                                             0xFFFF_0000 | nv.id()));
+                            }
+                        }
+                        jump_menu_hit(x, y, clubs.len())
+                            .and_then(|i| clubs.get(i).cloned())
+                    } else { None };
+                    if let Some((name, new_id)) = picked {
+                        eprintln!("[jump] → {name} ({new_id:#x})");
+                        // Only jump when the pick is a real club id
+                        // (national-team sentinel deferred — needs a
+                        // dedicated view for the national squad).
+                        if (new_id & 0xFFFF_0000) == 0 {
+                            choice.club_id = new_id;
+                            choice.club_name = name;
+                        }
+                    }
+                    *jump_menu_open = false;
+                } else if x >= JUMP_BUTTON_RECT.0 && x <= JUMP_BUTTON_RECT.2
+                       && y >= JUMP_BUTTON_RECT.1 && y <= JUMP_BUTTON_RECT.3 {
+                    *jump_menu_open = true;
                 } else if x >= VIEW_BUTTON_RECT.0 && x <= VIEW_BUTTON_RECT.2
                        && y >= VIEW_BUTTON_RECT.1 && y <= VIEW_BUTTON_RECT.3 {
-                    // Click on the View button — open the dropdown.
                     *view_menu_open = true;
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
-                    // Take Control button — top-right, above the title bar.
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
-                    // Back → return to Select Team.
                     goto_reopen_select_team = true;
                 }
             }
@@ -1103,6 +1150,7 @@ impl App {
                 scroll: 0,
                 view: cm_render::screen_club_squad_faithful::SquadView::Traditional,
                 view_menu_open: false,
+                jump_menu_open: false,
             };
         }
         if goto_reopen_select_team {
@@ -1639,6 +1687,7 @@ impl ApplicationHandler for App {
                 // moves cost nothing (no re-render).
                 let dropdown_open = match &self.screen {
                     Screen::ClubPreview { view_menu_open: true, .. } => true,
+                    Screen::ClubPreview { jump_menu_open: true, .. } => true,
                     Screen::SelectNationality { filter_open: true, .. } => true,
                     _ => false,
                 };

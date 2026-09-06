@@ -504,7 +504,7 @@ pub fn try_render_club_preview_faithful(
     cursor_x: i32,
     cursor_y: i32,
 ) -> bool {
-    let Screen::ClubPreview { choice, scroll, view, view_menu_open } = screen
+    let Screen::ClubPreview { choice, scroll, view, view_menu_open, jump_menu_open } = screen
         else { return false };
     let Some(world) = world else { return false };
 
@@ -862,6 +862,51 @@ pub fn try_render_club_preview_faithful(
     eprintln!("[kit] {} bg=0x{:04x} fg=0x{:04x}",
               choice.club_name, kit_bg_rgb565, kit_fg_rgb565);
 
+    // Build the jump-menu items when the dropdown is open — every
+    // club in the same division alphabetically, plus the nation team
+    // for that division's country. Skipped when the menu isn't open
+    // so we don't pay for the query every render.
+    let (jump_labels, jump_ids): (Vec<String>, Vec<u32>) = if *jump_menu_open {
+        let mut clubs: Vec<(String, u32)> = world.core.clubs.iter()
+            .filter_map(|rec| {
+                let cv = cm_domain::typed_records::ClubView::new(rec);
+                let did = cv.division_id().map(|v| v as u32)?;
+                if did != choice.division_id { return None; }
+                // Prefer the SHORT name (secondary_name) to match the
+                // exe's narrow menu strip.
+                let short = cv.secondary_name();
+                let name = if short.trim().is_empty() {
+                    cv.primary_name()
+                } else { short };
+                Some((name, cv.id()))
+            })
+            .collect();
+        clubs.sort_by(|a, b| a.0.cmp(&b.0));
+        // National team — nation of the division. Look up the
+        // club_comp record's nation_id, then find the nation's team
+        // by name (nationality_name, e.g. "England").
+        let mut items: Vec<(String, u32)> = clubs;
+        if let Some(comp) = world.references.club_competitions.iter()
+            .find(|c| c.id == choice.division_id)
+        {
+            let nid = comp.nation_id;
+            if let Some(nv) = world.core.nations.iter()
+                .map(|n| cm_domain::typed_records::NationView::new(n))
+                .find(|v| v.id() as i32 == nid)
+            {
+                // Encode the national team as club_id = 0xFFFF_0000 |
+                // nation_id — a sentinel value the app can distinguish
+                // from real club ids when routing the click.
+                items.push((nv.nationality_name(), 0xFFFF_0000 | nv.id()));
+            }
+        }
+        items.into_iter().unzip()
+    } else {
+        (Vec::new(), Vec::new())
+    };
+    let jump_labels_refs: Vec<&str> = jump_labels.iter().map(|s| s.as_str()).collect();
+    let _ = jump_ids;   // used by the app-side click handler, threaded there instead
+
     let state = cm_render::screen_club_squad_faithful::SquadState {
         club_name: &choice.club_name,
         players: &refs,
@@ -877,6 +922,8 @@ pub fn try_render_club_preview_faithful(
         view_menu_open: *view_menu_open,
         cursor_x,
         cursor_y,
+        jump_menu_open: *jump_menu_open,
+        jump_items: &jump_labels_refs,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
