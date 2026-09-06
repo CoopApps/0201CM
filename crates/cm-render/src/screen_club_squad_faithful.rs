@@ -545,28 +545,42 @@ fn draw_view_dropdown(
     const DD_ROW_H: i32 = 18;
     let items = SquadView::PRE_LAUNCH_ORDER;
     let dd_y1 = DD_Y0 + items.len() as i32 * DD_ROW_H;
-    // Green outer panel with a bevel — matches the exe's dropdown.
-    let green_a = pack565(0, 132, 0);
-    let green_b = pack565(0, 148, 0);
-    let ink_white = pack565(231, 231, 231);
-    let ink_yellow = INK_YELLOW;
+    // Measured from GDI live capture (scratchpad/prelaunch/gdi_view_menu3.png):
+    //   base green A (0,132,0), alternating green B (0,148,0),
+    //   currently-selected row → pure yellow (255,255,0),
+    //   text on ALL rows → BLACK, small pixel font, left-indented
+    //   with a whitespace pad (same convention as the Nationality
+    //   Filter dropdown at screen_nationality_faithful.rs:245).
+    let green_a  = pack565(  0, 132,   0);
+    let green_b  = pack565(  0, 148,   0);
+    let yellow   = pack565(255, 255,   0);
+    let ink_black = 0;
     draw_panel(surface, DD_X0, DD_Y0, DD_X1, dd_y1,
-        P_SOLID_FILL | P_BEVEL, green_a, ink_white, palette);
+        P_SOLID_FILL | P_BEVEL, green_a, ink_black, palette);
     for (i, mode) in items.iter().enumerate() {
         let ry0 = DD_Y0 + 1 + i as i32 * DD_ROW_H;
         let ry1 = ry0 + DD_ROW_H - 1;
-        // Alternating row-fill for the pattern the exe uses.
-        let fill = if i % 2 == 0 { green_a } else { green_b };
+        // Highlighted (currently-active) row → yellow; every other row
+        // uses one of the two green shades in alternation.
+        let fill = if *mode == current {
+            yellow
+        } else if i % 2 == 0 {
+            green_a
+        } else {
+            green_b
+        };
         for y in ry0..ry1 {
             for x in DD_X0 + 1..DD_X1 - 1 {
                 surface.buf[y as usize * surface.pitch_pixels as usize + x as usize] = fill;
             }
         }
-        // Selected mode → yellow; others → near-white.
-        let ink = if *mode == current { ink_yellow } else { ink_white };
-        draw_wrapped_text(surface, DD_X0 + 8, ry0, DD_X1 - 4, ry1,
-            font, &c_string(mode.label().as_bytes()),
-            ink, TS_CENTRE | W_LEFT, -1);
+        // BLACK text — same on selected and non-selected rows. Left-
+        // pad with whitespace so the exe's indent look is preserved.
+        let mut buf = b"      ".to_vec();
+        buf.extend_from_slice(mode.label().as_bytes());
+        buf.push(0);
+        draw_wrapped_text(surface, DD_X0, ry0, DD_X1 - 4, ry1,
+            font, &buf, ink_black, TS_CENTRE | W_LEFT, -1);
     }
 }
 
