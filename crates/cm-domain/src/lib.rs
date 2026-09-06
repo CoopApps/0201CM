@@ -614,14 +614,20 @@ impl DomainStaffType6 {
     pub fn first_name_id(&self) -> u32 {
         self.u32(0x00)
     }
-    /// Second-name/surname id — `body+0x04` (u16). Verified: consecutive
+    /// Second-name/surname id — `body+0x04` (**u32**, disk +0x08 as
+    /// `PlayerView::second_name_id` also reads). Verified: consecutive
     /// records carry consecutive surname ids (the pool is alphabetical).
-    pub fn second_name_id(&self) -> u16 {
-        self.u16(0x04)
+    /// CORRECTED 2026-09-06 — was returning `u16`, which truncated any
+    /// surname id `>= 0x10000` to a random low-range name (leaked
+    /// Foday / Ovie / Diabang / Okaruefe onto Chester City in the
+    /// port because Chris Hopwood's real id 68169 aliased to 2633).
+    pub fn second_name_id(&self) -> u32 {
+        self.u32(0x04)
     }
-    /// Common-name/nickname id — `body+0x06` (u16); 0 = none.
-    pub fn common_name_id(&self) -> u16 {
-        self.u16(0x06)
+    /// Common-name/nickname id — `body+0x08` (u32); 0 = none. Shifted
+    /// two bytes right of the old (wrong) u16 read at `body+0x06`.
+    pub fn common_name_id(&self) -> u32 {
+        self.u32(0x08)
     }
     /// Date-of-birth day-of-year — `body+0x0c` (u16, 1..366). Verified against
     /// real birthdates alongside the year field.
