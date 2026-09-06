@@ -1,2 +1,6 @@
 editor_dump/
 editor_events.jsonl
+editor_events.jsonl
+diff_report.json
+tobject_shapes.json
+editor_pools.json

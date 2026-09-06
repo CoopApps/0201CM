@@ -102,38 +102,44 @@ def main():
         return
 
     # ---- list mode: dump the range table only ----
-    ranges = api.list_ranges('rw-')
-    print(f'[+] {len(ranges)} RW ranges, '
-          f'total {sum(r["size"] for r in ranges):,} bytes')
+    rw = api.list_ranges('rw-')
+    rx = api.list_code_ranges()
+    ro = api.list_ro_ranges()
+    print(f'[+] {len(rw)} RW  {len(rx)} RX  {len(ro)} R-only  '
+          f'total {sum(r["size"] for r in rw)+sum(r["size"] for r in rx)+sum(r["size"] for r in ro):,} bytes')
     if args.list_ranges:
-        for r in ranges:
-            print(f'    {r["base"]:>12}  {r["size"]:>12,}  {r["protection"]}'
-                  + (f'  ({r["file"]["path"]})' if r["file"] else ''))
+        for label, rs in (('RW', rw), ('RX', rx), ('R-', ro)):
+            print(f'--- {label} ---')
+            for r in rs:
+                print(f'    {r["base"]:>12}  {r["size"]:>12,}  {r["protection"]}'
+                      + (f'  ({r["file"]["path"]})' if r["file"] else ''))
         session.detach()
         return
 
-    # ---- dump mode: write every reasonable RW range to disk ----
+    # ---- dump mode: write every reasonable range to disk (RW + RX + R-). ----
+    #      Code sections carry Delphi RTTI (class names, vptr tables) that
+    #      lets us enumerate every TObject instance in the RW heap.
     out_dir = Path(args.out); out_dir.mkdir(parents=True, exist_ok=True)
     index = {'pid': pid, 'modules': modules, 'ranges': []}
     dumped_bytes = 0
-    for i, r in enumerate(ranges):
-        if r['size'] < args.min_size or r['size'] > args.max_size:
-            continue
-        try:
-            data = api.dump_range(r['base'], r['size'])
-        except Exception as e:
-            print(f'    [!] skip {r["base"]} +{r["size"]}: {e}')
-            continue
-        if not data:
-            continue
-        # `data` is a bytes object (Frida turns ArrayBuffer into bytes).
-        fname = f'range_{r["base"]}.bin'
-        (out_dir / fname).write_bytes(bytes(data))
-        index['ranges'].append({**r, 'file': fname})
-        dumped_bytes += r['size']
-        if len(index['ranges']) % 25 == 0:
-            print(f'    dumped {len(index["ranges"])} ranges, '
-                  f'{dumped_bytes:,} bytes so far')
+    for label, rs in (('RW', rw), ('RX', rx), ('R-', ro)):
+        for r in rs:
+            if r['size'] < args.min_size or r['size'] > args.max_size:
+                continue
+            try:
+                data = api.dump_range(r['base'], r['size'])
+            except Exception as e:
+                print(f'    [!] skip {label} {r["base"]} +{r["size"]}: {e}')
+                continue
+            if not data:
+                continue
+            fname = f'range_{r["base"]}.bin'
+            (out_dir / fname).write_bytes(bytes(data))
+            index['ranges'].append({**r, 'file': fname, 'kind': label})
+            dumped_bytes += r['size']
+            if len(index['ranges']) % 25 == 0:
+                print(f'    dumped {len(index["ranges"])} ranges, '
+                      f'{dumped_bytes:,} bytes so far')
 
     (out_dir / 'index.json').write_text(json.dumps(index, indent=2))
     print(f'[+] done. {len(index["ranges"])} ranges, '

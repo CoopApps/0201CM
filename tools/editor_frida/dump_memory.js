@@ -36,6 +36,17 @@ rpc.exports = {
         return Process.enumerateRanges({ protection: prot, coalesce: true }).map(rangeInfo);
     },
 
+    // Code + read-only data: Delphi RTTI (class names, vptr tables) live
+    // in 'r-x' pages inside the executable module. We need them to find
+    // TClub / TNation vptrs so we can enumerate every TObject instance
+    // by scanning the RW dump for those vptr values.
+    listCodeRanges: function () {
+        return Process.enumerateRanges({ protection: 'r-x', coalesce: true }).map(rangeInfo);
+    },
+    listRoRanges: function () {
+        return Process.enumerateRanges({ protection: 'r--', coalesce: true }).map(rangeInfo);
+    },
+
     // Dump raw bytes at a given base (hex string) + size.
     dumpRange: function (baseHex, size) {
         const p = ptr(baseHex);
