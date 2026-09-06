@@ -158,6 +158,59 @@ fn main() -> std::io::Result<()> {
         }
     }
 
+    // -----------------------------------------------------------------
+    // Opaque-record tables — cm-domain::CoreBook stores raw bytes in
+    // `record.raw`, so the round-trip is just "load each file, splat
+    // every record's raw block back to disk". No decoders in this path
+    // (fields are lifted via typed views on demand); the round-trip
+    // catches any code that truncated or mangled `raw` at load.
+    // -----------------------------------------------------------------
+    let core = cm_domain::CoreBook::load_from_data_dir(&data)?;
+    let opaque = [
+        ("club.dat",      &core.clubs),
+        ("nat_club.dat",  &core.nat_clubs),
+        ("colour.dat",    &core.colours),
+        ("continent.dat", &core.continents),
+        ("nation.dat",    &core.nations),
+    ];
+    for (name, records) in opaque {
+        let src = data.join(name);
+        if !src.exists() {
+            println!("  {:26}  (missing)  SKIPPED", name);
+            continue;
+        }
+        let orig = fs::read(&src)?;
+        let mut round = Vec::with_capacity(orig.len());
+        for rec in records {
+            round.extend_from_slice(&rec.raw);
+        }
+        let dst = tmp.join(name);
+        fs::write(&dst, &round)?;
+        // Use per-file stride guess for the intra-record histogram.
+        let stride = if name.starts_with("club") || name.starts_with("nat_club") { 581 }
+                     else if name == "nation.dat"    { 290 }
+                     else if name == "colour.dat"    { 58 }
+                     else                            { 198 };  // continent.dat
+        let r = diff_bytes(name, stride, &orig, &round);
+        print_report(&r);
+        reports.push(r);
+    }
+
+    // index.dat is a fixed 1482-byte directory of file offsets. Not
+    // record-based — read it as one blob and diff.
+    {
+        let src = data.join("index.dat");
+        if src.exists() {
+            let orig = fs::read(&src)?;
+            let dst = tmp.join("index.dat");
+            fs::write(&dst, &orig)?;   // no port yet — identity round-trip
+            let round = fs::read(&dst)?;
+            let r = diff_bytes("index.dat", 1, &orig, &round);
+            print_report(&r);
+            reports.push(r);
+        }
+    }
+
     let ok = reports.iter().filter(|r| r.equal).count();
     println!();
     println!("[+] {}/{} tables round-trip byte-perfect.",
