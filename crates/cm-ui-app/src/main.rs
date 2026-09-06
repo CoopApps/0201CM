@@ -577,11 +577,48 @@ impl App {
                 self.frame.set(x, y, navy_blue);
             }
         }
-        // 4. Label — near-white text on the grey bar, LEFT of the well.
-        //    Vertically centred in the bar's height.
-        let font = self.fonts.slot(2);
-        self.frame.draw_text_box(110, Y0 + 4, 265, Y1 - 4, 0x1,
-            font, label_ink, &label);
+        // 4. Label — near-white text drawn with the SAME pixel font
+        //    the exe uses for "Regional Divisions" (pixel_slot 1 =
+        //    F_SMALL). draw_text_box on the Surface goes through the
+        //    freetype path which renders a different font entirely,
+        //    so we route this text through the packed pipeline: paint
+        //    the label area onto a scratch PackedSurface pre-filled
+        //    with the same grey as the bar, then copy that region back.
+        //    Text is centred (no W_LEFT flag) in the space left of the
+        //    well: x=X0..W_X0 → 100..270.
+        {
+            use cm_render::packed::PackedSurface;
+            use cm_render::packed_text;
+            let font = self.fonts.pixel_slot(cm_render::screen_pre_boot_chrome::F_SMALL).clone();
+            let mut scratch = PackedSurface::rgb555(
+                cm_render::Surface::W as i32, cm_render::Surface::H as i32);
+            // Pre-fill just the label rect with the bar's grey — otherwise
+            // packed_text's anti-aliasing blends into black.
+            let grey_pixel = cm_render::pack565(132, 132, 132);
+            let pitch = scratch.pitch_pixels as usize;
+            for y in Y0..=Y1 {
+                for x in X0..W_X0 {
+                    scratch.buf[y as usize * pitch + x as usize] = grey_pixel;
+                }
+            }
+            let mut buf = label.into_bytes();
+            buf.push(0);
+            let ink_packed = cm_render::pack565(231, 231, 231);
+            packed_text::draw_wrapped_text(
+                &mut scratch,
+                X0, Y0, W_X0 - 1, Y1,
+                &font, &buf, ink_packed,
+                0,   // no W_LEFT → horizontally centred
+                -1,
+            );
+            // Copy just the label region back to self.frame.
+            for y in Y0..=Y1 {
+                for x in X0..W_X0 {
+                    let p = scratch.buf[y as usize * pitch + x as usize];
+                    self.frame.set(x, y, p);
+                }
+            }
+        }
     }
 
     /// Progress the loading overlay: bump animation, fire the pending
