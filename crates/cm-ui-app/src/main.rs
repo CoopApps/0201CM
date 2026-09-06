@@ -517,39 +517,49 @@ impl App {
         let label = overlay.label.clone();
         use cm_render::pack565;
         use cm_render::panel::{F_SOLID_FILL, F_BEVEL};
-        // Geometry taken from the reference screenshot of the exe's
-        // "Loading database" bar: thin strip (~18 px), spans full
-        // width, progress well starts around x=180, blue fill is a
-        // bright saturated blue.
-        const Y0: i32 = 582;
-        const Y1: i32 = 599;
-        const X0: i32 = 0;
-        const X1: i32 = cm_render::Surface::W as i32 - 1;
-        let silver_rgb = (0xd0u8, 0xd0u8, 0xd0u8);
-        let ink_rgb    = (0x30u8, 0x30u8, 0x30u8);
-        let grey_dark  = pack565(0x90, 0x90, 0x90);
-        let blue       = pack565(0x00, 0x00, 0xff);   // saturated
-        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, silver_rgb);
-        // Progress well.
-        const P_X0: i32 = 180;
-        const P_X1: i32 = X1 - 6;
-        const P_Y0: i32 = Y0 + 3;
-        const P_Y1: i32 = Y1 - 3;
+        // Measured from a live Frida capture of the GDI exe running
+        // Loading Database (scratchpad/gdi_loadbar.png, RGB555):
+        //   bar area   y=555..590, x=100..790   36px tall × 691 wide
+        //   bar bg     RGB (222,222,214) cream
+        //   right edge x=791..799  dark bevel (33,33,16)
+        //   well area  y=567..578, x=102..788   11px tall, centre-vert
+        //   well bg    (132,132,132) mid grey (sunken)
+        //   blue fill  (0,0,132) dark navy
+        //   text ink   (~231,231,231) near-white ("engraved" emboss —
+        //              close enough for now with dark shadow via bevel)
+        const Y0: i32 = 555;
+        const Y1: i32 = 590;
+        const X0: i32 = 100;
+        const X1: i32 = 790;
+        let cream_rgb    = (222u8, 222u8, 214u8);
+        let ink_rgb      = ( 33u8,  33u8,  33u8);
+        let well_grey    = pack565(132, 132, 132);
+        let navy_blue    = pack565(  0,   0, 132);
+        // Bar background across the full width of the content area.
+        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, cream_rgb);
+        // Progress well — 11px tall strip vertically centred inside
+        // the bar, indented 2 px in from each side.
+        const P_X0: i32 = 102;
+        const P_X1: i32 = 788;
+        const P_Y0: i32 = 567;
+        const P_Y1: i32 = 578;
         for y in P_Y0..=P_Y1 {
-            for x in P_X0..P_X1 {
-                self.frame.set(x, y, grey_dark);
+            for x in P_X0..=P_X1 {
+                self.frame.set(x, y, well_grey);
             }
         }
+        // Dark navy fill grows left-to-right inside the well.
         let fill_w = ((P_X1 - P_X0) as f32 * progress) as i32;
-        for y in P_Y0 + 1..P_Y1 {
-            for x in P_X0 + 1..(P_X0 + fill_w).min(P_X1 - 1) {
-                self.frame.set(x, y, blue);
+        for y in P_Y0..=P_Y1 {
+            for x in P_X0..(P_X0 + fill_w).min(P_X1) {
+                self.frame.set(x, y, navy_blue);
             }
         }
-        // Label — smaller font slot (2 = system 12pt) to match the
-        // exe's thin bar text.
+        // Label — small system font in the left half of the bar,
+        // above the well strip.
         let font = self.fonts.slot(2);
-        self.frame.draw_text_box(8, Y0, 175, Y1, 0x1, font, ink_rgb, &label);
+        self.frame.draw_text_box(105, Y0 + 2, 265, Y0 + 14, 0x1,
+            font, ink_rgb, &label);
     }
 
     /// Progress the loading overlay: bump animation, fire the pending
