@@ -805,26 +805,29 @@ pub fn try_render_team_faithful(
             } else { None }
         }).unwrap_or_default()
     };
-    // Division long name → 3-letter code. The exe uses PRM / D1 / D2 /
-    // D3 / CON for England, DIVn for other simple structures. Fallback
-    // to the first 3 uppercase chars of the long name.
-    fn division_code(long_name: &str) -> String {
-        // Table of well-known English tier long names → codes captured
-        // from the exe on 2026-09-05.
-        let l = long_name.to_ascii_lowercase();
-        if l.contains("premier")         { return "PRM".into(); }
-        if l.contains("division one")    { return "D1".into(); }
-        if l.contains("division two")    { return "D2".into(); }
-        if l.contains("division three")  { return "D3".into(); }
-        if l.contains("conference")      { return "CON".into(); }
-        // Fallback — first three ASCII-alpha letters of the long name.
+    // Division code — read straight from the club_comp record's
+    // shipped `three_letter_name` field (PRM/D1/D2/D3/CON/etc). We
+    // already validate this round-trips byte-exact from Data/club_comp.dat.
+    // The old substring-on-long-name approach was fragile: shipped
+    // English tier names are "First Division" / "Second Division", not
+    // "Division One" / "Division Two", so the check for "division one"
+    // missed them all and the fallback returned the first 3 letters of
+    // "English ..." = "ENG".
+    let division_code = |division_id: u32, long_name: &str| -> String {
+        let three = world.references.club_competitions.iter()
+            .find(|c| c.id == division_id)
+            .map(|c| c.three_letter_name.trim().to_string())
+            .unwrap_or_default();
+        if !three.is_empty() { return three.to_uppercase(); }
+        // Fallback — first 3 alphabet chars of the long name (rare;
+        // fires only on tiers with no 3-letter set in the DB).
         let mut out = String::new();
         for c in long_name.chars() {
             if c.is_ascii_alphabetic() { out.push(c.to_ascii_uppercase()); }
             if out.len() == 3 { break; }
         }
         out
-    }
+    };
 
     // Look up each club's SHORT name — the exe shows "Tottenham" not
     // "Tottenham Hotspur", "Sheff Wed" not "Sheffield Wednesday". Falls
@@ -850,7 +853,7 @@ pub fn try_render_team_faithful(
             (
                 format!("  {}", short),          // exe indents with two spaces
                 nation_code_of(c.club_id),
-                division_code(&c.division_name),
+                division_code(c.division_id, &c.division_name),
                 c.club_id,
             )
         })
