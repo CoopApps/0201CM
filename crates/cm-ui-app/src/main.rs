@@ -517,49 +517,71 @@ impl App {
         let label = overlay.label.clone();
         use cm_render::pack565;
         use cm_render::panel::{F_SOLID_FILL, F_BEVEL};
-        // Measured from a live Frida capture of the GDI exe running
-        // Loading Database (scratchpad/gdi_loadbar.png, RGB555):
-        //   bar area   y=555..590, x=100..790   36px tall × 691 wide
-        //   bar bg     RGB (222,222,214) cream
-        //   right edge x=791..799  dark bevel (33,33,16)
-        //   well area  y=567..578, x=102..788   11px tall, centre-vert
-        //   well bg    (132,132,132) mid grey (sunken)
-        //   blue fill  (0,0,132) dark navy
-        //   text ink   (~231,231,231) near-white ("engraved" emboss —
-        //              close enough for now with dark shadow via bevel)
+        // Re-measured from the live GDI framebuffer (RGB555):
+        //   bar rect     y=555..590, x=100..790
+        //   bar fill     (132,132,132) medium grey  ← was wrong (had cream)
+        //   top highlight y=555  (222,222,214) cream — comes from the
+        //                        panel's built-in bevel
+        //   well rect    y=565..580, x=270..770  (16 px tall × 500 wide,
+        //                                        centred horizontally
+        //                                        in the bar's right 2/3)
+        //   well bevel   SUNKEN: (41,41,41) + (90,82,82) top-left,
+        //                        (173,173,173) + (222,222,214) bottom-right
+        //   well fill    (132,132,132) same as bar (before progress)
+        //   blue fill    (0,0,132) dark navy
+        //   label ink    (231,231,231) near-white  ← was wrong (had dark)
         const Y0: i32 = 555;
         const Y1: i32 = 590;
         const X0: i32 = 100;
         const X1: i32 = 790;
-        let cream_rgb    = (222u8, 222u8, 214u8);
-        let ink_rgb      = ( 33u8,  33u8,  33u8);
-        let well_grey    = pack565(132, 132, 132);
+        let grey_rgb     = (132u8, 132u8, 132u8);
+        let label_ink    = (231u8, 231u8, 231u8);
         let navy_blue    = pack565(  0,   0, 132);
-        // Bar background across the full width of the content area.
-        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, cream_rgb);
-        // Progress well — 11px tall strip vertically centred inside
-        // the bar, indented 2 px in from each side.
-        const P_X0: i32 = 102;
-        const P_X1: i32 = 788;
-        const P_Y0: i32 = 567;
-        const P_Y1: i32 = 578;
-        for y in P_Y0..=P_Y1 {
-            for x in P_X0..=P_X1 {
-                self.frame.set(x, y, well_grey);
+        let bevel_dark0  = pack565( 41,  41,  41);
+        let bevel_dark1  = pack565( 90,  82,  82);
+        let bevel_lite0  = pack565(173, 173, 173);
+        let bevel_lite1  = pack565(222, 222, 214);
+        // 1. Grey bar with panel-drawn bevel (top highlight, bottom
+        //    shadow — matches the cream top edge seen in the capture).
+        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, grey_rgb);
+        // 2. Sunken well — 2-px double bevel around a grey interior.
+        //    Top-left = DARK (sunk into the surface), bottom-right = LIGHT.
+        const W_X0: i32 = 270;
+        const W_X1: i32 = 770;
+        const W_Y0: i32 = 565;
+        const W_Y1: i32 = 580;
+        // Top edge — 2 rows of increasingly dark grey.
+        for x in W_X0..=W_X1 { self.frame.set(x, W_Y0,     bevel_dark0); }
+        for x in W_X0..=W_X1 { self.frame.set(x, W_Y0 + 1, bevel_dark1); }
+        // Bottom edge — 2 rows of light grey.
+        for x in W_X0..=W_X1 { self.frame.set(x, W_Y1 - 1, bevel_lite0); }
+        for x in W_X0..=W_X1 { self.frame.set(x, W_Y1,     bevel_lite1); }
+        // Left / right edges: dark-left, light-right (single px each).
+        for y in W_Y0..=W_Y1 { self.frame.set(W_X0, y, bevel_dark0); }
+        for y in W_Y0..=W_Y1 { self.frame.set(W_X1, y, bevel_lite1); }
+        // Well interior fill — same medium grey as the bar (before the
+        // blue fills over it).
+        let interior_y0 = W_Y0 + 2;
+        let interior_y1 = W_Y1 - 2;
+        let interior_x0 = W_X0 + 1;
+        let interior_x1 = W_X1 - 1;
+        for y in interior_y0..=interior_y1 {
+            for x in interior_x0..=interior_x1 {
+                self.frame.set(x, y, pack565(132, 132, 132));
             }
         }
-        // Dark navy fill grows left-to-right inside the well.
-        let fill_w = ((P_X1 - P_X0) as f32 * progress) as i32;
-        for y in P_Y0..=P_Y1 {
-            for x in P_X0..(P_X0 + fill_w).min(P_X1) {
+        // 3. Blue fill inside the well interior.
+        let fill_w = ((interior_x1 - interior_x0) as f32 * progress) as i32;
+        for y in interior_y0..=interior_y1 {
+            for x in interior_x0..(interior_x0 + fill_w).min(interior_x1) {
                 self.frame.set(x, y, navy_blue);
             }
         }
-        // Label — small system font in the left half of the bar,
-        // above the well strip.
+        // 4. Label — near-white text on the grey bar, LEFT of the well.
+        //    Vertically centred in the bar's height.
         let font = self.fonts.slot(2);
-        self.frame.draw_text_box(105, Y0 + 2, 265, Y0 + 14, 0x1,
-            font, ink_rgb, &label);
+        self.frame.draw_text_box(110, Y0 + 4, 265, Y1 - 4, 0x1,
+            font, label_ink, &label);
     }
 
     /// Progress the loading overlay: bump animation, fire the pending
