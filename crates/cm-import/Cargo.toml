@@ -10,6 +10,7 @@ cm-domain = { path = "../cm-domain" }
 cm-data = { path = "../cm-data" }
 cm-db = { path = "../cm-db" }
 cm-rng = { path = "../cm-rng" }
+cm-render = { path = "../cm-render" }
 serde_json = "1"
 
 [[bin]]

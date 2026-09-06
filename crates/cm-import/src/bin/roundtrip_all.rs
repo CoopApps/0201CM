@@ -211,6 +211,85 @@ fn main() -> std::io::Result<()> {
         }
     }
 
+    // -----------------------------------------------------------------
+    // Non-.dat imported data: tactics (.pct) + fonts (.fnt).
+    // These have LOADERS but no writers — we verify the loader doesn't
+    // reject any shipped file and report it as parsed.
+    // -----------------------------------------------------------------
+    println!();
+    println!("  {:26}  {:>10}   {}", "AUXILIARY", "COUNT", "STATUS");
+
+    // Tactics — 40 shipped .pct files.
+    let pcts: Vec<_> = data.read_dir()?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension()
+            .and_then(|s| s.to_str())
+            .map(|s| s.eq_ignore_ascii_case("pct"))
+            .unwrap_or(false))
+        .collect();
+    let mut pct_ok = 0;
+    let mut pct_fail = 0;
+    for e in &pcts {
+        let bytes = fs::read(e.path())?;
+        match cm_domain::tactic_file::parse_tactic(&bytes, true) {
+            Some(_)  => pct_ok += 1,
+            None     => pct_fail += 1,
+        }
+    }
+    println!("  {:26}  {:>10}   {}",
+             "*.pct (tactics)", pcts.len(),
+             if pct_fail == 0 { format!("OK — all {pct_ok} parsed") }
+                        else { format!("MISMATCH — {pct_ok}/{} parsed", pcts.len()) });
+
+    // Fonts — 7 shipped .fnt files.
+    let fnts: Vec<_> = data.read_dir()?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension()
+            .and_then(|s| s.to_str())
+            .map(|s| s.eq_ignore_ascii_case("fnt"))
+            .unwrap_or(false))
+        .collect();
+    let mut fnt_ok = 0;
+    let mut fnt_fail = 0;
+    for e in &fnts {
+        let bytes = fs::read(e.path())?;
+        match cm_render::font_loader::load_font_bytes(&bytes, true) {
+            Some(_) => fnt_ok += 1,
+            None    => fnt_fail += 1,
+        }
+    }
+    println!("  {:26}  {:>10}   {}",
+             "*.fnt (bitmap fonts)", fnts.len(),
+             if fnt_fail == 0 { format!("OK — all {fnt_ok} parsed") }
+                        else { format!("MISMATCH — {fnt_ok}/{} parsed", fnts.len()) });
+
+    // -----------------------------------------------------------------
+    // Not yet ported — enumerate remaining file types.
+    // -----------------------------------------------------------------
+    let mut by_ext: std::collections::BTreeMap<String, (usize, u64)> = Default::default();
+    let ported_exts: &[&str] = &["dat", "pct", "fnt"];
+    for e in data.read_dir()?.filter_map(|e| e.ok()) {
+        let p = e.path();
+        if !p.is_file() { continue; }
+        let ext = p.extension().and_then(|s| s.to_str())
+                                .map(|s| s.to_ascii_lowercase())
+                                .unwrap_or_default();
+        if ported_exts.contains(&ext.as_str()) { continue; }
+        let sz = p.metadata().map(|m| m.len()).unwrap_or(0);
+        let slot = by_ext.entry(ext).or_default();
+        slot.0 += 1;
+        slot.1 += sz;
+    }
+    if !by_ext.is_empty() {
+        println!();
+        println!("  {:26}  {:>10}   {}", "NOT PORTED YET",
+                 "COUNT", "TOTAL BYTES");
+        for (ext, (n, sz)) in by_ext {
+            let label = format!("*.{ext}");
+            println!("  {label:26}  {n:>10}   {sz:>13}");
+        }
+    }
+
     let ok = reports.iter().filter(|r| r.equal).count();
     println!();
     println!("[+] {}/{} tables round-trip byte-perfect.",

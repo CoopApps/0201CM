@@ -257,7 +257,12 @@ pub fn load_tactic(path: &std::path::Path) -> std::io::Result<Tactic> {
 /// Parse tactic bytes. Returns `None` if the version tag is not one of the
 /// six known versions.
 pub fn parse_tactic(bytes: &[u8], is_packaged: bool) -> Option<Tactic> {
-    if bytes.len() < 0x5C0 { return None; }
+    // Need at least the header + team_flags_2 block; the tighter check
+    // comes AFTER we know the version — v5E carries the 88-byte slot-pair
+    // block (needs 0x5C0+); v5C/v5D use the 44-byte layout and cap at
+    // 0x594. Was 0x5C0 unconditionally → rejected all 30 shipped v5C/v5D
+    // presets.
+    if bytes.len() < 0x594 { return None; }
     let version = {
         let raw = u32::from_le_bytes(bytes[0..4].try_into().ok()?);
         if is_packaged { raw.wrapping_sub(0x075BCD15) } else { raw }
@@ -265,6 +270,9 @@ pub fn parse_tactic(bytes: &[u8], is_packaged: bool) -> Option<Tactic> {
     if !(0x0098EC59..=0x0098EC5E).contains(&version) {
         return None;
     }
+    // Full-length check now that version is known.
+    let need = if version >= 0x0098EC5E { 0x5C0 } else { 0x594 };
+    if bytes.len() < need { return None; }
 
     // Formation name — bit-inverted ASCII c-string at +0x04, cap 50 bytes.
     let formation_name: String = bytes[0x04..0x36].iter()
