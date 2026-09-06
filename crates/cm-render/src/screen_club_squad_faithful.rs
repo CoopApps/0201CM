@@ -110,6 +110,16 @@ pub struct SquadState<'a> {
     /// puts the actual competition name there (e.g. "Conference" for
     /// Chester, "Premier League" for Arsenal). Never hardcoded.
     pub division_name: &'a str,
+    /// Club's home-kit BACKGROUND colour (packed RGB565). This is the
+    /// shirt body — e.g. Chester's home kit is dark-blue on white so
+    /// the bar fill will be dark-blue. Resolved by the app from
+    /// `ClubView::kit1_bg_color_id()` → `colour.dat` lookup. Falls back
+    /// to the in-game purple `IG_TITLE_FILL` when zero.
+    pub kit_bg_rgb565: u16,
+    /// Club's home-kit FOREGROUND colour (packed RGB565) — the trim /
+    /// stripe / shirt-detail colour used for the bevel and title ink.
+    /// Falls back to the in-game dark blue `IG_TITLE_INK` when zero.
+    pub kit_fg_rgb565: u16,
 }
 
 // -----------------------------------------------------------------------
@@ -215,16 +225,21 @@ pub fn render_squad(
     //      shared helper so it stays in sync with the pre-boot screens.
     draw_sidebar(surface, fonts, state.has_manager);
 
-    // ---- In-game TITLE BAR (100,10)-(790,70) — purple fill + dark-blue bevel.
+    // ---- In-game TITLE BAR (100,10)-(790,70) — filled with the club's
+    //      HOME-KIT background colour, bevelled with the kit foreground
+    //      (shirt trim). Falls back to the in-game purple/blue palette
+    //      when the DB has no colours set (e.g. tests, missing data).
+    let bar_fill = if state.kit_bg_rgb565 != 0 { state.kit_bg_rgb565 } else { IG_TITLE_FILL };
+    let bar_ink  = if state.kit_fg_rgb565 != 0 { state.kit_fg_rgb565 } else { IG_TITLE_INK };
     draw_panel(surface, 100, 10, 790, 70,
-        P_SOLID_FILL | P_BEVEL, IG_TITLE_FILL, IG_TITLE_INK, palette);
+        P_SOLID_FILL | P_BEVEL, bar_fill, bar_ink, palette);
     let mut title_bytes = state.club_name.as_bytes().to_vec();
     title_bytes.push(0);
     draw_wrapped_text(surface, 100, 10, 790, 70,
-        &title_font, &title_bytes, IG_TITLE_INK, TS_CENTRE, -1);
-    // Small badge placeholder — same purple/blue treatment.
+        &title_font, &title_bytes, bar_ink, TS_CENTRE, -1);
+    // Small badge placeholder — same kit colours.
     draw_panel(surface, 105, 15, 120, 35,
-        P_SOLID_FILL | P_BEVEL, IG_TITLE_FILL, IG_TITLE_INK, palette);
+        P_SOLID_FILL | P_BEVEL, bar_fill, bar_ink, palette);
 
     // ---- Take Control button (660,4)-(785,24) — dark-blue fill,
     //      purple bevel, purple text.
@@ -448,6 +463,8 @@ mod tests {
             photo_seed: 0,
             has_manager: false,
             division_name: "Conference",
+            kit_bg_rgb565: 0,
+            kit_fg_rgb565: 0,
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_squad(&mut surface, &mut fonts, &state);

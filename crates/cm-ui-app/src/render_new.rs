@@ -572,10 +572,31 @@ pub fn try_render_club_preview_faithful(
         // Use the SAME threshold that qualified the category, so if the
         // category only just cleared 10, sides down to 10 also count.
         let t = qualifying_t;
+        let r_eligible = a.apt_right_side >= t;
+        let l_eligible = a.apt_left_side  >= t;
+        let c_eligible = a.apt_central    >= t;
+        // **F vs S** — the exe splits Attacker into:
+        //   F = "Forward" — comfortable as both Attacker AND Attacking
+        //       Midfielder (a link player, either central or on a wing).
+        //   S = "Striker" — pure penalty-box finisher, no AM range.
+        // Verified against Chester's real DB: Malkin (att=20, att_mid=5),
+        // Kilgannon (att=20, att_mid=1), Beesley (att=20, att_mid=9)
+        // all show "S C" — att_mid doesn't clear the threshold, so
+        // pure striker. Haarhoff (att=20, left=20) shows "F LC" —
+        // wing ability alone qualifies him for F even without att_mid.
+        // So the rule is: Attacker-primary, then "F" if EITHER
+        // apt_att_midfielder is eligible OR a real side (R/L) is
+        // eligible; otherwise "S".
+        let am_eligible = a.apt_att_midfielder >= t;
+        let cat = if cat == "F" {
+            if am_eligible || r_eligible || l_eligible { "F" }
+            else if c_eligible                         { "S" }
+            else                                       { "F" } // no data
+        } else { cat };
         let mut sides = String::new();
-        if a.apt_right_side >= t { sides.push('R'); }
-        if a.apt_left_side  >= t { sides.push('L'); }
-        if a.apt_central    >= t { sides.push('C'); }
+        if r_eligible { sides.push('R'); }
+        if l_eligible { sides.push('L'); }
+        if c_eligible { sides.push('C'); }
         if sides.is_empty() { cat.into() } else { format!("{cat} {sides}") }
     }
     /// Sort order for the default Squad view — GK first, then SW, D,
@@ -688,6 +709,37 @@ pub fn try_render_club_preview_faithful(
         })
         .unwrap_or_else(|| choice.division_name.clone());
 
+    // ---- Home-kit colours for the title bar. Look up the club record,
+    //      read kit1_bg / kit1_fg colour ids, resolve them in colour.dat
+    //      (`ColourView::id() == kit_id` → rgb() → pack565). Zero when
+    //      any step is missing — the renderer then falls back to the
+    //      in-game purple/blue defaults.
+    let (kit_bg_rgb565, kit_fg_rgb565) = {
+        let club_rec = world.core.clubs.iter().find(|c|
+            cm_domain::typed_records::ClubView::new(c).id() == choice.club_id);
+        match club_rec {
+            Some(rec) => {
+                let cv = cm_domain::typed_records::ClubView::new(rec);
+                let resolve = |opt_id: Option<i32>| -> u16 {
+                    let id = match opt_id { Some(v) if v > 0 => v as u32, _ => return 0 };
+                    let hit = world.core.colours.iter().find(|c|
+                        cm_domain::typed_records::ColourView::new(c).id() == id);
+                    match hit {
+                        Some(c) => {
+                            let (r, g, b) = cm_domain::typed_records::ColourView::new(c).rgb();
+                            cm_render::pack565(r, g, b)
+                        }
+                        None => 0,
+                    }
+                };
+                (resolve(cv.kit1_bg_color_id()), resolve(cv.kit1_fg_color_id()))
+            }
+            None => (0, 0),
+        }
+    };
+    eprintln!("[kit] {} bg=0x{:04x} fg=0x{:04x}",
+              choice.club_name, kit_bg_rgb565, kit_fg_rgb565);
+
     let state = cm_render::screen_club_squad_faithful::SquadState {
         club_name: &choice.club_name,
         players: &refs,
@@ -697,6 +749,8 @@ pub fn try_render_club_preview_faithful(
         // Live division short name — Chester -> "Conference",
         // Arsenal -> "Prem", etc. Never hardcoded.
         division_name: &short_division,
+        kit_bg_rgb565,
+        kit_fg_rgb565,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
