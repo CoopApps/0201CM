@@ -502,7 +502,8 @@ pub fn try_render_club_preview_faithful(
     photo_seed: u64,
     has_manager: bool,
 ) -> bool {
-    let Screen::ClubPreview { choice, scroll } = screen else { return false };
+    let Screen::ClubPreview { choice, scroll, view, view_menu_open } = screen
+        else { return false };
     let Some(world) = world else { return false };
 
     // Build the exe's "D RC" / "F LC" style position code straight
@@ -623,6 +624,100 @@ pub fn try_render_club_preview_faithful(
         }
     }
 
+    /// Build one row's per-column cell strings for the selected View
+    /// mode. Columns match FUN_00457200's mode dispatch — see the
+    /// column_headers() list on SquadView.
+    ///
+    /// Data sources per column that we can populate NOW from rust-db:
+    ///   Traditional: position (already the row's `.position`)
+    ///   Contract:    Basic Wage / Contract Expiry / Contract Protected /
+    ///                Value (fields on type6 Person body — see PlayerView)
+    ///   Stats/More:  the type9 season-history records
+    ///   Other Info:  nation (nation_id) / int caps / int goals from type6
+    ///
+    /// For columns that need engine-produced state we don't yet have
+    /// (e.g. Selection Info, live Av. Rating) we emit an empty string;
+    /// the renderer paints a blank cell rather than "0".
+    fn build_view_columns(
+        mode: cm_render::screen_club_squad_faithful::SquadView,
+        position: &str,
+        person: &cm_domain::DomainStaffType6,
+        attrs: Option<&cm_domain::DomainStaffType10>,
+        world: &cm_domain::World,
+    ) -> Vec<String> {
+        use cm_render::screen_club_squad_faithful::SquadView::*;
+        let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
+        match mode {
+            Traditional => vec![position.to_string()],
+            Contract => {
+                let wage = pv.wage();
+                let value = pv.value();
+                let expires_year = pv.club_contract_expires().year;
+                let expires = if expires_year > 0 { expires_year.to_string() }
+                              else { String::new() };
+                let protected = String::new();   // flag TBD from decompile
+                vec![
+                    format_money_short(wage as i64) + "/w",
+                    expires,
+                    protected,
+                    format_money_short(value as i64),
+                ]
+            }
+            Selection => vec![position.to_string()],
+            Stats => vec![String::new(); 4],
+            MoreStats => vec![String::new()],
+            Attributes => {
+                if let Some(a) = attrs {
+                    // Sub-panel sums using fields that ACTUALLY exist on
+                    // DomainStaffType10 — verified against lib.rs 721-771.
+                    let phys = a.pace as i32 + a.strength as i32
+                        + a.jumping as i32 + a.stamina as i32
+                        + a.natural_fitness as i32 + a.balance as i32;
+                    let ment = a.decisions as i32 + a.leadership as i32
+                        + a.consistency as i32 + a.important_matches as i32
+                        + a.teamwork as i32 + a.flair as i32;
+                    let gk = a.handling as i32 + a.reflexes as i32
+                        + a.one_on_ones as i32 + a.positioning as i32;
+                    let def = a.tackling as i32 + a.marking as i32
+                        + a.heading as i32 + a.anticipation as i32
+                        + a.bravery as i32;
+                    let att = a.finishing as i32 + a.passing as i32
+                        + a.long_shots as i32 + a.dribbling as i32
+                        + a.crossing as i32 + a.penalties as i32;
+                    vec![phys.to_string(), ment.to_string(), gk.to_string(),
+                         def.to_string(), att.to_string()]
+                } else {
+                    vec![String::new(); 5]
+                }
+            }
+            OtherInfo => {
+                let nid = pv.nation_id();
+                let nation = world.core.nations.iter()
+                    .map(|n| cm_domain::typed_records::NationView::new(n))
+                    .find(|nv| Some(nv.id() as i32) == nid)
+                    .map(|nv| nv.three_letter_name().to_uppercase())
+                    .unwrap_or_default();
+                let caps = pv.international_caps();
+                let goals = pv.international_goals();
+                vec![nation, caps.to_string(), goals.to_string()]
+            }
+        }
+    }
+
+    /// Compact currency — 5000 → "£5,000", 12500 → "£12.5k", 1_500_000 → "£1.5m".
+    fn format_money_short(v: i64) -> String {
+        if v == 0 { return String::new(); }
+        let a = v.abs();
+        let s = if a >= 1_000_000 {
+            format!("£{:.1}m", v as f64 / 1_000_000.0)
+        } else if a >= 10_000 {
+            format!("£{:.1}k", v as f64 / 1_000.0)
+        } else {
+            format!("£{}", v)
+        };
+        s
+    }
+
     // Build "Surname, F" — the exe's row-label convention (see the
     // capture: 'Rose, M', 'Bagnall, S', ...). First-name and second-
     // name ids resolve into the first/second name pools loaded at boot.
@@ -655,6 +750,9 @@ pub fn try_render_club_preview_faithful(
         position: String,
         age: Option<u8>,
         marker: char,
+        /// Per-view column strings — length matches
+        /// SquadView::column_headers for the active mode.
+        cols: Vec<String>,
     }
     let mut rows: Vec<Row> = Vec::new();
     let attr_by_id: std::collections::BTreeMap<u32, &cm_domain::DomainStaffType10> =
@@ -665,17 +763,20 @@ pub fn try_render_club_preview_faithful(
         let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
         if !pv.is_player() { continue; }
         let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
-        let pos = attr_by_id.get(&link).map(|a| position_code(a)).unwrap_or_default();
+        let attrs = attr_by_id.get(&link).copied();
+        let pos = attrs.map(position_code).unwrap_or_default();
         let name = surname_initial(world, person);
         // Diagnostic prints the raw ids so we can cross-check against
         // the rust-db JSON when the render disagrees with the exe.
         eprintln!("[squad-in] person_id={} first_name_id={} second_name_id={} current_club_id={:?} name={:?}",
                    person.id, person.first_name_id(), person.second_name_id(), cc, name);
+        let cols = build_view_columns(*view, &pos, person, attrs, world);
         rows.push(Row {
             name,
             position: pos,
             age: person.age_at(2001, start_day),
             marker: ' ',
+            cols,
         });
     }
     // Sort by position group (GK → SW → D → WB → DM → M → AM → F → S),
@@ -695,15 +796,21 @@ pub fn try_render_club_preview_faithful(
 
     // Owned strings kept on the stack so the renderer's borrows stay
     // valid across the render_squad call.
-    let display: Vec<(String, String, Option<u8>, char)> = rows.into_iter()
-        .map(|r| (r.name, r.position, r.age, r.marker))
+    let display: Vec<(String, String, Option<u8>, char, Vec<String>)> = rows.into_iter()
+        .map(|r| (r.name, r.position, r.age, r.marker, r.cols))
+        .collect();
+    // A parallel Vec<Vec<&str>> for the columns — one per row.
+    let col_refs: Vec<Vec<&str>> = display.iter()
+        .map(|(_, _, _, _, cols)| cols.iter().map(|s| s.as_str()).collect())
         .collect();
     let refs: Vec<cm_render::screen_club_squad_faithful::SquadPlayer> = display.iter()
-        .map(|(n, p, a, m)| cm_render::screen_club_squad_faithful::SquadPlayer {
+        .enumerate()
+        .map(|(i, (n, p, a, m, _))| cm_render::screen_club_squad_faithful::SquadPlayer {
             name: n.as_str(),
             position: p.as_str(),
             age: *a,
             marker: *m,
+            cols: col_refs[i].as_slice(),
         })
         .collect();
 
@@ -764,6 +871,8 @@ pub fn try_render_club_preview_faithful(
         division_name: &short_division,
         kit_bg_rgb565,
         kit_fg_rgb565,
+        view: *view,
+        view_menu_open: *view_menu_open,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);

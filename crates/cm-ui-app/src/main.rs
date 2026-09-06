@@ -59,11 +59,12 @@ enum Screen {
     /// the Take Control button knows what to take control of.
     ClubPreview {
         choice: cm_domain::ManagerClubChoice,
-        /// Squad-list scroll offset in ENTRIES (0 = show entries
-        /// 0..30). Renderer skips this many players from the sorted
-        /// list; mouse-wheel handler shifts by 2 per notch (= 1 row
-        /// across both columns).
+        /// Squad-list scroll offset in ENTRIES.
         scroll: usize,
+        /// Current View pull-down mode. Defaults to Traditional.
+        view: cm_render::screen_club_squad_faithful::SquadView,
+        /// Whether the View dropdown is currently open.
+        view_menu_open: bool,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -910,14 +911,27 @@ impl App {
                     }
                 }
             }
-            Screen::ClubPreview { choice, .. } => {
-                // Take Control button — top-right, above the title bar.
-                // From screen_club_preview_faithful::TAKE_CONTROL_RECT.
-                if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+            Screen::ClubPreview { choice, view, view_menu_open, .. } => {
+                use cm_render::screen_club_squad_faithful::{
+                    view_dropdown_hit, VIEW_BUTTON_RECT,
+                };
+                // Dropdown priority: if it's open, ANY click resolves it.
+                if *view_menu_open {
+                    if let Some(new_mode) = view_dropdown_hit(x, y) {
+                        *view = new_mode;
+                    }
+                    // Any click (row or outside) closes the dropdown —
+                    // same behaviour as the exe.
+                    *view_menu_open = false;
+                } else if x >= VIEW_BUTTON_RECT.0 && x <= VIEW_BUTTON_RECT.2
+                       && y >= VIEW_BUTTON_RECT.1 && y <= VIEW_BUTTON_RECT.3 {
+                    // Click on the View button — open the dropdown.
+                    *view_menu_open = true;
+                } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    // Take Control button — top-right, above the title bar.
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
-                    // Back → return to Select Team. The list still has
-                    // the same clubs so no reload needed.
+                    // Back → return to Select Team.
                     goto_reopen_select_team = true;
                 }
             }
@@ -1074,7 +1088,12 @@ impl App {
             self.goto_select_club();
         }
         if let Some(choice) = goto_club_preview {
-            self.screen = Screen::ClubPreview { choice, scroll: 0 };
+            self.screen = Screen::ClubPreview {
+                choice,
+                scroll: 0,
+                view: cm_render::screen_club_squad_faithful::SquadView::Traditional,
+                view_menu_open: false,
+            };
         }
         if goto_reopen_select_team {
             self.goto_select_club();
@@ -1631,7 +1650,7 @@ impl ApplicationHandler for App {
                         *squad_scroll = if dy > 0.0 { squad_scroll.saturating_sub(1) } else { (*squad_scroll + 1).min(max) };
                         changed = true;
                     }
-                    Screen::ClubPreview { choice, scroll } => {
+                    Screen::ClubPreview { choice, scroll, .. } => {
                         // Squad screen: 2 cols × 14 rows = 28 entries
                         // visible (matches screen_club_squad_faithful::
                         // VISIBLE_ENTRIES). Renderer uses scroll as an

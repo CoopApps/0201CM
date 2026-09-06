@@ -90,6 +90,91 @@ pub struct SquadPlayer<'a> {
     /// list, empty when nothing special. Rendered in white ink like the
     /// exe capture.
     pub marker: char,
+    /// Per-mode column data — filled by the app when `view` != Traditional.
+    /// Each string is what the exe would paint in its column for this
+    /// row. Empty strings render blank cells.
+    pub cols: &'a [&'a str],
+}
+
+/// The View pull-down modes lifted from FUN_00457200 (attr_callers/
+/// 0x00457200.c lines 563..668). Bitmask flags in the exe are on
+/// `local_380`; we use them as enum discriminants for parity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SquadView {
+    /// Position(s) — the default view (bit 0x1).
+    Traditional = 0x0001,
+    /// Basic Wage / Contract Expiry / Contract Protected / Value (bit 0x2).
+    Contract    = 0x0002,
+    /// Goals / Conceded / Assists / Av. Rating (bit 0x4).
+    Stats       = 0x0004,
+    /// Competitions + extended stats (bit 0x8).
+    MoreStats   = 0x0008,
+    /// Physical / Mental / GK / Def / Att attribute grid (bit 0x10).
+    Attributes  = 0x0010,
+    /// Nationality/Club / Int. Caps / Int. Goals (bit 0x20).
+    OtherInfo   = 0x0020,
+    /// Selection Info (bit 0x1000).
+    Selection   = 0x1000,
+    // Penalty Takers (bit 0x800) — only shown after Take Control;
+    // omitted from the pre-launch dropdown per the FUN_005ea720 gate
+    // at 0x00457200:669.
+}
+
+impl SquadView {
+    /// Menu ORDER matches what the exe paints in FUN_00457200 —
+    /// Traditional / Contract / Selection / Stats / More Stats /
+    /// Attributes / Other Info.
+    pub const PRE_LAUNCH_ORDER: [SquadView; 7] = [
+        SquadView::Traditional,
+        SquadView::Contract,
+        SquadView::Selection,
+        SquadView::Stats,
+        SquadView::MoreStats,
+        SquadView::Attributes,
+        SquadView::OtherInfo,
+    ];
+    pub fn label(self) -> &'static str {
+        match self {
+            SquadView::Traditional => "Traditional",
+            SquadView::Contract    => "Contract",
+            SquadView::Selection   => "Selection",
+            SquadView::Stats       => "Stats",
+            SquadView::MoreStats   => "More Stats",
+            SquadView::Attributes  => "Attributes",
+            SquadView::OtherInfo   => "Other Info",
+        }
+    }
+    /// The right-side "sub-title" the exe puts at the top of the list
+    /// panel (see the s_Position_s / s_Contract_Info / etc. lines).
+    pub fn subtitle(self) -> &'static str {
+        match self {
+            SquadView::Traditional => "Position(s)",
+            SquadView::Contract    => "Contract Info",
+            SquadView::Selection   => "Selection Info",
+            SquadView::Stats       => "Stats",
+            SquadView::MoreStats   => "More Stats",
+            SquadView::Attributes  => "Attributes",
+            SquadView::OtherInfo   => "Other Info",
+        }
+    }
+    /// Column headers lifted from FUN_00457200's `text_template_expand`
+    /// calls — verified against the s_* string constants at
+    /// 0x0097b5e0..0x0097b7c8. Left-to-right in each row after the name
+    /// column.
+    pub fn column_headers(self) -> &'static [&'static str] {
+        match self {
+            SquadView::Traditional => &["Position(s)"],
+            SquadView::Contract    => &["Basic Wage", "Contract Expiry",
+                                         "Contract Protected", "Value"],
+            SquadView::Selection   => &["Selection Info"],
+            SquadView::Stats       => &["Goals", "Conceded", "Assists",
+                                         "Av. Rating"],
+            SquadView::MoreStats   => &["Competitions"],
+            SquadView::Attributes  => &["Physical", "Mental", "Goalkeeping",
+                                         "Defensive", "Attacking"],
+            SquadView::OtherInfo   => &["Nationality", "Int. Caps", "Int. Goals"],
+        }
+    }
 }
 
 pub struct SquadState<'a> {
@@ -120,6 +205,13 @@ pub struct SquadState<'a> {
     /// stripe / shirt-detail colour used for the bevel and title ink.
     /// Falls back to the in-game dark blue `IG_TITLE_INK` when zero.
     pub kit_fg_rgb565: u16,
+    /// Currently-active View mode from the "View" pull-down (FUN_00457200
+    /// bitmask). Controls the subtitle + column layout on the right side
+    /// of each row.
+    pub view: SquadView,
+    /// `true` when the View dropdown is open — the renderer paints the
+    /// 7-row overlay under the View button.
+    pub view_menu_open: bool,
 }
 
 // -----------------------------------------------------------------------
@@ -292,12 +384,39 @@ pub fn render_squad(
             INK_CYAN, TS_CENTRE, -1);
     }
 
-    // ---- Position header band.
+    // ---- Column header band. Displays the current view mode's
+    //      subtitle in the exe (Position(s) / Contract Info / etc).
+    //      For Traditional a single centred "Position(s)" label matches
+    //      the capture; for multi-column modes the exe splits the band
+    //      into equal-width labels drawn small.
     draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
         P_DARKEN, 0, 0, palette);
-    draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
-        &body_font, &c_string(b"Position(s)"),
-        INK_YELLOW, TS_CENTRE, -1);
+    let headers = state.view.column_headers();
+    if headers.len() <= 1 {
+        // Single-column layout — the exe's Traditional look: centred
+        // "Position(s)" in yellow above the position column.
+        draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+            &body_font, &c_string(state.view.subtitle().as_bytes()),
+            INK_YELLOW, TS_CENTRE, -1);
+    } else {
+        // Multi-column — carve the POS band into N equal slots for
+        // both left+right groups, matching how the exe partitions the
+        // 89-pixel wide POS cell across visible columns.
+        let l_w = (POS_L.1 - POS_L.0) / headers.len() as i32;
+        let r_w = (POS_R.1 - POS_R.0) / headers.len() as i32;
+        for (i, hdr) in headers.iter().enumerate() {
+            let lx0 = POS_L.0 + i as i32 * l_w;
+            let lx1 = lx0 + l_w - 2;
+            draw_wrapped_text(surface, lx0, HDR_Y0, lx1, HDR_Y1,
+                &small_font, &c_string(hdr.as_bytes()),
+                INK_YELLOW, TS_CENTRE, -1);
+            let rx0 = POS_R.0 + i as i32 * r_w;
+            let rx1 = rx0 + r_w - 2;
+            draw_wrapped_text(surface, rx0, HDR_Y0, rx1, HDR_Y1,
+                &small_font, &c_string(hdr.as_bytes()),
+                INK_YELLOW, TS_CENTRE, -1);
+        }
+    }
 
     // ---- Player list container.
     draw_panel(surface, LIST_X0, LIST_Y0, LIST_X1, LIST_Y1,
@@ -324,10 +443,23 @@ pub fn render_squad(
         draw_wrapped_text(surface, name.0, y0, name.1, y1,
             &body_font, buf.as_bytes(), name_ink,
             TS_CENTRE | W_LEFT, -1);
-        // Position — yellow.
-        draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
-            &small_font, &c_string(p.position.as_bytes()),
-            INK_YELLOW, TS_CENTRE, -1);
+        // Position / mode-specific columns — yellow. For Traditional
+        // (or when the app hasn't populated `cols`) fall back to the
+        // player's position string in the whole POS cell.
+        if headers.len() <= 1 || p.cols.is_empty() {
+            draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
+                &small_font, &c_string(p.position.as_bytes()),
+                INK_YELLOW, TS_CENTRE, -1);
+        } else {
+            let w = (pos.1 - pos.0) / headers.len() as i32;
+            for (ci, cell) in p.cols.iter().take(headers.len()).enumerate() {
+                let cx0 = pos.0 + ci as i32 * w;
+                let cx1 = cx0 + w - 2;
+                draw_wrapped_text(surface, cx0, y0, cx1, y1,
+                    &small_font, &c_string(cell.as_bytes()),
+                    INK_YELLOW, TS_CENTRE, -1);
+            }
+        }
     }
 
     // ---- Scrollbar.
@@ -379,7 +511,81 @@ pub fn render_squad(
             &body_font, &c_string(label.as_bytes()),
             INK_CYAN, TS_CENTRE, -1);
     }
+
+    // ---- View pull-down dropdown (drawn LAST so it overlays whatever's
+    //      beneath). Geometry from the reference capture:
+    //      view_menu.png measured at x=120..250, rows below the View
+    //      button. Green pattern background — dark 0x0084 (0,132,0)
+    //      alternating with 0x0094 (0,148,0) per row for the CM01/02
+    //      pull-down look. Selected row painted in a highlight cyan.
+    if state.view_menu_open {
+        draw_view_dropdown(surface, &small_font, state.view);
+    }
 }
+
+/// View pull-down. 7 rows (Traditional / Contract / Selection / Stats /
+/// More Stats / Attributes / Other Info per SquadView::PRE_LAUNCH_ORDER)
+/// stacked under the View button on the sub-toolbar. Positioned at
+/// (110, 145)..(255, 145+7*ROW) — width matches the View button.
+///
+/// Geometry lifted from the GDI capture in
+/// scratchpad/prelaunch/view_menu.png (RGB555): green pattern
+/// (0,132,0) / (0,148,0) alternating rows; the currently-selected mode
+/// is drawn with a highlight ink so the current state is visible.
+fn draw_view_dropdown(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    current: SquadView,
+) {
+    use crate::pack565;
+    let palette = PanelPalette::default();
+    const DD_X0: i32 = 110;
+    const DD_X1: i32 = 255;
+    const DD_Y0: i32 = 148;
+    const DD_ROW_H: i32 = 18;
+    let items = SquadView::PRE_LAUNCH_ORDER;
+    let dd_y1 = DD_Y0 + items.len() as i32 * DD_ROW_H;
+    // Green outer panel with a bevel — matches the exe's dropdown.
+    let green_a = pack565(0, 132, 0);
+    let green_b = pack565(0, 148, 0);
+    let ink_white = pack565(231, 231, 231);
+    let ink_yellow = INK_YELLOW;
+    draw_panel(surface, DD_X0, DD_Y0, DD_X1, dd_y1,
+        P_SOLID_FILL | P_BEVEL, green_a, ink_white, palette);
+    for (i, mode) in items.iter().enumerate() {
+        let ry0 = DD_Y0 + 1 + i as i32 * DD_ROW_H;
+        let ry1 = ry0 + DD_ROW_H - 1;
+        // Alternating row-fill for the pattern the exe uses.
+        let fill = if i % 2 == 0 { green_a } else { green_b };
+        for y in ry0..ry1 {
+            for x in DD_X0 + 1..DD_X1 - 1 {
+                surface.buf[y as usize * surface.pitch_pixels as usize + x as usize] = fill;
+            }
+        }
+        // Selected mode → yellow; others → near-white.
+        let ink = if *mode == current { ink_yellow } else { ink_white };
+        draw_wrapped_text(surface, DD_X0 + 8, ry0, DD_X1 - 4, ry1,
+            font, &c_string(mode.label().as_bytes()),
+            ink, TS_CENTRE | W_LEFT, -1);
+    }
+}
+
+/// Hit-test the View dropdown. Returns the SquadView the cursor is over,
+/// or None if outside the dropdown area. Used by the app's `on_release`
+/// to route a click through to the mode change.
+pub fn view_dropdown_hit(x: i32, y: i32) -> Option<SquadView> {
+    const DD_X0: i32 = 110;
+    const DD_X1: i32 = 255;
+    const DD_Y0: i32 = 148;
+    const DD_ROW_H: i32 = 18;
+    if x < DD_X0 || x >= DD_X1 || y < DD_Y0 { return None; }
+    let row = (y - DD_Y0) / DD_ROW_H;
+    SquadView::PRE_LAUNCH_ORDER.get(row as usize).copied()
+}
+
+/// The View button rect on the sub-toolbar. Clicks here toggle
+/// `view_menu_open`.
+pub const VIEW_BUTTON_RECT: (i32, i32, i32, i32) = (110, 125, 255, 145);
 
 /// Draw a hollow right-pointing ▷ triangle. Left edge is a vertical
 /// line at `(x_left, cy-h)..(x_left, cy+h)`; the top/bottom diagonals
