@@ -501,6 +501,8 @@ pub fn try_render_club_preview_faithful(
     fonts: &mut Fonts,
     photo_seed: u64,
     has_manager: bool,
+    cursor_x: i32,
+    cursor_y: i32,
 ) -> bool {
     let Screen::ClubPreview { choice, scroll, view, view_menu_open } = screen
         else { return false };
@@ -873,6 +875,8 @@ pub fn try_render_club_preview_faithful(
         kit_fg_rgb565,
         view: *view,
         view_menu_open: *view_menu_open,
+        cursor_x,
+        cursor_y,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);

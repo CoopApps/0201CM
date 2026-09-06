@@ -134,6 +134,10 @@ impl SquadView {
         SquadView::OtherInfo,
     ];
     pub fn label(self) -> &'static str {
+        // Menu labels as painted by the exe (FUN_00457200's dropdown
+        // `text_template_expand`s — the OTHER row uses just "Other";
+        // "Other Info" is the SUBTITLE shown at the top of the list
+        // panel, not the menu row).
         match self {
             SquadView::Traditional => "Traditional",
             SquadView::Contract    => "Contract",
@@ -141,7 +145,7 @@ impl SquadView {
             SquadView::Stats       => "Stats",
             SquadView::MoreStats   => "More Stats",
             SquadView::Attributes  => "Attributes",
-            SquadView::OtherInfo   => "Other Info",
+            SquadView::OtherInfo   => "Other",
         }
     }
     /// The right-side "sub-title" the exe puts at the top of the list
@@ -212,6 +216,13 @@ pub struct SquadState<'a> {
     /// `true` when the View dropdown is open — the renderer paints the
     /// 7-row overlay under the View button.
     pub view_menu_open: bool,
+    /// Live cursor y position (screen-space). Used by the dropdown to
+    /// paint a HOVER highlight (yellow bg + black text) on whichever
+    /// row the mouse is currently over — matches the exe's per-row
+    /// hover behaviour where yellow follows the cursor, and a tick is
+    /// drawn on the row of the currently-active mode.
+    pub cursor_x: i32,
+    pub cursor_y: i32,
 }
 
 // -----------------------------------------------------------------------
@@ -519,7 +530,8 @@ pub fn render_squad(
     //      alternating with 0x0094 (0,148,0) per row for the CM01/02
     //      pull-down look. Selected row painted in a highlight cyan.
     if state.view_menu_open {
-        draw_view_dropdown(surface, &small_font, state.view);
+        draw_view_dropdown(surface, &small_font, state.view,
+                           state.cursor_x, state.cursor_y);
     }
 }
 
@@ -536,8 +548,9 @@ fn draw_view_dropdown(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
     current: SquadView,
+    cursor_x: i32,
+    cursor_y: i32,
 ) {
-    use crate::pack565;
     let palette = PanelPalette::default();
     const DD_X0: i32 = 110;
     const DD_X1: i32 = 255;
@@ -545,24 +558,35 @@ fn draw_view_dropdown(
     const DD_ROW_H: i32 = 18;
     let items = SquadView::PRE_LAUNCH_ORDER;
     let dd_y1 = DD_Y0 + items.len() as i32 * DD_ROW_H;
-    // Measured from GDI live capture (scratchpad/prelaunch/gdi_view_menu3.png):
-    //   base green A (0,132,0), alternating green B (0,148,0),
-    //   currently-selected row → pure yellow (255,255,0),
-    //   text on ALL rows → BLACK, small pixel font, left-indented
-    //   with a whitespace pad (same convention as the Nationality
-    //   Filter dropdown at screen_nationality_faithful.rs:245).
-    let green_a  = pack565(  0, 132,   0);
-    let green_b  = pack565(  0, 148,   0);
-    let yellow   = pack565(255, 255,   0);
+    // Measured from GDI live capture (scratchpad/prelaunch/gdi_view_menu3.png).
+    // The surface is RGB555, so we hardcode the RGB555 bit patterns
+    // directly — the previous code used pack565() which packs for a
+    // 6-bit green channel and unpacked as near-black on this surface.
+    // These are the SAME constants the Nationality Filter uses at
+    // screen_nationality_faithful.rs:68-71, verified against op #497.
+    const MENU_GREEN:    u16 = 0x0200;  // RGB555 (0,132,0)
+    const MENU_GREEN_HI: u16 = 0x0240;  // RGB555 (0,148,0)
+    const YELLOW_HL:     u16 = 0x7FE0;  // RGB555 (255,255,0)
+    let green_a   = MENU_GREEN;
+    let green_b   = MENU_GREEN_HI;
+    let yellow    = YELLOW_HL;
     let ink_black = 0;
     draw_panel(surface, DD_X0, DD_Y0, DD_X1, dd_y1,
         P_SOLID_FILL | P_BEVEL, green_a, ink_black, palette);
+    // Which row is the cursor over?
+    let hover_row: Option<usize> = if cursor_x >= DD_X0 && cursor_x <= DD_X1
+                                     && cursor_y >= DD_Y0 && cursor_y < dd_y1 {
+        Some(((cursor_y - DD_Y0) / DD_ROW_H) as usize)
+    } else {
+        None
+    };
     for (i, mode) in items.iter().enumerate() {
         let ry0 = DD_Y0 + 1 + i as i32 * DD_ROW_H;
         let ry1 = ry0 + DD_ROW_H - 1;
-        // Highlighted (currently-active) row → yellow; every other row
-        // uses one of the two green shades in alternation.
-        let fill = if *mode == current {
+        // HOVER row → yellow; other rows use two alternating greens.
+        // The currently-active mode is NOT highlighted here — it gets
+        // a tick mark instead (drawn below).
+        let fill = if hover_row == Some(i) {
             yellow
         } else if i % 2 == 0 {
             green_a
@@ -574,13 +598,25 @@ fn draw_view_dropdown(
                 surface.buf[y as usize * surface.pitch_pixels as usize + x as usize] = fill;
             }
         }
-        // BLACK text — same on selected and non-selected rows. Left-
-        // pad with whitespace so the exe's indent look is preserved.
+        // BLACK text, left-padded so the tick has room. The exe uses
+        // "      " leading spaces to indent past the tick position.
         let mut buf = b"      ".to_vec();
         buf.extend_from_slice(mode.label().as_bytes());
         buf.push(0);
         draw_wrapped_text(surface, DD_X0, ry0, DD_X1 - 4, ry1,
             font, &buf, ink_black, TS_CENTRE | W_LEFT, -1);
+        // Tick mark for the currently-active mode. Drawn as two short
+        // line segments meeting at a low point — matches the exe's
+        // Windows-style check glyph in the menu.
+        if *mode == current {
+            let cx = DD_X0 + 5;
+            let cy = (ry0 + ry1) / 2;
+            surface.draw_line(cx,     cy - 1, cx + 2, cy + 2, 2, ink_black);
+            surface.draw_line(cx + 2, cy + 2, cx + 6, cy - 3, 2, ink_black);
+            // Second-pixel-thick trace for legibility on the greens.
+            surface.draw_line(cx,     cy,     cx + 2, cy + 3, 2, ink_black);
+            surface.draw_line(cx + 2, cy + 3, cx + 6, cy - 2, 2, ink_black);
+        }
     }
 }
 

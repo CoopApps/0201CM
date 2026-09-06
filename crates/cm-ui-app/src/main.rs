@@ -404,6 +404,7 @@ impl App {
                 &self.screen, self.world.as_ref(),
                 &mut self.frame, &mut self.fonts,
                 self.setup_photo_seed, has_manager,
+                self.cursor.0, self.cursor.1,
             ) {
                 self.overlay_menu_bar();
                 return;
@@ -1624,6 +1625,14 @@ impl ApplicationHandler for App {
             }
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor = (position.x as i32, position.y as i32);
+                // If the View dropdown is open on ClubPreview, we need
+                // a redraw on every cursor move so the yellow hover
+                // follows the mouse. Otherwise skip the redraw to keep
+                // the paint cost of idle moves at zero.
+                if let Screen::ClubPreview { view_menu_open: true, .. } = self.screen {
+                    if let Some(w) = self.window.as_ref() { w.request_redraw(); }
+                    self.render();
+                }
             }
             WindowEvent::MouseWheel { delta, .. } => {
                 let dy = match delta {
