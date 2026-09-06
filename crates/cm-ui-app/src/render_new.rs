@@ -500,40 +500,65 @@ pub fn try_render_club_preview_faithful(
     out: &mut Surface,
     fonts: &mut Fonts,
     photo_seed: u64,
-    _has_manager: bool,
+    has_manager: bool,
 ) -> bool {
-    let _photo_seed = photo_seed;
     let Screen::ClubPreview { choice } = screen else { return false };
     let Some(world) = world else { return false };
 
-    // Position bit-map → short code. `position_eligibility_bits` is a
-    // bitmask (port of `FUN_005a2030`). Map to the exe's short codes.
-    // The finer L/R/C split within a category is decoded but not yet
-    // ported; this returns the coarse category, which reads clean:
-    //   0x001                 → GK
-    //   0x002 / 0x004         → SW (sweeper)
-    //   0x008 / 0x010 / 0x020 → D  (defender)
-    //   0x040                 → DM
-    //   0x800                 → M  (midfielder, wide)
-    //   0x080 / 0x200         → F  (forward — wide/attacking bits)
-    //   default               → F  (best guess for an attacker)
-    fn position_code(bits: u16) -> &'static str {
-        if bits == 0 { return ""; }
-        if bits & 0x001 != 0 { return "GK"; }
-        if bits & (0x002 | 0x004) != 0 { return "SW"; }
-        if bits & 0x040 != 0 { return "DM"; }
-        if bits & (0x008 | 0x010 | 0x020) != 0 { return "D"; }
-        if bits & 0x800 != 0 { return "M"; }
-        if bits & (0x080 | 0x200) != 0 { return "F"; }
-        ""
+    // Build the exe's "D RC" / "F LC" style position code straight
+    // from the 12 aptitude bytes at type10 +0x0f..+0x1a (verified
+    // from FUN_00414d5c). The category comes from the HIGHEST-scoring
+    // of GK/SW/D/DM/M/AM/ST/WB; the side letters (R/L/C) then read
+    // whichever of Right/Left/Central aptitudes are eligible.
+    //
+    //   +0x0f Goalkeeper    +0x10 Sweeper   +0x11 Defender
+    //   +0x12 Def Mid       +0x13 Midfield  +0x14 Att Mid
+    //   +0x15 Attacker      +0x16 Wing Back +0x17 Right Side
+    //   +0x18 Left Side     +0x19 Central   +0x1a Free Role
+    //
+    // Aptitudes are on the game's 1..20 scale; >=15 is the exe's
+    // "eligible to play here" threshold (matches position_eligibility_
+    // bits' initial threshold in FUN_005a2030). Sides use the same
+    // 15 bar. Everything runs from the typed struct fields, which are
+    // populated during rust-db import.
+    fn position_code(a: &cm_domain::DomainStaffType10) -> String {
+        const T: i8 = 15;
+        // Pick the primary category by the highest apt with >=T. GK
+        // outranks everything if applicable (a keeper is a keeper).
+        if a.apt_goalkeeper >= T { return "GK".into(); }
+        let cats: [(&str, i8); 7] = [
+            ("SW", a.apt_sweeper),
+            ("D",  a.apt_defender),
+            ("WB", a.apt_wing_back),
+            ("DM", a.apt_def_midfielder),
+            ("M",  a.apt_midfielder),
+            ("AM", a.apt_att_midfielder),
+            ("F",  a.apt_attacker),
+        ];
+        let mut best: Option<(&str, i8)> = None;
+        for &(name, v) in &cats {
+            if v >= T && best.map_or(true, |(_, b)| v > b) {
+                best = Some((name, v));
+            }
+        }
+        let Some((cat, _)) = best else { return String::new(); };
+        // Side letters — R / L / C. GK / SW / WB don't get sides in the
+        // exe capture (they always play centrally), match that.
+        if cat == "SW" || cat == "WB" { return cat.into(); }
+        let mut sides = String::new();
+        if a.apt_right_side >= T { sides.push('R'); }
+        if a.apt_left_side  >= T { sides.push('L'); }
+        if a.apt_central    >= T { sides.push('C'); }
+        if sides.is_empty() { cat.into() } else { format!("{cat} {sides}") }
     }
     /// Sort order for the default Squad view — GK first, then SW, D,
-    /// DM, M, AM, F, S, others last. Mirrors the exe's grouping.
+    /// WB, DM, M, AM, F, S, others last. Mirrors the exe's grouping.
     fn position_group(code: &str) -> u8 {
-        match code {
-            "GK" => 0, "SW" => 1, "D" => 2, "DM" => 3,
-            "M" => 4, "AM" => 5, "F" => 6, "S" => 7,
-            _ => 8,
+        let head = code.split(' ').next().unwrap_or("");
+        match head {
+            "GK" => 0, "SW" => 1, "D" => 2, "WB" => 3, "DM" => 4,
+            "M" => 5, "AM" => 6, "F" => 7, "S" => 8,
+            _ => 9,
         }
     }
 
@@ -566,7 +591,7 @@ pub fn try_render_club_preview_faithful(
     let start_day = cm_domain::day_of_year(2001, 8, 10);
     struct Row {
         name: String,
-        position: &'static str,
+        position: String,
         age: Option<u8>,
         marker: char,
     }
@@ -575,39 +600,32 @@ pub fn try_render_club_preview_faithful(
         world.staff.type10.iter().map(|a| (a.id, a)).collect();
     for person in &world.staff.type6 {
         if person.current_club_id() != Some(choice.club_id) { continue; }
-        // Only PLAYERS (or player-coaches). Non-player staff — pure
-        // coaches, physios, chairmen, scouts — have no `player_data_id`
-        // link on their person record, per `FUN_00537870`'s "type-6 →
-        // type-10 attribute pointer" wiring. `PlayerView::is_player()`
-        // is a `player_data_id().is_some()` shorthand for exactly this.
         let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
         if !pv.is_player() { continue; }
         let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
-        let bits = attr_by_id.get(&link)
-            .map(|a| a.position_eligibility_bits())
-            .unwrap_or(0);
+        let pos = attr_by_id.get(&link).map(|a| position_code(a)).unwrap_or_default();
         rows.push(Row {
             name: surname_initial(world, person),
-            position: position_code(bits),
+            position: pos,
             age: person.age_at(2001, start_day),
             marker: ' ',
         });
     }
-    // Sort by position group (GK → SW → D → DM → M → AM → F → S), then
-    // alphabetical within each group.
+    // Sort by position group (GK → SW → D → WB → DM → M → AM → F → S),
+    // then alphabetical within each group.
     rows.sort_by(|a, b|
-        position_group(a.position).cmp(&position_group(b.position))
+        position_group(&a.position).cmp(&position_group(&b.position))
             .then(a.name.cmp(&b.name)));
 
     // Owned strings kept on the stack so the renderer's borrows stay
-    // valid. position is a &'static str already; name is a heap String.
-    let display: Vec<(String, &'static str, Option<u8>, char)> = rows.into_iter()
+    // valid across the render_squad call.
+    let display: Vec<(String, String, Option<u8>, char)> = rows.into_iter()
         .map(|r| (r.name, r.position, r.age, r.marker))
         .collect();
     let refs: Vec<cm_render::screen_club_squad_faithful::SquadPlayer> = display.iter()
         .map(|(n, p, a, m)| cm_render::screen_club_squad_faithful::SquadPlayer {
             name: n.as_str(),
-            position: p,
+            position: p.as_str(),
             age: *a,
             marker: *m,
         })
@@ -617,7 +635,11 @@ pub fn try_render_club_preview_faithful(
         club_name: &choice.club_name,
         players: &refs,
         scroll: 0,
-        photo_seed: _photo_seed,
+        photo_seed,
+        has_manager,
+        // Live division long name — Chester -> "Conference",
+        // Arsenal -> "Premier League", etc. Never hardcoded.
+        division_name: &choice.division_name,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);

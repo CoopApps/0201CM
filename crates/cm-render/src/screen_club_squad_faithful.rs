@@ -44,8 +44,8 @@ use crate::packed_panel::{
 };
 use crate::packed_text::{draw_wrapped_text, W_LEFT};
 use crate::screen_pre_boot_chrome::{
-    c_string, F_BODY, F_SMALL, F_TITLE, GREY_BAR, INK_CYAN,
-    INK_YELLOW, TS_CENTRE,
+    c_string, draw_sidebar, F_BODY, F_SMALL, F_TITLE, GREY_BAR,
+    INK_CYAN, INK_YELLOW, TS_CENTRE,
 };
 
 // -----------------------------------------------------------------------
@@ -98,6 +98,14 @@ pub struct SquadState<'a> {
     /// seed). `0` skips the blit — useful for tests/CI without the
     /// game's Data directory.
     pub photo_seed: u64,
+    /// `true` when a manager exists on the profile — controls the
+    /// Add-Manager sidebar entry's enabled/faded ink (same rule as
+    /// pre-boot chrome).
+    pub has_manager: bool,
+    /// Division long name for the fourth bottom-tab label — the exe
+    /// puts the actual competition name there (e.g. "Conference" for
+    /// Chester, "Premier League" for Arsenal). Never hardcoded.
+    pub division_name: &'a str,
 }
 
 // -----------------------------------------------------------------------
@@ -150,15 +158,22 @@ const SB_BOT_ARROW: (i32, i32) = (473, 492);
 const SB_TRACK_Y0: i32 = 218;
 const SB_TRACK_Y1: i32 = 472;
 
-// Bottom tab bar
+// Bottom tab bar. Slot 3 (currently "Conference" for Chester) is the
+// competition menu — its label is DYNAMIC per club (Premier League for
+// Arsenal, D1 for Wolves, Conference for Chester, ...). The other four
+// labels are fixed. Triangles on enabled tabs = hollow right-arrow at
+// the right edge, drawn by `draw_hollow_triangle` (pixels replicated
+// from the exe framebuffer since the primitive isn't hookable).
 const BTB_Y0: i32 = 510;
 const BTB_Y1: i32 = 545;
-const BOT_TABS: [(i32, i32, &str, bool); 5] = [
-    (100, 237, "Tactics",    true),   // enabled cyan
-    (239, 375, "Training",   false),  // disabled grey
-    (377, 513, "Last Match", true),
-    (515, 651, "Conference", true),
-    (653, 790, "History",    true),
+struct BotTab { x0: i32, x1: i32, label: &'static str, enabled: bool }
+const BOT_TABS_FIXED: [BotTab; 5] = [
+    BotTab { x0: 100, x1: 237, label: "Tactics",    enabled: true  },
+    BotTab { x0: 239, x1: 375, label: "Training",   enabled: false },
+    BotTab { x0: 377, x1: 513, label: "Last Match", enabled: true  },
+    // Slot 3's label is overridden per club from state.division_name.
+    BotTab { x0: 515, x1: 651, label: "",           enabled: true  },
+    BotTab { x0: 653, x1: 790, label: "History",    enabled: true  },
 ];
 
 // Bottom nav
@@ -189,11 +204,12 @@ pub fn render_squad(
     //      (P_DARKEN'd panels show a darkened photo through them).
     blit_photo(surface, state.photo_seed);
 
-    // ---- Left sidebar strip (0..89) — dark navy gradient placeholder.
-    //      In-game the exe paints its menu bar here (FUN_00745540); we
-    //      just paint a dark navy strip so the club screen isn't
-    //      broken by the photo showing through the left column.
-    draw_panel(surface, 0, 0, 89, 599, P_SOLID_FILL, 0x1082, 0, palette);
+    // ---- Left sidebar — the exe's club screen paints the FULL pre-boot
+    //      sidebar (Version / arrows / Add Manager / Restart / Exit) at
+    //      this stage of the flow; the persistent in-game menu bar
+    //      swaps in later once the manager takes control. Re-use the
+    //      shared helper so it stays in sync with the pre-boot screens.
+    draw_sidebar(surface, fonts, state.has_manager);
 
     // ---- In-game TITLE BAR (100,10)-(790,70) — purple fill + dark-blue bevel.
     draw_panel(surface, 100, 10, 790, 70,
@@ -311,14 +327,24 @@ pub fn render_squad(
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
 
     // ---- Bottom tab bar (visual only — click handling comes later).
-    for (x0, x1, label, enabled) in BOT_TABS.iter().copied() {
-        draw_panel(surface, x0, BTB_Y0, x1, BTB_Y1,
+    //      Slot 3's label is overridden with the live division name.
+    for (i, tab) in BOT_TABS_FIXED.iter().enumerate() {
+        let label = if i == 3 { state.division_name } else { tab.label };
+        draw_panel(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1,
             P_SOLID_FILL | P_BEVEL, TAB_FILL,
-            if enabled { CYAN_BRIGHT } else { GREY_BAR }, palette);
-        let ink = if enabled { CYAN_BRIGHT } else { GREY_BAR };
-        draw_wrapped_text(surface, x0, BTB_Y0, x1, BTB_Y1,
+            if tab.enabled { CYAN_BRIGHT } else { GREY_BAR }, palette);
+        let ink = if tab.enabled { CYAN_BRIGHT } else { GREY_BAR };
+        draw_wrapped_text(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1,
             &small_font, &c_string(label.as_bytes()),
             ink, TS_CENTRE, -1);
+        // Hollow ▷ triangle at the right edge for ENABLED tabs.
+        // Pixel-verified from the exe framebuffer at op-log frame 9:
+        // vertical left edge from (x1-10, y_centre-5) to (x1-10,
+        // y_centre+5), diagonals converging to a tip at (x1-5, y_centre).
+        if tab.enabled {
+            let cy = (BTB_Y0 + BTB_Y1) / 2;
+            draw_hollow_triangle(surface, tab.x1 - 10, cy, 5, CYAN_BRIGHT);
+        }
     }
 
     // ---- Bottom nav Back / Next (both grey / cyan).
@@ -328,6 +354,29 @@ pub fn render_squad(
         draw_wrapped_text(surface, rect.0, NAV_Y0, rect.1, NAV_Y1,
             &body_font, &c_string(label.as_bytes()),
             INK_CYAN, TS_CENTRE, -1);
+    }
+}
+
+/// Draw a hollow right-pointing ▷ triangle. Left edge is a vertical
+/// line at `(x_left, cy-h)..(x_left, cy+h)`; the top/bottom diagonals
+/// meet at the tip `(x_left + h, cy)`. Pixel pattern verified from the
+/// exe framebuffer at fixtures/club_squad_screen — the primitive that
+/// draws it isn't in our hooked set, so we replicate it by hand.
+fn draw_hollow_triangle(
+    surface: &mut PackedSurface,
+    x_left: i32, cy: i32, half_h: i32, colour: u16,
+) {
+    // Vertical left edge.
+    surface.draw_line(x_left, cy - half_h, x_left, cy + half_h, 2, colour);
+    // Top diagonal — one step right per row.
+    for i in 0..=half_h {
+        surface.draw_line(x_left + i, cy - half_h + i,
+                          x_left + i, cy - half_h + i, 2, colour);
+    }
+    // Bottom diagonal — mirror.
+    for i in 0..=half_h {
+        surface.draw_line(x_left + i, cy + half_h - i,
+                          x_left + i, cy + half_h - i, 2, colour);
     }
 }
 
@@ -393,6 +442,8 @@ mod tests {
             players: &players,
             scroll: 0,
             photo_seed: 0,
+            has_manager: false,
+            division_name: "Conference",
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_squad(&mut surface, &mut fonts, &state);
