@@ -102,16 +102,35 @@ impl SelectLeaguesState {
     }
 
     /// Toggle the primary SELECTED bit of the slot with this index (event 0xd).
+    ///
+    /// The three UI cells (SELECTED / BACKGROUND / secondary sub-tier) form
+    /// a MUTUALLY EXCLUSIVE tri-state: a league is Selected, Background, or
+    /// neither — never both. Corrected 2026-09-06 after a screenshot showed
+    /// England lit up on both SELECTED and BACKGROUND at once. Clicking
+    /// SELECTED here clears background_marker; toggling off clears extra
+    /// too (the secondary/reserve tier can only exist under a selected
+    /// primary).
     pub fn toggle_primary(&mut self, index: u8) {
         if let Some(s) = self.slots.iter_mut().find(|s| s.index == index) {
             s.selected = !s.selected;
+            if s.selected {
+                s.background_marker = false;
+            } else {
+                s.extra = false;
+            }
         }
     }
 
-    /// Toggle the secondary/extra bit (event 0xe).
+    /// Toggle the secondary/extra bit (event 0xe). Only meaningful when
+    /// the primary is selected — clicking on a row that isn't selected
+    /// promotes it to selected first, mirroring the exe.
     pub fn toggle_secondary(&mut self, index: u8) {
         if let Some(s) = self.slots.iter_mut().find(|s| s.index == index) {
             s.extra = !s.extra;
+            if s.extra {
+                s.selected = true;
+                s.background_marker = false;
+            }
         }
     }
 
@@ -123,20 +142,24 @@ impl SelectLeaguesState {
     }
 
     /// Toggle the row's BACKGROUND-cell highlight (col 4 in the picker).
-    /// Independent of `selected` per the exe's UI: each button is its own
-    /// user-facing toggle. Semantically the two are mutually exclusive as
-    /// game state (a league is either selected, background-only, or off)
-    /// but the visual toggles are separate as the user described.
+    /// Mutually exclusive with SELECTED per the exe's tri-state model —
+    /// clicking BACKGROUND clears selected (and its dependent extra).
     pub fn toggle_background_marker(&mut self, index: u8) {
         if let Some(s) = self.slots.iter_mut().find(|s| s.index == index) {
             s.background_marker = !s.background_marker;
+            if s.background_marker {
+                s.selected = false;
+                s.extra = false;
+            }
         }
     }
 
     /// Event 0xb: Select All. Enabled in the exe only when not post-selection.
+    /// Clears BACKGROUND on every row — the two are mutually exclusive.
     pub fn select_all(&mut self) {
         for s in &mut self.slots {
             s.selected = true;
+            s.background_marker = false;
         }
     }
 
