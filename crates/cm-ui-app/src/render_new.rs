@@ -526,14 +526,20 @@ pub fn try_render_club_preview_faithful(
         // `position_eligibility_bits`: start at 15, walk down until
         // something qualifies (`threshold > 9`). No player ends up
         // uncoded — the exe never shows a blank position column.
-        if a.apt_goalkeeper >= 10 && a.apt_goalkeeper >= 15 {
+        //
+        // MULTI-ROLE — corrected 2026-09-06 after Paul Robertson (Leigh
+        // RMI) came through as just "WB" when his aptitudes are
+        // WB=20 D=15 M=15 left=20; the exe shows him as "D/WB/M L".
+        // Rule change: collect EVERY category that qualifies at the
+        // highest threshold that produces >=1 hit, joined with '/',
+        // in defensive-to-attacking order.
+        if a.apt_goalkeeper >= 15 {
             return "GK".into();
         }
-        // The exe distinguishes F (wide/attacking-mid-ish forward) from
-        // S (central striker) at DRAW time — same underlying "Attacker"
-        // aptitude, but shown as "S" when the player only plays central
-        // and "F" when they can also play wide. That split lives in
-        // the sides branch below.
+        // (name, aptitude, allows_sides).
+        // GK/SW/central positions historically show without sides in
+        // the exe. WB is inherently side-dependent (no central wing
+        // back) — it needs R or L, never C.
         let cats: [(&str, i8); 7] = [
             ("SW", a.apt_sweeper),
             ("D",  a.apt_defender),
@@ -543,61 +549,73 @@ pub fn try_render_club_preview_faithful(
             ("AM", a.apt_att_midfielder),
             ("F",  a.apt_attacker),
         ];
-        let mut best: Option<(&str, i8)> = None;
-        let mut t: i8 = 15;
-        while t > 9 && best.is_none() {
-            // At this threshold: try GK first (it outranks outfield if
-            // eligible), then the highest-scoring outfield >= t.
+        // Walk the threshold down until AT LEAST one category qualifies.
+        let mut qualifying_t: i8 = 0;
+        let mut qualifying_cats: Vec<&str> = Vec::new();
+        for t in (10..=15).rev() {
             if a.apt_goalkeeper >= t { return "GK".into(); }
-            for &(name, v) in &cats {
-                if v >= t && best.map_or(true, |(_, b)| v > b) {
-                    best = Some((name, v));
-                }
+            let hits: Vec<&str> = cats.iter()
+                .filter(|(_, v)| *v >= t)
+                .map(|(n, _)| *n)
+                .collect();
+            if !hits.is_empty() {
+                qualifying_t = t;
+                qualifying_cats = hits;
+                break;
             }
-            t -= 1;
         }
-        // If NOTHING scored >= 10 anywhere (extremely rare — a truly
-        // rubbish player), fall back to the argmax across all categories.
-        let (cat, qualifying_t) = best.unwrap_or_else(|| {
-            let mut cat = "F";
+        if qualifying_cats.is_empty() {
+            // Genuine rubbish — fall back to argmax as a category name
+            // with no sides.
+            let mut argmax = "F";
             let mut best_v = i8::MIN;
-            for &(name, v) in &cats {
-                if v > best_v { cat = name; best_v = v; }
+            for &(n, v) in &cats {
+                if v > best_v { argmax = n; best_v = v; }
             }
-            (cat, 10)
-        });
-        // Side letters — R / L / C. GK / SW / WB always play centrally
-        // in the exe's convention; skip sides for them.
-        if cat == "SW" || cat == "WB" { return cat.into(); }
-        // Use the SAME threshold that qualified the category, so if the
-        // category only just cleared 10, sides down to 10 also count.
+            return argmax.into();
+        }
         let t = qualifying_t;
         let r_eligible = a.apt_right_side >= t;
         let l_eligible = a.apt_left_side  >= t;
         let c_eligible = a.apt_central    >= t;
-        // **F vs S** — the exe splits Attacker into:
-        //   F = "Forward" — comfortable as both Attacker AND Attacking
-        //       Midfielder (a link player, either central or on a wing).
-        //   S = "Striker" — pure penalty-box finisher, no AM range.
-        // Verified against Chester's real DB: Malkin (att=20, att_mid=5),
-        // Kilgannon (att=20, att_mid=1), Beesley (att=20, att_mid=9)
-        // all show "S C" — att_mid doesn't clear the threshold, so
-        // pure striker. Haarhoff (att=20, left=20) shows "F LC" —
-        // wing ability alone qualifies him for F even without att_mid.
-        // So the rule is: Attacker-primary, then "F" if EITHER
-        // apt_att_midfielder is eligible OR a real side (R/L) is
-        // eligible; otherwise "S".
         let am_eligible = a.apt_att_midfielder >= t;
-        let cat = if cat == "F" {
-            if am_eligible || r_eligible || l_eligible { "F" }
-            else if c_eligible                         { "S" }
-            else                                       { "F" } // no data
-        } else { cat };
+
+        // F vs S split — only applies when the SOLE qualifying category
+        // is "F" (Attacker). If the player also qualifies as something
+        // else, we keep "F" in the multi-role listing (a versatile
+        // forward isn't a pure striker).
+        if qualifying_cats == ["F"] {
+            let is_striker = !am_eligible && !r_eligible && !l_eligible
+                             && c_eligible;
+            let head = if is_striker { "S" } else { "F" };
+            let mut sides = String::new();
+            if r_eligible { sides.push('R'); }
+            if l_eligible { sides.push('L'); }
+            if c_eligible { sides.push('C'); }
+            return if sides.is_empty() { head.into() }
+                   else { format!("{head} {sides}") };
+        }
+
+        // Join categories in the fixed defensive→attacking order.
+        // Filter out any that don't have compatible sides — a "WB" with
+        // no R and no L wouldn't display (it needs a wing).
+        let has_wing = r_eligible || l_eligible;
+        let head_parts: Vec<&str> = qualifying_cats.iter().copied()
+            .filter(|c| !(*c == "WB" && !has_wing))
+            .collect();
+        if head_parts.is_empty() {
+            // WB survived on its own without wing eligibility — fall
+            // back to WB as the head anyway; the exe still shows it.
+            return "WB".into();
+        }
+        let head = head_parts.join("/");
+        // Side letters. WB never gets C; other categories can.
+        let allow_c = !head_parts.contains(&"WB");
         let mut sides = String::new();
-        if r_eligible { sides.push('R'); }
-        if l_eligible { sides.push('L'); }
-        if c_eligible { sides.push('C'); }
-        if sides.is_empty() { cat.into() } else { format!("{cat} {sides}") }
+        if r_eligible                { sides.push('R'); }
+        if l_eligible                { sides.push('L'); }
+        if c_eligible && allow_c     { sides.push('C'); }
+        if sides.is_empty() { head } else { format!("{head} {sides}") }
     }
     /// Sort order for the default Squad view — GK first, then SW, D,
     /// WB, DM, M, AM, F, S, others last. Mirrors the exe's grouping.
