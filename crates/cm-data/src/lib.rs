@@ -338,7 +338,17 @@ impl<'a, const N: usize, const NAME_B: usize, const SHORT_B: usize>
     }
 
     pub fn unknown_tail(&self) -> &'a [u8] {
-        &self.bytes[SHORT_B..N]
+        // For N==101 (staff_comp) capture the whole post-short-name block
+        // (bytes 82..101 = 19 bytes) as unknown_tail so the writer can
+        // round-trip the sentinel + un-decoded numeric fields byte-exact.
+        // For N==107 (club_comp/nation_comp) keep the historic 104..107
+        // window — three_letter + scope + nation_id + last_division +
+        // reserve_division + reputation are decoded separately.
+        if N == 101 {
+            &self.bytes[82..N]
+        } else {
+            &self.bytes[SHORT_B..N]
+        }
     }
 
     fn i32_at(&self, off: usize) -> i32 {
@@ -360,6 +370,18 @@ impl<'a, const N: usize, const NAME_B: usize, const SHORT_B: usize>
         read_c_string_latin1(&self.bytes[0x53..0x56.min(N)])
     }
 
+    /// Raw byte at +0x37 (past the long_name buffer). Some tables use
+    /// 0xff as a sentinel here (club_comp); others leave 0x00
+    /// (nation_comp). Captured so writers can round-trip byte-exactly.
+    pub fn long_name_sentinel(&self) -> u8 {
+        *self.bytes.get(0x37).unwrap_or(&0)
+    }
+
+    /// Raw byte at +0x52 (past the short_name buffer).
+    pub fn short_name_sentinel(&self) -> u8 {
+        *self.bytes.get(0x52).unwrap_or(&0)
+    }
+
     /// Decode the numeric field block for the 107-byte club/nation-comp
     /// layout. Offsets (verified vs raw bytes + official editor field
     /// labels): scope +0x59, nation +0x5d, last_division +0x61,
@@ -378,6 +400,8 @@ impl<'a, const N: usize, const NAME_B: usize, const SHORT_B: usize>
             last_division: if is_107 { self.i32_at(0x61) } else { -1 },
             reserve_division: if is_107 { self.i32_at(0x65) } else { -1 },
             reputation: if is_107 { self.u16_at(0x69) } else { 0 },
+            long_name_sentinel:  self.long_name_sentinel(),
+            short_name_sentinel: self.short_name_sentinel(),
             unknown_tail: self.unknown_tail().to_vec(),
         }
     }
@@ -1033,6 +1057,12 @@ pub struct CompetitionEntry {
     /// "League standard"). England: Premier 18, First 12, Second 8, Third 4,
     /// Conference 3, feeders 2, bucket 1.
     pub reputation: u16,
+    /// Raw sentinel byte at record +0x37 (past long_name buffer). Club_comp
+    /// carries 0xff here; nation_comp leaves 0x00. Preserved for byte-exact
+    /// round-trip.
+    pub long_name_sentinel: u8,
+    /// Raw sentinel byte at record +0x52 (past short_name buffer).
+    pub short_name_sentinel: u8,
     /// Kept for round-trip compatibility with the old parse (the final bytes).
     pub unknown_tail: Vec<u8>,
 }
@@ -1679,10 +1709,14 @@ pub fn write_name_table(path: &Path, entries: &[NameEntry]) -> io::Result<()> {
 }
 
 pub fn write_stadium_table(path: &Path, entries: &[StadiumEntry]) -> io::Result<()> {
+    // stadium record = id(4) + name(51) + 0xff sentinel(1) + unknown_tail(22).
+    // The 0xff at +0x37 is present on every shipped record; without it the
+    // loader / editor / game consider the name buffer un-terminated.
     let mut bytes = Vec::with_capacity(entries.len() * StadiumTable::LAYOUT.size);
     for entry in entries {
         bytes.extend_from_slice(&entry.id.to_le_bytes());
-        write_latin1_c_string(&mut bytes, &entry.name, 52);
+        write_latin1_c_string(&mut bytes, &entry.name, 51);
+        bytes.push(0xff);
         bytes.extend_from_slice(&entry.unknown_tail);
     }
     fs::write(path, bytes)
@@ -1874,8 +1908,11 @@ fn find_manifest_filename(bytes: &[u8], mark_offset: usize) -> Option<String> {
 }
 
 fn write_latin1_c_string(dst: &mut Vec<u8>, text: &str, width: usize) {
+    // Fixed-width latin-1 buffer, right-padded with 0. The shipped format
+    // does NOT force a trailing null when the string fills the buffer; if
+    // callers want a sentinel byte after the string they emit it separately.
     let mut buf = vec![0u8; width];
-    for (index, ch) in text.chars().take(width.saturating_sub(1)).enumerate() {
+    for (index, ch) in text.chars().take(width).enumerate() {
         buf[index] = if (ch as u32) <= 0xff { ch as u8 } else { b'?' };
     }
     dst.extend_from_slice(&buf);
@@ -1887,10 +1924,37 @@ fn write_competition_table<const N: usize, const NAME_B: usize, const SHORT_B: u
 ) -> io::Result<()> {
     let mut bytes = Vec::with_capacity(entries.len() * N);
     for entry in entries {
+        let record_start = bytes.len();
         bytes.extend_from_slice(&entry.id.to_le_bytes());
-        write_latin1_c_string(&mut bytes, &entry.long_name, NAME_B - 4);
-        write_latin1_c_string(&mut bytes, &entry.short_name, SHORT_B - 56);
-        bytes.extend_from_slice(&entry.unknown_tail);
+        // long_name buffer: 51 bytes padded, then per-record sentinel at +0x37.
+        // Club_comp sentinel is 0xff; nation_comp is 0x00; captured on load.
+        write_latin1_c_string(&mut bytes, &entry.long_name, NAME_B - 5);
+        bytes.push(entry.long_name_sentinel);
+        if N == 107 {
+            // 26 bytes of short_name padded, then per-record sentinel at +0x52.
+            write_latin1_c_string(&mut bytes, &entry.short_name, 26);
+            bytes.push(entry.short_name_sentinel);
+            // three_letter_name at +0x53..+0x56 (3 bytes, latin-1 padded).
+            write_latin1_c_string(&mut bytes, &entry.three_letter_name, 3);
+            // Three bytes of padding at +0x56..+0x59 — always zero on disk.
+            bytes.extend_from_slice(&[0, 0, 0]);
+            // Numeric fields: scope(i32)+nation_id(i32)+last_division(i32)+
+            // reserve_division(i32)+reputation(u16) — 4+4+4+4+2 = 18 bytes,
+            // filling +0x59..+0x6b (= 89..107).
+            bytes.extend_from_slice(&entry.scope.to_le_bytes());
+            bytes.extend_from_slice(&entry.nation_id.to_le_bytes());
+            bytes.extend_from_slice(&entry.last_division.to_le_bytes());
+            bytes.extend_from_slice(&entry.reserve_division.to_le_bytes());
+            bytes.extend_from_slice(&entry.reputation.to_le_bytes());
+        } else {
+            // staff_comp (N=101): 26-byte short_name + unknown_tail
+            // (19 bytes covering the sentinel + un-decoded numeric block
+            // at +0x52..+0x65).
+            write_latin1_c_string(&mut bytes, &entry.short_name, 26);
+            bytes.extend_from_slice(&entry.unknown_tail);
+        }
+        debug_assert_eq!(bytes.len() - record_start, N,
+            "competition record size mismatch (N={N})");
     }
     fs::write(path, bytes)
 }

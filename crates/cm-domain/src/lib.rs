@@ -22138,6 +22138,11 @@ fn to_cm_competitions(entries: &[DomainCompetition]) -> Vec<cm_data::Competition
             last_division: entry.last_division,
             reserve_division: entry.reserve_division,
             reputation: entry.reputation,
+            // Sentinels aren't carried through DomainCompetition; use the
+            // shipped-file defaults so round-trip stays identity for
+            // untouched competitions.
+            long_name_sentinel:  0xff,
+            short_name_sentinel: 0xff,
             unknown_tail: entry.unknown_tail.clone(),
         })
         .collect()
@@ -24022,6 +24027,8 @@ mod tests {
                 last_division: -1,
                 reserve_division: -1,
                 reputation: 0,
+                long_name_sentinel: 0,
+                short_name_sentinel: 0,
                 unknown_tail: vec![],
             }],
             club_competitions: vec![],
