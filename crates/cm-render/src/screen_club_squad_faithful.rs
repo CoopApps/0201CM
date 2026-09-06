@@ -544,6 +544,11 @@ pub fn render_squad(
 /// scratchpad/prelaunch/view_menu.png (RGB555): green pattern
 /// (0,132,0) / (0,148,0) alternating rows; the currently-selected mode
 /// is drawn with a highlight ink so the current state is visible.
+/// Anchor rect of the View dropdown — shared between the renderer and
+/// the app's hit-test.
+const VIEW_DROPDOWN: crate::menu_dropdown::DropdownRect =
+    crate::menu_dropdown::DropdownRect { x0: 110, y0: 148, width: 145, row_h: 18 };
+
 fn draw_view_dropdown(
     surface: &mut PackedSurface,
     font: &crate::packed_glyph::PixelFont,
@@ -551,86 +556,21 @@ fn draw_view_dropdown(
     cursor_x: i32,
     cursor_y: i32,
 ) {
-    let palette = PanelPalette::default();
-    const DD_X0: i32 = 110;
-    const DD_X1: i32 = 255;
-    const DD_Y0: i32 = 148;
-    const DD_ROW_H: i32 = 18;
     let items = SquadView::PRE_LAUNCH_ORDER;
-    let dd_y1 = DD_Y0 + items.len() as i32 * DD_ROW_H;
-    // Measured from GDI live capture (scratchpad/prelaunch/gdi_view_menu3.png).
-    // The surface is RGB555, so we hardcode the RGB555 bit patterns
-    // directly — the previous code used pack565() which packs for a
-    // 6-bit green channel and unpacked as near-black on this surface.
-    // These are the SAME constants the Nationality Filter uses at
-    // screen_nationality_faithful.rs:68-71, verified against op #497.
-    const MENU_GREEN:    u16 = 0x0200;  // RGB555 (0,132,0)
-    const MENU_GREEN_HI: u16 = 0x0240;  // RGB555 (0,148,0)
-    const YELLOW_HL:     u16 = 0x7FE0;  // RGB555 (255,255,0)
-    let green_a   = MENU_GREEN;
-    let green_b   = MENU_GREEN_HI;
-    let yellow    = YELLOW_HL;
-    let ink_black = 0;
-    draw_panel(surface, DD_X0, DD_Y0, DD_X1, dd_y1,
-        P_SOLID_FILL | P_BEVEL, green_a, ink_black, palette);
-    // Which row is the cursor over?
-    let hover_row: Option<usize> = if cursor_x >= DD_X0 && cursor_x <= DD_X1
-                                     && cursor_y >= DD_Y0 && cursor_y < dd_y1 {
-        Some(((cursor_y - DD_Y0) / DD_ROW_H) as usize)
-    } else {
-        None
-    };
-    for (i, mode) in items.iter().enumerate() {
-        let ry0 = DD_Y0 + 1 + i as i32 * DD_ROW_H;
-        let ry1 = ry0 + DD_ROW_H - 1;
-        // HOVER row → yellow; other rows use two alternating greens.
-        // The currently-active mode is NOT highlighted here — it gets
-        // a tick mark instead (drawn below).
-        let fill = if hover_row == Some(i) {
-            yellow
-        } else if i % 2 == 0 {
-            green_a
-        } else {
-            green_b
-        };
-        for y in ry0..ry1 {
-            for x in DD_X0 + 1..DD_X1 - 1 {
-                surface.buf[y as usize * surface.pitch_pixels as usize + x as usize] = fill;
-            }
-        }
-        // BLACK text, left-padded so the tick has room. The exe uses
-        // "      " leading spaces to indent past the tick position.
-        let mut buf = b"      ".to_vec();
-        buf.extend_from_slice(mode.label().as_bytes());
-        buf.push(0);
-        draw_wrapped_text(surface, DD_X0, ry0, DD_X1 - 4, ry1,
-            font, &buf, ink_black, TS_CENTRE | W_LEFT, -1);
-        // Tick mark for the currently-active mode. Drawn as two short
-        // line segments meeting at a low point — matches the exe's
-        // Windows-style check glyph in the menu.
-        if *mode == current {
-            let cx = DD_X0 + 5;
-            let cy = (ry0 + ry1) / 2;
-            surface.draw_line(cx,     cy - 1, cx + 2, cy + 2, 2, ink_black);
-            surface.draw_line(cx + 2, cy + 2, cx + 6, cy - 3, 2, ink_black);
-            // Second-pixel-thick trace for legibility on the greens.
-            surface.draw_line(cx,     cy,     cx + 2, cy + 3, 2, ink_black);
-            surface.draw_line(cx + 2, cy + 3, cx + 6, cy - 2, 2, ink_black);
-        }
-    }
+    let labels: Vec<&str> = items.iter().map(|m| m.label()).collect();
+    let selected = items.iter().position(|m| *m == current);
+    crate::menu_dropdown::draw_dropdown(
+        surface, font, VIEW_DROPDOWN, &labels, selected,
+        (cursor_x, cursor_y),
+    );
 }
 
 /// Hit-test the View dropdown. Returns the SquadView the cursor is over,
-/// or None if outside the dropdown area. Used by the app's `on_release`
-/// to route a click through to the mode change.
+/// or None if outside the dropdown area.
 pub fn view_dropdown_hit(x: i32, y: i32) -> Option<SquadView> {
-    const DD_X0: i32 = 110;
-    const DD_X1: i32 = 255;
-    const DD_Y0: i32 = 148;
-    const DD_ROW_H: i32 = 18;
-    if x < DD_X0 || x >= DD_X1 || y < DD_Y0 { return None; }
-    let row = (y - DD_Y0) / DD_ROW_H;
-    SquadView::PRE_LAUNCH_ORDER.get(row as usize).copied()
+    VIEW_DROPDOWN
+        .hit(SquadView::PRE_LAUNCH_ORDER.len(), x, y)
+        .and_then(|row| SquadView::PRE_LAUNCH_ORDER.get(row).copied())
 }
 
 /// The View button rect on the sub-toolbar. Clicks here toggle

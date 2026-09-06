@@ -11,6 +11,7 @@
 //! RGBA8 for a modern GPU window.
 
 pub mod area;
+pub mod menu_dropdown;
 pub mod background;
 pub mod bevel;
 pub mod blit;
