@@ -167,11 +167,19 @@ pub fn nation_passes(
     if v.nationality_name().is_empty() { return false; }
     match filter {
         NationalityFilter::MajorNations => {
-            // Real FIFA nations: valid continent id AND non-zero
-            // state-of-development. Drops West Germany, East Germany,
-            // Soviet Union, CIS, Basque, Czechoslovakia (all devel=0
-            // AND continent=0xFE).
-            v.state_of_development() > 0 && (0..=5).contains(&v.continent_id())
+            // Major = high-reputation footballing nations only.
+            // Reputation is stored ×100 (nation +0x8e), so top
+            // nations are 9500 (France, Brazil) down to 500 (tiny
+            // island nations). Threshold 5000 catches ~45 nations —
+            // all of Europe's heavyweights, Brazil/Argentina, USA,
+            // Republic of Ireland, Scotland, top African/Asian
+            // sides — verified against the shipped nations.json.
+            // The old predicate (state_of_development>0 &&
+            // continent 0..=5) was too loose; it passed every FIFA
+            // member so the default filter showed Afghan/Bhutan/etc.
+            v.state_of_development() > 0
+                && (0..=5).contains(&v.continent_id())
+                && v.reputation() >= 5000
         }
         NationalityFilter::AllNations => {
             // Loosest sensible rule — still require SOMETHING sensible
