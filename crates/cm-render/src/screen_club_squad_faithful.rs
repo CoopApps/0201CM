@@ -196,8 +196,13 @@ const NAV_Y1: i32 = 590;
 const NAV_BACK: (i32, i32) = (100, 617);
 const NAV_NEXT: (i32, i32) = (619, 790);
 
-// Visible rows in the list (17 rows × 2 cols = 34 players).
-pub const VISIBLE_ROWS: usize = 15;
+// Visible rows in the list — 14 rows × 2 cols = 28 players.
+// The list panel is y=190..500 (310px). Row 0 starts at ROW_FIRST_Y=198
+// with ROW_STRIDE=21, so row 14 would start at 492 and paint down to
+// 511 — past LIST_Y1=500 — bleeding into the darkened background. The
+// exe stops at row 13 (index 13, i.e. 14 rows) so Prescott/Monk are
+// the last fully-painted rows for Leigh RMI before scrolling.
+pub const VISIBLE_ROWS: usize = 14;
 pub const VISIBLE_ENTRIES: usize = VISIBLE_ROWS * 2;
 
 // -----------------------------------------------------------------------

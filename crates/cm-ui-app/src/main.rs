@@ -236,6 +236,29 @@ struct App {
     /// exe picks a new one on each screen open; we do the same by
     /// bumping this whenever we return to Setup.
     setup_photo_seed: u64,
+    /// Bottom-of-screen "Loading database" progress bar. `Some` while
+    /// the overlay is active; the transition to `pending` fires when
+    /// `progress` reaches 1.0. Matches the exe's grey bar that shows
+    /// after Select Leagues → Next while the DB refinement runs.
+    loading: Option<LoadingOverlay>,
+}
+
+/// State for the bottom "Loading database" progress bar.
+struct LoadingOverlay {
+    label:     String,
+    started:   std::time::Instant,
+    duration:  std::time::Duration,
+    /// Next screen to transition to when progress reaches 1.0. Boxed
+    /// to keep the Screen enum unbloated.
+    pending:   Box<Screen>,
+}
+
+impl LoadingOverlay {
+    fn progress(&self) -> f32 {
+        let elapsed = self.started.elapsed().as_secs_f32();
+        (elapsed / self.duration.as_secs_f32()).clamp(0.0, 1.0)
+    }
+    fn done(&self) -> bool { self.progress() >= 1.0 }
 }
 
 impl App {
@@ -480,6 +503,67 @@ impl App {
         if let Some(msg) = self.status.clone() {
             screens::status_line(&mut self.frame, &mut self.fonts, &msg);
         }
+        // Loading overlay — draws on top of whatever's already on the
+        // frame, so it survives every render fast-path.
+        self.draw_loading_bar();
+    }
+
+    /// Paint the bottom-of-screen "Loading database" progress bar when
+    /// an overlay is active. Grey strip across the width, label on the
+    /// left, blue fill growing left-to-right on the right.
+    fn draw_loading_bar(&mut self) {
+        let Some(overlay) = &self.loading else { return };
+        let progress = overlay.progress();
+        let label = overlay.label.clone();
+        use cm_render::pack565;
+        use cm_render::panel::{F_SOLID_FILL, F_BEVEL};
+        const Y0: i32 = 575;
+        const Y1: i32 = 599;
+        const X0: i32 = 0;
+        const X1: i32 = cm_render::Surface::W as i32 - 1;
+        // draw_panel takes an (r,g,b) tuple; set() takes packed u16.
+        let grey_rgb  = (0xc0u8, 0xc0u8, 0xc0u8);
+        let ink_rgb   = (0x20u8, 0x20u8, 0x20u8);
+        let grey_dark = pack565(0x80, 0x80, 0x80);
+        let blue      = pack565(0x00, 0x00, 0xc0);
+        // Grey bar with light bevel across the width.
+        self.frame.draw_panel(X0, Y0, X1, Y1, F_SOLID_FILL | F_BEVEL, grey_rgb);
+        // Progress well on the right — sunken grey_dark strip.
+        const P_X0: i32 = 245;
+        const P_X1: i32 = X1 - 8;
+        const P_Y0: i32 = Y0 + 5;
+        const P_Y1: i32 = Y1 - 5;
+        for y in P_Y0..=P_Y1 {
+            for x in P_X0..P_X1 {
+                self.frame.set(x, y, grey_dark);
+            }
+        }
+        // Blue progress fill inside the well.
+        let fill_w = ((P_X1 - P_X0) as f32 * progress) as i32;
+        for y in P_Y0 + 1..P_Y1 {
+            for x in P_X0 + 1..(P_X0 + fill_w).min(P_X1 - 1) {
+                self.frame.set(x, y, blue);
+            }
+        }
+        // Label — same helper status_line uses.
+        let font = self.fonts.slot(3);
+        self.frame.draw_text_box(12, Y0, 240, Y1, 0x1, font, ink_rgb, &label);
+    }
+
+    /// Progress the loading overlay: bump animation, fire the pending
+    /// screen transition when it finishes. Returns true if a redraw is
+    /// needed (either because it's still running or because we just
+    /// transitioned). Callers should also `request_redraw()` when they
+    /// see a `true` result.
+    fn tick_loading(&mut self) -> bool {
+        let Some(overlay) = &self.loading else { return false };
+        if overlay.done() {
+            let next = *self.loading.take().unwrap().pending;
+            self.screen = next;
+            true
+        } else {
+            true   // still animating — need another frame
+        }
     }
 
     /// Compute the pressed indicator for the current screen from a cursor position.
@@ -641,9 +725,20 @@ impl App {
                                     start_game = Some((leagues, season));
                                 }
                                 _ => {
+                                    // Multi-league flow — the exe shows a
+                                    // "Loading database" bar while it refines
+                                    // the DB down to the selected leagues.
+                                    // Match that UX: queue a Loading overlay
+                                    // that transitions to Start Season after
+                                    // ~2.5s.
                                     let leagues = state.clone();
                                     let season = StartSeasonState::from_leagues(&leagues);
-                                    self.screen = Screen::StartSeason { leagues, season };
+                                    self.loading = Some(LoadingOverlay {
+                                        label: "Loading database".into(),
+                                        started: std::time::Instant::now(),
+                                        duration: std::time::Duration::from_millis(2500),
+                                        pending: Box::new(Screen::StartSeason { leagues, season }),
+                                    });
                                 }
                             }
                         }
@@ -1402,6 +1497,7 @@ impl Default for App {
                     .map(|d| d.as_nanos() as u64)
                     .unwrap_or(0)
             },
+            loading: None,
         }
     }
 }
@@ -1465,11 +1561,12 @@ impl ApplicationHandler for App {
                         changed = true;
                     }
                     Screen::ClubPreview { choice, scroll } => {
-                        // Squad screen: 2 cols × 15 rows = 30 entries
-                        // visible. Renderer uses scroll as an ENTRY
-                        // skip count, so we shift by 2 per wheel notch
-                        // (one row across both columns).
-                        const VISIBLE_ENTRIES: usize = 30;
+                        // Squad screen: 2 cols × 14 rows = 28 entries
+                        // visible (matches screen_club_squad_faithful::
+                        // VISIBLE_ENTRIES). Renderer uses scroll as an
+                        // ENTRY skip count, so we shift by 2 per wheel
+                        // notch (one row across both columns).
+                        const VISIBLE_ENTRIES: usize = 28;
                         let total = self.world.as_ref().map(|w| {
                             w.staff.type6.iter()
                                 .filter(|p| p.current_club_id() == Some(choice.club_id))
@@ -1620,6 +1717,15 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::RedrawRequested => {
+                // Loading overlay animation — tick before the render so
+                // the progress bar's frame reflects the CURRENT elapsed
+                // time. If the tick fires a screen transition we re-
+                // render the new screen straight away.
+                let loading_active = self.loading.is_some();
+                if loading_active {
+                    self.tick_loading();   // may consume the overlay
+                    self.render();
+                }
                 let (Some(window), Some(sb)) = (self.window.as_ref(), self.sb.as_mut()) else {
                     return;
                 };
@@ -1634,6 +1740,11 @@ impl ApplicationHandler for App {
                     }
                 }
                 buffer.present().unwrap();
+                // Keep the animation running — request another redraw
+                // while the overlay is still active.
+                if self.loading.is_some() {
+                    window.request_redraw();
+                }
             }
             _ => {}
         }

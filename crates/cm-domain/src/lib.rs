@@ -13728,8 +13728,66 @@ impl World {
             staff_summary: StaffSummary::default(),
         };
         world.normalize_base_data();
+        world.init_missing_player_sides();
         world.refresh_summaries();
         Ok(world)
+    }
+
+    /// Fill in missing side aptitudes (apt_right_side / apt_left_side /
+    /// apt_central) for players whose shipped type10 record has all
+    /// three zero. Many lower-league players (e.g. Prescott, Cryer,
+    /// Storey at Leigh RMI) ship with no side data; the exe fills these
+    /// in during its per-player init at game start (FUN_0051f5d0).
+    /// Without this, our squad screen shows just "M" instead of the
+    /// "M R" / "M L" / "M C" / "M LC" / "M RC" combinations the exe
+    /// paints.
+    ///
+    /// Rule (heuristic; not RNG-exact to the exe but produces plausible,
+    /// deterministic sides):
+    ///   - If ALL of {RS, LS, C} are 0 AND the player has any outfield
+    ///     category (D/DM/M/AM/F/SW ≥ 10):
+    ///       * left_foot > right_foot → LS = 15
+    ///       * right_foot > left_foot → RS = 15
+    ///       * feet equal (both 0 or both non-zero same) → C = 15
+    ///   - Goalkeepers are left alone (they never show sides).
+    ///
+    /// Records that already have any of RS/LS/C set are untouched —
+    /// their shipped data is authoritative.
+    pub fn init_missing_player_sides(&mut self) {
+        let mut touched = 0usize;
+        for a in self.staff.type10.iter_mut() {
+            // Skip pure GKs entirely.
+            if a.apt_goalkeeper >= 15
+                && a.apt_defender < 10 && a.apt_def_midfielder < 10
+                && a.apt_midfielder < 10 && a.apt_att_midfielder < 10
+                && a.apt_attacker < 10 && a.apt_sweeper < 10
+                && a.apt_wing_back < 10 {
+                continue;
+            }
+            if a.apt_right_side != 0 || a.apt_left_side != 0 || a.apt_central != 0 {
+                continue;   // shipped data — leave alone
+            }
+            // Any real outfield category?
+            let has_outfield = a.apt_defender >= 10
+                || a.apt_def_midfielder >= 10
+                || a.apt_midfielder >= 10
+                || a.apt_att_midfielder >= 10
+                || a.apt_attacker >= 10
+                || a.apt_sweeper >= 10
+                || a.apt_wing_back >= 10;
+            if !has_outfield { continue; }
+            if a.left_foot > a.right_foot {
+                a.apt_left_side = 15;
+            } else if a.right_foot > a.left_foot {
+                a.apt_right_side = 15;
+            } else {
+                a.apt_central = 15;
+            }
+            touched += 1;
+        }
+        if touched > 0 {
+            eprintln!("[player-init] filled sides for {touched} type10 records");
+        }
     }
 
     pub fn normalize_base_data(&mut self) {
