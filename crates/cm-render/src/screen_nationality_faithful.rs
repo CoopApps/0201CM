@@ -53,10 +53,15 @@ pub struct NationalityState<'a> {
     /// Nations" and "Major Nations"). Only rendered while
     /// `filter_open` is true.
     pub filter_options: &'a [&'a str],
-    /// Which of `filter_options` is currently "hovered" / would be
-    /// picked by a click — one row per open menu is highlighted with
-    /// a brighter green shade.
+    /// Which of `filter_options` is currently ACTIVE (the tick row
+    /// when the dropdown is open). No longer used for hover — the
+    /// yellow hover highlight follows `cursor_x`/`cursor_y` instead.
     pub filter_highlight: usize,
+    /// Live cursor position (screen-space). When `filter_open` is
+    /// true, whichever row the cursor is over lights up yellow with
+    /// black text — same universal rule as the View / Sort By menus.
+    pub cursor_x: i32,
+    pub cursor_y: i32,
 }
 
 /// Highlighted-cell orange text — matches the Leagues screen selection.
@@ -210,43 +215,23 @@ pub fn render_nationality(
     draw_panel(surface, SB_X0, SB_BOT_ARROW.0, SB_X1, SB_BOT_ARROW.1,
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
 
-    // Filter dropdown menu — painted LAST so it lands on top of everything.
+    // Filter dropdown menu — painted LAST so it lands on top of
+    // everything. Uses the shared `menu_dropdown` helper so it gets
+    // the universal green/yellow/black scheme + hover-follows-cursor
+    // + tick-on-selected treatment for free.
     if state.filter_open {
-        draw_filter_dropdown(surface, &small_font,
-            state.filter_options, state.filter_highlight);
-    }
-}
-
-/// Paint the green "Filter" dropdown menu (op #497/#550/#573 in the
-/// exe capture). The current filter is highlighted with a slightly
-/// brighter green (`MENU_GREEN_HI`); the other rows use `MENU_GREEN`.
-/// Text is BLACK on green in font 1, with a leading whitespace pad for
-/// the exe's left-indent look.
-fn draw_filter_dropdown(
-    surface: &mut PackedSurface,
-    small_font: &crate::packed_glyph::PixelFont,
-    options: &[&str],
-    highlight: usize,
-) {
-    let palette = PanelPalette::default();
-    // Container — solid green + bevel (op #497 s=0x130 ≈ SOLID_FILL |
-    // BEVEL with a shrink flag; we approximate with SOLID_FILL|BEVEL).
-    draw_panel(surface, FILTER_MENU.0, FILTER_MENU.1, FILTER_MENU.2, FILTER_MENU.3,
-        P_SOLID_FILL | P_BEVEL, MENU_GREEN, 0, palette);
-    // Row rects — up to 2 for now (All Nations / Major Nations).
-    const ROW_RECTS: [(i32, i32, i32, i32); 2] = [FILTER_ROW1, FILTER_ROW2];
-    for (i, label) in options.iter().enumerate() {
-        if i >= ROW_RECTS.len() { break; }
-        let (x0, y0, x1, y1) = ROW_RECTS[i];
-        let fill = if i == highlight { MENU_GREEN_HI } else { MENU_GREEN };
-        draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL, fill, 0, palette);
-        // Label — BLACK text (c=0), font 1, LEFT-aligned (leading
-        // spaces in the exe act as indent, hardcoded here).
-        let mut buf = b"      ".to_vec();
-        buf.extend_from_slice(label.as_bytes());
-        buf.push(0);
-        draw_wrapped_text(surface, x0, y0, x1, y1,
-            small_font, &buf, 0x0000, TS_CENTRE | W_LEFT, -1);
+        let rect = crate::menu_dropdown::DropdownRect {
+            x0: FILTER_MENU.0,
+            y0: FILTER_MENU.1,
+            width: FILTER_MENU.2 - FILTER_MENU.0,
+            row_h: 20,
+        };
+        crate::menu_dropdown::draw_dropdown(
+            surface, &small_font, rect,
+            state.filter_options,
+            Some(state.filter_highlight),
+            (state.cursor_x, state.cursor_y),
+        );
     }
 }
 
