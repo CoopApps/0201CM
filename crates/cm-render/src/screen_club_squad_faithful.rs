@@ -353,18 +353,23 @@ pub fn render_squad(
     title_bytes.push(0);
     draw_wrapped_text(surface, 100, 10, 790, 70,
         &title_font, &title_bytes, bar_ink, TS_CENTRE, -1);
-    // Small badge / jump-menu trigger — same kit colours plus a small
-    // right-pointing triangle in the middle, matching the exe's
-    // corner box that opens the club-jump dropdown. Rect from the
-    // GDI capture: (105, 15)-(120, 35).
+    // Small badge / jump-menu trigger — same kit colours plus a
+    // filled black right-pointing triangle CENTRED inside the box.
+    // Rect from the GDI capture: (105, 15)-(120, 35).
     let (jbx0, jby0, jbx1, jby1) = JUMP_BUTTON_RECT;
     draw_panel(surface, jbx0, jby0, jbx1, jby1,
         P_SOLID_FILL | P_BEVEL, bar_fill, bar_ink, palette);
-    // Triangle glyph — hollow-ish arrow indicating a dropdown.
-    let cy = (jby0 + jby1) / 2;
-    surface.draw_line(jbx0 + 4, cy - 3, jbx0 + 4, cy + 3, 2, bar_ink);
-    surface.draw_line(jbx0 + 4, cy - 3, jbx0 + 9, cy,     2, bar_ink);
-    surface.draw_line(jbx0 + 4, cy + 3, jbx0 + 9, cy,     2, bar_ink);
+    // Filled right-pointing triangle. 8 px tall × ~5 px wide, black,
+    // its vertical left edge centred inside the box and its right
+    // tip on the box centre-line.
+    let ccx = (jbx0 + jbx1) / 2;
+    let ccy = (jby0 + jby1) / 2;
+    const TRI_HALF_H: i32 = 4;
+    let base_x = ccx - 2;
+    for dy in -TRI_HALF_H..=TRI_HALF_H {
+        let w = TRI_HALF_H - dy.abs();
+        surface.draw_line(base_x, ccy + dy, base_x + w, ccy + dy, 2, 0);
+    }
 
     // ---- Take Control button (660,4)-(785,24) — dark-blue fill,
     //      purple bevel, purple text.

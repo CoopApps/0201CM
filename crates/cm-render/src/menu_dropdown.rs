@@ -95,22 +95,39 @@ pub fn draw_dropdown(
                 surface.buf[y as usize * surface.pitch_pixels as usize + x as usize] = fill;
             }
         }
-        // Label — BLACK, left-indented past the tick position.
-        let mut buf = b"      ".to_vec();
-        buf.extend_from_slice(label.as_bytes());
-        buf.push(0);
-        draw_wrapped_text(surface, rect.x0, ry0, rect.x1() - 4, ry1,
-            font, &buf, ink_black, W_LEFT, -1);
-        // Tick on the currently-selected row. Two short line segments
-        // meeting at a low point; second-pixel-thick stroke for
-        // legibility on the greens.
-        if selected == Some(i) {
-            let tx = rect.x0 + 5;
-            let ty = (ry0 + ry1) / 2;
-            surface.draw_line(tx,     ty - 1, tx + 2, ty + 2, 2, ink_black);
-            surface.draw_line(tx + 2, ty + 2, tx + 6, ty - 3, 2, ink_black);
-            surface.draw_line(tx,     ty,     tx + 2, ty + 3, 2, ink_black);
-            surface.draw_line(tx + 2, ty + 3, tx + 6, ty - 2, 2, ink_black);
+        if label.is_empty() {
+            // Separator row — no text, no tick. Paint a 2-pixel
+            // embossed horizontal line centred vertically in the row:
+            // a darker upper line + a lighter lower line, matching the
+            // Windows-style groove the exe draws between the last club
+            // and the national team in the club-jump dropdown.
+            let cy = (ry0 + ry1) / 2;
+            let lx0 = rect.x0 + 4;
+            let lx1 = rect.x1() - 4;
+            // Upper pixel: same shade as bar shadow (approx 0,66,0 in
+            // RGB555 = 0x0100 — one green step darker than MENU_GREEN).
+            let shadow_green = 0x0100u16;
+            let hi_green     = 0x02A0u16;   // slightly brighter than MENU_GREEN_HI
+            surface.draw_line(lx0, cy - 1, lx1, cy - 1, 2, shadow_green);
+            surface.draw_line(lx0, cy,     lx1, cy,     2, hi_green);
+        } else {
+            // Label — BLACK, left-indented past the tick position.
+            let mut buf = b"      ".to_vec();
+            buf.extend_from_slice(label.as_bytes());
+            buf.push(0);
+            draw_wrapped_text(surface, rect.x0, ry0, rect.x1() - 4, ry1,
+                font, &buf, ink_black, W_LEFT, -1);
+            // Tick on the currently-selected row. Two short line segments
+            // meeting at a low point; second-pixel-thick stroke for
+            // legibility on the greens.
+            if selected == Some(i) {
+                let tx = rect.x0 + 5;
+                let ty = (ry0 + ry1) / 2;
+                surface.draw_line(tx,     ty - 1, tx + 2, ty + 2, 2, ink_black);
+                surface.draw_line(tx + 2, ty + 2, tx + 6, ty - 3, 2, ink_black);
+                surface.draw_line(tx,     ty,     tx + 2, ty + 3, 2, ink_black);
+                surface.draw_line(tx + 2, ty + 3, tx + 6, ty - 2, 2, ink_black);
+            }
         }
     }
 }

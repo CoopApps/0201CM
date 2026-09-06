@@ -882,9 +882,11 @@ pub fn try_render_club_preview_faithful(
             })
             .collect();
         clubs.sort_by(|a, b| a.0.cmp(&b.0));
-        // National team — nation of the division. Look up the
-        // club_comp record's nation_id, then find the nation's team
-        // by name (nationality_name, e.g. "England").
+        // National team — country name in UPPERCASE (ENGLAND, SCOTLAND,
+        // BRAZIL) — the exe uses NationView::primary_name(), not the
+        // nationality adjective. Preceded by a SEPARATOR row (empty
+        // label → the shared dropdown helper paints an embossed line
+        // instead of text).
         let mut items: Vec<(String, u32)> = clubs;
         if let Some(comp) = world.references.club_competitions.iter()
             .find(|c| c.id == choice.division_id)
@@ -894,10 +896,13 @@ pub fn try_render_club_preview_faithful(
                 .map(|n| cm_domain::typed_records::NationView::new(n))
                 .find(|v| v.id() as i32 == nid)
             {
+                // Empty-string row = separator; app's click handler
+                // skips it because the label is empty.
+                items.push((String::new(), 0));
                 // Encode the national team as club_id = 0xFFFF_0000 |
-                // nation_id — a sentinel value the app can distinguish
-                // from real club ids when routing the click.
-                items.push((nv.nationality_name(), 0xFFFF_0000 | nv.id()));
+                // nation_id sentinel so the click handler can spot it.
+                items.push((nv.primary_name().to_uppercase(),
+                             0xFFFF_0000 | nv.id()));
             }
         }
         items.into_iter().unzip()

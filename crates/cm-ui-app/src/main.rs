@@ -953,7 +953,9 @@ impl App {
                             })
                             .collect();
                         clubs.sort_by(|a, b| a.0.cmp(&b.0));
-                        // Nation team appended at the bottom.
+                        // Separator + uppercase nation name (matches
+                        // render_new.rs list build so the hit-index
+                        // stays in sync).
                         if let Some(comp) = world.references.club_competitions.iter()
                             .find(|c| c.id == choice.division_id)
                         {
@@ -962,7 +964,8 @@ impl App {
                                 .map(|n| cm_domain::typed_records::NationView::new(n))
                                 .find(|v| v.id() as i32 == nid)
                             {
-                                clubs.push((nv.nationality_name(),
+                                clubs.push((String::new(), 0));   // sep row
+                                clubs.push((nv.primary_name().to_uppercase(),
                                              0xFFFF_0000 | nv.id()));
                             }
                         }
@@ -970,13 +973,16 @@ impl App {
                             .and_then(|i| clubs.get(i).cloned())
                     } else { None };
                     if let Some((name, new_id)) = picked {
-                        eprintln!("[jump] → {name} ({new_id:#x})");
-                        // Only jump when the pick is a real club id
-                        // (national-team sentinel deferred — needs a
-                        // dedicated view for the national squad).
-                        if (new_id & 0xFFFF_0000) == 0 {
-                            choice.club_id = new_id;
-                            choice.club_name = name;
+                        // Empty label = separator row — ignore.
+                        if !name.is_empty() {
+                            eprintln!("[jump] → {name} ({new_id:#x})");
+                            // Only jump when the pick is a real club id
+                            // (national-team sentinel deferred — needs
+                            // a dedicated view for the national squad).
+                            if (new_id & 0xFFFF_0000) == 0 {
+                                choice.club_id = new_id;
+                                choice.club_name = name;
+                            }
                         }
                     }
                     *jump_menu_open = false;
