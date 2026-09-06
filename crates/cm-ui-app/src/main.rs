@@ -59,6 +59,11 @@ enum Screen {
     /// the Take Control button knows what to take control of.
     ClubPreview {
         choice: cm_domain::ManagerClubChoice,
+        /// Squad-list scroll offset in ENTRIES (0 = show entries
+        /// 0..30). Renderer skips this many players from the sorted
+        /// list; mouse-wheel handler shifts by 2 per notch (= 1 row
+        /// across both columns).
+        scroll: usize,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -739,7 +744,7 @@ impl App {
                     }
                 }
             }
-            Screen::ClubPreview { choice } => {
+            Screen::ClubPreview { choice, .. } => {
                 // Take Control button — top-right, above the title bar.
                 // From screen_club_preview_faithful::TAKE_CONTROL_RECT.
                 if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
@@ -903,7 +908,7 @@ impl App {
             self.goto_select_club();
         }
         if let Some(choice) = goto_club_preview {
-            self.screen = Screen::ClubPreview { choice };
+            self.screen = Screen::ClubPreview { choice, scroll: 0 };
         }
         if goto_reopen_select_team {
             self.goto_select_club();
@@ -1457,6 +1462,24 @@ impl ApplicationHandler for App {
                     Screen::Dashboard { view: cm_domain::DashboardView::Club(d), squad_scroll } => {
                         let max = d.squad.len().saturating_sub(screens::DASH_SQUAD_ROWS);
                         *squad_scroll = if dy > 0.0 { squad_scroll.saturating_sub(1) } else { (*squad_scroll + 1).min(max) };
+                        changed = true;
+                    }
+                    Screen::ClubPreview { choice, scroll } => {
+                        // Squad screen: 2 cols × 15 rows = 30 entries
+                        // visible. Renderer uses scroll as an ENTRY
+                        // skip count, so we shift by 2 per wheel notch
+                        // (one row across both columns).
+                        const VISIBLE_ENTRIES: usize = 30;
+                        let total = self.world.as_ref().map(|w| {
+                            w.staff.type6.iter()
+                                .filter(|p| p.current_club_id() == Some(choice.club_id))
+                                .filter(|p| cm_domain::typed_records::PlayerView::from_split(
+                                    p.id, &p.body).is_player())
+                                .count()
+                        }).unwrap_or(0);
+                        let max = total.saturating_sub(VISIBLE_ENTRIES);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(2) }
+                                  else        { (*scroll + 2).min(max) };
                         changed = true;
                     }
                     Screen::FifaRankings { view, scroll } => {

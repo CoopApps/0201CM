@@ -502,7 +502,7 @@ pub fn try_render_club_preview_faithful(
     photo_seed: u64,
     has_manager: bool,
 ) -> bool {
-    let Screen::ClubPreview { choice } = screen else { return false };
+    let Screen::ClubPreview { choice, scroll } = screen else { return false };
     let Some(world) = world else { return false };
 
     // Build the exe's "D RC" / "F LC" style position code straight
@@ -756,7 +756,7 @@ pub fn try_render_club_preview_faithful(
     let state = cm_render::screen_club_squad_faithful::SquadState {
         club_name: &choice.club_name,
         players: &refs,
-        scroll: 0,
+        scroll: *scroll,
         photo_seed,
         has_manager,
         // Live division short name — Chester -> "Conference",
