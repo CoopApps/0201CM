@@ -103,34 +103,36 @@ impl SelectLeaguesState {
 
     /// Toggle the primary SELECTED bit of the slot with this index (event 0xd).
     ///
-    /// The three UI cells (SELECTED / BACKGROUND / secondary sub-tier) form
-    /// a MUTUALLY EXCLUSIVE tri-state: a league is Selected, Background, or
-    /// neither — never both. Corrected 2026-09-06 after a screenshot showed
-    /// England lit up on both SELECTED and BACKGROUND at once. Clicking
-    /// SELECTED here clears background_marker; toggling off clears extra
-    /// too (the secondary/reserve tier can only exist under a selected
-    /// primary).
+    /// Verified 2026-09-07 against FUN_00811140.c (SETUP.CFG parser
+    /// re-used by the click handlers). The nation record byte at
+    /// `+0x11c` is a tri-state:
+    ///   0 = neither, bit 1 (0x01) = BACKGROUND, bit 2 (0x02) = SELECTED.
+    /// SELECTED and BACKGROUND are mutually exclusive because every
+    /// write to `+0x11c` overwrites the whole byte — never OR-merges.
+    /// So clicking SELECTED clears `background_marker`.
+    ///
+    /// The col-6 secondary/reserve toggle (Conference / Serie C etc.)
+    /// lives on a DIFFERENT byte the click handler never touches, so
+    /// `extra` must NOT be cleared here — the user's Conference pick
+    /// must survive a click on SELECTED-off.
     pub fn toggle_primary(&mut self, index: u8) {
         if let Some(s) = self.slots.iter_mut().find(|s| s.index == index) {
             s.selected = !s.selected;
             if s.selected {
                 s.background_marker = false;
-            } else {
-                s.extra = false;
             }
         }
     }
 
-    /// Toggle the secondary/extra bit (event 0xe). Only meaningful when
-    /// the primary is selected — clicking on a row that isn't selected
-    /// promotes it to selected first, mirroring the exe.
+    /// Toggle the secondary/extra bit (event 0xe). The secondary
+    /// marker lives on its own byte on the nation record — clicking
+    /// it does NOT touch `+0x11c`, so neither `selected` nor
+    /// `background_marker` change here. (Previous logic promoted the
+    /// row to SELECTED on secondary-on; removed because the exe's
+    /// click handler for col 6 only writes the secondary byte.)
     pub fn toggle_secondary(&mut self, index: u8) {
         if let Some(s) = self.slots.iter_mut().find(|s| s.index == index) {
             s.extra = !s.extra;
-            if s.extra {
-                s.selected = true;
-                s.background_marker = false;
-            }
         }
     }
 
@@ -142,14 +144,16 @@ impl SelectLeaguesState {
     }
 
     /// Toggle the row's BACKGROUND-cell highlight (col 4 in the picker).
-    /// Mutually exclusive with SELECTED per the exe's tri-state model —
-    /// clicking BACKGROUND clears selected (and its dependent extra).
+    /// Mutually exclusive with SELECTED per the exe's tri-state model
+    /// (byte at nation `+0x11c`, whole-byte write). Clears
+    /// `background_marker`'s counterpart `selected` only — the col-6
+    /// secondary/reserve toggle (`extra`) lives on a separate byte the
+    /// exe's click handler never touches, so it must stay put.
     pub fn toggle_background_marker(&mut self, index: u8) {
         if let Some(s) = self.slots.iter_mut().find(|s| s.index == index) {
             s.background_marker = !s.background_marker;
             if s.background_marker {
                 s.selected = false;
-                s.extra = false;
             }
         }
     }

@@ -846,10 +846,22 @@ impl App {
                         }
                         LeaguesClick::SelectAll => state.select_all(),
                         LeaguesClick::DeselectAll => state.deselect_all(),
-                        LeaguesClick::ToggleSelected(i) => state.toggle_primary(i),
-                        LeaguesClick::ToggleBackground(i) => state.toggle_background_marker(i),
-                        LeaguesClick::ToggleSecondary(i) => state.toggle_secondary(i),
-                        LeaguesClick::ToggleHuman(i) => state.toggle_human(i),
+                        LeaguesClick::ToggleSelected(i) => {
+                            eprintln!("[leagues] toggle SELECTED idx={i}");
+                            state.toggle_primary(i);
+                        }
+                        LeaguesClick::ToggleBackground(i) => {
+                            eprintln!("[leagues] toggle BACKGROUND idx={i}");
+                            state.toggle_background_marker(i);
+                        }
+                        LeaguesClick::ToggleSecondary(i) => {
+                            eprintln!("[leagues] toggle SECONDARY idx={i}");
+                            state.toggle_secondary(i);
+                        }
+                        LeaguesClick::ToggleHuman(i) => {
+                            eprintln!("[leagues] toggle HUMAN idx={i}");
+                            state.toggle_human(i);
+                        }
                     }
                 }
             }
