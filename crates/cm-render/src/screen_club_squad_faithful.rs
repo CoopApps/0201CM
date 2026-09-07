@@ -193,15 +193,16 @@ impl SquadView {
                 headers: ["Pkd","Inf","Name","Squad Status","Basic Wage",
                           "Contract Expiry","Releases","","","","","","Value"],
             }),
-            // widths local_324; headers per lines 2073-2123.
-            // Cols 7,8 are attribute-name headers built at runtime via
-            // FUN_007a9e60(1) / FUN_007a9e60(0x11); we hardcode the
-            // canonical short names for those attribute ids from
-            // Data/wldpl.dat (attr 1 = Aggression, 0x11 = Influence).
+            // Verified against scratchpad/prelaunch/selection_view.png
+            // (Cheltenham 2001). The archaeology's "attr#1 / attr#17"
+            // guess for cols 7-8 was wrong — the exe paints:
+            //   col 7 = "Apps" (season appearances — cyan)
+            //   col 8 = "Av R" (average match rating — cyan, "----"
+            //           when the record has no rated matches yet)
             Selection => Some(ColumnPack {
                 widths: [5,5,24,14,10,12,6,6,6,0,0,0,10],
                 headers: ["Pkd","Inf","Name","Position","Form","Morale","Cond.",
-                          "Agg","Inf","","","","Value"],
+                          "Apps","Av R","","","","Value"],
             }),
             // widths local_344 (Stats + More Stats share these).
             // Cols 3..11 populated at runtime from the attribute-id list
@@ -307,6 +308,26 @@ impl ColumnPack {
             }
         }
         k
+    }
+
+    /// Per-column body-cell ink for THIS view. `None` slots default
+    /// to yellow. Verified against
+    /// scratchpad/prelaunch/selection_view.png where the exe paints
+    /// Position (bright cyan 0x43ff), Morale (yellow 0x7380), Cond
+    /// (orange 0x6180), Apps (cyan), Av R (cyan) instead of the
+    /// uniform yellow every other view uses.
+    pub fn cell_inks(&self, view: SquadView) -> [Option<u16>; 13] {
+        let mut inks = [None; 13];
+        if let SquadView::Selection = view {
+            const CYAN_BRIGHT: u16 = 0x43ff;
+            const ORANGE:      u16 = 0x6180;
+            inks[3] = Some(CYAN_BRIGHT);  // Position
+            inks[6] = Some(ORANGE);       // Cond.
+            inks[7] = Some(CYAN_BRIGHT);  // Apps
+            inks[8] = Some(CYAN_BRIGHT);  // Av R
+            // Morale (col 5) stays default yellow.
+        }
+        inks
     }
 
     /// Convert unit widths to pixel x-slices across `x0..x1`. Returns one
@@ -641,44 +662,35 @@ pub fn render_squad(
                 P_DARKEN, 0, 0, palette);
 
             let one_col_rows: usize = ((LIST_Y1 - NT_ROW_FIRST_Y) / NT_ROW_STRIDE) as usize;
+            // Per-view per-column ink overrides (None = default yellow).
+            let cell_inks = pack.cell_inks(state.view);
             let visible = state.players.iter().skip(state.scroll).take(one_col_rows);
             for (i, p) in visible.enumerate() {
                 let y0 = NT_ROW_FIRST_Y + (i as i32) * NT_ROW_STRIDE;
                 let y1 = y0 + NT_ROW_HEIGHT;
                 for (col_idx, sx0, sx1) in &slices {
                     let cell = p.cols.get(*col_idx).copied().unwrap_or("");
+                    // Cols 0/1/2/12 have identical structure across
+                    // every non-Traditional view — carve them out first.
                     match *col_idx {
                         0 => {
-                            // Pkd — blue row-marker square, same style
-                            // as the Traditional number-cell.
+                            // Pkd — blue row-marker.
                             draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
                                 P_SOLID_FILL | P_BEVEL, BLUE, INK_CYAN, palette);
+                            continue;
                         }
-                        1 => {
-                            // Inf — currently blank (marker flags TBD
-                            // from the person record).
-                        }
+                        1 => continue,   // Inf (marker flags TBD)
                         2 => {
-                            // Name — WHITE. Marker players (transfer
-                            // list *) stay white; the exe paints an
-                            // orange stain only on named-day events we
-                            // haven't ported yet, so plain-white matches
-                            // the contract-view capture.
                             let mut buf = format!("  {}", p.name);
                             if p.marker != ' ' { buf.push(p.marker); }
                             buf.push('\0');
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
                                 &small_font, buf.as_bytes(), WHITE,
                                 TS_CENTRE | W_LEFT, -1);
+                            continue;
                         }
                         12 => {
-                            // Value column — purple bevelled cell with
-                            // yellow ink (contract_view.png). `-` when
-                            // the DB has no value.
-                            // Purple fill + bevel per row (contract_view
-                            // shows a distinct raised tile per player,
-                            // not one continuous purple strip). Text is
-                            // WHITE for readability on the deep magenta.
+                            // Value — purple bevel, WHITE ink.
                             draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
                                 P_SOLID_FILL | P_BEVEL, VALUE_PURPLE,
                                 WHITE, palette);
@@ -686,34 +698,23 @@ pub fn render_squad(
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
                                 &small_font, &c_string_latin1(shown.as_bytes()),
                                 WHITE, TS_CENTRE, -1);
+                            continue;
                         }
-                        3 => {
-                            // Squad Status — cyan '-' when unset.
-                            let shown = if cell.is_empty() { "-" } else { cell };
-                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, &c_string_latin1(shown.as_bytes()),
-                                INK_CYAN, TS_CENTRE, -1);
-                        }
-                        6 => {
-                            // Releases column — ORANGE for both the
-                            // clause codes ("Non Pro.", "Rlg.", "Man.",
-                            // "Min.Fee", "NP & Rlg") AND the '-' shown
-                            // for un-set slots. Column is single-tone:
-                            // release-related data reads orange whether
-                            // populated or not.
-                            let shown = if cell.is_empty() { "-" } else { cell };
-                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, &c_string_latin1(shown.as_bytes()),
-                                TRIANGLE_ORANGE, TS_CENTRE, -1);
-                        }
-                        _ => {
-                            // Data cells — yellow small font.
-                            let shown = if cell.is_empty() { "-" } else { cell };
-                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, &c_string_latin1(shown.as_bytes()),
-                                INK_YELLOW, TS_CENTRE, -1);
-                        }
+                        _ => {}
                     }
+                    // Body cell — ink from cell_inks[col], with the
+                    // Contract-only column overrides (Squad Status
+                    // cyan, Releases orange) applied when Contract is
+                    // the active view.
+                    let ink = match (state.view, *col_idx) {
+                        (SquadView::Contract, 3) => INK_CYAN,          // Squad Status
+                        (SquadView::Contract, 6) => TRIANGLE_ORANGE,   // Releases
+                        _ => cell_inks[*col_idx].unwrap_or(INK_YELLOW),
+                    };
+                    let shown = if cell.is_empty() { "-" } else { cell };
+                    draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                        &small_font, &c_string_latin1(shown.as_bytes()),
+                        ink, TS_CENTRE, -1);
                 }
             }
         }

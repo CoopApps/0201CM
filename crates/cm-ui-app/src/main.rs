@@ -1032,23 +1032,27 @@ impl App {
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
                     goto_reopen_select_team = true;
                 } else if let Some(pack) = view.column_pack() {
-                    // Column-header click → toggle sort. Same column
-                    // clicked twice flips the direction; a different
-                    // column resets to that column's default direction
-                    // (numeric = DESC first, text/date = ASC first).
+                    eprintln!("[sort] click x={x} y={y} — checking header strip");
                     if let Some(col) = header_hit(&pack, x, y) {
                         let kinds = pack.kinds();
                         let kind = kinds[col];
+                        eprintln!("[sort] hit col={col} header={:?} kind={:?}",
+                                  pack.headers[col], kind);
                         if kind == ColumnKind::Marker { /* nothing */ }
                         else {
-                            *sort = Some(match *sort {
+                            let new_sort = match *sort {
                                 Some(s) if s.column as usize == col =>
                                     SquadSort { column: col as u8, descending: !s.descending },
                                 _ =>
                                     SquadSort { column: col as u8, descending: kind.default_descending() },
-                            });
+                            };
+                            eprintln!("[sort] -> col={} desc={}",
+                                      new_sort.column, new_sort.descending);
+                            *sort = Some(new_sort);
                             *scroll = 0;
                         }
+                    } else {
+                        eprintln!("[sort] header_hit returned None");
                     }
                 }
             }

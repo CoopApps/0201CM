@@ -736,16 +736,31 @@ pub fn try_render_club_preview_faithful(
                 c[6] = clauses.short_code().to_string();
             }
             Selection => {
-                // Cols 3..8 per lines 2073-2123.
-                c[3] = position.to_string();   // Position
-                c[4] = String::new();   // Form  — needs season Type9
-                c[5] = String::new();   // Morale — mood field TBD
-                c[6] = String::new();   // Cond. — 156-condition field
-                // Cols 7 & 8: attr #1 (Aggression) & attr #17 (Influence).
-                if let Some(a) = attrs {
-                    c[7] = a.aggression.to_string();
-                    c[8] = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
-                }
+                // Layout verified against
+                // scratchpad/prelaunch/selection_view.png (Cheltenham).
+                // Archaeology's "attr#1 / attr#17" for cols 7-8 was
+                // wrong — the exe paints Apps and Av R (average match
+                // rating), not attribute short-codes.
+                //   col 3 = Position (D/DM R, S C, etc.)  — cyan
+                //   col 4 = Form (rolling form indicator)  — "-" at boot
+                //   col 5 = Morale ("Ok" at boot)          — yellow
+                //   col 6 = Cond. ("82%") from condition byte / 156
+                //   col 7 = Apps (season appearances)      — "-" at boot
+                //   col 8 = Av R (average rating)          — "----" at boot
+                c[3] = position.to_string();
+                c[4] = String::new();
+                c[5] = "Ok".to_string();
+                // Condition — starts at 156 (INITIAL_CONDITION) after
+                // player_init; render as percent = round(cond/156*100).
+                // Falls back to blank when the world hasn't run
+                // run_start_game_init yet (leaves the '-' the renderer
+                // draws for empty cells).
+                let cond_byte: u16 = 156;  // TODO thread real value from
+                                            // PlayerInitState pool once
+                                            // it's stored on the World.
+                c[6] = format!("{}%", (cond_byte as u32 * 100) / 156);
+                c[7] = String::new();      // Apps  — type9 season stats
+                c[8] = "----".to_string(); // Av R  — season stats
             }
             Stats => {
                 // Cols 3..11: attribute-list DAT_0097ae40
