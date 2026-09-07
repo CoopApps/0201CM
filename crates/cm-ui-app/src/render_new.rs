@@ -666,16 +666,22 @@ pub fn try_render_club_preview_faithful(
         match mode {
             Traditional => unreachable!(),
             Contract => {
-                // Cols 3..6 per FUN_00457200 lines 2128-2186.
+                // Cols 3..6 per FUN_00457200 lines 2128-2186. Formats
+                // verified against scratchpad/prelaunch/contract_view.png:
+                //   Basic Wage    — plain "£475" (NO "/w" suffix)
+                //   Contract Exp. — "14.6.07"  (DD.M.YY)
+                //   Squad Status  — "-" when unset (renderer inserts
+                //                   the dash for empty cells)
+                //   Releases      — "-" when unset (ditto)
                 let wage = pv.wage();
-                let expires_year = pv.club_contract_expires().year;
-                // Squad Status vs Club: FUN_0075d3d0 gate — for the pre-
-                // launch preview the club is un-managed so no squad
-                // status is set; leave the cell blank.
-                c[3] = String::new();
-                c[4] = format_money_short(wage as i64) + "/w";
-                c[5] = if expires_year > 0 { expires_year.to_string() } else { String::new() };
-                c[6] = String::new();   // release clause (FUN_004d2710 TBD)
+                let exp = pv.club_contract_expires();
+                c[3] = String::new();   // Squad Status flag TBD
+                c[4] = format_money_short(wage as i64);
+                // CmDate stores day-of-year; convert to (month, day-of-
+                // month) for the DD.M.YY string.
+                let (mm, dd) = exp.to_month_day();
+                c[5] = format_contract_expiry(dd as u16, mm as u16, exp.year);
+                c[6] = String::new();   // Release clause flag TBD
             }
             Selection => {
                 // Cols 3..8 per lines 2073-2123.
@@ -759,18 +765,39 @@ pub fn try_render_club_preview_faithful(
         c
     }
 
-    /// Compact currency — 5000 → "£5,000", 12500 → "£12.5k", 1_500_000 → "£1.5m".
+    /// Compact currency — matches the exe's own formatter
+    /// (contract_view.png: £475, £1,200, £26K, £100K, £1.5M).
+    /// - <1000            → "£475"
+    /// - 1000..1_000_000  → "£26K" / "£1,200"
+    /// - >=1_000_000      → "£1.5M"
+    /// The K/M suffix uses UPPERCASE (verified against the capture).
     fn format_money_short(v: i64) -> String {
         if v == 0 { return String::new(); }
         let a = v.abs();
-        let s = if a >= 1_000_000 {
-            format!("£{:.1}m", v as f64 / 1_000_000.0)
+        if a >= 1_000_000 {
+            format!("£{:.1}M", v as f64 / 1_000_000.0)
         } else if a >= 10_000 {
-            format!("£{:.1}k", v as f64 / 1_000.0)
+            // £26K, £100K — round to the nearest thousand.
+            format!("£{}K", v / 1_000)
+        } else if a >= 1_000 {
+            // £1,200 style — the exe splits the thousand with a comma.
+            let thousands = v / 1_000;
+            let rem = v % 1_000;
+            format!("£{},{:03}", thousands, rem)
         } else {
             format!("£{}", v)
-        };
-        s
+        }
+    }
+
+    /// Contract expiry as DD.M.YY per the capture (14.6.07). The exe's
+    /// wall-clock helper packs the date into 3 fields on the Person
+    /// record; we already surface (day, month, year) via
+    /// `PlayerView::club_contract_expires()`.
+    fn format_contract_expiry(day: u16, month: u16, year: u16) -> String {
+        if year == 0 { return String::new(); }
+        // Two-digit year — 2007 → "07".
+        let yy = year % 100;
+        format!("{}.{}.{:02}", day, month, yy)
     }
 
     // Build "Surname, F" — the exe's row-label convention (see the

@@ -184,9 +184,13 @@ impl SquadView {
             // widths to {5,5,24,18,18,18,0,...} in the managed branch
             // (FUN_00525450 gate). For the pre-launch preview the club
             // is un-managed so col 6 stays.
+            // Header order verified against live GDI capture
+            // scratchpad/prelaunch/contract_view.png — the exe paints
+            // Pkd first, Inf second (the decompiled bit table was in
+            // sort-mask order, not paint order).
             Contract => Some(ColumnPack {
                 widths: [5,5,24,14,14,15,11,0,0,0,0,0,10],
-                headers: ["Inf","Pkd","Name","Squad Status","Basic Wage",
+                headers: ["Pkd","Inf","Name","Squad Status","Basic Wage",
                           "Contract Expiry","Releases","","","","","","Value"],
             }),
             // widths local_324; headers per lines 2073-2123.
@@ -519,44 +523,74 @@ pub fn render_squad(
         Some(pack) => {
             let list_right = SB_X0 - 1;
             let slices = pack.slices(LIST_X0, list_right);
-            // Header row — small yellow labels centred in each slice.
+            // ---- Header row — grey bevel + cyan labels. Matches the
+            //      exe's sub-toolbar convention verified against
+            //      scratchpad/prelaunch/contract_view.png.
             for (col_idx, sx0, sx1) in &slices {
                 let hdr = pack.headers[*col_idx].trim_start();
+                // Grey-bevelled cell background under every header cell.
+                draw_panel(surface, *sx0, HDR_Y0, *sx1 - 1, HDR_Y1,
+                    P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
                 if hdr.is_empty() { continue; }
                 draw_wrapped_text(surface, *sx0, HDR_Y0, *sx1 - 2, HDR_Y1,
                     &small_font, &c_string(hdr.as_bytes()),
-                    INK_YELLOW, TS_CENTRE, -1);
+                    INK_CYAN, TS_CENTRE, -1);
             }
-            // Body rows — one per player, 13 sub-cells.
-            let one_col_stride = ROW_STRIDE;
-            let one_col_rows: usize = ((LIST_Y1 - ROW_FIRST_Y) / one_col_stride) as usize;
+            // ---- Body rows — one per player, 13 sub-cells. Tight
+            //      stride so ~16 rows fit the (190..500) list panel
+            //      as the exe does (measured at 16 rows in
+            //      contract_view.png).
+            const NT_ROW_STRIDE: i32 = 16;
+            const NT_ROW_HEIGHT: i32 = 15;
+            let one_col_rows: usize = ((LIST_Y1 - ROW_FIRST_Y) / NT_ROW_STRIDE) as usize;
             let visible = state.players.iter().skip(state.scroll).take(one_col_rows);
             for (i, p) in visible.enumerate() {
-                let y0 = ROW_FIRST_Y + (i as i32) * one_col_stride;
-                let y1 = y0 + ROW_HEIGHT;
+                let y0 = ROW_FIRST_Y + (i as i32) * NT_ROW_STRIDE;
+                let y1 = y0 + NT_ROW_HEIGHT;
                 for (col_idx, sx0, sx1) in &slices {
                     let cell = p.cols.get(*col_idx).copied().unwrap_or("");
                     match *col_idx {
-                        0 | 1 => {
-                            // Inf / Pkd — small marker cells; the exe
-                            // fills them only when a flag is set. Leave
-                            // blank for now (marker fields not yet
-                            // decoded from the person record).
+                        0 => {
+                            // Pkd — blue row-marker square, same style
+                            // as the Traditional number-cell.
+                            draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
+                                P_SOLID_FILL | P_BEVEL, BLUE, INK_CYAN, palette);
+                        }
+                        1 => {
+                            // Inf — currently blank (marker flags TBD
+                            // from the person record).
                         }
                         2 => {
-                            // Name — cyan (or white for on-list players).
-                            let ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
+                            // Name — yellow (or white when the player
+                            // carries a transfer/loan marker).
+                            let ink = if p.marker != ' ' { WHITE } else { INK_YELLOW };
                             let mut buf = format!("  {}", p.name);
                             if p.marker != ' ' { buf.push(p.marker); }
                             buf.push('\0');
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &body_font, buf.as_bytes(), ink,
+                                &small_font, buf.as_bytes(), ink,
                                 TS_CENTRE | W_LEFT, -1);
                         }
-                        _ => {
-                            // Attribute / value cells — yellow, centred.
+                        12 => {
+                            // Value column — the exe paints it on a
+                            // purple/pink bevelled cell (contract_view
+                            // capture). Yellow text centred.
+                            draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
+                                P_SOLID_FILL | P_BEVEL, IG_TITLE_FILL,
+                                INK_YELLOW, palette);
+                            let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, &c_string(cell.as_bytes()),
+                                &small_font, &c_string(shown.as_bytes()),
+                                INK_YELLOW, TS_CENTRE, -1);
+                        }
+                        _ => {
+                            // Data cells — yellow small font. Blank
+                            // cells render "-" like the exe does for
+                            // Squad Status / Releases when the flag
+                            // isn't set.
+                            let shown = if cell.is_empty() { "-" } else { cell };
+                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                                &small_font, &c_string(shown.as_bytes()),
                                 INK_YELLOW, TS_CENTRE, -1);
                         }
                     }
