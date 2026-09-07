@@ -13831,59 +13831,66 @@ impl World {
             if attr.home_reputation    == 0 { attr.home_reputation    = st.reputation[0] as i16; }
             if attr.current_reputation == 0 { attr.current_reputation = st.reputation[1] as i16; }
             if attr.world_reputation   == 0 { attr.world_reputation   = st.reputation[2] as i16; }
-            // Attribute vec (42 slots in DFM order) — stamp back into
-            // the individual named fields when the record shipped as
-            // all-zero. Shane Higgs at Cheltenham is the canonical
-            // "all zeros" case; PlayerInitState fills every one to
-            // [1, 20] via generate_attributes_core.
-            let all_zero =
-                attr.acceleration == 0 && attr.aggression == 0 && attr.agility == 0 &&
-                attr.anticipation == 0 && attr.balance == 0 && attr.bravery == 0 &&
-                attr.consistency == 0 && attr.corners == 0 && attr.crossing == 0;
-            if all_zero && st.attributes.len() >= 42 {
-                let s = &st.attributes;
-                attr.acceleration       = s[0]  as i8;
-                attr.aggression         = s[1]  as i8;
-                attr.agility            = s[2]  as i8;
-                attr.anticipation       = s[3]  as i8;
-                attr.balance            = s[4]  as i8;
-                attr.bravery            = s[5]  as i8;
-                attr.consistency        = s[6]  as i8;
-                attr.corners            = s[7]  as i8;
-                attr.crossing           = s[8]  as i8;
-                attr.free_kicks         = s[9]  as i8;
-                attr.handling           = s[10] as i8;
-                attr.heading            = s[11] as i8;
-                attr.important_matches  = s[12] as i8;
-                attr.injury_proneness   = s[13] as i8;
-                attr.jumping            = s[14] as i8;
-                attr.leadership         = s[15] as i8;
-                attr.left_foot          = s[16] as i8;
-                attr.long_shots         = s[17] as i8;
-                attr.dirtiness          = s[18] as i8;
-                attr.dribbling          = s[19] as i8;
-                attr.finishing          = s[20] as i8;
-                attr.flair              = s[21] as i8;
-                attr.decisions          = s[22] as i8;
-                attr.movement           = s[23] as i8;
-                attr.natural_fitness    = s[24] as i8;
-                attr.one_on_ones        = s[25] as i8;
-                attr.marking            = s[26] as i8;
-                attr.pace               = s[27] as i8;
-                attr.passing            = s[28] as i8;
-                attr.penalties          = s[29] as i8;
-                attr.positioning        = s[30] as i8;
-                attr.reflexes           = s[31] as i8;
-                attr.right_foot         = s[32] as i8;
-                attr.stamina            = s[33] as i8;
-                attr.strength           = s[34] as i8;
-                attr.tackling           = s[35] as i8;
-                attr.teamwork           = s[36] as i8;
-                attr.throw_ins          = s[37] as i8;
-                attr.versatility        = s[38] as i8;
-                attr.vision             = s[39] as i8;
-                attr.work_rate          = s[40] as i8;
-                attr.technique          = s[41] as i8;
+            // Attribute vec (42 slots in DFM order) — PER-SLOT layered
+            // override. Any single attribute that ships as zero gets
+            // replaced by the generated value. Previous logic only
+            // stamped when ALL 42 were zero, which left Muggleton's
+            // Bra=0 alone (his Agg is 8, Cor is 5 — real DB data —
+            // but Bra genuinely ships as zero, and the exe fills that
+            // in). Now every zero slot fills independently.
+            //
+            // PlayerInitState::seed regenerates the 42-vec only when
+            // the shipped record is entirely zero; for partial records
+            // it echoes the shipped bytes. Use a fresh, always-full
+            // generation from generate_attributes_core so we have a
+            // real value to fall back to for each 0 slot.
+            let fill = PlayerInitState::generate_attributes_core(
+                if attr.current_ability > 0 { attr.current_ability } else { st.current_ability },
+                &mut rng,
+            );
+            if fill.len() >= 42 {
+                if attr.acceleration      == 0 { attr.acceleration      = fill[0]  as i8; }
+                if attr.aggression        == 0 { attr.aggression        = fill[1]  as i8; }
+                if attr.agility           == 0 { attr.agility           = fill[2]  as i8; }
+                if attr.anticipation      == 0 { attr.anticipation      = fill[3]  as i8; }
+                if attr.balance           == 0 { attr.balance           = fill[4]  as i8; }
+                if attr.bravery           == 0 { attr.bravery           = fill[5]  as i8; }
+                if attr.consistency       == 0 { attr.consistency       = fill[6]  as i8; }
+                if attr.corners           == 0 { attr.corners           = fill[7]  as i8; }
+                if attr.crossing          == 0 { attr.crossing          = fill[8]  as i8; }
+                if attr.free_kicks        == 0 { attr.free_kicks        = fill[9]  as i8; }
+                if attr.handling          == 0 { attr.handling          = fill[10] as i8; }
+                if attr.heading           == 0 { attr.heading           = fill[11] as i8; }
+                if attr.important_matches == 0 { attr.important_matches = fill[12] as i8; }
+                if attr.injury_proneness  == 0 { attr.injury_proneness  = fill[13] as i8; }
+                if attr.jumping           == 0 { attr.jumping           = fill[14] as i8; }
+                if attr.leadership        == 0 { attr.leadership        = fill[15] as i8; }
+                if attr.left_foot         == 0 { attr.left_foot         = fill[16] as i8; }
+                if attr.long_shots        == 0 { attr.long_shots        = fill[17] as i8; }
+                if attr.dirtiness         == 0 { attr.dirtiness         = fill[18] as i8; }
+                if attr.dribbling         == 0 { attr.dribbling         = fill[19] as i8; }
+                if attr.finishing         == 0 { attr.finishing         = fill[20] as i8; }
+                if attr.flair             == 0 { attr.flair             = fill[21] as i8; }
+                if attr.decisions         == 0 { attr.decisions         = fill[22] as i8; }
+                if attr.movement          == 0 { attr.movement          = fill[23] as i8; }
+                if attr.natural_fitness   == 0 { attr.natural_fitness   = fill[24] as i8; }
+                if attr.one_on_ones       == 0 { attr.one_on_ones       = fill[25] as i8; }
+                if attr.marking           == 0 { attr.marking           = fill[26] as i8; }
+                if attr.pace              == 0 { attr.pace              = fill[27] as i8; }
+                if attr.passing           == 0 { attr.passing           = fill[28] as i8; }
+                if attr.penalties         == 0 { attr.penalties         = fill[29] as i8; }
+                if attr.positioning       == 0 { attr.positioning       = fill[30] as i8; }
+                if attr.reflexes          == 0 { attr.reflexes          = fill[31] as i8; }
+                if attr.right_foot        == 0 { attr.right_foot        = fill[32] as i8; }
+                if attr.stamina           == 0 { attr.stamina           = fill[33] as i8; }
+                if attr.strength          == 0 { attr.strength          = fill[34] as i8; }
+                if attr.tackling          == 0 { attr.tackling          = fill[35] as i8; }
+                if attr.teamwork          == 0 { attr.teamwork          = fill[36] as i8; }
+                if attr.throw_ins         == 0 { attr.throw_ins         = fill[37] as i8; }
+                if attr.versatility       == 0 { attr.versatility       = fill[38] as i8; }
+                if attr.vision            == 0 { attr.vision            = fill[39] as i8; }
+                if attr.work_rate         == 0 { attr.work_rate         = fill[40] as i8; }
+                if attr.technique         == 0 { attr.technique         = fill[41] as i8; }
             }
         }
         // 2. Contract pool — depends on the freshly-populated CA/PA
