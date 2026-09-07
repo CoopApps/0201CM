@@ -666,27 +666,36 @@ pub fn try_render_club_preview_faithful(
         match mode {
             Traditional => unreachable!(),
             Contract => {
-                // Cols 3..6 per FUN_00457200 lines 2128-2186. Formats
-                // verified against scratchpad/prelaunch/contract_view.png:
-                //   Basic Wage    — plain "£475" (NO "/w" suffix)
-                //   Contract Exp. — "14.6.07"  (DD.M.YY)
-                //   Squad Status  — "-" when unset (renderer inserts
-                //                   the dash for empty cells)
-                //   Releases      — "-" when unset (ditto)
-                let wage = pv.wage();
-                let exp = pv.club_contract_expires();
+                // Cols 3..6 per FUN_00457200 lines 2128-2186.
+                //
+                // Data source priority:
+                //   1. World.contracts (contract_init pool) — populated
+                //      at boot by our ContractPool::initialise_all.
+                //      Correct for the ~88% of staff whose shipped .dat
+                //      leaves wage/value/clauses empty.
+                //   2. Fall back to PlayerView getters (Person +0x52
+                //      /+0x4e / etc.) for the ~12% whose contract is
+                //      already in the .dat.
+                let ct = world.contracts.as_ref()
+                    .and_then(|p| p.contract_for_staff(person.id));
+                let wage = ct.map(|r| r.wage).unwrap_or_else(|| pv.wage());
+                let (exp_dd, exp_mm, exp_yyyy) = if let Some(r) = ct {
+                    let exp = cm_domain::typed_records::CmDate {
+                        day: r.expiry_dayofyear, year: r.expiry_year,
+                        is_leap: 0,
+                    };
+                    let (mm, dd) = exp.to_month_day();
+                    (dd as u16, mm as u16, exp.year)
+                } else {
+                    let exp = pv.club_contract_expires();
+                    let (mm, dd) = exp.to_month_day();
+                    (dd as u16, mm as u16, exp.year)
+                };
+                let clauses = ct.map(|r| r.clauses()).unwrap_or_default();
                 c[3] = String::new();   // Squad Status flag TBD
                 c[4] = format_money_full(wage as i64);
-                // CmDate stores day-of-year; convert to (month, day-of-
-                // month) for the DD.M.YY string.
-                let (mm, dd) = exp.to_month_day();
-                c[5] = format_contract_expiry(dd as u16, mm as u16, exp.year);
-                // Releases — ported from FUN_00850fd0 via
-                // ReleaseClauses::short_code(). Currently stays blank
-                // for every player because the shipped-dat import
-                // doesn't populate the clause bytes on Person records
-                // yet (see PlayerView::release_clauses TODO).
-                c[6] = pv.release_clauses().short_code().to_string();
+                c[5] = format_contract_expiry(exp_dd, exp_mm, exp_yyyy);
+                c[6] = clauses.short_code().to_string();
             }
             Selection => {
                 // Cols 3..8 per lines 2073-2123.

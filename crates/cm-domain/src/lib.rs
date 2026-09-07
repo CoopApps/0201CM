@@ -250,6 +250,7 @@ pub mod agevak_patches;
 pub mod menu;
 pub mod stadium;
 pub mod typed_records;
+pub mod contract_init;
 pub mod ui_schema;
 
 pub use typed_records::{ClubView, NationView, PlayerView};
@@ -562,6 +563,14 @@ pub struct World {
     #[serde(default)]
     pub staff: StaffBook,
     pub staff_summary: StaffSummary,
+    /// Boot-time-generated contract pool (wage, value, release
+    /// clauses, expiry). Populated by `contract_init::initialise_all`
+    /// as part of `read_rust_db_dir`. Ports the exe's
+    /// `CONTRACT_MANAGER::initialise_all` (FUN_004cd930) post-load
+    /// pass. `None` on a freshly deserialised World that hasn't run
+    /// the init pass yet.
+    #[serde(default)]
+    pub contracts: Option<contract_init::ContractPool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -12984,6 +12993,7 @@ impl World {
             reference_summary,
             staff: staff_book,
             staff_summary,
+            contracts: None,
         }
     }
 
@@ -13726,9 +13736,14 @@ impl World {
             reference_summary: ReferenceSummary::default(),
             staff,
             staff_summary: StaffSummary::default(),
+            contracts: None,
         };
         world.normalize_base_data();
         world.init_missing_player_sides();
+        // Boot-time contract generator — synthesises wage/value/
+        // release-clause data that the shipped .dat leaves empty for
+        // ~88% of staff. Ports FUN_004cd930 + FUN_00847a80.
+        world.contracts = Some(contract_init::initialise_all(&world));
         world.refresh_summaries();
         Ok(world)
     }
