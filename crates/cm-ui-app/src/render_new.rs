@@ -764,38 +764,27 @@ pub fn try_render_club_preview_faithful(
                 c[7] = String::new();      // Apps  — type9 season stats
                 c[8] = "----".to_string(); // Av R  — season stats
             }
-            Stats => {
-                // Cols 3..11: attribute-list DAT_0097ae40
-                //   {1,2,5,0xc,0xd,0xe,0xf,0x10,0x11}
-                //   = Aggression, Anticipation, Corners, Finishing, Flair,
-                //     Handling, Heading, ImportantMatches, Influence.
-                if let Some(a) = attrs {
-                    c[3]  = a.aggression.to_string();
-                    c[4]  = a.anticipation.to_string();
-                    c[5]  = a.corners.to_string();
-                    c[6]  = a.finishing.to_string();
-                    c[7]  = a.flair.to_string();
-                    c[8]  = a.handling.to_string();
-                    c[9]  = a.heading.to_string();
-                    c[10] = a.important_matches.to_string();
-                    c[11] = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
-                }
-            }
-            MoreStats => {
-                // DAT_0097ae4c {3,4,0xa,0xb,8,9,6,7,0x11}
-                //   = Bravery, Consistency, Dirtiness, Dribbling, Decisions,
-                //     Determination, Creativity, Crossing, Influence.
-                if let Some(a) = attrs {
-                    c[3]  = a.bravery.to_string();
-                    c[4]  = a.consistency.to_string();
-                    c[5]  = a.dirtiness.to_string();
-                    c[6]  = a.dribbling.to_string();
-                    c[7]  = a.decisions.to_string();
-                    c[8]  = String::new(); /* Determination attr 9 not on DomainStaffType10 */
-                    c[9]  = String::new(); /* Creativity attr 6 not on DomainStaffType10 */
-                    c[10] = a.crossing.to_string();
-                    c[11] = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
-                }
+            Stats | MoreStats => {
+                // At the pre-launch (team selection) stage the exe
+                // shows every attribute cell as '-' because no season
+                // has been played yet — Stats and More Stats read
+                // per-competition/per-match tallies from the type9
+                // record, and those are empty at t=0. Leave cols 3..11
+                // blank so the renderer paints its default '-' dash;
+                // Value (col 12) still fills in.
+                //
+                // Once a season has been ticked, the attribute lists
+                // used here would be:
+                //   Stats     DAT_0097ae40 = {1,2,5,0xc,0xd,0xe,0xf,0x10,0x11}
+                //     (Aggression, Anticipation, Corners, Finishing,
+                //      Flair, Handling, Heading, ImportantMatches, Influence)
+                //   MoreStats DAT_0097ae4c = {3,4,0xa,0xb,8,9,6,7,0x11}
+                //     (Bravery, Consistency, Dirtiness, Dribbling,
+                //      Decisions, Determination, Creativity, Crossing,
+                //      Influence)
+                // — but per the user callout these are hidden until
+                // season data exists. Leave the loop empty here.
+                for i in 3..=11 { c[i].clear(); }
             }
             Attributes => {
                 // Default (Physical) sub-toggle: DAT_0097ae58
