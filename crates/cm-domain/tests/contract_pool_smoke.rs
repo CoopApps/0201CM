@@ -28,6 +28,28 @@ fn muggleton_gets_a_contract() {
         .find(|v| v.id() == 1953).expect("Cheltenham club");
     println!("Cheltenham rep = {}", cv.reputation());
 
+    // ---- Aggregate proof: at world scale, how many staff have DB-real
+    //      wage/value/expiry vs synthesised? ----
+    let mut n_total = 0;
+    let mut n_db_wage   = 0;
+    let mut n_db_value  = 0;
+    let mut n_db_expiry = 0;
+    for p in &world.staff.type6 {
+        if p.current_club_id().is_none() { continue; }
+        let pv = cm_domain::typed_records::PlayerView::from_split(p.id, &p.body);
+        n_total += 1;
+        if pv.wage()  > 0                          { n_db_wage   += 1; }
+        if pv.value() > 0                          { n_db_value  += 1; }
+        if !pv.club_contract_expires().is_placeholder() { n_db_expiry += 1; }
+    }
+    println!("\n[layered override] of {n_total} staff-with-employer:");
+    println!("  db wage    : {n_db_wage} ({:.1}%) — synth for the rest",
+             100.0 * n_db_wage   as f32 / n_total as f32);
+    println!("  db value   : {n_db_value} ({:.1}%) — synth for the rest",
+             100.0 * n_db_value  as f32 / n_total as f32);
+    println!("  db expiry  : {n_db_expiry} ({:.1}%) — synth for the rest",
+             100.0 * n_db_expiry as f32 / n_total as f32);
+
     let attr_by_id: std::collections::BTreeMap<u32, &cm_domain::DomainStaffType10> =
         world.staff.type10.iter().map(|a| (a.id, a)).collect();
 
