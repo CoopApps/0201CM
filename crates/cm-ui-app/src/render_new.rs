@@ -895,16 +895,25 @@ pub fn try_render_club_preview_faithful(
         if cc != Some(choice.club_id) { continue; }
         let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
         if !pv.is_player() { continue; }
+        // Note: some players ship with a type10 stub whose CA/PA are 0
+        // because the exe generates their attributes at boot via
+        // FUN_0051f5d0 (player_init). Duncan Willetts at Cheltenham is
+        // one — 17-year-old player in the real game; our port shows
+        // him at CA=0/PA=0/DOB-unset until the init generator is wired
+        // to the World post-load pass. Do NOT filter by ability here —
+        // those zeros are "not yet generated", not "not a player".
         let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
         let attrs = attr_by_id.get(&link).copied();
         let pos = attrs.map(position_code).unwrap_or_default();
-        // Contract view uses the full name; every other mode uses the
-        // "Surname, F" abbreviation. Matches the exe (contract_view.png
-        // shows 'Simon Brown', not 'Brown, S').
-        let name = if matches!(*view, cm_render::screen_club_squad_faithful::SquadView::Contract) {
-            full_name(world, person)
-        } else {
+        // Every non-Traditional view (Contract / Selection / Stats /
+        // More Stats / Attributes / Other) uses the full "Firstname
+        // Lastname" — Traditional is the only view that abbreviates
+        // to "Surname, F" (its 2-players-per-row layout doesn't
+        // have room for the full name).
+        let name = if matches!(*view, cm_render::screen_club_squad_faithful::SquadView::Traditional) {
             surname_initial(world, person)
+        } else {
+            full_name(world, person)
         };
         // Diagnostic prints the raw ids so we can cross-check against
         // the rust-db JSON when the render disagrees with the exe.

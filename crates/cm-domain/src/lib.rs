@@ -2518,10 +2518,18 @@ impl LeagueTier {
         }
     }
 
-    /// The exe's `flag & 3` predicate: is a club in this nation manageable?
-    /// True for Foreground and Background, false for Neither.
+    /// The exe's `+0x11c & 2` predicate — is a club in this nation
+    /// manageable? Verified against FUN_00811140.c:392 (start-game
+    /// gate) and :478 (club-picker loop), plus FUN_0069c0d0.c:18,50,
+    /// 51,102 (per-team active + transfer paths). ONLY Foreground
+    /// (SELECTED, bit 2) is manageable — Background (bit 1) leagues
+    /// tick in the background but their clubs never appear in the
+    /// picker and cross-border transfer paths short-circuit.
+    ///
+    /// Neither and Background both return false here; the earlier
+    /// `!= Neither` interpretation was wrong.
     pub fn is_manageable(self) -> bool {
-        !matches!(self, LeagueTier::Neither)
+        matches!(self, LeagueTier::Foreground)
     }
 }
 
