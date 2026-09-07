@@ -744,8 +744,14 @@ pub fn render_squad(
                 P_DARKEN, 0, 0, palette);
             draw_panel(surface, LIST_X0, LIST_Y0, LIST_X1, LIST_Y1,
                 P_DARKEN, 0, 0, palette);
+            // Subtitle text tracks the active Sort By pick — the exe
+            // labels the band with whatever the current sort key is
+            // (Name / Position(s) / Age / Basic Wage / ...), so the
+            // player knows at a glance which axis the two-col grid is
+            // ordered on.
+            let hdr_txt = state.sort_by.label();
             draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
-                &body_font, &c_string(b"Position(s)"),
+                &body_font, &c_string_latin1(hdr_txt.as_bytes()),
                 INK_YELLOW, TS_CENTRE, -1);
             let visible = state.players.iter().skip(state.scroll).take(VISIBLE_ENTRIES);
             for (i, p) in visible.enumerate() {
