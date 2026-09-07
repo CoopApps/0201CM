@@ -13748,10 +13748,14 @@ impl World {
         };
         world.normalize_base_data();
         world.init_missing_player_sides();
-        // Boot-time contract generator — synthesises wage/value/
-        // release-clause data that the shipped .dat leaves empty for
-        // ~88% of staff. Ports FUN_004cd930 + FUN_00847a80.
-        world.contracts = Some(contract_init::initialise_all(&world));
+        // NOTE: contract_init used to run here. Moved to a
+        // post-league-selection step (`World::run_start_game_init`)
+        // so it fires AFTER the user picks Selected/Background
+        // leagues — same phasing as the exe's FUN_008120d0
+        // "Initialising game data" pass, which runs after
+        // FUN_008053d0 (Select Leagues) and drives the "Loading
+        // database" progress bar. read_rust_db_dir now only loads
+        // shipped-dat pools.
         world.refresh_summaries();
         Ok(world)
     }
@@ -13776,6 +13780,36 @@ impl World {
     ///
     /// Records that already have any of RS/LS/C set are untouched —
     /// their shipped data is authoritative.
+    /// Post-league-selection initialisation. Ports the exe's
+    /// `FUN_008120d0` "Initialising game data" pass that runs AFTER
+    /// the Select Leagues screen and drives the "Loading database"
+    /// progress bar. Every subsystem that needs the user's SELECTED
+    /// / BACKGROUND league picks belongs in this call.
+    ///
+    /// Called from `cm-ui-app` when the leagues → Loading overlay
+    /// transition starts, so by the time Select Team / Select Season
+    /// paints, every generated value the pipeline needs is in place.
+    ///
+    /// Ordered subsystems:
+    ///   1. `contract_init::initialise_all` — wage / value / release
+    ///      clauses / expiry for the ~88% of staff without them.
+    ///   2. player_init (deferred) — CA / PA / DOB for zero-attribute
+    ///      players like Duncan Willetts at Cheltenham.
+    ///   3. (future) any other post-load generators FUN_008120d0
+    ///      runs — retirements, national-team refresh, etc.
+    ///
+    /// Idempotent: calling twice replaces the pool wholesale, which
+    /// matches the exe's behaviour on a fresh "New Game" click.
+    pub fn run_start_game_init(&mut self) {
+        // 1. Contract pool — depends on club reputation (already loaded)
+        //    and, when league tiers are threaded through, on
+        //    LeagueTier::Foreground vs Background.
+        self.contracts = Some(contract_init::initialise_all(self));
+        // 2. player_init — TODO. See FUN_0051f5d0; deterministic core
+        //    already in `player_init::PlayerInitState` but not yet
+        //    called from here.
+    }
+
     pub fn init_missing_player_sides(&mut self) {
         let mut touched = 0usize;
         for a in self.staff.type10.iter_mut() {

@@ -805,28 +805,31 @@ impl App {
                             //  - >1 selected → show Season screen (one box/league)
                             match state.selected_count() {
                                 0 => {}
-                                1 => {
-                                    // Single league: its season is fixed, so
-                                    // initialise directly (Season page skipped).
+                                1 | _ => {
+                                    // FUN_008120d0 "Initialising game
+                                    // data" runs after Select Leagues.
+                                    // Fire every post-selection init
+                                    // subsystem here so the pipeline is
+                                    // ready before Start Season paints.
+                                    if let Some(w) = self.world.as_mut() {
+                                        w.run_start_game_init();
+                                    }
                                     let leagues = state.clone();
                                     let season = StartSeasonState::from_leagues(&leagues);
-                                    start_game = Some((leagues, season));
-                                }
-                                _ => {
-                                    // Multi-league flow — the exe shows a
-                                    // "Loading database" bar while it refines
-                                    // the DB down to the selected leagues.
-                                    // Match that UX: queue a Loading overlay
-                                    // that transitions to Start Season after
-                                    // ~2.5s.
-                                    let leagues = state.clone();
-                                    let season = StartSeasonState::from_leagues(&leagues);
-                                    self.loading = Some(LoadingOverlay {
-                                        label: "Loading database".into(),
-                                        started: std::time::Instant::now(),
-                                        duration: std::time::Duration::from_millis(2500),
-                                        pending: Box::new(Screen::StartSeason { leagues, season }),
-                                    });
+                                    if state.selected_count() == 1 {
+                                        // Single league — season fixed, skip Start Season.
+                                        start_game = Some((leagues, season));
+                                    } else {
+                                        // Multi-league: show the "Loading
+                                        // database" progress bar while the
+                                        // init just ran (visual continuity).
+                                        self.loading = Some(LoadingOverlay {
+                                            label: "Loading database".into(),
+                                            started: std::time::Instant::now(),
+                                            duration: std::time::Duration::from_millis(2500),
+                                            pending: Box::new(Screen::StartSeason { leagues, season }),
+                                        });
+                                    }
                                 }
                             }
                         }
