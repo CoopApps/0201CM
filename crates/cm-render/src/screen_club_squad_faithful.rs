@@ -616,8 +616,11 @@ pub fn render_squad(
                             // Value column — purple bevelled cell with
                             // yellow ink (contract_view.png). `-` when
                             // the DB has no value.
+                            // Purple fill + bevel per row (contract_view
+                            // shows a distinct raised tile per player,
+                            // not one continuous purple strip).
                             draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
-                                P_SOLID_FILL, VALUE_PURPLE,
+                                P_SOLID_FILL | P_BEVEL, VALUE_PURPLE,
                                 INK_YELLOW, palette);
                             let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
