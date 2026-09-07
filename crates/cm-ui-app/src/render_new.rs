@@ -930,6 +930,8 @@ pub fn try_render_club_preview_faithful(
         position: String,
         age: Option<u8>,
         marker: char,
+        /// Squad number 1..N assigned by `World::assign_squad_numbers`.
+        squad_number: u8,
         /// Per-view column strings — length matches
         /// SquadView::column_headers for the active mode.
         cols: Vec<String>,
@@ -972,6 +974,7 @@ pub fn try_render_club_preview_faithful(
             position: pos,
             age: person.age_at(2001, start_day),
             marker: ' ',
+            squad_number: attrs.map(|a| a.squad_number).unwrap_or(0),
             cols,
         });
     }
@@ -1024,6 +1027,8 @@ pub fn try_render_club_preview_faithful(
                     position_group(&a.position).cmp(&position_group(&b.position))
                         .then(a.name.cmp(&b.name)),
                 SortByKey::Age            => a.age.cmp(&b.age),
+                SortByKey::SquadNumber    => a.squad_number.cmp(&b.squad_number)
+                                                .then(a.name.cmp(&b.name)),
                 // The rest are deferred data sources (form/morale/
                 // condition per-player, stats per-season, wage/value
                 // per-contract). Fall back to name for a deterministic
@@ -1049,20 +1054,21 @@ pub fn try_render_club_preview_faithful(
 
     // Owned strings kept on the stack so the renderer's borrows stay
     // valid across the render_squad call.
-    let display: Vec<(String, String, Option<u8>, char, Vec<String>)> = rows.into_iter()
-        .map(|r| (r.name, r.position, r.age, r.marker, r.cols))
+    let display: Vec<(String, String, Option<u8>, char, u8, Vec<String>)> = rows.into_iter()
+        .map(|r| (r.name, r.position, r.age, r.marker, r.squad_number, r.cols))
         .collect();
     // A parallel Vec<Vec<&str>> for the columns — one per row.
     let col_refs: Vec<Vec<&str>> = display.iter()
-        .map(|(_, _, _, _, cols)| cols.iter().map(|s| s.as_str()).collect())
+        .map(|(_, _, _, _, _, cols)| cols.iter().map(|s| s.as_str()).collect())
         .collect();
     let refs: Vec<cm_render::screen_club_squad_faithful::SquadPlayer> = display.iter()
         .enumerate()
-        .map(|(i, (n, p, a, m, _))| cm_render::screen_club_squad_faithful::SquadPlayer {
+        .map(|(i, (n, p, a, m, sq, _))| cm_render::screen_club_squad_faithful::SquadPlayer {
             name: n.as_str(),
             position: p.as_str(),
             age: *a,
             marker: *m,
+            squad_number: *sq,
             cols: col_refs[i].as_slice(),
         })
         .collect();

@@ -86,6 +86,11 @@ pub struct SquadPlayer<'a> {
     pub position: &'a str,
     /// Age in years; `None` when the DB has no DOB for this person.
     pub age: Option<u8>,
+    /// Squad number assigned by `World::assign_squad_numbers` — 1..N
+    /// per club, ranked GK-first then top-CA within group. Rendered
+    /// inside the blue number-cell on Traditional view. `0` when the
+    /// player isn't in the current squad numbering pass.
+    pub squad_number: u8,
     /// A marker rendered after the name — e.g. "*" for on the transfer
     /// list, empty when nothing special. Rendered in white ink like the
     /// exe capture.
@@ -766,6 +771,16 @@ pub fn render_squad(
                 };
                 draw_panel(surface, num.0, y0, num.1, y1,
                     P_SOLID_FILL | P_BEVEL, BLUE, INK_CYAN, palette);
+                // Squad number in the blue cell — white text centred.
+                // Suppressed when 0 (player wasn't in the assignment
+                // pass — matches the exe's empty-cell look).
+                if p.squad_number > 0 {
+                    let mut nbuf = format!("{}", p.squad_number);
+                    nbuf.push('\0');
+                    draw_wrapped_text(surface, num.0, y0, num.1, y1,
+                        &small_font, nbuf.as_bytes(), WHITE,
+                        TS_CENTRE, -1);
+                }
                 let name_ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
                 let mut buf = format!("  {}", p.name);
                 if p.marker != ' ' { buf.push(p.marker); }

@@ -13893,11 +13893,91 @@ impl World {
                 if attr.technique         == 0 { attr.technique         = fill[41] as i8; }
             }
         }
-        // 2. Contract pool — depends on the freshly-populated CA/PA
+        // 2. Squad-number assignment. Every shipped record has a
+        //    sentinel squad_number (Cheltenham ships every player
+        //    with 2) — the exe assigns real 1..N per club at boot
+        //    by grouping on position + ranking within group by CA.
+        //    Deterministic per DB.
+        self.assign_squad_numbers();
+
+        // 3. Contract pool — depends on the freshly-populated CA/PA
         //    above, and on club reputation (already loaded). Runs
         //    AFTER player_init so wage/value calculations use the
         //    generated numbers, not zero.
         self.contracts = Some(contract_init::initialise_all(self));
+    }
+
+    /// Assign 1..N squad numbers per club by grouping on position
+    /// (GK first, then SW, D, DM, M, AM, F, S) and ranking within
+    /// each group by descending CA. Matches the exe's boot-time
+    /// pass: highest-CA GK = 1, top defenders 2..6, top mid/att
+    /// 7..11, then backups, then reserves. Sentinel values in the
+    /// shipped .dat (Cheltenham ships every player with 2) get
+    /// replaced wholesale — squad numbers are always regenerated at
+    /// boot so a partial ship doesn't leak through.
+    pub fn assign_squad_numbers(&mut self) {
+        use std::collections::BTreeMap;
+        // person id → club id (only players with a club get numbered).
+        let person_club: BTreeMap<u32, u32> = self.staff.type6.iter()
+            .filter_map(|p| p.current_club_id().map(|c| (p.id, c)))
+            .collect();
+        // person → linked type10 record (via player_data_id).
+        let person_link: BTreeMap<u32, u32> = self.staff.type6.iter()
+            .map(|p| {
+                let pv = crate::typed_records::PlayerView::from_split(p.id, &p.body);
+                let link = pv.player_data_id().map(|l| l as u32).unwrap_or(p.id);
+                (p.id, link)
+            })
+            .collect();
+        // Group type10 indices by club, tagged with (group, ca).
+        // group: 0=GK 1=SW 2=D 3=DM 4=M 5=AM 6=F 7=S 8=other.
+        let mut by_club: BTreeMap<u32, Vec<(u8, i16, usize)>> = BTreeMap::new();
+        for (i, attr) in self.staff.type10.iter().enumerate() {
+            // Find the person that links to this type10 — search back
+            // via the (person_id → linked type10 id) map.
+            let Some(person_id) = person_link.iter()
+                .find_map(|(pid, link)| if *link == attr.id { Some(*pid) } else { None }) else { continue; };
+            let Some(club_id) = person_club.get(&person_id).copied() else { continue; };
+            // Primary aptitude — pick the strongest of the 8 role
+            // groups. Ties break in GK → SW → D → DM → M → AM → F → S
+            // preference order.
+            // Position groups: 0=GK 1=SW 2=D 3=DM 4=M 5=AM 6=F/S.
+            // The type10 aptitude set doesn't split F vs S (there's a
+            // single apt_attacker byte covering both), which is fine
+            // for ranking — the exe uses the same apt for both roles
+            // and only splits on display via the aptitude formatter.
+            let apts = [
+                attr.apt_goalkeeper,
+                attr.apt_sweeper,
+                attr.apt_defender,
+                attr.apt_def_midfielder,
+                attr.apt_midfielder,
+                attr.apt_att_midfielder,
+                attr.apt_attacker,
+            ];
+            let (group, _) = apts.iter().enumerate()
+                .fold((7u8, i8::MIN), |(bg, bv), (i, &v)| {
+                    if v > bv { (i as u8, v) } else { (bg, bv) }
+                });
+            let ca = if attr.current_ability > 0 { attr.current_ability } else { 0 };
+            by_club.entry(club_id).or_default().push((group, ca, i));
+        }
+        // Sort each club's list: group ASC, CA DESC, then id ASC as a
+        // stable tiebreaker so re-runs of the same DB assign the
+        // same numbers.
+        for (_, roster) in by_club.iter_mut() {
+            roster.sort_by(|a, b|
+                a.0.cmp(&b.0)
+                    .then(b.1.cmp(&a.1))
+                    .then(a.2.cmp(&b.2))
+            );
+            // Assign 1..=roster.len() (clamps to u8 — CM never has more
+            // than 255 players at a single club, and 30-50 is typical).
+            for (rank, &(_, _, idx)) in roster.iter().enumerate() {
+                let n = (rank + 1).min(255) as u8;
+                self.staff.type10[idx].squad_number = n;
+            }
+        }
     }
 
     pub fn init_missing_player_sides(&mut self) {
