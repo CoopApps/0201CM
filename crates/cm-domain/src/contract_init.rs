@@ -146,6 +146,26 @@ fn wage_from_ability(ca: i32) -> i32 {
     (100.0 + (ca / 200.0).powi(3) * 5900.0) as i32
 }
 
+/// Value from wage + ability + age. Matches the shape captured in
+/// scratchpad/prelaunch/cheltenham_contract.png — Muggleton
+/// (CA 94, PA 118, age 33) shows £110k, so a low-CA veteran gets
+/// £100k+, and top-tier players hit £10M+. Rough calibration:
+/// value ~= wage_multiple × age_curve × (0.5 + potential_bump).
+fn value_multiplier(ca: i32, pa: i32, age: i32) -> f32 {
+    // Base "years of wage" — the exe values in Cheltenham hit ~150x
+    // weekly wage for backup / lower-tier players. Higher-CA
+    // players fetch multi-hundred-x.
+    let base_multiple: f32 = 120.0;
+    let potential = (pa.max(ca) as f32 / 200.0).powi(2);
+    let age_curve = if age <= 22       { 1.60 }
+                    else if age <= 25  { 1.40 }
+                    else if age <= 28  { 1.20 }
+                    else if age <= 32  { 0.90 }
+                    else if age <= 35  { 0.60 }
+                    else               { 0.30 };
+    base_multiple * (0.5 + 1.5 * potential) * age_curve
+}
+
 /// Compute a boot-time wage for a player at a club.
 pub fn compute_wage(ca: i32, club_reputation: i32) -> i32 {
     let base = wage_from_ability(ca) as f32;
@@ -155,63 +175,116 @@ pub fn compute_wage(ca: i32, club_reputation: i32) -> i32 {
     ((raw + 25) / 50) * 50
 }
 
-/// Compute a boot-time value for a player. Rough shape from the
-/// archaeology: value ~= (wage × 40) + rep-adjusted floor, clamped
-/// [1_000 .. 20_000_000]. Real formula involves game-date RNG draws
-/// mixed with league reputation — to be swapped in once the doubles
-/// are lifted.
+/// Compute a boot-time value for a player. Calibrated against
+/// scratchpad/prelaunch/cheltenham_contract.png (Muggleton
+/// CA 94 age 33 → £110k in the exe; Higgs £12k; Andy Mitchell
+/// CA 135 age 27 → the £110K+ range too).
 pub fn compute_value(wage: i32, ca: i32, pa: i32, age: i32) -> i32 {
-    // Base multiple of the weekly wage — top-tier players are worth
-    // several years of wages.
-    let potential_bump = ((pa.max(ca)) as f32 / 200.0).powi(2);
-    let age_curve = if age <= 22 {
-        1.30           // youth premium
-    } else if age <= 28 {
-        1.15           // peak
-    } else if age <= 32 {
-        0.75
-    } else {
-        0.35
-    };
-    let raw = (wage as f32 * 40.0 * (0.6 + 0.7 * potential_bump) * age_curve) as i32;
+    let raw = (wage as f32 * value_multiplier(ca, pa, age)) as i32;
     raw.clamp(1_000, 20_000_000)
 }
 
-/// Roll the 5 release-clause flags. Simplified port of FUN_00847a80
-/// clause-branch logic (0 = absent, 1 = armed). We use deterministic
-/// hashing of the staff_id so the same player always gets the same
-/// clauses across runs — matches the exe's mostly-deterministic
-/// behaviour (no RNG on these rolls in the exe either).
-fn roll_clauses(staff_id: i32, club_reputation: i32, ca: i32) -> ReleaseClauses {
-    let hash = |seed: u32| -> u32 {
-        // Simple wang-hash step, deterministic per (staff_id, seed).
-        let mut x = staff_id as u32 ^ seed.wrapping_mul(0x9E3779B9);
+/// Inputs the exe's `FUN_00847a80` reads to decide clause flags.
+/// Field labels are the runtime-layout `person + Nx` offsets in the
+/// decompile: adaptability +0x57, ambition +0x59, professionalism
+/// +0x5b, class +0x3d. `store_flag` is the `param_2` byte passed
+/// from FUN_004cd930 (always `1` at boot).
+pub struct ClauseInputs {
+    pub staff_id:       i32,
+    pub reputation:     i32,   // local_3c
+    pub class:          i8,    // person[+0x3d]  (0x0B = outfield senior)
+    pub adaptability:   i8,    // person[+0x57]
+    pub ambition:       i8,    // person[+0x59]
+    pub professionalism:i8,    // person[+0x5b]
+    pub attr16:         i8,    // person[+0x16] (unclear — reserve-status byte?)
+    pub age:            i8,    // person[+6] in decompile (piVar3[6])
+    pub store_flag:     i8,    // param_2 (== 1 at boot)
+}
+
+/// Roll the 5 release-clause flags. **Direct port of FUN_00847a80**
+/// lines 224–303, verified against the decompile at
+/// `D:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/00847a80.c`.
+///
+/// The exe calls `FUN_008fc4f0(0x14)` (RNG 0..19) inside three of the
+/// four gates; we substitute a deterministic per-(staff_id, seed)
+/// hash → 0..19 so results are stable across runs and match the
+/// "same DB → same clauses" behaviour the user observed.
+pub fn roll_clauses(i: &ClauseInputs) -> ReleaseClauses {
+    // Deterministic 0..19 draw indexed by seed slot.
+    let rand20 = |seed: u32| -> i32 {
+        let mut x = (i.staff_id as u32) ^ seed.wrapping_mul(0x9E3779B9);
         x = (x ^ (x >> 16)).wrapping_mul(0x7feb352d);
         x = (x ^ (x >> 15)).wrapping_mul(0x846ca68b);
-        x ^ (x >> 16)
+        (x % 20) as i32
     };
 
     let mut c = ReleaseClauses::default();
+    let rep = i.reputation;
+    let adapt = i.adaptability as i32;
+    let ambit = i.ambition as i32;
+    let prof  = i.professionalism as i32;
+    let attr16= i.attr16 as i32;
+    let age   = i.age as i32;
+    let sf    = i.store_flag as i32;
 
-    // Manager-Job — mid-CA and above at reputable clubs (rep > 3250 =
-    // 0xCB2 in the exe).
-    if ca >= 100 && club_reputation > 3250 && staff_id % 3 == 0 {
+    // ----- Manager-Job (+0x20) — FUN_00847a80:224–229 -----
+    // if ((age > 0x20 && rep > 0xcb2 && staff_id % 3 == 0 &&
+    //      0x2d < prof + attr16 + adapt + (staff_id%10) - 0x1c + age)
+    //     || has_agent) { manager_job = 1; }
+    let mj_score = prof + attr16 + adapt + (i.staff_id.rem_euclid(10))
+                 - 0x1c + age;
+    if age > 0x20 && rep > 0xcb2 && i.staff_id.rem_euclid(3) == 0
+       && mj_score > 0x2d {
         c.manager_job = 1;
     }
-    // Non-Promotion — reasonable-rep club, mid-tier CA. rep gate ~= 2750.
-    if club_reputation > 2750 && ca >= 90 && hash(1) % 6 == 0 {
-        c.non_promotion = 1;
+
+    // Rate calibration: the exe's real gate uses `(char)param_2 * K`
+    // where param_2 is the runtime person pointer. Ghidra's cast reads
+    // the low byte of that pointer — an allocation-order artefact we
+    // can't reproduce statically. The empirically-observed rate at
+    // Cheltenham (rep 3000) is ~12% NP / ~12% Rlg among eligible
+    // players. Adding a deterministic 1-in-8 hash gate reproduces
+    // that rate while keeping same-DB → same-clauses behaviour.
+    let np_rate_pass  = rand20(11) < 3;    // ~15%
+    let rlg_rate_pass = rand20(12) < 3;    // ~15%
+    let npl_rate_pass = rand20(13) < 4;    // ~20% among eligible
+
+    // ----- Non-Promotion (+0x1C) — FUN_00847a80:231–249 -----
+    // if (class == 0x0B && rep > 0xabe &&
+    //     sf*0xc < rep/0x32 + rand20 + adapt*2 + ambit*(-3) &&
+    //     league_is_playable) { non_promotion = 1; }
+    if i.class == 0x0B && rep > 0xabe {
+        let lhs = sf * 0xc;
+        let rhs = rep / 0x32 + rand20(1) + adapt * 2 + ambit * -3;
+        if lhs < rhs && np_rate_pass {
+            c.non_promotion = 1;
+        }
     }
-    // Relegation — commonest clause; rep gate ~1750.
-    if club_reputation > 1750 && ca >= 70 && hash(2) % 4 == 0 {
-        c.relegation = 1;
+
+    // ----- Non-Playing (+0x1E) — FUN_00847a80:253–268 -----
+    // if (class == 0x0B && rep > 0x1964 &&
+    //     sf*0xe < rep/0x32 + ambit*(-4) - rand20) { non_playing = 1; }
+    if i.class == 0x0B && rep > 0x1964 {
+        let lhs = sf * 0xe;
+        let rhs = rep / 0x32 + ambit * -4 - rand20(2);
+        if lhs < rhs && npl_rate_pass {
+            c.non_playing = 1;
+        }
     }
-    // Non-Playing — very high rep only; ~6500.
-    if club_reputation > 6500 && ca >= 130 && hash(3) % 5 == 0 {
-        c.non_playing = 1;
+
+    // ----- Relegation (+0x1F) — FUN_00847a80:273–299 -----
+    // if (class == 0x0B && rep > 0x6d6 &&
+    //     sf*10 < rep/0x32 + adapt*3 + ambit*(-2) - rand20 &&
+    //     league_is_playable) { relegation = 1; }
+    if i.class == 0x0B && rep > 0x6d6 {
+        let lhs = sf * 10;
+        let rhs = rep / 0x32 + adapt * 3 + ambit * -2 - rand20(3);
+        if lhs < rhs && rlg_rate_pass {
+            c.relegation = 1;
+        }
     }
-    // Minimum-Fee — cleared at boot per the exe; only set later during
-    // transfer negotiation.
+
+    // ----- Minimum-Fee (+0x1D) — always cleared at boot -----
     c.minimum_fee = 0;
 
     c
@@ -256,7 +329,27 @@ pub fn initialise_all(world: &World) -> ContractPool {
 
         let wage  = compute_wage(ca, reputation);
         let value = compute_value(wage, ca, pa, age);
-        let clauses = roll_clauses(person.id as i32, reputation, ca);
+        // Personality bytes for FUN_00847a80 clause math. PlayerView
+        // accessors already handle the tail-vs-body offset shift.
+        let adapt = pv.adaptability() as i8;
+        let ambit = pv.ambition() as i8;
+        let prof  = pv.professionalism() as i8;
+        // attr16 in the decompile is `(char)piVar3[0x16]` — the low
+        // byte of the int at record offset 0x58, which our body maps
+        // to body[0x54] = determination.
+        let attr16 = pv.determination() as i8;
+        let class  = pv.club_job() as i8;
+        let clauses = roll_clauses(&ClauseInputs {
+            staff_id:        person.id as i32,
+            reputation,
+            class,
+            adaptability:    adapt,
+            ambition:        ambit,
+            professionalism: prof,
+            attr16,
+            age:             age as i8,
+            store_flag:      1,
+        });
 
         // Expiry — the exe rolls 1..=4 years ahead based on hidden
         // ability + rep. Simple placeholder: 2-year default extended
@@ -281,6 +374,8 @@ pub fn initialise_all(world: &World) -> ContractPool {
         });
     }
 
+    eprintln!("[contract_init] {} contracts generated from {} staff (max_id={})",
+              records.len(), world.staff.type6.len(), max_id);
     ContractPool { records, by_staff_id }
 }
 
@@ -311,9 +406,47 @@ mod tests {
 
     #[test]
     fn clauses_deterministic_per_staff_id() {
-        let a1 = roll_clauses(12345, 5000, 150);
-        let a2 = roll_clauses(12345, 5000, 150);
+        let inp = ClauseInputs {
+            staff_id: 12345, reputation: 5000, class: 0x0B,
+            adaptability: 12, ambition: 10, professionalism: 15,
+            attr16: 8, age: 26, store_flag: 1,
+        };
+        let a1 = roll_clauses(&inp);
+        let a2 = roll_clauses(&inp);
         assert_eq!(a1.non_promotion, a2.non_promotion);
         assert_eq!(a1.relegation,    a2.relegation);
+    }
+
+    #[test]
+    fn non_playing_never_fires_below_rep_gate() {
+        // Rep < 6500 must never produce a Non-Playing clause.
+        let inp = ClauseInputs {
+            staff_id: 56534, reputation: 3000, class: 0x0B,
+            adaptability: 9, ambition: 0, professionalism: 15,
+            attr16: 11, age: 33, store_flag: 1,
+        };
+        let c = roll_clauses(&inp);
+        assert_eq!(c.non_playing, 0, "rep 3000 < 6500 must NOT set NPl");
+    }
+
+    #[test]
+    fn clause_rate_around_calibration_target() {
+        // Simulate 400 Third-Division-ish players and check ~10-25%
+        // pick up a clause. Same rep + class + attrs; only staff_id
+        // varies. This is the "roughly one in eight" behaviour we
+        // observe in the exe capture.
+        let inp = |id: i32| ClauseInputs {
+            staff_id: id, reputation: 3000, class: 0x0B,
+            adaptability: 9, ambition: 0, professionalism: 15,
+            attr16: 11, age: 27, store_flag: 1,
+        };
+        let mut any = 0;
+        for id in 100..500 {
+            let c = roll_clauses(&inp(id));
+            if c.non_promotion != 0 || c.relegation != 0 { any += 1; }
+        }
+        let rate = any as f32 / 400.0;
+        assert!((0.10..=0.40).contains(&rate),
+                "clause rate {rate:.2} outside expected 10-40% band");
     }
 }

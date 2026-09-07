@@ -782,8 +782,9 @@ pub fn try_render_club_preview_faithful(
     /// Currency formatter for the WAGE column — full digits with
     /// comma-separated thousands. Verified against
     /// cheltenham_contract.png: £150, £750, £1,200. No K/M abbrev.
+    /// Zero prints as `£0` (out-of-contract), NOT blank.
     fn format_money_full(v: i64) -> String {
-        if v == 0 { return String::new(); }
+        if v == 0 { return "\u{00A3}0".to_string(); }
         let neg = v < 0;
         let mut n = v.unsigned_abs();
         let mut groups: Vec<String> = Vec::new();
@@ -800,9 +801,9 @@ pub fn try_render_club_preview_faithful(
     /// Currency formatter for the VALUE column (purple bevel) — the
     /// exe uses K/M abbreviations here. Verified against
     /// cheltenham_contract.png: £12K, £110K, £45K, £8K. Below 1000
-    /// prints full digits.
+    /// prints full digits. Zero shows as `£0` (out-of-contract).
     fn format_money_k(v: i64) -> String {
-        if v == 0 { return String::new(); }
+        if v == 0 { return "\u{00A3}0".to_string(); }
         let a = v.unsigned_abs();
         let sign = if v < 0 { "-" } else { "" };
         if a >= 1_000_000 {
