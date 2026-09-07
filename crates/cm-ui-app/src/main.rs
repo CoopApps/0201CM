@@ -965,7 +965,7 @@ impl App {
                                 .find(|v| v.id() as i32 == nid)
                             {
                                 clubs.push((String::new(), 0));   // sep row
-                                clubs.push((nv.primary_name().to_uppercase(),
+                                clubs.push((nv.primary_name(),
                                              0xFFFF_0000 | nv.id()));
                             }
                         }

@@ -901,7 +901,7 @@ pub fn try_render_club_preview_faithful(
                 items.push((String::new(), 0));
                 // Encode the national team as club_id = 0xFFFF_0000 |
                 // nation_id sentinel so the click handler can spot it.
-                items.push((nv.primary_name().to_uppercase(),
+                items.push((nv.primary_name(),
                              0xFFFF_0000 | nv.id()));
             }
         }
