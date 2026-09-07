@@ -711,10 +711,19 @@ pub fn render_squad(
                         (SquadView::Contract, 6) => TRIANGLE_ORANGE,   // Releases
                         _ => cell_inks[*col_idx].unwrap_or(INK_YELLOW),
                     };
+                    // Alignment — Position column reads left-aligned in
+                    // the exe (D/DM R, S C etc. hug the left of the
+                    // cell) so the varying widths don't look wobbly.
+                    // Every other data cell is centred.
+                    let align = if matches!(state.view, SquadView::Selection) && *col_idx == 3 {
+                        W_LEFT
+                    } else {
+                        TS_CENTRE
+                    };
                     let shown = if cell.is_empty() { "-" } else { cell };
                     draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
                         &small_font, &c_string_latin1(shown.as_bytes()),
-                        ink, TS_CENTRE, -1);
+                        ink, align, -1);
                 }
             }
         }
