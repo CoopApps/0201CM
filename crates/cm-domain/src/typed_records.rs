@@ -504,6 +504,65 @@ pub struct PlayerView<'a> {
     id: i32,
 }
 
+/// 5 release-clause flags on a staff contract. Semantics per
+/// FUN_00850fd0: 0 = absent, 1 = armed, 2 = tripped. Field order
+/// verified against `agevak::AgevakTContractOffsets` (0x1C..0x20).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ReleaseClauses {
+    pub non_promotion: u8,
+    pub minimum_fee:   u8,
+    pub non_playing:   u8,
+    pub relegation:    u8,
+    pub manager_job:   u8,
+}
+
+impl ReleaseClauses {
+    /// Squad-view "Releases" column short-code. Direct port of the
+    /// precedence tree in FUN_00850fd0 (00850fd0.c), verified against
+    /// scratchpad/prelaunch/cheltenham_contract.png (Muggleton →
+    /// "NP & Rlg", Keith Hill → "Rlg."). Returns `""` when no clause
+    /// is set — the caller renders a cyan '-' in that case.
+    ///
+    /// The five short codes are literals from the exe's `.rdata`:
+    ///   0x00A6F658 "Man."
+    ///   0x00A6F69C "NP & Rlg"
+    ///   0x00A6F6F4 "Rlg."
+    ///   0x00A6F734 "Non Pro."
+    ///   0x00A6F77C "Min.Fee"
+    ///
+    /// The exe NEVER joins codes at runtime with " & " — the combined
+    /// "NP & Rlg" is a single pre-canned string. Precedence:
+    ///   1. minimum_fee     → "Min.Fee"
+    ///   2. NP && Rlg both set:
+    ///        NP == 2 → "Non Pro."   (tripped)
+    ///        Rlg == 2 → "Rlg."      (tripped)
+    ///        else   → "NP & Rlg"
+    ///   3. NP alone        → "Non Pro."
+    ///   4. Rlg alone       → "Rlg."
+    ///   5. manager_job     → "Man."
+    ///   6. else            → ""
+    pub fn short_code(&self) -> &'static str {
+        if self.minimum_fee != 0 { return "Min.Fee"; }
+        let (np, rlg) = (self.non_promotion, self.relegation);
+        if np != 0 && rlg != 0 {
+            if np  == 2 { return "Non Pro."; }
+            if rlg == 2 { return "Rlg."; }
+            return "NP & Rlg";
+        }
+        if np  != 0 { return "Non Pro."; }
+        if rlg != 0 { return "Rlg."; }
+        if self.manager_job != 0 { return "Man."; }
+        ""
+    }
+    /// Whether the short code should be painted in the HIGHLIGHT
+    /// colour (orange). Matches the return-1 / return-2 test the exe
+    /// makes on FUN_00850fd0 to pick DAT_00acdf98 (red/orange) vs
+    /// DAT_00ad6bc4 (default). ANY set clause colours the cell.
+    pub fn is_active(&self) -> bool {
+        !self.short_code().is_empty()
+    }
+}
+
 impl<'a> PlayerView<'a> {
     /// On-disk size of the shipped (version-1) record.
     pub const RECORD_SIZE_DISK_V1: usize = 0x9d;
@@ -647,6 +706,32 @@ impl<'a> PlayerView<'a> {
 
     pub fn value(&self) -> i32 {
         le_i32(self.tail, self.at(0x52))
+    }
+
+    /// Five release-clause flags read from the Person record. Byte
+    /// semantics per FUN_00850fd0 decompile: 0 = clause absent, 1 =
+    /// clause armed but not tripped, 2 = clause tripped (red-highlight
+    /// paint on the Releases column). Field order matches
+    /// `agevak::AgevakTContractOffsets` — Non-Promotion, Minimum-Fee,
+    /// Non-Playing, Relegation, Manager-Job.
+    ///
+    /// WHERE THE BYTES LIVE — TODO. The Ghidra archaeology reads these
+    /// off `param_1 + 0x1C..0x20` where param_1 is the pointer passed to
+    /// FUN_00850fd0 (a TContract pointer). Our shipped-dat import
+    /// currently leaves wage/value/clauses empty on many staff (Muggleton
+    /// verified id=56534 with wage=0/value=0) so the source offset on
+    /// the Person record is unresolved — likely the exe fills these at
+    /// game boot in FUN_0051f5d0 / FUN_005121a0. Until the loader is
+    /// fixed OR the byte offset is Frida-verified, this returns all
+    /// zeros and the Releases column stays blank.
+    pub fn release_clauses(&self) -> ReleaseClauses {
+        ReleaseClauses {
+            non_promotion: 0,
+            minimum_fee:   0,
+            non_playing:   0,
+            relegation:    0,
+            manager_job:   0,
+        }
     }
 
     // --- personality (offsets loader-verified; names community-standard) ---

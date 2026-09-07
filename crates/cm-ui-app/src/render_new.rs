@@ -681,7 +681,12 @@ pub fn try_render_club_preview_faithful(
                 // month) for the DD.M.YY string.
                 let (mm, dd) = exp.to_month_day();
                 c[5] = format_contract_expiry(dd as u16, mm as u16, exp.year);
-                c[6] = String::new();   // Release clause flag TBD
+                // Releases — ported from FUN_00850fd0 via
+                // ReleaseClauses::short_code(). Currently stays blank
+                // for every player because the shipped-dat import
+                // doesn't populate the clause bytes on Person records
+                // yet (see PlayerView::release_clauses TODO).
+                c[6] = pv.release_clauses().short_code().to_string();
             }
             Selection => {
                 // Cols 3..8 per lines 2073-2123.

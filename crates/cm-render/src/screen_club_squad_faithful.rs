@@ -628,14 +628,31 @@ pub fn render_squad(
                                 &small_font, &c_string_latin1(shown.as_bytes()),
                                 WHITE, TS_CENTRE, -1);
                         }
-                        3 | 6 => {
-                            // Squad Status + Releases — flag-driven
-                            // columns; the exe paints a CYAN "-" when
-                            // the flag isn't set (contract_view.png).
+                        3 => {
+                            // Squad Status — cyan '-' when unset.
                             let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
                                 &small_font, &c_string_latin1(shown.as_bytes()),
                                 INK_CYAN, TS_CENTRE, -1);
+                        }
+                        6 => {
+                            // Releases — cyan '-' when unset, otherwise
+                            // ORANGE-highlighted short code (Non Pro.,
+                            // Rlg., Man., Min.Fee, NP & Rlg). Matches
+                            // FUN_00850fd0 return-code path selecting
+                            // DAT_00acdf98 red/orange in the exe. Colour
+                            // verified against cheltenham_contract.png
+                            // where Muggleton's "NP & Rlg" is orange
+                            // and everyone else's '-' is cyan.
+                            if cell.is_empty() {
+                                draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                                    &small_font, &c_string_latin1(b"-"),
+                                    INK_CYAN, TS_CENTRE, -1);
+                            } else {
+                                draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                                    &small_font, &c_string_latin1(cell.as_bytes()),
+                                    TRIANGLE_ORANGE, TS_CENTRE, -1);
+                            }
                         }
                         _ => {
                             // Data cells — yellow small font.
