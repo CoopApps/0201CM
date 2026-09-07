@@ -238,6 +238,34 @@ impl SquadView {
     }
 }
 
+/// Semantic type of a header cell — drives default sort direction
+/// and the compare function used when the header is clicked.
+///
+///   Text    — first click sorts A→Z, second click Z→A. Name / Nat. /
+///             Squad Status / Position / Releases fall here.
+///   Numeric — first click sorts high→low, second click low→high.
+///             Wage / Value / attributes / Age fall here.
+///   Date    — first click sorts soonest→furthest, second click flips.
+///             Contract Expiry is the only current one.
+///   Marker  — non-sortable ornament columns (Inf / Pkd flags). Header
+///             clicks are absorbed with no state change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColumnKind {
+    Text,
+    Numeric,
+    Date,
+    Marker,
+}
+
+impl ColumnKind {
+    /// True when this column's first-click direction is descending.
+    /// Numeric columns (wage / value / attributes) show the biggest
+    /// value at the top first; text/date columns show smallest first.
+    pub fn default_descending(self) -> bool {
+        matches!(self, ColumnKind::Numeric)
+    }
+}
+
 /// Per-view column pack — unit widths + header strings, one entry each
 /// per column in the exe's 13-cell row grid (or 8 for Traditional).
 #[derive(Debug, Clone, Copy)]
@@ -250,6 +278,37 @@ pub struct ColumnPack {
 }
 
 impl ColumnPack {
+    /// Semantic type of each column — drives default sort direction
+    /// and the compare function used at click time. Aligned by index
+    /// with `headers` / `widths`.
+    pub fn kinds(&self) -> [ColumnKind; 13] {
+        // Fallback: the trailing "Value" column and per-attribute
+        // numeric columns default to numeric-desc; Name is text-asc;
+        // date columns are date-asc; everything else defaults to
+        // text-asc so the sort at least deterministically groups
+        // like values.
+        use ColumnKind::*;
+        let mut k = [Text; 13];
+        k[0] = Marker; k[1] = Marker;
+        k[2] = Text;   // Name column — text sort (A→Z first click).
+        k[12] = Numeric;
+        // Override cols 3..11 per known headers.
+        for (i, hdr) in self.headers.iter().enumerate() {
+            match *hdr {
+                "Contract Expiry"                => k[i] = Date,
+                "Basic Wage" | "Value" | "Age"
+                    | "Caps" | "Goals" | "Form"
+                    | "Morale" | "Cond."          => k[i] = Numeric,
+                "Nat." | "Squad Status" | "Position" | "Releases"
+                    | "Name"                      => k[i] = Text,
+                // Attribute columns ("Agg", "Ant", "Cor", "Bra"…): numeric.
+                s if s.len() <= 3 && !s.is_empty() => k[i] = Numeric,
+                _ => {}
+            }
+        }
+        k
+    }
+
     /// Convert unit widths to pixel x-slices across `x0..x1`. Returns one
     /// (x0, x1) tuple per NON-ZERO column, in the same order as `widths`.
     pub fn slices(&self, x0: i32, x1: i32) -> Vec<(usize, i32, i32)> {
@@ -854,6 +913,23 @@ fn jump_menu_rect(item_count: usize) -> crate::menu_dropdown::DropdownRect {
 /// is over (0-based), capped at `items.len()`.
 pub fn jump_menu_hit(x: i32, y: i32, item_count: usize) -> Option<usize> {
     jump_menu_rect(item_count).hit(item_count.min(JUMP_MENU_MAX), x, y)
+}
+
+/// Hit-test the column-header row (non-Traditional view only).
+/// Returns the 0..12 column index the click lands on, or None when
+/// the click misses the header strip or lands on a Marker column
+/// (Inf / Pkd) that can't be sorted.
+pub fn header_hit(pack: &ColumnPack, x: i32, y: i32) -> Option<usize> {
+    if y < COL_HDR_Y0 || y > COL_HDR_Y1 { return None; }
+    let list_right = SB_X0 - 1;
+    let kinds = pack.kinds();
+    for (col_idx, sx0, sx1) in pack.slices(LIST_X0, list_right) {
+        if x >= sx0 && x <= sx1 {
+            if kinds[col_idx] == ColumnKind::Marker { return None; }
+            return Some(col_idx);
+        }
+    }
+    None
 }
 
 /// Draw a hollow right-pointing ▷ triangle. Left edge is a vertical

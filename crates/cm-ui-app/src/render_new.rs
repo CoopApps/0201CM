@@ -504,7 +504,7 @@ pub fn try_render_club_preview_faithful(
     cursor_x: i32,
     cursor_y: i32,
 ) -> bool {
-    let Screen::ClubPreview { choice, scroll, view, view_menu_open, jump_menu_open } = screen
+    let Screen::ClubPreview { choice, scroll, view, view_menu_open, jump_menu_open, sort } = screen
         else { return false };
     let Some(world) = world else { return false };
 
@@ -615,6 +615,44 @@ pub fn try_render_club_preview_faithful(
     /// exe's actual 7 outfield display codes in defensive→attacking
     /// order. Multi-role players are grouped by their FIRST head code
     /// (e.g. "D/M L" sorts as D), matching the exe's grouping.
+    /// Best-effort numeric extraction for sort comparison.
+    /// Handles the game's formats: "£475", "£26K", "£1.5M", "3.5",
+    /// "42" — anything non-digit gets stripped, K/M multiply. Missing
+    /// or unparseable inputs sort as 0 (bottom for DESC, top for ASC).
+    fn strip_num(s: &str) -> i64 {
+        let s = s.trim();
+        if s.is_empty() || s == "-" { return 0; }
+        let mut mult: i64 = 1;
+        let ended = s.chars().last().unwrap();
+        let body = match ended {
+            'K' | 'k' => { mult = 1_000;      &s[..s.len()-1] }
+            'M' | 'm' => { mult = 1_000_000;  &s[..s.len()-1] }
+            _         => s,
+        };
+        // Strip £ and commas, allow a single decimal point.
+        let digits: String = body.chars()
+            .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
+            .collect();
+        if digits.is_empty() { return 0; }
+        if let Ok(f) = digits.parse::<f64>() {
+            return (f * mult as f64) as i64;
+        }
+        0
+    }
+
+    /// Parse a "DD.M.YY" contract-expiry string to a (year, month, day)
+    /// tuple for sort comparison. Two-digit years wrap 00..79 → 2000s,
+    /// 80..99 → 1900s. Bad / blank inputs sort as (0, 0, 0).
+    fn date_key(s: &str) -> (i32, i32, i32) {
+        let parts: Vec<&str> = s.trim().split('.').collect();
+        if parts.len() != 3 { return (0, 0, 0); }
+        let d: i32 = parts[0].parse().unwrap_or(0);
+        let m: i32 = parts[1].parse().unwrap_or(0);
+        let yy: i32 = parts[2].parse().unwrap_or(0);
+        let y = if yy >= 80 { 1900 + yy } else { 2000 + yy };
+        (y, m, d)
+    }
+
     fn position_group(code: &str) -> u8 {
         // Split off sides, then take the first "/"-separated head.
         let head_block = code.split(' ').next().unwrap_or("");
@@ -928,11 +966,50 @@ pub fn try_render_club_preview_faithful(
             cols,
         });
     }
-    // Sort by position group (GK → SW → D → WB → DM → M → AM → F → S),
-    // then alphabetical within each group.
-    rows.sort_by(|a, b|
-        position_group(&a.position).cmp(&position_group(&b.position))
-            .then(a.name.cmp(&b.name)));
+    // Column-header sort — takes precedence over the default
+    // position-group ordering when the user has clicked a header.
+    if let Some(s) = sort {
+        use cm_render::screen_club_squad_faithful::ColumnKind;
+        let col = s.column as usize;
+        let pack = view.column_pack();
+        let kind = pack.map(|p| p.kinds()[col]).unwrap_or(ColumnKind::Text);
+        rows.sort_by(|a, b| {
+            let ord = match kind {
+                ColumnKind::Numeric => {
+                    // Strip £ / K / M / commas so wage/value/attributes
+                    // all compare as numbers. Names are pulled from
+                    // cols; row 2 = Name is textual.
+                    let av = strip_num(a.cols.get(col).map(|s| s.as_str()).unwrap_or(""));
+                    let bv = strip_num(b.cols.get(col).map(|s| s.as_str()).unwrap_or(""));
+                    av.cmp(&bv)
+                }
+                ColumnKind::Date => {
+                    // Contract Expiry rendered "DD.M.YY" — parse to
+                    // (year, month, day) with wraparound to a full year.
+                    let ak = date_key(a.cols.get(col).map(|s| s.as_str()).unwrap_or(""));
+                    let bk = date_key(b.cols.get(col).map(|s| s.as_str()).unwrap_or(""));
+                    ak.cmp(&bk)
+                }
+                _ => {
+                    // Name / text columns.
+                    let av = if col == 2 { &a.name } else {
+                        a.cols.get(col).map(|s| s.as_str()).unwrap_or("")
+                    };
+                    let bv = if col == 2 { &b.name } else {
+                        b.cols.get(col).map(|s| s.as_str()).unwrap_or("")
+                    };
+                    av.cmp(bv)
+                }
+            };
+            if s.descending { ord.reverse() } else { ord }
+        });
+    } else {
+        // Default: position group (GK → SW → D → WB → DM → M → AM → F → S),
+        // then alphabetical within each group.
+        rows.sort_by(|a, b|
+            position_group(&a.position).cmp(&position_group(&b.position))
+                .then(a.name.cmp(&b.name)));
+    }
     // Diagnostic — helps identify wrong-club leakage the user asked
     // about (e.g. Foday/Ovie showing on Chester).
     eprintln!("[squad] {} (club_id={}): {} players",

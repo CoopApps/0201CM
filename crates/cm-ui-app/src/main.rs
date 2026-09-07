@@ -16,6 +16,17 @@ use cm_render::font::Fonts;
 use cm_render::image::Image;
 use cm_render::Surface;
 use game_state::{real_34_slots, SelectLeaguesState, StartSeasonState};
+
+/// Column sort state for the club Squad screen. `column` indexes into
+/// the active View mode's `ColumnPack.headers` (or column 2 = Name
+/// for Traditional). `descending` follows the exe's convention:
+/// text/date columns default ASC on first click, numeric columns
+/// default DESC — clicking a second time on the same header flips.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SquadSort {
+    pub column: u8,
+    pub descending: bool,
+}
 use screens::{LeaguesClick, SeasonClick};
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
@@ -71,6 +82,12 @@ enum Screen {
         /// division alphabetically + the national team of the
         /// division's nation.
         jump_menu_open: bool,
+        /// Column-header sort state — which column (by index in the
+        /// current view's `ColumnPack.headers`) is active and which
+        /// direction the sort is going. `None` = the view's default
+        /// ordering (position group + alphabetical, per the exe).
+        /// Click the same header twice to flip direction.
+        sort: Option<SquadSort>,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -944,10 +961,11 @@ impl App {
                     }
                 }
             }
-            Screen::ClubPreview { choice, view, view_menu_open, jump_menu_open, .. } => {
+            Screen::ClubPreview { choice, view, view_menu_open, jump_menu_open, sort, scroll, .. } => {
                 use cm_render::screen_club_squad_faithful::{
                     view_dropdown_hit, VIEW_BUTTON_RECT,
                     jump_menu_hit, JUMP_BUTTON_RECT,
+                    header_hit, ColumnKind,
                 };
                 // Dropdown priority: whichever is open catches the click.
                 if *view_menu_open {
@@ -1013,6 +1031,25 @@ impl App {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
                     goto_reopen_select_team = true;
+                } else if let Some(pack) = view.column_pack() {
+                    // Column-header click → toggle sort. Same column
+                    // clicked twice flips the direction; a different
+                    // column resets to that column's default direction
+                    // (numeric = DESC first, text/date = ASC first).
+                    if let Some(col) = header_hit(&pack, x, y) {
+                        let kinds = pack.kinds();
+                        let kind = kinds[col];
+                        if kind == ColumnKind::Marker { /* nothing */ }
+                        else {
+                            *sort = Some(match *sort {
+                                Some(s) if s.column as usize == col =>
+                                    SquadSort { column: col as u8, descending: !s.descending },
+                                _ =>
+                                    SquadSort { column: col as u8, descending: kind.default_descending() },
+                            });
+                            *scroll = 0;
+                        }
+                    }
                 }
             }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
@@ -1174,6 +1211,7 @@ impl App {
                 view: cm_render::screen_club_squad_faithful::SquadView::Traditional,
                 view_menu_open: false,
                 jump_menu_open: false,
+                sort: None,
             };
         }
         if goto_reopen_select_team {
