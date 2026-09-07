@@ -812,7 +812,9 @@ impl App {
                                     // subsystem here so the pipeline is
                                     // ready before Start Season paints.
                                     if let Some(w) = self.world.as_mut() {
-                                        w.run_start_game_init();
+                                        let rng_path = std::path::PathBuf::from(
+                                            "D:/cm0102-rs/rust-db/config/rng_table.bin");
+                                        w.run_start_game_init(Some(&rng_path));
                                     }
                                     let leagues = state.clone();
                                     let season = StartSeasonState::from_leagues(&leagues);

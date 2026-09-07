@@ -13800,14 +13800,43 @@ impl World {
     ///
     /// Idempotent: calling twice replaces the pool wholesale, which
     /// matches the exe's behaviour on a fresh "New Game" click.
-    pub fn run_start_game_init(&mut self) {
-        // 1. Contract pool — depends on club reputation (already loaded)
-        //    and, when league tiers are threaded through, on
-        //    LeagueTier::Foreground vs Background.
+    pub fn run_start_game_init(&mut self, rng_table_path: Option<&Path>) {
+        // 1. player_init — FUN_0051f5d0. Generates CA/PA/attributes/
+        //    reputation for the ~55% of type10 records that ship with
+        //    CA=0. Runs FIRST because contract wages/values read the
+        //    (now-filled-in) CA/PA. Uses a deterministic seeded RNG
+        //    so re-runs of the same DB produce the same players.
+        //
+        //    Duncan Willetts at Cheltenham is the canonical example —
+        //    ships as CA=0/PA=0/DOB-unset; after this pass he has
+        //    generated CA + PA + reputation, matching the exe's
+        //    17-year-old player. DOB backfill is a separate follow-up
+        //    (needs writes to person.body bytes).
+        let start = GameDate { year: 2001, month: 8, day: 10 };
+        // Prefer the exe's real 3.4MB RNG table for exe-parity
+        // determinism. Falls back to a small deterministic table when
+        // the caller can't supply the path (test builds).
+        let table = rng_table_path
+            .and_then(|p| std::fs::read(p).ok())
+            .and_then(|b| cm_rng::table_from_le_bytes(&b).ok())
+            .unwrap_or_else(|| (0..1024).collect());
+        let mut rng = cm_rng::MatchRng::new_seeded(table, 0x0051_f5d0);
+        let states = self.initialise_players(&start, Some(&mut rng));
+        // Stamp generated ratings back into the type10 records where
+        // the shipped values are zero. Leaves populated records
+        // untouched so DB truth wins.
+        for (attr, st) in self.staff.type10.iter_mut().zip(states.iter()) {
+            if attr.current_ability   == 0 { attr.current_ability   = st.current_ability; }
+            if attr.potential_ability == 0 { attr.potential_ability = st.potential_ability; }
+            if attr.home_reputation    == 0 { attr.home_reputation    = st.reputation[0] as i16; }
+            if attr.current_reputation == 0 { attr.current_reputation = st.reputation[1] as i16; }
+            if attr.world_reputation   == 0 { attr.world_reputation   = st.reputation[2] as i16; }
+        }
+        // 2. Contract pool — depends on the freshly-populated CA/PA
+        //    above, and on club reputation (already loaded). Runs
+        //    AFTER player_init so wage/value calculations use the
+        //    generated numbers, not zero.
         self.contracts = Some(contract_init::initialise_all(self));
-        // 2. player_init — TODO. See FUN_0051f5d0; deterministic core
-        //    already in `player_init::PlayerInitState` but not yet
-        //    called from here.
     }
 
     pub fn init_missing_player_sides(&mut self) {
