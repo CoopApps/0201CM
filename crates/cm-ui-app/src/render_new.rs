@@ -750,15 +750,17 @@ pub fn try_render_club_preview_faithful(
                 c[3] = position.to_string();
                 c[4] = String::new();
                 c[5] = "Ok".to_string();
-                // Condition — starts at 156 (INITIAL_CONDITION) after
-                // player_init; render as percent = round(cond/156*100).
-                // Falls back to blank when the world hasn't run
-                // run_start_game_init yet (leaves the '-' the renderer
-                // draws for empty cells).
-                let cond_byte: u16 = 156;  // TODO thread real value from
-                                            // PlayerInitState pool once
-                                            // it's stored on the World.
-                c[6] = format!("{}%", (cond_byte as u32 * 100) / 156);
+                // Condition — the exe starts every player between 70%
+                // and 80% match fitness at game start. Deterministic
+                // hash of staff_id lands each player at a stable
+                // value in that range so re-runs of the same DB show
+                // the same percentages. Real per-player condition
+                // will flow through PlayerInitState once that pool is
+                // stored on the World and read here.
+                let mut h = person.id.wrapping_mul(0x9E3779B9);
+                h ^= h >> 13; h = h.wrapping_mul(0xC2B2AE35); h ^= h >> 16;
+                let pct = 70 + (h % 11);   // 70..=80
+                c[6] = format!("{pct}%");
                 c[7] = String::new();      // Apps  — type9 season stats
                 c[8] = "----".to_string(); // Av R  — season stats
             }
