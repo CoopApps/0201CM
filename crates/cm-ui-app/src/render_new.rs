@@ -649,61 +649,114 @@ pub fn try_render_club_preview_faithful(
     ) -> Vec<String> {
         use cm_render::screen_club_squad_faithful::SquadView::*;
         let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
+        // Traditional uses the legacy 1-cell layout (renderer picks the
+        // position string directly out of SquadPlayer.position, but we
+        // still return it in cols[0] for callers that read cols).
+        if matches!(mode, Traditional) {
+            return vec![position.to_string()];
+        }
+        // Non-Traditional modes: 13 cells matching FUN_00457200's
+        // 13-column row grid. Every cell must exist even when blank so
+        // slice-index -> cell mapping stays stable across modes.
+        let mut c: Vec<String> = vec![String::new(); 13];
+        // Col 2 = Name — pulled from SquadPlayer.name in the renderer;
+        // leave the vector cell empty to avoid double-painting.
+        let value = pv.value();
+        c[12] = format_money_short(value as i64);
         match mode {
-            Traditional => vec![position.to_string()],
+            Traditional => unreachable!(),
             Contract => {
+                // Cols 3..6 per FUN_00457200 lines 2128-2186.
                 let wage = pv.wage();
-                let value = pv.value();
                 let expires_year = pv.club_contract_expires().year;
-                let expires = if expires_year > 0 { expires_year.to_string() }
-                              else { String::new() };
-                let protected = String::new();   // flag TBD from decompile
-                vec![
-                    format_money_short(wage as i64) + "/w",
-                    expires,
-                    protected,
-                    format_money_short(value as i64),
-                ]
+                // Squad Status vs Club: FUN_0075d3d0 gate — for the pre-
+                // launch preview the club is un-managed so no squad
+                // status is set; leave the cell blank.
+                c[3] = String::new();
+                c[4] = format_money_short(wage as i64) + "/w";
+                c[5] = if expires_year > 0 { expires_year.to_string() } else { String::new() };
+                c[6] = String::new();   // release clause (FUN_004d2710 TBD)
             }
-            Selection => vec![position.to_string()],
-            Stats => vec![String::new(); 4],
-            MoreStats => vec![String::new()],
-            Attributes => {
+            Selection => {
+                // Cols 3..8 per lines 2073-2123.
+                c[3] = position.to_string();   // Position
+                c[4] = String::new();   // Form  — needs season Type9
+                c[5] = String::new();   // Morale — mood field TBD
+                c[6] = String::new();   // Cond. — 156-condition field
+                // Cols 7 & 8: attr #1 (Aggression) & attr #17 (Influence).
                 if let Some(a) = attrs {
-                    // Sub-panel sums using fields that ACTUALLY exist on
-                    // DomainStaffType10 — verified against lib.rs 721-771.
-                    let phys = a.pace as i32 + a.strength as i32
-                        + a.jumping as i32 + a.stamina as i32
-                        + a.natural_fitness as i32 + a.balance as i32;
-                    let ment = a.decisions as i32 + a.leadership as i32
-                        + a.consistency as i32 + a.important_matches as i32
-                        + a.teamwork as i32 + a.flair as i32;
-                    let gk = a.handling as i32 + a.reflexes as i32
-                        + a.one_on_ones as i32 + a.positioning as i32;
-                    let def = a.tackling as i32 + a.marking as i32
-                        + a.heading as i32 + a.anticipation as i32
-                        + a.bravery as i32;
-                    let att = a.finishing as i32 + a.passing as i32
-                        + a.long_shots as i32 + a.dribbling as i32
-                        + a.crossing as i32 + a.penalties as i32;
-                    vec![phys.to_string(), ment.to_string(), gk.to_string(),
-                         def.to_string(), att.to_string()]
-                } else {
-                    vec![String::new(); 5]
+                    c[7] = a.aggression.to_string();
+                    c[8] = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
+                }
+            }
+            Stats => {
+                // Cols 3..11: attribute-list DAT_0097ae40
+                //   {1,2,5,0xc,0xd,0xe,0xf,0x10,0x11}
+                //   = Aggression, Anticipation, Corners, Finishing, Flair,
+                //     Handling, Heading, ImportantMatches, Influence.
+                if let Some(a) = attrs {
+                    c[3]  = a.aggression.to_string();
+                    c[4]  = a.anticipation.to_string();
+                    c[5]  = a.corners.to_string();
+                    c[6]  = a.finishing.to_string();
+                    c[7]  = a.flair.to_string();
+                    c[8]  = a.handling.to_string();
+                    c[9]  = a.heading.to_string();
+                    c[10] = a.important_matches.to_string();
+                    c[11] = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
+                }
+            }
+            MoreStats => {
+                // DAT_0097ae4c {3,4,0xa,0xb,8,9,6,7,0x11}
+                //   = Bravery, Consistency, Dirtiness, Dribbling, Decisions,
+                //     Determination, Creativity, Crossing, Influence.
+                if let Some(a) = attrs {
+                    c[3]  = a.bravery.to_string();
+                    c[4]  = a.consistency.to_string();
+                    c[5]  = a.dirtiness.to_string();
+                    c[6]  = a.dribbling.to_string();
+                    c[7]  = a.decisions.to_string();
+                    c[8]  = String::new(); /* Determination attr 9 not on DomainStaffType10 */
+                    c[9]  = String::new(); /* Creativity attr 6 not on DomainStaffType10 */
+                    c[10] = a.crossing.to_string();
+                    c[11] = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
+                }
+            }
+            Attributes => {
+                // Default (Physical) sub-toggle: DAT_0097ae58
+                //   {1,3,5,0xf,0x11,0x15,0x1a,0x1b,0x1e}
+                //   = Aggression, Bravery, Corners, Heading, Influence,
+                //     Jumping, Pace, Stamina, Strength.
+                if let Some(a) = attrs {
+                    c[3]  = a.aggression.to_string();
+                    c[4]  = a.bravery.to_string();
+                    c[5]  = a.corners.to_string();
+                    c[6]  = a.heading.to_string();
+                    c[7]  = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
+                    c[8]  = a.jumping.to_string();
+                    c[9]  = a.pace.to_string();
+                    c[10] = a.stamina.to_string();
+                    c[11] = a.strength.to_string();
                 }
             }
             OtherInfo => {
+                // Cols 3..9 per lines 1914-1958.
                 let nid = pv.nation_id();
                 let nation = world.core.nations.iter()
                     .map(|n| cm_domain::typed_records::NationView::new(n))
                     .find(|nv| Some(nv.id() as i32) == nid)
                     .map(|nv| nv.three_letter_name().to_uppercase())
                     .unwrap_or_default();
-                let caps = pv.international_caps();
-                let goals = pv.international_goals();
-                vec![nation, caps.to_string(), goals.to_string()]
+                c[3] = nation;
+                if let Some(age) = person.age_at(2001, cm_domain::day_of_year(2001, 8, 10)) {
+                    c[4] = age.to_string();
+                }
+                c[5] = pv.international_caps().to_string();
+                c[6] = pv.international_goals().to_string();
+                // Form / Morale / Cond. (7/8/9) — same TBD blockers.
             }
         }
+        c
     }
 
     /// Compact currency — 5000 → "£5,000", 12500 → "£12.5k", 1_500_000 → "£1.5m".

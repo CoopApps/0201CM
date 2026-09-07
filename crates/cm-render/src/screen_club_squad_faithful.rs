@@ -161,23 +161,107 @@ impl SquadView {
             SquadView::OtherInfo   => "Other Info",
         }
     }
-    /// Column headers lifted from FUN_00457200's `text_template_expand`
-    /// calls — verified against the s_* string constants at
-    /// 0x0097b5e0..0x0097b7c8. Left-to-right in each row after the name
-    /// column.
-    pub fn column_headers(self) -> &'static [&'static str] {
+    /// Per-mode column pack, verbatim from FUN_00457200:
+    ///
+    /// - Widths are the `local_304 / local_35c / local_324 / local_344 /
+    ///   local_314 / local_334` byte arrays declared at lines 456-528 of
+    ///   the decompile — unit widths inside a 13-column row grid (except
+    ///   Traditional, which is 8-col, 2-players-per-row).
+    /// - Headers are the s_* string constants at 0x0097b2c4..0x0097b360
+    ///   emitted by the `FUN_00549580(kind=2, ..., group=0xc)` header-
+    ///   spawn calls at lines 1867..2186. Empty strings pair with 0-width
+    ///   cells the exe skips over.
+    ///
+    /// Traditional is a 2-col layout with no header row and is handled
+    /// specially by the renderer — it returns `None` here.
+    pub fn column_pack(self) -> Option<ColumnPack> {
+        use SquadView::*;
         match self {
-            SquadView::Traditional => &["Position(s)"],
-            SquadView::Contract    => &["Basic Wage", "Contract Expiry",
-                                         "Contract Protected", "Value"],
-            SquadView::Selection   => &["Selection Info"],
-            SquadView::Stats       => &["Goals", "Conceded", "Assists",
-                                         "Av. Rating"],
-            SquadView::MoreStats   => &["Competitions"],
-            SquadView::Attributes  => &["Physical", "Mental", "Goalkeeping",
-                                         "Defensive", "Attacking"],
-            SquadView::OtherInfo   => &["Nationality", "Int. Caps", "Int. Goals"],
+            Traditional => None,
+            // widths local_35c = {5,5,24,14,14,15,11,0,0,0,0,0,10}
+            // headers per lines 2128-2186. Col 6 (Releases) is present
+            // only when the club is NOT human-managed; the exe swaps the
+            // widths to {5,5,24,18,18,18,0,...} in the managed branch
+            // (FUN_00525450 gate). For the pre-launch preview the club
+            // is un-managed so col 6 stays.
+            Contract => Some(ColumnPack {
+                widths: [5,5,24,14,14,15,11,0,0,0,0,0,10],
+                headers: ["Inf","Pkd","Name","Squad Status","Basic Wage",
+                          "Contract Expiry","Releases","","","","","","Value"],
+            }),
+            // widths local_324; headers per lines 2073-2123.
+            // Cols 7,8 are attribute-name headers built at runtime via
+            // FUN_007a9e60(1) / FUN_007a9e60(0x11); we hardcode the
+            // canonical short names for those attribute ids from
+            // Data/wldpl.dat (attr 1 = Aggression, 0x11 = Influence).
+            Selection => Some(ColumnPack {
+                widths: [5,5,24,14,10,12,6,6,6,0,0,0,10],
+                headers: ["Pkd","Inf","Name","Position","Form","Morale","Cond.",
+                          "Agg","Inf","","","","Value"],
+            }),
+            // widths local_344 (Stats + More Stats share these).
+            // Cols 3..11 populated at runtime from the attribute-id list
+            // DAT_0097ae40 = {1,2,5,0xc,0xd,0xe,0xf,0x10,0x11}.
+            // Short names from Data attribute table.
+            Stats => Some(ColumnPack {
+                widths: [5,5,24,6,6,6,6,6,6,6,6,6,10],
+                headers: ["Pkd","Inf","Name","Agg","Ant","Cor","Fin","Fla",
+                          "Han","Hea","IM","Inf","Value"],
+            }),
+            // widths local_344; attr list DAT_0097ae4c = {3,4,0xa,0xb,8,9,6,7,0x11}.
+            MoreStats => Some(ColumnPack {
+                widths: [5,5,24,6,6,6,6,6,6,6,6,6,10],
+                headers: ["Pkd","Inf","Name","Bra","Con","Dir","Dri","Dec",
+                          "Det","Cre","Cro","Inf","Value"],
+            }),
+            // widths local_314; header text via FUN_0052c3f0 (long attr
+            // name). Sub-toggle selects one of Physical / Mental / GK /
+            // Def / Att attribute lists (DAT_0097ae58..88). We default to
+            // Physical (bit 0x40 in the exe's local_384). Long names
+            // truncate to fit the 6-unit cell.
+            Attributes => Some(ColumnPack {
+                widths: [5,5,24,6,6,6,6,6,6,6,6,6,10],
+                headers: ["Pkd","Inf","Name","Agg","Bra","Cor","Hea","Inf",
+                          "Jum","Pac","Sta","Str","Value"],
+            }),
+            // widths local_334; headers per lines 1914-1958.
+            OtherInfo => Some(ColumnPack {
+                widths: [5,5,24,8,6,6,6,10,12,6,0,0,10],
+                headers: ["Pkd","Inf","Name","Nat.","Age","Caps","Goals",
+                          "Form","Morale","Cond.","","","Value"],
+            }),
         }
+    }
+}
+
+/// Per-view column pack — unit widths + header strings, one entry each
+/// per column in the exe's 13-cell row grid (or 8 for Traditional).
+#[derive(Debug, Clone, Copy)]
+pub struct ColumnPack {
+    /// Unit widths from `local_35c / 324 / 344 / 314 / 334`. A zero-width
+    /// column is skipped when partitioning the row into pixel slices.
+    pub widths: [u8; 13],
+    /// Header labels — `""` on a 0-width cell.
+    pub headers: [&'static str; 13],
+}
+
+impl ColumnPack {
+    /// Convert unit widths to pixel x-slices across `x0..x1`. Returns one
+    /// (x0, x1) tuple per NON-ZERO column, in the same order as `widths`.
+    pub fn slices(&self, x0: i32, x1: i32) -> Vec<(usize, i32, i32)> {
+        let total: u32 = self.widths.iter().map(|w| *w as u32).sum();
+        if total == 0 { return Vec::new(); }
+        let span = (x1 - x0) as u32;
+        let mut out = Vec::with_capacity(13);
+        let mut acc: u32 = 0;
+        for (i, w) in self.widths.iter().enumerate() {
+            if *w == 0 { continue; }
+            let sx0 = x0 + (acc * span / total) as i32;
+            acc += *w as u32;
+            let sx1 = x0 + (acc * span / total) as i32;
+            out.push((i, sx0, sx1));
+        }
+        out
     }
 }
 
@@ -417,79 +501,102 @@ pub fn render_squad(
             INK_CYAN, TS_CENTRE, -1);
     }
 
-    // ---- Column header band. Displays the current view mode's
-    //      subtitle in the exe (Position(s) / Contract Info / etc).
-    //      For Traditional a single centred "Position(s)" label matches
-    //      the capture; for multi-column modes the exe splits the band
-    //      into equal-width labels drawn small.
+    // ---- Column header band + player list. Structure per FUN_00457200:
+    //      Traditional (bit 1) uses a 2-players-per-row grid with NO
+    //      header cells. Every other mode uses a single-player-per-row
+    //      13-column grid with one header row spanning the full width.
     draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
         P_DARKEN, 0, 0, palette);
-    let headers = state.view.column_headers();
-    if headers.len() <= 1 {
-        // Single-column layout — the exe's Traditional look: centred
-        // "Position(s)" in yellow above the position column.
-        draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
-            &body_font, &c_string(state.view.subtitle().as_bytes()),
-            INK_YELLOW, TS_CENTRE, -1);
-    } else {
-        // Multi-column — carve the POS band into N equal slots for
-        // both left+right groups, matching how the exe partitions the
-        // 89-pixel wide POS cell across visible columns.
-        let l_w = (POS_L.1 - POS_L.0) / headers.len() as i32;
-        let r_w = (POS_R.1 - POS_R.0) / headers.len() as i32;
-        for (i, hdr) in headers.iter().enumerate() {
-            let lx0 = POS_L.0 + i as i32 * l_w;
-            let lx1 = lx0 + l_w - 2;
-            draw_wrapped_text(surface, lx0, HDR_Y0, lx1, HDR_Y1,
-                &small_font, &c_string(hdr.as_bytes()),
-                INK_YELLOW, TS_CENTRE, -1);
-            let rx0 = POS_R.0 + i as i32 * r_w;
-            let rx1 = rx0 + r_w - 2;
-            draw_wrapped_text(surface, rx0, HDR_Y0, rx1, HDR_Y1,
-                &small_font, &c_string(hdr.as_bytes()),
-                INK_YELLOW, TS_CENTRE, -1);
-        }
-    }
-
-    // ---- Player list container.
     draw_panel(surface, LIST_X0, LIST_Y0, LIST_X1, LIST_Y1,
         P_DARKEN, 0, 0, palette);
-    let visible = state.players.iter().skip(state.scroll).take(VISIBLE_ENTRIES);
-    for (i, p) in visible.enumerate() {
-        let row_idx = i / 2;
-        let is_left = i % 2 == 0;
-        let y0 = ROW_FIRST_Y + (row_idx as i32) * ROW_STRIDE;
-        let y1 = y0 + ROW_HEIGHT;
-        let (num, name, pos) = if is_left {
-            (NUM_L, NAME_L, POS_L)
-        } else {
-            (NUM_R, NAME_R, POS_R)
-        };
-        // Number cell — blue bevel.
-        draw_panel(surface, num.0, y0, num.1, y1,
-            P_SOLID_FILL | P_BEVEL, BLUE, INK_CYAN, palette);
-        // Name — cyan (or white for marked players).
-        let name_ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
-        let mut buf = format!("  {}", p.name);
-        if p.marker != ' ' { buf.push(p.marker); }
-        buf.push('\0');
-        draw_wrapped_text(surface, name.0, y0, name.1, y1,
-            &body_font, buf.as_bytes(), name_ink,
-            TS_CENTRE | W_LEFT, -1);
-        // Position / mode-specific columns — yellow. For Traditional
-        // (or when the app hasn't populated `cols`) fall back to the
-        // player's position string in the whole POS cell.
-        if headers.len() <= 1 || p.cols.is_empty() {
-            draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
-                &small_font, &c_string(p.position.as_bytes()),
+
+    match state.view.column_pack() {
+        // ================================================================
+        // Non-Traditional modes — single column list, 13-cell rows.
+        // Width partition: local_* unit array from FUN_00457200 scaled
+        // across LIST_X0..(SB_X0-1) so the scrollbar is preserved.
+        // ================================================================
+        Some(pack) => {
+            let list_right = SB_X0 - 1;
+            let slices = pack.slices(LIST_X0, list_right);
+            // Header row — small yellow labels centred in each slice.
+            for (col_idx, sx0, sx1) in &slices {
+                let hdr = pack.headers[*col_idx].trim_start();
+                if hdr.is_empty() { continue; }
+                draw_wrapped_text(surface, *sx0, HDR_Y0, *sx1 - 2, HDR_Y1,
+                    &small_font, &c_string(hdr.as_bytes()),
+                    INK_YELLOW, TS_CENTRE, -1);
+            }
+            // Body rows — one per player, 13 sub-cells.
+            let one_col_stride = ROW_STRIDE;
+            let one_col_rows: usize = ((LIST_Y1 - ROW_FIRST_Y) / one_col_stride) as usize;
+            let visible = state.players.iter().skip(state.scroll).take(one_col_rows);
+            for (i, p) in visible.enumerate() {
+                let y0 = ROW_FIRST_Y + (i as i32) * one_col_stride;
+                let y1 = y0 + ROW_HEIGHT;
+                for (col_idx, sx0, sx1) in &slices {
+                    let cell = p.cols.get(*col_idx).copied().unwrap_or("");
+                    match *col_idx {
+                        0 | 1 => {
+                            // Inf / Pkd — small marker cells; the exe
+                            // fills them only when a flag is set. Leave
+                            // blank for now (marker fields not yet
+                            // decoded from the person record).
+                        }
+                        2 => {
+                            // Name — cyan (or white for on-list players).
+                            let ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
+                            let mut buf = format!("  {}", p.name);
+                            if p.marker != ' ' { buf.push(p.marker); }
+                            buf.push('\0');
+                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                                &body_font, buf.as_bytes(), ink,
+                                TS_CENTRE | W_LEFT, -1);
+                        }
+                        _ => {
+                            // Attribute / value cells — yellow, centred.
+                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                                &small_font, &c_string(cell.as_bytes()),
+                                INK_YELLOW, TS_CENTRE, -1);
+                        }
+                    }
+                }
+            }
+        }
+        // ================================================================
+        // Traditional mode — 2-players-per-row, no header cells. Old
+        // layout preserved because it matched the exe capture pixel-for-
+        // pixel on Chester and Leigh RMI.
+        // ================================================================
+        None => {
+            // Single centred "Position(s)" band — the header widget the
+            // exe paints in Traditional is the same one used by the Sort-
+            // By sub-pull-down (the string at 0x0097b6ec).
+            draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+                &body_font, &c_string(b"Position(s)"),
                 INK_YELLOW, TS_CENTRE, -1);
-        } else {
-            let w = (pos.1 - pos.0) / headers.len() as i32;
-            for (ci, cell) in p.cols.iter().take(headers.len()).enumerate() {
-                let cx0 = pos.0 + ci as i32 * w;
-                let cx1 = cx0 + w - 2;
-                draw_wrapped_text(surface, cx0, y0, cx1, y1,
-                    &small_font, &c_string(cell.as_bytes()),
+            let visible = state.players.iter().skip(state.scroll).take(VISIBLE_ENTRIES);
+            for (i, p) in visible.enumerate() {
+                let row_idx = i / 2;
+                let is_left = i % 2 == 0;
+                let y0 = ROW_FIRST_Y + (row_idx as i32) * ROW_STRIDE;
+                let y1 = y0 + ROW_HEIGHT;
+                let (num, name, pos) = if is_left {
+                    (NUM_L, NAME_L, POS_L)
+                } else {
+                    (NUM_R, NAME_R, POS_R)
+                };
+                draw_panel(surface, num.0, y0, num.1, y1,
+                    P_SOLID_FILL | P_BEVEL, BLUE, INK_CYAN, palette);
+                let name_ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
+                let mut buf = format!("  {}", p.name);
+                if p.marker != ' ' { buf.push(p.marker); }
+                buf.push('\0');
+                draw_wrapped_text(surface, name.0, y0, name.1, y1,
+                    &body_font, buf.as_bytes(), name_ink,
+                    TS_CENTRE | W_LEFT, -1);
+                draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
+                    &small_font, &c_string(p.position.as_bytes()),
                     INK_YELLOW, TS_CENTRE, -1);
             }
         }
