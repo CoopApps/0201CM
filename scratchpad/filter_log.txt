@@ -1,0 +1,2409 @@
+      meta  ready=True hooks=8
+[capture-framebuffers ON — every PRESENT will emit a ~1 MB base64 payload]
+logging cm0102_GDI.exe pid=11804 for up to 18.0s (exit after 7.0s of silence). Interact with the game NOW.
+   restore  from=0x14923b x=0 y=0
+     panel  from=0x3222 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+   restore  from=0x1d7bf3 x=0 y=0
+     panel  from=0x1d7c42 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=10 x1=85 y1=53 style=1061 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=11 x1=84 y1=11 style=2 colour=10
+      line  from=0x1cfe17 x0=6 y0=11 x1=6 y1=52 style=2 colour=10
+      line  from=0x1cfe30 x0=84 y0=52 x1=7 y1=52 style=2 colour=19
+      line  from=0x1cfe43 x0=84 y0=52 x1=84 y1=12 style=2 colour=19
+      line  from=0x1cfdfd x0=5 y0=10 x1=85 y1=10 style=2 colour=5
+      line  from=0x1cfe17 x0=5 y0=10 x1=5 y1=53 style=2 colour=5
+      line  from=0x1cfe30 x0=85 y0=53 x1=6 y1=53 style=2 colour=24
+      line  from=0x1cfe43 x0=85 y0=53 x1=85 y1=11 style=2 colour=24
+   wrapped  from=0x1d810d x0=7 y0=12 x1=87 y1=55 style=c font=1 colour=32736 text=Version
+3.9.60
+     glyph  from=0x1d0a92 x=27 y=19 font=1 colour=32736 text=Version
+     glyph  from=0x1d0a92 x=29 y=34 font=1 colour=32736 text=3.9.60
+     panel  from=0x1d7c42 x0=5 y0=100 x1=85 y1=143 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=101 x1=84 y1=101 style=2 colour=17
+      line  from=0x1cfe17 x0=6 y0=101 x1=6 y1=142 style=2 colour=17
+      line  from=0x1cfe30 x0=84 y0=142 x1=7 y1=142 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=142 x1=84 y1=102 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=100 x1=85 y1=100 style=2 colour=21
+      line  from=0x1cfe17 x0=5 y0=100 x1=5 y1=143 style=2 colour=21
+      line  from=0x1cfe30 x0=85 y0=143 x1=6 y1=143 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=143 x1=85 y1=101 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=100 x1=85 y1=143 style=2c font=1 colour=29596 text=Add
+Manager
+     glyph  from=0x1d0915 x=35 y=108 font=1 colour=19 text=Add
+     glyph  from=0x1d0a92 x=34 y=107 font=1 colour=7 text=Add
+     glyph  from=0x1d0915 x=22 y=123 font=1 colour=19 text=Manager
+     glyph  from=0x1d0a92 x=21 y=122 font=1 colour=7 text=Manager
+     panel  from=0x1d7c42 x0=5 y0=145 x1=85 y1=187 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=146 x1=84 y1=146 style=2 colour=15
+      line  from=0x1cfe17 x0=6 y0=146 x1=6 y1=186 style=2 colour=15
+      line  from=0x1cfe30 x0=84 y0=186 x1=7 y1=186 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=186 x1=84 y1=147 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=145 x1=85 y1=145 style=2 colour=19
+      line  from=0x1cfe17 x0=5 y0=145 x1=5 y1=187 style=2 colour=19
+      line  from=0x1cfe30 x0=85 y0=187 x1=6 y1=187 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=187 x1=85 y1=146 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=145 x1=85 y1=187 style=2c font=1 colour=32736 text=Restart
+Game
+     glyph  from=0x1d0915 x=28 y=152 font=1 colour=18 text=Restart
+     glyph  from=0x1d0a92 x=27 y=151 font=1 colour=7 text=Restart
+     glyph  from=0x1d0915 x=31 y=167 font=1 colour=18 text=Game
+     glyph  from=0x1d0a92 x=30 y=166 font=1 colour=7 text=Game
+     panel  from=0x1d7c42 x0=5 y0=189 x1=85 y1=232 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=190 x1=84 y1=190 style=2 colour=14
+      line  from=0x1cfe17 x0=6 y0=190 x1=6 y1=231 style=2 colour=14
+      line  from=0x1cfe30 x0=84 y0=231 x1=7 y1=231 style=2 colour=7
+      line  from=0x1cfe43 x0=84 y0=231 x1=84 y1=191 style=2 colour=7
+      line  from=0x1cfdfd x0=5 y0=189 x1=85 y1=189 style=2 colour=18
+      line  from=0x1cfe17 x0=5 y0=189 x1=5 y1=232 style=2 colour=18
+      line  from=0x1cfe30 x0=85 y0=232 x1=6 y1=232 style=2 colour=3
+      line  from=0x1cfe43 x0=85 y0=232 x1=85 y1=190 style=2 colour=3
+   wrapped  from=0x1d810d x0=5 y0=189 x1=85 y1=232 style=2c font=1 colour=32736 text=Exit
+Game
+     glyph  from=0x1d0915 x=36 y=197 font=1 colour=16 text=Exit
+     glyph  from=0x1d0a92 x=35 y=196 font=1 colour=6 text=Exit
+     glyph  from=0x1d0915 x=31 y=212 font=1 colour=16 text=Game
+     glyph  from=0x1d0a92 x=30 y=211 font=1 colour=6 text=Game
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=55 x1=44 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=56 x1=43 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=6 y0=56 x1=6 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=43 y0=97 x1=7 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=43 y0=97 x1=43 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=5 y0=55 x1=44 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=5 y0=55 x1=5 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=44 y0=98 x1=6 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=44 y0=98 x1=44 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=55 x1=44 y1=98 style=c font=1 colour=29596 text=<<<
+     glyph  from=0x1d0a92 x=10 y=69 font=1 colour=29596 text=<<<
+     panel  from=0x1d7c42 x0=46 y0=55 x1=85 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=47 y0=56 x1=84 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=47 y0=56 x1=47 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=84 y0=97 x1=48 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=84 y0=97 x1=84 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=46 y0=55 x1=85 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=46 y0=55 x1=46 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=85 y0=98 x1=47 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=98 x1=85 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=46 y0=55 x1=85 y1=98 style=c font=1 colour=29596 text=>>>
+     glyph  from=0x1d0a92 x=51 y=69 font=1 colour=29596 text=>>>
+     panel  from=0x3222 x0=110 y0=170 x1=780 y1=535 style=2 colour=0 pattern=0
+    darken  from=0x1cf645 x0=110 y0=170 x1=780 y1=535
+     panel  from=0x1d7c42 x0=112 y0=178 x1=396 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=178 x1=396 y1=198 style=1 font=3 colour=29596 text=  American
+     glyph  from=0x1d0a92 x=112 y=178 font=3 colour=29596 text=  American
+     panel  from=0x1d7c42 x0=398 y0=178 x1=444 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=178 x1=444 y1=198 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=406 y=179 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=446 y0=178 x1=730 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=178 x1=730 y1=198 style=1 font=3 colour=29596 text=  Argentinian
+     glyph  from=0x1d0a92 x=446 y=178 font=3 colour=29596 text=  Argentinian
+     panel  from=0x1d7c42 x0=732 y0=178 x1=778 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=178 x1=778 y1=198 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=742 y=179 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=112 y0=200 x1=396 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=200 x1=396 y1=220 style=1 font=3 colour=29596 text=  Australian
+     glyph  from=0x1d0a92 x=112 y=200 font=3 colour=29596 text=  Australian
+     panel  from=0x1d7c42 x0=398 y0=200 x1=444 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=200 x1=444 y1=220 style=c font=2 colour=32736 text=OCE
+     glyph  from=0x1d0a92 x=408 y=201 font=2 colour=32736 text=OCE
+     panel  from=0x1d7c42 x0=446 y0=200 x1=730 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=200 x1=730 y1=220 style=1 font=3 colour=29596 text=  Belgian
+     glyph  from=0x1d0a92 x=446 y=200 font=3 colour=29596 text=  Belgian
+     panel  from=0x1d7c42 x0=732 y0=200 x1=778 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=200 x1=778 y1=220 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=201 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=222 x1=396 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=222 x1=396 y1=242 style=1 font=3 colour=29596 text=  Brazilian
+     glyph  from=0x1d0a92 x=112 y=222 font=3 colour=29596 text=  Brazilian
+     panel  from=0x1d7c42 x0=398 y0=222 x1=444 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=222 x1=444 y1=242 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=408 y=223 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=446 y0=222 x1=730 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=222 x1=730 y1=242 style=1 font=3 colour=29596 text=  Canadian
+     glyph  from=0x1d0a92 x=446 y=222 font=3 colour=29596 text=  Canadian
+     panel  from=0x1d7c42 x0=732 y0=222 x1=778 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=222 x1=778 y1=242 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=740 y=223 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=112 y0=244 x1=396 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=244 x1=396 y1=264 style=1 font=3 colour=29596 text=  Croatian
+     glyph  from=0x1d0a92 x=112 y=244 font=3 colour=29596 text=  Croatian
+     panel  from=0x1d7c42 x0=398 y0=244 x1=444 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=244 x1=444 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=244 x1=730 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=244 x1=730 y1=264 style=1 font=3 colour=29596 text=  Danish
+     glyph  from=0x1d0a92 x=446 y=244 font=3 colour=29596 text=  Danish
+     panel  from=0x1d7c42 x0=732 y0=244 x1=778 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=244 x1=778 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=266 x1=396 y1=286 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=266 x1=396 y1=286 style=1 font=3 colour=29596 text=  Dutch
+     glyph  from=0x1d0a92 x=112 y=266 font=3 colour=29596 text=  Dutch
+     panel  from=0x1d7c42 x0=398 y0=266 x1=444 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=266 x1=444 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=266 x1=730 y1=286 style=801 colour=0 pattern=29596
+      rect  from=0x1d0388 x0=445 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7c6 x0=445 y0=265 x1=731 y1=265 style=2 colour=32736
+      line  from=0x1cd7d6 x0=731 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7e6 x0=731 y0=287 x1=445 y1=287 style=2 colour=32736
+      line  from=0x1cd7f9 x0=445 y0=287 x1=445 y1=265 style=2 colour=32736
+   wrapped  from=0x1d810d x0=446 y0=266 x1=730 y1=286 style=1 font=3 colour=29596 text=  English
+     glyph  from=0x1d0a92 x=446 y=266 font=3 colour=29596 text=  English
+     panel  from=0x1d7c42 x0=732 y0=266 x1=778 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=266 x1=778 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=288 x1=396 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=288 x1=396 y1=308 style=1 font=3 colour=29596 text=  Finnish
+     glyph  from=0x1d0a92 x=112 y=288 font=3 colour=29596 text=  Finnish
+     panel  from=0x1d7c42 x0=398 y0=288 x1=444 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=288 x1=444 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=288 x1=730 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=288 x1=730 y1=308 style=1 font=3 colour=29596 text=  French
+     glyph  from=0x1d0a92 x=446 y=288 font=3 colour=29596 text=  French
+     panel  from=0x1d7c42 x0=732 y0=288 x1=778 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=288 x1=778 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=310 x1=396 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=310 x1=396 y1=330 style=1 font=3 colour=29596 text=  German
+     glyph  from=0x1d0a92 x=112 y=310 font=3 colour=29596 text=  German
+     panel  from=0x1d7c42 x0=398 y0=310 x1=444 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=310 x1=444 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=310 x1=730 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=310 x1=730 y1=330 style=1 font=3 colour=29596 text=  Greek
+     glyph  from=0x1d0a92 x=446 y=310 font=3 colour=29596 text=  Greek
+     panel  from=0x1d7c42 x0=732 y0=310 x1=778 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=310 x1=778 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=332 x1=396 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=332 x1=396 y1=352 style=1 font=3 colour=29596 text=  Hong Kong
+     glyph  from=0x1d0a92 x=112 y=332 font=3 colour=29596 text=  Hong Kong
+     panel  from=0x1d7c42 x0=398 y0=332 x1=444 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=332 x1=444 y1=352 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=333 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=332 x1=730 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=332 x1=730 y1=352 style=1 font=3 colour=29596 text=  Icelandic
+     glyph  from=0x1d0a92 x=446 y=332 font=3 colour=29596 text=  Icelandic
+     panel  from=0x1d7c42 x0=732 y0=332 x1=778 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=332 x1=778 y1=352 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=333 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=354 x1=396 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=354 x1=396 y1=373 style=1 font=3 colour=29596 text=  Irish
+     glyph  from=0x1d0a92 x=112 y=354 font=3 colour=29596 text=  Irish
+     panel  from=0x1d7c42 x0=398 y0=354 x1=444 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=354 x1=444 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=354 x1=730 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=354 x1=730 y1=373 style=1 font=3 colour=29596 text=  Israeli
+     glyph  from=0x1d0a92 x=446 y=354 font=3 colour=29596 text=  Israeli
+     panel  from=0x1d7c42 x0=732 y0=354 x1=778 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=354 x1=778 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=375 x1=396 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=375 x1=396 y1=395 style=1 font=3 colour=29596 text=  Italian
+     glyph  from=0x1d0a92 x=112 y=375 font=3 colour=29596 text=  Italian
+     panel  from=0x1d7c42 x0=398 y0=375 x1=444 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=375 x1=444 y1=395 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=376 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=375 x1=730 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=375 x1=730 y1=395 style=1 font=3 colour=29596 text=  Japanese
+     glyph  from=0x1d0a92 x=446 y=375 font=3 colour=29596 text=  Japanese
+     panel  from=0x1d7c42 x0=732 y0=375 x1=778 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=375 x1=778 y1=395 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=746 y=376 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=112 y0=397 x1=396 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=397 x1=396 y1=417 style=1 font=3 colour=29596 text=  Northern Irish
+     glyph  from=0x1d0a92 x=112 y=397 font=3 colour=29596 text=  Northern Irish
+     panel  from=0x1d7c42 x0=398 y0=397 x1=444 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=397 x1=444 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=397 x1=730 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=397 x1=730 y1=417 style=1 font=3 colour=29596 text=  Norwegian
+     glyph  from=0x1d0a92 x=446 y=397 font=3 colour=29596 text=  Norwegian
+     panel  from=0x1d7c42 x0=732 y0=397 x1=778 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=397 x1=778 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=419 x1=396 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=419 x1=396 y1=439 style=1 font=3 colour=29596 text=  Polish
+     glyph  from=0x1d0a92 x=112 y=419 font=3 colour=29596 text=  Polish
+     panel  from=0x1d7c42 x0=398 y0=419 x1=444 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=419 x1=444 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=419 x1=730 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=419 x1=730 y1=439 style=1 font=3 colour=29596 text=  Portuguese
+     glyph  from=0x1d0a92 x=446 y=419 font=3 colour=29596 text=  Portuguese
+     panel  from=0x1d7c42 x0=732 y0=419 x1=778 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=419 x1=778 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=441 x1=396 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=441 x1=396 y1=461 style=1 font=3 colour=29596 text=  Russian
+     glyph  from=0x1d0a92 x=112 y=441 font=3 colour=29596 text=  Russian
+     panel  from=0x1d7c42 x0=398 y0=441 x1=444 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=441 x1=444 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=441 x1=730 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=441 x1=730 y1=461 style=1 font=3 colour=29596 text=  Scottish
+     glyph  from=0x1d0a92 x=446 y=441 font=3 colour=29596 text=  Scottish
+     panel  from=0x1d7c42 x0=732 y0=441 x1=778 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=441 x1=778 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=463 x1=396 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=463 x1=396 y1=483 style=1 font=3 colour=29596 text=  Singaporean
+     glyph  from=0x1d0a92 x=112 y=463 font=3 colour=29596 text=  Singaporean
+     panel  from=0x1d7c42 x0=398 y0=463 x1=444 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=463 x1=444 y1=483 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=464 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=463 x1=730 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=463 x1=730 y1=483 style=1 font=3 colour=29596 text=  South African
+     glyph  from=0x1d0a92 x=446 y=463 font=3 colour=29596 text=  South African
+     panel  from=0x1d7c42 x0=732 y0=463 x1=778 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=463 x1=778 y1=483 style=c font=2 colour=32736 text=AFR
+     glyph  from=0x1d0a92 x=743 y=464 font=2 colour=32736 text=AFR
+     panel  from=0x1d7c42 x0=112 y0=485 x1=396 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=485 x1=396 y1=505 style=1 font=3 colour=29596 text=  Spanish
+     glyph  from=0x1d0a92 x=112 y=485 font=3 colour=29596 text=  Spanish
+     panel  from=0x1d7c42 x0=398 y0=485 x1=444 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=485 x1=444 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=485 x1=730 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=485 x1=730 y1=505 style=1 font=3 colour=29596 text=  Swedish
+     glyph  from=0x1d0a92 x=446 y=485 font=3 colour=29596 text=  Swedish
+     panel  from=0x1d7c42 x0=732 y0=485 x1=778 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=485 x1=778 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=507 x1=396 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=507 x1=396 y1=527 style=1 font=3 colour=29596 text=  Turkish
+     glyph  from=0x1d0a92 x=112 y=507 font=3 colour=29596 text=  Turkish
+     panel  from=0x1d7c42 x0=398 y0=507 x1=444 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=507 x1=444 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=507 x1=730 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=507 x1=730 y1=527 style=1 font=3 colour=29596 text=  Welsh
+     glyph  from=0x1d0a92 x=446 y=507 font=3 colour=29596 text=  Welsh
+     panel  from=0x1d7c42 x0=732 y0=507 x1=778 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=507 x1=778 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x3222 x0=100 y0=555 x1=790 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=100 y0=555 x1=617 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=555 x1=617 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=100 y0=555 x1=617 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=556 x1=617 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=557 x1=617 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=558 x1=617 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=559 x1=617 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=560 x1=617 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=561 x1=617 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=562 x1=617 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=563 x1=617 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=564 x1=617 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=565 x1=617 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=566 x1=617 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=567 x1=617 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=568 x1=617 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=569 x1=617 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=570 x1=617 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=571 x1=617 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=572 x1=617 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=573 x1=617 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=574 x1=617 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=575 x1=617 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=576 x1=617 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=577 x1=617 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=578 x1=617 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=579 x1=617 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=580 x1=617 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=581 x1=617 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=582 x1=617 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=583 x1=617 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=584 x1=617 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=585 x1=617 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=586 x1=617 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=587 x1=617 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=588 x1=617 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=589 x1=617 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=590 x1=617 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=101 y0=556 x1=616 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=101 y0=556 x1=101 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=616 y0=589 x1=102 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=616 y0=589 x1=616 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=100 y0=555 x1=617 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=100 y0=555 x1=100 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=617 y0=590 x1=101 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=617 y0=590 x1=617 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=100 y0=555 x1=617 y1=590 style=c font=3 colour=29596 text=Back
+     glyph  from=0x1d0a92 x=338 y=562 font=3 colour=29596 text=Back
+     panel  from=0x1d7c42 x0=619 y0=555 x1=790 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=619 y0=555 x1=790 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=619 y0=555 x1=790 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=556 x1=790 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=557 x1=790 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=558 x1=790 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=559 x1=790 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=560 x1=790 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=561 x1=790 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=562 x1=790 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=563 x1=790 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=564 x1=790 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=565 x1=790 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=566 x1=790 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=567 x1=790 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=568 x1=790 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=569 x1=790 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=570 x1=790 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=571 x1=790 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=572 x1=790 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=573 x1=790 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=574 x1=790 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=575 x1=790 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=576 x1=790 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=577 x1=790 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=578 x1=790 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=579 x1=790 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=580 x1=790 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=581 x1=790 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=582 x1=790 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=583 x1=790 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=584 x1=790 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=585 x1=790 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=586 x1=790 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=587 x1=790 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=588 x1=790 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=589 x1=790 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=590 x1=790 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=620 y0=556 x1=789 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=620 y0=556 x1=620 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=789 y0=589 x1=621 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=789 y0=589 x1=789 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=619 y0=555 x1=790 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=619 y0=555 x1=619 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=790 y0=590 x1=620 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=790 y0=590 x1=790 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=619 y0=555 x1=790 y1=590 style=c font=3 colour=29596 text=Next
+     glyph  from=0x1d0a92 x=685 y=562 font=3 colour=29596 text=Next
+     panel  from=0x1d7c42 x0=100 y0=10 x1=790 y1=70 style=30 colour=31744 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=10 x1=790 y1=70 style=4 colour=31744
+      line  from=0x1cd856 x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=11 x1=790 y1=11 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=12 x1=790 y1=12 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=13 x1=790 y1=13 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=14 x1=790 y1=14 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=15 x1=790 y1=15 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=16 x1=790 y1=16 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=17 x1=790 y1=17 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=18 x1=790 y1=18 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=19 x1=790 y1=19 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=20 x1=790 y1=20 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=21 x1=790 y1=21 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=22 x1=790 y1=22 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=23 x1=790 y1=23 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=24 x1=790 y1=24 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=25 x1=790 y1=25 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=26 x1=790 y1=26 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=27 x1=790 y1=27 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=28 x1=790 y1=28 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=29 x1=790 y1=29 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=30 x1=790 y1=30 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=31 x1=790 y1=31 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=32 x1=790 y1=32 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=33 x1=790 y1=33 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=34 x1=790 y1=34 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=35 x1=790 y1=35 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=36 x1=790 y1=36 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=37 x1=790 y1=37 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=38 x1=790 y1=38 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=39 x1=790 y1=39 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=40 x1=790 y1=40 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=41 x1=790 y1=41 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=42 x1=790 y1=42 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=43 x1=790 y1=43 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=44 x1=790 y1=44 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=45 x1=790 y1=45 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=46 x1=790 y1=46 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=47 x1=790 y1=47 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=48 x1=790 y1=48 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=49 x1=790 y1=49 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=50 x1=790 y1=50 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=51 x1=790 y1=51 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=52 x1=790 y1=52 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=53 x1=790 y1=53 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=54 x1=790 y1=54 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=55 x1=790 y1=55 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=56 x1=790 y1=56 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=57 x1=790 y1=57 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=58 x1=790 y1=58 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=59 x1=790 y1=59 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=60 x1=790 y1=60 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=61 x1=790 y1=61 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=62 x1=790 y1=62 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=63 x1=790 y1=63 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=64 x1=790 y1=64 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=65 x1=790 y1=65 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=66 x1=790 y1=66 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=67 x1=790 y1=67 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=68 x1=790 y1=68 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=69 x1=790 y1=69 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=70 x1=790 y1=70 style=2 colour=31744
+      line  from=0x1cfdfd x0=103 y0=13 x1=787 y1=13 style=2 colour=31744
+      line  from=0x1cfe17 x0=103 y0=13 x1=103 y1=67 style=2 colour=31744
+      line  from=0x1cfe30 x0=787 y0=67 x1=104 y1=67 style=2 colour=26624
+      line  from=0x1cfe43 x0=787 y0=67 x1=787 y1=14 style=2 colour=26624
+      line  from=0x1cfdfd x0=102 y0=12 x1=788 y1=12 style=2 colour=31744
+      line  from=0x1cfe17 x0=102 y0=12 x1=102 y1=68 style=2 colour=31744
+      line  from=0x1cfe30 x0=788 y0=68 x1=103 y1=68 style=2 colour=21504
+      line  from=0x1cfe43 x0=788 y0=68 x1=788 y1=13 style=2 colour=21504
+      line  from=0x1cfdfd x0=101 y0=11 x1=789 y1=11 style=2 colour=31744
+      line  from=0x1cfe17 x0=101 y0=11 x1=101 y1=69 style=2 colour=31744
+      line  from=0x1cfe30 x0=789 y0=69 x1=102 y1=69 style=2 colour=16384
+      line  from=0x1cfe43 x0=789 y0=69 x1=789 y1=12 style=2 colour=16384
+      line  from=0x1cfdfd x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cfe17 x0=100 y0=10 x1=100 y1=70 style=2 colour=31744
+      line  from=0x1cfe30 x0=790 y0=70 x1=101 y1=70 style=2 colour=10240
+      line  from=0x1cfe43 x0=790 y0=70 x1=790 y1=11 style=2 colour=10240
+   wrapped  from=0x1d810d x0=100 y0=10 x1=790 y1=70 style=c font=7 colour=29596 text=Championship Manager 2001/02
+     glyph  from=0x1d0a92 x=207 y=18 font=7 colour=29596 text=Championship Manager 2001/02
+     panel  from=0x1d7c42 x0=100 y0=80 x1=790 y1=125 style=2 colour=0 pattern=32736
+    darken  from=0x1cf645 x0=100 y0=80 x1=790 y1=125
+   wrapped  from=0x1d810d x0=100 y0=80 x1=790 y1=125 style=c font=6 colour=32736 text=Select Nationality
+     glyph  from=0x1d0a92 x=328 y=83 font=6 colour=32736 text=Select Nationality
+     panel  from=0x1d7c42 x0=655 y0=145 x1=780 y1=165 style=70 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=655 y0=145 x1=780 y1=165 style=4 colour=16912
+      line  from=0x1cd856 x0=655 y0=145 x1=780 y1=145 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=146 x1=780 y1=146 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=147 x1=780 y1=147 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=148 x1=780 y1=148 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=149 x1=780 y1=149 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=150 x1=780 y1=150 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=151 x1=780 y1=151 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=152 x1=780 y1=152 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=153 x1=780 y1=153 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=154 x1=780 y1=154 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=155 x1=780 y1=155 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=156 x1=780 y1=156 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=157 x1=780 y1=157 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=158 x1=780 y1=158 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=159 x1=780 y1=159 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=160 x1=780 y1=160 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=161 x1=780 y1=161 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=162 x1=780 y1=162 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=163 x1=780 y1=163 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=164 x1=780 y1=164 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=165 x1=780 y1=165 style=2 colour=16912
+      line  from=0x1cfdfd x0=656 y0=146 x1=779 y1=146 style=2 colour=11594
+      line  from=0x1cfe17 x0=656 y0=146 x1=656 y1=164 style=2 colour=11594
+      line  from=0x1cfe30 x0=779 y0=164 x1=657 y1=164 style=2 colour=22197
+      line  from=0x1cfe43 x0=779 y0=164 x1=779 y1=147 style=2 colour=22197
+      line  from=0x1cfdfd x0=655 y0=145 x1=780 y1=145 style=2 colour=5285
+      line  from=0x1cfe17 x0=655 y0=145 x1=655 y1=165 style=2 colour=5285
+      line  from=0x1cfe30 x0=780 y0=165 x1=656 y1=165 style=2 colour=28538
+      line  from=0x1cfe43 x0=780 y0=165 x1=780 y1=146 style=2 colour=28538
+   wrapped  from=0x1d810d x0=657 y0=147 x1=782 y1=167 style=c font=1 colour=29596 text=Filter
+     glyph  from=0x1d0a92 x=706 y=150 font=1 colour=29596 text=Filter
+     panel  from=0x3222 x0=655 y0=168 x1=780 y1=210 style=130 colour=512 pattern=0
+      rect  from=0x1cf673 x0=655 y0=168 x1=780 y1=210 style=4 colour=512
+      line  from=0x1cd856 x0=655 y0=168 x1=780 y1=168 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=169 x1=780 y1=169 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=170 x1=780 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=171 x1=780 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=172 x1=780 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=173 x1=780 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=174 x1=780 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=175 x1=780 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=176 x1=780 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=177 x1=780 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=178 x1=780 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=179 x1=780 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=180 x1=780 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=181 x1=780 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=182 x1=780 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=183 x1=780 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=184 x1=780 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=185 x1=780 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=186 x1=780 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=187 x1=780 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=188 x1=780 y1=188 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=189 x1=780 y1=189 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=190 x1=780 y1=190 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=191 x1=780 y1=191 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=192 x1=780 y1=192 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=193 x1=780 y1=193 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=194 x1=780 y1=194 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=195 x1=780 y1=195 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=196 x1=780 y1=196 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=197 x1=780 y1=197 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=198 x1=780 y1=198 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=199 x1=780 y1=199 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=200 x1=780 y1=200 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=201 x1=780 y1=201 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=202 x1=780 y1=202 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=203 x1=780 y1=203 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=204 x1=780 y1=204 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=205 x1=780 y1=205 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=206 x1=780 y1=206 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=207 x1=780 y1=207 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=208 x1=780 y1=208 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=209 x1=780 y1=209 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=210 x1=780 y1=210 style=2 colour=512
+      line  from=0x1cfdfd x0=656 y0=169 x1=779 y1=169 style=2 colour=672
+      line  from=0x1cfe17 x0=656 y0=169 x1=656 y1=209 style=2 colour=672
+      line  from=0x1cfe30 x0=779 y0=209 x1=657 y1=209 style=2 colour=320
+      line  from=0x1cfe43 x0=779 y0=209 x1=779 y1=170 style=2 colour=320
+      line  from=0x1cfdfd x0=655 y0=168 x1=780 y1=168 style=2 colour=864
+      line  from=0x1cfe17 x0=655 y0=168 x1=655 y1=210 style=2 colour=864
+      line  from=0x1cfe30 x0=780 y0=210 x1=656 y1=210 style=2 colour=160
+      line  from=0x1cfe43 x0=780 y0=210 x1=780 y1=169 style=2 colour=160
+     panel  from=0x1d7c42 x0=657 y0=170 x1=778 y1=188 style=10 colour=512 pattern=0
+      rect  from=0x1cf673 x0=657 y0=170 x1=778 y1=188 style=4 colour=512
+      line  from=0x1cd856 x0=657 y0=170 x1=778 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=171 x1=778 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=172 x1=778 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=173 x1=778 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=174 x1=778 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=175 x1=778 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=176 x1=778 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=177 x1=778 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=178 x1=778 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=179 x1=778 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=180 x1=778 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=181 x1=778 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=182 x1=778 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=183 x1=778 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=184 x1=778 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=185 x1=778 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=186 x1=778 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=187 x1=778 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=188 x1=778 y1=188 style=2 colour=512
+   wrapped  from=0x1d810d x0=657 y0=170 x1=778 y1=188 style=1 font=1 colour=0 text=      All Nations
+     glyph  from=0x1d0a92 x=657 y=172 font=1 colour=0 text=      All Nations
+     panel  from=0x1d7c42 x0=657 y0=190 x1=778 y1=208 style=10 colour=576 pattern=0
+      rect  from=0x1cf673 x0=657 y0=190 x1=778 y1=208 style=4 colour=576
+      line  from=0x1cd856 x0=657 y0=190 x1=778 y1=190 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=191 x1=778 y1=191 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=192 x1=778 y1=192 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=193 x1=778 y1=193 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=194 x1=778 y1=194 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=195 x1=778 y1=195 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=196 x1=778 y1=196 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=197 x1=778 y1=197 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=198 x1=778 y1=198 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=199 x1=778 y1=199 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=200 x1=778 y1=200 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=201 x1=778 y1=201 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=202 x1=778 y1=202 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=203 x1=778 y1=203 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=204 x1=778 y1=204 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=205 x1=778 y1=205 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=206 x1=778 y1=206 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=207 x1=778 y1=207 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=208 x1=778 y1=208 style=2 colour=576
+   wrapped  from=0x1d810d x0=657 y0=190 x1=778 y1=208 style=1 font=1 colour=0 text=      Major Nations
+     glyph  from=0x1d0a92 x=657 y=192 font=1 colour=0 text=      Major Nations
+--- PRESENT ---  x0=0 y0=0 x1=799 y1=599
+present_fb  w=800 h=600 pitch=800 data_b64_len=1280000
+   restore  from=0x14923b x=0 y=0
+     panel  from=0x3222 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+   restore  from=0x1d7bf3 x=0 y=0
+     panel  from=0x1d7c42 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=10 x1=85 y1=53 style=1061 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=11 x1=84 y1=11 style=2 colour=10
+      line  from=0x1cfe17 x0=6 y0=11 x1=6 y1=52 style=2 colour=10
+      line  from=0x1cfe30 x0=84 y0=52 x1=7 y1=52 style=2 colour=19
+      line  from=0x1cfe43 x0=84 y0=52 x1=84 y1=12 style=2 colour=19
+      line  from=0x1cfdfd x0=5 y0=10 x1=85 y1=10 style=2 colour=5
+      line  from=0x1cfe17 x0=5 y0=10 x1=5 y1=53 style=2 colour=5
+      line  from=0x1cfe30 x0=85 y0=53 x1=6 y1=53 style=2 colour=24
+      line  from=0x1cfe43 x0=85 y0=53 x1=85 y1=11 style=2 colour=24
+   wrapped  from=0x1d810d x0=7 y0=12 x1=87 y1=55 style=c font=1 colour=32736 text=Version
+3.9.60
+     glyph  from=0x1d0a92 x=27 y=19 font=1 colour=32736 text=Version
+     glyph  from=0x1d0a92 x=29 y=34 font=1 colour=32736 text=3.9.60
+     panel  from=0x1d7c42 x0=5 y0=100 x1=85 y1=143 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=101 x1=84 y1=101 style=2 colour=17
+      line  from=0x1cfe17 x0=6 y0=101 x1=6 y1=142 style=2 colour=17
+      line  from=0x1cfe30 x0=84 y0=142 x1=7 y1=142 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=142 x1=84 y1=102 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=100 x1=85 y1=100 style=2 colour=21
+      line  from=0x1cfe17 x0=5 y0=100 x1=5 y1=143 style=2 colour=21
+      line  from=0x1cfe30 x0=85 y0=143 x1=6 y1=143 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=143 x1=85 y1=101 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=100 x1=85 y1=143 style=2c font=1 colour=29596 text=Add
+Manager
+     glyph  from=0x1d0915 x=35 y=108 font=1 colour=19 text=Add
+     glyph  from=0x1d0a92 x=34 y=107 font=1 colour=7 text=Add
+     glyph  from=0x1d0915 x=22 y=123 font=1 colour=19 text=Manager
+     glyph  from=0x1d0a92 x=21 y=122 font=1 colour=7 text=Manager
+     panel  from=0x1d7c42 x0=5 y0=145 x1=85 y1=187 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=146 x1=84 y1=146 style=2 colour=15
+      line  from=0x1cfe17 x0=6 y0=146 x1=6 y1=186 style=2 colour=15
+      line  from=0x1cfe30 x0=84 y0=186 x1=7 y1=186 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=186 x1=84 y1=147 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=145 x1=85 y1=145 style=2 colour=19
+      line  from=0x1cfe17 x0=5 y0=145 x1=5 y1=187 style=2 colour=19
+      line  from=0x1cfe30 x0=85 y0=187 x1=6 y1=187 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=187 x1=85 y1=146 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=145 x1=85 y1=187 style=2c font=1 colour=32736 text=Restart
+Game
+     glyph  from=0x1d0915 x=28 y=152 font=1 colour=18 text=Restart
+     glyph  from=0x1d0a92 x=27 y=151 font=1 colour=7 text=Restart
+     glyph  from=0x1d0915 x=31 y=167 font=1 colour=18 text=Game
+     glyph  from=0x1d0a92 x=30 y=166 font=1 colour=7 text=Game
+     panel  from=0x1d7c42 x0=5 y0=189 x1=85 y1=232 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=190 x1=84 y1=190 style=2 colour=14
+      line  from=0x1cfe17 x0=6 y0=190 x1=6 y1=231 style=2 colour=14
+      line  from=0x1cfe30 x0=84 y0=231 x1=7 y1=231 style=2 colour=7
+      line  from=0x1cfe43 x0=84 y0=231 x1=84 y1=191 style=2 colour=7
+      line  from=0x1cfdfd x0=5 y0=189 x1=85 y1=189 style=2 colour=18
+      line  from=0x1cfe17 x0=5 y0=189 x1=5 y1=232 style=2 colour=18
+      line  from=0x1cfe30 x0=85 y0=232 x1=6 y1=232 style=2 colour=3
+      line  from=0x1cfe43 x0=85 y0=232 x1=85 y1=190 style=2 colour=3
+   wrapped  from=0x1d810d x0=5 y0=189 x1=85 y1=232 style=2c font=1 colour=32736 text=Exit
+Game
+     glyph  from=0x1d0915 x=36 y=197 font=1 colour=16 text=Exit
+     glyph  from=0x1d0a92 x=35 y=196 font=1 colour=6 text=Exit
+     glyph  from=0x1d0915 x=31 y=212 font=1 colour=16 text=Game
+     glyph  from=0x1d0a92 x=30 y=211 font=1 colour=6 text=Game
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=55 x1=44 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=56 x1=43 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=6 y0=56 x1=6 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=43 y0=97 x1=7 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=43 y0=97 x1=43 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=5 y0=55 x1=44 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=5 y0=55 x1=5 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=44 y0=98 x1=6 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=44 y0=98 x1=44 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=55 x1=44 y1=98 style=c font=1 colour=29596 text=<<<
+     glyph  from=0x1d0a92 x=10 y=69 font=1 colour=29596 text=<<<
+     panel  from=0x1d7c42 x0=46 y0=55 x1=85 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=47 y0=56 x1=84 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=47 y0=56 x1=47 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=84 y0=97 x1=48 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=84 y0=97 x1=84 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=46 y0=55 x1=85 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=46 y0=55 x1=46 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=85 y0=98 x1=47 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=98 x1=85 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=46 y0=55 x1=85 y1=98 style=c font=1 colour=29596 text=>>>
+     glyph  from=0x1d0a92 x=51 y=69 font=1 colour=29596 text=>>>
+     panel  from=0x3222 x0=110 y0=170 x1=780 y1=535 style=2 colour=0 pattern=0
+    darken  from=0x1cf645 x0=110 y0=170 x1=780 y1=535
+     panel  from=0x1d7c42 x0=112 y0=178 x1=396 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=178 x1=396 y1=198 style=1 font=3 colour=29596 text=  American
+     glyph  from=0x1d0a92 x=112 y=178 font=3 colour=29596 text=  American
+     panel  from=0x1d7c42 x0=398 y0=178 x1=444 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=178 x1=444 y1=198 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=406 y=179 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=446 y0=178 x1=730 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=178 x1=730 y1=198 style=1 font=3 colour=29596 text=  Argentinian
+     glyph  from=0x1d0a92 x=446 y=178 font=3 colour=29596 text=  Argentinian
+     panel  from=0x1d7c42 x0=732 y0=178 x1=778 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=178 x1=778 y1=198 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=742 y=179 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=112 y0=200 x1=396 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=200 x1=396 y1=220 style=1 font=3 colour=29596 text=  Australian
+     glyph  from=0x1d0a92 x=112 y=200 font=3 colour=29596 text=  Australian
+     panel  from=0x1d7c42 x0=398 y0=200 x1=444 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=200 x1=444 y1=220 style=c font=2 colour=32736 text=OCE
+     glyph  from=0x1d0a92 x=408 y=201 font=2 colour=32736 text=OCE
+     panel  from=0x1d7c42 x0=446 y0=200 x1=730 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=200 x1=730 y1=220 style=1 font=3 colour=29596 text=  Belgian
+     glyph  from=0x1d0a92 x=446 y=200 font=3 colour=29596 text=  Belgian
+     panel  from=0x1d7c42 x0=732 y0=200 x1=778 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=200 x1=778 y1=220 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=201 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=222 x1=396 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=222 x1=396 y1=242 style=1 font=3 colour=29596 text=  Brazilian
+     glyph  from=0x1d0a92 x=112 y=222 font=3 colour=29596 text=  Brazilian
+     panel  from=0x1d7c42 x0=398 y0=222 x1=444 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=222 x1=444 y1=242 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=408 y=223 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=446 y0=222 x1=730 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=222 x1=730 y1=242 style=1 font=3 colour=29596 text=  Canadian
+     glyph  from=0x1d0a92 x=446 y=222 font=3 colour=29596 text=  Canadian
+     panel  from=0x1d7c42 x0=732 y0=222 x1=778 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=222 x1=778 y1=242 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=740 y=223 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=112 y0=244 x1=396 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=244 x1=396 y1=264 style=1 font=3 colour=29596 text=  Croatian
+     glyph  from=0x1d0a92 x=112 y=244 font=3 colour=29596 text=  Croatian
+     panel  from=0x1d7c42 x0=398 y0=244 x1=444 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=244 x1=444 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=244 x1=730 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=244 x1=730 y1=264 style=1 font=3 colour=29596 text=  Danish
+     glyph  from=0x1d0a92 x=446 y=244 font=3 colour=29596 text=  Danish
+     panel  from=0x1d7c42 x0=732 y0=244 x1=778 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=244 x1=778 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=266 x1=396 y1=286 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=266 x1=396 y1=286 style=1 font=3 colour=29596 text=  Dutch
+     glyph  from=0x1d0a92 x=112 y=266 font=3 colour=29596 text=  Dutch
+     panel  from=0x1d7c42 x0=398 y0=266 x1=444 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=266 x1=444 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=266 x1=730 y1=286 style=801 colour=0 pattern=29596
+      rect  from=0x1d0388 x0=445 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7c6 x0=445 y0=265 x1=731 y1=265 style=2 colour=32736
+      line  from=0x1cd7d6 x0=731 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7e6 x0=731 y0=287 x1=445 y1=287 style=2 colour=32736
+      line  from=0x1cd7f9 x0=445 y0=287 x1=445 y1=265 style=2 colour=32736
+   wrapped  from=0x1d810d x0=446 y0=266 x1=730 y1=286 style=1 font=3 colour=29596 text=  English
+     glyph  from=0x1d0a92 x=446 y=266 font=3 colour=29596 text=  English
+     panel  from=0x1d7c42 x0=732 y0=266 x1=778 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=266 x1=778 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=288 x1=396 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=288 x1=396 y1=308 style=1 font=3 colour=29596 text=  Finnish
+     glyph  from=0x1d0a92 x=112 y=288 font=3 colour=29596 text=  Finnish
+     panel  from=0x1d7c42 x0=398 y0=288 x1=444 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=288 x1=444 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=288 x1=730 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=288 x1=730 y1=308 style=1 font=3 colour=29596 text=  French
+     glyph  from=0x1d0a92 x=446 y=288 font=3 colour=29596 text=  French
+     panel  from=0x1d7c42 x0=732 y0=288 x1=778 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=288 x1=778 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=310 x1=396 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=310 x1=396 y1=330 style=1 font=3 colour=29596 text=  German
+     glyph  from=0x1d0a92 x=112 y=310 font=3 colour=29596 text=  German
+     panel  from=0x1d7c42 x0=398 y0=310 x1=444 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=310 x1=444 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=310 x1=730 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=310 x1=730 y1=330 style=1 font=3 colour=29596 text=  Greek
+     glyph  from=0x1d0a92 x=446 y=310 font=3 colour=29596 text=  Greek
+     panel  from=0x1d7c42 x0=732 y0=310 x1=778 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=310 x1=778 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=332 x1=396 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=332 x1=396 y1=352 style=1 font=3 colour=29596 text=  Hong Kong
+     glyph  from=0x1d0a92 x=112 y=332 font=3 colour=29596 text=  Hong Kong
+     panel  from=0x1d7c42 x0=398 y0=332 x1=444 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=332 x1=444 y1=352 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=333 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=332 x1=730 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=332 x1=730 y1=352 style=1 font=3 colour=29596 text=  Icelandic
+     glyph  from=0x1d0a92 x=446 y=332 font=3 colour=29596 text=  Icelandic
+     panel  from=0x1d7c42 x0=732 y0=332 x1=778 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=332 x1=778 y1=352 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=333 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=354 x1=396 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=354 x1=396 y1=373 style=1 font=3 colour=29596 text=  Irish
+     glyph  from=0x1d0a92 x=112 y=354 font=3 colour=29596 text=  Irish
+     panel  from=0x1d7c42 x0=398 y0=354 x1=444 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=354 x1=444 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=354 x1=730 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=354 x1=730 y1=373 style=1 font=3 colour=29596 text=  Israeli
+     glyph  from=0x1d0a92 x=446 y=354 font=3 colour=29596 text=  Israeli
+     panel  from=0x1d7c42 x0=732 y0=354 x1=778 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=354 x1=778 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=375 x1=396 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=375 x1=396 y1=395 style=1 font=3 colour=29596 text=  Italian
+     glyph  from=0x1d0a92 x=112 y=375 font=3 colour=29596 text=  Italian
+     panel  from=0x1d7c42 x0=398 y0=375 x1=444 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=375 x1=444 y1=395 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=376 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=375 x1=730 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=375 x1=730 y1=395 style=1 font=3 colour=29596 text=  Japanese
+     glyph  from=0x1d0a92 x=446 y=375 font=3 colour=29596 text=  Japanese
+     panel  from=0x1d7c42 x0=732 y0=375 x1=778 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=375 x1=778 y1=395 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=746 y=376 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=112 y0=397 x1=396 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=397 x1=396 y1=417 style=1 font=3 colour=29596 text=  Northern Irish
+     glyph  from=0x1d0a92 x=112 y=397 font=3 colour=29596 text=  Northern Irish
+     panel  from=0x1d7c42 x0=398 y0=397 x1=444 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=397 x1=444 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=397 x1=730 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=397 x1=730 y1=417 style=1 font=3 colour=29596 text=  Norwegian
+     glyph  from=0x1d0a92 x=446 y=397 font=3 colour=29596 text=  Norwegian
+     panel  from=0x1d7c42 x0=732 y0=397 x1=778 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=397 x1=778 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=419 x1=396 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=419 x1=396 y1=439 style=1 font=3 colour=29596 text=  Polish
+     glyph  from=0x1d0a92 x=112 y=419 font=3 colour=29596 text=  Polish
+     panel  from=0x1d7c42 x0=398 y0=419 x1=444 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=419 x1=444 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=419 x1=730 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=419 x1=730 y1=439 style=1 font=3 colour=29596 text=  Portuguese
+     glyph  from=0x1d0a92 x=446 y=419 font=3 colour=29596 text=  Portuguese
+     panel  from=0x1d7c42 x0=732 y0=419 x1=778 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=419 x1=778 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=441 x1=396 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=441 x1=396 y1=461 style=1 font=3 colour=29596 text=  Russian
+     glyph  from=0x1d0a92 x=112 y=441 font=3 colour=29596 text=  Russian
+     panel  from=0x1d7c42 x0=398 y0=441 x1=444 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=441 x1=444 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=441 x1=730 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=441 x1=730 y1=461 style=1 font=3 colour=29596 text=  Scottish
+     glyph  from=0x1d0a92 x=446 y=441 font=3 colour=29596 text=  Scottish
+     panel  from=0x1d7c42 x0=732 y0=441 x1=778 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=441 x1=778 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=463 x1=396 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=463 x1=396 y1=483 style=1 font=3 colour=29596 text=  Singaporean
+     glyph  from=0x1d0a92 x=112 y=463 font=3 colour=29596 text=  Singaporean
+     panel  from=0x1d7c42 x0=398 y0=463 x1=444 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=463 x1=444 y1=483 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=464 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=463 x1=730 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=463 x1=730 y1=483 style=1 font=3 colour=29596 text=  South African
+     glyph  from=0x1d0a92 x=446 y=463 font=3 colour=29596 text=  South African
+     panel  from=0x1d7c42 x0=732 y0=463 x1=778 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=463 x1=778 y1=483 style=c font=2 colour=32736 text=AFR
+     glyph  from=0x1d0a92 x=743 y=464 font=2 colour=32736 text=AFR
+     panel  from=0x1d7c42 x0=112 y0=485 x1=396 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=485 x1=396 y1=505 style=1 font=3 colour=29596 text=  Spanish
+     glyph  from=0x1d0a92 x=112 y=485 font=3 colour=29596 text=  Spanish
+     panel  from=0x1d7c42 x0=398 y0=485 x1=444 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=485 x1=444 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=485 x1=730 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=485 x1=730 y1=505 style=1 font=3 colour=29596 text=  Swedish
+     glyph  from=0x1d0a92 x=446 y=485 font=3 colour=29596 text=  Swedish
+     panel  from=0x1d7c42 x0=732 y0=485 x1=778 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=485 x1=778 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=507 x1=396 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=507 x1=396 y1=527 style=1 font=3 colour=29596 text=  Turkish
+     glyph  from=0x1d0a92 x=112 y=507 font=3 colour=29596 text=  Turkish
+     panel  from=0x1d7c42 x0=398 y0=507 x1=444 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=507 x1=444 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=507 x1=730 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=507 x1=730 y1=527 style=1 font=3 colour=29596 text=  Welsh
+     glyph  from=0x1d0a92 x=446 y=507 font=3 colour=29596 text=  Welsh
+     panel  from=0x1d7c42 x0=732 y0=507 x1=778 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=507 x1=778 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x3222 x0=100 y0=555 x1=790 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=100 y0=555 x1=617 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=555 x1=617 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=100 y0=555 x1=617 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=556 x1=617 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=557 x1=617 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=558 x1=617 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=559 x1=617 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=560 x1=617 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=561 x1=617 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=562 x1=617 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=563 x1=617 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=564 x1=617 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=565 x1=617 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=566 x1=617 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=567 x1=617 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=568 x1=617 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=569 x1=617 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=570 x1=617 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=571 x1=617 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=572 x1=617 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=573 x1=617 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=574 x1=617 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=575 x1=617 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=576 x1=617 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=577 x1=617 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=578 x1=617 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=579 x1=617 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=580 x1=617 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=581 x1=617 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=582 x1=617 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=583 x1=617 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=584 x1=617 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=585 x1=617 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=586 x1=617 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=587 x1=617 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=588 x1=617 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=589 x1=617 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=590 x1=617 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=101 y0=556 x1=616 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=101 y0=556 x1=101 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=616 y0=589 x1=102 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=616 y0=589 x1=616 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=100 y0=555 x1=617 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=100 y0=555 x1=100 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=617 y0=590 x1=101 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=617 y0=590 x1=617 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=100 y0=555 x1=617 y1=590 style=c font=3 colour=29596 text=Back
+     glyph  from=0x1d0a92 x=338 y=562 font=3 colour=29596 text=Back
+     panel  from=0x1d7c42 x0=619 y0=555 x1=790 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=619 y0=555 x1=790 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=619 y0=555 x1=790 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=556 x1=790 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=557 x1=790 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=558 x1=790 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=559 x1=790 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=560 x1=790 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=561 x1=790 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=562 x1=790 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=563 x1=790 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=564 x1=790 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=565 x1=790 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=566 x1=790 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=567 x1=790 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=568 x1=790 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=569 x1=790 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=570 x1=790 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=571 x1=790 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=572 x1=790 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=573 x1=790 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=574 x1=790 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=575 x1=790 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=576 x1=790 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=577 x1=790 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=578 x1=790 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=579 x1=790 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=580 x1=790 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=581 x1=790 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=582 x1=790 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=583 x1=790 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=584 x1=790 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=585 x1=790 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=586 x1=790 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=587 x1=790 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=588 x1=790 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=589 x1=790 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=590 x1=790 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=620 y0=556 x1=789 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=620 y0=556 x1=620 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=789 y0=589 x1=621 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=789 y0=589 x1=789 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=619 y0=555 x1=790 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=619 y0=555 x1=619 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=790 y0=590 x1=620 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=790 y0=590 x1=790 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=619 y0=555 x1=790 y1=590 style=c font=3 colour=29596 text=Next
+     glyph  from=0x1d0a92 x=685 y=562 font=3 colour=29596 text=Next
+     panel  from=0x1d7c42 x0=100 y0=10 x1=790 y1=70 style=30 colour=31744 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=10 x1=790 y1=70 style=4 colour=31744
+      line  from=0x1cd856 x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=11 x1=790 y1=11 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=12 x1=790 y1=12 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=13 x1=790 y1=13 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=14 x1=790 y1=14 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=15 x1=790 y1=15 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=16 x1=790 y1=16 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=17 x1=790 y1=17 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=18 x1=790 y1=18 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=19 x1=790 y1=19 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=20 x1=790 y1=20 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=21 x1=790 y1=21 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=22 x1=790 y1=22 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=23 x1=790 y1=23 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=24 x1=790 y1=24 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=25 x1=790 y1=25 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=26 x1=790 y1=26 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=27 x1=790 y1=27 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=28 x1=790 y1=28 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=29 x1=790 y1=29 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=30 x1=790 y1=30 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=31 x1=790 y1=31 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=32 x1=790 y1=32 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=33 x1=790 y1=33 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=34 x1=790 y1=34 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=35 x1=790 y1=35 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=36 x1=790 y1=36 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=37 x1=790 y1=37 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=38 x1=790 y1=38 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=39 x1=790 y1=39 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=40 x1=790 y1=40 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=41 x1=790 y1=41 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=42 x1=790 y1=42 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=43 x1=790 y1=43 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=44 x1=790 y1=44 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=45 x1=790 y1=45 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=46 x1=790 y1=46 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=47 x1=790 y1=47 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=48 x1=790 y1=48 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=49 x1=790 y1=49 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=50 x1=790 y1=50 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=51 x1=790 y1=51 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=52 x1=790 y1=52 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=53 x1=790 y1=53 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=54 x1=790 y1=54 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=55 x1=790 y1=55 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=56 x1=790 y1=56 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=57 x1=790 y1=57 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=58 x1=790 y1=58 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=59 x1=790 y1=59 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=60 x1=790 y1=60 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=61 x1=790 y1=61 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=62 x1=790 y1=62 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=63 x1=790 y1=63 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=64 x1=790 y1=64 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=65 x1=790 y1=65 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=66 x1=790 y1=66 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=67 x1=790 y1=67 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=68 x1=790 y1=68 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=69 x1=790 y1=69 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=70 x1=790 y1=70 style=2 colour=31744
+      line  from=0x1cfdfd x0=103 y0=13 x1=787 y1=13 style=2 colour=31744
+      line  from=0x1cfe17 x0=103 y0=13 x1=103 y1=67 style=2 colour=31744
+      line  from=0x1cfe30 x0=787 y0=67 x1=104 y1=67 style=2 colour=26624
+      line  from=0x1cfe43 x0=787 y0=67 x1=787 y1=14 style=2 colour=26624
+      line  from=0x1cfdfd x0=102 y0=12 x1=788 y1=12 style=2 colour=31744
+      line  from=0x1cfe17 x0=102 y0=12 x1=102 y1=68 style=2 colour=31744
+      line  from=0x1cfe30 x0=788 y0=68 x1=103 y1=68 style=2 colour=21504
+      line  from=0x1cfe43 x0=788 y0=68 x1=788 y1=13 style=2 colour=21504
+      line  from=0x1cfdfd x0=101 y0=11 x1=789 y1=11 style=2 colour=31744
+      line  from=0x1cfe17 x0=101 y0=11 x1=101 y1=69 style=2 colour=31744
+      line  from=0x1cfe30 x0=789 y0=69 x1=102 y1=69 style=2 colour=16384
+      line  from=0x1cfe43 x0=789 y0=69 x1=789 y1=12 style=2 colour=16384
+      line  from=0x1cfdfd x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cfe17 x0=100 y0=10 x1=100 y1=70 style=2 colour=31744
+      line  from=0x1cfe30 x0=790 y0=70 x1=101 y1=70 style=2 colour=10240
+      line  from=0x1cfe43 x0=790 y0=70 x1=790 y1=11 style=2 colour=10240
+   wrapped  from=0x1d810d x0=100 y0=10 x1=790 y1=70 style=c font=7 colour=29596 text=Championship Manager 2001/02
+     glyph  from=0x1d0a92 x=207 y=18 font=7 colour=29596 text=Championship Manager 2001/02
+     panel  from=0x1d7c42 x0=100 y0=80 x1=790 y1=125 style=2 colour=0 pattern=32736
+    darken  from=0x1cf645 x0=100 y0=80 x1=790 y1=125
+   wrapped  from=0x1d810d x0=100 y0=80 x1=790 y1=125 style=c font=6 colour=32736 text=Select Nationality
+     glyph  from=0x1d0a92 x=328 y=83 font=6 colour=32736 text=Select Nationality
+     panel  from=0x1d7c42 x0=655 y0=145 x1=780 y1=165 style=70 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=655 y0=145 x1=780 y1=165 style=4 colour=16912
+      line  from=0x1cd856 x0=655 y0=145 x1=780 y1=145 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=146 x1=780 y1=146 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=147 x1=780 y1=147 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=148 x1=780 y1=148 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=149 x1=780 y1=149 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=150 x1=780 y1=150 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=151 x1=780 y1=151 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=152 x1=780 y1=152 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=153 x1=780 y1=153 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=154 x1=780 y1=154 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=155 x1=780 y1=155 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=156 x1=780 y1=156 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=157 x1=780 y1=157 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=158 x1=780 y1=158 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=159 x1=780 y1=159 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=160 x1=780 y1=160 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=161 x1=780 y1=161 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=162 x1=780 y1=162 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=163 x1=780 y1=163 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=164 x1=780 y1=164 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=165 x1=780 y1=165 style=2 colour=16912
+      line  from=0x1cfdfd x0=656 y0=146 x1=779 y1=146 style=2 colour=11594
+      line  from=0x1cfe17 x0=656 y0=146 x1=656 y1=164 style=2 colour=11594
+      line  from=0x1cfe30 x0=779 y0=164 x1=657 y1=164 style=2 colour=22197
+      line  from=0x1cfe43 x0=779 y0=164 x1=779 y1=147 style=2 colour=22197
+      line  from=0x1cfdfd x0=655 y0=145 x1=780 y1=145 style=2 colour=5285
+      line  from=0x1cfe17 x0=655 y0=145 x1=655 y1=165 style=2 colour=5285
+      line  from=0x1cfe30 x0=780 y0=165 x1=656 y1=165 style=2 colour=28538
+      line  from=0x1cfe43 x0=780 y0=165 x1=780 y1=146 style=2 colour=28538
+   wrapped  from=0x1d810d x0=657 y0=147 x1=782 y1=167 style=c font=1 colour=29596 text=Filter
+     glyph  from=0x1d0a92 x=706 y=150 font=1 colour=29596 text=Filter
+     panel  from=0x3222 x0=655 y0=168 x1=780 y1=210 style=130 colour=512 pattern=0
+      rect  from=0x1cf673 x0=655 y0=168 x1=780 y1=210 style=4 colour=512
+      line  from=0x1cd856 x0=655 y0=168 x1=780 y1=168 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=169 x1=780 y1=169 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=170 x1=780 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=171 x1=780 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=172 x1=780 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=173 x1=780 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=174 x1=780 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=175 x1=780 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=176 x1=780 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=177 x1=780 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=178 x1=780 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=179 x1=780 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=180 x1=780 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=181 x1=780 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=182 x1=780 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=183 x1=780 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=184 x1=780 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=185 x1=780 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=186 x1=780 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=187 x1=780 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=188 x1=780 y1=188 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=189 x1=780 y1=189 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=190 x1=780 y1=190 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=191 x1=780 y1=191 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=192 x1=780 y1=192 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=193 x1=780 y1=193 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=194 x1=780 y1=194 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=195 x1=780 y1=195 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=196 x1=780 y1=196 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=197 x1=780 y1=197 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=198 x1=780 y1=198 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=199 x1=780 y1=199 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=200 x1=780 y1=200 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=201 x1=780 y1=201 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=202 x1=780 y1=202 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=203 x1=780 y1=203 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=204 x1=780 y1=204 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=205 x1=780 y1=205 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=206 x1=780 y1=206 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=207 x1=780 y1=207 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=208 x1=780 y1=208 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=209 x1=780 y1=209 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=210 x1=780 y1=210 style=2 colour=512
+      line  from=0x1cfdfd x0=656 y0=169 x1=779 y1=169 style=2 colour=672
+      line  from=0x1cfe17 x0=656 y0=169 x1=656 y1=209 style=2 colour=672
+      line  from=0x1cfe30 x0=779 y0=209 x1=657 y1=209 style=2 colour=320
+      line  from=0x1cfe43 x0=779 y0=209 x1=779 y1=170 style=2 colour=320
+      line  from=0x1cfdfd x0=655 y0=168 x1=780 y1=168 style=2 colour=864
+      line  from=0x1cfe17 x0=655 y0=168 x1=655 y1=210 style=2 colour=864
+      line  from=0x1cfe30 x0=780 y0=210 x1=656 y1=210 style=2 colour=160
+      line  from=0x1cfe43 x0=780 y0=210 x1=780 y1=169 style=2 colour=160
+     panel  from=0x1d7c42 x0=657 y0=170 x1=778 y1=188 style=10 colour=512 pattern=0
+      rect  from=0x1cf673 x0=657 y0=170 x1=778 y1=188 style=4 colour=512
+      line  from=0x1cd856 x0=657 y0=170 x1=778 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=171 x1=778 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=172 x1=778 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=173 x1=778 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=174 x1=778 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=175 x1=778 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=176 x1=778 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=177 x1=778 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=178 x1=778 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=179 x1=778 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=180 x1=778 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=181 x1=778 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=182 x1=778 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=183 x1=778 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=184 x1=778 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=185 x1=778 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=186 x1=778 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=187 x1=778 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=188 x1=778 y1=188 style=2 colour=512
+   wrapped  from=0x1d810d x0=657 y0=170 x1=778 y1=188 style=1 font=1 colour=0 text=      All Nations
+     glyph  from=0x1d0a92 x=657 y=172 font=1 colour=0 text=      All Nations
+     panel  from=0x1d7c42 x0=657 y0=190 x1=778 y1=208 style=10 colour=576 pattern=0
+      rect  from=0x1cf673 x0=657 y0=190 x1=778 y1=208 style=4 colour=576
+      line  from=0x1cd856 x0=657 y0=190 x1=778 y1=190 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=191 x1=778 y1=191 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=192 x1=778 y1=192 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=193 x1=778 y1=193 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=194 x1=778 y1=194 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=195 x1=778 y1=195 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=196 x1=778 y1=196 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=197 x1=778 y1=197 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=198 x1=778 y1=198 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=199 x1=778 y1=199 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=200 x1=778 y1=200 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=201 x1=778 y1=201 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=202 x1=778 y1=202 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=203 x1=778 y1=203 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=204 x1=778 y1=204 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=205 x1=778 y1=205 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=206 x1=778 y1=206 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=207 x1=778 y1=207 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=208 x1=778 y1=208 style=2 colour=576
+   wrapped  from=0x1d810d x0=657 y0=190 x1=778 y1=208 style=1 font=1 colour=0 text=      Major Nations
+     glyph  from=0x1d0a92 x=657 y=192 font=1 colour=0 text=      Major Nations
+--- PRESENT ---  x0=0 y0=0 x1=799 y1=599
+present_fb  w=800 h=600 pitch=800 data_b64_len=1280000
+   restore  from=0x14923b x=0 y=0
+     panel  from=0x3222 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+   restore  from=0x1d7bf3 x=0 y=0
+     panel  from=0x1d7c42 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=10 x1=85 y1=53 style=1061 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=11 x1=84 y1=11 style=2 colour=10
+      line  from=0x1cfe17 x0=6 y0=11 x1=6 y1=52 style=2 colour=10
+      line  from=0x1cfe30 x0=84 y0=52 x1=7 y1=52 style=2 colour=19
+      line  from=0x1cfe43 x0=84 y0=52 x1=84 y1=12 style=2 colour=19
+      line  from=0x1cfdfd x0=5 y0=10 x1=85 y1=10 style=2 colour=5
+      line  from=0x1cfe17 x0=5 y0=10 x1=5 y1=53 style=2 colour=5
+      line  from=0x1cfe30 x0=85 y0=53 x1=6 y1=53 style=2 colour=24
+      line  from=0x1cfe43 x0=85 y0=53 x1=85 y1=11 style=2 colour=24
+   wrapped  from=0x1d810d x0=7 y0=12 x1=87 y1=55 style=c font=1 colour=32736 text=Version
+3.9.60
+     glyph  from=0x1d0a92 x=27 y=19 font=1 colour=32736 text=Version
+     glyph  from=0x1d0a92 x=29 y=34 font=1 colour=32736 text=3.9.60
+     panel  from=0x1d7c42 x0=5 y0=100 x1=85 y1=143 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=101 x1=84 y1=101 style=2 colour=17
+      line  from=0x1cfe17 x0=6 y0=101 x1=6 y1=142 style=2 colour=17
+      line  from=0x1cfe30 x0=84 y0=142 x1=7 y1=142 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=142 x1=84 y1=102 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=100 x1=85 y1=100 style=2 colour=21
+      line  from=0x1cfe17 x0=5 y0=100 x1=5 y1=143 style=2 colour=21
+      line  from=0x1cfe30 x0=85 y0=143 x1=6 y1=143 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=143 x1=85 y1=101 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=100 x1=85 y1=143 style=2c font=1 colour=29596 text=Add
+Manager
+     glyph  from=0x1d0915 x=35 y=108 font=1 colour=19 text=Add
+     glyph  from=0x1d0a92 x=34 y=107 font=1 colour=7 text=Add
+     glyph  from=0x1d0915 x=22 y=123 font=1 colour=19 text=Manager
+     glyph  from=0x1d0a92 x=21 y=122 font=1 colour=7 text=Manager
+     panel  from=0x1d7c42 x0=5 y0=145 x1=85 y1=187 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=146 x1=84 y1=146 style=2 colour=15
+      line  from=0x1cfe17 x0=6 y0=146 x1=6 y1=186 style=2 colour=15
+      line  from=0x1cfe30 x0=84 y0=186 x1=7 y1=186 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=186 x1=84 y1=147 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=145 x1=85 y1=145 style=2 colour=19
+      line  from=0x1cfe17 x0=5 y0=145 x1=5 y1=187 style=2 colour=19
+      line  from=0x1cfe30 x0=85 y0=187 x1=6 y1=187 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=187 x1=85 y1=146 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=145 x1=85 y1=187 style=2c font=1 colour=32736 text=Restart
+Game
+     glyph  from=0x1d0915 x=28 y=152 font=1 colour=18 text=Restart
+     glyph  from=0x1d0a92 x=27 y=151 font=1 colour=7 text=Restart
+     glyph  from=0x1d0915 x=31 y=167 font=1 colour=18 text=Game
+     glyph  from=0x1d0a92 x=30 y=166 font=1 colour=7 text=Game
+     panel  from=0x1d7c42 x0=5 y0=189 x1=85 y1=232 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=190 x1=84 y1=190 style=2 colour=14
+      line  from=0x1cfe17 x0=6 y0=190 x1=6 y1=231 style=2 colour=14
+      line  from=0x1cfe30 x0=84 y0=231 x1=7 y1=231 style=2 colour=7
+      line  from=0x1cfe43 x0=84 y0=231 x1=84 y1=191 style=2 colour=7
+      line  from=0x1cfdfd x0=5 y0=189 x1=85 y1=189 style=2 colour=18
+      line  from=0x1cfe17 x0=5 y0=189 x1=5 y1=232 style=2 colour=18
+      line  from=0x1cfe30 x0=85 y0=232 x1=6 y1=232 style=2 colour=3
+      line  from=0x1cfe43 x0=85 y0=232 x1=85 y1=190 style=2 colour=3
+   wrapped  from=0x1d810d x0=5 y0=189 x1=85 y1=232 style=2c font=1 colour=32736 text=Exit
+Game
+     glyph  from=0x1d0915 x=36 y=197 font=1 colour=16 text=Exit
+     glyph  from=0x1d0a92 x=35 y=196 font=1 colour=6 text=Exit
+     glyph  from=0x1d0915 x=31 y=212 font=1 colour=16 text=Game
+     glyph  from=0x1d0a92 x=30 y=211 font=1 colour=6 text=Game
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=55 x1=44 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=56 x1=43 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=6 y0=56 x1=6 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=43 y0=97 x1=7 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=43 y0=97 x1=43 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=5 y0=55 x1=44 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=5 y0=55 x1=5 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=44 y0=98 x1=6 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=44 y0=98 x1=44 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=55 x1=44 y1=98 style=c font=1 colour=29596 text=<<<
+     glyph  from=0x1d0a92 x=10 y=69 font=1 colour=29596 text=<<<
+     panel  from=0x1d7c42 x0=46 y0=55 x1=85 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=47 y0=56 x1=84 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=47 y0=56 x1=47 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=84 y0=97 x1=48 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=84 y0=97 x1=84 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=46 y0=55 x1=85 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=46 y0=55 x1=46 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=85 y0=98 x1=47 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=98 x1=85 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=46 y0=55 x1=85 y1=98 style=c font=1 colour=29596 text=>>>
+     glyph  from=0x1d0a92 x=51 y=69 font=1 colour=29596 text=>>>
+     panel  from=0x3222 x0=110 y0=170 x1=780 y1=535 style=2 colour=0 pattern=0
+    darken  from=0x1cf645 x0=110 y0=170 x1=780 y1=535
+     panel  from=0x1d7c42 x0=112 y0=178 x1=396 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=178 x1=396 y1=198 style=1 font=3 colour=29596 text=  American
+     glyph  from=0x1d0a92 x=112 y=178 font=3 colour=29596 text=  American
+     panel  from=0x1d7c42 x0=398 y0=178 x1=444 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=178 x1=444 y1=198 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=406 y=179 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=446 y0=178 x1=730 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=178 x1=730 y1=198 style=1 font=3 colour=29596 text=  Argentinian
+     glyph  from=0x1d0a92 x=446 y=178 font=3 colour=29596 text=  Argentinian
+     panel  from=0x1d7c42 x0=732 y0=178 x1=778 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=178 x1=778 y1=198 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=742 y=179 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=112 y0=200 x1=396 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=200 x1=396 y1=220 style=1 font=3 colour=29596 text=  Australian
+     glyph  from=0x1d0a92 x=112 y=200 font=3 colour=29596 text=  Australian
+     panel  from=0x1d7c42 x0=398 y0=200 x1=444 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=200 x1=444 y1=220 style=c font=2 colour=32736 text=OCE
+     glyph  from=0x1d0a92 x=408 y=201 font=2 colour=32736 text=OCE
+     panel  from=0x1d7c42 x0=446 y0=200 x1=730 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=200 x1=730 y1=220 style=1 font=3 colour=29596 text=  Belgian
+     glyph  from=0x1d0a92 x=446 y=200 font=3 colour=29596 text=  Belgian
+     panel  from=0x1d7c42 x0=732 y0=200 x1=778 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=200 x1=778 y1=220 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=201 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=222 x1=396 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=222 x1=396 y1=242 style=1 font=3 colour=29596 text=  Brazilian
+     glyph  from=0x1d0a92 x=112 y=222 font=3 colour=29596 text=  Brazilian
+     panel  from=0x1d7c42 x0=398 y0=222 x1=444 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=222 x1=444 y1=242 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=408 y=223 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=446 y0=222 x1=730 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=222 x1=730 y1=242 style=1 font=3 colour=29596 text=  Canadian
+     glyph  from=0x1d0a92 x=446 y=222 font=3 colour=29596 text=  Canadian
+     panel  from=0x1d7c42 x0=732 y0=222 x1=778 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=222 x1=778 y1=242 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=740 y=223 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=112 y0=244 x1=396 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=244 x1=396 y1=264 style=1 font=3 colour=29596 text=  Croatian
+     glyph  from=0x1d0a92 x=112 y=244 font=3 colour=29596 text=  Croatian
+     panel  from=0x1d7c42 x0=398 y0=244 x1=444 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=244 x1=444 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=244 x1=730 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=244 x1=730 y1=264 style=1 font=3 colour=29596 text=  Danish
+     glyph  from=0x1d0a92 x=446 y=244 font=3 colour=29596 text=  Danish
+     panel  from=0x1d7c42 x0=732 y0=244 x1=778 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=244 x1=778 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=266 x1=396 y1=286 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=266 x1=396 y1=286 style=1 font=3 colour=29596 text=  Dutch
+     glyph  from=0x1d0a92 x=112 y=266 font=3 colour=29596 text=  Dutch
+     panel  from=0x1d7c42 x0=398 y0=266 x1=444 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=266 x1=444 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=266 x1=730 y1=286 style=801 colour=0 pattern=29596
+      rect  from=0x1d0388 x0=445 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7c6 x0=445 y0=265 x1=731 y1=265 style=2 colour=32736
+      line  from=0x1cd7d6 x0=731 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7e6 x0=731 y0=287 x1=445 y1=287 style=2 colour=32736
+      line  from=0x1cd7f9 x0=445 y0=287 x1=445 y1=265 style=2 colour=32736
+   wrapped  from=0x1d810d x0=446 y0=266 x1=730 y1=286 style=1 font=3 colour=29596 text=  English
+     glyph  from=0x1d0a92 x=446 y=266 font=3 colour=29596 text=  English
+     panel  from=0x1d7c42 x0=732 y0=266 x1=778 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=266 x1=778 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=288 x1=396 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=288 x1=396 y1=308 style=1 font=3 colour=29596 text=  Finnish
+     glyph  from=0x1d0a92 x=112 y=288 font=3 colour=29596 text=  Finnish
+     panel  from=0x1d7c42 x0=398 y0=288 x1=444 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=288 x1=444 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=288 x1=730 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=288 x1=730 y1=308 style=1 font=3 colour=29596 text=  French
+     glyph  from=0x1d0a92 x=446 y=288 font=3 colour=29596 text=  French
+     panel  from=0x1d7c42 x0=732 y0=288 x1=778 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=288 x1=778 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=310 x1=396 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=310 x1=396 y1=330 style=1 font=3 colour=29596 text=  German
+     glyph  from=0x1d0a92 x=112 y=310 font=3 colour=29596 text=  German
+     panel  from=0x1d7c42 x0=398 y0=310 x1=444 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=310 x1=444 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=310 x1=730 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=310 x1=730 y1=330 style=1 font=3 colour=29596 text=  Greek
+     glyph  from=0x1d0a92 x=446 y=310 font=3 colour=29596 text=  Greek
+     panel  from=0x1d7c42 x0=732 y0=310 x1=778 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=310 x1=778 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=332 x1=396 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=332 x1=396 y1=352 style=1 font=3 colour=29596 text=  Hong Kong
+     glyph  from=0x1d0a92 x=112 y=332 font=3 colour=29596 text=  Hong Kong
+     panel  from=0x1d7c42 x0=398 y0=332 x1=444 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=332 x1=444 y1=352 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=333 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=332 x1=730 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=332 x1=730 y1=352 style=1 font=3 colour=29596 text=  Icelandic
+     glyph  from=0x1d0a92 x=446 y=332 font=3 colour=29596 text=  Icelandic
+     panel  from=0x1d7c42 x0=732 y0=332 x1=778 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=332 x1=778 y1=352 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=333 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=354 x1=396 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=354 x1=396 y1=373 style=1 font=3 colour=29596 text=  Irish
+     glyph  from=0x1d0a92 x=112 y=354 font=3 colour=29596 text=  Irish
+     panel  from=0x1d7c42 x0=398 y0=354 x1=444 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=354 x1=444 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=354 x1=730 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=354 x1=730 y1=373 style=1 font=3 colour=29596 text=  Israeli
+     glyph  from=0x1d0a92 x=446 y=354 font=3 colour=29596 text=  Israeli
+     panel  from=0x1d7c42 x0=732 y0=354 x1=778 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=354 x1=778 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=375 x1=396 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=375 x1=396 y1=395 style=1 font=3 colour=29596 text=  Italian
+     glyph  from=0x1d0a92 x=112 y=375 font=3 colour=29596 text=  Italian
+     panel  from=0x1d7c42 x0=398 y0=375 x1=444 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=375 x1=444 y1=395 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=376 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=375 x1=730 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=375 x1=730 y1=395 style=1 font=3 colour=29596 text=  Japanese
+     glyph  from=0x1d0a92 x=446 y=375 font=3 colour=29596 text=  Japanese
+     panel  from=0x1d7c42 x0=732 y0=375 x1=778 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=375 x1=778 y1=395 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=746 y=376 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=112 y0=397 x1=396 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=397 x1=396 y1=417 style=1 font=3 colour=29596 text=  Northern Irish
+     glyph  from=0x1d0a92 x=112 y=397 font=3 colour=29596 text=  Northern Irish
+     panel  from=0x1d7c42 x0=398 y0=397 x1=444 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=397 x1=444 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=397 x1=730 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=397 x1=730 y1=417 style=1 font=3 colour=29596 text=  Norwegian
+     glyph  from=0x1d0a92 x=446 y=397 font=3 colour=29596 text=  Norwegian
+     panel  from=0x1d7c42 x0=732 y0=397 x1=778 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=397 x1=778 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=419 x1=396 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=419 x1=396 y1=439 style=1 font=3 colour=29596 text=  Polish
+     glyph  from=0x1d0a92 x=112 y=419 font=3 colour=29596 text=  Polish
+     panel  from=0x1d7c42 x0=398 y0=419 x1=444 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=419 x1=444 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=419 x1=730 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=419 x1=730 y1=439 style=1 font=3 colour=29596 text=  Portuguese
+     glyph  from=0x1d0a92 x=446 y=419 font=3 colour=29596 text=  Portuguese
+     panel  from=0x1d7c42 x0=732 y0=419 x1=778 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=419 x1=778 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=441 x1=396 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=441 x1=396 y1=461 style=1 font=3 colour=29596 text=  Russian
+     glyph  from=0x1d0a92 x=112 y=441 font=3 colour=29596 text=  Russian
+     panel  from=0x1d7c42 x0=398 y0=441 x1=444 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=441 x1=444 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=441 x1=730 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=441 x1=730 y1=461 style=1 font=3 colour=29596 text=  Scottish
+     glyph  from=0x1d0a92 x=446 y=441 font=3 colour=29596 text=  Scottish
+     panel  from=0x1d7c42 x0=732 y0=441 x1=778 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=441 x1=778 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=463 x1=396 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=463 x1=396 y1=483 style=1 font=3 colour=29596 text=  Singaporean
+     glyph  from=0x1d0a92 x=112 y=463 font=3 colour=29596 text=  Singaporean
+     panel  from=0x1d7c42 x0=398 y0=463 x1=444 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=463 x1=444 y1=483 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=464 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=463 x1=730 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=463 x1=730 y1=483 style=1 font=3 colour=29596 text=  South African
+     glyph  from=0x1d0a92 x=446 y=463 font=3 colour=29596 text=  South African
+     panel  from=0x1d7c42 x0=732 y0=463 x1=778 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=463 x1=778 y1=483 style=c font=2 colour=32736 text=AFR
+     glyph  from=0x1d0a92 x=743 y=464 font=2 colour=32736 text=AFR
+     panel  from=0x1d7c42 x0=112 y0=485 x1=396 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=485 x1=396 y1=505 style=1 font=3 colour=29596 text=  Spanish
+     glyph  from=0x1d0a92 x=112 y=485 font=3 colour=29596 text=  Spanish
+     panel  from=0x1d7c42 x0=398 y0=485 x1=444 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=485 x1=444 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=485 x1=730 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=485 x1=730 y1=505 style=1 font=3 colour=29596 text=  Swedish
+     glyph  from=0x1d0a92 x=446 y=485 font=3 colour=29596 text=  Swedish
+     panel  from=0x1d7c42 x0=732 y0=485 x1=778 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=485 x1=778 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=507 x1=396 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=507 x1=396 y1=527 style=1 font=3 colour=29596 text=  Turkish
+     glyph  from=0x1d0a92 x=112 y=507 font=3 colour=29596 text=  Turkish
+     panel  from=0x1d7c42 x0=398 y0=507 x1=444 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=507 x1=444 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=507 x1=730 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=507 x1=730 y1=527 style=1 font=3 colour=29596 text=  Welsh
+     glyph  from=0x1d0a92 x=446 y=507 font=3 colour=29596 text=  Welsh
+     panel  from=0x1d7c42 x0=732 y0=507 x1=778 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=507 x1=778 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x3222 x0=100 y0=555 x1=790 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=100 y0=555 x1=617 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=555 x1=617 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=100 y0=555 x1=617 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=556 x1=617 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=557 x1=617 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=558 x1=617 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=559 x1=617 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=560 x1=617 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=561 x1=617 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=562 x1=617 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=563 x1=617 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=564 x1=617 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=565 x1=617 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=566 x1=617 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=567 x1=617 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=568 x1=617 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=569 x1=617 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=570 x1=617 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=571 x1=617 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=572 x1=617 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=573 x1=617 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=574 x1=617 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=575 x1=617 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=576 x1=617 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=577 x1=617 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=578 x1=617 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=579 x1=617 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=580 x1=617 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=581 x1=617 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=582 x1=617 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=583 x1=617 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=584 x1=617 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=585 x1=617 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=586 x1=617 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=587 x1=617 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=588 x1=617 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=589 x1=617 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=590 x1=617 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=101 y0=556 x1=616 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=101 y0=556 x1=101 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=616 y0=589 x1=102 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=616 y0=589 x1=616 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=100 y0=555 x1=617 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=100 y0=555 x1=100 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=617 y0=590 x1=101 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=617 y0=590 x1=617 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=100 y0=555 x1=617 y1=590 style=c font=3 colour=29596 text=Back
+     glyph  from=0x1d0a92 x=338 y=562 font=3 colour=29596 text=Back
+     panel  from=0x1d7c42 x0=619 y0=555 x1=790 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=619 y0=555 x1=790 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=619 y0=555 x1=790 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=556 x1=790 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=557 x1=790 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=558 x1=790 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=559 x1=790 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=560 x1=790 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=561 x1=790 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=562 x1=790 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=563 x1=790 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=564 x1=790 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=565 x1=790 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=566 x1=790 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=567 x1=790 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=568 x1=790 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=569 x1=790 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=570 x1=790 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=571 x1=790 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=572 x1=790 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=573 x1=790 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=574 x1=790 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=575 x1=790 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=576 x1=790 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=577 x1=790 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=578 x1=790 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=579 x1=790 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=580 x1=790 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=581 x1=790 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=582 x1=790 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=583 x1=790 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=584 x1=790 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=585 x1=790 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=586 x1=790 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=587 x1=790 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=588 x1=790 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=589 x1=790 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=590 x1=790 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=620 y0=556 x1=789 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=620 y0=556 x1=620 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=789 y0=589 x1=621 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=789 y0=589 x1=789 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=619 y0=555 x1=790 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=619 y0=555 x1=619 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=790 y0=590 x1=620 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=790 y0=590 x1=790 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=619 y0=555 x1=790 y1=590 style=c font=3 colour=29596 text=Next
+     glyph  from=0x1d0a92 x=685 y=562 font=3 colour=29596 text=Next
+     panel  from=0x1d7c42 x0=100 y0=10 x1=790 y1=70 style=30 colour=31744 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=10 x1=790 y1=70 style=4 colour=31744
+      line  from=0x1cd856 x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=11 x1=790 y1=11 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=12 x1=790 y1=12 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=13 x1=790 y1=13 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=14 x1=790 y1=14 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=15 x1=790 y1=15 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=16 x1=790 y1=16 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=17 x1=790 y1=17 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=18 x1=790 y1=18 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=19 x1=790 y1=19 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=20 x1=790 y1=20 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=21 x1=790 y1=21 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=22 x1=790 y1=22 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=23 x1=790 y1=23 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=24 x1=790 y1=24 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=25 x1=790 y1=25 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=26 x1=790 y1=26 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=27 x1=790 y1=27 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=28 x1=790 y1=28 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=29 x1=790 y1=29 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=30 x1=790 y1=30 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=31 x1=790 y1=31 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=32 x1=790 y1=32 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=33 x1=790 y1=33 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=34 x1=790 y1=34 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=35 x1=790 y1=35 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=36 x1=790 y1=36 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=37 x1=790 y1=37 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=38 x1=790 y1=38 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=39 x1=790 y1=39 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=40 x1=790 y1=40 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=41 x1=790 y1=41 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=42 x1=790 y1=42 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=43 x1=790 y1=43 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=44 x1=790 y1=44 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=45 x1=790 y1=45 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=46 x1=790 y1=46 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=47 x1=790 y1=47 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=48 x1=790 y1=48 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=49 x1=790 y1=49 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=50 x1=790 y1=50 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=51 x1=790 y1=51 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=52 x1=790 y1=52 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=53 x1=790 y1=53 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=54 x1=790 y1=54 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=55 x1=790 y1=55 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=56 x1=790 y1=56 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=57 x1=790 y1=57 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=58 x1=790 y1=58 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=59 x1=790 y1=59 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=60 x1=790 y1=60 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=61 x1=790 y1=61 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=62 x1=790 y1=62 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=63 x1=790 y1=63 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=64 x1=790 y1=64 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=65 x1=790 y1=65 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=66 x1=790 y1=66 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=67 x1=790 y1=67 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=68 x1=790 y1=68 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=69 x1=790 y1=69 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=70 x1=790 y1=70 style=2 colour=31744
+      line  from=0x1cfdfd x0=103 y0=13 x1=787 y1=13 style=2 colour=31744
+      line  from=0x1cfe17 x0=103 y0=13 x1=103 y1=67 style=2 colour=31744
+      line  from=0x1cfe30 x0=787 y0=67 x1=104 y1=67 style=2 colour=26624
+      line  from=0x1cfe43 x0=787 y0=67 x1=787 y1=14 style=2 colour=26624
+      line  from=0x1cfdfd x0=102 y0=12 x1=788 y1=12 style=2 colour=31744
+      line  from=0x1cfe17 x0=102 y0=12 x1=102 y1=68 style=2 colour=31744
+      line  from=0x1cfe30 x0=788 y0=68 x1=103 y1=68 style=2 colour=21504
+      line  from=0x1cfe43 x0=788 y0=68 x1=788 y1=13 style=2 colour=21504
+      line  from=0x1cfdfd x0=101 y0=11 x1=789 y1=11 style=2 colour=31744
+      line  from=0x1cfe17 x0=101 y0=11 x1=101 y1=69 style=2 colour=31744
+      line  from=0x1cfe30 x0=789 y0=69 x1=102 y1=69 style=2 colour=16384
+      line  from=0x1cfe43 x0=789 y0=69 x1=789 y1=12 style=2 colour=16384
+      line  from=0x1cfdfd x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cfe17 x0=100 y0=10 x1=100 y1=70 style=2 colour=31744
+      line  from=0x1cfe30 x0=790 y0=70 x1=101 y1=70 style=2 colour=10240
+      line  from=0x1cfe43 x0=790 y0=70 x1=790 y1=11 style=2 colour=10240
+   wrapped  from=0x1d810d x0=100 y0=10 x1=790 y1=70 style=c font=7 colour=29596 text=Championship Manager 2001/02
+     glyph  from=0x1d0a92 x=207 y=18 font=7 colour=29596 text=Championship Manager 2001/02
+     panel  from=0x1d7c42 x0=100 y0=80 x1=790 y1=125 style=2 colour=0 pattern=32736
+    darken  from=0x1cf645 x0=100 y0=80 x1=790 y1=125
+   wrapped  from=0x1d810d x0=100 y0=80 x1=790 y1=125 style=c font=6 colour=32736 text=Select Nationality
+     glyph  from=0x1d0a92 x=328 y=83 font=6 colour=32736 text=Select Nationality
+     panel  from=0x1d7c42 x0=655 y0=145 x1=780 y1=165 style=70 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=655 y0=145 x1=780 y1=165 style=4 colour=16912
+      line  from=0x1cd856 x0=655 y0=145 x1=780 y1=145 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=146 x1=780 y1=146 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=147 x1=780 y1=147 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=148 x1=780 y1=148 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=149 x1=780 y1=149 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=150 x1=780 y1=150 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=151 x1=780 y1=151 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=152 x1=780 y1=152 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=153 x1=780 y1=153 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=154 x1=780 y1=154 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=155 x1=780 y1=155 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=156 x1=780 y1=156 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=157 x1=780 y1=157 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=158 x1=780 y1=158 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=159 x1=780 y1=159 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=160 x1=780 y1=160 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=161 x1=780 y1=161 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=162 x1=780 y1=162 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=163 x1=780 y1=163 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=164 x1=780 y1=164 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=165 x1=780 y1=165 style=2 colour=16912
+      line  from=0x1cfdfd x0=656 y0=146 x1=779 y1=146 style=2 colour=11594
+      line  from=0x1cfe17 x0=656 y0=146 x1=656 y1=164 style=2 colour=11594
+      line  from=0x1cfe30 x0=779 y0=164 x1=657 y1=164 style=2 colour=22197
+      line  from=0x1cfe43 x0=779 y0=164 x1=779 y1=147 style=2 colour=22197
+      line  from=0x1cfdfd x0=655 y0=145 x1=780 y1=145 style=2 colour=5285
+      line  from=0x1cfe17 x0=655 y0=145 x1=655 y1=165 style=2 colour=5285
+      line  from=0x1cfe30 x0=780 y0=165 x1=656 y1=165 style=2 colour=28538
+      line  from=0x1cfe43 x0=780 y0=165 x1=780 y1=146 style=2 colour=28538
+   wrapped  from=0x1d810d x0=657 y0=147 x1=782 y1=167 style=c font=1 colour=29596 text=Filter
+     glyph  from=0x1d0a92 x=706 y=150 font=1 colour=29596 text=Filter
+     panel  from=0x3222 x0=655 y0=168 x1=780 y1=210 style=130 colour=512 pattern=0
+      rect  from=0x1cf673 x0=655 y0=168 x1=780 y1=210 style=4 colour=512
+      line  from=0x1cd856 x0=655 y0=168 x1=780 y1=168 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=169 x1=780 y1=169 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=170 x1=780 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=171 x1=780 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=172 x1=780 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=173 x1=780 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=174 x1=780 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=175 x1=780 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=176 x1=780 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=177 x1=780 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=178 x1=780 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=179 x1=780 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=180 x1=780 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=181 x1=780 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=182 x1=780 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=183 x1=780 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=184 x1=780 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=185 x1=780 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=186 x1=780 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=187 x1=780 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=188 x1=780 y1=188 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=189 x1=780 y1=189 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=190 x1=780 y1=190 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=191 x1=780 y1=191 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=192 x1=780 y1=192 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=193 x1=780 y1=193 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=194 x1=780 y1=194 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=195 x1=780 y1=195 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=196 x1=780 y1=196 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=197 x1=780 y1=197 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=198 x1=780 y1=198 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=199 x1=780 y1=199 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=200 x1=780 y1=200 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=201 x1=780 y1=201 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=202 x1=780 y1=202 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=203 x1=780 y1=203 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=204 x1=780 y1=204 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=205 x1=780 y1=205 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=206 x1=780 y1=206 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=207 x1=780 y1=207 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=208 x1=780 y1=208 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=209 x1=780 y1=209 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=210 x1=780 y1=210 style=2 colour=512
+      line  from=0x1cfdfd x0=656 y0=169 x1=779 y1=169 style=2 colour=672
+      line  from=0x1cfe17 x0=656 y0=169 x1=656 y1=209 style=2 colour=672
+      line  from=0x1cfe30 x0=779 y0=209 x1=657 y1=209 style=2 colour=320
+      line  from=0x1cfe43 x0=779 y0=209 x1=779 y1=170 style=2 colour=320
+      line  from=0x1cfdfd x0=655 y0=168 x1=780 y1=168 style=2 colour=864
+      line  from=0x1cfe17 x0=655 y0=168 x1=655 y1=210 style=2 colour=864
+      line  from=0x1cfe30 x0=780 y0=210 x1=656 y1=210 style=2 colour=160
+      line  from=0x1cfe43 x0=780 y0=210 x1=780 y1=169 style=2 colour=160
+     panel  from=0x1d7c42 x0=657 y0=170 x1=778 y1=188 style=10 colour=512 pattern=0
+      rect  from=0x1cf673 x0=657 y0=170 x1=778 y1=188 style=4 colour=512
+      line  from=0x1cd856 x0=657 y0=170 x1=778 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=171 x1=778 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=172 x1=778 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=173 x1=778 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=174 x1=778 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=175 x1=778 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=176 x1=778 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=177 x1=778 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=178 x1=778 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=179 x1=778 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=180 x1=778 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=181 x1=778 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=182 x1=778 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=183 x1=778 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=184 x1=778 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=185 x1=778 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=186 x1=778 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=187 x1=778 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=188 x1=778 y1=188 style=2 colour=512
+   wrapped  from=0x1d810d x0=657 y0=170 x1=778 y1=188 style=1 font=1 colour=0 text=      All Nations
+     glyph  from=0x1d0a92 x=657 y=172 font=1 colour=0 text=      All Nations
+     panel  from=0x1d7c42 x0=657 y0=190 x1=778 y1=208 style=10 colour=576 pattern=0
+      rect  from=0x1cf673 x0=657 y0=190 x1=778 y1=208 style=4 colour=576
+      line  from=0x1cd856 x0=657 y0=190 x1=778 y1=190 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=191 x1=778 y1=191 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=192 x1=778 y1=192 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=193 x1=778 y1=193 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=194 x1=778 y1=194 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=195 x1=778 y1=195 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=196 x1=778 y1=196 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=197 x1=778 y1=197 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=198 x1=778 y1=198 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=199 x1=778 y1=199 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=200 x1=778 y1=200 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=201 x1=778 y1=201 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=202 x1=778 y1=202 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=203 x1=778 y1=203 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=204 x1=778 y1=204 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=205 x1=778 y1=205 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=206 x1=778 y1=206 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=207 x1=778 y1=207 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=208 x1=778 y1=208 style=2 colour=576
+   wrapped  from=0x1d810d x0=657 y0=190 x1=778 y1=208 style=1 font=1 colour=0 text=      Major Nations
+     glyph  from=0x1d0a92 x=657 y=192 font=1 colour=0 text=      Major Nations
+--- PRESENT ---  x0=0 y0=0 x1=799 y1=599
+present_fb  w=800 h=600 pitch=800 data_b64_len=1280000
+   restore  from=0x14923b x=0 y=0
+     panel  from=0x3222 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+   restore  from=0x1d7bf3 x=0 y=0
+     panel  from=0x1d7c42 x0=0 y0=0 x1=89 y1=599 style=1 colour=0 pattern=0
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=10 x1=85 y1=53 style=1061 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=11 x1=84 y1=11 style=2 colour=10
+      line  from=0x1cfe17 x0=6 y0=11 x1=6 y1=52 style=2 colour=10
+      line  from=0x1cfe30 x0=84 y0=52 x1=7 y1=52 style=2 colour=19
+      line  from=0x1cfe43 x0=84 y0=52 x1=84 y1=12 style=2 colour=19
+      line  from=0x1cfdfd x0=5 y0=10 x1=85 y1=10 style=2 colour=5
+      line  from=0x1cfe17 x0=5 y0=10 x1=5 y1=53 style=2 colour=5
+      line  from=0x1cfe30 x0=85 y0=53 x1=6 y1=53 style=2 colour=24
+      line  from=0x1cfe43 x0=85 y0=53 x1=85 y1=11 style=2 colour=24
+   wrapped  from=0x1d810d x0=7 y0=12 x1=87 y1=55 style=c font=1 colour=32736 text=Version
+3.9.60
+     glyph  from=0x1d0a92 x=27 y=19 font=1 colour=32736 text=Version
+     glyph  from=0x1d0a92 x=29 y=34 font=1 colour=32736 text=3.9.60
+     panel  from=0x1d7c42 x0=5 y0=100 x1=85 y1=143 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=101 x1=84 y1=101 style=2 colour=17
+      line  from=0x1cfe17 x0=6 y0=101 x1=6 y1=142 style=2 colour=17
+      line  from=0x1cfe30 x0=84 y0=142 x1=7 y1=142 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=142 x1=84 y1=102 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=100 x1=85 y1=100 style=2 colour=21
+      line  from=0x1cfe17 x0=5 y0=100 x1=5 y1=143 style=2 colour=21
+      line  from=0x1cfe30 x0=85 y0=143 x1=6 y1=143 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=143 x1=85 y1=101 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=100 x1=85 y1=143 style=2c font=1 colour=29596 text=Add
+Manager
+     glyph  from=0x1d0915 x=35 y=108 font=1 colour=19 text=Add
+     glyph  from=0x1d0a92 x=34 y=107 font=1 colour=7 text=Add
+     glyph  from=0x1d0915 x=22 y=123 font=1 colour=19 text=Manager
+     glyph  from=0x1d0a92 x=21 y=122 font=1 colour=7 text=Manager
+     panel  from=0x1d7c42 x0=5 y0=145 x1=85 y1=187 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=146 x1=84 y1=146 style=2 colour=15
+      line  from=0x1cfe17 x0=6 y0=146 x1=6 y1=186 style=2 colour=15
+      line  from=0x1cfe30 x0=84 y0=186 x1=7 y1=186 style=2 colour=8
+      line  from=0x1cfe43 x0=84 y0=186 x1=84 y1=147 style=2 colour=8
+      line  from=0x1cfdfd x0=5 y0=145 x1=85 y1=145 style=2 colour=19
+      line  from=0x1cfe17 x0=5 y0=145 x1=5 y1=187 style=2 colour=19
+      line  from=0x1cfe30 x0=85 y0=187 x1=6 y1=187 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=187 x1=85 y1=146 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=145 x1=85 y1=187 style=2c font=1 colour=32736 text=Restart
+Game
+     glyph  from=0x1d0915 x=28 y=152 font=1 colour=18 text=Restart
+     glyph  from=0x1d0a92 x=27 y=151 font=1 colour=7 text=Restart
+     glyph  from=0x1d0915 x=31 y=167 font=1 colour=18 text=Game
+     glyph  from=0x1d0a92 x=30 y=166 font=1 colour=7 text=Game
+     panel  from=0x1d7c42 x0=5 y0=189 x1=85 y1=232 style=1021 colour=0 pattern=32736
+      line  from=0x1cfdfd x0=6 y0=190 x1=84 y1=190 style=2 colour=14
+      line  from=0x1cfe17 x0=6 y0=190 x1=6 y1=231 style=2 colour=14
+      line  from=0x1cfe30 x0=84 y0=231 x1=7 y1=231 style=2 colour=7
+      line  from=0x1cfe43 x0=84 y0=231 x1=84 y1=191 style=2 colour=7
+      line  from=0x1cfdfd x0=5 y0=189 x1=85 y1=189 style=2 colour=18
+      line  from=0x1cfe17 x0=5 y0=189 x1=5 y1=232 style=2 colour=18
+      line  from=0x1cfe30 x0=85 y0=232 x1=6 y1=232 style=2 colour=3
+      line  from=0x1cfe43 x0=85 y0=232 x1=85 y1=190 style=2 colour=3
+   wrapped  from=0x1d810d x0=5 y0=189 x1=85 y1=232 style=2c font=1 colour=32736 text=Exit
+Game
+     glyph  from=0x1d0915 x=36 y=197 font=1 colour=16 text=Exit
+     glyph  from=0x1d0a92 x=35 y=196 font=1 colour=6 text=Exit
+     glyph  from=0x1d0915 x=31 y=212 font=1 colour=16 text=Game
+     glyph  from=0x1d0a92 x=30 y=211 font=1 colour=6 text=Game
+     panel  from=0x3222 x0=5 y0=10 x1=85 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=5 y0=55 x1=44 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=6 y0=56 x1=43 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=6 y0=56 x1=6 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=43 y0=97 x1=7 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=43 y0=97 x1=43 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=5 y0=55 x1=44 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=5 y0=55 x1=5 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=44 y0=98 x1=6 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=44 y0=98 x1=44 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=5 y0=55 x1=44 y1=98 style=c font=1 colour=29596 text=<<<
+     glyph  from=0x1d0a92 x=10 y=69 font=1 colour=29596 text=<<<
+     panel  from=0x1d7c42 x0=46 y0=55 x1=85 y1=98 style=1021 colour=0 pattern=29596
+      line  from=0x1cfdfd x0=47 y0=56 x1=84 y1=56 style=2 colour=18
+      line  from=0x1cfe17 x0=47 y0=56 x1=47 y1=97 style=2 colour=18
+      line  from=0x1cfe30 x0=84 y0=97 x1=48 y1=97 style=2 colour=9
+      line  from=0x1cfe43 x0=84 y0=97 x1=84 y1=57 style=2 colour=9
+      line  from=0x1cfdfd x0=46 y0=55 x1=85 y1=55 style=2 colour=23
+      line  from=0x1cfe17 x0=46 y0=55 x1=46 y1=98 style=2 colour=23
+      line  from=0x1cfe30 x0=85 y0=98 x1=47 y1=98 style=2 colour=4
+      line  from=0x1cfe43 x0=85 y0=98 x1=85 y1=56 style=2 colour=4
+   wrapped  from=0x1d810d x0=46 y0=55 x1=85 y1=98 style=c font=1 colour=29596 text=>>>
+     glyph  from=0x1d0a92 x=51 y=69 font=1 colour=29596 text=>>>
+     panel  from=0x3222 x0=110 y0=170 x1=780 y1=535 style=2 colour=0 pattern=0
+    darken  from=0x1cf645 x0=110 y0=170 x1=780 y1=535
+     panel  from=0x1d7c42 x0=112 y0=178 x1=396 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=178 x1=396 y1=198 style=1 font=3 colour=29596 text=  American
+     glyph  from=0x1d0a92 x=112 y=178 font=3 colour=29596 text=  American
+     panel  from=0x1d7c42 x0=398 y0=178 x1=444 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=178 x1=444 y1=198 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=406 y=179 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=446 y0=178 x1=730 y1=198 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=178 x1=730 y1=198 style=1 font=3 colour=29596 text=  Argentinian
+     glyph  from=0x1d0a92 x=446 y=178 font=3 colour=29596 text=  Argentinian
+     panel  from=0x1d7c42 x0=732 y0=178 x1=778 y1=198 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=178 x1=778 y1=198 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=742 y=179 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=112 y0=200 x1=396 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=200 x1=396 y1=220 style=1 font=3 colour=29596 text=  Australian
+     glyph  from=0x1d0a92 x=112 y=200 font=3 colour=29596 text=  Australian
+     panel  from=0x1d7c42 x0=398 y0=200 x1=444 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=200 x1=444 y1=220 style=c font=2 colour=32736 text=OCE
+     glyph  from=0x1d0a92 x=408 y=201 font=2 colour=32736 text=OCE
+     panel  from=0x1d7c42 x0=446 y0=200 x1=730 y1=220 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=200 x1=730 y1=220 style=1 font=3 colour=29596 text=  Belgian
+     glyph  from=0x1d0a92 x=446 y=200 font=3 colour=29596 text=  Belgian
+     panel  from=0x1d7c42 x0=732 y0=200 x1=778 y1=220 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=200 x1=778 y1=220 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=201 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=222 x1=396 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=222 x1=396 y1=242 style=1 font=3 colour=29596 text=  Brazilian
+     glyph  from=0x1d0a92 x=112 y=222 font=3 colour=29596 text=  Brazilian
+     panel  from=0x1d7c42 x0=398 y0=222 x1=444 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=222 x1=444 y1=242 style=c font=2 colour=32736 text=SAM
+     glyph  from=0x1d0a92 x=408 y=223 font=2 colour=32736 text=SAM
+     panel  from=0x1d7c42 x0=446 y0=222 x1=730 y1=242 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=222 x1=730 y1=242 style=1 font=3 colour=29596 text=  Canadian
+     glyph  from=0x1d0a92 x=446 y=222 font=3 colour=29596 text=  Canadian
+     panel  from=0x1d7c42 x0=732 y0=222 x1=778 y1=242 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=222 x1=778 y1=242 style=c font=2 colour=32736 text=NAM
+     glyph  from=0x1d0a92 x=740 y=223 font=2 colour=32736 text=NAM
+     panel  from=0x1d7c42 x0=112 y0=244 x1=396 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=244 x1=396 y1=264 style=1 font=3 colour=29596 text=  Croatian
+     glyph  from=0x1d0a92 x=112 y=244 font=3 colour=29596 text=  Croatian
+     panel  from=0x1d7c42 x0=398 y0=244 x1=444 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=244 x1=444 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=244 x1=730 y1=264 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=244 x1=730 y1=264 style=1 font=3 colour=29596 text=  Danish
+     glyph  from=0x1d0a92 x=446 y=244 font=3 colour=29596 text=  Danish
+     panel  from=0x1d7c42 x0=732 y0=244 x1=778 y1=264 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=244 x1=778 y1=264 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=245 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=266 x1=396 y1=286 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=266 x1=396 y1=286 style=1 font=3 colour=29596 text=  Dutch
+     glyph  from=0x1d0a92 x=112 y=266 font=3 colour=29596 text=  Dutch
+     panel  from=0x1d7c42 x0=398 y0=266 x1=444 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=266 x1=444 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=266 x1=730 y1=286 style=801 colour=0 pattern=29596
+      rect  from=0x1d0388 x0=445 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7c6 x0=445 y0=265 x1=731 y1=265 style=2 colour=32736
+      line  from=0x1cd7d6 x0=731 y0=265 x1=731 y1=287 style=2 colour=32736
+      line  from=0x1cd7e6 x0=731 y0=287 x1=445 y1=287 style=2 colour=32736
+      line  from=0x1cd7f9 x0=445 y0=287 x1=445 y1=265 style=2 colour=32736
+   wrapped  from=0x1d810d x0=446 y0=266 x1=730 y1=286 style=1 font=3 colour=29596 text=  English
+     glyph  from=0x1d0a92 x=446 y=266 font=3 colour=29596 text=  English
+     panel  from=0x1d7c42 x0=732 y0=266 x1=778 y1=286 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=266 x1=778 y1=286 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=267 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=288 x1=396 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=288 x1=396 y1=308 style=1 font=3 colour=29596 text=  Finnish
+     glyph  from=0x1d0a92 x=112 y=288 font=3 colour=29596 text=  Finnish
+     panel  from=0x1d7c42 x0=398 y0=288 x1=444 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=288 x1=444 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=288 x1=730 y1=308 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=288 x1=730 y1=308 style=1 font=3 colour=29596 text=  French
+     glyph  from=0x1d0a92 x=446 y=288 font=3 colour=29596 text=  French
+     panel  from=0x1d7c42 x0=732 y0=288 x1=778 y1=308 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=288 x1=778 y1=308 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=289 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=310 x1=396 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=310 x1=396 y1=330 style=1 font=3 colour=29596 text=  German
+     glyph  from=0x1d0a92 x=112 y=310 font=3 colour=29596 text=  German
+     panel  from=0x1d7c42 x0=398 y0=310 x1=444 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=310 x1=444 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=310 x1=730 y1=330 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=310 x1=730 y1=330 style=1 font=3 colour=29596 text=  Greek
+     glyph  from=0x1d0a92 x=446 y=310 font=3 colour=29596 text=  Greek
+     panel  from=0x1d7c42 x0=732 y0=310 x1=778 y1=330 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=310 x1=778 y1=330 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=311 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=332 x1=396 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=332 x1=396 y1=352 style=1 font=3 colour=29596 text=  Hong Kong
+     glyph  from=0x1d0a92 x=112 y=332 font=3 colour=29596 text=  Hong Kong
+     panel  from=0x1d7c42 x0=398 y0=332 x1=444 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=332 x1=444 y1=352 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=333 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=332 x1=730 y1=352 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=332 x1=730 y1=352 style=1 font=3 colour=29596 text=  Icelandic
+     glyph  from=0x1d0a92 x=446 y=332 font=3 colour=29596 text=  Icelandic
+     panel  from=0x1d7c42 x0=732 y0=332 x1=778 y1=352 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=332 x1=778 y1=352 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=333 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=354 x1=396 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=354 x1=396 y1=373 style=1 font=3 colour=29596 text=  Irish
+     glyph  from=0x1d0a92 x=112 y=354 font=3 colour=29596 text=  Irish
+     panel  from=0x1d7c42 x0=398 y0=354 x1=444 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=354 x1=444 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=354 x1=730 y1=373 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=354 x1=730 y1=373 style=1 font=3 colour=29596 text=  Israeli
+     glyph  from=0x1d0a92 x=446 y=354 font=3 colour=29596 text=  Israeli
+     panel  from=0x1d7c42 x0=732 y0=354 x1=778 y1=373 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=354 x1=778 y1=373 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=355 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=375 x1=396 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=375 x1=396 y1=395 style=1 font=3 colour=29596 text=  Italian
+     glyph  from=0x1d0a92 x=112 y=375 font=3 colour=29596 text=  Italian
+     panel  from=0x1d7c42 x0=398 y0=375 x1=444 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=375 x1=444 y1=395 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=376 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=375 x1=730 y1=395 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=375 x1=730 y1=395 style=1 font=3 colour=29596 text=  Japanese
+     glyph  from=0x1d0a92 x=446 y=375 font=3 colour=29596 text=  Japanese
+     panel  from=0x1d7c42 x0=732 y0=375 x1=778 y1=395 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=375 x1=778 y1=395 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=746 y=376 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=112 y0=397 x1=396 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=397 x1=396 y1=417 style=1 font=3 colour=29596 text=  Northern Irish
+     glyph  from=0x1d0a92 x=112 y=397 font=3 colour=29596 text=  Northern Irish
+     panel  from=0x1d7c42 x0=398 y0=397 x1=444 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=397 x1=444 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=397 x1=730 y1=417 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=397 x1=730 y1=417 style=1 font=3 colour=29596 text=  Norwegian
+     glyph  from=0x1d0a92 x=446 y=397 font=3 colour=29596 text=  Norwegian
+     panel  from=0x1d7c42 x0=732 y0=397 x1=778 y1=417 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=397 x1=778 y1=417 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=398 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=419 x1=396 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=419 x1=396 y1=439 style=1 font=3 colour=29596 text=  Polish
+     glyph  from=0x1d0a92 x=112 y=419 font=3 colour=29596 text=  Polish
+     panel  from=0x1d7c42 x0=398 y0=419 x1=444 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=419 x1=444 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=419 x1=730 y1=439 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=419 x1=730 y1=439 style=1 font=3 colour=29596 text=  Portuguese
+     glyph  from=0x1d0a92 x=446 y=419 font=3 colour=29596 text=  Portuguese
+     panel  from=0x1d7c42 x0=732 y0=419 x1=778 y1=439 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=419 x1=778 y1=439 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=420 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=441 x1=396 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=441 x1=396 y1=461 style=1 font=3 colour=29596 text=  Russian
+     glyph  from=0x1d0a92 x=112 y=441 font=3 colour=29596 text=  Russian
+     panel  from=0x1d7c42 x0=398 y0=441 x1=444 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=441 x1=444 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=441 x1=730 y1=461 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=441 x1=730 y1=461 style=1 font=3 colour=29596 text=  Scottish
+     glyph  from=0x1d0a92 x=446 y=441 font=3 colour=29596 text=  Scottish
+     panel  from=0x1d7c42 x0=732 y0=441 x1=778 y1=461 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=441 x1=778 y1=461 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=442 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=463 x1=396 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=463 x1=396 y1=483 style=1 font=3 colour=29596 text=  Singaporean
+     glyph  from=0x1d0a92 x=112 y=463 font=3 colour=29596 text=  Singaporean
+     panel  from=0x1d7c42 x0=398 y0=463 x1=444 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=463 x1=444 y1=483 style=c font=2 colour=32736 text=ASI
+     glyph  from=0x1d0a92 x=412 y=464 font=2 colour=32736 text=ASI
+     panel  from=0x1d7c42 x0=446 y0=463 x1=730 y1=483 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=463 x1=730 y1=483 style=1 font=3 colour=29596 text=  South African
+     glyph  from=0x1d0a92 x=446 y=463 font=3 colour=29596 text=  South African
+     panel  from=0x1d7c42 x0=732 y0=463 x1=778 y1=483 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=463 x1=778 y1=483 style=c font=2 colour=32736 text=AFR
+     glyph  from=0x1d0a92 x=743 y=464 font=2 colour=32736 text=AFR
+     panel  from=0x1d7c42 x0=112 y0=485 x1=396 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=485 x1=396 y1=505 style=1 font=3 colour=29596 text=  Spanish
+     glyph  from=0x1d0a92 x=112 y=485 font=3 colour=29596 text=  Spanish
+     panel  from=0x1d7c42 x0=398 y0=485 x1=444 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=485 x1=444 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=485 x1=730 y1=505 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=485 x1=730 y1=505 style=1 font=3 colour=29596 text=  Swedish
+     glyph  from=0x1d0a92 x=446 y=485 font=3 colour=29596 text=  Swedish
+     panel  from=0x1d7c42 x0=732 y0=485 x1=778 y1=505 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=485 x1=778 y1=505 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=486 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=112 y0=507 x1=396 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=112 y0=507 x1=396 y1=527 style=1 font=3 colour=29596 text=  Turkish
+     glyph  from=0x1d0a92 x=112 y=507 font=3 colour=29596 text=  Turkish
+     panel  from=0x1d7c42 x0=398 y0=507 x1=444 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=398 y0=507 x1=444 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=409 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x1d7c42 x0=446 y0=507 x1=730 y1=527 style=1 colour=0 pattern=29596
+   wrapped  from=0x1d810d x0=446 y0=507 x1=730 y1=527 style=1 font=3 colour=29596 text=  Welsh
+     glyph  from=0x1d0a92 x=446 y=507 font=3 colour=29596 text=  Welsh
+     panel  from=0x1d7c42 x0=732 y0=507 x1=778 y1=527 style=1 colour=0 pattern=32736
+   wrapped  from=0x1d810d x0=732 y0=507 x1=778 y1=527 style=c font=2 colour=32736 text=EUR
+     glyph  from=0x1d0a92 x=743 y=508 font=2 colour=32736 text=EUR
+     panel  from=0x3222 x0=100 y0=555 x1=790 y1=590 style=1 colour=0 pattern=0
+     panel  from=0x1d7c42 x0=100 y0=555 x1=617 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=555 x1=617 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=100 y0=555 x1=617 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=556 x1=617 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=557 x1=617 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=558 x1=617 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=559 x1=617 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=560 x1=617 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=561 x1=617 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=562 x1=617 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=563 x1=617 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=564 x1=617 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=565 x1=617 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=566 x1=617 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=567 x1=617 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=568 x1=617 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=569 x1=617 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=570 x1=617 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=571 x1=617 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=572 x1=617 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=573 x1=617 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=574 x1=617 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=575 x1=617 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=576 x1=617 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=577 x1=617 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=578 x1=617 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=579 x1=617 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=580 x1=617 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=581 x1=617 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=582 x1=617 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=583 x1=617 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=584 x1=617 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=585 x1=617 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=586 x1=617 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=587 x1=617 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=588 x1=617 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=589 x1=617 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=100 y0=590 x1=617 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=101 y0=556 x1=616 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=101 y0=556 x1=101 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=616 y0=589 x1=102 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=616 y0=589 x1=616 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=100 y0=555 x1=617 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=100 y0=555 x1=100 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=617 y0=590 x1=101 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=617 y0=590 x1=617 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=100 y0=555 x1=617 y1=590 style=c font=3 colour=29596 text=Back
+     glyph  from=0x1d0a92 x=338 y=562 font=3 colour=29596 text=Back
+     panel  from=0x1d7c42 x0=619 y0=555 x1=790 y1=590 style=30 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=619 y0=555 x1=790 y1=590 style=4 colour=16912
+      line  from=0x1cd856 x0=619 y0=555 x1=790 y1=555 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=556 x1=790 y1=556 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=557 x1=790 y1=557 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=558 x1=790 y1=558 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=559 x1=790 y1=559 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=560 x1=790 y1=560 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=561 x1=790 y1=561 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=562 x1=790 y1=562 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=563 x1=790 y1=563 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=564 x1=790 y1=564 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=565 x1=790 y1=565 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=566 x1=790 y1=566 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=567 x1=790 y1=567 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=568 x1=790 y1=568 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=569 x1=790 y1=569 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=570 x1=790 y1=570 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=571 x1=790 y1=571 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=572 x1=790 y1=572 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=573 x1=790 y1=573 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=574 x1=790 y1=574 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=575 x1=790 y1=575 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=576 x1=790 y1=576 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=577 x1=790 y1=577 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=578 x1=790 y1=578 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=579 x1=790 y1=579 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=580 x1=790 y1=580 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=581 x1=790 y1=581 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=582 x1=790 y1=582 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=583 x1=790 y1=583 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=584 x1=790 y1=584 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=585 x1=790 y1=585 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=586 x1=790 y1=586 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=587 x1=790 y1=587 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=588 x1=790 y1=588 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=589 x1=790 y1=589 style=2 colour=16912
+      line  from=0x1cd856 x0=619 y0=590 x1=790 y1=590 style=2 colour=16912
+      line  from=0x1cfdfd x0=620 y0=556 x1=789 y1=556 style=2 colour=22197
+      line  from=0x1cfe17 x0=620 y0=556 x1=620 y1=589 style=2 colour=22197
+      line  from=0x1cfe30 x0=789 y0=589 x1=621 y1=589 style=2 colour=11594
+      line  from=0x1cfe43 x0=789 y0=589 x1=789 y1=557 style=2 colour=11594
+      line  from=0x1cfdfd x0=619 y0=555 x1=790 y1=555 style=2 colour=28538
+      line  from=0x1cfe17 x0=619 y0=555 x1=619 y1=590 style=2 colour=28538
+      line  from=0x1cfe30 x0=790 y0=590 x1=620 y1=590 style=2 colour=5285
+      line  from=0x1cfe43 x0=790 y0=590 x1=790 y1=556 style=2 colour=5285
+   wrapped  from=0x1d810d x0=619 y0=555 x1=790 y1=590 style=c font=3 colour=29596 text=Next
+     glyph  from=0x1d0a92 x=685 y=562 font=3 colour=29596 text=Next
+     panel  from=0x1d7c42 x0=100 y0=10 x1=790 y1=70 style=30 colour=31744 pattern=29596
+      rect  from=0x1cf673 x0=100 y0=10 x1=790 y1=70 style=4 colour=31744
+      line  from=0x1cd856 x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=11 x1=790 y1=11 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=12 x1=790 y1=12 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=13 x1=790 y1=13 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=14 x1=790 y1=14 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=15 x1=790 y1=15 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=16 x1=790 y1=16 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=17 x1=790 y1=17 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=18 x1=790 y1=18 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=19 x1=790 y1=19 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=20 x1=790 y1=20 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=21 x1=790 y1=21 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=22 x1=790 y1=22 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=23 x1=790 y1=23 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=24 x1=790 y1=24 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=25 x1=790 y1=25 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=26 x1=790 y1=26 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=27 x1=790 y1=27 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=28 x1=790 y1=28 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=29 x1=790 y1=29 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=30 x1=790 y1=30 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=31 x1=790 y1=31 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=32 x1=790 y1=32 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=33 x1=790 y1=33 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=34 x1=790 y1=34 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=35 x1=790 y1=35 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=36 x1=790 y1=36 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=37 x1=790 y1=37 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=38 x1=790 y1=38 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=39 x1=790 y1=39 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=40 x1=790 y1=40 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=41 x1=790 y1=41 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=42 x1=790 y1=42 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=43 x1=790 y1=43 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=44 x1=790 y1=44 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=45 x1=790 y1=45 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=46 x1=790 y1=46 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=47 x1=790 y1=47 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=48 x1=790 y1=48 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=49 x1=790 y1=49 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=50 x1=790 y1=50 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=51 x1=790 y1=51 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=52 x1=790 y1=52 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=53 x1=790 y1=53 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=54 x1=790 y1=54 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=55 x1=790 y1=55 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=56 x1=790 y1=56 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=57 x1=790 y1=57 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=58 x1=790 y1=58 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=59 x1=790 y1=59 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=60 x1=790 y1=60 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=61 x1=790 y1=61 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=62 x1=790 y1=62 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=63 x1=790 y1=63 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=64 x1=790 y1=64 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=65 x1=790 y1=65 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=66 x1=790 y1=66 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=67 x1=790 y1=67 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=68 x1=790 y1=68 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=69 x1=790 y1=69 style=2 colour=31744
+      line  from=0x1cd856 x0=100 y0=70 x1=790 y1=70 style=2 colour=31744
+      line  from=0x1cfdfd x0=103 y0=13 x1=787 y1=13 style=2 colour=31744
+      line  from=0x1cfe17 x0=103 y0=13 x1=103 y1=67 style=2 colour=31744
+      line  from=0x1cfe30 x0=787 y0=67 x1=104 y1=67 style=2 colour=26624
+      line  from=0x1cfe43 x0=787 y0=67 x1=787 y1=14 style=2 colour=26624
+      line  from=0x1cfdfd x0=102 y0=12 x1=788 y1=12 style=2 colour=31744
+      line  from=0x1cfe17 x0=102 y0=12 x1=102 y1=68 style=2 colour=31744
+      line  from=0x1cfe30 x0=788 y0=68 x1=103 y1=68 style=2 colour=21504
+      line  from=0x1cfe43 x0=788 y0=68 x1=788 y1=13 style=2 colour=21504
+      line  from=0x1cfdfd x0=101 y0=11 x1=789 y1=11 style=2 colour=31744
+      line  from=0x1cfe17 x0=101 y0=11 x1=101 y1=69 style=2 colour=31744
+      line  from=0x1cfe30 x0=789 y0=69 x1=102 y1=69 style=2 colour=16384
+      line  from=0x1cfe43 x0=789 y0=69 x1=789 y1=12 style=2 colour=16384
+      line  from=0x1cfdfd x0=100 y0=10 x1=790 y1=10 style=2 colour=31744
+      line  from=0x1cfe17 x0=100 y0=10 x1=100 y1=70 style=2 colour=31744
+      line  from=0x1cfe30 x0=790 y0=70 x1=101 y1=70 style=2 colour=10240
+      line  from=0x1cfe43 x0=790 y0=70 x1=790 y1=11 style=2 colour=10240
+   wrapped  from=0x1d810d x0=100 y0=10 x1=790 y1=70 style=c font=7 colour=29596 text=Championship Manager 2001/02
+     glyph  from=0x1d0a92 x=207 y=18 font=7 colour=29596 text=Championship Manager 2001/02
+     panel  from=0x1d7c42 x0=100 y0=80 x1=790 y1=125 style=2 colour=0 pattern=32736
+    darken  from=0x1cf645 x0=100 y0=80 x1=790 y1=125
+   wrapped  from=0x1d810d x0=100 y0=80 x1=790 y1=125 style=c font=6 colour=32736 text=Select Nationality
+     glyph  from=0x1d0a92 x=328 y=83 font=6 colour=32736 text=Select Nationality
+     panel  from=0x1d7c42 x0=655 y0=145 x1=780 y1=165 style=70 colour=16912 pattern=29596
+      rect  from=0x1cf673 x0=655 y0=145 x1=780 y1=165 style=4 colour=16912
+      line  from=0x1cd856 x0=655 y0=145 x1=780 y1=145 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=146 x1=780 y1=146 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=147 x1=780 y1=147 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=148 x1=780 y1=148 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=149 x1=780 y1=149 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=150 x1=780 y1=150 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=151 x1=780 y1=151 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=152 x1=780 y1=152 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=153 x1=780 y1=153 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=154 x1=780 y1=154 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=155 x1=780 y1=155 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=156 x1=780 y1=156 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=157 x1=780 y1=157 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=158 x1=780 y1=158 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=159 x1=780 y1=159 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=160 x1=780 y1=160 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=161 x1=780 y1=161 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=162 x1=780 y1=162 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=163 x1=780 y1=163 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=164 x1=780 y1=164 style=2 colour=16912
+      line  from=0x1cd856 x0=655 y0=165 x1=780 y1=165 style=2 colour=16912
+      line  from=0x1cfdfd x0=656 y0=146 x1=779 y1=146 style=2 colour=11594
+      line  from=0x1cfe17 x0=656 y0=146 x1=656 y1=164 style=2 colour=11594
+      line  from=0x1cfe30 x0=779 y0=164 x1=657 y1=164 style=2 colour=22197
+      line  from=0x1cfe43 x0=779 y0=164 x1=779 y1=147 style=2 colour=22197
+      line  from=0x1cfdfd x0=655 y0=145 x1=780 y1=145 style=2 colour=5285
+      line  from=0x1cfe17 x0=655 y0=145 x1=655 y1=165 style=2 colour=5285
+      line  from=0x1cfe30 x0=780 y0=165 x1=656 y1=165 style=2 colour=28538
+      line  from=0x1cfe43 x0=780 y0=165 x1=780 y1=146 style=2 colour=28538
+   wrapped  from=0x1d810d x0=657 y0=147 x1=782 y1=167 style=c font=1 colour=29596 text=Filter
+     glyph  from=0x1d0a92 x=706 y=150 font=1 colour=29596 text=Filter
+     panel  from=0x3222 x0=655 y0=168 x1=780 y1=210 style=130 colour=512 pattern=0
+      rect  from=0x1cf673 x0=655 y0=168 x1=780 y1=210 style=4 colour=512
+      line  from=0x1cd856 x0=655 y0=168 x1=780 y1=168 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=169 x1=780 y1=169 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=170 x1=780 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=171 x1=780 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=172 x1=780 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=173 x1=780 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=174 x1=780 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=175 x1=780 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=176 x1=780 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=177 x1=780 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=178 x1=780 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=179 x1=780 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=180 x1=780 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=181 x1=780 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=182 x1=780 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=183 x1=780 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=184 x1=780 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=185 x1=780 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=186 x1=780 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=187 x1=780 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=188 x1=780 y1=188 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=189 x1=780 y1=189 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=190 x1=780 y1=190 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=191 x1=780 y1=191 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=192 x1=780 y1=192 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=193 x1=780 y1=193 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=194 x1=780 y1=194 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=195 x1=780 y1=195 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=196 x1=780 y1=196 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=197 x1=780 y1=197 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=198 x1=780 y1=198 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=199 x1=780 y1=199 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=200 x1=780 y1=200 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=201 x1=780 y1=201 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=202 x1=780 y1=202 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=203 x1=780 y1=203 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=204 x1=780 y1=204 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=205 x1=780 y1=205 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=206 x1=780 y1=206 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=207 x1=780 y1=207 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=208 x1=780 y1=208 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=209 x1=780 y1=209 style=2 colour=512
+      line  from=0x1cd856 x0=655 y0=210 x1=780 y1=210 style=2 colour=512
+      line  from=0x1cfdfd x0=656 y0=169 x1=779 y1=169 style=2 colour=672
+      line  from=0x1cfe17 x0=656 y0=169 x1=656 y1=209 style=2 colour=672
+      line  from=0x1cfe30 x0=779 y0=209 x1=657 y1=209 style=2 colour=320
+      line  from=0x1cfe43 x0=779 y0=209 x1=779 y1=170 style=2 colour=320
+      line  from=0x1cfdfd x0=655 y0=168 x1=780 y1=168 style=2 colour=864
+      line  from=0x1cfe17 x0=655 y0=168 x1=655 y1=210 style=2 colour=864
+      line  from=0x1cfe30 x0=780 y0=210 x1=656 y1=210 style=2 colour=160
+      line  from=0x1cfe43 x0=780 y0=210 x1=780 y1=169 style=2 colour=160
+     panel  from=0x1d7c42 x0=657 y0=170 x1=778 y1=188 style=10 colour=512 pattern=0
+      rect  from=0x1cf673 x0=657 y0=170 x1=778 y1=188 style=4 colour=512
+      line  from=0x1cd856 x0=657 y0=170 x1=778 y1=170 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=171 x1=778 y1=171 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=172 x1=778 y1=172 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=173 x1=778 y1=173 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=174 x1=778 y1=174 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=175 x1=778 y1=175 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=176 x1=778 y1=176 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=177 x1=778 y1=177 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=178 x1=778 y1=178 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=179 x1=778 y1=179 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=180 x1=778 y1=180 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=181 x1=778 y1=181 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=182 x1=778 y1=182 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=183 x1=778 y1=183 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=184 x1=778 y1=184 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=185 x1=778 y1=185 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=186 x1=778 y1=186 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=187 x1=778 y1=187 style=2 colour=512
+      line  from=0x1cd856 x0=657 y0=188 x1=778 y1=188 style=2 colour=512
+   wrapped  from=0x1d810d x0=657 y0=170 x1=778 y1=188 style=1 font=1 colour=0 text=      All Nations
+     glyph  from=0x1d0a92 x=657 y=172 font=1 colour=0 text=      All Nations
+     panel  from=0x1d7c42 x0=657 y0=190 x1=778 y1=208 style=10 colour=576 pattern=0
+      rect  from=0x1cf673 x0=657 y0=190 x1=778 y1=208 style=4 colour=576
+      line  from=0x1cd856 x0=657 y0=190 x1=778 y1=190 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=191 x1=778 y1=191 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=192 x1=778 y1=192 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=193 x1=778 y1=193 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=194 x1=778 y1=194 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=195 x1=778 y1=195 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=196 x1=778 y1=196 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=197 x1=778 y1=197 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=198 x1=778 y1=198 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=199 x1=778 y1=199 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=200 x1=778 y1=200 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=201 x1=778 y1=201 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=202 x1=778 y1=202 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=203 x1=778 y1=203 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=204 x1=778 y1=204 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=205 x1=778 y1=205 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=206 x1=778 y1=206 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=207 x1=778 y1=207 style=2 colour=576
+      line  from=0x1cd856 x0=657 y0=208 x1=778 y1=208 style=2 colour=576
+   wrapped  from=0x1d810d x0=657 y0=190 x1=778 y1=208 style=1 font=1 colour=0 text=      Major Nations
+     glyph  from=0x1d0a92 x=657 y=192 font=1 colour=0 text=      Major Nations
+--- PRESENT ---  x0=0 y0=0 x1=799 y1=599
+present_fb  w=800 h=600 pitch=800 data_b64_len=1280000
+[7.0s silence — stopping]
+wrote fixtures\nationality_filter_dropdown.jsonl.gz — 2389 event(s)

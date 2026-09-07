@@ -630,7 +630,9 @@ const JUMP_MENU_X0:    i32 = 123;
 const JUMP_MENU_WIDTH: i32 = 124;
 const JUMP_MENU_Y0:    i32 = 17;
 const JUMP_MENU_ROW_H: i32 = 20;
-const JUMP_MENU_MAX:   usize = 25;
+// Divisions like the Second Division carry 24 clubs; leave headroom
+// for the separator + national-team row without clipping them off.
+const JUMP_MENU_MAX:   usize = 28;
 
 fn jump_menu_rect(item_count: usize) -> crate::menu_dropdown::DropdownRect {
     let rows = item_count.min(JUMP_MENU_MAX) as i32;

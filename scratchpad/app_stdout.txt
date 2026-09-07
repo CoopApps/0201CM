@@ -1,0 +1,376 @@
+[db] opened D:/cm0102-rs/rust-db: 213 nations, 10580 clubs, 109940 players (pristine shipping data)
+[start] game initialised IN MEMORY: 1 foreground nation(s), 50682 fixtures, date 2001-07-10 — not saved to disk yet
+[nationality] picked "Bermudan" -> nation_id 22
+[club] 114 playable clubs across England's manageable divisions
+[team] picked "Chester City" -> club_id 1979
+[squad-in] person_id=1171 first_name_id=76 second_name_id=86 current_club_id=Some(1979) name="Roberts, P"
+[squad-in] person_id=1368 first_name_id=66 second_name_id=110 current_club_id=Some(1979) name="Williams, M"
+[squad-in] person_id=5883 first_name_id=76 second_name_id=1142 current_club_id=Some(1979) name="Berry, P"
+[squad-in] person_id=7464 first_name_id=1388 second_name_id=1836 current_club_id=Some(1979) name="Cooper, J"
+[squad-in] person_id=9391 first_name_id=66 second_name_id=2887 current_club_id=Some(1979) name="Rose, M"
+[squad-in] person_id=9394 first_name_id=673 second_name_id=2887 current_club_id=Some(1979) name="Rose, S"
+[squad-in] person_id=9760 first_name_id=2762 second_name_id=2970 current_club_id=Some(1979) name="Brown, W"
+[squad-in] person_id=12646 first_name_id=1524 second_name_id=4058 current_club_id=Some(1979) name="Haarhoff, J"
+[squad-in] person_id=20353 first_name_id=1349 second_name_id=6877 current_club_id=Some(1979) name="Hill, S"
+[squad-in] person_id=24649 first_name_id=19 second_name_id=7221 current_club_id=Some(1979) name="Wright, D"
+[squad-in] person_id=32150 first_name_id=21 second_name_id=9037 current_club_id=Some(1979) name="Kerr, D"
+[squad-in] person_id=51297 first_name_id=9501 second_name_id=18552 current_club_id=Some(1979) name="Bagnall, S"
+[squad-in] person_id=51526 first_name_id=1088 second_name_id=18672 current_club_id=Some(1979) name="Beesley, M"
+[squad-in] person_id=51636 first_name_id=1824 second_name_id=18754 current_club_id=Some(1979) name="Blackburn, C"
+[squad-in] person_id=52758 first_name_id=15 second_name_id=19322 current_club_id=Some(1979) name="Croft, B"
+[squad-in] person_id=52992 first_name_id=593 second_name_id=19425 current_club_id=Some(1979) name="Dean, J"
+[squad-in] person_id=54775 first_name_id=1088 second_name_id=20325 current_club_id=Some(1979) name="Howell, M"
+[squad-in] person_id=55183 first_name_id=9578 second_name_id=20537 current_club_id=Some(1979) name="Kilgannon, W"
+[squad-in] person_id=55293 first_name_id=12793 second_name_id=20608 current_club_id=Some(1979) name="Lancaster, M"
+[squad-in] person_id=55469 first_name_id=26039 second_name_id=20725 current_club_id=Some(1979) name="Lloyd, G"
+[squad-in] person_id=55640 first_name_id=12772 second_name_id=20797 current_club_id=Some(1979) name="Mackin, L"
+[squad-in] person_id=55704 first_name_id=1824 second_name_id=20824 current_club_id=Some(1979) name="Malkin, C"
+[squad-in] person_id=56220 first_name_id=21 second_name_id=20978 current_club_id=Some(1979) name="McNiven, D"
+[squad-in] person_id=57287 first_name_id=7 second_name_id=21495 current_club_id=Some(1979) name="Porter, A"
+[squad-in] person_id=57831 first_name_id=7598 second_name_id=21739 current_club_id=Some(1979) name="Ruffer, C"
+[squad-in] person_id=57970 first_name_id=59 second_name_id=21825 current_club_id=Some(1979) name="Sefton, L"
+[squad-in] person_id=58230 first_name_id=8365 second_name_id=21989 current_club_id=Some(1979) name="Spink, D"
+[squad-in] person_id=120939 first_name_id=1824 second_name_id=68169 current_club_id=Some(1979) name="Hopwood, C"
+[squad-in] person_id=120953 first_name_id=59 second_name_id=68225 current_club_id=Some(1979) name="Lloyd-Hughes, L"
+[squad-in] person_id=120992 first_name_id=9501 second_name_id=68337 current_club_id=Some(1979) name="Ruscoe, S"
+[squad-in] person_id=121027 first_name_id=59 second_name_id=68434 current_club_id=Some(1979) name="Woodyat, L"
+[squad] Chester City (club_id=1979): 31 players
+  Brown, W                 GK      age=24
+  Mackin, L                GK      age=?
+  Bagnall, S               SW      age=?
+  Cooper, J                SW      age=?
+  Dean, J                  SW      age=?
+  Howell, M                SW      age=?
+  Lloyd, G                 SW      age=?
+  Lloyd-Hughes, L          SW      age=?
+  Sefton, L                SW      age=?
+  Williams, M              SW      age=?
+  Lancaster, M             D C     age=20
+  Roberts, P               D L     age=?
+  Rose, M                  D R     age=19
+  Rose, S                  D RC    age=20
+  Ruffer, C                D C     age=26
+  Spink, D                 D C     age=34
+  Woodyat, L               D       age=?
+  Porter, A                DM C    age=32
+  Blackburn, C             M C     age=19
+  Kerr, D                  M C     age=26
+  Berry, P                 AM RL   age=22
+  Croft, B                 AM L    age=33
+  Hill, S                  AM R    age=?
+  Ruscoe, S                AM C    age=?
+  Wright, D                AM C    age=21
+  Beesley, M               F C     age=19
+  Haarhoff, J              F LC    age=20
+  Hopwood, C               F       age=?
+  Kilgannon, W             F C     age=18
+  Malkin, C                F C     age=34
+  McNiven, D               F C     age=23
+[squad-in] person_id=1171 first_name_id=76 second_name_id=86 current_club_id=Some(1979) name="Roberts, P"
+[squad-in] person_id=1368 first_name_id=66 second_name_id=110 current_club_id=Some(1979) name="Williams, M"
+[squad-in] person_id=5883 first_name_id=76 second_name_id=1142 current_club_id=Some(1979) name="Berry, P"
+[squad-in] person_id=7464 first_name_id=1388 second_name_id=1836 current_club_id=Some(1979) name="Cooper, J"
+[squad-in] person_id=9391 first_name_id=66 second_name_id=2887 current_club_id=Some(1979) name="Rose, M"
+[squad-in] person_id=9394 first_name_id=673 second_name_id=2887 current_club_id=Some(1979) name="Rose, S"
+[squad-in] person_id=9760 first_name_id=2762 second_name_id=2970 current_club_id=Some(1979) name="Brown, W"
+[squad-in] person_id=12646 first_name_id=1524 second_name_id=4058 current_club_id=Some(1979) name="Haarhoff, J"
+[squad-in] person_id=20353 first_name_id=1349 second_name_id=6877 current_club_id=Some(1979) name="Hill, S"
+[squad-in] person_id=24649 first_name_id=19 second_name_id=7221 current_club_id=Some(1979) name="Wright, D"
+[squad-in] person_id=32150 first_name_id=21 second_name_id=9037 current_club_id=Some(1979) name="Kerr, D"
+[squad-in] person_id=51297 first_name_id=9501 second_name_id=18552 current_club_id=Some(1979) name="Bagnall, S"
+[squad-in] person_id=51526 first_name_id=1088 second_name_id=18672 current_club_id=Some(1979) name="Beesley, M"
+[squad-in] person_id=51636 first_name_id=1824 second_name_id=18754 current_club_id=Some(1979) name="Blackburn, C"
+[squad-in] person_id=52758 first_name_id=15 second_name_id=19322 current_club_id=Some(1979) name="Croft, B"
+[squad-in] person_id=52992 first_name_id=593 second_name_id=19425 current_club_id=Some(1979) name="Dean, J"
+[squad-in] person_id=54775 first_name_id=1088 second_name_id=20325 current_club_id=Some(1979) name="Howell, M"
+[squad-in] person_id=55183 first_name_id=9578 second_name_id=20537 current_club_id=Some(1979) name="Kilgannon, W"
+[squad-in] person_id=55293 first_name_id=12793 second_name_id=20608 current_club_id=Some(1979) name="Lancaster, M"
+[squad-in] person_id=55469 first_name_id=26039 second_name_id=20725 current_club_id=Some(1979) name="Lloyd, G"
+[squad-in] person_id=55640 first_name_id=12772 second_name_id=20797 current_club_id=Some(1979) name="Mackin, L"
+[squad-in] person_id=55704 first_name_id=1824 second_name_id=20824 current_club_id=Some(1979) name="Malkin, C"
+[squad-in] person_id=56220 first_name_id=21 second_name_id=20978 current_club_id=Some(1979) name="McNiven, D"
+[squad-in] person_id=57287 first_name_id=7 second_name_id=21495 current_club_id=Some(1979) name="Porter, A"
+[squad-in] person_id=57831 first_name_id=7598 second_name_id=21739 current_club_id=Some(1979) name="Ruffer, C"
+[squad-in] person_id=57970 first_name_id=59 second_name_id=21825 current_club_id=Some(1979) name="Sefton, L"
+[squad-in] person_id=58230 first_name_id=8365 second_name_id=21989 current_club_id=Some(1979) name="Spink, D"
+[squad-in] person_id=120939 first_name_id=1824 second_name_id=68169 current_club_id=Some(1979) name="Hopwood, C"
+[squad-in] person_id=120953 first_name_id=59 second_name_id=68225 current_club_id=Some(1979) name="Lloyd-Hughes, L"
+[squad-in] person_id=120992 first_name_id=9501 second_name_id=68337 current_club_id=Some(1979) name="Ruscoe, S"
+[squad-in] person_id=121027 first_name_id=59 second_name_id=68434 current_club_id=Some(1979) name="Woodyat, L"
+[squad] Chester City (club_id=1979): 31 players
+  Brown, W                 GK      age=24
+  Mackin, L                GK      age=?
+  Bagnall, S               SW      age=?
+  Cooper, J                SW      age=?
+  Dean, J                  SW      age=?
+  Howell, M                SW      age=?
+  Lloyd, G                 SW      age=?
+  Lloyd-Hughes, L          SW      age=?
+  Sefton, L                SW      age=?
+  Williams, M              SW      age=?
+  Lancaster, M             D C     age=20
+  Roberts, P               D L     age=?
+  Rose, M                  D R     age=19
+  Rose, S                  D RC    age=20
+  Ruffer, C                D C     age=26
+  Spink, D                 D C     age=34
+  Woodyat, L               D       age=?
+  Porter, A                DM C    age=32
+  Blackburn, C             M C     age=19
+  Kerr, D                  M C     age=26
+  Berry, P                 AM RL   age=22
+  Croft, B                 AM L    age=33
+  Hill, S                  AM R    age=?
+  Ruscoe, S                AM C    age=?
+  Wright, D                AM C    age=21
+  Beesley, M               F C     age=19
+  Haarhoff, J              F LC    age=20
+  Hopwood, C               F       age=?
+  Kilgannon, W             F C     age=18
+  Malkin, C                F C     age=34
+  McNiven, D               F C     age=23
+[club] 114 playable clubs across England's manageable divisions
+[team] picked "Carlisle United" -> club_id 1779
+[squad-in] person_id=323 first_name_id=673 second_name_id=36 current_club_id=Some(1779) name="Halliday, S"
+[squad-in] person_id=1208 first_name_id=20 second_name_id=87 current_club_id=Some(1779) name="Rogers, D"
+[squad-in] person_id=10631 first_name_id=2385 second_name_id=3157 current_club_id=Some(1779) name="Lewis, C"
+[squad-in] person_id=15265 first_name_id=17 second_name_id=4422 current_club_id=Some(1779) name="Lee, C"
+[squad-in] person_id=20781 first_name_id=12105 second_name_id=6956 current_club_id=Some(1779) name="Galloway, M"
+[squad-in] person_id=29595 first_name_id=66 second_name_id=8375 current_club_id=Some(1779) name="Jack, M"
+[squad-in] person_id=29654 first_name_id=59 second_name_id=8386 current_club_id=Some(1779) name="Andrews, L"
+[squad-in] person_id=31739 first_name_id=17788 second_name_id=8922 current_club_id=Some(1779) name="Harkin, M"
+[squad-in] person_id=32625 first_name_id=2513 second_name_id=9193 current_club_id=Some(1779) name="May, K"
+[squad-in] person_id=34014 first_name_id=40 second_name_id=9570 current_club_id=Some(1779) name="Stevens, I"
+[squad-in] person_id=34319 first_name_id=12775 second_name_id=9684 current_club_id=Some(1779) name="Weaver, L"
+[squad-in] person_id=47378 first_name_id=1088 second_name_id=17352 current_club_id=Some(1779) name="Birch, M"
+[squad-in] person_id=51142 first_name_id=1389 second_name_id=18446 current_club_id=Some(1779) name="Allan, J"
+[squad-in] person_id=51806 first_name_id=2652 second_name_id=18848 current_club_id=Some(1779) name="Bowman, R"
+[squad-in] person_id=53427 first_name_id=7685 second_name_id=19629 current_club_id=Some(1779) name="Elliott, S"
+[squad-in] person_id=53712 first_name_id=9468 second_name_id=19766 current_club_id=Some(1779) name="Foran, R"
+[squad-in] person_id=54220 first_name_id=515 second_name_id=20026 current_club_id=Some(1779) name="Haddow, A"
+[squad-in] person_id=54697 first_name_id=59 second_name_id=20296 current_club_id=Some(1779) name="Hooklin, L"
+[squad-in] person_id=54718 first_name_id=2103 second_name_id=20302 current_club_id=Some(1779) name="Hopper, T"
+[squad-in] person_id=54721 first_name_id=47 second_name_id=20303 current_club_id=Some(1779) name="Hore, J"
+[squad-in] person_id=55657 first_name_id=59 second_name_id=20803 current_club_id=Some(1779) name="Maddison, L"
+[squad-in] person_id=55851 first_name_id=2385 second_name_id=20898 current_club_id=Some(1779) name="McAughtrie, C"
+[squad-in] person_id=55972 first_name_id=684 second_name_id=20923 current_club_id=Some(1779) name="McDonagh, W"
+[squad-in] person_id=56468 first_name_id=21 second_name_id=21092 current_club_id=Some(1779) name="Morley, D"
+[squad-in] person_id=57791 first_name_id=94 second_name_id=21707 current_club_id=Some(1779) name="Rooke, S"
+[squad-in] person_id=58184 first_name_id=93 second_name_id=21959 current_club_id=Some(1779) name="Soley, S"
+[squad-in] person_id=58623 first_name_id=1088 second_name_id=22205 current_club_id=Some(1779) name="Thurston, M"
+[squad-in] person_id=58624 first_name_id=2308 second_name_id=22206 current_club_id=Some(1779) name="Thwaites, A"
+[squad-in] person_id=58807 first_name_id=9579 second_name_id=22336 current_club_id=Some(1779) name="Varty, W"
+[squad-in] person_id=59084 first_name_id=7685 second_name_id=22476 current_club_id=Some(1779) name="Whitehead, S"
+[squad-in] person_id=59194 first_name_id=9501 second_name_id=22521 current_club_id=Some(1779) name="Willis, S"
+[squad-in] person_id=59217 first_name_id=1088 second_name_id=22539 current_club_id=Some(1779) name="Winstanley, M"
+[squad] Carlisle United (club_id=1779): 32 players
+  Weaver, L                GK      age=25
+  Haddow, A                SW      age=19
+  Hooklin, L               SW      age=19
+  McDonagh, W              SW      age=?
+  Rooke, S                 SW      age=?
+  Andrews, L               D R     age=19
+  Birch, M                 D       age=24
+  Bowman, R                D RC    age=25
+  Lewis, C                 D C     age=?
+  Maddison, L              D L     age=28
+  May, K                   D C     age=18
+  McAughtrie, C            D C     age=20
+  Morley, D                D C     age=23
+  Rogers, D                D LC    age=25
+  Thwaites, A              D C     age=19
+  Varty, W                 D       age=24
+  Whitehead, S             D C     age=25
+  Winstanley, M            D C     age=33
+  Willis, S                DM C    age=19
+  Elliott, S               M C     age=23
+  Galloway, M              M C     age=26
+  Hopper, T                M RC    age=25
+  Hore, J                  M L     age=18
+  Jack, M                  M       age=?
+  Soley, S                 M C     age=30
+  Thurston, M              M C     age=21
+  Harkin, M                AM RC   age=21
+  Allan, J                 F C     age=18
+  Foran, R                 F C     age=21
+  Halliday, S              F C     age=25
+  Lee, C                   F C     age=24
+  Stevens, I               F C     age=34
+[squad-in] person_id=323 first_name_id=673 second_name_id=36 current_club_id=Some(1779) name="Halliday, S"
+[squad-in] person_id=1208 first_name_id=20 second_name_id=87 current_club_id=Some(1779) name="Rogers, D"
+[squad-in] person_id=10631 first_name_id=2385 second_name_id=3157 current_club_id=Some(1779) name="Lewis, C"
+[squad-in] person_id=15265 first_name_id=17 second_name_id=4422 current_club_id=Some(1779) name="Lee, C"
+[squad-in] person_id=20781 first_name_id=12105 second_name_id=6956 current_club_id=Some(1779) name="Galloway, M"
+[squad-in] person_id=29595 first_name_id=66 second_name_id=8375 current_club_id=Some(1779) name="Jack, M"
+[squad-in] person_id=29654 first_name_id=59 second_name_id=8386 current_club_id=Some(1779) name="Andrews, L"
+[squad-in] person_id=31739 first_name_id=17788 second_name_id=8922 current_club_id=Some(1779) name="Harkin, M"
+[squad-in] person_id=32625 first_name_id=2513 second_name_id=9193 current_club_id=Some(1779) name="May, K"
+[squad-in] person_id=34014 first_name_id=40 second_name_id=9570 current_club_id=Some(1779) name="Stevens, I"
+[squad-in] person_id=34319 first_name_id=12775 second_name_id=9684 current_club_id=Some(1779) name="Weaver, L"
+[squad-in] person_id=47378 first_name_id=1088 second_name_id=17352 current_club_id=Some(1779) name="Birch, M"
+[squad-in] person_id=51142 first_name_id=1389 second_name_id=18446 current_club_id=Some(1779) name="Allan, J"
+[squad-in] person_id=51806 first_name_id=2652 second_name_id=18848 current_club_id=Some(1779) name="Bowman, R"
+[squad-in] person_id=53427 first_name_id=7685 second_name_id=19629 current_club_id=Some(1779) name="Elliott, S"
+[squad-in] person_id=53712 first_name_id=9468 second_name_id=19766 current_club_id=Some(1779) name="Foran, R"
+[squad-in] person_id=54220 first_name_id=515 second_name_id=20026 current_club_id=Some(1779) name="Haddow, A"
+[squad-in] person_id=54697 first_name_id=59 second_name_id=20296 current_club_id=Some(1779) name="Hooklin, L"
+[squad-in] person_id=54718 first_name_id=2103 second_name_id=20302 current_club_id=Some(1779) name="Hopper, T"
+[squad-in] person_id=54721 first_name_id=47 second_name_id=20303 current_club_id=Some(1779) name="Hore, J"
+[squad-in] person_id=55657 first_name_id=59 second_name_id=20803 current_club_id=Some(1779) name="Maddison, L"
+[squad-in] person_id=55851 first_name_id=2385 second_name_id=20898 current_club_id=Some(1779) name="McAughtrie, C"
+[squad-in] person_id=55972 first_name_id=684 second_name_id=20923 current_club_id=Some(1779) name="McDonagh, W"
+[squad-in] person_id=56468 first_name_id=21 second_name_id=21092 current_club_id=Some(1779) name="Morley, D"
+[squad-in] person_id=57791 first_name_id=94 second_name_id=21707 current_club_id=Some(1779) name="Rooke, S"
+[squad-in] person_id=58184 first_name_id=93 second_name_id=21959 current_club_id=Some(1779) name="Soley, S"
+[squad-in] person_id=58623 first_name_id=1088 second_name_id=22205 current_club_id=Some(1779) name="Thurston, M"
+[squad-in] person_id=58624 first_name_id=2308 second_name_id=22206 current_club_id=Some(1779) name="Thwaites, A"
+[squad-in] person_id=58807 first_name_id=9579 second_name_id=22336 current_club_id=Some(1779) name="Varty, W"
+[squad-in] person_id=59084 first_name_id=7685 second_name_id=22476 current_club_id=Some(1779) name="Whitehead, S"
+[squad-in] person_id=59194 first_name_id=9501 second_name_id=22521 current_club_id=Some(1779) name="Willis, S"
+[squad-in] person_id=59217 first_name_id=1088 second_name_id=22539 current_club_id=Some(1779) name="Winstanley, M"
+[squad] Carlisle United (club_id=1779): 32 players
+  Weaver, L                GK      age=25
+  Haddow, A                SW      age=19
+  Hooklin, L               SW      age=19
+  McDonagh, W              SW      age=?
+  Rooke, S                 SW      age=?
+  Andrews, L               D R     age=19
+  Birch, M                 D       age=24
+  Bowman, R                D RC    age=25
+  Lewis, C                 D C     age=?
+  Maddison, L              D L     age=28
+  May, K                   D C     age=18
+  McAughtrie, C            D C     age=20
+  Morley, D                D C     age=23
+  Rogers, D                D LC    age=25
+  Thwaites, A              D C     age=19
+  Varty, W                 D       age=24
+  Whitehead, S             D C     age=25
+  Winstanley, M            D C     age=33
+  Willis, S                DM C    age=19
+  Elliott, S               M C     age=23
+  Galloway, M              M C     age=26
+  Hopper, T                M RC    age=25
+  Hore, J                  M L     age=18
+  Jack, M                  M       age=?
+  Soley, S                 M C     age=30
+  Thurston, M              M C     age=21
+  Harkin, M                AM RC   age=21
+  Allan, J                 F C     age=18
+  Foran, R                 F C     age=21
+  Halliday, S              F C     age=25
+  Lee, C                   F C     age=24
+  Stevens, I               F C     age=34
+[club] 114 playable clubs across England's manageable divisions
+[team] picked "Burnley" -> club_id 1604
+[squad-in] person_id=7230 first_name_id=21 second_name_id=1722 current_club_id=Some(1604) name="Gnohéré, D"
+[squad-in] person_id=9154 first_name_id=8365 second_name_id=2762 current_club_id=Some(1604) name="West, D"
+[squad-in] person_id=9161 first_name_id=47 second_name_id=2765 current_club_id=Some(1604) name="Williamson, J"
+[squad-in] person_id=9550 first_name_id=1898 second_name_id=2937 current_club_id=Some(1604) name="Armstrong, G"
+[squad-in] person_id=10067 first_name_id=2103 second_name_id=3018 current_club_id=Some(1604) name="Ellis, T"
+[squad-in] person_id=11004 first_name_id=40 second_name_id=3312 current_club_id=Some(1604) name="Moore, I"
+[squad-in] person_id=11038 first_name_id=8416 second_name_id=3312 current_club_id=Some(1604) name="Moore, A"
+[squad-in] person_id=11795 first_name_id=12816 second_name_id=3516 current_club_id=Some(1604) name="Thomas, M"
+[squad-in] person_id=15753 first_name_id=93 second_name_id=4518 current_club_id=Some(1604) name="Davis, S"
+[squad-in] person_id=19123 first_name_id=76 second_name_id=6321 current_club_id=Some(1604) name="Cook, P"
+[squad-in] person_id=27457 first_name_id=29 second_name_id=7683 current_club_id=Some(1604) name="Taylor, G"
+[squad-in] person_id=29254 first_name_id=40 second_name_id=8246 current_club_id=Some(1604) name="Cox, I"
+[squad-in] person_id=29919 first_name_id=2506 second_name_id=8499 current_club_id=Some(1604) name="Ball, K"
+[squad-in] person_id=33267 first_name_id=7 second_name_id=9359 current_club_id=Some(1604) name="Payton, A"
+[squad-in] person_id=50264 first_name_id=1088 second_name_id=18100 current_club_id=Some(1604) name="Rasmussen, M"
+[squad-in] person_id=51862 first_name_id=2442 second_name_id=18871 current_club_id=Some(1604) name="Branch, G"
+[squad-in] person_id=51924 first_name_id=59 second_name_id=18908 current_club_id=Some(1604) name="Briscoe, L"
+[squad-in] person_id=54972 first_name_id=12752 second_name_id=20443 current_club_id=Some(1604) name="Johnrose, L"
+[squad-in] person_id=55446 first_name_id=2435 second_name_id=20718 current_club_id=Some(1604) name="Little, G"
+[squad-in] person_id=55844 first_name_id=2358 second_name_id=20890 current_club_id=Some(1604) name="Maylett, B"
+[squad-in] person_id=56044 first_name_id=1088 second_name_id=20945 current_club_id=Some(1604) name="McGregor, M"
+[squad-in] person_id=56567 first_name_id=47 second_name_id=21128 current_club_id=Some(1604) name="Mullin, J"
+[squad-in] person_id=58003 first_name_id=434 second_name_id=21848 current_club_id=Some(1604) name="Shandran, A"
+[squad-in] person_id=59022 first_name_id=76 second_name_id=22442 current_club_id=Some(1604) name="Weller, P"
+[squad-in] person_id=71968 first_name_id=9363 second_name_id=31633 current_club_id=Some(1604) name="Cennamo, L"
+[squad-in] person_id=72766 first_name_id=10529 second_name_id=32343 current_club_id=Some(1604) name="Michopoulos, N"
+[squad-in] person_id=72947 first_name_id=14946 second_name_id=32471 current_club_id=Some(1604) name="Papadopoulos, D"
+[squad] Burnley (club_id=1604): 27 players
+  Cennamo, L               GK      age=21
+  Michopoulos, N           GK      age=31
+  Armstrong, G             SW      age=34
+  Briscoe, L               D L     age=25
+  Cox, I                   D C     age=30
+  Davis, S                 D C     age=32
+  Gnohéré, D               D C     age=22
+  McGregor, M              D RC    age=24
+  Thomas, M                D C     age=36
+  West, D                  D R     age=28
+  Williamson, J            D C     age=20
+  Maylett, B               WB      age=20
+  Weller, P                WB      age=26
+  Ball, K                  DM C    age=36
+  Johnrose, L              DM C    age=31
+  Cook, P                  M C     age=34
+  Little, G                M R     age=25
+  Moore, A                 M L     age=26
+  Branch, G                AM C    age=29
+  Ellis, T                 F C     age=36
+  Moore, I                 F C     age=24
+  Mullin, J                F C     age=26
+  Papadopoulos, D          F C     age=19
+  Payton, A                F C     age=34
+  Rasmussen, M             F C     age=?
+  Shandran, A              F C     age=19
+  Taylor, G                F C     age=28
+[squad-in] person_id=7230 first_name_id=21 second_name_id=1722 current_club_id=Some(1604) name="Gnohéré, D"
+[squad-in] person_id=9154 first_name_id=8365 second_name_id=2762 current_club_id=Some(1604) name="West, D"
+[squad-in] person_id=9161 first_name_id=47 second_name_id=2765 current_club_id=Some(1604) name="Williamson, J"
+[squad-in] person_id=9550 first_name_id=1898 second_name_id=2937 current_club_id=Some(1604) name="Armstrong, G"
+[squad-in] person_id=10067 first_name_id=2103 second_name_id=3018 current_club_id=Some(1604) name="Ellis, T"
+[squad-in] person_id=11004 first_name_id=40 second_name_id=3312 current_club_id=Some(1604) name="Moore, I"
+[squad-in] person_id=11038 first_name_id=8416 second_name_id=3312 current_club_id=Some(1604) name="Moore, A"
+[squad-in] person_id=11795 first_name_id=12816 second_name_id=3516 current_club_id=Some(1604) name="Thomas, M"
+[squad-in] person_id=15753 first_name_id=93 second_name_id=4518 current_club_id=Some(1604) name="Davis, S"
+[squad-in] person_id=19123 first_name_id=76 second_name_id=6321 current_club_id=Some(1604) name="Cook, P"
+[squad-in] person_id=27457 first_name_id=29 second_name_id=7683 current_club_id=Some(1604) name="Taylor, G"
+[squad-in] person_id=29254 first_name_id=40 second_name_id=8246 current_club_id=Some(1604) name="Cox, I"
+[squad-in] person_id=29919 first_name_id=2506 second_name_id=8499 current_club_id=Some(1604) name="Ball, K"
+[squad-in] person_id=33267 first_name_id=7 second_name_id=9359 current_club_id=Some(1604) name="Payton, A"
+[squad-in] person_id=50264 first_name_id=1088 second_name_id=18100 current_club_id=Some(1604) name="Rasmussen, M"
+[squad-in] person_id=51862 first_name_id=2442 second_name_id=18871 current_club_id=Some(1604) name="Branch, G"
+[squad-in] person_id=51924 first_name_id=59 second_name_id=18908 current_club_id=Some(1604) name="Briscoe, L"
+[squad-in] person_id=54972 first_name_id=12752 second_name_id=20443 current_club_id=Some(1604) name="Johnrose, L"
+[squad-in] person_id=55446 first_name_id=2435 second_name_id=20718 current_club_id=Some(1604) name="Little, G"
+[squad-in] person_id=55844 first_name_id=2358 second_name_id=20890 current_club_id=Some(1604) name="Maylett, B"
+[squad-in] person_id=56044 first_name_id=1088 second_name_id=20945 current_club_id=Some(1604) name="McGregor, M"
+[squad-in] person_id=56567 first_name_id=47 second_name_id=21128 current_club_id=Some(1604) name="Mullin, J"
+[squad-in] person_id=58003 first_name_id=434 second_name_id=21848 current_club_id=Some(1604) name="Shandran, A"
+[squad-in] person_id=59022 first_name_id=76 second_name_id=22442 current_club_id=Some(1604) name="Weller, P"
+[squad-in] person_id=71968 first_name_id=9363 second_name_id=31633 current_club_id=Some(1604) name="Cennamo, L"
+[squad-in] person_id=72766 first_name_id=10529 second_name_id=32343 current_club_id=Some(1604) name="Michopoulos, N"
+[squad-in] person_id=72947 first_name_id=14946 second_name_id=32471 current_club_id=Some(1604) name="Papadopoulos, D"
+[squad] Burnley (club_id=1604): 27 players
+  Cennamo, L               GK      age=21
+  Michopoulos, N           GK      age=31
+  Armstrong, G             SW      age=34
+  Briscoe, L               D L     age=25
+  Cox, I                   D C     age=30
+  Davis, S                 D C     age=32
+  Gnohéré, D               D C     age=22
+  McGregor, M              D RC    age=24
+  Thomas, M                D C     age=36
+  West, D                  D R     age=28
+  Williamson, J            D C     age=20
+  Maylett, B               WB      age=20
+  Weller, P                WB      age=26
+  Ball, K                  DM C    age=36
+  Johnrose, L              DM C    age=31
+  Cook, P                  M C     age=34
+  Little, G                M R     age=25
+  Moore, A                 M L     age=26
+  Branch, G                AM C    age=29
+  Ellis, T                 F C     age=36
+  Moore, I                 F C     age=24
+  Mullin, J                F C     age=26
+  Papadopoulos, D          F C     age=19
+  Payton, A                F C     age=34
+  Rasmussen, M             F C     age=?
+  Shandran, A              F C     age=19
+  Taylor, G                F C     age=28
+[club] 114 playable clubs across England's manageable divisions

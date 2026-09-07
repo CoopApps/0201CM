@@ -83,7 +83,9 @@ pub fn draw_dropdown(
     for (i, label) in items.iter().enumerate() {
         let ry0 = rect.y0 + 1 + i as i32 * rect.row_h;
         let ry1 = ry0 + rect.row_h - 1;
-        let fill = if hover_row == Some(i) {
+        // Separator rows never hover-highlight — they aren't selectable.
+        let is_sep = label.is_empty();
+        let fill = if hover_row == Some(i) && !is_sep {
             YELLOW_HL
         } else if i % 2 == 0 {
             MENU_GREEN
