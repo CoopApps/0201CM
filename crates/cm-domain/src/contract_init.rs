@@ -327,8 +327,27 @@ pub fn initialise_all(world: &World) -> ContractPool {
         let age = person.age_at(today_year, crate::day_of_year(today_year, 8, 10))
                         .unwrap_or(25) as i32;
 
-        let wage  = compute_wage(ca, reputation);
-        let value = compute_value(wage, ca, pa, age);
+        // ---- LAYERED OVERRIDE ---------------------------------------
+        // Prefer the shipped-DB values wherever they are populated.
+        // Only synthesise the missing ones (~88% of staff whose .dat
+        // record has wage=0 / value=0 / expiry=31.1.1900 placeholder).
+        // Verified against the JSON dump: Chris Banks (id=45) has
+        // DB wage=600 value=35000 expiry=30.6.2004; Muggleton has
+        // DB expiry=29.5.2003 but wage/value=0.
+
+        let db_wage  = pv.wage();
+        let db_value = pv.value();
+        let db_exp   = pv.club_contract_expires();
+        let db_exp_valid = !db_exp.is_placeholder();
+
+        let wage = if db_wage > 0 { db_wage } else { compute_wage(ca, reputation) };
+        // Value: always try DB first; synthesise only when zero.
+        // Even players with wage=0 in the DB may have a real value.
+        let value = if db_value > 0 {
+            db_value
+        } else {
+            compute_value(wage, ca, pa, age)
+        };
         // Personality bytes for FUN_00847a80 clause math. PlayerView
         // accessors already handle the tail-vs-body offset shift.
         let adapt = pv.adaptability() as i8;
@@ -351,11 +370,16 @@ pub fn initialise_all(world: &World) -> ContractPool {
             store_flag:      1,
         });
 
-        // Expiry — the exe rolls 1..=4 years ahead based on hidden
-        // ability + rep. Simple placeholder: 2-year default extended
-        // for higher-CA players.
-        let years_ahead = if ca >= 140 { 4 } else if ca >= 100 { 3 } else { 2 };
-        let expiry_year = today_year + years_ahead;
+        // Expiry — use DB when it holds a real date (year != 1900
+        // placeholder). Synthesise only for the ~40% of Cheltenham
+        // staff with unset expiry: 2-year default, extended for
+        // higher-CA players.
+        let (expiry_dayofyear, expiry_year) = if db_exp_valid {
+            (db_exp.day, db_exp.year)
+        } else {
+            let years_ahead = if ca >= 140 { 4 } else if ca >= 100 { 3 } else { 2 };
+            (180, (today_year + years_ahead) as u16)
+        };
 
         let idx = records.len() as i32;
         by_staff_id[person.id as usize] = idx;
@@ -369,8 +393,8 @@ pub fn initialise_all(world: &World) -> ContractPool {
             non_playing:   clauses.non_playing,
             relegation:    clauses.relegation,
             manager_job:   clauses.manager_job,
-            expiry_dayofyear: 180,  // ~end of season
-            expiry_year:      expiry_year as u16,
+            expiry_dayofyear,
+            expiry_year,
         });
     }
 
