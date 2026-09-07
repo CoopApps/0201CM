@@ -269,6 +269,22 @@ impl ColumnPack {
     }
 }
 
+/// UTF-8 → Latin-1 conversion for the game's font. `£` in a Rust
+/// string literal is two bytes (0xC2 0xA3), but the exe's bitmap font
+/// indexes each glyph by Latin-1 codepoint — so we have to collapse
+/// each `char` back down to a single byte. Any codepoint above 0xFF
+/// falls back to `?` so a bad input never crashes the renderer.
+pub fn c_string_latin1(s: &[u8]) -> Vec<u8> {
+    let text = std::str::from_utf8(s).unwrap_or("");
+    let mut out = Vec::with_capacity(text.len() + 1);
+    for ch in text.chars() {
+        let cp = ch as u32;
+        out.push(if cp < 0x100 { cp as u8 } else { b'?' });
+    }
+    out.push(0);
+    out
+}
+
 pub struct SquadState<'a> {
     /// Club name — goes in the in-game title bar.
     pub club_name: &'a str,
@@ -343,9 +359,18 @@ const TOOLBAR_LEFT_L: (i32, i32) = (110, 234);
 const TOOLBAR_LEFT_R: (i32, i32) = (236, 360);
 const TOOLBAR_FILTER: (i32, i32) = (656, 780);
 
-// Position header
+// Subtitle band ("Position(s)" for Traditional, "Contract Info" /
+// "Selection Info" / "Stats" / etc. for the other modes). Yellow
+// centred text on the darkened photo backing. Height verified against
+// scratchpad/prelaunch/contract_view.png.
 const HDR_Y0: i32 = 150;
 const HDR_Y1: i32 = 185;
+
+// Column header row — ONLY drawn on non-Traditional modes. Sits just
+// above LIST_Y0 in a shorter (~22 px) grey-bevel strip. Measured from
+// the contract-view capture: header cells span y≈195..217.
+const COL_HDR_Y0: i32 = 190;
+const COL_HDR_Y1: i32 = 212;
 
 // Player list
 const LIST_X0: i32 = 110;
@@ -505,47 +530,52 @@ pub fn render_squad(
             INK_CYAN, TS_CENTRE, -1);
     }
 
-    // ---- Column header band + player list. Structure per FUN_00457200:
+    // ---- Column header band + player list. Structure per FUN_00457200
+    //      and verified against scratchpad/prelaunch/contract_view.png:
     //      Traditional (bit 1) uses a 2-players-per-row grid with NO
-    //      header cells. Every other mode uses a single-player-per-row
-    //      13-column grid with one header row spanning the full width.
-    draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
-        P_DARKEN, 0, 0, palette);
-    draw_panel(surface, LIST_X0, LIST_Y0, LIST_X1, LIST_Y1,
-        P_DARKEN, 0, 0, palette);
-
+    //      column header cells. Every other mode paints
+    //        - a subtitle band ("Contract Info", "Stats", …) in yellow,
+    //        - a short (~22 px) column-header strip on grey bevel with
+    //          cyan labels,
+    //        - a 13-cell body row per player below.
     match state.view.column_pack() {
         // ================================================================
-        // Non-Traditional modes — single column list, 13-cell rows.
-        // Width partition: local_* unit array from FUN_00457200 scaled
-        // across LIST_X0..(SB_X0-1) so the scrollbar is preserved.
+        // Non-Traditional modes — subtitle + short header + 1-row grid.
         // ================================================================
         Some(pack) => {
+            // Subtitle strip ("Contract Info" / "Selection Info" / …).
+            draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+                P_DARKEN, 0, 0, palette);
+            draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+                &body_font, &c_string(state.view.subtitle().as_bytes()),
+                INK_YELLOW, TS_CENTRE, -1);
+
             let list_right = SB_X0 - 1;
             let slices = pack.slices(LIST_X0, list_right);
-            // ---- Header row — grey bevel + cyan labels. Matches the
-            //      exe's sub-toolbar convention verified against
-            //      scratchpad/prelaunch/contract_view.png.
+
+            // Column header row — grey bevel + cyan labels, ~22 px tall.
             for (col_idx, sx0, sx1) in &slices {
                 let hdr = pack.headers[*col_idx].trim_start();
-                // Grey-bevelled cell background under every header cell.
-                draw_panel(surface, *sx0, HDR_Y0, *sx1 - 1, HDR_Y1,
+                draw_panel(surface, *sx0, COL_HDR_Y0, *sx1 - 1, COL_HDR_Y1,
                     P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
                 if hdr.is_empty() { continue; }
-                draw_wrapped_text(surface, *sx0, HDR_Y0, *sx1 - 2, HDR_Y1,
-                    &small_font, &c_string(hdr.as_bytes()),
+                draw_wrapped_text(surface, *sx0, COL_HDR_Y0, *sx1 - 2, COL_HDR_Y1,
+                    &small_font, &c_string_latin1(hdr.as_bytes()),
                     INK_CYAN, TS_CENTRE, -1);
             }
-            // ---- Body rows — one per player, 13 sub-cells. Tight
-            //      stride so ~16 rows fit the (190..500) list panel
-            //      as the exe does (measured at 16 rows in
-            //      contract_view.png).
+
+            // List background — starts just below the header strip.
+            const NT_LIST_Y0: i32 = COL_HDR_Y1 + 2;
+            const NT_ROW_FIRST_Y: i32 = NT_LIST_Y0 + 4;
             const NT_ROW_STRIDE: i32 = 16;
             const NT_ROW_HEIGHT: i32 = 15;
-            let one_col_rows: usize = ((LIST_Y1 - ROW_FIRST_Y) / NT_ROW_STRIDE) as usize;
+            draw_panel(surface, LIST_X0, NT_LIST_Y0, LIST_X1, LIST_Y1,
+                P_DARKEN, 0, 0, palette);
+
+            let one_col_rows: usize = ((LIST_Y1 - NT_ROW_FIRST_Y) / NT_ROW_STRIDE) as usize;
             let visible = state.players.iter().skip(state.scroll).take(one_col_rows);
             for (i, p) in visible.enumerate() {
-                let y0 = ROW_FIRST_Y + (i as i32) * NT_ROW_STRIDE;
+                let y0 = NT_ROW_FIRST_Y + (i as i32) * NT_ROW_STRIDE;
                 let y1 = y0 + NT_ROW_HEIGHT;
                 for (col_idx, sx0, sx1) in &slices {
                     let cell = p.cols.get(*col_idx).copied().unwrap_or("");
@@ -561,36 +591,44 @@ pub fn render_squad(
                             // from the person record).
                         }
                         2 => {
-                            // Name — yellow (or white when the player
-                            // carries a transfer/loan marker).
-                            let ink = if p.marker != ' ' { WHITE } else { INK_YELLOW };
+                            // Name — WHITE. Marker players (transfer
+                            // list *) stay white; the exe paints an
+                            // orange stain only on named-day events we
+                            // haven't ported yet, so plain-white matches
+                            // the contract-view capture.
                             let mut buf = format!("  {}", p.name);
                             if p.marker != ' ' { buf.push(p.marker); }
                             buf.push('\0');
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, buf.as_bytes(), ink,
+                                &small_font, buf.as_bytes(), WHITE,
                                 TS_CENTRE | W_LEFT, -1);
                         }
                         12 => {
-                            // Value column — the exe paints it on a
-                            // purple/pink bevelled cell (contract_view
-                            // capture). Yellow text centred.
+                            // Value column — purple bevelled cell with
+                            // yellow ink (contract_view.png). `-` when
+                            // the DB has no value.
                             draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
                                 P_SOLID_FILL | P_BEVEL, IG_TITLE_FILL,
                                 INK_YELLOW, palette);
                             let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, &c_string(shown.as_bytes()),
+                                &small_font, &c_string_latin1(shown.as_bytes()),
                                 INK_YELLOW, TS_CENTRE, -1);
                         }
-                        _ => {
-                            // Data cells — yellow small font. Blank
-                            // cells render "-" like the exe does for
-                            // Squad Status / Releases when the flag
-                            // isn't set.
+                        3 | 6 => {
+                            // Squad Status + Releases — flag-driven
+                            // columns; the exe paints a CYAN "-" when
+                            // the flag isn't set (contract_view.png).
                             let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, &c_string(shown.as_bytes()),
+                                &small_font, &c_string_latin1(shown.as_bytes()),
+                                INK_CYAN, TS_CENTRE, -1);
+                        }
+                        _ => {
+                            // Data cells — yellow small font.
+                            let shown = if cell.is_empty() { "-" } else { cell };
+                            draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
+                                &small_font, &c_string_latin1(shown.as_bytes()),
                                 INK_YELLOW, TS_CENTRE, -1);
                         }
                     }
@@ -603,9 +641,12 @@ pub fn render_squad(
         // pixel on Chester and Leigh RMI.
         // ================================================================
         None => {
-            // Single centred "Position(s)" band — the header widget the
-            // exe paints in Traditional is the same one used by the Sort-
-            // By sub-pull-down (the string at 0x0097b6ec).
+            // Subtitle band + darkened list area — Traditional only
+            // paints the "Position(s)" heading, no per-column strip.
+            draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+                P_DARKEN, 0, 0, palette);
+            draw_panel(surface, LIST_X0, LIST_Y0, LIST_X1, LIST_Y1,
+                P_DARKEN, 0, 0, palette);
             draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
                 &body_font, &c_string(b"Position(s)"),
                 INK_YELLOW, TS_CENTRE, -1);
