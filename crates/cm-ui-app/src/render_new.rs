@@ -804,15 +804,17 @@ pub fn try_render_club_preview_faithful(
     /// prints full digits. Zero shows as `£0` (out-of-contract).
     fn format_money_k(v: i64) -> String {
         if v == 0 { return "\u{00A3}0".to_string(); }
-        let a = v.unsigned_abs();
         let sign = if v < 0 { "-" } else { "" };
-        if a >= 1_000_000 {
-            format!("{sign}\u{00A3}{:.1}M", v as f64 / 1_000_000.0)
-        } else if a >= 1_000 {
-            // Round to nearest thousand — £12K, £110K.
-            format!("{sign}\u{00A3}{}K", a / 1_000)
+        // Snap to the nearest £5,000 — 40,102 → £40K, 42,605 → £45K.
+        // Anything non-zero below £2,500 rounds up to £5K so tiny
+        // valuations still render as "£5K" instead of "£0K".
+        let a = v.unsigned_abs();
+        let snapped = if a < 2_500 { 5_000 }
+                      else { ((a + 2_500) / 5_000) * 5_000 };
+        if snapped >= 1_000_000 {
+            format!("{sign}\u{00A3}{:.1}M", snapped as f64 / 1_000_000.0)
         } else {
-            format!("{sign}\u{00A3}{}", v)
+            format!("{sign}\u{00A3}{}K", snapped / 1_000)
         }
     }
 
