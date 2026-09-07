@@ -765,28 +765,24 @@ pub fn try_render_club_preview_faithful(
         c
     }
 
-    /// Compact currency — matches the exe's own formatter
-    /// (contract_view.png: £475, £1,200, £26K, £100K, £1.5M).
-    /// - <1000            → "£475"
-    /// - 1000..1_000_000  → "£26K" / "£1,200"
-    /// - >=1_000_000      → "£1.5M"
-    /// The K/M suffix uses UPPERCASE (verified against the capture).
+    /// Currency formatter — full digits with comma-separated thousands.
+    /// The exe never abbreviates with K/M in the Contract view cells
+    /// (per-user callout on the 2nd capture pass); numbers always print
+    /// in full. Examples: £475, £1,200, £26,000, £1,500,000.
     fn format_money_short(v: i64) -> String {
         if v == 0 { return String::new(); }
-        let a = v.abs();
-        if a >= 1_000_000 {
-            format!("£{:.1}M", v as f64 / 1_000_000.0)
-        } else if a >= 10_000 {
-            // £26K, £100K — round to the nearest thousand.
-            format!("£{}K", v / 1_000)
-        } else if a >= 1_000 {
-            // £1,200 style — the exe splits the thousand with a comma.
-            let thousands = v / 1_000;
-            let rem = v % 1_000;
-            format!("£{},{:03}", thousands, rem)
-        } else {
-            format!("£{}", v)
+        let neg = v < 0;
+        let mut n = v.unsigned_abs();
+        // Build the digit groups right-to-left so we can insert commas.
+        let mut groups: Vec<String> = Vec::new();
+        while n >= 1000 {
+            groups.push(format!("{:03}", n % 1000));
+            n /= 1000;
         }
+        groups.push(n.to_string());
+        groups.reverse();
+        let sign = if neg { "-" } else { "" };
+        format!("{sign}\u{00A3}{}", groups.join(","))
     }
 
     /// Contract expiry as DD.M.YY per the capture (14.6.07). The exe's

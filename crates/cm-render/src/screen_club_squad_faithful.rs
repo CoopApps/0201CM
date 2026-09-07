@@ -367,10 +367,19 @@ const HDR_Y0: i32 = 150;
 const HDR_Y1: i32 = 185;
 
 // Column header row — ONLY drawn on non-Traditional modes. Sits just
-// above LIST_Y0 in a shorter (~22 px) grey-bevel strip. Measured from
-// the contract-view capture: header cells span y≈195..217.
-const COL_HDR_Y0: i32 = 190;
-const COL_HDR_Y1: i32 = 212;
+// above LIST_Y0 in a SHORT (~16 px) grey-bevel strip — shorter than
+// the sub-toolbar (Filter / Sort By at y=125..145 = 20 px). Framebuffer
+// sample from scratchpad/prelaunch/contract_view.png at x=300 shows the
+// header main body as flat 0x4210 grey from y=200..213 with a 2-px
+// highlight above (y=198..199) and a 2-px shadow below (y=214..215).
+const COL_HDR_Y0: i32 = 198;
+const COL_HDR_Y1: i32 = 214;
+
+/// Value column body colour — deep magenta 0x2008 sampled directly out
+/// of contract_view.rgb555.bin at the Simon Brown value cell (x=700..720,
+/// y=223..230 all read 0x2008 = R65 G0 B65). NOT the same as the
+/// title-bar purple 0x331f (which is a light cyan-lavender).
+const VALUE_PURPLE: u16 = 0x2008;
 
 // Player list
 const LIST_X0: i32 = 110;
@@ -608,7 +617,7 @@ pub fn render_squad(
                             // yellow ink (contract_view.png). `-` when
                             // the DB has no value.
                             draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
-                                P_SOLID_FILL | P_BEVEL, IG_TITLE_FILL,
+                                P_SOLID_FILL, VALUE_PURPLE,
                                 INK_YELLOW, palette);
                             let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
