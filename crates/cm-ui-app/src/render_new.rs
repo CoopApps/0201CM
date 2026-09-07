@@ -796,6 +796,28 @@ pub fn try_render_club_preview_faithful(
         format!("{}.{}.{:02}", day, month, yy)
     }
 
+    // Build "First Second" — the Contract view's row-label convention
+    // (see scratchpad/prelaunch/contract_view.png: 'Simon Brown',
+    // 'Glenn Williamson', ...). Every other view uses "Surname, F"
+    // via surname_initial() — see also full_name().
+    fn full_name(world: &cm_domain::World,
+                 person: &cm_domain::DomainStaffType6) -> String {
+        let first = world.references.first_names
+            .get(person.first_name_id() as usize)
+            .map(|n| n.text.as_str())
+            .unwrap_or("");
+        let second = world.references.second_names
+            .get(person.second_name_id() as usize)
+            .map(|n| n.text.as_str())
+            .unwrap_or("");
+        match (first.is_empty(), second.is_empty()) {
+            (true,  true)  => String::new(),
+            (true,  false) => second.to_string(),
+            (false, true)  => first.to_string(),
+            (false, false) => format!("{first} {second}"),
+        }
+    }
+
     // Build "Surname, F" — the exe's row-label convention (see the
     // capture: 'Rose, M', 'Bagnall, S', ...). First-name and second-
     // name ids resolve into the first/second name pools loaded at boot.
@@ -843,7 +865,14 @@ pub fn try_render_club_preview_faithful(
         let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
         let attrs = attr_by_id.get(&link).copied();
         let pos = attrs.map(position_code).unwrap_or_default();
-        let name = surname_initial(world, person);
+        // Contract view uses the full name; every other mode uses the
+        // "Surname, F" abbreviation. Matches the exe (contract_view.png
+        // shows 'Simon Brown', not 'Brown, S').
+        let name = if matches!(*view, cm_render::screen_club_squad_faithful::SquadView::Contract) {
+            full_name(world, person)
+        } else {
+            surname_initial(world, person)
+        };
         // Diagnostic prints the raw ids so we can cross-check against
         // the rust-db JSON when the render disagrees with the exe.
         eprintln!("[squad-in] person_id={} first_name_id={} second_name_id={} current_club_id={:?} name={:?}",

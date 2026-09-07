@@ -618,14 +618,15 @@ pub fn render_squad(
                             // the DB has no value.
                             // Purple fill + bevel per row (contract_view
                             // shows a distinct raised tile per player,
-                            // not one continuous purple strip).
+                            // not one continuous purple strip). Text is
+                            // WHITE for readability on the deep magenta.
                             draw_panel(surface, *sx0 + 1, y0, *sx1 - 2, y1,
                                 P_SOLID_FILL | P_BEVEL, VALUE_PURPLE,
-                                INK_YELLOW, palette);
+                                WHITE, palette);
                             let shown = if cell.is_empty() { "-" } else { cell };
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
                                 &small_font, &c_string_latin1(shown.as_bytes()),
-                                INK_YELLOW, TS_CENTRE, -1);
+                                WHITE, TS_CENTRE, -1);
                         }
                         3 | 6 => {
                             // Squad Status + Releases — flag-driven
