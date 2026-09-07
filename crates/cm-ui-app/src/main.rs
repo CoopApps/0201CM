@@ -88,6 +88,14 @@ enum Screen {
         /// ordering (position group + alphabetical, per the exe).
         /// Click the same header twice to flip direction.
         sort: Option<SquadSort>,
+        /// Sort By dropdown selection for Traditional view. Every
+        /// squad-selection screen paints a Sort By button on the sub-
+        /// toolbar; on non-Traditional views the column-header click
+        /// covers the same job (the exe grey-boxes the pull-down
+        /// there). Defaults to Name (ticked in the exe capture).
+        sort_by: cm_render::screen_club_squad_faithful::SortByKey,
+        /// Whether the Sort By dropdown is currently open.
+        sort_menu_open: bool,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -961,14 +969,26 @@ impl App {
                     }
                 }
             }
-            Screen::ClubPreview { choice, view, view_menu_open, jump_menu_open, sort, scroll, .. } => {
+            Screen::ClubPreview {
+                choice, view, view_menu_open, jump_menu_open,
+                sort, sort_by, sort_menu_open, scroll, ..
+            } => {
                 use cm_render::screen_club_squad_faithful::{
                     view_dropdown_hit, VIEW_BUTTON_RECT,
                     jump_menu_hit, JUMP_BUTTON_RECT,
                     header_hit, ColumnKind,
+                    sort_dropdown_hit, SORT_BUTTON_RECT, SquadView,
                 };
                 // Dropdown priority: whichever is open catches the click.
-                if *view_menu_open {
+                if *sort_menu_open {
+                    // Sort By dropdown consumes any click; pick a key
+                    // (or dismiss on miss / separator).
+                    if let Some(k) = sort_dropdown_hit(x, y) {
+                        *sort_by = k;
+                        *scroll = 0;
+                    }
+                    *sort_menu_open = false;
+                } else if *view_menu_open {
                     if let Some(new_mode) = view_dropdown_hit(x, y) {
                         *view = new_mode;
                     }
@@ -1027,6 +1047,14 @@ impl App {
                 } else if x >= VIEW_BUTTON_RECT.0 && x <= VIEW_BUTTON_RECT.2
                        && y >= VIEW_BUTTON_RECT.1 && y <= VIEW_BUTTON_RECT.3 {
                     *view_menu_open = true;
+                } else if x >= SORT_BUTTON_RECT.0 && x <= SORT_BUTTON_RECT.2
+                       && y >= SORT_BUTTON_RECT.1 && y <= SORT_BUTTON_RECT.3
+                       && matches!(*view, SquadView::Traditional) {
+                    // Sort By dropdown is only active in Traditional
+                    // view — the exe grey-boxes it on the column-
+                    // header views because the headers themselves are
+                    // the sort mechanism there.
+                    *sort_menu_open = true;
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
@@ -1216,6 +1244,8 @@ impl App {
                 view_menu_open: false,
                 jump_menu_open: false,
                 sort: None,
+                sort_by: cm_render::screen_club_squad_faithful::SortByKey::Name,
+                sort_menu_open: false,
             };
         }
         if goto_reopen_select_team {
@@ -1753,6 +1783,7 @@ impl ApplicationHandler for App {
                 let dropdown_open = match &self.screen {
                     Screen::ClubPreview { view_menu_open: true, .. } => true,
                     Screen::ClubPreview { jump_menu_open: true, .. } => true,
+                    Screen::ClubPreview { sort_menu_open: true, .. } => true,
                     Screen::SelectNationality { filter_open: true, .. } => true,
                     _ => false,
                 };

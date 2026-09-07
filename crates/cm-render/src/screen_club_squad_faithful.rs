@@ -415,6 +415,11 @@ pub struct SquadState<'a> {
     /// Labels for the jump menu, in the order the exe paints them.
     /// Empty when the menu is closed.
     pub jump_items: &'a [&'a str],
+    /// Currently-selected Sort By option (Traditional view only).
+    /// Rendered as a tick in the dropdown when open. Defaults to Name.
+    pub sort_by: SortByKey,
+    /// `true` when the Sort By dropdown is open.
+    pub sort_menu_open: bool,
 }
 
 // -----------------------------------------------------------------------
@@ -829,6 +834,13 @@ pub fn render_squad(
         draw_view_dropdown(surface, &small_font, state.view,
                            state.cursor_x, state.cursor_y);
     }
+    // Sort By dropdown (Traditional view only). Same green-alternating
+    // menu as View, with a tick on the currently-active sort key and a
+    // separator row between base attributes and per-season stats.
+    if state.sort_menu_open {
+        draw_sort_dropdown(surface, &small_font, state.sort_by,
+                           state.cursor_x, state.cursor_y);
+    }
     // Club-jump dropdown — corner-triangle box opens a menu of every
     // club in the current division alphabetically + the national
     // team. Rendered LAST so it overlays even the View dropdown when
@@ -889,6 +901,117 @@ pub fn view_dropdown_hit(x: i32, y: i32) -> Option<SquadView> {
 /// The View button rect on the sub-toolbar. Clicks here toggle
 /// `view_menu_open`.
 pub const VIEW_BUTTON_RECT: (i32, i32, i32, i32) = (110, 125, 255, 145);
+/// Sort-By button rect on the sub-toolbar — same y as View, sits
+/// just right of it at TOOLBAR_LEFT_R (236..360).
+pub const SORT_BUTTON_RECT: (i32, i32, i32, i32) = (236, 125, 360, 145);
+
+/// The seventeen Sort By options shown when Traditional view opens
+/// the Sort By dropdown, verified against the running exe. Layout
+/// order matches the capture: Name first (default, ticked on new
+/// game), then base attributes, blank separator, then per-season
+/// stats which stay disabled until a season has actually been
+/// played.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortByKey {
+    Name,
+    Position,
+    SquadNumber,
+    Form,
+    Morale,
+    Condition,
+    Nationality,
+    Age,
+    IntCaps,
+    IntGoals,
+    BasicWage,
+    ContractExpiry,
+    Value,
+    Goals,
+    Conceded,
+    Assists,
+    AvRating,
+}
+
+impl SortByKey {
+    /// Menu order lifted from the exe's Sort By dropdown. A `None`
+    /// slot renders as the embossed separator (menu_dropdown paints
+    /// an empty-label row as a groove).
+    pub const MENU_ORDER: [Option<SortByKey>; 18] = [
+        Some(SortByKey::Name),
+        Some(SortByKey::Position),
+        Some(SortByKey::SquadNumber),
+        Some(SortByKey::Form),
+        Some(SortByKey::Morale),
+        Some(SortByKey::Condition),
+        Some(SortByKey::Nationality),
+        Some(SortByKey::Age),
+        Some(SortByKey::IntCaps),
+        Some(SortByKey::IntGoals),
+        Some(SortByKey::BasicWage),
+        Some(SortByKey::ContractExpiry),
+        Some(SortByKey::Value),
+        None,                                 // separator row
+        Some(SortByKey::Goals),
+        Some(SortByKey::Conceded),
+        Some(SortByKey::Assists),
+        Some(SortByKey::AvRating),
+    ];
+    /// Label as painted in the exe dropdown.
+    pub fn label(self) -> &'static str {
+        match self {
+            SortByKey::Name           => "Name",
+            SortByKey::Position       => "Position(s)",
+            SortByKey::SquadNumber    => "Squad Number",
+            SortByKey::Form           => "Form",
+            SortByKey::Morale         => "Morale",
+            SortByKey::Condition      => "Condition",
+            SortByKey::Nationality    => "Nationality",
+            SortByKey::Age            => "Age",
+            SortByKey::IntCaps        => "Int. Caps",
+            SortByKey::IntGoals       => "Int. Goals",
+            SortByKey::BasicWage      => "Basic Wage",
+            SortByKey::ContractExpiry => "Contract Expiry",
+            SortByKey::Value          => "Value",
+            SortByKey::Goals          => "Goals",
+            SortByKey::Conceded       => "Conceded",
+            SortByKey::Assists        => "Assists",
+            SortByKey::AvRating       => "Av. Rating",
+        }
+    }
+}
+
+/// Sort-By dropdown anchor. Sits just under the Sort By button; row
+/// height matches the View dropdown so the two menus share the same
+/// visual weight.
+const SORT_DROPDOWN: crate::menu_dropdown::DropdownRect =
+    crate::menu_dropdown::DropdownRect { x0: 236, y0: 148, width: 145, row_h: 18 };
+
+/// Paint the Sort By dropdown. `selected` is the currently-active
+/// sort key (gets the tick); cursor drives yellow hover.
+pub fn draw_sort_dropdown(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    selected: SortByKey,
+    cursor_x: i32, cursor_y: i32,
+) {
+    let items: Vec<&str> = SortByKey::MENU_ORDER
+        .iter()
+        .map(|o| o.map(|k| k.label()).unwrap_or(""))
+        .collect();
+    let sel_row = SortByKey::MENU_ORDER.iter()
+        .position(|o| *o == Some(selected));
+    crate::menu_dropdown::draw_dropdown(
+        surface, font, SORT_DROPDOWN,
+        &items, sel_row, (cursor_x, cursor_y),
+    );
+}
+
+/// Hit-test the Sort By dropdown. Returns the picked key, or None if
+/// the click missed a row or landed on the separator.
+pub fn sort_dropdown_hit(x: i32, y: i32) -> Option<SortByKey> {
+    let idx = SORT_DROPDOWN.hit(SortByKey::MENU_ORDER.len(), x, y)?;
+    SortByKey::MENU_ORDER[idx]
+}
 
 /// Corner triangle box inside the title bar. Clicks here toggle
 /// `jump_menu_open`. Measured from the GDI capture — sits just inside

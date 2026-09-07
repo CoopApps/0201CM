@@ -504,7 +504,10 @@ pub fn try_render_club_preview_faithful(
     cursor_x: i32,
     cursor_y: i32,
 ) -> bool {
-    let Screen::ClubPreview { choice, scroll, view, view_menu_open, jump_menu_open, sort } = screen
+    let Screen::ClubPreview {
+        choice, scroll, view, view_menu_open, jump_menu_open,
+        sort, sort_by, sort_menu_open,
+    } = screen
         else { return false };
     let Some(world) = world else { return false };
 
@@ -1010,11 +1013,29 @@ pub fn try_render_club_preview_faithful(
             if s.descending { ord.reverse() } else { ord }
         });
     } else {
-        // Default: position group (GK → SW → D → WB → DM → M → AM → F → S),
-        // then alphabetical within each group.
-        rows.sort_by(|a, b|
-            position_group(&a.position).cmp(&position_group(&b.position))
-                .then(a.name.cmp(&b.name)));
+        // No column-header override — Traditional consults its own
+        // Sort By dropdown pick; other views fall back to position
+        // group + alphabetical.
+        use cm_render::screen_club_squad_faithful::{SquadView, SortByKey};
+        if matches!(*view, SquadView::Traditional) {
+            rows.sort_by(|a, b| match *sort_by {
+                SortByKey::Name           => a.name.cmp(&b.name),
+                SortByKey::Position       =>
+                    position_group(&a.position).cmp(&position_group(&b.position))
+                        .then(a.name.cmp(&b.name)),
+                SortByKey::Age            => a.age.cmp(&b.age),
+                // The rest are deferred data sources (form/morale/
+                // condition per-player, stats per-season, wage/value
+                // per-contract). Fall back to name for a deterministic
+                // ordering until each source wires through; user still
+                // sees the picked option ticked in the menu.
+                _ => a.name.cmp(&b.name),
+            });
+        } else {
+            rows.sort_by(|a, b|
+                position_group(&a.position).cmp(&position_group(&b.position))
+                    .then(a.name.cmp(&b.name)));
+        }
     }
     // Diagnostic — helps identify wrong-club leakage the user asked
     // about (e.g. Foday/Ovie showing on Chester).
@@ -1159,6 +1180,8 @@ pub fn try_render_club_preview_faithful(
         cursor_y,
         jump_menu_open: *jump_menu_open,
         jump_items: &jump_labels_refs,
+        sort_by: *sort_by,
+        sort_menu_open: *sort_menu_open,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
