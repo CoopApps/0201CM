@@ -662,7 +662,7 @@ pub fn try_render_club_preview_faithful(
         // Col 2 = Name — pulled from SquadPlayer.name in the renderer;
         // leave the vector cell empty to avoid double-painting.
         let value = pv.value();
-        c[12] = format_money_short(value as i64);
+        c[12] = format_money_k(value as i64);
         match mode {
             Traditional => unreachable!(),
             Contract => {
@@ -676,7 +676,7 @@ pub fn try_render_club_preview_faithful(
                 let wage = pv.wage();
                 let exp = pv.club_contract_expires();
                 c[3] = String::new();   // Squad Status flag TBD
-                c[4] = format_money_short(wage as i64);
+                c[4] = format_money_full(wage as i64);
                 // CmDate stores day-of-year; convert to (month, day-of-
                 // month) for the DD.M.YY string.
                 let (mm, dd) = exp.to_month_day();
@@ -770,15 +770,13 @@ pub fn try_render_club_preview_faithful(
         c
     }
 
-    /// Currency formatter — full digits with comma-separated thousands.
-    /// The exe never abbreviates with K/M in the Contract view cells
-    /// (per-user callout on the 2nd capture pass); numbers always print
-    /// in full. Examples: £475, £1,200, £26,000, £1,500,000.
-    fn format_money_short(v: i64) -> String {
+    /// Currency formatter for the WAGE column — full digits with
+    /// comma-separated thousands. Verified against
+    /// cheltenham_contract.png: £150, £750, £1,200. No K/M abbrev.
+    fn format_money_full(v: i64) -> String {
         if v == 0 { return String::new(); }
         let neg = v < 0;
         let mut n = v.unsigned_abs();
-        // Build the digit groups right-to-left so we can insert commas.
         let mut groups: Vec<String> = Vec::new();
         while n >= 1000 {
             groups.push(format!("{:03}", n % 1000));
@@ -788,6 +786,24 @@ pub fn try_render_club_preview_faithful(
         groups.reverse();
         let sign = if neg { "-" } else { "" };
         format!("{sign}\u{00A3}{}", groups.join(","))
+    }
+
+    /// Currency formatter for the VALUE column (purple bevel) — the
+    /// exe uses K/M abbreviations here. Verified against
+    /// cheltenham_contract.png: £12K, £110K, £45K, £8K. Below 1000
+    /// prints full digits.
+    fn format_money_k(v: i64) -> String {
+        if v == 0 { return String::new(); }
+        let a = v.unsigned_abs();
+        let sign = if v < 0 { "-" } else { "" };
+        if a >= 1_000_000 {
+            format!("{sign}\u{00A3}{:.1}M", v as f64 / 1_000_000.0)
+        } else if a >= 1_000 {
+            // Round to nearest thousand — £12K, £110K.
+            format!("{sign}\u{00A3}{}K", a / 1_000)
+        } else {
+            format!("{sign}\u{00A3}{}", v)
+        }
     }
 
     /// Contract expiry as DD.M.YY per the capture (14.6.07). The exe's
