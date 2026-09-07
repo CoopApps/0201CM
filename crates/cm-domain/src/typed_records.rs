@@ -708,30 +708,57 @@ impl<'a> PlayerView<'a> {
         le_i32(self.tail, self.at(0x52))
     }
 
-    /// Five release-clause flags read from the Person record. Byte
-    /// semantics per FUN_00850fd0 decompile: 0 = clause absent, 1 =
-    /// clause armed but not tripped, 2 = clause tripped (red-highlight
-    /// paint on the Releases column). Field order matches
-    /// `agevak::AgevakTContractOffsets` — Non-Promotion, Minimum-Fee,
-    /// Non-Playing, Relegation, Manager-Job.
+    /// Five release-clause flags. Byte semantics per FUN_00850fd0:
+    /// 0 = absent, 1 = armed, 2 = tripped.
     ///
-    /// WHERE THE BYTES LIVE — TODO. The Ghidra archaeology reads these
-    /// off `param_1 + 0x1C..0x20` where param_1 is the pointer passed to
-    /// FUN_00850fd0 (a TContract pointer). Our shipped-dat import
-    /// currently leaves wage/value/clauses empty on many staff (Muggleton
-    /// verified id=56534 with wage=0/value=0) so the source offset on
-    /// the Person record is unresolved — likely the exe fills these at
-    /// game boot in FUN_0051f5d0 / FUN_005121a0. Until the loader is
-    /// fixed OR the byte offset is Frida-verified, this returns all
-    /// zeros and the Releases column stays blank.
+    /// # Data source (not yet available)
+    ///
+    /// The clauses do NOT live on the Person record. They live on a
+    /// separate 80-byte (0x50) Contract record allocated at game boot
+    /// by `CONTRACT_MANAGER::initialise_all` (FUN_004cd930), one per
+    /// staff-with-employer. The lookup is:
+    ///
+    ///   contract_ptr = (*DAT_00accad8) + DAT_00acdf0c[staff_id] * 0x50
+    ///   clause_byte  = contract_ptr[0x1C + N]      // N=0..4
+    ///
+    /// The record layout on that 0x50 array is:
+    ///   +0x00  staff_id (i32 sanity check)
+    ///   +0x04  linked Person id
+    ///   +0x0C  wage (i32)
+    ///   +0x1C  Non-Promotion flag       ← reads
+    ///   +0x1D  Minimum-Fee flag         ← reads
+    ///   +0x1E  Non-Playing flag         ← reads
+    ///   +0x1F  Relegation flag          ← reads
+    ///   +0x20  Manager-Job flag         ← reads
+    ///   +0x25  contract-start date word (short)
+    ///   +0x27  contract-end date word
+    ///   +0x2D / +0x2F  additional date words
+    ///
+    /// The generator (`FUN_00847a80`, called from FUN_004cd930 during
+    /// boot) rolls each clause using reputation + position + RNG:
+    ///
+    ///   Manager-Job    (`+0x20`) → age gate + rep > 0xCB2 + id % 3 == 0
+    ///   Non-Promotion  (`+0x1C`) → class == 0x0B + rep > 0xABE  + roll
+    ///   Non-Playing    (`+0x1E`) → class == 0x0B + rep > 0x1964 + roll
+    ///   Relegation     (`+0x1F`) → class == 0x0B + rep > 0x6D6  + roll
+    ///   Minimum-Fee    (`+0x1D`) → cleared here; only ever set during
+    ///                              transfer negotiation
+    ///
+    /// # Blocker
+    ///
+    /// Our rust-db import stops at the shipped .dat pools; ~88% of
+    /// staff (Muggleton included) leave the shipped dat with no
+    /// contract data at all — the exe generates them post-load via the
+    /// path above. Wiring this correctly needs a real port of
+    /// FUN_004cd930 + FUN_00847a80 + FUN_004d7090 (wage computer)
+    /// into a boot-time contract-init subsystem. Not a byte-offset
+    /// fix.
+    ///
+    /// Until that subsystem lands, this returns all zeros and the
+    /// Releases column stays blank. The FORMATTER path (short_code +
+    /// orange ink) is correct and will light up as soon as data flows.
     pub fn release_clauses(&self) -> ReleaseClauses {
-        ReleaseClauses {
-            non_promotion: 0,
-            minimum_fee:   0,
-            non_playing:   0,
-            relegation:    0,
-            manager_job:   0,
-        }
+        ReleaseClauses::default()
     }
 
     // --- personality (offsets loader-verified; names community-standard) ---
