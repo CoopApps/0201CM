@@ -13831,6 +13831,60 @@ impl World {
             if attr.home_reputation    == 0 { attr.home_reputation    = st.reputation[0] as i16; }
             if attr.current_reputation == 0 { attr.current_reputation = st.reputation[1] as i16; }
             if attr.world_reputation   == 0 { attr.world_reputation   = st.reputation[2] as i16; }
+            // Attribute vec (42 slots in DFM order) — stamp back into
+            // the individual named fields when the record shipped as
+            // all-zero. Shane Higgs at Cheltenham is the canonical
+            // "all zeros" case; PlayerInitState fills every one to
+            // [1, 20] via generate_attributes_core.
+            let all_zero =
+                attr.acceleration == 0 && attr.aggression == 0 && attr.agility == 0 &&
+                attr.anticipation == 0 && attr.balance == 0 && attr.bravery == 0 &&
+                attr.consistency == 0 && attr.corners == 0 && attr.crossing == 0;
+            if all_zero && st.attributes.len() >= 42 {
+                let s = &st.attributes;
+                attr.acceleration       = s[0]  as i8;
+                attr.aggression         = s[1]  as i8;
+                attr.agility            = s[2]  as i8;
+                attr.anticipation       = s[3]  as i8;
+                attr.balance            = s[4]  as i8;
+                attr.bravery            = s[5]  as i8;
+                attr.consistency        = s[6]  as i8;
+                attr.corners            = s[7]  as i8;
+                attr.crossing           = s[8]  as i8;
+                attr.free_kicks         = s[9]  as i8;
+                attr.handling           = s[10] as i8;
+                attr.heading            = s[11] as i8;
+                attr.important_matches  = s[12] as i8;
+                attr.injury_proneness   = s[13] as i8;
+                attr.jumping            = s[14] as i8;
+                attr.leadership         = s[15] as i8;
+                attr.left_foot          = s[16] as i8;
+                attr.long_shots         = s[17] as i8;
+                attr.dirtiness          = s[18] as i8;
+                attr.dribbling          = s[19] as i8;
+                attr.finishing          = s[20] as i8;
+                attr.flair              = s[21] as i8;
+                attr.decisions          = s[22] as i8;
+                attr.movement           = s[23] as i8;
+                attr.natural_fitness    = s[24] as i8;
+                attr.one_on_ones        = s[25] as i8;
+                attr.marking            = s[26] as i8;
+                attr.pace               = s[27] as i8;
+                attr.passing            = s[28] as i8;
+                attr.penalties          = s[29] as i8;
+                attr.positioning        = s[30] as i8;
+                attr.reflexes           = s[31] as i8;
+                attr.right_foot         = s[32] as i8;
+                attr.stamina            = s[33] as i8;
+                attr.strength           = s[34] as i8;
+                attr.tackling           = s[35] as i8;
+                attr.teamwork           = s[36] as i8;
+                attr.throw_ins          = s[37] as i8;
+                attr.versatility        = s[38] as i8;
+                attr.vision             = s[39] as i8;
+                attr.work_rate          = s[40] as i8;
+                attr.technique          = s[41] as i8;
+            }
         }
         // 2. Contract pool — depends on the freshly-populated CA/PA
         //    above, and on club reputation (already loaded). Runs
