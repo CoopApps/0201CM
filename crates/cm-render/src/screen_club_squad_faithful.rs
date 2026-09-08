@@ -1157,13 +1157,16 @@ impl AttrGroup {
                 ["Han", "1v1", "Ref", "Pos", "Con", "Fla", "Fin", "Fit", "Thr"],
             AttrGroup::Defensive   =>
                 ["Mar", "Tck", "Pos", "Hea", "Jum", "Str", "Ant", "Cnt", "Bra"],
+            // Verified against Mansfield Town Attacking capture
+            // (attributes_menu.png subset): Cre / Cro / Dri / Fin /
+            // Fla / Lon / Off / Pas / Set.
             AttrGroup::Attacking   =>
-                ["Fin", "Dri", "Cro", "Cor", "Pas", "Fla", "LSh", "FrK", "Pen"],
+                ["Cre", "Cro", "Dri", "Fin", "Fla", "Lon", "Off", "Pas", "Set"],
         }
     }
-    /// The corresponding DomainStaffType10 accessor names in the
-    /// same order as `headers`. Used by the app-side data builder
-    /// to fill cols 3..11.
+    /// The corresponding AttrSlot per column — read via the render's
+    /// game-authoritative byte-offset table (see
+    /// memory/type10-real-attribute-offsets.md).
     pub fn attribute_indices(self) -> [AttrSlot; 9] {
         use AttrSlot::*;
         match self {
@@ -1176,7 +1179,7 @@ impl AttrGroup {
             AttrGroup::Defensive   =>
                 [Marking, Tackling, Positioning, Heading, Jumping, Strength, Anticipation, Consistency, Bravery],
             AttrGroup::Attacking   =>
-                [Finishing, Dribbling, Crossing, Corners, Passing, Flair, LongShots, FreeKicks, Penalties],
+                [Creativity, Crossing, Dribbling, Finishing, Flair, LongShots, Movement, Passing, FreeKicks],
         }
     }
 }

@@ -684,65 +684,84 @@ pub fn try_render_club_preview_faithful(
     /// For columns that need engine-produced state we don't yet have
     /// (e.g. Selection Info, live Av. Rating) we emit an empty string;
     /// the renderer paints a blank cell rather than "0".
-    /// Map an AttrSlot enum variant to the corresponding i8 field on
-    /// DomainStaffType10. Kept here (not on AttrSlot itself) so
-    /// cm-render stays free of a cm-domain dep.
+    /// Map an AttrSlot to the correct byte on the type-10 record by
+    /// its game-authoritative offset (verified against FUN_0052d090's
+    /// id→byte dispatch, `D:\cm0102-carve\ghidra_out\cm0102.exe\
+    /// decompiled\0052d090.c`). We READ RAW BYTES via
+    /// `full_attributes()` rather than reading DomainStaffType10's
+    /// named fields — the named fields are systematically mislabelled
+    /// past +0x24, so `attrs.flair` etc. are pointing at the wrong
+    /// bytes. See memory/type10-real-attribute-offsets.md for the
+    /// full name → byte table.
+    ///
+    /// Determination is NOT on type10 (it lives on Person +0x58).
+    /// Return 0 here for it — the caller should read the person
+    /// record via a separate accessor when it lands.
     fn attr_slot_value(
         a: &cm_domain::DomainStaffType10,
         slot: cm_render::screen_club_squad_faithful::AttrSlot,
     ) -> i8 {
         use cm_render::screen_club_squad_faithful::AttrSlot::*;
+        // Byte at game offset +N is at index (N - 0x0f) in
+        // full_attributes() — which returns 54 bytes for +0x0f..+0x44.
+        let fa = a.full_attributes();
+        let at = |offset: usize| -> i8 {
+            fa.get(offset - 0x0f).copied().unwrap_or(0) as i8
+        };
         match slot {
-            Acceleration      => a.acceleration,
-            Aggression        => a.aggression,
-            Agility           => a.agility,
-            Anticipation      => a.anticipation,
-            Balance           => a.balance,
-            Bravery           => a.bravery,
-            Consistency       => a.consistency,
-            Corners           => a.corners,
-            // Creativity has no direct type10 field in this port; use
-            // Flair as the closest CM01/02 analogue.
-            Creativity        => a.flair,
-            Crossing          => a.crossing,
-            Decisions         => a.decisions,
-            Determination     => a.work_rate,
-            Dirtiness         => a.dirtiness,
-            Dribbling         => a.dribbling,
-            Finishing         => a.finishing,
-            Flair             => a.flair,
-            FreeKicks         => a.free_kicks,
-            Handling          => a.handling,
-            Heading           => a.heading,
-            ImportantMatches  => a.important_matches,
-            // Influence not present on the DomainStaffType10 layout
-            // we ship; use Leadership (closest match — the field the
-            // exe reads into +0x25 alongside influence in real ordering).
-            Influence         => a.leadership,
-            InjuryProneness   => a.injury_proneness,
-            Jumping           => a.jumping,
-            Leadership        => a.leadership,
-            LeftFoot          => a.left_foot,
-            LongShots         => a.long_shots,
-            Marking           => a.marking,
-            Movement          => a.movement,
-            NaturalFitness    => a.natural_fitness,
-            OneOnOnes         => a.one_on_ones,
-            Pace              => a.pace,
-            Passing           => a.passing,
-            Penalties         => a.penalties,
-            Positioning       => a.positioning,
-            Reflexes          => a.reflexes,
-            RightFoot         => a.right_foot,
-            Stamina           => a.stamina,
-            Strength          => a.strength,
-            Tackling          => a.tackling,
-            Teamwork          => a.teamwork,
-            Technique         => a.technique,
-            ThrowIns          => a.throw_ins,
-            Versatility       => a.versatility,
-            Vision            => a.vision,
-            WorkRate          => a.work_rate,
+            Acceleration      => at(0x1b),  // id 1
+            Aggression        => at(0x1c),  // id 2
+            Agility           => at(0x1d),  // id 3
+            Anticipation      => at(0x1e),  // id 4
+            Balance           => at(0x1f),  // id 5
+            Bravery           => at(0x20),  // id 6
+            Creativity        => at(0x43),  // id 7 — REAL, at +0x43
+            Crossing          => at(0x23),  // id 8
+            Decisions         => at(0x24),  // id 9
+            // Determination lives on Person +0x58, not type10.
+            Determination     => 0,
+            Dribbling         => at(0x26),  // id 11
+            Finishing         => at(0x27),  // id 12
+            Flair             => at(0x28),  // id 13
+            Handling          => at(0x2a),  // id 14
+            Heading           => at(0x2b),  // id 15
+            Influence         => at(0x2f),  // id 16 — REAL, at +0x2f
+            Jumping           => at(0x2e),  // id 17
+            LongShots         => at(0x31),  // id 18
+            Marking           => at(0x32),  // id 19
+            Movement          => at(0x33),  // id 20 (Off The Ball)
+            Pace              => at(0x36),  // id 21
+            Passing           => at(0x37),  // id 22
+            Positioning       => at(0x39),  // id 23
+            Reflexes          => at(0x3a),  // id 24
+            FreeKicks         => at(0x29),  // id 25 (Set Pieces)
+            Stamina           => at(0x3c),  // id 26
+            Strength          => at(0x3d),  // id 27
+            Tackling          => at(0x3e),  // id 28
+            Teamwork          => at(0x3f),  // id 29
+            Technique         => at(0x40),  // id 30
+            WorkRate          => at(0x44),  // id 31
+            // The 12 hidden bytes at +0x21/22/25/2c/2d/30/34/35/38/3b/41/42
+            // are Consistency, Corners, Dirtiness, Important Matches,
+            // Injury Proneness, Leadership, Left Foot, Natural Fitness,
+            // One On Ones, Penalties, Right Foot, Throw Ins, Versatility,
+            // Vision — exact 12-of-14 mapping needs the editor's DFM
+            // tabsheet_staff_pl2 to disambiguate. Best-effort per DFM
+            // order guesses below; blank for now to avoid fabricating.
+            Consistency       => 0,
+            Corners           => 0,
+            Dirtiness         => 0,
+            ImportantMatches  => 0,
+            InjuryProneness   => 0,
+            Leadership        => 0,
+            LeftFoot          => 0,
+            NaturalFitness    => 0,
+            OneOnOnes         => 0,
+            Penalties         => 0,
+            RightFoot         => 0,
+            ThrowIns          => 0,
+            Versatility       => 0,
+            Vision            => 0,
         }
     }
 
