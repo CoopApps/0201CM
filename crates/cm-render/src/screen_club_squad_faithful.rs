@@ -40,7 +40,7 @@ use crate::image::Image;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{
     draw_panel, PanelPalette,
-    P_BEVEL, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
+    P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
 };
 use crate::packed_text::{draw_wrapped_text, W_LEFT};
 use crate::screen_pre_boot_chrome::{
@@ -443,6 +443,25 @@ pub struct SquadState<'a> {
     pub comp_scope: CompScope,
     /// `true` when the Competitions dropdown is open.
     pub comp_menu_open: bool,
+    /// Which sub-toolbar / chrome button is currently held down (if
+    /// any). Drives the pressed-invert bevel so the user gets
+    /// visible feedback while the mouse is still down. `None` on a
+    /// steady frame.
+    pub pressed: PressedButton,
+}
+
+/// Which button on the club-preview / squad screen the user is
+/// currently pressing. Mirrors `ClubPreviewButton` in the app crate
+/// so both sides can drive the pressed bevel without a two-way dep.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PressedButton {
+    None,
+    View, Middle, Filter,
+    TakeControl,
+    Back, Next,
+    JumpTriangle,
+    TopTab(u8),
+    BottomTab(u8),
 }
 
 // -----------------------------------------------------------------------
@@ -604,8 +623,11 @@ pub fn render_squad(
     // ---- Take Control button (660,4)-(785,24) — dark-blue fill,
     //      purple bevel, purple text.
     let (tx0, ty0, tx1, ty1) = TAKE_CONTROL_RECT;
+    let tc_flags = if state.pressed == PressedButton::TakeControl {
+        P_SOLID_FILL | P_BEVEL_INVERT
+    } else { P_SOLID_FILL | P_BEVEL };
     draw_panel(surface, tx0, ty0, tx1, ty1,
-        P_SOLID_FILL | P_BEVEL, IG_TITLE_INK, IG_TITLE_FILL, palette);
+        tc_flags, IG_TITLE_INK, IG_TITLE_FILL, palette);
     surface.draw_rectangle(tx0, ty0, tx1, ty1, 4, IG_TITLE_INK);
     draw_wrapped_text(surface, tx0, ty0, tx1, ty1,
         &small_font, &c_string(b"Take Control"),
@@ -615,7 +637,10 @@ pub fn render_squad(
     //      pattern + outer-highlight + explicit yellow rect outline.
     for (i, (x0, x1, label)) in TOP_TABS.iter().copied().enumerate() {
         let selected = i == 0;
-        let style = if selected {
+        let pressed = state.pressed == PressedButton::TopTab(i as u8);
+        let style = if pressed {
+            P_SOLID_FILL | P_BEVEL_INVERT
+        } else if selected {
             P_SOLID_FILL | P_BEVEL | P_OUTER_HIGHLIGHT
         } else {
             P_SOLID_FILL | P_BEVEL
@@ -642,20 +667,27 @@ pub fn render_squad(
         SortButtonMode::Competitions => Some("Competitions"),
         SortButtonMode::Hidden       => None,
     };
+    // Pressed-state bevel selector — inverts the highlight/shadow
+    // pair so a held button reads "pushed in" like the exe does.
+    let bevel_for = |btn: PressedButton| -> u32 {
+        if state.pressed == btn {
+            P_SOLID_FILL | P_BEVEL_INVERT
+        } else {
+            P_SOLID_FILL | P_BEVEL
+        }
+    };
     // View and Filter always paint.
-    for (rect, label) in [
-        (TOOLBAR_LEFT_L, "View"),
-        (TOOLBAR_FILTER, "Filter"),
-    ] {
-        draw_panel(surface, rect.0, TB_Y0, rect.1, TB_Y1,
-            P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
-        draw_wrapped_text(surface, rect.0, TB_Y0, rect.1, TB_Y1,
-            &small_font, &c_string(label.as_bytes()),
-            INK_CYAN, TS_CENTRE, -1);
-    }
+    draw_panel(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
+        bevel_for(PressedButton::View), GREY_BAR, INK_CYAN, palette);
+    draw_wrapped_text(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
+        &small_font, &c_string(b"View"), INK_CYAN, TS_CENTRE, -1);
+    draw_panel(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
+        bevel_for(PressedButton::Filter), GREY_BAR, INK_CYAN, palette);
+    draw_wrapped_text(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
+        &small_font, &c_string(b"Filter"), INK_CYAN, TS_CENTRE, -1);
     if let Some(lbl) = mid_label {
         draw_panel(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
-            P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
+            bevel_for(PressedButton::Middle), GREY_BAR, INK_CYAN, palette);
         draw_wrapped_text(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
             &small_font, &c_string(lbl.as_bytes()),
             INK_CYAN, TS_CENTRE, -1);
@@ -893,8 +925,11 @@ pub fn render_squad(
     //      Slot 3's label is overridden with the live division name.
     for (i, tab) in BOT_TABS_FIXED.iter().enumerate() {
         let label = if i == 3 { state.division_name } else { tab.label };
+        let pressed = state.pressed == PressedButton::BottomTab(i as u8);
+        let style = if pressed { P_SOLID_FILL | P_BEVEL_INVERT }
+                    else       { P_SOLID_FILL | P_BEVEL };
         draw_panel(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1,
-            P_SOLID_FILL | P_BEVEL, TAB_FILL,
+            style, TAB_FILL,
             if tab.enabled { CYAN_BRIGHT } else { GREY_BAR }, palette);
         let ink = if tab.enabled { CYAN_BRIGHT } else { GREY_BAR };
         draw_wrapped_text(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1,
@@ -911,9 +946,14 @@ pub fn render_squad(
     }
 
     // ---- Bottom nav Back / Next (both grey / cyan).
-    for (rect, label) in [(NAV_BACK, "Back"), (NAV_NEXT, "Next")] {
+    for (rect, label, btn) in [
+        (NAV_BACK, "Back", PressedButton::Back),
+        (NAV_NEXT, "Next", PressedButton::Next),
+    ] {
+        let style = if state.pressed == btn { P_SOLID_FILL | P_BEVEL_INVERT }
+                    else                    { P_SOLID_FILL | P_BEVEL };
         draw_panel(surface, rect.0, NAV_Y0, rect.1, NAV_Y1,
-            P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
+            style, GREY_BAR, INK_CYAN, palette);
         draw_wrapped_text(surface, rect.0, NAV_Y0, rect.1, NAV_Y1,
             &body_font, &c_string(label.as_bytes()),
             INK_CYAN, TS_CENTRE, -1);

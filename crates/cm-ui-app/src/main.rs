@@ -235,6 +235,20 @@ enum Pressed {
     Season(SeasonClick),
     Name(screens::NameClick),
     Club(screens::ClubClick),
+    ClubPreview(ClubPreviewButton),
+}
+
+/// Which button on the club-preview / squad screen is currently
+/// held down. Drives the pressed-invert bevel state so the user
+/// gets visual feedback while the mouse is still down.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClubPreviewButton {
+    View, Middle, Filter,
+    TakeControl,
+    Back, Next,
+    JumpTriangle,
+    TopTab(u8),      // 0..=4
+    BottomTab(u8),   // 0..=4
 }
 
 /// A working game instance — held in memory, never auto-written. The master
@@ -445,11 +459,30 @@ impl App {
         // Control button. See screen_club_squad_faithful.
         {
             let has_manager = self.game.is_some();
+            // Map the app's Pressed → the renderer's PressedButton
+            // (both use the same set of button kinds via
+            // ClubPreviewButton → PressedButton conversion below).
+            use cm_render::screen_club_squad_faithful::PressedButton;
+            let pressed = match self.pressed {
+                Pressed::ClubPreview(b) => match b {
+                    ClubPreviewButton::View          => PressedButton::View,
+                    ClubPreviewButton::Middle        => PressedButton::Middle,
+                    ClubPreviewButton::Filter        => PressedButton::Filter,
+                    ClubPreviewButton::TakeControl   => PressedButton::TakeControl,
+                    ClubPreviewButton::Back          => PressedButton::Back,
+                    ClubPreviewButton::Next          => PressedButton::Next,
+                    ClubPreviewButton::JumpTriangle  => PressedButton::JumpTriangle,
+                    ClubPreviewButton::TopTab(i)     => PressedButton::TopTab(i),
+                    ClubPreviewButton::BottomTab(i)  => PressedButton::BottomTab(i),
+                },
+                _ => PressedButton::None,
+            };
             if render_new::try_render_club_preview_faithful(
                 &self.screen, self.world.as_ref(),
                 &mut self.frame, &mut self.fonts,
                 self.setup_photo_seed, has_manager,
                 self.cursor.0, self.cursor.1,
+                pressed,
             ) {
                 self.overlay_menu_bar();
                 return;
@@ -713,7 +746,46 @@ impl App {
             Screen::SelectNationality { .. } => Pressed::None,
             // ClubPreview owns its own hit-test (Take Control button +
             // Back nav) — no per-widget press tracking.
-            Screen::ClubPreview { .. } => Pressed::None,
+            Screen::ClubPreview { view, .. } => {
+                use cm_render::screen_club_squad_faithful::{
+                    VIEW_BUTTON_RECT, SORT_BUTTON_RECT, JUMP_BUTTON_RECT,
+                    SortButtonMode,
+                };
+                let hit = |r: (i32,i32,i32,i32)| x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3;
+                if hit(VIEW_BUTTON_RECT) { Pressed::ClubPreview(ClubPreviewButton::View) }
+                else if hit(SORT_BUTTON_RECT)
+                     && !matches!(SortButtonMode::for_view(*view), SortButtonMode::Hidden)
+                    { Pressed::ClubPreview(ClubPreviewButton::Middle) }
+                // Filter button rect same y strip, x=656..780.
+                else if x >= 656 && x <= 780 && y >= 125 && y <= 145
+                    { Pressed::ClubPreview(ClubPreviewButton::Filter) }
+                // Take Control top-right.
+                else if x >= 660 && x <= 785 && y >= 4 && y <= 24
+                    { Pressed::ClubPreview(ClubPreviewButton::TakeControl) }
+                // Back / Next bottom nav.
+                else if y >= 555 && y <= 590 && x >= 100 && x <= 617
+                    { Pressed::ClubPreview(ClubPreviewButton::Back) }
+                else if y >= 555 && y <= 590 && x >= 619 && x <= 790
+                    { Pressed::ClubPreview(ClubPreviewButton::Next) }
+                // Club-jump triangle box.
+                else if hit(JUMP_BUTTON_RECT)
+                    { Pressed::ClubPreview(ClubPreviewButton::JumpTriangle) }
+                // Top tabs y=80..115, five columns.
+                else if y >= 80 && y <= 115 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::TopTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                }
+                // Bottom tabs y=510..545.
+                else if y >= 510 && y <= 545 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::BottomTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                }
+                else { Pressed::None }
+            }
             Screen::Dashboard { .. }
             | Screen::News { .. }
             | Screen::FifaRankings { .. }

@@ -503,6 +503,7 @@ pub fn try_render_club_preview_faithful(
     has_manager: bool,
     cursor_x: i32,
     cursor_y: i32,
+    pressed: cm_render::screen_club_squad_faithful::PressedButton,
 ) -> bool {
     let Screen::ClubPreview {
         choice, scroll, view, view_menu_open, jump_menu_open,
@@ -1277,6 +1278,7 @@ pub fn try_render_club_preview_faithful(
         sort_menu_open: *sort_menu_open,
         comp_scope: *comp_scope,
         comp_menu_open: *comp_menu_open,
+        pressed,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
