@@ -821,10 +821,13 @@ pub fn render_squad(
                     // Name — no useful right-col value (name already
                     // fills the wide cell); leave blank.
                     SortByKey::Name         => String::new(),
-                    // Season-stats family (Form / Goals / Conceded /
-                    // Assists / Av. Rating) genuinely have no data
-                    // until a season has been played; '-' matches the
-                    // exe's boot-time blank state.
+                    // Average rating uses a 4-dash placeholder in the
+                    // exe (matches the exe's Selection view Av R col
+                    // pre-season) to signal "float value TBD" rather
+                    // than "single-value TBD".
+                    SortByKey::AvRating     => "----".to_string(),
+                    // Rest of the season-stats family (Form / Goals /
+                    // Conceded / Assists) — one dash, no data yet.
                     _ => "-".to_string(),
                 };
                 draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
