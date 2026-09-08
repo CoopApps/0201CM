@@ -336,14 +336,24 @@ impl ColumnPack {
     /// uniform yellow every other view uses.
     pub fn cell_inks(&self, view: SquadView) -> [Option<u16>; 13] {
         let mut inks = [None; 13];
-        if let SquadView::Selection = view {
-            const CYAN_BRIGHT: u16 = 0x43ff;
-            const ORANGE:      u16 = 0x6180;
-            inks[3] = Some(CYAN_BRIGHT);  // Position
-            inks[6] = Some(ORANGE);       // Cond.
-            inks[7] = Some(CYAN_BRIGHT);  // Apps
-            inks[8] = Some(CYAN_BRIGHT);  // Av R
-            // Morale (col 5) stays default yellow.
+        const CYAN_BRIGHT: u16 = 0x43ff;
+        const ORANGE:      u16 = 0x6180;
+        match view {
+            SquadView::Selection => {
+                inks[3] = Some(CYAN_BRIGHT);  // Position
+                inks[6] = Some(ORANGE);       // Cond.
+                inks[7] = Some(CYAN_BRIGHT);  // Apps
+                inks[8] = Some(CYAN_BRIGHT);  // Av R
+                // Morale (col 5) stays default yellow.
+            }
+            SquadView::Attributes => {
+                // All 9 attribute value cells (cols 3..11) paint in
+                // bright cyan on the Attributes view — matches the
+                // Mansfield capture where the numeric grid reads as
+                // one solid cyan block, not yellow.
+                for i in 3..=11 { inks[i] = Some(CYAN_BRIGHT); }
+            }
+            _ => {}
         }
         inks
     }
