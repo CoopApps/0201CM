@@ -784,19 +784,27 @@ pub fn render_squad(
                     &body_font, buf.as_bytes(), name_ink,
                     TS_CENTRE | W_LEFT, -1);
                 // Right column reflects the Sort By pick — Position(s)
-                // shows the position code, Squad Number shows the
-                // digit, Age shows years, etc. Matches the exe where
-                // the field always mirrors the current sort key.
+                // shows the position code, Squad Number the digit,
+                // Age years, etc. Fields we don't yet have real data
+                // for (Form, Morale, Condition, Basic Wage, ...) still
+                // render '-' so the reader can see the column is
+                // populated but empty — matches the exe's behaviour
+                // at boot when no season has been played.
                 let sort_txt: String = match state.sort_by {
                     SortByKey::Position    => p.position.to_string(),
-                    SortByKey::SquadNumber => {
-                        if p.squad_number > 0 { p.squad_number.to_string() } else { String::new() }
-                    }
-                    SortByKey::Age => p.age.map(|a| a.to_string()).unwrap_or_default(),
-                    // Every other key — the right column stays blank
-                    // rather than duplicating what the wide name/left
-                    // cell already shows.
-                    _ => String::new(),
+                    SortByKey::SquadNumber =>
+                        if p.squad_number > 0 { p.squad_number.to_string() }
+                        else { "-".to_string() },
+                    SortByKey::Age =>
+                        p.age.map(|a| a.to_string()).unwrap_or_else(|| "-".to_string()),
+                    // Name — no useful right-col value (name already
+                    // fills the wide cell); leave blank.
+                    SortByKey::Name        => String::new(),
+                    // Everything else = "-" until its data source
+                    // threads through (Form / Morale / Condition /
+                    // Nationality / Int. Caps / Goals / Wage / Expiry
+                    // / Value / season-stats family).
+                    _ => "-".to_string(),
                 };
                 draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
                     &small_font, &c_string_latin1(sort_txt.as_bytes()),
