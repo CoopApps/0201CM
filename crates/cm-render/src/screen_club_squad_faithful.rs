@@ -42,7 +42,7 @@ use crate::packed_panel::{
     draw_panel, PanelPalette,
     P_BEVEL, P_BEVEL_INVERT, P_DARKEN, P_OUTER_HIGHLIGHT, P_SOLID_FILL,
 };
-use crate::packed_text::{draw_wrapped_text, W_LEFT};
+use crate::packed_text::{draw_wrapped_text, W_LEFT, W_SHADOW};
 use crate::screen_pre_boot_chrome::{
     c_string, draw_sidebar, F_BODY, F_SMALL, F_TITLE, GREY_BAR,
     INK_CYAN, INK_YELLOW, TS_CENTRE,
@@ -353,6 +353,12 @@ impl ColumnPack {
                 // one solid cyan block, not yellow.
                 for i in 3..=11 { inks[i] = Some(CYAN_BRIGHT); }
             }
+            SquadView::OtherInfo => {
+                // Same slots that go cyan on Attributes go cyan here —
+                // Nat. / Age / Caps / Goals / Form / Morale / Cond.
+                // (cols 3..9); cols 10-11 are zero-width filler.
+                for i in 3..=11 { inks[i] = Some(CYAN_BRIGHT); }
+            }
             _ => {}
         }
         inks
@@ -458,11 +464,36 @@ pub struct SquadState<'a> {
     pub attr_group: AttrGroup,
     /// `true` when the Attributes dropdown is open.
     pub attr_menu_open: bool,
+    /// Row-level filter (position group + side + availability) —
+    /// applied by the app before rows are handed to the renderer.
+    /// The renderer only needs it here to know which item to tick
+    /// when the dropdown is open. Defaults to no restriction.
+    pub filter: SquadFilter,
+    /// `true` when the Filter dropdown is open.
+    pub filter_menu_open: bool,
     /// Which sub-toolbar / chrome button is currently held down (if
     /// any). Drives the pressed-invert bevel so the user gets
     /// visible feedback while the mouse is still down. `None` on a
     /// steady frame.
     pub pressed: PressedButton,
+    /// Index (0..=4) of the top tab that owns the current screen. 0 =
+    /// Squad (default); 1 = Transfers; 2 = Next Match; etc. Drives
+    /// the yellow highlight + outer-highlight rectangle on the top-tab
+    /// row so tabs beyond Squad can share this renderer.
+    pub top_tab_active: u8,
+    /// When `Some`, replace the auto-derived subtitle (Position(s) /
+    /// Contract Info / ...) with this literal string. Used by
+    /// non-Squad top tabs — Transfers paints e.g. `"Players In -
+    /// Season 2001/02"` here.
+    pub subtitle_override: Option<&'a str>,
+    /// When `true`, hide the sub-toolbar's middle (Sort By /
+    /// Competitions / Attributes) AND right (Filter) buttons — the
+    /// Transfers screen only has the View button on its sub-toolbar.
+    pub hide_middle_and_filter_buttons: bool,
+    /// When `Some`, the sub-toolbar's View button paints this label
+    /// instead of the current SquadView label. Transfers uses it to
+    /// show "Players In" / "Players Out" / etc.
+    pub view_button_label_override: Option<&'a str>,
 }
 
 /// Which button on the club-preview / squad screen the user is
@@ -635,8 +666,15 @@ pub fn render_squad(
         surface.draw_line(base_x, ccy + dy, base_x + w, ccy + dy, 2, 0);
     }
 
-    // ---- Take Control button (660,4)-(785,24) — dark-blue fill,
-    //      purple bevel, purple text.
+    // ---- Top-right chrome button (660,4)-(785,24) — dark-blue fill,
+    // purple bevel, purple text.
+    //
+    // Manager-gated per scratchpad/prelaunch/transfers_players_in.png
+    // (Pro Vercelli, save mid-season): with a manager installed, this
+    // slot paints "Print ▼" — the current screen printout dropdown.
+    // Without a manager (pre-Take-Control view / Add Manager sidebar
+    // active), it paints "Take Control" so the user can pick this
+    // club to manage.
     let (tx0, ty0, tx1, ty1) = TAKE_CONTROL_RECT;
     let tc_flags = if state.pressed == PressedButton::TakeControl {
         P_SOLID_FILL | P_BEVEL_INVERT
@@ -644,14 +682,15 @@ pub fn render_squad(
     draw_panel(surface, tx0, ty0, tx1, ty1,
         tc_flags, IG_TITLE_INK, IG_TITLE_FILL, palette);
     surface.draw_rectangle(tx0, ty0, tx1, ty1, 4, IG_TITLE_INK);
+    let tr_label: &[u8] = if state.has_manager { b"Print" } else { b"Take Control" };
     draw_wrapped_text(surface, tx0, ty0, tx1, ty1,
-        &small_font, &c_string(b"Take Control"),
+        &small_font, &c_string(tr_label),
         IG_TITLE_FILL, TS_CENTRE, -1);
 
     // ---- Top tab bar. Squad (idx 0) is the current tab — yellow
     //      pattern + outer-highlight + explicit yellow rect outline.
     for (i, (x0, x1, label)) in TOP_TABS.iter().copied().enumerate() {
-        let selected = i == 0;
+        let selected = i as u8 == state.top_tab_active;
         let pressed = state.pressed == PressedButton::TopTab(i as u8);
         let style = if pressed {
             P_SOLID_FILL | P_BEVEL_INVERT
@@ -692,21 +731,80 @@ pub fn render_squad(
             P_SOLID_FILL | P_BEVEL
         }
     };
-    // View and Filter always paint.
-    draw_panel(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
-        bevel_for(PressedButton::View), GREY_BAR, INK_CYAN, palette);
-    draw_wrapped_text(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
-        &small_font, &c_string(b"View"), INK_CYAN, TS_CENTRE, -1);
-    draw_panel(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
-        bevel_for(PressedButton::Filter), GREY_BAR, INK_CYAN, palette);
-    draw_wrapped_text(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
-        &small_font, &c_string(b"Filter"), INK_CYAN, TS_CENTRE, -1);
-    if let Some(lbl) = mid_label {
+    // Sub-toolbar layout swaps between Squad and Transfers tabs.
+    //
+    // Squad (top_tab_active == 0), verified against
+    // scratchpad/prelaunch/cheltenham_gdi.png:
+    //   [ View ]  [ Sort By / Competitions / Attributes ]        [ Filter ]
+    //     LEFT_L         LEFT_R (middle, may hide)                 FILTER (right)
+    //
+    // Transfers (top_tab_active == 1), verified against
+    // scratchpad/prelaunch/transfers_players_in.png (Pro Vercelli
+    // mid-season 2001-10-10):
+    //   [ << Season ]  [ Season >> ]                             [ View  ▼ ]
+    //     LEFT_L (grey/dim)  LEFT_R (grey/dim)                     FILTER (yellow-highlighted)
+    //
+    // The View button on Transfers moves to the RIGHT slot (where
+    // Squad's Filter lives). Its label stays literally "View" — it
+    // does NOT relabel to the sub-view name.
+    if state.top_tab_active == 1 {
+        // Season navigator: `<< Season` (previous) + `Season >>` (next).
+        // Each is greyed/disabled at the far end of the club's season
+        // history — `<<` disabled when viewing the earliest season on
+        // record (nothing before to look at), `>>` disabled when
+        // viewing the current in-play season (nothing after). At the
+        // very start of a save both are disabled: only one season
+        // exists yet. That's the state we render at boot until real
+        // per-club season history + a current-view slot land — then
+        // this branch will consult state fields for `has_prev_season`
+        // / `has_next_season` and swap the ink between dimmed and
+        // active cyan. For now: both flat cyan on grey bevel, no
+        // pressed bevel behaviour.
+        // Disabled = emboss style — same W_SHADOW pass the exe's
+        // Back button uses on the pre-boot nav (FUN_005d75b0 disabled
+        // branch, font_id=0xc): text renders as a 1-px shadow offset
+        // (+1,+1) plus a scaled overlay on top so the label reads as
+        // "engraved" into the button rather than sitting on it. See
+        // packed_text::W_SHADOW (packed_text.rs:21) and
+        // screen_nav_back_next.rs:39 for the exe reference.
+        // TODO: swap to non-shadow bright cyan once has_prev_season /
+        // has_next_season fields land on SquadState.
+        let season_style = TS_CENTRE | W_SHADOW;
+        draw_panel(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
+            P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
+        draw_wrapped_text(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
+            &small_font, &c_string(b"<< Season"), INK_CYAN, season_style, -1);
         draw_panel(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
-            bevel_for(PressedButton::Middle), GREY_BAR, INK_CYAN, palette);
+            P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
         draw_wrapped_text(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
-            &small_font, &c_string(lbl.as_bytes()),
-            INK_CYAN, TS_CENTRE, -1);
+            &small_font, &c_string(b"Season >>"), INK_CYAN, season_style, -1);
+        // View button — RIGHT slot, styled as the active pull-down
+        // (yellow-highlighted bevel, orange-ish text) per the capture.
+        // Use the same bevel_for(PressedButton::View) so the pressed
+        // invert still works — the highlighted look comes from the
+        // ink+fill choice on top.
+        draw_panel(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
+            bevel_for(PressedButton::View), GREY_BAR, INK_CYAN, palette);
+        draw_wrapped_text(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
+            &small_font, &c_string(b"View"), INK_CYAN, TS_CENTRE, -1);
+    } else {
+        draw_panel(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
+            bevel_for(PressedButton::View), GREY_BAR, INK_CYAN, palette);
+        draw_wrapped_text(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
+            &small_font, &c_string(b"View"), INK_CYAN, TS_CENTRE, -1);
+        if !state.hide_middle_and_filter_buttons {
+            draw_panel(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
+                bevel_for(PressedButton::Filter), GREY_BAR, INK_CYAN, palette);
+            draw_wrapped_text(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
+                &small_font, &c_string(b"Filter"), INK_CYAN, TS_CENTRE, -1);
+            if let Some(lbl) = mid_label {
+                draw_panel(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
+                    bevel_for(PressedButton::Middle), GREY_BAR, INK_CYAN, palette);
+                draw_wrapped_text(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
+                    &small_font, &c_string(lbl.as_bytes()),
+                    INK_CYAN, TS_CENTRE, -1);
+            }
+        }
     }
 
     // ---- Column header band + player list. Structure per FUN_00457200
@@ -717,7 +815,21 @@ pub fn render_squad(
     //        - a short (~22 px) column-header strip on grey bevel with
     //          cyan labels,
     //        - a 13-cell body row per player below.
-    match state.view.column_pack() {
+    // Non-Squad top tabs (Transfers = 1) borrow this frame but paint
+    // their own body — draw the subtitle band from the override and
+    // then darken the body area. No player list is walked because the
+    // players[] slice is expected to be empty for those tabs.
+    if state.top_tab_active != 0 {
+        draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+            P_DARKEN, 0, 0, palette);
+        draw_panel(surface, LIST_X0, LIST_Y0, LIST_X1, LIST_Y1,
+            P_DARKEN, 0, 0, palette);
+        if let Some(sub) = state.subtitle_override {
+            draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
+                &body_font, &c_string_latin1(sub.as_bytes()),
+                INK_YELLOW, TS_CENTRE, -1);
+        }
+    } else { match state.view.column_pack() {
         // ================================================================
         // Non-Traditional modes — subtitle + short header + 1-row grid.
         // ================================================================
@@ -913,9 +1025,12 @@ pub fn render_squad(
                     SortByKey::BasicWage    => p.wage_str.to_string(),
                     SortByKey::ContractExpiry => p.expiry_str.to_string(),
                     SortByKey::Value        => p.value_str.to_string(),
-                    // Name — no useful right-col value (name already
-                    // fills the wide cell); leave blank.
-                    SortByKey::Name         => String::new(),
+                    // Name — the wide left cell already shows the name,
+                    // so the right column falls back to Position(s).
+                    // Matches the exe capture (cheltenham_gdi.png): when
+                    // Sort By = Name, every row still lists its position
+                    // code (D RC / GK / M L / ...) in the right column.
+                    SortByKey::Name         => p.position.to_string(),
                     // Average rating uses a 4-dash placeholder in the
                     // exe (matches the exe's Selection view Av R col
                     // pre-season) to signal "float value TBD" rather
@@ -930,9 +1045,22 @@ pub fn render_squad(
                     INK_YELLOW, TS_CENTRE, -1);
             }
         }
-    }
+    } }
 
-    // ---- Scrollbar.
+    // ---- Scrollbar. The exe hides it when everything fits: only paint
+    // when the row count exceeds what the visible window can hold.
+    // Verified against scratchpad/prelaunch/transfers_players_in.png
+    // (Pro Vercelli, 3 rows → no scrollbar) and
+    // scratchpad/prelaunch/transfers_stalybridge_2006.png (14+ rows →
+    // scrollbar). Squad view uses the same rule against
+    // VISIBLE_ENTRIES (2 columns × 14 rows).
+    let want_scrollbar = state.top_tab_active == 0
+        && state.players.len() > VISIBLE_ENTRIES;
+    let want_scrollbar = want_scrollbar
+        || (state.top_tab_active != 0 && state.players.len() > 14);
+    if !want_scrollbar {
+        // Skip all scrollbar geometry — leave the body area clean.
+    } else {
     draw_panel(surface, SB_X0, SB_TOP_ARROW.0, SB_X1, SB_TOP_ARROW.1,
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     draw_panel(surface, SB_X0, SB_TRACK_Y0, SB_X1, SB_TRACK_Y1,
@@ -951,6 +1079,7 @@ pub fn render_squad(
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     draw_panel(surface, SB_X0, SB_BOT_ARROW.0, SB_X1, SB_BOT_ARROW.1,
         P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    }
 
     // ---- Bottom tab bar (visual only — click handling comes later).
     //      Slot 3's label is overridden with the live division name.
@@ -1016,6 +1145,10 @@ pub fn render_squad(
     if state.attr_menu_open {
         draw_attr_dropdown(surface, &small_font, state.attr_group,
                            state.cursor_x, state.cursor_y);
+    }
+    if state.filter_menu_open {
+        draw_filter_dropdown(surface, &small_font, state.filter,
+                             state.cursor_x, state.cursor_y);
     }
     // Club-jump dropdown — corner-triangle box opens a menu of every
     // club in the current division alphabetically + the national
@@ -1291,6 +1424,181 @@ pub fn draw_comp_dropdown(
 pub fn comp_dropdown_hit(x: i32, y: i32) -> Option<CompScope> {
     let idx = COMP_DROPDOWN.hit(CompScope::MENU_ORDER.len(), x, y)?;
     Some(CompScope::MENU_ORDER[idx])
+}
+
+// ---------------------------------------------------------------------
+// Filter dropdown
+// ---------------------------------------------------------------------
+
+/// Position group selector — one-of-five, mutually exclusive.
+/// Bit layout matches the exe's `local_38c` in FUN_00457200 lines
+/// 1454-1522 (bits 0x1..0x10, "All Positions" through "Attackers").
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PositionGroup {
+    All,          // bit 0x01 — All Positions
+    Goalkeepers,  // bit 0x02
+    Defenders,    // bit 0x04
+    Midfielders,  // bit 0x08
+    Attackers,    // bit 0x10
+}
+
+/// Playing-side selector — one-of-four, mutually exclusive. Bit
+/// layout from FUN_00457200 lines 1541-1594 (bits 0x20..0x100).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SideFilter {
+    All,     // bit 0x20 — All Sides
+    Left,    // bit 0x40
+    Central, // bit 0x80
+    Right,   // bit 0x100
+}
+
+/// Availability filter — one-of-three. In the exe this is a two-bit
+/// pair (0x1000 Available / 0x2000 Unavailable) that can be cleared
+/// back to "no filter" by clicking the active option again; we model
+/// that resting state as `All`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Availability {
+    All,          // no availability restriction
+    AvailableOnly,   // bit 0x1000
+    UnavailableOnly, // bit 0x2000
+}
+
+/// Combined Filter dropdown state. Every squad-screen keeps one of
+/// these on its per-screen state block (equivalent of the exe's slot
+/// 0x18 at panel-struct offset 0xD4).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SquadFilter {
+    pub position: PositionGroup,
+    pub side: SideFilter,
+    pub availability: Availability,
+}
+
+impl Default for SquadFilter {
+    /// Boot default: no filtering (matches the exe when no bits are
+    /// set — the row builder passes every player through).
+    fn default() -> Self {
+        SquadFilter {
+            position: PositionGroup::All,
+            side: SideFilter::All,
+            availability: Availability::All,
+        }
+    }
+}
+
+/// Filter dropdown menu items in the exact order the exe paints
+/// them (FUN_00457200:1454-1691). `None` slots are the two embossed
+/// separator rows between position / side / availability groups.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FilterMenuItem {
+    Position(PositionGroup),
+    Side(SideFilter),
+    Availability(Availability),
+}
+
+impl FilterMenuItem {
+    pub const MENU_ORDER: [Option<FilterMenuItem>; 13] = [
+        Some(FilterMenuItem::Position(PositionGroup::All)),
+        Some(FilterMenuItem::Position(PositionGroup::Goalkeepers)),
+        Some(FilterMenuItem::Position(PositionGroup::Defenders)),
+        Some(FilterMenuItem::Position(PositionGroup::Midfielders)),
+        Some(FilterMenuItem::Position(PositionGroup::Attackers)),
+        None,   // separator
+        Some(FilterMenuItem::Side(SideFilter::All)),
+        Some(FilterMenuItem::Side(SideFilter::Left)),
+        Some(FilterMenuItem::Side(SideFilter::Central)),
+        Some(FilterMenuItem::Side(SideFilter::Right)),
+        None,   // separator
+        Some(FilterMenuItem::Availability(Availability::AvailableOnly)),
+        Some(FilterMenuItem::Availability(Availability::UnavailableOnly)),
+    ];
+
+    /// Menu label. The exe stores these with a leading space (used as
+    /// column indent) but the shared dropdown widget adds its own tick-
+    /// column indent, so we strip it here to line up with View / Sort By.
+    pub fn label(self) -> &'static str {
+        match self {
+            FilterMenuItem::Position(PositionGroup::All)         => "All Positions",
+            FilterMenuItem::Position(PositionGroup::Goalkeepers) => "Goalkeepers",
+            FilterMenuItem::Position(PositionGroup::Defenders)   => "Defenders",
+            FilterMenuItem::Position(PositionGroup::Midfielders) => "Midfielders",
+            FilterMenuItem::Position(PositionGroup::Attackers)   => "Attackers",
+            FilterMenuItem::Side(SideFilter::All)                => "All Sides",
+            FilterMenuItem::Side(SideFilter::Left)               => "Left Sided",
+            FilterMenuItem::Side(SideFilter::Central)            => "Central",
+            FilterMenuItem::Side(SideFilter::Right)              => "Right Sided",
+            FilterMenuItem::Availability(Availability::AvailableOnly)   => "Available Only",
+            FilterMenuItem::Availability(Availability::UnavailableOnly) => "Unavailable",
+            FilterMenuItem::Availability(Availability::All)      => "",   // never rendered
+        }
+    }
+
+    /// True when this menu item is currently the active selection —
+    /// used to draw the tick next to it.
+    pub fn is_active(self, f: SquadFilter) -> bool {
+        match self {
+            FilterMenuItem::Position(p)     => f.position == p,
+            FilterMenuItem::Side(s)         => f.side == s,
+            FilterMenuItem::Availability(a) => f.availability == a,
+        }
+    }
+}
+
+/// Apply a menu pick to the filter — returns the new SquadFilter.
+/// Matches the exe's "click the active option again to clear back to
+/// the group's `All`" behaviour for the availability group; the
+/// position and side groups just replace the current pick.
+pub fn apply_filter_pick(cur: SquadFilter, item: FilterMenuItem) -> SquadFilter {
+    let mut f = cur;
+    match item {
+        FilterMenuItem::Position(p)     => f.position = p,
+        FilterMenuItem::Side(s)         => f.side = s,
+        FilterMenuItem::Availability(a) => {
+            // Toggle-off: re-clicking the active availability filter
+            // clears it back to the "no restriction" state (`All`),
+            // matching the exe's reset-mask dispatch.
+            f.availability = if f.availability == a { Availability::All } else { a };
+        }
+    }
+    f
+}
+
+/// The Filter dropdown pops down under the Filter button on the
+/// right of the sub-toolbar. Right-aligned to the button
+/// (TOOLBAR_FILTER = 656..780) so the menu doesn't spill past the
+/// 800-pixel surface edge like it would if we used the same 145px
+/// width as View / Sort By anchored to the button's left. 145px
+/// width from x=635 stops exactly at 780, matching the button's
+/// right edge; row_h + y0 stay identical to the other dropdowns so
+/// the visual style (green rows, tick column, hover highlight) is
+/// the same shared widget.
+const FILTER_DROPDOWN: crate::menu_dropdown::DropdownRect =
+    crate::menu_dropdown::DropdownRect { x0: 635, y0: 148, width: 145, row_h: 18 };
+
+pub fn draw_filter_dropdown(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    filter: SquadFilter,
+    cursor_x: i32, cursor_y: i32,
+) {
+    let items: Vec<&str> = FilterMenuItem::MENU_ORDER
+        .iter()
+        .map(|o| o.map(|i| i.label()).unwrap_or(""))
+        .collect();
+    // A tick is drawn on any menu row whose item is currently active.
+    // The dropdown widget only supports a single selected row, so pick
+    // the FIRST active row (position tick wins if multiple would show).
+    let sel = FilterMenuItem::MENU_ORDER.iter().position(|o| {
+        matches!(o, Some(i) if i.is_active(filter))
+    });
+    crate::menu_dropdown::draw_dropdown(
+        surface, font, FILTER_DROPDOWN,
+        &items, sel, (cursor_x, cursor_y),
+    );
+}
+
+pub fn filter_dropdown_hit(x: i32, y: i32) -> Option<FilterMenuItem> {
+    let idx = FILTER_DROPDOWN.hit(FilterMenuItem::MENU_ORDER.len(), x, y)?;
+    FilterMenuItem::MENU_ORDER[idx]
 }
 
 /// The seventeen Sort By options shown when Traditional view opens

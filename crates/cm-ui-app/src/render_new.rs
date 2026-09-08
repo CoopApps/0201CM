@@ -505,13 +505,60 @@ pub fn try_render_club_preview_faithful(
     cursor_y: i32,
     pressed: cm_render::screen_club_squad_faithful::PressedButton,
 ) -> bool {
-    let Screen::ClubPreview {
-        choice, scroll, view, view_menu_open, jump_menu_open,
-        sort, sort_by, sort_menu_open,
-        comp_scope, comp_menu_open,
-        attr_group, attr_menu_open,
-    } = screen
-        else { return false };
+    // ClubPreview (Squad tab) and ClubTransfers (Transfers tab) share
+    // this chrome. Extract the club choice + scroll + jump-menu state
+    // from either variant; Squad-specific state (sort/filter/etc.)
+    // stays on ClubPreview and defaults on ClubTransfers, and the
+    // Transfers-only override fields ride the SquadState overrides.
+    use cm_render::screen_club_transfers_faithful::TransfersView;
+    let is_transfers = matches!(screen, Screen::ClubTransfers { .. });
+    let (choice, scroll, view, view_menu_open, jump_menu_open,
+         sort, sort_by, sort_menu_open,
+         comp_scope, comp_menu_open,
+         attr_group, attr_menu_open,
+         filter, filter_menu_open,
+         transfers_view) = match screen {
+        Screen::ClubPreview {
+            choice, scroll, view, view_menu_open, jump_menu_open,
+            sort, sort_by, sort_menu_open,
+            comp_scope, comp_menu_open,
+            attr_group, attr_menu_open,
+            filter, filter_menu_open,
+        } => (choice, scroll, *view, *view_menu_open, *jump_menu_open,
+              *sort, *sort_by, *sort_menu_open,
+              *comp_scope, *comp_menu_open,
+              *attr_group, *attr_menu_open,
+              *filter, *filter_menu_open,
+              TransfersView::PlayersIn),
+        Screen::ClubTransfers { choice, view, view_menu_open,
+                                 scroll, jump_menu_open } => (
+            choice, scroll,
+            cm_render::screen_club_squad_faithful::SquadView::Traditional,
+            *view_menu_open, *jump_menu_open,
+            None,
+            cm_render::screen_club_squad_faithful::SortByKey::Position,
+            false,
+            cm_render::screen_club_squad_faithful::CompScope::League, false,
+            cm_render::screen_club_squad_faithful::AttrGroup::Physical, false,
+            cm_render::screen_club_squad_faithful::SquadFilter::default(), false,
+            *view),
+        _ => return false,
+    };
+    // Deref to plain values so the rest of the function can keep its
+    // `*x` style unchanged. `sort` needs a re-borrow to match the
+    // original `Option<SquadSort>` shape.
+    let sort = &sort;
+    let sort_by = &sort_by;
+    let sort_menu_open = &sort_menu_open;
+    let comp_scope = &comp_scope;
+    let comp_menu_open = &comp_menu_open;
+    let attr_group = &attr_group;
+    let attr_menu_open = &attr_menu_open;
+    let filter = &filter;
+    let filter_menu_open = &filter_menu_open;
+    let view = &view;
+    let view_menu_open = &view_menu_open;
+    let jump_menu_open = &jump_menu_open;
     let Some(world) = world else { return false };
 
     // Build the exe's "D RC" / "F LC" style position code straight
@@ -909,7 +956,17 @@ pub fn try_render_club_preview_faithful(
                 }
                 c[5] = pv.international_caps().to_string();
                 c[6] = pv.international_goals().to_string();
-                // Form / Morale / Cond. (7/8/9) — same TBD blockers.
+                // Form (col 7) — dash at boot; no matches played yet.
+                c[7] = "-".to_string();
+                // Morale (col 8) — every player starts "Ok" pre-season,
+                // same convention the Selection view uses.
+                c[8] = "Ok".to_string();
+                // Cond. (col 9) — same deterministic 70..80% hash as
+                // Selection so the number stays consistent between views.
+                let mut h = person.id.wrapping_mul(0x9E3779B9);
+                h ^= h >> 13; h = h.wrapping_mul(0xC2B2AE35); h ^= h >> 16;
+                let pct = 70 + (h % 11);
+                c[9] = format!("{pct}%");
             }
         }
         c
@@ -1053,6 +1110,54 @@ pub fn try_render_club_preview_faithful(
         let link = pv.player_data_id().map(|l| l as u32).unwrap_or(person.id);
         let attrs = attr_by_id.get(&link).copied();
         let pos = attrs.map(position_code).unwrap_or_default();
+        // -------- Filter predicate (exe FUN_00457200 filter dropdown) --
+        // Position-group filter: first "/"-separated head of the code.
+        // Head letters map to groups per the exe's Filter dropdown:
+        //   GK          -> Goalkeepers
+        //   SW / D / WB -> Defenders
+        //   DM / M / AM -> Midfielders
+        //   F  / S      -> Attackers
+        use cm_render::screen_club_squad_faithful::{
+            Availability, PositionGroup, SideFilter,
+        };
+        {
+            let head_block = pos.split(' ').next().unwrap_or("");
+            let head = head_block.split('/').next().unwrap_or("");
+            let is_gk = head == "GK";
+            let is_def = matches!(head, "SW" | "D" | "WB");
+            let is_mid = matches!(head, "DM" | "M" | "AM");
+            let is_att = matches!(head, "F" | "S");
+            let pos_ok = match filter.position {
+                PositionGroup::All         => true,
+                PositionGroup::Goalkeepers => is_gk,
+                PositionGroup::Defenders   => is_def,
+                PositionGroup::Midfielders => is_mid,
+                PositionGroup::Attackers   => is_att,
+            };
+            if !pos_ok { continue; }
+            // Side letters after the space — R = right, L = left,
+            // C = central. A player may qualify for multiple sides.
+            let sides = pos.split_once(' ').map(|(_, s)| s).unwrap_or("");
+            let side_ok = match filter.side {
+                SideFilter::All     => true,
+                SideFilter::Left    => sides.contains('L'),
+                SideFilter::Central => sides.contains('C'),
+                SideFilter::Right   => sides.contains('R'),
+            };
+            if !side_ok { continue; }
+            // Availability — at pre-launch, before any match has been
+            // played, no player is injured / on loan / cup-tied /
+            // barred from playing parent club. All players count as
+            // Available; nobody is Unavailable. Wire real flags here
+            // once the injury/loan/cup-tie subsystems land.
+            let is_available = true;
+            let avail_ok = match filter.availability {
+                Availability::All            => true,
+                Availability::AvailableOnly  => is_available,
+                Availability::UnavailableOnly => !is_available,
+            };
+            if !avail_ok { continue; }
+        }
         // Every non-Traditional view (Contract / Selection / Stats /
         // More Stats / Attributes / Other) uses the full "Firstname
         // Lastname" — Traditional is the only view that abbreviates
@@ -1344,9 +1449,45 @@ pub fn try_render_club_preview_faithful(
     let jump_labels_refs: Vec<&str> = jump_labels.iter().map(|s| s.as_str()).collect();
     let _ = jump_ids;   // used by the app-side click handler, threaded there instead
 
+    // Transfers subtitle format — verified against the GDI capture
+    // scratchpad/prelaunch/transfers_players_in.png (Pro Vercelli,
+    // 2001-10-10). The exe uses the SHORT trailing year: "2001/2",
+    // NOT "2001/02". Exe format string ref: strings.json:611
+    // "<Title> - Season <year>".
+    let transfers_subtitle: String = if is_transfers {
+        format!("{} - Season 2001/2", transfers_view.label())
+    } else { String::new() };
+    // View button on the Transfers screen is labelled literally
+    // "View" with a ▼ arrow — it does NOT relabel to the current
+    // sub-view name (I had that wrong; the sub-view name shows only
+    // in the subtitle band). Confirmed from the capture: the button
+    // reads "View" on Pro Vercelli even though Players In is active.
+    let (
+        players_slice,
+        top_tab_active,
+        subtitle_override,
+        hide_middle_and_filter,
+        view_btn_label_override,
+        view_menu_open_effective,
+    ) = if is_transfers {
+        (&[][..],
+         1u8,
+         Some(transfers_subtitle.as_str()),
+         true,       // squad's Sort By / Filter don't paint on Transfers
+         None,       // View button label stays "View"
+         *view_menu_open)
+    } else {
+        (refs.as_slice(),
+         0u8,
+         None,
+         false,
+         None,
+         *view_menu_open)
+    };
+
     let state = cm_render::screen_club_squad_faithful::SquadState {
         club_name: &choice.club_name,
-        players: &refs,
+        players: players_slice,
         scroll: *scroll,
         photo_seed,
         has_manager,
@@ -1356,7 +1497,7 @@ pub fn try_render_club_preview_faithful(
         kit_bg_rgb565,
         kit_fg_rgb565,
         view: *view,
-        view_menu_open: *view_menu_open,
+        view_menu_open: view_menu_open_effective,
         cursor_x,
         cursor_y,
         jump_menu_open: *jump_menu_open,
@@ -1367,10 +1508,65 @@ pub fn try_render_club_preview_faithful(
         comp_menu_open: *comp_menu_open,
         attr_group: *attr_group,
         attr_menu_open: *attr_menu_open,
+        filter: *filter,
+        filter_menu_open: *filter_menu_open,
         pressed,
+        top_tab_active,
+        subtitle_override,
+        hide_middle_and_filter_buttons: hide_middle_and_filter,
+        view_button_label_override: view_btn_label_override,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
-    cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);
+    // For the Transfers tab we suppress the Squad view_menu_open so the
+    // Squad SquadView dropdown never paints; the Transfers dropdown
+    // (Players In / Players Out / ... with its own 7-row menu) then
+    // paints on top from here instead.
+    let mut squad_state = state;
+    if is_transfers {
+        squad_state.view_menu_open = false;
+    }
+    cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &squad_state);
+    if is_transfers {
+        // Demo row so we can eyeball how a real signing renders on
+        // this screen — Zubin Anklesaria, hypothetical Cheltenham
+        // signing from Reading on Sept 1 2001 for £150K. Real rows
+        // will replace this once the transfer-history record layout
+        // is decoded (LAB_004551c0 row loop, still undecompiled).
+        // Only paints on the PlayersIn sub-view; the other sub-views
+        // (Players Out / Future / Loans / Staff) stay empty until
+        // their own row shape is decoded.
+        use cm_render::screen_club_transfers_faithful::{
+            TransferRow, TransfersView, render_players_in_rows,
+        };
+        if transfers_view == TransfersView::PlayersIn {
+            // Row body uses arial_narrow_13 (pixel_slot 3), the larger
+            // face — verified against the GDI captures: name text
+            // stands ~12 px tall matching that slot, not the 10/11
+            // used elsewhere on this chrome.
+            let font = fonts.pixel_slot(3).clone();
+            let demo: [TransferRow; 1] = [TransferRow {
+                name: "Zubin Anklesaria".to_string(),
+                position: "M C".to_string(),
+                other_club: "Reading".to_string(),
+                fee: "\u{00A3}150K".to_string(),
+                date: "1.9.01".to_string(),
+            }];
+            render_players_in_rows(&mut packed, &font, &demo);
+        }
+    }
+    if is_transfers && view_menu_open_effective {
+        // The Transfers view dropdown uses the same shared widget
+        // (green rows, tick column, hover highlight) as View / Sort By
+        // — see screen_club_transfers_faithful::draw_transfers_view_dropdown.
+        // F_SMALL = pixel_slot(1) — same slot render_squad uses.
+        let font = fonts.pixel_slot(1).clone();
+        cm_render::screen_club_transfers_faithful::draw_transfers_view_dropdown(
+            &mut packed,
+            &font,
+            transfers_view,
+            cursor_x, cursor_y,
+        );
+    }
     blit_packed_to_surface(&packed, out);
     // Keep the import alive — screen_club_preview_faithful is retained
     // for the older placeholder variant while we're bootstrapping.

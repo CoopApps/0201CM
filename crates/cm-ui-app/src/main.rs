@@ -105,6 +105,29 @@ enum Screen {
         attr_group: cm_render::screen_club_squad_faithful::AttrGroup,
         /// Whether the Attributes dropdown is currently open.
         attr_menu_open: bool,
+        /// Row-level filter (position group + side + availability),
+        /// applied to the player list before sort/scroll. Defaults to
+        /// no restriction — every row passes through.
+        filter: cm_render::screen_club_squad_faithful::SquadFilter,
+        /// Whether the Filter dropdown is currently open.
+        filter_menu_open: bool,
+    },
+    /// Transfers page — top tab #1 of the club preview. Shares chrome
+    /// with ClubPreview (title, tabs, sidebar, bottom bar) but the
+    /// sub-toolbar has only a View button and the body shows the
+    /// active transfer view (Players In / Out / Loans / Staff).
+    ClubTransfers {
+        choice: cm_domain::ManagerClubChoice,
+        /// Which sub-view is active. Boot default: Players In.
+        view: cm_render::screen_club_transfers_faithful::TransfersView,
+        /// `true` when the View dropdown is popped open.
+        view_menu_open: bool,
+        /// Top-of-list scroll offset (unused until the row list is
+        /// populated once the transfer-history record decodes).
+        scroll: usize,
+        /// Jump-menu (division club list) state — same behaviour as
+        /// ClubPreview so the corner-triangle box still works.
+        jump_menu_open: bool,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -566,7 +589,8 @@ impl App {
             | Screen::EnterName
             | Screen::SelectNationality { .. }
             | Screen::SelectClub { .. }
-            | Screen::ClubPreview { .. } => {
+            | Screen::ClubPreview { .. }
+            | Screen::ClubTransfers { .. } => {
                 self.frame.fill(0, 0, 0);
                 self.status = Some(
                     "pre-boot fast path refused to build a pool".into()
@@ -750,6 +774,39 @@ impl App {
             Screen::SelectNationality { .. } => Pressed::None,
             // ClubPreview owns its own hit-test (Take Control button +
             // Back nav) — no per-widget press tracking.
+            // Transfers uses the same press-tracking as ClubPreview —
+            // View button, top tabs, jump triangle, Back/Next.
+            Screen::ClubTransfers { .. } => {
+                use cm_render::screen_club_squad_faithful::JUMP_BUTTON_RECT;
+                // Transfers View button is on the RIGHT — same rect as
+                // Squad's Filter button. See render_squad's Transfers
+                // sub-toolbar branch.
+                const TRANSFERS_VIEW_RECT: (i32, i32, i32, i32) =
+                    (656, 125, 780, 145);
+                let hit = |r: (i32,i32,i32,i32)| x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3;
+                if hit(TRANSFERS_VIEW_RECT) { Pressed::ClubPreview(ClubPreviewButton::View) }
+                else if x >= 660 && x <= 785 && y >= 4 && y <= 24
+                    { Pressed::ClubPreview(ClubPreviewButton::TakeControl) }
+                else if y >= 555 && y <= 590 && x >= 100 && x <= 617
+                    { Pressed::ClubPreview(ClubPreviewButton::Back) }
+                else if y >= 555 && y <= 590 && x >= 619 && x <= 790
+                    { Pressed::ClubPreview(ClubPreviewButton::Next) }
+                else if hit(JUMP_BUTTON_RECT)
+                    { Pressed::ClubPreview(ClubPreviewButton::JumpTriangle) }
+                else if y >= 80 && y <= 115 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::TopTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                }
+                else if y >= 510 && y <= 545 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::BottomTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                }
+                else { Pressed::None }
+            }
             Screen::ClubPreview { view, .. } => {
                 use cm_render::screen_club_squad_faithful::{
                     VIEW_BUTTON_RECT, SORT_BUTTON_RECT, JUMP_BUTTON_RECT,
@@ -878,6 +935,10 @@ impl App {
         let mut goto_reopen_select_team = false;
         // Deferred: Take Control -> install manager + Dashboard/News.
         let mut install_club: Option<cm_domain::ManagerClubChoice> = None;
+        // Deferred: Transfers top tab -> switch to ClubTransfers.
+        let mut goto_club_transfers: Option<cm_domain::ManagerClubChoice> = None;
+        // Deferred: Squad top tab from ClubTransfers -> back to ClubPreview.
+        let mut goto_club_squad: Option<cm_domain::ManagerClubChoice> = None;
         // Deferred: a News control without a ported target was clicked.
         let mut news_note = false;
         match &mut self.screen {
@@ -1054,7 +1115,8 @@ impl App {
                 choice, view, view_menu_open, jump_menu_open,
                 sort, sort_by, sort_menu_open,
                 comp_scope, comp_menu_open,
-                attr_group, attr_menu_open, scroll, ..
+                attr_group, attr_menu_open,
+                filter, filter_menu_open, scroll, ..
             } => {
                 use cm_render::screen_club_squad_faithful::{
                     view_dropdown_hit, VIEW_BUTTON_RECT,
@@ -1063,9 +1125,20 @@ impl App {
                     sort_dropdown_hit, SORT_BUTTON_RECT, SquadView,
                     comp_dropdown_hit, SortButtonMode,
                     attr_dropdown_hit,
+                    filter_dropdown_hit, apply_filter_pick,
                 };
+                // Sub-toolbar Filter button rect (TOOLBAR_FILTER in
+                // screen_club_squad_faithful.rs).
+                const FILTER_BUTTON_RECT: (i32, i32, i32, i32) =
+                    (656, 125, 780, 145);
                 // Dropdown priority: whichever is open catches the click.
-                if *sort_menu_open {
+                if *filter_menu_open {
+                    if let Some(item) = filter_dropdown_hit(x, y) {
+                        *filter = apply_filter_pick(*filter, item);
+                        *scroll = 0;
+                    }
+                    *filter_menu_open = false;
+                } else if *sort_menu_open {
                     if let Some(k) = sort_dropdown_hit(x, y) {
                         *sort_by = k;
                         *scroll = 0;
@@ -1149,6 +1222,12 @@ impl App {
                         SortButtonMode::Attributes   => *attr_menu_open = true,
                         SortButtonMode::Hidden       => {}
                     }
+                } else if x >= FILTER_BUTTON_RECT.0 && x <= FILTER_BUTTON_RECT.2
+                       && y >= FILTER_BUTTON_RECT.1 && y <= FILTER_BUTTON_RECT.3 {
+                    *filter_menu_open = true;
+                } else if y >= 80 && y <= 115 && x >= 239 && x <= 375 {
+                    // Top tab #1 — Transfers.
+                    goto_club_transfers = Some(choice.clone());
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
@@ -1176,6 +1255,66 @@ impl App {
                     } else {
                         eprintln!("[sort] header_hit returned None");
                     }
+                }
+            }
+            Screen::ClubTransfers {
+                choice, view, view_menu_open, jump_menu_open, scroll,
+            } => {
+                use cm_render::screen_club_squad_faithful::{
+                    JUMP_BUTTON_RECT, jump_menu_hit,
+                };
+                use cm_render::screen_club_transfers_faithful::
+                    transfers_view_dropdown_hit;
+                // Transfers screen puts View on the RIGHT (same rect
+                // as Squad's Filter button), not the left. Verified
+                // from scratchpad/prelaunch/transfers_players_in.png.
+                const VIEW_BUTTON_RECT: (i32, i32, i32, i32) =
+                    (656, 125, 780, 145);
+                // Dropdown open eats clicks first.
+                if *view_menu_open {
+                    if let Some(v) = transfers_view_dropdown_hit(x, y) {
+                        *view = v;
+                        *scroll = 0;
+                    }
+                    *view_menu_open = false;
+                } else if *jump_menu_open {
+                    // Same jump list the ClubPreview branch builds so
+                    // the corner-triangle box still works from Transfers.
+                    let picked = if let Some(world) = self.world.as_ref() {
+                        let mut clubs: Vec<(String, u32)> = world.core.clubs.iter()
+                            .filter_map(|rec| {
+                                let cv = cm_domain::typed_records::ClubView::new(rec);
+                                let did = cv.division_id().map(|v| v as u32)?;
+                                if did != choice.division_id { return None; }
+                                let short = cv.secondary_name();
+                                let name = if short.trim().is_empty() { cv.primary_name() } else { short };
+                                Some((name, cv.id()))
+                            })
+                            .collect();
+                        clubs.sort_by(|a, b| a.0.cmp(&b.0));
+                        jump_menu_hit(x, y, clubs.len())
+                            .and_then(|i| clubs.get(i).cloned())
+                    } else { None };
+                    if let Some((name, new_id)) = picked {
+                        if !name.is_empty() && (new_id & 0xFFFF_0000) == 0 {
+                            choice.club_id = new_id;
+                            choice.club_name = name;
+                        }
+                    }
+                    *jump_menu_open = false;
+                } else if x >= JUMP_BUTTON_RECT.0 && x <= JUMP_BUTTON_RECT.2
+                       && y >= JUMP_BUTTON_RECT.1 && y <= JUMP_BUTTON_RECT.3 {
+                    *jump_menu_open = true;
+                } else if x >= VIEW_BUTTON_RECT.0 && x <= VIEW_BUTTON_RECT.2
+                       && y >= VIEW_BUTTON_RECT.1 && y <= VIEW_BUTTON_RECT.3 {
+                    *view_menu_open = true;
+                } else if y >= 80 && y <= 115 && x >= 100 && x <= 237 {
+                    // Top tab #0 — Squad. Back to ClubPreview.
+                    goto_club_squad = Some(choice.clone());
+                } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    install_club = Some(choice.clone());
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    goto_reopen_select_team = true;
                 }
             }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
@@ -1338,16 +1477,49 @@ impl App {
                 view_menu_open: false,
                 jump_menu_open: false,
                 sort: None,
-                sort_by: cm_render::screen_club_squad_faithful::SortByKey::Name,
+                // Exe default at boot: Position (GK → SW → D → DM → M →
+                // AM → F → S), which paints the position code in the
+                // right column and orders the two grid columns by
+                // position group.
+                sort_by: cm_render::screen_club_squad_faithful::SortByKey::Position,
                 sort_menu_open: false,
                 comp_scope: cm_render::screen_club_squad_faithful::CompScope::League,
                 comp_menu_open: false,
                 attr_group: cm_render::screen_club_squad_faithful::AttrGroup::Physical,
                 attr_menu_open: false,
+                filter: cm_render::screen_club_squad_faithful::SquadFilter::default(),
+                filter_menu_open: false,
             };
         }
         if goto_reopen_select_team {
             self.goto_select_club();
+        }
+        if let Some(choice) = goto_club_transfers {
+            self.screen = Screen::ClubTransfers {
+                choice,
+                view: cm_render::screen_club_transfers_faithful::TransfersView::PlayersIn,
+                view_menu_open: false,
+                scroll: 0,
+                jump_menu_open: false,
+            };
+        }
+        if let Some(choice) = goto_club_squad {
+            self.screen = Screen::ClubPreview {
+                choice,
+                scroll: 0,
+                view: cm_render::screen_club_squad_faithful::SquadView::Traditional,
+                view_menu_open: false,
+                jump_menu_open: false,
+                sort: None,
+                sort_by: cm_render::screen_club_squad_faithful::SortByKey::Position,
+                sort_menu_open: false,
+                comp_scope: cm_render::screen_club_squad_faithful::CompScope::League,
+                comp_menu_open: false,
+                attr_group: cm_render::screen_club_squad_faithful::AttrGroup::Physical,
+                attr_menu_open: false,
+                filter: cm_render::screen_club_squad_faithful::SquadFilter::default(),
+                filter_menu_open: false,
+            };
         }
         if let Some(choice) = install_club {
             self.take_control_of_club(&choice);
@@ -1884,6 +2056,7 @@ impl ApplicationHandler for App {
                     Screen::ClubPreview { sort_menu_open: true, .. } => true,
                     Screen::ClubPreview { comp_menu_open: true, .. } => true,
                     Screen::ClubPreview { attr_menu_open: true, .. } => true,
+                    Screen::ClubPreview { filter_menu_open: true, .. } => true,
                     Screen::SelectNationality { filter_open: true, .. } => true,
                     _ => false,
                 };
@@ -2046,6 +2219,7 @@ impl ApplicationHandler for App {
                                 | Screen::SelectNationality { .. }
                                 | Screen::SelectClub { .. }
                                 | Screen::ClubPreview { .. }
+                                | Screen::ClubTransfers { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
