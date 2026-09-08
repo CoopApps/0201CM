@@ -13952,10 +13952,11 @@ impl World {
     /// panel (FUN_0047ea60 lines 854-875), not a boot pass.
     pub fn assign_squad_numbers(&mut self) {
         use std::collections::BTreeMap;
-        let has_club: BTreeMap<u32, ()> = self.staff.type6.iter()
-            .filter(|p| p.current_club_id().is_some())
-            .map(|p| (p.id, ()))
+        // person id -> club id (only staff-with-employer get a number).
+        let person_club: BTreeMap<u32, u32> = self.staff.type6.iter()
+            .filter_map(|p| p.current_club_id().map(|c| (p.id, c)))
             .collect();
+        // type10 id -> person id.
         let type10_owner: BTreeMap<u32, u32> = self.staff.type6.iter()
             .filter_map(|p| {
                 let pv = crate::typed_records::PlayerView::from_split(p.id, &p.body);
@@ -13963,12 +13964,53 @@ impl World {
                 Some((link, p.id))
             })
             .collect();
+
+        // -- Pass 1: FUN_00842f40 clamp-copy of the preferred number
+        //    from type10.flags_byte_04 into the pool. Records the
+        //    club so pass 2 can group by roster.
+        //
+        //    Per-club (staff_id → assigned number) map for fast
+        //    conflict detection.
+        let mut roster_by_club: BTreeMap<u32, Vec<(u32, u8)>> = BTreeMap::new();
         for attr in &self.staff.type10 {
             let Some(person_id) = type10_owner.get(&attr.id).copied() else { continue; };
-            if !has_club.contains_key(&person_id) { continue; }
+            let Some(club_id) = person_club.get(&person_id).copied() else { continue; };
             let raw = attr.flags_byte_04 as i8;
-            let n = if raw < 0 { 0 } else if raw <= 50 { raw as u8 } else { 50 };
-            self.squad_numbers.insert(attr.id, n);
+            let mut n: u8 = if raw < 0 { 0 } else if raw <= 50 { raw as u8 } else { 50 };
+            // Duplicate-guard: if another player at the same club
+            // already claimed `n`, treat this player as unassigned
+            // so pass 2 gives them the next free number. Matches the
+            // exe — no two players share a shirt.
+            if n > 0 {
+                let taken = roster_by_club.get(&club_id)
+                    .map(|v| v.iter().any(|&(_, m)| m == n))
+                    .unwrap_or(false);
+                if taken { n = 0; }
+            }
+            roster_by_club.entry(club_id).or_default().push((attr.id, n));
+        }
+
+        // -- Pass 2: FUN_0047ea60 auto-fill for zeros. Per club, scan
+        //    1..50 and grant the lowest free number to each unnumbered
+        //    player in insertion order (which is type10 pool order,
+        //    matching the exe's own iteration). Guarantees every
+        //    staff-with-employer leaves boot with a squad number.
+        for (_, roster) in roster_by_club.iter_mut() {
+            let mut taken: [bool; 51] = [false; 51];
+            for &(_, n) in roster.iter() {
+                if n > 0 && (n as usize) < taken.len() { taken[n as usize] = true; }
+            }
+            for entry in roster.iter_mut() {
+                if entry.1 == 0 {
+                    if let Some(n) = (1u8..=50).find(|&k| !taken[k as usize]) {
+                        entry.1 = n;
+                        taken[n as usize] = true;
+                    }
+                }
+            }
+            for &(type10_id, n) in roster.iter() {
+                self.squad_numbers.insert(type10_id, n);
+            }
         }
     }
 
