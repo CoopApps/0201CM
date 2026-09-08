@@ -974,7 +974,13 @@ pub fn try_render_club_preview_faithful(
             position: pos,
             age: person.age_at(2001, start_day),
             marker: ' ',
-            squad_number: attrs.map(|a| a.squad_number).unwrap_or(0),
+            // Read from the World.squad_numbers pool (keyed by
+            // type10 id). Falls back to 0 (empty) when the boot-time
+            // assignment pass hasn't run yet, which the renderer
+            // paints as an empty blue cell.
+            squad_number: attrs
+                .and_then(|a| world.squad_numbers.get(&a.id).copied())
+                .unwrap_or(0),
             cols,
         });
     }

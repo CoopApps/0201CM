@@ -571,6 +571,17 @@ pub struct World {
     /// the init pass yet.
     #[serde(default)]
     pub contracts: Option<contract_init::ContractPool>,
+    /// Boot-assigned squad numbers, keyed by `DomainStaffType10.id`.
+    /// Populated by `assign_squad_numbers` inside
+    /// `run_start_game_init`. Kept OFF the type10 record itself
+    /// because `type10 + 0x45` is NOT the squad-number byte the
+    /// name once suggested — the ghidra archaeology (see
+    /// [[squad-number-not-at-45]]) shows FUN_0052e260 and
+    /// FUN_0069c6f0 read/write that byte as a `[1, 20]`
+    /// form/morale attribute. Writing squad numbers there would
+    /// corrupt the real form value.
+    #[serde(default)]
+    pub squad_numbers: std::collections::BTreeMap<u32, u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -783,6 +794,15 @@ pub struct DomainStaffType10 {
     #[serde(default)] pub work_rate: i8,
     #[serde(default)] pub technique: i8,
     // ---- Footer (+0x45) ----
+    /// Footer byte at record `+0x45`. **NOTE 2026-09-08**: was named
+    /// `squad_number` from the initial layout guess, but ghidra
+    /// archaeology (FUN_0052e260 setter, FUN_0069c6f0 post-match
+    /// writer, FUN_0051f5d0 seeder default = 10) proves this byte is
+    /// a `[1, 20]` form / morale attribute, NOT the squad number.
+    /// Real squad numbers live in `World.squad_numbers`, populated at
+    /// boot by `assign_squad_numbers`. Kept the old field name for
+    /// backward-compat JSON deserialisation; the semantic will be
+    /// renamed on a future record-layout revision.
     #[serde(default)] pub squad_number: u8,
     // ---- Legacy (raw byte accessors) — for backward-compat only. ----
     #[serde(default, alias = "probable_ca")] pub rating_short_0x05: u16,
@@ -13002,6 +13022,7 @@ impl World {
             staff: staff_book,
             staff_summary,
             contracts: None,
+            squad_numbers: std::collections::BTreeMap::new(),
         }
     }
 
@@ -13745,6 +13766,7 @@ impl World {
             staff,
             staff_summary: StaffSummary::default(),
             contracts: None,
+            squad_numbers: std::collections::BTreeMap::new(),
         };
         world.normalize_base_data();
         world.init_missing_player_sides();
@@ -13971,11 +13993,15 @@ impl World {
                     .then(b.1.cmp(&a.1))
                     .then(a.2.cmp(&b.2))
             );
-            // Assign 1..=roster.len() (clamps to u8 — CM never has more
-            // than 255 players at a single club, and 30-50 is typical).
+            // Assign 1..=roster.len() (clamps to u8 — CM never has
+            // more than 255 players at a single club, and 30-50 is
+            // typical). Writes go to World.squad_numbers keyed by
+            // type10 id, NOT to type10+0x45 (that byte is a form
+            // attribute — see the note on World.squad_numbers).
             for (rank, &(_, _, idx)) in roster.iter().enumerate() {
                 let n = (rank + 1).min(255) as u8;
-                self.staff.type10[idx].squad_number = n;
+                let type10_id = self.staff.type10[idx].id;
+                self.squad_numbers.insert(type10_id, n);
             }
         }
     }
