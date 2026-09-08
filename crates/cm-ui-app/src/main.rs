@@ -1991,6 +1991,13 @@ impl ApplicationHandler for App {
                 match state {
                     winit::event::ElementState::Pressed => {
                         self.pressed = self.hit_test_at(self.cursor.0, self.cursor.1);
+                        // Wake the window so the pressed-invert bevel
+                        // paints immediately instead of waiting for
+                        // the mouse-release redraw — without this the
+                        // button reads flat until release.
+                        if !matches!(self.pressed, Pressed::None) {
+                            if let Some(w) = self.window.as_ref() { w.request_redraw(); }
+                        }
                     }
                     winit::event::ElementState::Released => {
                         // Only fire the action if release lands on the same target as press;
