@@ -13929,24 +13929,33 @@ impl World {
         self.contracts = Some(contract_init::initialise_all(self));
     }
 
-    /// Assign 1..N squad numbers per club by grouping on position
-    /// (GK first, then SW, D, DM, M, AM, F, S) and ranking within
-    /// each group by descending CA. Matches the exe's boot-time
-    /// pass: highest-CA GK = 1, top defenders 2..6, top mid/att
-    /// 7..11, then backups, then reserves. Sentinel values in the
-    /// shipped .dat (Cheltenham ships every player with 2) get
-    /// replaced wholesale — squad numbers are always regenerated at
-    /// boot so a partial ship doesn't leak through.
+    /// Populate `World.squad_numbers` from every staff-with-employer's
+    /// type10 record. Direct port of the exe's boot-time copy loop in
+    /// FUN_00842f40 (called from FUN_008120d0 at boot for every
+    /// playable club):
+    ///
+    /// ```text
+    ///   b = *(char*)((player->type10) + 4);   // preferred number
+    ///   if (b < 0)      contract->+0x3a = 0;
+    ///   else if (b < 51) contract->+0x3a = b;
+    ///   else            contract->+0x3a = 50;
+    /// ```
+    ///
+    /// The byte at `type10 + 4` (our `flags_byte_04` field) IS the
+    /// player's preferred squad number — NOT a CA-anchored ranking
+    /// pass as an earlier port guess had it. Cross-checked against
+    /// Cheltenham Squad Number capture: Steve Jones 20, Jackson 18,
+    /// Duff M 2, Duff S 24 all match the exe verbatim.
+    ///
+    /// Zero-value slots stay 0 and paint as an empty cell — the exe
+    /// only fills them via the interactive "Submit Squad Numbers"
+    /// panel (FUN_0047ea60 lines 854-875), not a boot pass.
     pub fn assign_squad_numbers(&mut self) {
         use std::collections::BTreeMap;
-        // person id → club id (only players with a club get numbered).
-        let person_club: BTreeMap<u32, u32> = self.staff.type6.iter()
-            .filter_map(|p| p.current_club_id().map(|c| (p.id, c)))
+        let has_club: BTreeMap<u32, ()> = self.staff.type6.iter()
+            .filter(|p| p.current_club_id().is_some())
+            .map(|p| (p.id, ()))
             .collect();
-        // Inverse map: type10 id -> person id (O(1) lookup instead of
-        // the naive O(N) linear scan that made this pass take minutes
-        // over 132k records and was silently dropping most players
-        // from the assignment).
         let type10_owner: BTreeMap<u32, u32> = self.staff.type6.iter()
             .filter_map(|p| {
                 let pv = crate::typed_records::PlayerView::from_split(p.id, &p.body);
@@ -13954,55 +13963,12 @@ impl World {
                 Some((link, p.id))
             })
             .collect();
-        // Group type10 indices by club, tagged with (group, ca).
-        // group: 0=GK 1=SW 2=D 3=DM 4=M 5=AM 6=F/S.
-        let mut by_club: BTreeMap<u32, Vec<(u8, i16, usize)>> = BTreeMap::new();
-        for (i, attr) in self.staff.type10.iter().enumerate() {
+        for attr in &self.staff.type10 {
             let Some(person_id) = type10_owner.get(&attr.id).copied() else { continue; };
-            let Some(club_id) = person_club.get(&person_id).copied() else { continue; };
-            // Primary aptitude — pick the strongest of the 8 role
-            // groups. Ties break in GK → SW → D → DM → M → AM → F → S
-            // preference order.
-            // Position groups: 0=GK 1=SW 2=D 3=DM 4=M 5=AM 6=F/S.
-            // The type10 aptitude set doesn't split F vs S (there's a
-            // single apt_attacker byte covering both), which is fine
-            // for ranking — the exe uses the same apt for both roles
-            // and only splits on display via the aptitude formatter.
-            let apts = [
-                attr.apt_goalkeeper,
-                attr.apt_sweeper,
-                attr.apt_defender,
-                attr.apt_def_midfielder,
-                attr.apt_midfielder,
-                attr.apt_att_midfielder,
-                attr.apt_attacker,
-            ];
-            let (group, _) = apts.iter().enumerate()
-                .fold((7u8, i8::MIN), |(bg, bv), (i, &v)| {
-                    if v > bv { (i as u8, v) } else { (bg, bv) }
-                });
-            let ca = if attr.current_ability > 0 { attr.current_ability } else { 0 };
-            by_club.entry(club_id).or_default().push((group, ca, i));
-        }
-        // Sort each club's list: group ASC, CA DESC, then id ASC as a
-        // stable tiebreaker so re-runs of the same DB assign the
-        // same numbers.
-        for (_, roster) in by_club.iter_mut() {
-            roster.sort_by(|a, b|
-                a.0.cmp(&b.0)
-                    .then(b.1.cmp(&a.1))
-                    .then(a.2.cmp(&b.2))
-            );
-            // Assign 1..=roster.len() (clamps to u8 — CM never has
-            // more than 255 players at a single club, and 30-50 is
-            // typical). Writes go to World.squad_numbers keyed by
-            // type10 id, NOT to type10+0x45 (that byte is a form
-            // attribute — see the note on World.squad_numbers).
-            for (rank, &(_, _, idx)) in roster.iter().enumerate() {
-                let n = (rank + 1).min(255) as u8;
-                let type10_id = self.staff.type10[idx].id;
-                self.squad_numbers.insert(type10_id, n);
-            }
+            if !has_club.contains_key(&person_id) { continue; }
+            let raw = attr.flags_byte_04 as i8;
+            let n = if raw < 0 { 0 } else if raw <= 50 { raw as u8 } else { 50 };
+            self.squad_numbers.insert(attr.id, n);
         }
     }
 
