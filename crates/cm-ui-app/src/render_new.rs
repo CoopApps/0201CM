@@ -699,6 +699,7 @@ pub fn try_render_club_preview_faithful(
     /// record via a separate accessor when it lands.
     fn attr_slot_value(
         a: &cm_domain::DomainStaffType10,
+        person: &cm_domain::DomainStaffType6,
         slot: cm_render::screen_club_squad_faithful::AttrSlot,
     ) -> i8 {
         use cm_render::screen_club_squad_faithful::AttrSlot::*;
@@ -718,8 +719,14 @@ pub fn try_render_club_preview_faithful(
             Creativity        => at(0x43),  // id 7 — REAL, at +0x43
             Crossing          => at(0x23),  // id 8
             Decisions         => at(0x24),  // id 9
-            // Determination lives on Person +0x58, not type10.
-            Determination     => 0,
+            // Determination lives on Person +0x58 per id 10 in the
+            // FUN_0052d090 dispatch. PlayerView.determination() reads
+            // exactly that byte.
+            Determination     => {
+                let pv = cm_domain::typed_records::PlayerView::from_split(
+                    person.id, &person.body);
+                pv.determination() as i8
+            }
             Dribbling         => at(0x26),  // id 11
             Finishing         => at(0x27),  // id 12
             Flair             => at(0x28),  // id 13
@@ -882,7 +889,7 @@ pub fn try_render_club_preview_faithful(
                 if let Some(a) = attrs {
                     let slots = attr_group.attribute_indices();
                     for (col, slot) in (3..=11).zip(slots.iter()) {
-                        c[col] = attr_slot_value(a, *slot).to_string();
+                        c[col] = attr_slot_value(a, person, *slot).to_string();
                     }
                 }
             }
