@@ -91,6 +91,19 @@ pub struct SquadPlayer<'a> {
     /// inside the blue number-cell on Traditional view. `0` when the
     /// player isn't in the current squad numbering pass.
     pub squad_number: u8,
+    /// Sort-value fields — every entry on the Traditional Sort By
+    /// menu has a value the exe paints in the right column of each
+    /// row (Nationality "ENG", Age "23", Basic Wage "£475", Contract
+    /// Expiry "14.6.07", etc). Populated by the app from the exact
+    /// same sources the other views read.
+    pub nationality: &'a str,
+    pub int_caps: u16,
+    pub int_goals: u16,
+    pub condition_pct: u8,
+    pub morale: &'a str,
+    pub wage_str: &'a str,
+    pub expiry_str: &'a str,
+    pub value_str: &'a str,
     /// A marker rendered after the name — e.g. "*" for on the transfer
     /// list, empty when nothing special. Rendered in white ink like the
     /// exe capture.
@@ -797,13 +810,21 @@ pub fn render_squad(
                         else { "-".to_string() },
                     SortByKey::Age =>
                         p.age.map(|a| a.to_string()).unwrap_or_else(|| "-".to_string()),
+                    SortByKey::Nationality  => p.nationality.to_string(),
+                    SortByKey::IntCaps      => p.int_caps.to_string(),
+                    SortByKey::IntGoals     => p.int_goals.to_string(),
+                    SortByKey::Condition    => format!("{}%", p.condition_pct),
+                    SortByKey::Morale       => p.morale.to_string(),
+                    SortByKey::BasicWage    => p.wage_str.to_string(),
+                    SortByKey::ContractExpiry => p.expiry_str.to_string(),
+                    SortByKey::Value        => p.value_str.to_string(),
                     // Name — no useful right-col value (name already
                     // fills the wide cell); leave blank.
-                    SortByKey::Name        => String::new(),
-                    // Everything else = "-" until its data source
-                    // threads through (Form / Morale / Condition /
-                    // Nationality / Int. Caps / Goals / Wage / Expiry
-                    // / Value / season-stats family).
+                    SortByKey::Name         => String::new(),
+                    // Season-stats family (Form / Goals / Conceded /
+                    // Assists / Av. Rating) genuinely have no data
+                    // until a season has been played; '-' matches the
+                    // exe's boot-time blank state.
                     _ => "-".to_string(),
                 };
                 draw_wrapped_text(surface, pos.0, y0, pos.1, y1,

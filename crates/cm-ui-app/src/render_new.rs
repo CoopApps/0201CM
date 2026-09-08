@@ -930,10 +930,20 @@ pub fn try_render_club_preview_faithful(
         position: String,
         age: Option<u8>,
         marker: char,
-        /// Squad number 1..N assigned by `World::assign_squad_numbers`.
         squad_number: u8,
-        /// Per-view column strings — length matches
-        /// SquadView::column_headers for the active mode.
+        // Sort-value fields — one per Traditional Sort By key that
+        // has a real data source at boot (Nationality / Int. Caps /
+        // Int. Goals / Condition / Morale / Basic Wage / Contract
+        // Expiry / Value). Match the values the other views already
+        // show so switching sort key stays consistent.
+        nationality: String,
+        int_caps: u16,
+        int_goals: u16,
+        condition_pct: u8,
+        morale: String,
+        wage_str: String,
+        expiry_str: String,
+        value_str: String,
         cols: Vec<String>,
     }
     let mut rows: Vec<Row> = Vec::new();
@@ -969,18 +979,63 @@ pub fn try_render_club_preview_faithful(
         eprintln!("[squad-in] person_id={} first_name_id={} second_name_id={} current_club_id={:?} name={:?}",
                    person.id, person.first_name_id(), person.second_name_id(), cc, name);
         let cols = build_view_columns(*view, &pos, person, attrs, world);
+        // Sort-value fields — every Traditional Sort By key that has
+        // a real data source at boot.
+        let pv2 = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
+        let nationality: String = pv2.nation_id()
+            .and_then(|nid| world.core.nations.iter()
+                .map(|n| cm_domain::typed_records::NationView::new(n))
+                .find(|nv| nv.id() as i32 == nid)
+                .map(|nv| nv.three_letter_name().to_uppercase()))
+            .unwrap_or_else(|| "-".to_string());
+        let int_caps  = pv2.international_caps()  as u16;
+        let int_goals = pv2.international_goals() as u16;
+        // Condition — same 70..80 hash used by the Selection view's
+        // Cond. column so the number stays consistent when the user
+        // switches sort.
+        let mut h = person.id.wrapping_mul(0x9E3779B9);
+        h ^= h >> 13; h = h.wrapping_mul(0xC2B2AE35); h ^= h >> 16;
+        let condition_pct: u8 = (70 + (h % 11)) as u8;
+        // Wage / value / expiry — read from the contract pool, which
+        // already layer-overrode the shipped DB (contract_init.rs).
+        let ct = world.contracts.as_ref()
+            .and_then(|p| p.contract_for_staff(person.id));
+        let wage_i = ct.map(|r| r.wage).unwrap_or_else(|| pv2.wage());
+        let value_i = ct.map(|r| r.value).unwrap_or_else(|| pv2.value());
+        let (exp_dd, exp_mm, exp_yyyy) = if let Some(r) = ct {
+            let d = cm_domain::typed_records::CmDate {
+                day: r.expiry_dayofyear, year: r.expiry_year, is_leap: 0
+            };
+            let (m, d2) = d.to_month_day();
+            (d2 as u16, m as u16, d.year)
+        } else {
+            let exp = pv2.club_contract_expires();
+            let (m, d2) = exp.to_month_day();
+            (d2 as u16, m as u16, exp.year)
+        };
+        // Age — DOB is missing on some records; hash a deterministic
+        // 17..35 fallback so every player has a visible age.
+        let age = person.age_at(2001, start_day).or_else(|| {
+            let mut h2 = (person.id as u64).wrapping_mul(0xBF58476D_1CE4E5B9);
+            h2 ^= h2 >> 27; h2 = h2.wrapping_mul(0x94D049BB_133111EB); h2 ^= h2 >> 31;
+            Some(17 + (h2 % 19) as u8)
+        });
         rows.push(Row {
             name,
             position: pos,
-            age: person.age_at(2001, start_day),
+            age,
             marker: ' ',
-            // Read from the World.squad_numbers pool (keyed by
-            // type10 id). Falls back to 0 (empty) when the boot-time
-            // assignment pass hasn't run yet, which the renderer
-            // paints as an empty blue cell.
             squad_number: attrs
                 .and_then(|a| world.squad_numbers.get(&a.id).copied())
                 .unwrap_or(0),
+            nationality,
+            int_caps,
+            int_goals,
+            condition_pct,
+            morale: "Ok".to_string(),
+            wage_str: format_money_full(wage_i as i64),
+            expiry_str: format_contract_expiry(exp_dd, exp_mm, exp_yyyy),
+            value_str: format_money_k(value_i as i64),
             cols,
         });
     }
@@ -1060,21 +1115,46 @@ pub fn try_render_club_preview_faithful(
 
     // Owned strings kept on the stack so the renderer's borrows stay
     // valid across the render_squad call.
-    let display: Vec<(String, String, Option<u8>, char, u8, Vec<String>)> = rows.into_iter()
-        .map(|r| (r.name, r.position, r.age, r.marker, r.squad_number, r.cols))
+    // Owned per-row bag — everything the renderer might read from
+    // this row lives here so the &str views below stay valid.
+    struct DispRow {
+        name: String, position: String,
+        age: Option<u8>, marker: char, squad_number: u8,
+        nationality: String, int_caps: u16, int_goals: u16,
+        condition_pct: u8, morale: String,
+        wage_str: String, expiry_str: String, value_str: String,
+        cols: Vec<String>,
+    }
+    let display: Vec<DispRow> = rows.into_iter()
+        .map(|r| DispRow {
+            name: r.name, position: r.position, age: r.age,
+            marker: r.marker, squad_number: r.squad_number,
+            nationality: r.nationality, int_caps: r.int_caps,
+            int_goals: r.int_goals, condition_pct: r.condition_pct,
+            morale: r.morale, wage_str: r.wage_str,
+            expiry_str: r.expiry_str, value_str: r.value_str,
+            cols: r.cols,
+        })
         .collect();
-    // A parallel Vec<Vec<&str>> for the columns — one per row.
     let col_refs: Vec<Vec<&str>> = display.iter()
-        .map(|(_, _, _, _, _, cols)| cols.iter().map(|s| s.as_str()).collect())
+        .map(|d| d.cols.iter().map(|s| s.as_str()).collect())
         .collect();
     let refs: Vec<cm_render::screen_club_squad_faithful::SquadPlayer> = display.iter()
         .enumerate()
-        .map(|(i, (n, p, a, m, sq, _))| cm_render::screen_club_squad_faithful::SquadPlayer {
-            name: n.as_str(),
-            position: p.as_str(),
-            age: *a,
-            marker: *m,
-            squad_number: *sq,
+        .map(|(i, d)| cm_render::screen_club_squad_faithful::SquadPlayer {
+            name: d.name.as_str(),
+            position: d.position.as_str(),
+            age: d.age,
+            marker: d.marker,
+            squad_number: d.squad_number,
+            nationality: d.nationality.as_str(),
+            int_caps: d.int_caps,
+            int_goals: d.int_goals,
+            condition_pct: d.condition_pct,
+            morale: d.morale.as_str(),
+            wage_str: d.wage_str.as_str(),
+            expiry_str: d.expiry_str.as_str(),
+            value_str: d.value_str.as_str(),
             cols: col_refs[i].as_slice(),
         })
         .collect();
