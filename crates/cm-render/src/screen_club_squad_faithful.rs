@@ -443,6 +443,11 @@ pub struct SquadState<'a> {
     pub comp_scope: CompScope,
     /// `true` when the Competitions dropdown is open.
     pub comp_menu_open: bool,
+    /// Attribute group pick — Attributes view only. Defaults to
+    /// Physical (per the Mansfield capture).
+    pub attr_group: AttrGroup,
+    /// `true` when the Attributes dropdown is open.
+    pub attr_menu_open: bool,
     /// Which sub-toolbar / chrome button is currently held down (if
     /// any). Drives the pressed-invert bevel so the user gets
     /// visible feedback while the mouse is still down. `None` on a
@@ -665,6 +670,7 @@ pub fn render_squad(
     let mid_label: Option<&str> = match SortButtonMode::for_view(state.view) {
         SortButtonMode::SortBy       => Some("Sort By"),
         SortButtonMode::Competitions => Some("Competitions"),
+        SortButtonMode::Attributes   => Some("Attributes"),
         SortButtonMode::Hidden       => None,
     };
     // Pressed-state bevel selector — inverts the highlight/shadow
@@ -720,6 +726,11 @@ pub fn render_squad(
                     s.push_str(base);
                     s
                 }
+                SquadView::Attributes => {
+                    let mut s = state.attr_group.subtitle_prefix().to_string();
+                    s.push_str(" Attributes");
+                    s
+                }
                 _ => state.view.subtitle().to_string(),
             };
             draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
@@ -729,9 +740,19 @@ pub fn render_squad(
             let list_right = SB_X0 - 1;
             let slices = pack.slices(LIST_X0, list_right);
 
-            // Column header row — grey bevel + cyan labels, ~22 px tall.
+            // Column header row — grey bevel + cyan labels, ~22 px
+            // tall. Attributes view overrides cols 3..11 with the
+            // active AttrGroup's headers so switching Physical /
+            // Mental / GK / Def / Att relabels the strip live.
+            let attr_hdrs = if matches!(state.view, SquadView::Attributes) {
+                Some(state.attr_group.headers())
+            } else { None };
             for (col_idx, sx0, sx1) in &slices {
-                let hdr = pack.headers[*col_idx].trim_start();
+                let base = pack.headers[*col_idx].trim_start();
+                let hdr: &str = match (attr_hdrs, *col_idx) {
+                    (Some(h), c) if (3..=11).contains(&c) => h[c - 3],
+                    _                                     => base,
+                };
                 draw_panel(surface, *sx0, COL_HDR_Y0, *sx1 - 1, COL_HDR_Y1,
                     P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
                 if hdr.is_empty() { continue; }
@@ -982,6 +1003,10 @@ pub fn render_squad(
         draw_comp_dropdown(surface, &small_font, state.comp_scope,
                            state.cursor_x, state.cursor_y);
     }
+    if state.attr_menu_open {
+        draw_attr_dropdown(surface, &small_font, state.attr_group,
+                           state.cursor_x, state.cursor_y);
+    }
     // Club-jump dropdown — corner-triangle box opens a menu of every
     // club in the current division alphabetically + the national
     // team. Rendered LAST so it overlays even the View dropdown when
@@ -1049,26 +1074,139 @@ pub const VIEW_BUTTON_RECT: (i32, i32, i32, i32) = (110, 125, 255, 145);
 pub const SORT_BUTTON_RECT: (i32, i32, i32, i32) = (236, 125, 360, 145);
 
 /// Middle sub-toolbar button state — the exe swaps this button
-/// between three modes depending on the active View:
+/// between four modes depending on the active View:
 ///
 ///   Traditional            -> "Sort By"     (17 sort keys)
 ///   Stats / More Stats     -> "Competitions" (6 scopes, default League)
-///   Contract / Selection / Attributes / Other Info -> hidden
-///
-/// `SortButtonMode` is derived from `SquadView` and read by both the
-/// renderer (label + dropdown paint) and the app's click handler
-/// (which pull-down to open).
+///   Attributes             -> "Attributes"   (5 groups, default Physical)
+///   Contract / Selection / Other Info        -> hidden
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SortButtonMode { SortBy, Competitions, Hidden }
+pub enum SortButtonMode { SortBy, Competitions, Attributes, Hidden }
 
 impl SortButtonMode {
     pub fn for_view(v: SquadView) -> Self {
         match v {
             SquadView::Traditional             => SortButtonMode::SortBy,
             SquadView::Stats | SquadView::MoreStats => SortButtonMode::Competitions,
+            SquadView::Attributes              => SortButtonMode::Attributes,
             _                                  => SortButtonMode::Hidden,
         }
     }
+}
+
+/// Attribute-group dropdown on the Attributes view. Five items per
+/// the Mansfield GDI capture — Physical is the boot default (ticked).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttrGroup {
+    Physical,
+    Mental,
+    Goalkeeping,
+    Defensive,
+    Attacking,
+}
+
+impl AttrGroup {
+    pub const MENU_ORDER: [AttrGroup; 5] = [
+        AttrGroup::Physical,
+        AttrGroup::Mental,
+        AttrGroup::Goalkeeping,
+        AttrGroup::Defensive,
+        AttrGroup::Attacking,
+    ];
+    pub fn label(self) -> &'static str {
+        match self {
+            AttrGroup::Physical    => "Physical",
+            AttrGroup::Mental      => "Mental",
+            AttrGroup::Goalkeeping => "Goalkeeping",
+            AttrGroup::Defensive   => "Defensive",
+            AttrGroup::Attacking   => "Attacking",
+        }
+    }
+    /// Subtitle band prefix ("Physical Attributes", ...).
+    pub fn subtitle_prefix(self) -> &'static str {
+        match self {
+            AttrGroup::Physical    => "Physical",
+            AttrGroup::Mental      => "Mental",
+            AttrGroup::Goalkeeping => "Goalkeeping",
+            AttrGroup::Defensive   => "Defensive",
+            AttrGroup::Attacking   => "Attacking",
+        }
+    }
+    /// The 9 attribute short-codes painted in cols 3..11 for this
+    /// group. Verified against the Mansfield Attributes capture:
+    /// Physical is Acc / Agi / Bal / Hea / Jum / Pac / Sta / Str /
+    /// Tec (cols 3-11 in exe layout — first two hidden by dropdown
+    /// overlay in the capture but visible in the col-header strip).
+    pub fn headers(self) -> [&'static str; 9] {
+        match self {
+            AttrGroup::Physical    =>
+                ["Acc", "Agi", "Bal", "Hea", "Jum", "Pac", "Sta", "Str", "Tec"],
+            AttrGroup::Mental      =>
+                ["Agg", "Ant", "Bra", "Cnt", "Cre", "Dec", "Det", "IM", "Inf"],
+            AttrGroup::Goalkeeping =>
+                ["Han", "1v1", "Ref", "Pos", "Con", "Fla", "Fin", "Fit", "Thr"],
+            AttrGroup::Defensive   =>
+                ["Mar", "Tck", "Pos", "Hea", "Jum", "Str", "Ant", "Cnt", "Bra"],
+            AttrGroup::Attacking   =>
+                ["Fin", "Dri", "Cro", "Cor", "Pas", "Fla", "LSh", "FrK", "Pen"],
+        }
+    }
+    /// The corresponding DomainStaffType10 accessor names in the
+    /// same order as `headers`. Used by the app-side data builder
+    /// to fill cols 3..11.
+    pub fn attribute_indices(self) -> [AttrSlot; 9] {
+        use AttrSlot::*;
+        match self {
+            AttrGroup::Physical    =>
+                [Acceleration, Agility, Balance, Heading, Jumping, Pace, Stamina, Strength, Technique],
+            AttrGroup::Mental      =>
+                [Aggression, Anticipation, Bravery, Consistency, Creativity, Decisions, Determination, ImportantMatches, Influence],
+            AttrGroup::Goalkeeping =>
+                [Handling, OneOnOnes, Reflexes, Positioning, Consistency, Flair, Finishing, NaturalFitness, ThrowIns],
+            AttrGroup::Defensive   =>
+                [Marking, Tackling, Positioning, Heading, Jumping, Strength, Anticipation, Consistency, Bravery],
+            AttrGroup::Attacking   =>
+                [Finishing, Dribbling, Crossing, Corners, Passing, Flair, LongShots, FreeKicks, Penalties],
+        }
+    }
+}
+
+/// Named type10 attribute slot — decouples the enum picker from the
+/// DomainStaffType10 struct field names so cm-render doesn't need to
+/// depend on cm-domain. The app-side render translates each variant
+/// to the matching u8 field.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttrSlot {
+    Acceleration, Aggression, Agility, Anticipation, Balance, Bravery,
+    Consistency, Corners, Creativity, Crossing, Decisions, Determination,
+    Dirtiness, Dribbling, Finishing, Flair, FreeKicks, Handling, Heading,
+    ImportantMatches, Influence, InjuryProneness, Jumping,
+    Leadership, LeftFoot, LongShots, Marking, Movement, NaturalFitness,
+    OneOnOnes, Pace, Passing, Penalties, Positioning, Reflexes, RightFoot,
+    Stamina, Strength, Tackling, Teamwork, Technique, ThrowIns, Versatility,
+    Vision, WorkRate,
+}
+
+const ATTR_DROPDOWN: crate::menu_dropdown::DropdownRect =
+    crate::menu_dropdown::DropdownRect { x0: 236, y0: 148, width: 145, row_h: 18 };
+
+pub fn draw_attr_dropdown(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    selected: AttrGroup,
+    cursor_x: i32, cursor_y: i32,
+) {
+    let items: Vec<&str> = AttrGroup::MENU_ORDER.iter().map(|g| g.label()).collect();
+    let sel = AttrGroup::MENU_ORDER.iter().position(|g| *g == selected);
+    crate::menu_dropdown::draw_dropdown(
+        surface, font, ATTR_DROPDOWN,
+        &items, sel, (cursor_x, cursor_y),
+    );
+}
+
+pub fn attr_dropdown_hit(x: i32, y: i32) -> Option<AttrGroup> {
+    let idx = ATTR_DROPDOWN.hit(AttrGroup::MENU_ORDER.len(), x, y)?;
+    Some(AttrGroup::MENU_ORDER[idx])
 }
 
 /// Competition scope pull-down on Stats / More Stats. Six options

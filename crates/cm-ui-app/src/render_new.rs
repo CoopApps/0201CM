@@ -509,6 +509,7 @@ pub fn try_render_club_preview_faithful(
         choice, scroll, view, view_menu_open, jump_menu_open,
         sort, sort_by, sort_menu_open,
         comp_scope, comp_menu_open,
+        attr_group, attr_menu_open,
     } = screen
         else { return false };
     let Some(world) = world else { return false };
@@ -683,12 +684,75 @@ pub fn try_render_club_preview_faithful(
     /// For columns that need engine-produced state we don't yet have
     /// (e.g. Selection Info, live Av. Rating) we emit an empty string;
     /// the renderer paints a blank cell rather than "0".
+    /// Map an AttrSlot enum variant to the corresponding i8 field on
+    /// DomainStaffType10. Kept here (not on AttrSlot itself) so
+    /// cm-render stays free of a cm-domain dep.
+    fn attr_slot_value(
+        a: &cm_domain::DomainStaffType10,
+        slot: cm_render::screen_club_squad_faithful::AttrSlot,
+    ) -> i8 {
+        use cm_render::screen_club_squad_faithful::AttrSlot::*;
+        match slot {
+            Acceleration      => a.acceleration,
+            Aggression        => a.aggression,
+            Agility           => a.agility,
+            Anticipation      => a.anticipation,
+            Balance           => a.balance,
+            Bravery           => a.bravery,
+            Consistency       => a.consistency,
+            Corners           => a.corners,
+            // Creativity has no direct type10 field in this port; use
+            // Flair as the closest CM01/02 analogue.
+            Creativity        => a.flair,
+            Crossing          => a.crossing,
+            Decisions         => a.decisions,
+            Determination     => a.work_rate,
+            Dirtiness         => a.dirtiness,
+            Dribbling         => a.dribbling,
+            Finishing         => a.finishing,
+            Flair             => a.flair,
+            FreeKicks         => a.free_kicks,
+            Handling          => a.handling,
+            Heading           => a.heading,
+            ImportantMatches  => a.important_matches,
+            // Influence not present on the DomainStaffType10 layout
+            // we ship; use Leadership (closest match — the field the
+            // exe reads into +0x25 alongside influence in real ordering).
+            Influence         => a.leadership,
+            InjuryProneness   => a.injury_proneness,
+            Jumping           => a.jumping,
+            Leadership        => a.leadership,
+            LeftFoot          => a.left_foot,
+            LongShots         => a.long_shots,
+            Marking           => a.marking,
+            Movement          => a.movement,
+            NaturalFitness    => a.natural_fitness,
+            OneOnOnes         => a.one_on_ones,
+            Pace              => a.pace,
+            Passing           => a.passing,
+            Penalties         => a.penalties,
+            Positioning       => a.positioning,
+            Reflexes          => a.reflexes,
+            RightFoot         => a.right_foot,
+            Stamina           => a.stamina,
+            Strength          => a.strength,
+            Tackling          => a.tackling,
+            Teamwork          => a.teamwork,
+            Technique         => a.technique,
+            ThrowIns          => a.throw_ins,
+            Versatility       => a.versatility,
+            Vision            => a.vision,
+            WorkRate          => a.work_rate,
+        }
+    }
+
     fn build_view_columns(
         mode: cm_render::screen_club_squad_faithful::SquadView,
         position: &str,
         person: &cm_domain::DomainStaffType6,
         attrs: Option<&cm_domain::DomainStaffType10>,
         world: &cm_domain::World,
+        attr_group: cm_render::screen_club_squad_faithful::AttrGroup,
     ) -> Vec<String> {
         use cm_render::screen_club_squad_faithful::SquadView::*;
         let pv = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
@@ -792,20 +856,15 @@ pub fn try_render_club_preview_faithful(
                 for i in 3..=11 { c[i].clear(); }
             }
             Attributes => {
-                // Default (Physical) sub-toggle: DAT_0097ae58
-                //   {1,3,5,0xf,0x11,0x15,0x1a,0x1b,0x1e}
-                //   = Aggression, Bravery, Corners, Heading, Influence,
-                //     Jumping, Pace, Stamina, Strength.
+                // Attribute group picker drives which 9 fields land
+                // in cols 3..11. Headers are painted by the renderer
+                // from AttrGroup::headers(); we just have to feed
+                // the values in the same order.
                 if let Some(a) = attrs {
-                    c[3]  = a.aggression.to_string();
-                    c[4]  = a.bravery.to_string();
-                    c[5]  = a.corners.to_string();
-                    c[6]  = a.heading.to_string();
-                    c[7]  = String::new() /* Influence attr 0x11 not on DomainStaffType10 */;
-                    c[8]  = a.jumping.to_string();
-                    c[9]  = a.pace.to_string();
-                    c[10] = a.stamina.to_string();
-                    c[11] = a.strength.to_string();
+                    let slots = attr_group.attribute_indices();
+                    for (col, slot) in (3..=11).zip(slots.iter()) {
+                        c[col] = attr_slot_value(a, *slot).to_string();
+                    }
                 }
             }
             OtherInfo => {
@@ -980,7 +1039,7 @@ pub fn try_render_club_preview_faithful(
         // the rust-db JSON when the render disagrees with the exe.
         eprintln!("[squad-in] person_id={} first_name_id={} second_name_id={} current_club_id={:?} name={:?}",
                    person.id, person.first_name_id(), person.second_name_id(), cc, name);
-        let cols = build_view_columns(*view, &pos, person, attrs, world);
+        let cols = build_view_columns(*view, &pos, person, attrs, world, *attr_group);
         // Sort-value fields — every Traditional Sort By key that has
         // a real data source at boot.
         let pv2 = cm_domain::typed_records::PlayerView::from_split(person.id, &person.body);
@@ -1278,6 +1337,8 @@ pub fn try_render_club_preview_faithful(
         sort_menu_open: *sort_menu_open,
         comp_scope: *comp_scope,
         comp_menu_open: *comp_menu_open,
+        attr_group: *attr_group,
+        attr_menu_open: *attr_menu_open,
         pressed,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);

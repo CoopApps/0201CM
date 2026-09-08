@@ -101,6 +101,10 @@ enum Screen {
         comp_scope: cm_render::screen_club_squad_faithful::CompScope,
         /// Whether the Competitions dropdown is currently open.
         comp_menu_open: bool,
+        /// Attribute group (Attributes view only). Default Physical.
+        attr_group: cm_render::screen_club_squad_faithful::AttrGroup,
+        /// Whether the Attributes dropdown is currently open.
+        attr_menu_open: bool,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -1049,7 +1053,8 @@ impl App {
             Screen::ClubPreview {
                 choice, view, view_menu_open, jump_menu_open,
                 sort, sort_by, sort_menu_open,
-                comp_scope, comp_menu_open, scroll, ..
+                comp_scope, comp_menu_open,
+                attr_group, attr_menu_open, scroll, ..
             } => {
                 use cm_render::screen_club_squad_faithful::{
                     view_dropdown_hit, VIEW_BUTTON_RECT,
@@ -1057,6 +1062,7 @@ impl App {
                     header_hit, ColumnKind,
                     sort_dropdown_hit, SORT_BUTTON_RECT, SquadView,
                     comp_dropdown_hit, SortButtonMode,
+                    attr_dropdown_hit,
                 };
                 // Dropdown priority: whichever is open catches the click.
                 if *sort_menu_open {
@@ -1070,6 +1076,11 @@ impl App {
                         *comp_scope = s;
                     }
                     *comp_menu_open = false;
+                } else if *attr_menu_open {
+                    if let Some(g) = attr_dropdown_hit(x, y) {
+                        *attr_group = g;
+                    }
+                    *attr_menu_open = false;
                 } else if *view_menu_open {
                     if let Some(new_mode) = view_dropdown_hit(x, y) {
                         *view = new_mode;
@@ -1135,6 +1146,7 @@ impl App {
                     match SortButtonMode::for_view(*view) {
                         SortButtonMode::SortBy       => *sort_menu_open = true,
                         SortButtonMode::Competitions => *comp_menu_open = true,
+                        SortButtonMode::Attributes   => *attr_menu_open = true,
                         SortButtonMode::Hidden       => {}
                     }
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
@@ -1330,6 +1342,8 @@ impl App {
                 sort_menu_open: false,
                 comp_scope: cm_render::screen_club_squad_faithful::CompScope::League,
                 comp_menu_open: false,
+                attr_group: cm_render::screen_club_squad_faithful::AttrGroup::Physical,
+                attr_menu_open: false,
             };
         }
         if goto_reopen_select_team {
@@ -1869,6 +1883,7 @@ impl ApplicationHandler for App {
                     Screen::ClubPreview { jump_menu_open: true, .. } => true,
                     Screen::ClubPreview { sort_menu_open: true, .. } => true,
                     Screen::ClubPreview { comp_menu_open: true, .. } => true,
+                    Screen::ClubPreview { attr_menu_open: true, .. } => true,
                     Screen::SelectNationality { filter_open: true, .. } => true,
                     _ => false,
                 };
