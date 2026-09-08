@@ -507,6 +507,7 @@ pub fn try_render_club_preview_faithful(
     let Screen::ClubPreview {
         choice, scroll, view, view_menu_open, jump_menu_open,
         sort, sort_by, sort_menu_open,
+        comp_scope, comp_menu_open,
     } = screen
         else { return false };
     let Some(world) = world else { return false };
@@ -1274,6 +1275,8 @@ pub fn try_render_club_preview_faithful(
         jump_items: &jump_labels_refs,
         sort_by: *sort_by,
         sort_menu_open: *sort_menu_open,
+        comp_scope: *comp_scope,
+        comp_menu_open: *comp_menu_open,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     cm_render::screen_club_squad_faithful::render_squad(&mut packed, fonts, &state);

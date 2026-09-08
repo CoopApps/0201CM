@@ -438,6 +438,11 @@ pub struct SquadState<'a> {
     pub sort_by: SortByKey,
     /// `true` when the Sort By dropdown is open.
     pub sort_menu_open: bool,
+    /// Competition scope pick — Stats / More Stats only. Defaults
+    /// to League (per the exe capture).
+    pub comp_scope: CompScope,
+    /// `true` when the Competitions dropdown is open.
+    pub comp_menu_open: bool,
 }
 
 // -----------------------------------------------------------------------
@@ -629,16 +634,30 @@ pub fn render_squad(
             ink, TS_CENTRE, -1);
     }
 
-    // ---- Sub-toolbar (View / Sort By / Filter).
+    // ---- Sub-toolbar (View / Sort By or Competitions / Filter).
+    //      Middle button swaps label per view — hidden entirely on
+    //      Contract / Selection / Attributes / Other Info.
+    let mid_label: Option<&str> = match SortButtonMode::for_view(state.view) {
+        SortButtonMode::SortBy       => Some("Sort By"),
+        SortButtonMode::Competitions => Some("Competitions"),
+        SortButtonMode::Hidden       => None,
+    };
+    // View and Filter always paint.
     for (rect, label) in [
         (TOOLBAR_LEFT_L, "View"),
-        (TOOLBAR_LEFT_R, "Sort By"),
         (TOOLBAR_FILTER, "Filter"),
     ] {
         draw_panel(surface, rect.0, TB_Y0, rect.1, TB_Y1,
             P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
         draw_wrapped_text(surface, rect.0, TB_Y0, rect.1, TB_Y1,
             &small_font, &c_string(label.as_bytes()),
+            INK_CYAN, TS_CENTRE, -1);
+    }
+    if let Some(lbl) = mid_label {
+        draw_panel(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
+            P_SOLID_FILL | P_BEVEL, GREY_BAR, INK_CYAN, palette);
+        draw_wrapped_text(surface, TOOLBAR_LEFT_R.0, TB_Y0, TOOLBAR_LEFT_R.1, TB_Y1,
+            &small_font, &c_string(lbl.as_bytes()),
             INK_CYAN, TS_CENTRE, -1);
     }
 
@@ -655,11 +674,24 @@ pub fn render_squad(
         // Non-Traditional modes — subtitle + short header + 1-row grid.
         // ================================================================
         Some(pack) => {
-            // Subtitle strip ("Contract Info" / "Selection Info" / …).
+            // Subtitle strip ("Contract Info" / "League Stats" / …).
+            // Stats + More Stats prefix with the active comp scope
+            // ("League Stats", "Cup Stats", "Continental Stats" ...).
             draw_panel(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
                 P_DARKEN, 0, 0, palette);
+            let subtitle_owned: String = match state.view {
+                SquadView::Stats | SquadView::MoreStats => {
+                    let base = if matches!(state.view, SquadView::MoreStats) {
+                        " More Stats"
+                    } else { " Stats" };
+                    let mut s = state.comp_scope.subtitle_prefix().to_string();
+                    s.push_str(base);
+                    s
+                }
+                _ => state.view.subtitle().to_string(),
+            };
             draw_wrapped_text(surface, LIST_X0, HDR_Y0, LIST_X1, HDR_Y1,
-                &body_font, &c_string(state.view.subtitle().as_bytes()),
+                &body_font, &c_string(subtitle_owned.as_bytes()),
                 INK_YELLOW, TS_CENTRE, -1);
 
             let list_right = SB_X0 - 1;
@@ -904,6 +936,12 @@ pub fn render_squad(
         draw_sort_dropdown(surface, &small_font, state.sort_by,
                            state.cursor_x, state.cursor_y);
     }
+    // Competitions dropdown — same geometry as Sort By, Stats/
+    // More Stats only.
+    if state.comp_menu_open {
+        draw_comp_dropdown(surface, &small_font, state.comp_scope,
+                           state.cursor_x, state.cursor_y);
+    }
     // Club-jump dropdown — corner-triangle box opens a menu of every
     // club in the current division alphabetically + the national
     // team. Rendered LAST so it overlays even the View dropdown when
@@ -965,8 +1003,104 @@ pub fn view_dropdown_hit(x: i32, y: i32) -> Option<SquadView> {
 /// `view_menu_open`.
 pub const VIEW_BUTTON_RECT: (i32, i32, i32, i32) = (110, 125, 255, 145);
 /// Sort-By button rect on the sub-toolbar — same y as View, sits
-/// just right of it at TOOLBAR_LEFT_R (236..360).
+/// just right of it at TOOLBAR_LEFT_R (236..360). Shared with the
+/// Competitions button on Stats / More Stats views (same geometry,
+/// different label + dropdown). Hidden on every other view.
 pub const SORT_BUTTON_RECT: (i32, i32, i32, i32) = (236, 125, 360, 145);
+
+/// Middle sub-toolbar button state — the exe swaps this button
+/// between three modes depending on the active View:
+///
+///   Traditional            -> "Sort By"     (17 sort keys)
+///   Stats / More Stats     -> "Competitions" (6 scopes, default League)
+///   Contract / Selection / Attributes / Other Info -> hidden
+///
+/// `SortButtonMode` is derived from `SquadView` and read by both the
+/// renderer (label + dropdown paint) and the app's click handler
+/// (which pull-down to open).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortButtonMode { SortBy, Competitions, Hidden }
+
+impl SortButtonMode {
+    pub fn for_view(v: SquadView) -> Self {
+        match v {
+            SquadView::Traditional             => SortButtonMode::SortBy,
+            SquadView::Stats | SquadView::MoreStats => SortButtonMode::Competitions,
+            _                                  => SortButtonMode::Hidden,
+        }
+    }
+}
+
+/// Competition scope pull-down on Stats / More Stats. Six options
+/// per the Mansfield Town GDI capture — League is the boot default
+/// (ticked). Corresponds to the Sort-By state slot the exe reads via
+/// FUN_007e6ee0(9), see FUN_00457200 line 1324-1356.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompScope {
+    NonCompetitive,
+    League,
+    Cup,
+    Continental,
+    International,
+    SeniorClub,
+}
+
+impl CompScope {
+    pub const MENU_ORDER: [CompScope; 6] = [
+        CompScope::NonCompetitive,
+        CompScope::League,
+        CompScope::Cup,
+        CompScope::Continental,
+        CompScope::International,
+        CompScope::SeniorClub,
+    ];
+    pub fn label(self) -> &'static str {
+        match self {
+            CompScope::NonCompetitive => "Non Competitive",
+            CompScope::League         => "League",
+            CompScope::Cup            => "Cup",
+            CompScope::Continental    => "Continental",
+            CompScope::International  => "International",
+            CompScope::SeniorClub     => "Senior Club",
+        }
+    }
+    /// Subtitle prefix on Stats / More Stats views ("League Stats",
+    /// "Cup Stats", etc). Matches the exe's `<scope> Stats` label.
+    pub fn subtitle_prefix(self) -> &'static str {
+        match self {
+            CompScope::NonCompetitive => "Non Competitive",
+            CompScope::League         => "League",
+            CompScope::Cup            => "Cup",
+            CompScope::Continental    => "Continental",
+            CompScope::International  => "International",
+            CompScope::SeniorClub     => "Senior Club",
+        }
+    }
+}
+
+/// Competitions dropdown anchor — same x as Sort By but sized for
+/// 6 rows.
+const COMP_DROPDOWN: crate::menu_dropdown::DropdownRect =
+    crate::menu_dropdown::DropdownRect { x0: 236, y0: 148, width: 145, row_h: 18 };
+
+pub fn draw_comp_dropdown(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    selected: CompScope,
+    cursor_x: i32, cursor_y: i32,
+) {
+    let items: Vec<&str> = CompScope::MENU_ORDER.iter().map(|s| s.label()).collect();
+    let sel_row = CompScope::MENU_ORDER.iter().position(|s| *s == selected);
+    crate::menu_dropdown::draw_dropdown(
+        surface, font, COMP_DROPDOWN,
+        &items, sel_row, (cursor_x, cursor_y),
+    );
+}
+
+pub fn comp_dropdown_hit(x: i32, y: i32) -> Option<CompScope> {
+    let idx = COMP_DROPDOWN.hit(CompScope::MENU_ORDER.len(), x, y)?;
+    Some(CompScope::MENU_ORDER[idx])
+}
 
 /// The seventeen Sort By options shown when Traditional view opens
 /// the Sort By dropdown, verified against the running exe. Layout
