@@ -748,27 +748,29 @@ pub fn try_render_club_preview_faithful(
             Teamwork          => at(0x3f),  // id 29
             Technique         => at(0x40),  // id 30
             WorkRate          => at(0x44),  // id 31
-            // The 12 hidden bytes at +0x21/22/25/2c/2d/30/34/35/38/3b/41/42
-            // are Consistency, Corners, Dirtiness, Important Matches,
-            // Injury Proneness, Leadership, Left Foot, Natural Fitness,
-            // One On Ones, Penalties, Right Foot, Throw Ins, Versatility,
-            // Vision — exact 12-of-14 mapping needs the editor's DFM
-            // tabsheet_staff_pl2 to disambiguate. Best-effort per DFM
-            // order guesses below; blank for now to avoid fabricating.
-            Consistency       => 0,
-            Corners           => 0,
-            Dirtiness         => 0,
-            ImportantMatches  => 0,
-            InjuryProneness   => 0,
-            Leadership        => 0,
-            LeftFoot          => 0,
-            NaturalFitness    => 0,
-            OneOnOnes         => 0,
-            Penalties         => 0,
-            RightFoot         => 0,
-            ThrowIns          => 0,
-            Versatility       => 0,
-            Vision            => 0,
+            // The 12 hidden attributes — offsets locked in from the
+            // editor's own loader (FUN_0048bd00 in cm0102ed.exe) +
+            // DFM tabsheet_staff_pl2 field-order dump; see
+            // memory/type10-real-attribute-offsets.md.
+            Consistency       => at(0x21),
+            Corners           => at(0x22),
+            Dirtiness         => at(0x25),
+            ImportantMatches  => at(0x2c),
+            InjuryProneness   => at(0x2d),
+            LeftFoot          => at(0x30),
+            NaturalFitness    => at(0x34),
+            OneOnOnes         => at(0x35),
+            Penalties         => at(0x38),
+            RightFoot         => at(0x3b),
+            ThrowIns          => at(0x41),
+            Versatility       => at(0x42),
+            // Leadership and Vision are NOT separate bytes on type-10:
+            // the game's "Influence" IS the editor's "Leadership"
+            // (both label +0x2f); the game's "Creativity" IS the
+            // editor's "Vision" (both label +0x43). Alias to the
+            // canonical byte.
+            Leadership        => at(0x2f),
+            Vision            => at(0x43),
         }
     }
 
