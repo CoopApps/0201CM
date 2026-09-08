@@ -769,18 +769,13 @@ pub fn render_squad(
                 } else {
                     (NUM_R, NAME_R, POS_R)
                 };
+                // Blue row-marker cell is always empty — the exe uses
+                // it as a per-row Pkd/Inf status flag, not for the
+                // squad number. Squad number lives in the right-hand
+                // column when Sort By = Squad Number, matching the
+                // Cheltenham exe capture.
                 draw_panel(surface, num.0, y0, num.1, y1,
                     P_SOLID_FILL | P_BEVEL, BLUE, INK_CYAN, palette);
-                // Squad number in the blue cell — white text centred.
-                // Suppressed when 0 (player wasn't in the assignment
-                // pass — matches the exe's empty-cell look).
-                if p.squad_number > 0 {
-                    let mut nbuf = format!("{}", p.squad_number);
-                    nbuf.push('\0');
-                    draw_wrapped_text(surface, num.0, y0, num.1, y1,
-                        &small_font, nbuf.as_bytes(), WHITE,
-                        TS_CENTRE, -1);
-                }
                 let name_ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
                 let mut buf = format!("  {}", p.name);
                 if p.marker != ' ' { buf.push(p.marker); }
@@ -788,8 +783,23 @@ pub fn render_squad(
                 draw_wrapped_text(surface, name.0, y0, name.1, y1,
                     &body_font, buf.as_bytes(), name_ink,
                     TS_CENTRE | W_LEFT, -1);
+                // Right column reflects the Sort By pick — Position(s)
+                // shows the position code, Squad Number shows the
+                // digit, Age shows years, etc. Matches the exe where
+                // the field always mirrors the current sort key.
+                let sort_txt: String = match state.sort_by {
+                    SortByKey::Position    => p.position.to_string(),
+                    SortByKey::SquadNumber => {
+                        if p.squad_number > 0 { p.squad_number.to_string() } else { String::new() }
+                    }
+                    SortByKey::Age => p.age.map(|a| a.to_string()).unwrap_or_default(),
+                    // Every other key — the right column stays blank
+                    // rather than duplicating what the wide name/left
+                    // cell already shows.
+                    _ => String::new(),
+                };
                 draw_wrapped_text(surface, pos.0, y0, pos.1, y1,
-                    &small_font, &c_string(p.position.as_bytes()),
+                    &small_font, &c_string_latin1(sort_txt.as_bytes()),
                     INK_YELLOW, TS_CENTRE, -1);
             }
         }

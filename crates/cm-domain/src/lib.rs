@@ -13921,22 +13921,22 @@ impl World {
         let person_club: BTreeMap<u32, u32> = self.staff.type6.iter()
             .filter_map(|p| p.current_club_id().map(|c| (p.id, c)))
             .collect();
-        // person → linked type10 record (via player_data_id).
-        let person_link: BTreeMap<u32, u32> = self.staff.type6.iter()
-            .map(|p| {
+        // Inverse map: type10 id -> person id (O(1) lookup instead of
+        // the naive O(N) linear scan that made this pass take minutes
+        // over 132k records and was silently dropping most players
+        // from the assignment).
+        let type10_owner: BTreeMap<u32, u32> = self.staff.type6.iter()
+            .filter_map(|p| {
                 let pv = crate::typed_records::PlayerView::from_split(p.id, &p.body);
                 let link = pv.player_data_id().map(|l| l as u32).unwrap_or(p.id);
-                (p.id, link)
+                Some((link, p.id))
             })
             .collect();
         // Group type10 indices by club, tagged with (group, ca).
-        // group: 0=GK 1=SW 2=D 3=DM 4=M 5=AM 6=F 7=S 8=other.
+        // group: 0=GK 1=SW 2=D 3=DM 4=M 5=AM 6=F/S.
         let mut by_club: BTreeMap<u32, Vec<(u8, i16, usize)>> = BTreeMap::new();
         for (i, attr) in self.staff.type10.iter().enumerate() {
-            // Find the person that links to this type10 — search back
-            // via the (person_id → linked type10 id) map.
-            let Some(person_id) = person_link.iter()
-                .find_map(|(pid, link)| if *link == attr.id { Some(*pid) } else { None }) else { continue; };
+            let Some(person_id) = type10_owner.get(&attr.id).copied() else { continue; };
             let Some(club_id) = person_club.get(&person_id).copied() else { continue; };
             // Primary aptitude — pick the strongest of the 8 role
             // groups. Ties break in GK → SW → D → DM → M → AM → F → S
