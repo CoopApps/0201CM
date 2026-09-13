@@ -14,8 +14,28 @@ use std::path::Path;
 struct DerefEntry {
     slot: i64,
     club_id: i32,
-    #[serde(default)] nation_ptr: Option<String>,
-    #[serde(default)] nation_plus_48: Option<String>,
+    // NEW field names from the tagged-this Phase 12 capture
+    // (perturb-actual: Club.+0x69 is stadium ptr not nation)
+    #[serde(default)] stadium_ptr: Option<String>,
+    #[serde(default)] stadium_alt_ptr: Option<String>,
+    // Legacy names for the mislabelled earlier captures
+    #[serde(default, alias = "stadium_ptr")]
+    nation_ptr: Option<String>,
+    #[serde(default, alias = "stadium_alt_ptr")]
+    nation_plus_48: Option<String>,
+}
+
+impl DerefEntry {
+    fn stadium_str(&self) -> String {
+        self.stadium_ptr.clone()
+            .or_else(|| self.nation_ptr.clone())
+            .unwrap_or_else(|| "0x0".into())
+    }
+    fn stadium_alt_str(&self) -> String {
+        self.stadium_alt_ptr.clone()
+            .or_else(|| self.nation_plus_48.clone())
+            .unwrap_or_else(|| "0x0".into())
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -233,8 +253,9 @@ fn perturb_replay_v2(
 }
 
 fn main() {
+    // TRUE English Second Division 2001-02 tagged-this lineage (Phase 12).
     let path = Path::new(
-        "D:/cm0102-rs/reports/fixture_disasm/runtime/20260913_221525_lineage.jsonl");
+        "D:/cm0102-rs/reports/fixture_disasm/runtime/20260914_004421_eng2_true_lineage.jsonl");
     let text = std::fs::read_to_string(path).unwrap();
     let records: Vec<serde_json::Value> = text.lines()
         .filter(|l| !l.trim().is_empty())
@@ -259,8 +280,8 @@ fn main() {
     let mut club_nation = std::collections::HashMap::new();
     let mut club_plus48 = std::collections::HashMap::new();
     for e in &p1_entries {
-        club_nation.insert(e.club_id, e.nation_ptr.clone().unwrap_or_else(|| "0x0".into()));
-        club_plus48.insert(e.club_id, e.nation_plus_48.clone().unwrap_or_else(|| "0x0".into()));
+        club_nation.insert(e.club_id, e.stadium_str());
+        club_plus48.insert(e.club_id, e.stadium_alt_str());
     }
 
     let rng_rec = records.iter().find(|r| r["op"] == "rng_trace").unwrap();
