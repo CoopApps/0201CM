@@ -1,0 +1,228 @@
+{"op": "hooks_installed"}
+{"op": "calling"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 12, "month": 7, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [223, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [223, 2001, 0, 0], "ecx_as_buf_after": [222, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [222, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 0, "first8_hex": "de000000010dc002"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 19, "month": 7, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [230, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [230, 2001, 0, 0], "ecx_as_buf_after": [229, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [229, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 1, "first8_hex": "e500000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 26, "month": 7, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [237, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [237, 2001, 0, 0], "ecx_as_buf_after": [236, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [236, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 2, "first8_hex": "ec00000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 28, "month": 7, "year": 2001, "flag": 0, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x0", "ecx_as_buf": [239, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [239, 2001, 0, 0], "ecx_as_buf_after": [238, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [238, 2001, 0, 0], "flag": 0}
+{"op": "writer_done", "round_idx": 3, "first8_hex": "ee00000002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 2, "month": 8, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [244, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [244, 2001, 0, 0], "ecx_as_buf_after": [243, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [243, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 4, "first8_hex": "f300000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 9, "month": 8, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [251, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [251, 2001, 0, 0], "ecx_as_buf_after": [250, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [250, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 5, "first8_hex": "fa00000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 13, "month": 8, "year": 2001, "flag": 2, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x2", "ecx_as_buf": [255, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [255, 2001, 0, 0], "ecx_as_buf_after": [254, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [254, 2001, 0, 0], "flag": 2}
+{"op": "writer_done", "round_idx": 6, "first8_hex": "fe00000002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 16, "month": 8, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [258, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [258, 2001, 0, 0], "ecx_as_buf_after": [257, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [257, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 7, "first8_hex": "0101000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 23, "month": 8, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [265, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [265, 2001, 0, 0], "ecx_as_buf_after": [264, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [264, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 8, "first8_hex": "0801000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 30, "month": 8, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [272, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [272, 2001, 0, 0], "ecx_as_buf_after": [271, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [271, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 9, "first8_hex": "0f01000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 7, "month": 9, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [279, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [279, 2001, 0, 0], "ecx_as_buf_after": [278, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [278, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 10, "first8_hex": "1601000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 14, "month": 9, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [286, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [286, 2001, 0, 0], "ecx_as_buf_after": [285, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [285, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 11, "first8_hex": "1d01000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 17, "month": 9, "year": 2001, "flag": 1, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x1", "ecx_as_buf": [289, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [289, 2001, 0, 0], "ecx_as_buf_after": [288, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [288, 2001, 0, 0], "flag": 1}
+{"op": "writer_done", "round_idx": 12, "first8_hex": "2001000002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 21, "month": 9, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [293, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [293, 2001, 0, 0], "ecx_as_buf_after": [292, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [292, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 13, "first8_hex": "2401000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 24, "month": 9, "year": 2001, "flag": 1, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x1", "ecx_as_buf": [296, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [296, 2001, 0, 0], "ecx_as_buf_after": [295, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [295, 2001, 0, 0], "flag": 1}
+{"op": "writer_done", "round_idx": 14, "first8_hex": "2701000002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 28, "month": 9, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [300, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [300, 2001, 0, 0], "ecx_as_buf_after": [299, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [299, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 15, "first8_hex": "2b01000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 4, "month": 10, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [307, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [307, 2001, 0, 0], "ecx_as_buf_after": [306, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [306, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 16, "first8_hex": "3201000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 11, "month": 10, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [314, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [314, 2001, 0, 0], "ecx_as_buf_after": [313, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [313, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 17, "first8_hex": "3901000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 18, "month": 10, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [321, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [321, 2001, 0, 0], "ecx_as_buf_after": [320, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [320, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 18, "first8_hex": "4001000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 25, "month": 10, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [328, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [328, 2001, 0, 0], "ecx_as_buf_after": [327, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [327, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 19, "first8_hex": "4701000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 2, "month": 11, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [335, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [335, 2001, 0, 0], "ecx_as_buf_after": [334, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [334, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 20, "first8_hex": "4e01000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 9, "month": 11, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [342, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [342, 2001, 0, 0], "ecx_as_buf_after": [341, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [341, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 21, "first8_hex": "5501000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 16, "month": 11, "year": 2001, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [349, 2001, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [349, 2001, 0, 0], "ecx_as_buf_after": [348, 2001, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [348, 2001, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 22, "first8_hex": "5c01000001000000"}
+{"op": "packdate_enter", "result": "0x377f284", "day": 1, "month": 11, "year": 2001, "flag": -1, "ret": "0x55f79c"}
+{"op": "packdate_leave", "result": "0x377f284", "buf": [334, 2001, 0, 0], "flag": -1}
+{"op": "packdate_enter", "result": "0x377f248", "day": 22, "month": 11, "year": 2001, "flag": -1, "ret": "0x66f3d7"}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [355, 2001, 0, 0], "flag": -1}
+{"op": "writer_done", "round_idx": 23, "first8_hex": "6301000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 26, "month": 11, "year": 2001, "flag": -1, "ret": "0x66f3d7"}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [359, 2001, 0, 0], "flag": -1}
+{"op": "writer_done", "round_idx": 24, "first8_hex": "6701000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 29, "month": 11, "year": 2001, "flag": -1, "ret": "0x66f3d7"}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [362, 2001, 0, 0], "flag": -1}
+{"op": "writer_done", "round_idx": 25, "first8_hex": "6a01000001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 1, "month": 0, "year": 2002, "flag": -1, "ret": "0x66f3d7"}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [0, 2002, 0, 0], "flag": -1}
+{"op": "writer_done", "round_idx": 26, "first8_hex": "0000010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 13, "month": 0, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [12, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [12, 2002, 0, 0], "ecx_as_buf_after": [11, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [11, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 27, "first8_hex": "0b00010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 20, "month": 0, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [19, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [19, 2002, 0, 0], "ecx_as_buf_after": [18, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [18, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 28, "first8_hex": "1200010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 3, "month": 1, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [33, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [33, 2002, 0, 0], "ecx_as_buf_after": [32, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [32, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 29, "first8_hex": "2000010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 10, "month": 1, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [40, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [40, 2002, 0, 0], "ecx_as_buf_after": [39, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [39, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 30, "first8_hex": "2700010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 17, "month": 1, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [47, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [47, 2002, 0, 0], "ecx_as_buf_after": [46, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [46, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 31, "first8_hex": "2e00010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 20, "month": 1, "year": 2002, "flag": 1, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x1", "ecx_as_buf": [50, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [50, 2002, 0, 0], "ecx_as_buf_after": [49, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [49, 2002, 0, 0], "flag": 1}
+{"op": "writer_done", "round_idx": 32, "first8_hex": "3100010002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 24, "month": 1, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [54, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [54, 2002, 0, 0], "ecx_as_buf_after": [53, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [53, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 33, "first8_hex": "3500010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 3, "month": 2, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [61, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [61, 2002, 0, 0], "ecx_as_buf_after": [60, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [60, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 34, "first8_hex": "3c00010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 7, "month": 2, "year": 2002, "flag": 2, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x2", "ecx_as_buf": [65, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [65, 2002, 0, 0], "ecx_as_buf_after": [64, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [64, 2002, 0, 0], "flag": 2}
+{"op": "writer_done", "round_idx": 35, "first8_hex": "4000010002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 10, "month": 2, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [68, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [68, 2002, 0, 0], "ecx_as_buf_after": [67, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [67, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 36, "first8_hex": "4300010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 17, "month": 2, "year": 2002, "flag": 1, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x1", "ecx_as_buf": [75, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [75, 2002, 0, 0], "ecx_as_buf_after": [77, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [77, 2002, 0, 0], "flag": 1}
+{"op": "writer_done", "round_idx": 37, "first8_hex": "4d00010002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 24, "month": 2, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [82, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [82, 2002, 0, 0], "ecx_as_buf_after": [81, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [81, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 38, "first8_hex": "5100010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 31, "month": 2, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [89, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [89, 2002, 0, 0], "ecx_as_buf_after": [88, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [88, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 39, "first8_hex": "5800010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 7, "month": 3, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [96, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [96, 2002, 0, 0], "ecx_as_buf_after": [95, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [95, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 40, "first8_hex": "5f00010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 14, "month": 3, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [103, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [103, 2002, 0, 0], "ecx_as_buf_after": [102, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [102, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 41, "first8_hex": "6600010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 16, "month": 3, "year": 2002, "flag": 0, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x0", "ecx_as_buf": [105, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [105, 2002, 0, 0], "ecx_as_buf_after": [104, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [104, 2002, 0, 0], "flag": 0}
+{"op": "writer_done", "round_idx": 42, "first8_hex": "6800010002000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 21, "month": 3, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [110, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [110, 2002, 0, 0], "ecx_as_buf_after": [109, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [109, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 43, "first8_hex": "6d00010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 28, "month": 3, "year": 2002, "flag": 5, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x5", "ecx_as_buf": [117, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [117, 2002, 0, 0], "ecx_as_buf_after": [116, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [116, 2002, 0, 0], "flag": 5}
+{"op": "writer_done", "round_idx": 44, "first8_hex": "7400010001000000"}
+{"op": "packdate_enter", "result": "0x377f248", "day": 6, "month": 4, "year": 2002, "flag": 6, "ret": "0x66f3d7"}
+{"op": "flagsnap_enter", "ecx": "0x377f248", "stack_arg1": "0x6", "ecx_as_buf": [125, 2002, 0, 0], "stk_as_buf": null, "ret": "0x533ce1"}
+{"op": "flagsnap_leave", "ecx_as_buf_before": [125, 2002, 0, 0], "ecx_as_buf_after": [124, 2002, 0, 0], "stk_as_buf_before": null, "stk_as_buf_after": null}
+{"op": "packdate_leave", "result": "0x377f248", "buf": [124, 2002, 0, 0], "flag": 6}
+{"op": "writer_done", "round_idx": 45, "first8_hex": "7c00010001000000"}
+{"op": "returned", "retval": "0x2ca9eb8", "round_count": 46}
+{"op": "done"}

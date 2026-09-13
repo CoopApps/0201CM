@@ -1,0 +1,51 @@
+{"op": "hook_installed", "_ts": 1789295466.0191307}
+{"op": "calling_getter", "this_ptr": "0x38b0010", "p2": "0x38b00b9", "p3": "0x38b004a", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 0, "day": 12, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f3db", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 1, "day": 19, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f404", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 2, "day": 26, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f42e", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 3, "day": 28, "month": 7, "day_off": 0, "flag": 0, "type_byte": 2, "year": 46794705, "p9": 0, "retaddr": "0x55f457", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 4, "day": 2, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f481", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 5, "day": 9, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f4ab", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 6, "day": 13, "month": 8, "day_off": 0, "flag": 2, "type_byte": 2, "year": 46794705, "p9": 0, "retaddr": "0x55f4d5", "_ts": 1789295466.0201294}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 7, "day": 16, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f4ff", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 8, "day": 23, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f529", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 9, "day": 30, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f553", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 10, "day": 7, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f57d", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 11, "day": 14, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f5a7", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 12, "day": 17, "month": 9, "day_off": 0, "flag": 1, "type_byte": 2, "year": 46794705, "p9": 0, "retaddr": "0x55f5d1", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 13, "day": 21, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f5fb", "_ts": 1789295466.0211287}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 14, "day": 24, "month": 9, "day_off": 0, "flag": 1, "type_byte": 2, "year": 46794705, "p9": 0, "retaddr": "0x55f625", "_ts": 1789295466.0221276}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 15, "day": 28, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f64f", "_ts": 1789295466.0271227}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 16, "day": 4, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f679", "_ts": 1789295466.0281217}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 17, "day": 11, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f6a3", "_ts": 1789295466.0281217}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 18, "day": 18, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f6cd", "_ts": 1789295466.0291216}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 19, "day": 25, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f6f7", "_ts": 1789295466.0291216}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 20, "day": 2, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f721", "_ts": 1789295466.0291216}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 21, "day": 9, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f74b", "_ts": 1789295466.0301204}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 22, "day": 16, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f775", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 23, "day": 22, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55f8f8", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 24, "day": 26, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f922", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 25, "day": 29, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55f94c", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 26, "day": 1, "month": 0, "day_off": 1, "flag": -1, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55fb94", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 27, "day": 13, "month": 0, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fcc6", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 28, "day": 20, "month": 0, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fcf0", "_ts": 1789295466.0321176}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 29, "day": 3, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55fd1b", "_ts": 1789295466.0331166}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 30, "day": 10, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fd46", "_ts": 1789295466.0331166}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 31, "day": 17, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fd71", "_ts": 1789295466.0331166}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 32, "day": 20, "month": 1, "day_off": 1, "flag": 1, "type_byte": 2, "year": 2001, "p9": 0, "retaddr": "0x55fd9c", "_ts": 1789295466.0331166}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 33, "day": 24, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fdc7", "_ts": 1789295466.0331166}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 34, "day": 3, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fdf2", "_ts": 1789295466.0341156}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 35, "day": 7, "month": 2, "day_off": 1, "flag": 2, "type_byte": 2, "year": 2001, "p9": 0, "retaddr": "0x55fe1d", "_ts": 1789295466.0341156}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 36, "day": 10, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fe48", "_ts": 1789295466.0341156}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 37, "day": 17, "month": 2, "day_off": 1, "flag": 1, "type_byte": 2, "year": 46794705, "p9": 0, "retaddr": "0x55fe73", "_ts": 1789295466.0341156}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 38, "day": 24, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55fe9e", "_ts": 1789295466.0341156}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 39, "day": 31, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fec9", "_ts": 1789295466.0341156}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 40, "day": 7, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55fef4", "_ts": 1789295466.0351145}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 41, "day": 14, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55ff1f", "_ts": 1789295466.0351145}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 42, "day": 16, "month": 3, "day_off": 1, "flag": 0, "type_byte": 2, "year": 46794705, "p9": 0, "retaddr": "0x55ff49", "_ts": 1789295466.0351145}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 43, "day": 21, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55ff74", "_ts": 1789295466.0351145}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 44, "day": 28, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "p9": 0, "retaddr": "0x55ff9f", "_ts": 1789295466.0361135}
+{"op": "roundwriter", "buf": "0x2ca9300", "round_idx": 45, "day": 6, "month": 4, "day_off": 1, "flag": 6, "type_byte": 1, "year": 46794705, "p9": 0, "retaddr": "0x55ffca", "_ts": 1789295466.0361135}
+{"op": "getter_returned", "retval": "0x2ca9300", "round_count": 46, "_ts": 1789295466.0361135}
+{"op": "buffer_dump", "ptr": "0x2ca9300", "size": 2990, "_ts": 1789295466.0361135}
+{"op": "done", "_ts": 1789295466.0361135}

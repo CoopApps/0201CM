@@ -1,6 +1,6 @@
 # Deviation: League fixture dates
 
-## Status: RECOVERY IN PROGRESS
+## Status: PARTIALLY RECOVERED — flag-snap chain + walker + driver still to port
 
 - **Rust sites**:
   - `crates/cm-domain/src/lib.rs::start_new_game` league fixture emission uses
@@ -8,6 +8,9 @@
     `generate_double_round_robin` (both TEMPORARY STUB).
   - `crates/cm-domain/src/league_calendar.rs::SEASON_STARTS` (season-window
     openers, not real matchdays).
+  - `crates/cm-domain/src/exe_date.rs` — `pack_date` (byte-exact PRE-SNAP);
+    `write_round_record` (byte-exact for +0x00/+0x02/+0x04/+0x3d slots but
+    does NOT apply the flag-snap chain).
 
 - **Executable functions / addresses (VERIFIED)**:
   - `eng_prm.cpp`   at `0x0055cf20`  — Premier   ctor (comp id 7)
@@ -15,83 +18,116 @@
   - **`eng_second.cpp` at `0x0055f040`** — Second ctor (comp id 9)
   - `eng_third.cpp` at `0x00560b40`  — Third     ctor (comp id 10)
   - `eng_conf.cpp`  at `0x005577a0`  — Conference ctor (comp id 93)
-  - `FUN_00560320` (`decompiled/00560320.c`) — sets `+0xba = vtable+0x3c()`
-    (virtual dispatch to schedule-getter)
-  - `FUN_0066f3b0` (`decompiled/0066f3b0.c`) — round-record writer; writes
-    packed date at `buffer+round_idx*0x41+0` and `+0x02`, type byte at `+0x04`,
-    int at `+0x3d`
-  - `FUN_00533b50` (`decompiled/00533b50.c`) — date encoder; validates
-    `1 ≤ day ≤ 31` and `0 ≤ month ≤ 11` (MONTHS ARE 0-INDEXED)
+  - `FUN_00560320` — sets `+0xba = vtable+0x3c()` (virtual dispatch to
+    schedule-getter)
   - **`0x0055f340`** — eng_second schedule-getter (vtable slot +0x3c on
-    vtable `0x00957dc8`). Not decompiled by Ghidra; disassembled directly.
+    vtable `0x00957dc8`).
+  - `FUN_0066f3b0` — round-record writer; 9 args
+    `(buffer, round_idx, day, month, day_off, flag, type, year, prize)`;
+    writes packed date, type, prize into the 65-byte record.
+  - `FUN_00533b50` — date encoder (day/month/year → 4-short pack).
+  - **`FUN_00533eb0`** — flag-snap helper (weekday snap-back); NOT YET
+    PORTED. This is the key remaining pre-buffer step.
+  - `FUN_00668890` — round-robin driver (writes the +0x09..+0x0b 0xFF
+    sentinels + is presumed to fill team-pair bytes later).
+  - `FUN_0066f280` — schedule walker / nominal-date generator.
 
-- **Discrepancy**:
-  1. Round 0 for English Second Division IS **Sun 12 Aug 2001**, not the
-     Sat 11 Aug 2001 my pragmatic patch would have inserted (contract-forbidden
-     historical guess). Port currently writes Tue 10 Jul 2001 (also wrong).
-  2. Port uses flat +7-day stride between rounds. Exe uses variable stride
-     with midweek rounds (e.g. Round 3 is Tue 28 Aug 2001, Round 6 is
-     Thu 13 Sep 2001).
-  3. Port never installs any schedule template; exe writes 46 round records
-     into a `malloc(0xbae)` = 2990 byte buffer.
+## VERIFIED EXACT — Runtime capture 2026-09-13
 
-- **Evidence RECOVERED (VERIFIED EXACT)**:
+Full report: `reports/fixture_disasm/RUNTIME_CAPTURE_REPORT.md`.
+Raw artefacts: `reports/fixture_disasm/runtime/20260913_113106_*`.
 
-  Rounds 0-25 for English Second Division 2001/02, decoded directly from
-  the schedule-getter at `0x0055f340..0x0055f823` (calls 0-25 of 134):
+Method: Frida in-process attach + direct call to `FUN_0055f340` with
+`arg1 = 0xFF` on a synthetic comp record (`this+0x40 = 2001`).
 
-  | Round | Day | Month (0-idx) | Year | Date        | Weekday |
-  |-------|-----|---------------|------|-------------|---------|
-  | 0     | 12  | 7             | 2001 | 12 Aug 2001 | Sun     |
-  | 1     | 19  | 7             | 2001 | 19 Aug 2001 | Sun     |
-  | 2     | 26  | 7             | 2001 | 26 Aug 2001 | Sun     |
-  | 3     | 28  | 7             | 2001 | 28 Aug 2001 | Tue **midweek** |
-  | 4     | 2   | 8             | 2001 | 2 Sep 2001  | Sun     |
-  | 5     | 9   | 8             | 2001 | 9 Sep 2001  | Sun     |
-  | 6     | 13  | 8             | 2001 | 13 Sep 2001 | Thu **midweek** |
-  | 7     | 16  | 8             | 2001 | 16 Sep 2001 | Sun     |
-  | 8     | 23  | 8             | 2001 | 23 Sep 2001 | Sun     |
-  | 9     | 30  | 8             | 2001 | 30 Sep 2001 | Sun     |
-  | 10    | 7   | 9             | 2001 | 7 Oct 2001  | Sun     |
-  | 11    | 14  | 9             | 2001 | 14 Oct 2001 | Sun     |
-  | 12    | 17  | 9             | 2001 | 17 Oct 2001 | Wed **midweek** |
-  | 13    | 21  | 9             | 2001 | 21 Oct 2001 | Sun     |
-  | 14    | 24  | 9             | 2001 | 24 Oct 2001 | Wed **midweek** |
-  | 15    | 28  | 9             | 2001 | 28 Oct 2001 | Sun     |
-  | 16    | 4   | 10            | 2001 | 4 Nov 2001  | Sun     |
-  | 17    | 11  | 10            | 2001 | 11 Nov 2001 | Sun     |
-  | 18    | 18  | 10            | 2001 | 18 Nov 2001 | Sun     |
-  | 19    | 25  | 10            | 2001 | 25 Nov 2001 | Sun     |
-  | 20    | 2   | 11            | 2001 | 2 Dec 2001  | Sun     |
-  | 21    | 9   | 11            | 2001 | 9 Dec 2001  | Sun     |
-  | 22    | 16  | 11            | 2001 | 16 Dec 2001 | Sun     |
-  | 23    | 20  | 11            | 2001 | 20 Dec 2001 | Thu     |
-  | 24    | 27  | 11            | 2001 | 27 Dec 2001 | Thu (Boxing week) |
-  | 25    | 30  | 11            | 2001 | 30 Dec 2001 | Sun     |
+### Answers to standing questions
 
-  Full raw dump at `reports/fixture_disasm/eng_second_full_schedule.txt`.
+1. **"134 static call sites — why not 46?"** Because 134 calls to
+   FUN_0066f3b0 exist across ALL param_1 branches of FUN_0055f340.
+   Runtime with arg1=0xFF hits **exactly 46**. The remaining 88 belong
+   to playoff/promotion/reset paths not taken for normal Div-2
+   construction.
 
-- **Confidence**: STRONGLY SUPPORTED for rounds 0-25 (register-value tracking
-  fully resolved). Rounds 26-45 are in the alternate branches of the
-  schedule-getter (calls 26-66 of 134); the constant-tracker needs to walk
-  further to resolve all `mov reg, imm` sources.
+2. **"Buffer size / layout?"** `malloc(0xbae)` = 2990 bytes = 46 × 65.
+   Confirmed the exact bytes and per-record layout (see report §3).
 
-- **Work required**:
-  1. Complete extraction of rounds 26-45 via improved constant tracker
-     across the alternate `param_1` branches.
-  2. Same disassembly pass for eng_prm (0x0055cf20), eng_first (0x0055b340),
-     eng_third (0x00560b40), eng_conf (0x005577a0).
-  3. Port `FUN_0066f3b0` (4 effective lines) + `FUN_00533b50` (date encoder,
-     ~40 lines with validation).
-  4. Encode recovered schedule as a Rust `pub const` per comp.
-  5. Wire per-comp schedule into `generate_double_round_robin` so round N uses
-     the schedule template's date instead of `season_start + N*7`.
-  6. Port `FUN_0066f280` (schedule walker) byte-exact.
-  7. Port `FUN_00668890` algorithmic path byte-exact.
-  8. Validate: seed with same base year + PRNG state, confirm the port's
-     first 46 English Second Division fixture dates match a Frida-captured
-     `save.season.fixtures` from a fresh save.
+3. **"Round 0 date?"** **Sat 11 Aug 2001** — buffer doy=222, year=2001.
+   NOT Sun 12 Aug as my earlier static-analysis claimed. (My static
+   pass captured the writer *input* day=12; the buffer stores the
+   flag-snapped result day=11.)
+
+4. **"What is `flag`?"** Target weekday for `FUN_00533eb0` snap-back
+   (0=Mon..6=Sun, -1=no-snap). Verified across all 46 rounds: nominal
+   is always exactly one day past target, and `flag = -1` on rounds
+   23–26 (Xmas/New Year holidays) preserves the exact hardcoded date.
+
+### Full recovered fixture list (VERIFIED EXACT from buffer)
+
+| Rd | Date | Type | Notes |
+|----|------|------|-------|
+| 0 | Sat 11 Aug 2001 | 1 | Opening day |
+| 1 | Sat 18 Aug 2001 | 1 | |
+| 2 | Sat 25 Aug 2001 | 1 | |
+| 3 | Mon 27 Aug 2001 | 2 | Aug Bank Holiday midweek |
+| 4 | Sat 01 Sep 2001 | 1 | |
+| 5 | Sat 08 Sep 2001 | 1 | |
+| 6 | Wed 12 Sep 2001 | 2 | Midweek |
+| 7 | Sat 15 Sep 2001 | 1 | |
+| 8 | Sat 22 Sep 2001 | 1 | |
+| 9 | Sat 29 Sep 2001 | 1 | |
+| 10 | Sat 06 Oct 2001 | 1 | |
+| 11 | Sat 13 Oct 2001 | 1 | |
+| 12 | Tue 16 Oct 2001 | 2 | Midweek |
+| 13 | Sat 20 Oct 2001 | 1 | |
+| 14 | Tue 23 Oct 2001 | 2 | Midweek |
+| 15 | Sat 27 Oct 2001 | 1 | |
+| 16 | Sat 03 Nov 2001 | 1 | |
+| 17 | Sat 10 Nov 2001 | 1 | |
+| 18 | Sat 17 Nov 2001 | 1 | |
+| 19 | Sat 24 Nov 2001 | 1 | |
+| 20 | Sat 01 Dec 2001 | 1 | |
+| 21 | Sat 08 Dec 2001 | 1 | |
+| 22 | Sat 15 Dec 2001 | 1 | |
+| 23 | Sat 22 Dec 2001 | 1 | flag=-1 |
+| 24 | Wed 26 Dec 2001 | 1 | Boxing Day flag=-1 |
+| 25 | Sat 29 Dec 2001 | 1 | flag=-1 |
+| 26 | Tue 01 Jan 2002 | 1 | New Year flag=-1 |
+| 27 | Sat 12 Jan 2002 | 1 | |
+| 28 | Sat 19 Jan 2002 | 1 | |
+| 29 | Sat 02 Feb 2002 | 1 | |
+| 30 | Sat 09 Feb 2002 | 1 | |
+| 31 | Sat 16 Feb 2002 | 1 | |
+| 32 | Tue 19 Feb 2002 | 2 | Midweek |
+| 33 | Sat 23 Feb 2002 | 1 | |
+| 34 | Sat 02 Mar 2002 | 1 | |
+| 35 | Wed 06 Mar 2002 | 2 | Midweek |
+| 36 | Sat 09 Mar 2002 | 1 | |
+| 37 | Tue 19 Mar 2002 | 2 | Midweek |
+| 38 | Sat 23 Mar 2002 | 1 | |
+| 39 | Sat 30 Mar 2002 | 1 | |
+| 40 | Sat 06 Apr 2002 | 1 | |
+| 41 | Sat 13 Apr 2002 | 1 | |
+| 42 | Mon 15 Apr 2002 | 2 | Easter Mon |
+| 43 | Sat 20 Apr 2002 | 1 | |
+| 44 | Sat 27 Apr 2002 | 1 | |
+| 45 | Sun 05 May 2002 | 1 | Final day, flag=6 |
+
+## Remaining work
+
+1. Byte-exact port of **FUN_00533eb0** (flag-snap). This is the last
+   date-transform block needed for round-record byte match.
+2. Byte-exact port of **FUN_0066f280** (walker / nominal-date stream).
+3. Byte-exact port of **FUN_00668890** (round-robin driver — writes the
+   0xFF sentinels and is presumed to populate team-pair bytes).
+4. Identify where the H/A team pair bytes get written (not by
+   FUN_0066f3b0; not in the captured buffer either). Suspect a later
+   pass driven by a comp-tick or "start-of-season" hook.
+5. Same runtime capture for other English divs (Premier / First /
+   Third / Conf) — with contract rule: not yet, English Second Division
+   only.
+6. Choose the Rust representation only after 1–4 are done.
 
 - **Player-visible**: YES  |  **Save-affecting**: YES
 - **Opened**: 2026-09-13
+- **Runtime capture**: 2026-09-13 (superseded static claim of "Sun 12 Aug")
 - **Resolved**: —
