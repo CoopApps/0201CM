@@ -11,7 +11,12 @@ use serde::Deserialize;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
-struct DerefEntry { slot: i64, club_id: i32 }
+struct DerefEntry {
+    slot: i64,
+    club_id: i32,
+    #[serde(default)] nation_ptr: Option<String>,
+    #[serde(default)] nation_plus_48: Option<String>,
+}
 
 #[derive(Debug, Deserialize)]
 struct RngCall {
@@ -70,14 +75,19 @@ impl StreamRng {
 }
 
 /// Manually-inline reimplementation of matrix_perturb, phase-by-phase,
-/// so we can log what each phase does and fix E1-E4 iteratively.
-fn perturb_replay(
+/// with per-slot nation + nation.+0x48 data feeding E2/E3.
+///
+/// `nation_of(club_id)` and `plus48_of(club_id)` are stable per-club
+/// lookups; the algorithm indexes them by the CURRENT clubs[i] value
+/// at each E-phase step (which changes as Phase D shuffles clubs).
+fn perturb_replay_v2(
     n_clubs: i16,
     year: i16,
     d9_flags: u16,
     owner_first: Option<i32>,
-    same_nation: bool,   // resolver: all clubs share nation
-    clubs: &mut Vec<i32>,   // slot -> club_id (simulates the 0x3b-byte table by first-int only)
+    nation_of: &dyn Fn(i32) -> String,
+    plus48_of: &dyn Fn(i32) -> String,
+    clubs: &mut Vec<i32>,
     rng: &mut StreamRng,
     dbc340_cli_seed: i32,
     dat_009bba9c: i32,
@@ -147,12 +157,15 @@ fn perturb_replay(
             }
         }
 
-        // E2 — pair by shared +0x69 (all English clubs share nation)
+        // E2 — pair by shared nation pointer (both non-null, equal).
+        // Outer i from 0..n-1, inner j from i+1..n-1.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] { continue; }
-            for j in (local_254 + 1)..n {
-                if used_dst[j] { continue; }
-                if !same_nation { continue; }
+            if nation_of(clubs[i]) == "0x0" { continue; }
+            for j in (i + 1)..n {
+                if used_src[j] { continue; }
+                if nation_of(clubs[j]) == "0x0" { continue; }
+                if nation_of(clubs[i]) != nation_of(clubs[j]) { continue; }
                 if local_254 >= half { break; }
                 let slot_lo = local_254;
                 let slot_hi = half + local_254;
@@ -168,9 +181,30 @@ fn perturb_replay(
         }
         lineage.push(scratch.iter().map(|x| x.unwrap_or(-1)).collect());   // after E1+E2
 
-        // E3 — cross-link via +0x48 (currently a no-op via NullResolver)
-        // Nothing to do here for now.
-        lineage.push(scratch.iter().map(|x| x.unwrap_or(-1)).collect());
+        // E3 — pair by nation.+0x48 cross-link (bidirectional).
+        // Same outer i / inner j iteration as E2.
+        for i in 0..n.saturating_sub(1) {
+            if used_src[i] { continue; }
+            if nation_of(clubs[i]) == "0x0" { continue; }
+            for j in (i + 1)..n {
+                if used_src[j] { continue; }
+                if nation_of(clubs[j]) == "0x0" { continue; }
+                let match_ij = plus48_of(clubs[i]) == nation_of(clubs[j]);
+                let match_ji = plus48_of(clubs[j]) == nation_of(clubs[i]);
+                if !match_ij && !match_ji { continue; }
+                if local_254 >= half { break; }
+                let slot_lo = local_254;
+                let slot_hi = half + local_254;
+                scratch[slot_lo] = Some(clubs[i]);
+                scratch[slot_hi] = Some(clubs[j]);
+                used_dst[slot_lo] = true;
+                used_dst[slot_hi] = true;
+                used_src[i] = true;
+                used_src[j] = true;
+                local_254 += 1;
+                break;
+            }
+        }
 
         // E4 — flush unconsumed sources
         for i in 0..n {
@@ -200,7 +234,7 @@ fn perturb_replay(
 
 fn main() {
     let path = Path::new(
-        "D:/cm0102-rs/reports/fixture_disasm/runtime/20260913_205743_lineage.jsonl");
+        "D:/cm0102-rs/reports/fixture_disasm/runtime/20260913_221525_lineage.jsonl");
     let text = std::fs::read_to_string(path).unwrap();
     let records: Vec<serde_json::Value> = text.lines()
         .filter(|l| !l.trim().is_empty())
@@ -211,16 +245,23 @@ fn main() {
         .find(|r| r["op"] == "clubs_snap" && r["point"] == "P1").unwrap();
     let p2_rec = records.iter()
         .find(|r| r["op"] == "clubs_snap" && r["point"] == "P2").unwrap();
-    let p1: Vec<i32> = {
-        let ents: Vec<DerefEntry> = serde_json::from_value(
-            p1_rec["entries"].clone()).unwrap();
-        (0..24).map(|i| ents.iter().find(|e| e.slot == i).unwrap().club_id).collect()
-    };
-    let p2: Vec<i32> = {
-        let ents: Vec<DerefEntry> = serde_json::from_value(
-            p2_rec["entries"].clone()).unwrap();
-        (0..24).map(|i| ents.iter().find(|e| e.slot == i).unwrap().club_id).collect()
-    };
+    let p1_entries: Vec<DerefEntry> = serde_json::from_value(
+        p1_rec["entries"].clone()).unwrap();
+    let p2_entries: Vec<DerefEntry> = serde_json::from_value(
+        p2_rec["entries"].clone()).unwrap();
+    let p1: Vec<i32> = (0..24)
+        .map(|i| p1_entries.iter().find(|e| e.slot == i).unwrap().club_id).collect();
+    let p2: Vec<i32> = (0..24)
+        .map(|i| p2_entries.iter().find(|e| e.slot == i).unwrap().club_id).collect();
+
+    // Build club_id -> (nation, plus48) map from P1 (clubs are identical
+    // across P1 and P2 — only their slot order changes)
+    let mut club_nation = std::collections::HashMap::new();
+    let mut club_plus48 = std::collections::HashMap::new();
+    for e in &p1_entries {
+        club_nation.insert(e.club_id, e.nation_ptr.clone().unwrap_or_else(|| "0x0".into()));
+        club_plus48.insert(e.club_id, e.nation_plus_48.clone().unwrap_or_else(|| "0x0".into()));
+    }
 
     let rng_rec = records.iter().find(|r| r["op"] == "rng_trace").unwrap();
     let rng_calls: Vec<RngCall> = serde_json::from_value(
@@ -232,30 +273,54 @@ fn main() {
     // d9_flags (comp+0xd9) = 0x3
     // owner_first_int = 8
     // For unknown DAT_009b* constants use MIN sentinels so E1 doesn't fire.
+    // Build per-slot nation/plus48 arrays keyed by post-D club order.
+    // Since Phase D shuffles in-place, we must rebuild these arrays
+    // dynamically after each phase. But E2/E3 read them indexed by the
+    // CURRENT clubs[i], so we look up by club_id at each i.
+    let nation_lookup: Box<dyn Fn(i32) -> String> = {
+        let m = club_nation.clone();
+        Box::new(move |cid| m.get(&cid).cloned().unwrap_or_else(|| "0x0".into()))
+    };
+    let plus48_lookup: Box<dyn Fn(i32) -> String> = {
+        let m = club_plus48.clone();
+        Box::new(move |cid| m.get(&cid).cloned().unwrap_or_else(|| "0x0".into()))
+    };
+
     let mut clubs = p1.clone();
-    let lineage = perturb_replay(
-        24, 2001, 0x3, Some(8), true,
+    // Build initial nation/plus48 arrays; perturb_replay will use these
+    // indexed by CURRENT slot which is what post-D reads.
+    let nations_by_slot: Vec<String> = (0..24)
+        .map(|i| nation_lookup(p1[i])).collect();
+    let plus48_by_slot: Vec<String> = (0..24)
+        .map(|i| plus48_lookup(p1[i])).collect();
+
+    // Phase D shuffles clubs. E2/E3 then read nations of shuffled clubs.
+    // Since club_id -> nation is a stable map, we pass the LOOKUPS and
+    // perturb_replay indexes by clubs[i] at each E-phase step.
+    let lineage = perturb_replay_v2(
+        24, 2001, 0x3, Some(8),
+        &nation_lookup, &plus48_lookup,
         &mut clubs, &mut rng,
-        0,                     // dbc340_cli_seed — Rust assumption for stock
+        0,
         i32::MIN, i32::MIN, i32::MIN,
     );
+    let _ = (nations_by_slot, plus48_by_slot);
 
     println!("P1:            {:?}", p1);
     println!("After Phase D: {:?}", lineage[1]);
     println!("After E1+E2:   {:?}", lineage[2]);
-    println!("After E3:      {:?}", lineage[3]);
-    println!("After E4 :     {:?}", lineage[4]);
+    println!("After E4 :     {:?}", lineage[3]);
     println!("P2 expected:   {:?}", p2);
 
     let mismatches: Vec<usize> = (0..24).filter(|&i| clubs[i] != p2[i]).collect();
     println!("\n=== Slot lineage table ===");
-    println!("{:<5} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {}",
-             "slot", "P1", "postD", "postE12", "postE3", "postE4", "P2exp", "match");
+    println!("{:<5} {:<10} {:<10} {:<10} {:<10} {:<10} {}",
+             "slot", "P1", "postD", "postE12", "postE4", "P2exp", "match");
     for i in 0..24 {
         let m = if clubs[i] == p2[i] { "OK" } else { "**" };
-        println!("{:<5} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {}",
-                 i, p1[i], lineage[1][i], lineage[2][i], lineage[3][i],
-                 lineage[4][i], p2[i], m);
+        println!("{:<5} {:<10} {:<10} {:<10} {:<10} {:<10} {}",
+                 i, p1[i], lineage[1][i], lineage[2][i],
+                 lineage[3][i], p2[i], m);
     }
     println!("\nP1→P2 mismatches: {}/24", mismatches.len());
     println!("mismatch slots: {:?}", mismatches);
