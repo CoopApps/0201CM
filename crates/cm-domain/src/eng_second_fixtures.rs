@@ -531,20 +531,35 @@ pub fn matrix_perturb(
             }
         }
 
-        // Sub-phase E2 — pair by shared nation-pointer at Club+0x69
+        // Sub-phase E2 — pair by shared STADIUM pointer at Club+0x69
         // (GDI FUN_0066b900 0x0066bd55..0x0066bf44).
         //
         // Byte-exact port verified 2026-09-13 against captured GDI
-        // trace 20260913_221525_lineage (English Second Division,
-        // 24 clubs, Cardiff+Wrexham share Welsh nation). Golden test
+        // trace 20260913_221525_lineage. Golden test
         // `examples/perturb_golden_p1_p2.rs` reaches 24/24 P1→P2.
+        //
+        // SEMANTIC CORRECTION (2026-09-13, superseding earlier notes):
+        // Club.+0x69 = STADIUM POINTER (not nation). Verified via
+        // `runtime/20260913_233815_nation_array.jsonl`: the pointer
+        // target has stadium-name strings at offset 0 (Highbury,
+        // Villa Park, Old Trafford ...) and Arsenal's shipped Club
+        // record at +0x69 holds int 2 = Highbury's stadium_id.
+        //
+        // E2 pairs clubs that SHARE A STADIUM (both non-null). This
+        // is rare — e.g. two Milan clubs at San Siro, or in the
+        // English pyramid situations where two clubs literally share
+        // a ground. Purpose is anti-clustering — they can't both be
+        // "home" the same weekend.
         //
         // Iteration: outer i in 0..n-1 (source A). Inner j in
         // (i+1)..n (source B, must be > i). Both must have non-null
-        // nation pointer and share it. Pair goes into scratch at
-        // (local_254, half + local_254) which is what breaks
-        // same-nation clubs into opposite halves of the round-robin
-        // draw. See `ClubResolver::e2_pair_shares_69`.
+        // stadium pointer and share it. Pair goes into scratch at
+        // (local_254, half + local_254) which forces them into
+        // opposite halves of the round-robin.
+        //
+        // See `ClubResolver::e2_pair_shares_69` (kept the exe-derived
+        // method name for cross-reference; semantically it means
+        // "share stadium").
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
             for j in (i + 1)..n {
@@ -566,18 +581,32 @@ pub fn matrix_perturb(
             }
         }
 
-        // Sub-phase E3 — pair by Nation.+0x48 cross-link, checked
+        // Sub-phase E3 — pair by STADIUM RIVAL cross-link, checked
         // bidirectionally (GDI FUN_0066b900 0x0066bf44..0x0066c141).
         //
-        // The exe reads `*(Nation_i + 0x48)` (Nation_i coming from
-        // `*(Club_i + 0x69)`) and compares to Nation_j directly, then
-        // reverses: `*(Nation_j + 0x48) == Nation_i`. Either match
-        // pairs them. This links e.g. Welsh clubs to English clubs
-        // via Wales.+0x48 → England (or vice versa), splitting them
-        // across the round-robin halves the same way E2 does. See
-        // `ClubResolver::e3_pair_cross_linked`, which the caller
-        // must implement to return true when the cross-link holds
-        // in either direction.
+        // The exe reads `*(Stadium_i + 0x48)` (Stadium_i coming from
+        // `*(Club_i + 0x69)`) and compares to Stadium_j directly, then
+        // reverses: `*(Stadium_j + 0x48) == Stadium_i`. Either match
+        // pairs them.
+        //
+        // SEMANTIC (verified via runtime sweep 20260913_233815):
+        // Stadium.+0x48 is the RIVAL STADIUM POINTER — the derby
+        // partner. Confirmed examples from the sweep:
+        //   Highbury(Arsenal) ↔ White Hart Lane(Tottenham) — N. London
+        //   Old Trafford(Man U) ↔ Maine Road(Man City) — Manchester
+        //   Anfield(LFC) ↔ Goodison Park(EFC) — Merseyside
+        //   Hillsborough(SW) ↔ Bramall Lane(SU) — Sheffield
+        //   Meadow Lane(Notts C) ↔ City Ground(Forest) — Nottingham
+        //   Villa Park ↔ St.Andrews (Villa/Birmingham City)
+        //   Molineux ↔ The Hawthorns (Wolves/West Brom)
+        //
+        // The shipped `stadium.dat` carries this as `alt_stadium_id`
+        // at record +0x48 (already imported to `DomainStadium`). The
+        // loader converts the id into a runtime pointer.
+        //
+        // See `ClubResolver::e3_pair_cross_linked` — implementation
+        // should read `world.stadium(club[i].stadium_id).alt_stadium_id`
+        // and compare to `club[j].stadium_id`, and vice versa.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
             for j in (i + 1)..n {
