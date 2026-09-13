@@ -18333,6 +18333,14 @@ impl World {
             }
             members.sort_by(|a, b| a.1.cmp(&b.1));
 
+            // TEMPORARY STUB: consumes the picker's season-window
+            // opener (day/month recovered from FUN_006508e0). This is
+            // NOT the first league matchday — the exe stores each
+            // real matchday inside the comp record's +0xba round
+            // array, populated by an English-comp constructor in the
+            // un-decompiled block 0x0081a118..0x00821e90. Recovering
+            // those constructors is the fix; see
+            // deviations/fixture_dates.md.
             let start = self
                 .competition_nation_name(competition.id)
                 .and_then(|country| {

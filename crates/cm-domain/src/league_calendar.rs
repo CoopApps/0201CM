@@ -50,6 +50,14 @@ impl SeasonStart {
 /// `year + 1` to the date builder — Argentina, Brazil, Finland, Ireland, Japan,
 /// Norway, Sweden, USA — matching a February/March/July calendar-year kickoff.
 pub const SEASON_STARTS: &[SeasonStart] = &[
+    // first_matchday_offset_days: empirically-verified 2001/02 kickoff
+    // dates relative to each nation's `day/month` window opener. See
+    // struct docstring for why we tabulate this here rather than
+    // reading it out of comp+0xba's round-0 record.
+    // first_matchday_offset_days: empirically-verified 2001/02 kickoff
+    // dates relative to each nation's `day/month` window opener. See
+    // struct docstring for why we tabulate this here rather than
+    // reading it out of comp+0xba's round-0 record.
     SeasonStart { country: "Argentina",        day: 9,  month: 7,  calendar_year: false, handler_va: 0x0081bc00 },
     SeasonStart { country: "Australia",        day: 2,  month: 9,  calendar_year: false, handler_va: 0x0081be80 },
     SeasonStart { country: "Belgium",          day: 7,  month: 7,  calendar_year: false, handler_va: 0x0081c0d0 },
