@@ -531,18 +531,24 @@ pub fn matrix_perturb(
             }
         }
 
-        // Sub-phase E2 — pair by shared +0x69 (lines 166..235).
-        // NOTE: The exe pattern is
-        //   *(int *)( *(int *)(entry_i + 0) + 0x69)
-        // — a double-indirection through the entry's Club* pointer
-        // that a raw byte slice cannot reproduce. The
-        // `ClubResolver::e2_pair_shares_69` closure answers "do
-        // these two slots share a non-zero +0x69 field" without
-        // the byte-slice hack. See the type doc.
+        // Sub-phase E2 — pair by shared nation-pointer at Club+0x69
+        // (GDI FUN_0066b900 0x0066bd55..0x0066bf44).
+        //
+        // Byte-exact port verified 2026-09-13 against captured GDI
+        // trace 20260913_221525_lineage (English Second Division,
+        // 24 clubs, Cardiff+Wrexham share Welsh nation). Golden test
+        // `examples/perturb_golden_p1_p2.rs` reaches 24/24 P1→P2.
+        //
+        // Iteration: outer i in 0..n-1 (source A). Inner j in
+        // (i+1)..n (source B, must be > i). Both must have non-null
+        // nation pointer and share it. Pair goes into scratch at
+        // (local_254, half + local_254) which is what breaks
+        // same-nation clubs into opposite halves of the round-robin
+        // draw. See `ClubResolver::e2_pair_shares_69`.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
-            for j in (local_254 + 1)..n {
-                if used_dst[j] != 0 { continue; }
+            for j in (i + 1)..n {
+                if used_src[j] != 0 { continue; }
                 if !resolver.e2_pair_shares_69(i, j) { continue; }
                 if local_254 >= half { break; }
                 let slot_lo = local_254;
@@ -560,17 +566,22 @@ pub fn matrix_perturb(
             }
         }
 
-        // Sub-phase E3 — pair by (+0x69)-cross-linked-via-+0x48
-        // (lines 236..306 of 0066bd40.c). Byte-exact port pending
-        // a runtime capture of a real Club record showing what
-        // `+0x48` actually holds. Routed through
-        // `resolver.e3_pair_cross_linked`; default returns false so
-        // E3 is a no-op for any caller that has not populated the
-        // cross-link table.
+        // Sub-phase E3 — pair by Nation.+0x48 cross-link, checked
+        // bidirectionally (GDI FUN_0066b900 0x0066bf44..0x0066c141).
+        //
+        // The exe reads `*(Nation_i + 0x48)` (Nation_i coming from
+        // `*(Club_i + 0x69)`) and compares to Nation_j directly, then
+        // reverses: `*(Nation_j + 0x48) == Nation_i`. Either match
+        // pairs them. This links e.g. Welsh clubs to English clubs
+        // via Wales.+0x48 → England (or vice versa), splitting them
+        // across the round-robin halves the same way E2 does. See
+        // `ClubResolver::e3_pair_cross_linked`, which the caller
+        // must implement to return true when the cross-link holds
+        // in either direction.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
-            for j in (local_254 + 1)..n {
-                if used_dst[j] != 0 { continue; }
+            for j in (i + 1)..n {
+                if used_src[j] != 0 { continue; }
                 if !resolver.e3_pair_cross_linked(i, j) { continue; }
                 if local_254 >= half { break; }
                 let slot_lo = local_254;
