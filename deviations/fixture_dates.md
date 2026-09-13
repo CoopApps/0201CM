@@ -112,22 +112,56 @@ Method: Frida in-process attach + direct call to `FUN_0055f340` with
 | 44 | Sat 27 Apr 2002 | 1 | |
 | 45 | Sun 05 May 2002 | 1 | Final day, flag=6 |
 
-## Remaining work
+## Update 2 (2026-09-13, later): team-pair pipeline identified
 
-1. Byte-exact port of **FUN_00533eb0** (flag-snap). This is the last
-   date-transform block needed for round-record byte match.
-2. Byte-exact port of **FUN_0066f280** (walker / nominal-date stream).
-3. Byte-exact port of **FUN_00668890** (round-robin driver — writes the
-   0xFF sentinels and is presumed to populate team-pair bytes).
-4. Identify where the H/A team pair bytes get written (not by
-   FUN_0066f3b0; not in the captured buffer either). Suspect a later
-   pass driven by a comp-tick or "start-of-season" hook.
-5. Same runtime capture for other English divs (Premier / First /
-   Third / Conf) — with contract rule: not yet, English Second Division
-   only.
-6. Choose the Rust representation only after 1–4 are done.
+Complete report: `reports/fixture_disasm/TEAM_PAIRING_REPORT.md`.
+
+### Answers
+
+- **FUN_00668890 IS called from eng_second_ctor** at `0x0055f136` (my
+  earlier "not called from schedule-getter" was correct but
+  misleading — the ctor calls it directly, but I had only direct-
+  called the schedule-getter). See ctor decompile line 50.
+- **FUN_0066f410** is the second writer function inside FUN_0055f340
+  — every writer call is paired with a slot-writer call. Slot-writer
+  owns bytes +0x05..+0x0b of each round record, initialising slot 0
+  to sentinels (-1, -1, -1, 0). Not previously found because I only
+  hooked one writer function; add_writer_hook and re-capture confirm.
+- **65-byte round-record layout**: header (5B, FUN_0066f3b0) + 8×7B
+  fixture sub-slots (FUN_0066f410) + tail (4B, FUN_0066f3b0). The
+  8-sub-slot structure was completely unknown before.
+- **Team pairings live in 79-byte TFixture records** (not in the
+  schedule buffer). Built on-stack by FUN_00668890 (round-robin
+  driver), inserted into a `TFixList` calendar via FUN_00594d00
+  (`fix_man.cpp`).
+- **TFixList container**: 0x1184 bytes per season year, chained
+  linked-list. Indexed by [year][doy][slot 0..2][comp-idx] of
+  TList<TFixture*>. Save file: `fixtures.<year>.tmp`.
+- **552 fixtures per Div-2 season**: 24 clubs × 23 rounds × 2 legs = 552.
+
+### Rust changes (this update)
+
+- Added `apply_flag_snap` (byte-exact FUN_00533eb0).
+- Added `write_slot` (byte-exact FUN_0066f410).
+- Added `build_eng_second_schedule` — reproduces the entire 2990-
+  byte buffer byte-exact vs runtime capture.
+- Test `full_buffer_matches_runtime_capture` compares all 2990 bytes.
+
+### Remaining (still open)
+
+1. Byte-exact port of **FUN_00668890** (~425 lines) — the round-
+   robin driver + fixture builder.
+2. Byte-exact port of **FUN_00594d00** (fixture inserter, ~250
+   lines) and the TFixList container (0x1184-byte struct).
+3. Byte-exact port of **FUN_0066f280** walker — done conceptually,
+   pending FUN_00668890 to know how it's called.
+4. Runtime capture of a concrete pair sequence (blocked on safe
+   direct-call of eng_second_ctor — currently crashes the exe).
+5. Save-file compatibility with the exe's `fixtures.<year>.tmp`
+   format.
 
 - **Player-visible**: YES  |  **Save-affecting**: YES
 - **Opened**: 2026-09-13
-- **Runtime capture**: 2026-09-13 (superseded static claim of "Sun 12 Aug")
+- **Update 1**: 2026-09-13 (12 Aug → 11 Aug correction, flag-snap decoded)
+- **Update 2**: 2026-09-13 (team-pair mechanism located)
 - **Resolved**: —

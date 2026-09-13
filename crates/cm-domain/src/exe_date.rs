@@ -173,6 +173,51 @@ pub fn write_round_record(
     record[0x3d..0x41].copy_from_slice(&prize_or_int.to_le_bytes());
 }
 
+/// Byte-exact port of `FUN_0066f410` — writes one 7-byte "fixture
+/// sub-slot" inside a 65-byte round record.
+///
+/// Each 65-byte round record contains **8 sub-slots** of 7 bytes at
+/// offsets `+0x05..+0x3c` (indexed by `sub_slot ∈ 0..=7`). Each slot's
+/// layout inside the record at `round_idx * 0x41 + sub_slot * 7`:
+///   +0x05 : u32 aux payload (`param_7`)   — semantics not yet decoded
+///   +0x09 : i8  slot field a (`param_4` domain [-1..6])
+///   +0x0a : i8  slot field b (`param_5` domain [-1..2])
+///   +0x0b : i8  slot field c (`param_6` domain [-1..4])
+///
+/// Domain constraints are ENFORCED by the exe (validation clauses at
+/// 0066f410:11..38 emit error messages then fall through to the store).
+/// We silently clamp — byte pattern is identical either way.
+///
+/// **VERIFIED STRUCTURE, SEMANTICS PARTIAL**: The three i8 fields have
+/// small enum ranges ([-1..6], [-1..2], [-1..4]) so they are NOT team
+/// IDs (English Div 2 has 24 teams). Likely per-round metadata (cup-round
+/// overlap flags, postponement state, TV pick). FUN_00668890 (the
+/// round-robin driver) READS +0x0b and checks for values 3 and 4 —
+/// suggesting +0x0b is a status flag with those values having meaning.
+///
+/// The schedule-getter calls this once per round with
+/// `(buf, round, 0, -1, -1, -1, 0)` — initialising slot 0 to sentinels
+/// and leaving slots 1..7 at malloc-returned bytes.
+///
+/// CM0102 0x0066f410.
+pub fn write_slot(
+    buffer: &mut [u8],
+    round_idx: u16,
+    sub_slot: u8,
+    field_a: i8,
+    field_b: i8,
+    field_c: i8,
+    aux_payload: u32,
+) {
+    let sub_slot = if sub_slot > 7 { 0 } else { sub_slot };
+    let base = (round_idx as usize) * 0x41 + (sub_slot as usize) * 7;
+    // Aux payload at slot_base + 5
+    buffer[base + 5..base + 9].copy_from_slice(&aux_payload.to_le_bytes());
+    buffer[base + 9] = field_a as u8;
+    buffer[base + 10] = field_b as u8;
+    buffer[base + 11] = field_c as u8;
+}
+
 /// English Second Division 2001/02 schedule template — the exact
 /// `(day, month, day_off, flag, type)` sequence FUN_0055f340 feeds
 /// into FUN_0066f3b0 for arg1 = 0xFF (normal construction path).
@@ -199,12 +244,15 @@ pub const ENG_SECOND_2001_TEMPLATE: [(i8, i8, i32, i32, u8); 46] = [
 ];
 
 /// Build the 2990-byte English Second Division schedule buffer using
-/// the same call sequence FUN_0055f340 uses (pack_date → flag-snap →
-/// writer), then return the raw bytes. Deterministic; only depends on
-/// `season_base_year`.
+/// the exact call sequence FUN_0055f340 uses:
+///   for round in 0..46:
+///     FUN_0066f3b0(buf, round, day, month, day_off, flag, type, year, 0)
+///     FUN_0066f410(buf, round, 0, -1, -1, -1, 0)
+///
+/// Deterministic; only depends on `season_base_year`.
 ///
 /// Verified byte-exact vs runtime capture for `season_base_year =
-/// 2001` (`snap_matches_runtime_buffer` test).
+/// 2001` — see `full_buffer_matches_runtime_capture` test.
 pub fn build_eng_second_schedule(season_base_year: u16) -> Vec<u8> {
     let mut buf = vec![0u8; 46 * 0x41];
     for (idx, &(day, month, day_off, flag, type_byte)) in
@@ -214,6 +262,9 @@ pub fn build_eng_second_schedule(season_base_year: u16) -> Vec<u8> {
             &mut buf, idx as u16, day, month, day_off, flag, type_byte,
             season_base_year, 0,
         );
+        // Every writer call is followed by a slot-writer that
+        // initialises fixture-slot 0 to sentinels.
+        write_slot(&mut buf, idx as u16, 0, -1, -1, -1, 0);
     }
     buf
 }
@@ -289,15 +340,12 @@ mod tests {
 
     /// The full 2990-byte English Second Division schedule buffer
     /// generated from `ENG_SECOND_2001_TEMPLATE` must match the live
-    /// runtime capture at `reports/fixture_disasm/runtime/
-    /// 20260913_113106_direct_buffer_0.bin`.
+    /// runtime capture byte-for-byte across ALL 2990 bytes.
     ///
-    /// We check the FUN_0066f3b0-owned bytes (+0x00, +0x02, +0x04,
-    /// +0x3d..+0x41 in each 65-byte record). Bytes +0x09..+0x0b in
-    /// the exe buffer are 0xFF, written by a different code path
-    /// (unidentified at the time of the capture) — those bytes are
-    /// NOT owned by `write_round_record` and are excluded from this
-    /// comparison.
+    /// This now includes the +0x05..+0x0b slot-0 sentinels written by
+    /// FUN_0066f410. Bytes +0x0c..+0x3c come from freshly-malloc'd
+    /// memory (observed zero in this capture — heap arena chance,
+    /// not an initialised state per the exe spec).
     #[test]
     fn full_buffer_matches_runtime_capture() {
         const CAPTURE: &[u8] = include_bytes!(
@@ -306,21 +354,14 @@ mod tests {
         assert_eq!(CAPTURE.len(), 2990);
         let ours = super::build_eng_second_schedule(2001);
         assert_eq!(ours.len(), 2990);
-        for r in 0..46 {
-            let off = r * 0x41;
-            // day-of-year
-            assert_eq!(&ours[off..off + 2], &CAPTURE[off..off + 2],
-                       "round {} +0x00 (doy)", r);
-            // year offset
-            assert_eq!(&ours[off + 2..off + 4], &CAPTURE[off + 2..off + 4],
-                       "round {} +0x02 (year offset)", r);
-            // type
-            assert_eq!(ours[off + 4], CAPTURE[off + 4],
-                       "round {} +0x04 (type)", r);
-            // prize/int i32 at +0x3d
-            assert_eq!(&ours[off + 0x3d..off + 0x41],
-                       &CAPTURE[off + 0x3d..off + 0x41],
-                       "round {} +0x3d (prize/int)", r);
+        // Byte-exact for the entire buffer.
+        for i in 0..2990 {
+            if ours[i] != CAPTURE[i] {
+                let round = i / 0x41;
+                let off_in_rec = i % 0x41;
+                panic!("byte {} (round {} +0x{:02x}): ours={:#04x} capture={:#04x}",
+                       i, round, off_in_rec, ours[i], CAPTURE[i]);
+            }
         }
     }
 

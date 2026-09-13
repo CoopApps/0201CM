@@ -1,0 +1,97 @@
+{"op": "hooks_installed"}
+{"op": "calling"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 0, "day": 12, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f3db"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 0, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f3ea"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 1, "day": 19, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f404"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 1, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f414"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 2, "day": 26, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f42e"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 2, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f43e"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 3, "day": 28, "month": 7, "day_off": 0, "flag": 0, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f457"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 3, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f467"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 4, "day": 2, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f481"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 4, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f491"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 5, "day": 9, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f4ab"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 5, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f4bb"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 6, "day": 13, "month": 8, "day_off": 0, "flag": 2, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f4d5"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 6, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f4e5"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 7, "day": 16, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f4ff"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 7, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f50f"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 8, "day": 23, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f529"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 8, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f539"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 9, "day": 30, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f553"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 9, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f563"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 10, "day": 7, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f57d"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 10, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f58d"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 11, "day": 14, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f5a7"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 11, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f5b7"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 12, "day": 17, "month": 9, "day_off": 0, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f5d1"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 12, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f5e1"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 13, "day": 21, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f5fb"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 13, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f60b"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 14, "day": 24, "month": 9, "day_off": 0, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f625"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 14, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f635"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 15, "day": 28, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f64f"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 15, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f65f"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 16, "day": 4, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f679"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 16, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f689"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 17, "day": 11, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f6a3"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 17, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f6b3"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 18, "day": 18, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f6cd"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 18, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f6dd"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 19, "day": 25, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f6f7"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 19, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f707"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 20, "day": 2, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f721"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 20, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f731"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 21, "day": 9, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f74b"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 21, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f75b"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 22, "day": 16, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f775"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 22, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f785"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 23, "day": 22, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f8f8"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 23, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f908"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 24, "day": 26, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f922"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 24, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f932"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 25, "day": 29, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f94c"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 25, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f95c"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 26, "day": 1, "month": 0, "day_off": 1, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fb94"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 26, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fba4"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 27, "day": 13, "month": 0, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fcc6"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 27, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fcd6"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 28, "day": 20, "month": 0, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fcf0"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 28, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fd00"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 29, "day": 3, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fd1b"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 29, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fd2b"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 30, "day": 10, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fd46"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 30, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fd56"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 31, "day": 17, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fd71"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 31, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fd81"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 32, "day": 20, "month": 1, "day_off": 1, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55fd9c"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 32, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fdac"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 33, "day": 24, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fdc7"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 33, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fdd7"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 34, "day": 3, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fdf2"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 34, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fe02"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 35, "day": 7, "month": 2, "day_off": 1, "flag": 2, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55fe1d"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 35, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fe2d"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 36, "day": 10, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fe48"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 36, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fe58"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 37, "day": 17, "month": 2, "day_off": 1, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55fe73"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 37, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fe83"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 38, "day": 24, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fe9e"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 38, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55feae"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 39, "day": 31, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fec9"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 39, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fed9"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 40, "day": 7, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fef4"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 40, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff04"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 41, "day": 14, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ff1f"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 41, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff2f"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 42, "day": 16, "month": 3, "day_off": 1, "flag": 0, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55ff49"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 42, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff59"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 43, "day": 21, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ff74"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 43, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff84"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 44, "day": 28, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ff9f"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 44, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ffaf"}
+{"op": "writer", "buf": "0x2c02f38", "round_idx": 45, "day": 6, "month": 4, "day_off": 1, "flag": 6, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ffca"}
+{"op": "slotwriter", "buf": "0x2c02f38", "round_idx": 45, "sub_slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ffda"}
+{"op": "returned", "retval": "0x2c02f38", "round_count": 46}
+{"op": "buffer_dump", "ptr": "0x2c02f38", "size": 2990}
+{"op": "done"}
