@@ -8,7 +8,8 @@
 //! If diff == 0: driver is byte-exact; only perturb blocks production.
 //! If diff > 0: driver has bugs too.
 //!
-//! Trace: reports/fixture_disasm/runtime/20260913_205743_lineage.jsonl
+//! Trace: reports/fixture_disasm/runtime/20260914_004421_eng2_true_lineage.jsonl
+//! This is the TAGGED-THIS English Second Division 2001-02 capture.
 
 use cm_domain::eng_second_fixtures::{
     matrix_seed_base, FixtureEmission,
@@ -47,6 +48,8 @@ struct WalkerCall {
 #[derive(Debug, Deserialize)]
 struct DerefEntry {
     slot: i64, club_id: i32,
+    // Legacy captures used `cptr`; tagged-this capture uses `club_ptr`.
+    #[serde(default, alias = "club_ptr")]
     #[allow(dead_code)] cptr: String,
 }
 
@@ -114,7 +117,7 @@ fn replay_driver(
 
 fn main() {
     let root = Path::new("D:/cm0102-rs/reports/fixture_disasm/runtime");
-    let trace_path = root.join("20260913_205743_lineage.jsonl");
+    let trace_path = root.join("20260914_004421_eng2_true_lineage.jsonl");
     let text = std::fs::read_to_string(&trace_path).unwrap();
     let records: Vec<serde_json::Value> = text.lines()
         .filter(|l| !l.trim().is_empty())
@@ -127,9 +130,11 @@ fn main() {
         .find(|r| r["op"] == "insert_trace").unwrap();
     let inserts: Vec<Insert> = serde_json::from_value(
         inserts_rec["inserts"].clone()).unwrap();
+    // Tagged-this capture tags primary inserts as "primary"; legacy
+    // captures used "main". Accept either.
     let primary: Vec<&Insert> = inserts.iter()
-        .filter(|i| i.site == "main").collect();
-    println!("GDI primary (site==main) inserts: {}", primary.len());
+        .filter(|i| i.site == "primary" || i.site == "main").collect();
+    println!("GDI primary inserts: {}", primary.len());
     assert_eq!(primary.len(), 552);
 
     let walker_rec = records.iter()
