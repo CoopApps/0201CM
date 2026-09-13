@@ -1,0 +1,26 @@
+{
+  "7": {
+    "ctor": "0x42e100",
+    "vtable": "0x955f10",
+    "getter": "0x42e460",
+    "name": "Premier"
+  },
+  "8": {
+    "ctor": "0x53a7c0",
+    "vtable": "0x957598",
+    "getter": "0x53aa80",
+    "name": "First"
+  },
+  "9": {
+    "ctor": "0x554810",
+    "vtable": "0x95789c",
+    "getter": "0x554bc0",
+    "name": "Second"
+  },
+  "10": {
+    "ctor": "0x57d260",
+    "vtable": "0x958400",
+    "getter": "0x57d570",
+    "name": "Third"
+  }
+}
