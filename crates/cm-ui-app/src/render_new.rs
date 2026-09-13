@@ -497,6 +497,7 @@ pub fn try_render_leagues_faithful(
 pub fn try_render_club_preview_faithful(
     screen: &Screen,
     world: Option<&cm_domain::World>,
+    save: Option<&cm_domain::RuntimeSaveGame>,
     out: &mut Surface,
     fonts: &mut Fonts,
     photo_seed: u64,
@@ -505,13 +506,14 @@ pub fn try_render_club_preview_faithful(
     cursor_y: i32,
     pressed: cm_render::screen_club_squad_faithful::PressedButton,
 ) -> bool {
-    // ClubPreview (Squad tab) and ClubTransfers (Transfers tab) share
+    // ClubPreview (Squad), ClubTransfers, and ClubFixtures all share
     // this chrome. Extract the club choice + scroll + jump-menu state
-    // from either variant; Squad-specific state (sort/filter/etc.)
-    // stays on ClubPreview and defaults on ClubTransfers, and the
-    // Transfers-only override fields ride the SquadState overrides.
+    // from any of them; Squad-specific state (sort/filter/etc.)
+    // stays on ClubPreview and defaults on the other variants, and
+    // per-tab override fields ride the SquadState overrides.
     use cm_render::screen_club_transfers_faithful::TransfersView;
     let is_transfers = matches!(screen, Screen::ClubTransfers { .. });
+    let is_fixtures  = matches!(screen, Screen::ClubFixturesTab { .. });
     let (choice, scroll, view, view_menu_open, jump_menu_open,
          sort, sort_by, sort_menu_open,
          comp_scope, comp_menu_open,
@@ -542,6 +544,17 @@ pub fn try_render_club_preview_faithful(
             cm_render::screen_club_squad_faithful::AttrGroup::Physical, false,
             cm_render::screen_club_squad_faithful::SquadFilter::default(), false,
             *view),
+        Screen::ClubFixturesTab { choice, scroll, jump_menu_open, .. } => (
+            choice, scroll,
+            cm_render::screen_club_squad_faithful::SquadView::Traditional,
+            false, *jump_menu_open,
+            None,
+            cm_render::screen_club_squad_faithful::SortByKey::Position,
+            false,
+            cm_render::screen_club_squad_faithful::CompScope::League, false,
+            cm_render::screen_club_squad_faithful::AttrGroup::Physical, false,
+            cm_render::screen_club_squad_faithful::SquadFilter::default(), false,
+            TransfersView::PlayersIn),
         _ => return false,
     };
     // Deref to plain values so the rest of the function can keep its
@@ -672,6 +685,33 @@ pub fn try_render_club_preview_faithful(
     /// Handles the game's formats: "£475", "£26K", "£1.5M", "3.5",
     /// "42" — anything non-digit gets stripped, K/M multiply. Missing
     /// or unparseable inputs sort as 0 (bottom for DESC, top for ASC).
+    /// Trim the leading nation qualifier off a competition long_name so
+    /// it matches what the exe paints on the Fixtures row grid. The
+    /// exe reads the string from `local_12c[0x13]+4` (00460820.c:519)
+    /// which resolves to the comp record's short-name pointer; rust-db
+    /// carries the long_name on the ClubFixtureRow. Stripping the
+    /// leading nationality word is a stopgap that matches the GDI
+    /// capture — the fuller fix is threading short_name through
+    /// club_fixtures_for.
+    fn strip_nation_prefix(name: &str) -> String {
+        for prefix in ["English ", "Scottish ", "Welsh ", "Northern Irish ",
+                       "Irish ", "French ", "German ", "Italian ",
+                       "Spanish ", "Portuguese ", "Dutch ", "Belgian ",
+                       "Swiss ", "Austrian ", "Danish ", "Swedish ",
+                       "Norwegian ", "Finnish ", "Polish ", "Czech ",
+                       "Turkish ", "Greek ", "Croatian ", "Serbian ",
+                       "Bulgarian ", "Romanian ", "Ukrainian ", "Russian ",
+                       "Brazilian ", "Argentinian ", "Argentine ",
+                       "Uruguayan ", "Chilean ", "Mexican ",
+                       "American ", "Canadian ", "Japanese ", "Korean ",
+                       "Australian ", "New Zealand ", "South African "] {
+            if let Some(rest) = name.strip_prefix(prefix) {
+                return rest.to_string();
+            }
+        }
+        name.to_string()
+    }
+
     fn strip_num(s: &str) -> i64 {
         let s = s.trim();
         if s.is_empty() || s == "-" { return 0; }
@@ -1454,9 +1494,22 @@ pub fn try_render_club_preview_faithful(
     // 2001-10-10). The exe uses the SHORT trailing year: "2001/2",
     // NOT "2001/02". Exe format string ref: strings.json:611
     // "<Title> - Season <year>".
+    //
+    // Fixtures uses the same short-year format but omits the sub-view
+    // prefix — verified against scratchpad/prelaunch/fixtures_gdi.png
+    // where the subtitle is just "Season 2001/2".
     let transfers_subtitle: String = if is_transfers {
         format!("{} - Season 2001/2", transfers_view.label())
+    } else if is_fixtures {
+        cm_render::screen_club_fixtures_faithful::format_subtitle(2001)
     } else { String::new() };
+    // Pre-fetch the fixture row count so the shared chrome can size
+    // the scrollbar correctly. Actual row painting still happens
+    // after render_squad below.
+    let fixture_row_count: usize = if is_fixtures {
+        save.and_then(|s| world.club_fixtures_for(s, choice.club_id))
+            .map(|v| v.rows.len()).unwrap_or(0)
+    } else { 0 };
     // View button on the Transfers screen is labelled literally
     // "View" with a ▼ arrow — it does NOT relabel to the current
     // sub-view name (I had that wrong; the sub-view name shows only
@@ -1476,6 +1529,13 @@ pub fn try_render_club_preview_faithful(
          true,       // squad's Sort By / Filter don't paint on Transfers
          None,       // View button label stays "View"
          *view_menu_open)
+    } else if is_fixtures {
+        (&[][..],
+         3u8,
+         Some(transfers_subtitle.as_str()),
+         true,       // Fixtures sub-toolbar has only the season nav
+         None,
+         false)
     } else {
         (refs.as_slice(),
          0u8,
@@ -1515,6 +1575,7 @@ pub fn try_render_club_preview_faithful(
         subtitle_override,
         hide_middle_and_filter_buttons: hide_middle_and_filter,
         view_button_label_override: view_btn_label_override,
+        external_body_row_count: fixture_row_count,
     };
     let mut packed = PackedSurface::rgb555(Surface::W as i32, Surface::H as i32);
     // For the Transfers tab we suppress the Squad view_menu_open so the
@@ -1538,21 +1599,155 @@ pub fn try_render_club_preview_faithful(
         use cm_render::screen_club_transfers_faithful::{
             TransferRow, TransfersView, render_players_in_rows,
         };
-        if transfers_view == TransfersView::PlayersIn {
-            // Row body uses arial_narrow_13 (pixel_slot 3), the larger
-            // face — verified against the GDI captures: name text
-            // stands ~12 px tall matching that slot, not the 10/11
-            // used elsewhere on this chrome.
-            let font = fonts.pixel_slot(3).clone();
-            let demo: [TransferRow; 1] = [TransferRow {
-                name: "Zubin Anklesaria".to_string(),
-                position: "M C".to_string(),
-                other_club: "Reading".to_string(),
-                fee: "\u{00A3}150K".to_string(),
-                date: "1.9.01".to_string(),
-            }];
-            render_players_in_rows(&mut packed, &font, &demo);
-        }
+        // Row body font: pixel_slot 2 = arial_narrow_11. Slot 3
+        // (arial_14) overshoots the box height; slot 2 fits with
+        // room. No arial_11 (non-narrow) slot exists to hit the
+        // exact GDI size — closest available option.
+        let font = fonts.pixel_slot(2).clone();
+        // ------------------------------------------------------------
+        // Demo rows per sub-view: flip SHOW_TRANSFER_DEMO_ROWS to true
+        // to eyeball layout when iterating on chrome/columns; the real
+        // in-game rendering keeps this OFF so at a fresh boot the
+        // lists correctly render empty (nothing has happened yet in
+        // the save). Real per-season rows land once the transfer-
+        // history record loop is decoded (LAB_004551c0 block,
+        // undecompiled). Fee column repurposing per view: permanent
+        // fee (Players In/Out) — phase label (Future Transfers,
+        // strings.json:602-607) — loan end date (Loans In/Out) —
+        // staff role (Staff In/Out).
+        // ------------------------------------------------------------
+        const SHOW_TRANSFER_DEMO_ROWS: bool = false;
+        let demo_rows: Vec<TransferRow> = if !SHOW_TRANSFER_DEMO_ROWS {
+            Vec::new()
+        } else { match transfers_view {
+            TransfersView::PlayersIn => vec![
+                TransferRow {
+                    name: "Zubin Anklesaria".to_string(),
+                    position: "M C".to_string(),
+                    other_club: "Reading".to_string(),
+                    fee: "\u{00A3}150K".to_string(),
+                    date: "1.9.01".to_string(),
+                },
+            ],
+            TransfersView::PlayersOut => vec![
+                TransferRow {
+                    name: "Ashley Vincent".to_string(),
+                    position: "M R".to_string(),
+                    other_club: "Bristol Rovers".to_string(),
+                    fee: "\u{00A3}75K".to_string(),
+                    date: "18.7.01".to_string(),
+                },
+                TransferRow {
+                    name: "Martin Devaney".to_string(),
+                    position: "AM LC".to_string(),
+                    other_club: "Barnsley".to_string(),
+                    fee: "\u{00A3}250K".to_string(),
+                    date: "22.8.01".to_string(),
+                },
+            ],
+            TransfersView::FutureTransfers => vec![
+                TransferRow {
+                    name: "Adrian Brooke".to_string(),
+                    position: "F C".to_string(),
+                    other_club: "from Leek Town".to_string(),
+                    fee: "Offer".to_string(),
+                    date: "3.9.01".to_string(),
+                },
+                TransferRow {
+                    name: "Joe Watts".to_string(),
+                    position: "D LC".to_string(),
+                    other_club: "to Millwall".to_string(),
+                    fee: "Negotiation".to_string(),
+                    date: "5.9.01".to_string(),
+                },
+            ],
+            TransfersView::LoansIn => vec![
+                TransferRow {
+                    name: "Tommy Doherty".to_string(),
+                    position: "M C".to_string(),
+                    other_club: "West Brom".to_string(),
+                    fee: "15.5.02".to_string(),   // loan end date
+                    date: "12.8.01".to_string(),
+                },
+            ],
+            TransfersView::LoansOut => vec![
+                TransferRow {
+                    name: "Ryan Green".to_string(),
+                    position: "D R".to_string(),
+                    other_club: "Yeovil".to_string(),
+                    fee: "15.5.02".to_string(),
+                    date: "20.8.01".to_string(),
+                },
+            ],
+            TransfersView::StaffIn => vec![
+                TransferRow {
+                    name: "John Ward".to_string(),
+                    position: "".to_string(),
+                    other_club: "Bristol Rovers".to_string(),
+                    fee: "Coach".to_string(),
+                    date: "5.7.01".to_string(),
+                },
+            ],
+            TransfersView::StaffOut => vec![
+                TransferRow {
+                    name: "Bob Bloomer".to_string(),
+                    position: "".to_string(),
+                    other_club: "Chesterfield".to_string(),
+                    fee: "Physio".to_string(),
+                    date: "3.7.01".to_string(),
+                },
+            ],
+        } };
+        render_players_in_rows(&mut packed, &font, &demo_rows);
+    }
+    // Fixtures body — pull the club's live fixture rows from the sim
+    // (World::club_fixtures_for reads save.season.fixtures which is
+    // populated at game start by run_start_game_init). Empty when no
+    // game has been created yet OR the club plays in a competition
+    // whose schedule generator hasn't been ported — both cases are
+    // rendered honestly as an empty body.
+    if is_fixtures {
+        use cm_render::screen_club_fixtures_faithful::{
+            FixtureRow, render_fixture_rows, format_row_date,
+        };
+        let font = fonts.pixel_slot(2).clone();
+        let rows: Vec<FixtureRow> = if let Some(s) = save {
+            match world.club_fixtures_for(s, choice.club_id) {
+                Some(view) => view.rows.iter().map(|r| FixtureRow {
+                    date: format_row_date(
+                        r.date.day as u16, r.date.month as u16, r.date.year),
+                    opponent: r.opponent_name.clone(),
+                    // Nation flag column deferred — need the opponent's
+                    // nation vs the viewed club's nation. Empty means
+                    // domestic (matches most rows in the capture).
+                    nation_flag: String::new(),
+                    home_away: if r.is_home { "H" } else { "A" },
+                    // The exe's row painter reads competition NAME
+                    // from the comp record via `local_12c[0x13]+4`
+                    // (00460820.c:519). rust-db carries both long_name
+                    // ("English Second Division") and short_name
+                    // ("Second Division") on each competition record;
+                    // the GDI Fixtures capture uses the short form.
+                    // Strip the leading nation qualifier as a
+                    // stop-gap until the row builder wires
+                    // short_name through directly.
+                    competition: strip_nation_prefix(&r.competition_name),
+                    // Unplayed fixtures paint "---" in the purple
+                    // bevel — verified against the GDI capture where
+                    // every future match shows three dashes, not an
+                    // empty cell. Played fixtures show "H-A" (home
+                    // score first from the viewed club's perspective —
+                    // the domain layer already flips it via `is_home`).
+                    result: match r.result {
+                        Some((h, a)) => format!("{h}-{a}"),
+                        None => "---".to_string(),
+                    },
+                }).collect(),
+                None => Vec::new(),
+            }
+        } else { Vec::new() };
+        // (Diagnostic eprintln stripped; enable if debugging fixture H/A.)
+        render_fixture_rows(&mut packed, &font, &rows);
     }
     if is_transfers && view_menu_open_effective {
         // The Transfers view dropdown uses the same shared widget

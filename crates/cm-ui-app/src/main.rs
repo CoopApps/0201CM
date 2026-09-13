@@ -129,6 +129,27 @@ enum Screen {
         /// ClubPreview so the corner-triangle box still works.
         jump_menu_open: bool,
     },
+    /// Fixtures page — top tab #3 of the club preview. Same club
+    /// chrome (title, tabs, sidebar, bottom bar) as Squad/Transfers;
+    /// sub-toolbar has ONLY the season navigator (`<<Season` /
+    /// `Season>>`) — no View button per the GDI capture. Body paints
+    /// six columns per FUN_00460820's 6-column list spec, populated
+    /// from the per-club fixture record array at `club+0xb1` (127
+    /// slots × 80 bytes) once the loader lands. Empty at boot until
+    /// then — see memory/fixtures-screen-decoded.md.
+    ///
+    /// Distinct from the older `ClubFixtures` variant above (which is
+    /// the rich-state fixture browser used by the pool renderer);
+    /// `ClubFixturesTab` is specifically the top-tab-3 branch of the
+    /// club-preview chrome that mirrors Squad/Transfers.
+    ClubFixturesTab {
+        choice: cm_domain::ManagerClubChoice,
+        /// Currently viewed season — Fixtures state slot 0xc in the
+        /// exe. Boot default: the in-play season.
+        viewed_season: u16,
+        scroll: usize,
+        jump_menu_open: bool,
+    },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
     News {
@@ -506,6 +527,7 @@ impl App {
             };
             if render_new::try_render_club_preview_faithful(
                 &self.screen, self.world.as_ref(),
+                self.game.as_ref().map(|g| &g.save),
                 &mut self.frame, &mut self.fonts,
                 self.setup_photo_seed, has_manager,
                 self.cursor.0, self.cursor.1,
@@ -590,7 +612,9 @@ impl App {
             | Screen::SelectNationality { .. }
             | Screen::SelectClub { .. }
             | Screen::ClubPreview { .. }
-            | Screen::ClubTransfers { .. } => {
+            | Screen::ClubTransfers { .. }
+            | Screen::ClubFixturesTab { .. }
+            | Screen::ClubFixtures { .. } => {
                 self.frame.fill(0, 0, 0);
                 self.status = Some(
                     "pre-boot fast path refused to build a pool".into()
@@ -774,6 +798,34 @@ impl App {
             Screen::SelectNationality { .. } => Pressed::None,
             // ClubPreview owns its own hit-test (Take Control button +
             // Back nav) — no per-widget press tracking.
+            // Fixtures — season-nav-only sub-toolbar; press only
+            // tracks chrome (top tabs, jump, Take Control / Print,
+            // Back/Next). No View button.
+            Screen::ClubFixturesTab { .. } => {
+                use cm_render::screen_club_squad_faithful::JUMP_BUTTON_RECT;
+                let hit = |r: (i32,i32,i32,i32)| x >= r.0 && x <= r.2 && y >= r.1 && y <= r.3;
+                if x >= 660 && x <= 785 && y >= 4 && y <= 24
+                    { Pressed::ClubPreview(ClubPreviewButton::TakeControl) }
+                else if y >= 555 && y <= 590 && x >= 100 && x <= 617
+                    { Pressed::ClubPreview(ClubPreviewButton::Back) }
+                else if y >= 555 && y <= 590 && x >= 619 && x <= 790
+                    { Pressed::ClubPreview(ClubPreviewButton::Next) }
+                else if hit(JUMP_BUTTON_RECT)
+                    { Pressed::ClubPreview(ClubPreviewButton::JumpTriangle) }
+                else if y >= 80 && y <= 115 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::TopTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                }
+                else if y >= 510 && y <= 545 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::BottomTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                }
+                else { Pressed::None }
+            }
             // Transfers uses the same press-tracking as ClubPreview —
             // View button, top tabs, jump triangle, Back/Next.
             Screen::ClubTransfers { .. } => {
@@ -855,6 +907,7 @@ impl App {
             | Screen::LeagueTable { .. }
             | Screen::PlayerProfile { .. }
             | Screen::ClubFixtures { .. }
+            | Screen::ClubFixturesTab { .. }
             | Screen::WidgetPoolDebug { .. }
             | Screen::AutoRoute { .. } => Pressed::None,
         }
@@ -939,6 +992,8 @@ impl App {
         let mut goto_club_transfers: Option<cm_domain::ManagerClubChoice> = None;
         // Deferred: Squad top tab from ClubTransfers -> back to ClubPreview.
         let mut goto_club_squad: Option<cm_domain::ManagerClubChoice> = None;
+        // Deferred: Fixtures top tab -> switch to ClubFixtures.
+        let mut goto_club_fixtures: Option<cm_domain::ManagerClubChoice> = None;
         // Deferred: a News control without a ported target was clicked.
         let mut news_note = false;
         match &mut self.screen {
@@ -1228,6 +1283,9 @@ impl App {
                 } else if y >= 80 && y <= 115 && x >= 239 && x <= 375 {
                     // Top tab #1 — Transfers.
                     goto_club_transfers = Some(choice.clone());
+                } else if y >= 80 && y <= 115 && x >= 515 && x <= 651 {
+                    // Top tab #3 — Fixtures.
+                    goto_club_fixtures = Some(choice.clone());
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
@@ -1311,11 +1369,58 @@ impl App {
                 } else if y >= 80 && y <= 115 && x >= 100 && x <= 237 {
                     // Top tab #0 — Squad. Back to ClubPreview.
                     goto_club_squad = Some(choice.clone());
+                } else if y >= 80 && y <= 115 && x >= 515 && x <= 651 {
+                    // Top tab #3 — Fixtures.
+                    goto_club_fixtures = Some(choice.clone());
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
                     goto_reopen_select_team = true;
                 }
+            }
+            Screen::ClubFixturesTab {
+                choice, viewed_season: _, scroll: _, jump_menu_open,
+            } => {
+                use cm_render::screen_club_squad_faithful::{
+                    JUMP_BUTTON_RECT, jump_menu_hit,
+                };
+                if *jump_menu_open {
+                    let picked = if let Some(world) = self.world.as_ref() {
+                        let mut clubs: Vec<(String, u32)> = world.core.clubs.iter()
+                            .filter_map(|rec| {
+                                let cv = cm_domain::typed_records::ClubView::new(rec);
+                                let did = cv.division_id().map(|v| v as u32)?;
+                                if did != choice.division_id { return None; }
+                                let short = cv.secondary_name();
+                                let name = if short.trim().is_empty() { cv.primary_name() } else { short };
+                                Some((name, cv.id()))
+                            })
+                            .collect();
+                        clubs.sort_by(|a, b| a.0.cmp(&b.0));
+                        jump_menu_hit(x, y, clubs.len())
+                            .and_then(|i| clubs.get(i).cloned())
+                    } else { None };
+                    if let Some((name, new_id)) = picked {
+                        if !name.is_empty() && (new_id & 0xFFFF_0000) == 0 {
+                            choice.club_id = new_id;
+                            choice.club_name = name;
+                        }
+                    }
+                    *jump_menu_open = false;
+                } else if x >= JUMP_BUTTON_RECT.0 && x <= JUMP_BUTTON_RECT.2
+                       && y >= JUMP_BUTTON_RECT.1 && y <= JUMP_BUTTON_RECT.3 {
+                    *jump_menu_open = true;
+                } else if y >= 80 && y <= 115 && x >= 100 && x <= 237 {
+                    goto_club_squad = Some(choice.clone());
+                } else if y >= 80 && y <= 115 && x >= 239 && x <= 375 {
+                    goto_club_transfers = Some(choice.clone());
+                } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    install_club = Some(choice.clone());
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    goto_reopen_select_team = true;
+                }
+                // Season nav buttons are inert until has_prev/next_season
+                // wires up — matches the exe's disabled state at boot.
             }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
                 // The arms are mutually exclusive — an `if / else if`
@@ -1493,6 +1598,19 @@ impl App {
         }
         if goto_reopen_select_team {
             self.goto_select_club();
+        }
+        if let Some(choice) = goto_club_fixtures {
+            self.screen = Screen::ClubFixturesTab {
+                choice,
+                // Boot default: in-play season. The date-of-year
+                // reference here is 2001 for the shipped database
+                // (see start-new-game-flow memory) — real
+                // "current season" wiring flips this to
+                // world.current_season when that field lands.
+                viewed_season: 2001,
+                scroll: 0,
+                jump_menu_open: false,
+            };
         }
         if let Some(choice) = goto_club_transfers {
             self.screen = Screen::ClubTransfers {
@@ -2220,6 +2338,7 @@ impl ApplicationHandler for App {
                                 | Screen::SelectClub { .. }
                                 | Screen::ClubPreview { .. }
                                 | Screen::ClubTransfers { .. }
+                                | Screen::ClubFixtures { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);

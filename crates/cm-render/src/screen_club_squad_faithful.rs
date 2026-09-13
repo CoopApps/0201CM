@@ -494,6 +494,12 @@ pub struct SquadState<'a> {
     /// instead of the current SquadView label. Transfers uses it to
     /// show "Players In" / "Players Out" / etc.
     pub view_button_label_override: Option<&'a str>,
+    /// External-body row count — Fixtures paints its own body but
+    /// still needs the shared chrome to show the scrollbar when the
+    /// row count exceeds the visible-window cap (14). Squad/Transfers
+    /// leave this 0 and the scrollbar gate falls back to
+    /// `players.len()`.
+    pub external_body_row_count: usize,
 }
 
 /// Which button on the club-preview / squad screen the user is
@@ -747,7 +753,7 @@ pub fn render_squad(
     // The View button on Transfers moves to the RIGHT slot (where
     // Squad's Filter lives). Its label stays literally "View" — it
     // does NOT relabel to the sub-view name.
-    if state.top_tab_active == 1 {
+    if state.top_tab_active == 1 || state.top_tab_active == 3 {
         // Season navigator: `<< Season` (previous) + `Season >>` (next).
         // Each is greyed/disabled at the far end of the club's season
         // history — `<<` disabled when viewing the earliest season on
@@ -780,13 +786,16 @@ pub fn render_squad(
             &small_font, &c_string(b"Season >>"), INK_CYAN, season_style, -1);
         // View button — RIGHT slot, styled as the active pull-down
         // (yellow-highlighted bevel, orange-ish text) per the capture.
-        // Use the same bevel_for(PressedButton::View) so the pressed
-        // invert still works — the highlighted look comes from the
-        // ink+fill choice on top.
+        // Only Transfers (top_tab_active == 1) has a View button;
+        // Fixtures (== 3) shows season nav only — verified from
+        // scratchpad/prelaunch/fixtures_gdi.png where the sub-toolbar
+        // right slot is empty.
+        if state.top_tab_active == 1 {
         draw_panel(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
             bevel_for(PressedButton::View), GREY_BAR, INK_CYAN, palette);
         draw_wrapped_text(surface, TOOLBAR_FILTER.0, TB_Y0, TOOLBAR_FILTER.1, TB_Y1,
             &small_font, &c_string(b"View"), INK_CYAN, TS_CENTRE, -1);
+        }
     } else {
         draw_panel(surface, TOOLBAR_LEFT_L.0, TB_Y0, TOOLBAR_LEFT_L.1, TB_Y1,
             bevel_for(PressedButton::View), GREY_BAR, INK_CYAN, palette);
@@ -1058,6 +1067,9 @@ pub fn render_squad(
         && state.players.len() > VISIBLE_ENTRIES;
     let want_scrollbar = want_scrollbar
         || (state.top_tab_active != 0 && state.players.len() > 14);
+    // Fixtures signals its row count separately since its body isn't
+    // painted through state.players.
+    let want_scrollbar = want_scrollbar || state.external_body_row_count > 14;
     if !want_scrollbar {
         // Skip all scrollbar geometry — leave the body area clean.
     } else {

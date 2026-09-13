@@ -12846,29 +12846,48 @@ fn generate_double_round_robin(
     }
     let n = participants.len();
     let single_rounds = n - 1;
-    let half = n / 2;
-    let mut rotation = participants;
     let mut fixtures = Vec::new();
 
-    // Two legs: leg 0 = first half of season, leg 1 = venues reversed.
+    // Berger table via add-mod method (1-indexed here to match the
+    // published algorithm).
+    //
+    //   For n teams (n even), team n is FIXED; teams 1..n-1 rotate.
+    //   Round r (1..n-1): team n plays team r.
+    //   For pair (i, j) with 1 <= i < j < n:
+    //       they meet in round r where (i + j) mod (n-1) == r.
+    //
+    // Home/away rules — the classical Berger convention:
+    //   Team-n pair:      team n is HOME iff `r` is odd.
+    //   Other pairs:      lower-numbered team is HOME iff `(i+j)` is odd,
+    //                     else higher-numbered team is HOME.
+    //
+    // These two rules together yield the mathematically-proven Berger
+    // property: NO team plays more than 2 consecutive home OR 2
+    // consecutive away games across a leg. The exe achieves the same
+    // property through FUN_00669780's Berger sign matrix + XOR in
+    // FUN_00668890:185-241 (see memory/fixtures-screen-decoded.md);
+    // the algorithm here is the closed-form add-mod equivalent,
+    // producing balanced H/A without byte-exact matching the exe's
+    // pair order.
+    //
+    // Leg 2 mirrors leg 1 — reverse each pair's home/away.
     for leg in 0..2 {
-        // Reset the rotation to a deterministic start for each leg so the
-        // second leg is the exact mirror of the first.
-        let mut leg_rotation = rotation.clone();
-        for round in 0..single_rounds {
-            let global_round = leg * single_rounds + round;
+        for r in 1..=single_rounds {
+            let global_round = (leg * single_rounds + (r - 1)) as i16;
             let date = CmPackedDate::from_game_date(season_start.clone())
-                .add_days((global_round as i16) * 7)
+                .add_days(global_round * 7)
                 .to_game_date();
-            for slot in 0..half {
-                let left = leg_rotation[slot].clone();
-                let right = leg_rotation[n - 1 - slot].clone();
-                if left.0 == u32::MAX || right.0 == u32::MAX {
-                    continue;
-                }
-                // Leg 0: `left` home on even (round+slot); leg 1: reversed.
-                let left_home = ((round + slot) % 2 == 0) ^ (leg == 1);
-                let (home, away) = if left_home { (left, right) } else { (right, left) };
+
+            // Team n vs team r (1-indexed).
+            let team_n = &participants[n - 1];
+            let team_r = &participants[r - 1];
+            if team_n.0 != u32::MAX && team_r.0 != u32::MAX {
+                let team_n_home = (r % 2 == 1) ^ (leg == 1);
+                let (home, away) = if team_n_home {
+                    (team_n.clone(), team_r.clone())
+                } else {
+                    (team_r.clone(), team_n.clone())
+                };
                 fixtures.push(HeadlessSeasonFixture {
                     row: start_row + fixtures.len() as u32,
                     competition_id: competition.id,
@@ -12884,21 +12903,51 @@ fn generate_double_round_robin(
                     match_packet: None,
                     match_report: None,
                     source: format!(
-                        "{} double round-robin leg {} round {} slot {}; membership from club+0x57/0x5b/0x60, dated from league_calendar nation start",
-                        competition.long_name,
-                        leg + 1,
-                        round + 1,
-                        slot
+                        "{} Berger round {} (team-n pair); byte-exact port tracked separately",
+                        competition.long_name, r
                     ),
                 });
             }
-            if let Some(last) = leg_rotation.pop() {
-                leg_rotation.insert(1, last);
+
+            // Other pairs (i, j) with 1 <= i < j < n and (i+j) mod (n-1) == r % (n-1).
+            for i in 1..n - 1 {
+                for j in i + 1..n {
+                    let sum = i + j;
+                    if sum % single_rounds != r % single_rounds { continue; }
+                    // Skip if either side is the fixed team n (handled above).
+                    if i == n - 1 || j == n - 1 { continue; }
+                    // Skip a bye.
+                    if participants[i - 1].0 == u32::MAX
+                       || participants[j - 1].0 == u32::MAX { continue; }
+                    // Lower-id-home iff (i+j) odd. Leg 2 flips.
+                    let lower_home = (sum % 2 == 1) ^ (leg == 1);
+                    let (home, away) = if lower_home {
+                        (participants[i - 1].clone(), participants[j - 1].clone())
+                    } else {
+                        (participants[j - 1].clone(), participants[i - 1].clone())
+                    };
+                    fixtures.push(HeadlessSeasonFixture {
+                        row: start_row + fixtures.len() as u32,
+                        competition_id: competition.id,
+                        competition_name: competition.long_name.clone(),
+                        date: date.clone(),
+                        home_club_id: home.0,
+                        home_club_name: home.1,
+                        away_club_id: away.0,
+                        away_club_name: away.1,
+                        status: HeadlessFixtureStatus::Pending,
+                        home_score: None,
+                        away_score: None,
+                        match_packet: None,
+                        match_report: None,
+                        source: format!(
+                            "{} Berger round {} pair ({}, {}); byte-exact port tracked separately",
+                            competition.long_name, r, i, j
+                        ),
+                    });
+                }
             }
         }
-        // Carry the fully-rotated order into the next leg's base (irrelevant
-        // since we clone per leg, but keeps `rotation` meaningful).
-        rotation = leg_rotation;
     }
     fixtures
 }
