@@ -1,0 +1,77 @@
+{
+  "_comment": "cm0102_GDI.exe VA map for the English Second Division fixture pipeline. All addresses confirmed 2026-09-13. The GDI schedule buffer is byte-exact identical to the DirectDraw buffer (verified by SHA256), because pack_date + walker + round-writer + slot-writer + flag-snap bodies are byte-identical between builds MODULO ADDRESS RELOCATIONS ONLY. The overall driver+ctor bodies are also structurally identical modulo relocations. This means every byte-exact port derived from cm0102.exe transfers directly to cm0102_GDI.exe as the authoritative spec.",
+  "spec_binary": "D:/cm0102/cm0102_GDI.exe",
+  "verification_date": "2026-09-13",
+  "corroboration": {
+    "gdi_buffer_sha256":  "682a5ea610672a235c4f0a6205103af4346b3e4e66f6fb5f1008fdea0157c586",
+    "dd_buffer_sha256":   "682a5ea610672a235c4f0a6205103af4346b3e4e66f6fb5f1008fdea0157c586",
+    "identical": true,
+    "method": "Direct-call schedule-getter on both processes; SHA256 the 2990-byte returned buffer"
+  },
+
+  "functions_confirmed_byte_identical_modulo_relocations": {
+    "0x00533d80": {"name": "pack_date FUN_00533b50",   "dd_va": "0x00533b50", "delta": "+0x230"},
+    "0x005340e0": {"name": "flag-snap FUN_00533eb0",   "dd_va": "0x00533eb0", "delta": "+0x230"},
+    "0x0066ef70": {"name": "round writer FUN_0066f3b0","dd_va": "0x0066f3b0", "delta": "-0x440"},
+    "0x0066efd0": {"name": "slot writer FUN_0066f410", "dd_va": "0x0066f410", "delta": "-0x440"},
+    "0x0066ee40": {"name": "walker FUN_0066f280",      "dd_va": "0x0066f280", "delta": "-0x440"},
+    "0x00669340": {"name": "matrix base seeder FUN_00669780", "dd_va": "0x00669780", "delta": "-0x440"},
+    "0x0066b900": {"name": "matrix perturb FUN_0066bd40",     "dd_va": "0x0066bd40", "delta": "-0x440"}
+  },
+  "functions_confirmed_structurally_identical_modulo_relocations": {
+    "0x0055f240": {"name": "eng_second_ctor",       "dd_va": "0x0055f040", "delta": "+0x200", "note": "same call chain: base ctor → hook 0x0066c9a0 → malloc(4) → schedule-installer → roster populator → round-robin driver → post-hook → construct → success finalizer"},
+    "0x0055f540": {"name": "eng_second schedule-getter", "dd_va": "0x0055f340", "delta": "+0x200", "note": "body 0x0055f540..~0x005603a9; 46 (round-writer, slot-writer) pairs on arg1=0xFF path; buffer SHA256 identical to DD"},
+    "0x00668450": {"name": "round-robin driver",    "dd_va": "0x00668890", "delta": "-0x440", "note": "round-robin adjacency matrix + walker call at 0x0066899d + fixture commit at 0x00594eb0"},
+    "0x00560520": {"name": "schedule-installer",    "dd_va": "0x00560320", "delta": "+0x200"},
+    "0x005603d0": {"name": "roster populator",      "dd_va": "0x005601d0", "delta": "+0x200"}
+  },
+  "new_targets_recovered": {
+    "0x00594eb0": {"name": "TFixList inserter (was FUN_00594d00)", "dd_va": "0x00594d00", "delta": "+0x1b0", "callsite_in_driver": "0x006688e5"},
+    "0x00844dc0": {"name": "venue writer (was FUN_00845380)",       "dd_va": "0x00845380", "delta": "-0x5c0", "callsites_in_driver": ["0x00668883", "0x00668c22"]},
+    "0x0066a4d0": {"name": "replay/reset (was FUN_0066a910)",       "dd_va": "0x0066a910", "delta": "-0x440"},
+    "0x0055f480": {"name": "eng_second dtor",                        "dd_va": "0x0055f480 or absent in DD", "note": "small 191-byte dtor calling free on schedule buffer at comp+0xba"},
+    "0x0066c9a0": {"name": "pre-init hook called from ctor at +0x55", "note": "called BEFORE schedule-installer; returns non-zero to skip remainder (short-circuit already-inited path)"},
+    "0x00667090": {"name": "parent ctor (called at ctor entry)"},
+    "0x00667660": {"name": "post-schedule allocator (was FUN_00667aa0)", "dd_va": "0x00667aa0", "delta": "-0x440"},
+    "0x004a5bd0": {"name": "final construct on 0x5ce buffer (was FUN_004a5900)", "dd_va": "0x004a5900", "delta": "+0x2d0"},
+    "0x0066f660": {"name": "success finalizer (was FUN_0066faa0)",   "dd_va": "0x0066faa0", "delta": "-0x440"}
+  },
+  "vtable_and_global_data_relocations": {
+    "vtable": {"dd": "0x00957dc8", "gdi": "0x00957dd8", "delta": "+0x10"},
+    "special_walker_comp_id": {"dd": "0x009bbba8", "gdi": "0x009bbaf0", "delta": "-0xb8"},
+    "skip_matrix_perturb_comp_ids": {
+      "dd": ["0x009bbc5c", "0x009bbc64"],
+      "gdi": ["0x009bbba4", "0x009bbbac"],
+      "delta": "-0xb8"
+    },
+    "error_buffer_DAT": {"dd": "0x00acd6d0", "gdi": "0x00acd620", "delta": "-0xb0"},
+    "error_flag_DAT":   {"dd": "0x00b4d5a8", "gdi": "0x00b4d4f0", "delta": "-0xb8"},
+    "comp_league_filename_literal": {"dd": "0x009dd618", "gdi": "0x009dd560", "delta": "-0xb8"},
+    "eng_second_filename_literal": {"dd": "0x009b0a7c", "gdi": "0x009b0a7c", "delta": "0"},
+    "RNG":  {"dd": "0x008fc4f0 (was FUN_008fc4f0)", "gdi": "0x008fbe20", "delta": "-0x6d0"}
+  },
+
+  "ctor_call_chain_gdi": [
+    {"offset": "+0x23", "va": "0x0055f263", "target": "0x00667090", "purpose": "parent ctor"},
+    {"offset": "+0x55", "va": "0x0055f295", "target": "0x0066c9a0", "purpose": "pre-init hook; non-zero return short-circuits"},
+    {"offset": "+0x74", "va": "0x0055f2b4", "target": "0x00933720", "purpose": "malloc(4)"},
+    {"offset": "+0x81", "va": "0x0055f2c1", "target": "0x00560520", "purpose": "schedule-installer (writes comp+0xba via vtable +0x3c)"},
+    {"offset": "+0xbc", "va": "0x0055f2fc", "target": "0x005603d0", "purpose": "roster populator (fills comp+0xb1 with 24 clubs)"},
+    {"offset": "+0xf6", "va": "0x0055f336", "target": "0x00668450", "purpose": "round-robin driver — team pairs"},
+    {"offset": "+0x132","va": "0x0055f372", "target": "0x00667660", "purpose": "post-schedule allocator"},
+    {"offset": "+0x188","va": "0x0055f3c8", "target": "0x004a5bd0", "purpose": "construct on 0x5ce buffer"},
+    {"offset": "+0x1fc","va": "0x0055f43c", "target": "0x0066f660", "purpose": "success finalizer"}
+  ],
+
+  "rust_port_implications": {
+    "pack_date_port_valid": true,
+    "apply_flag_snap_port_valid": true,
+    "write_round_record_port_valid": true,
+    "write_slot_port_valid": true,
+    "ENG_SECOND_2001_TEMPLATE_valid": true,
+    "build_eng_second_schedule_valid": true,
+    "full_buffer_matches_runtime_capture_uses_gdi_capture_as_authoritative": true,
+    "FUN_00668890_reconstruction_carries_over_to_0x00668450": true,
+    "note": "The 79-byte fixture record layout, adjacency matrix seeding, walker state machine, H/A flip logic, and comp field offsets are all identical between builds. Only immediate call/data VAs shift. The prior reconstruction in FUN_00668890_DECODE.md is valid for the GDI spec after applying the address relocations table above."
+  }
+}

@@ -1,0 +1,97 @@
+{"op": "hooks_installed"}
+{"op": "calling"}
+{"op": "W", "buf": "0x2bb9300", "round": 0, "day": 12, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f5db"}
+{"op": "S", "buf": "0x2bb9300", "round": 0, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f5ea"}
+{"op": "W", "buf": "0x2bb9300", "round": 1, "day": 19, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f604"}
+{"op": "S", "buf": "0x2bb9300", "round": 1, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f614"}
+{"op": "W", "buf": "0x2bb9300", "round": 2, "day": 26, "month": 7, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f62e"}
+{"op": "S", "buf": "0x2bb9300", "round": 2, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f63e"}
+{"op": "W", "buf": "0x2bb9300", "round": 3, "day": 28, "month": 7, "day_off": 0, "flag": 0, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f657"}
+{"op": "S", "buf": "0x2bb9300", "round": 3, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f667"}
+{"op": "W", "buf": "0x2bb9300", "round": 4, "day": 2, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f681"}
+{"op": "S", "buf": "0x2bb9300", "round": 4, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f691"}
+{"op": "W", "buf": "0x2bb9300", "round": 5, "day": 9, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f6ab"}
+{"op": "S", "buf": "0x2bb9300", "round": 5, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f6bb"}
+{"op": "W", "buf": "0x2bb9300", "round": 6, "day": 13, "month": 8, "day_off": 0, "flag": 2, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f6d5"}
+{"op": "S", "buf": "0x2bb9300", "round": 6, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f6e5"}
+{"op": "W", "buf": "0x2bb9300", "round": 7, "day": 16, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f6ff"}
+{"op": "S", "buf": "0x2bb9300", "round": 7, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f70f"}
+{"op": "W", "buf": "0x2bb9300", "round": 8, "day": 23, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f729"}
+{"op": "S", "buf": "0x2bb9300", "round": 8, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f739"}
+{"op": "W", "buf": "0x2bb9300", "round": 9, "day": 30, "month": 8, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f753"}
+{"op": "S", "buf": "0x2bb9300", "round": 9, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f763"}
+{"op": "W", "buf": "0x2bb9300", "round": 10, "day": 7, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f77d"}
+{"op": "S", "buf": "0x2bb9300", "round": 10, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f78d"}
+{"op": "W", "buf": "0x2bb9300", "round": 11, "day": 14, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f7a7"}
+{"op": "S", "buf": "0x2bb9300", "round": 11, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f7b7"}
+{"op": "W", "buf": "0x2bb9300", "round": 12, "day": 17, "month": 9, "day_off": 0, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f7d1"}
+{"op": "S", "buf": "0x2bb9300", "round": 12, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f7e1"}
+{"op": "W", "buf": "0x2bb9300", "round": 13, "day": 21, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f7fb"}
+{"op": "S", "buf": "0x2bb9300", "round": 13, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f80b"}
+{"op": "W", "buf": "0x2bb9300", "round": 14, "day": 24, "month": 9, "day_off": 0, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55f825"}
+{"op": "S", "buf": "0x2bb9300", "round": 14, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f835"}
+{"op": "W", "buf": "0x2bb9300", "round": 15, "day": 28, "month": 9, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f84f"}
+{"op": "S", "buf": "0x2bb9300", "round": 15, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f85f"}
+{"op": "W", "buf": "0x2bb9300", "round": 16, "day": 4, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f879"}
+{"op": "S", "buf": "0x2bb9300", "round": 16, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f889"}
+{"op": "W", "buf": "0x2bb9300", "round": 17, "day": 11, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f8a3"}
+{"op": "S", "buf": "0x2bb9300", "round": 17, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f8b3"}
+{"op": "W", "buf": "0x2bb9300", "round": 18, "day": 18, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f8cd"}
+{"op": "S", "buf": "0x2bb9300", "round": 18, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f8dd"}
+{"op": "W", "buf": "0x2bb9300", "round": 19, "day": 25, "month": 10, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f8f7"}
+{"op": "S", "buf": "0x2bb9300", "round": 19, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f907"}
+{"op": "W", "buf": "0x2bb9300", "round": 20, "day": 2, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f921"}
+{"op": "S", "buf": "0x2bb9300", "round": 20, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f931"}
+{"op": "W", "buf": "0x2bb9300", "round": 21, "day": 9, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f94b"}
+{"op": "S", "buf": "0x2bb9300", "round": 21, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f95b"}
+{"op": "W", "buf": "0x2bb9300", "round": 22, "day": 16, "month": 11, "day_off": 0, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55f975"}
+{"op": "S", "buf": "0x2bb9300", "round": 22, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55f985"}
+{"op": "W", "buf": "0x2bb9300", "round": 23, "day": 22, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55faf8"}
+{"op": "S", "buf": "0x2bb9300", "round": 23, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fb08"}
+{"op": "W", "buf": "0x2bb9300", "round": 24, "day": 26, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fb22"}
+{"op": "S", "buf": "0x2bb9300", "round": 24, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fb32"}
+{"op": "W", "buf": "0x2bb9300", "round": 25, "day": 29, "month": 11, "day_off": 0, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fb4c"}
+{"op": "S", "buf": "0x2bb9300", "round": 25, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fb5c"}
+{"op": "W", "buf": "0x2bb9300", "round": 26, "day": 1, "month": 0, "day_off": 1, "flag": -1, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fd94"}
+{"op": "S", "buf": "0x2bb9300", "round": 26, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fda4"}
+{"op": "W", "buf": "0x2bb9300", "round": 27, "day": 13, "month": 0, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fec6"}
+{"op": "S", "buf": "0x2bb9300", "round": 27, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55fed6"}
+{"op": "W", "buf": "0x2bb9300", "round": 28, "day": 20, "month": 0, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fef0"}
+{"op": "S", "buf": "0x2bb9300", "round": 28, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff00"}
+{"op": "W", "buf": "0x2bb9300", "round": 29, "day": 3, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ff1b"}
+{"op": "S", "buf": "0x2bb9300", "round": 29, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff2b"}
+{"op": "W", "buf": "0x2bb9300", "round": 30, "day": 10, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ff46"}
+{"op": "S", "buf": "0x2bb9300", "round": 30, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff56"}
+{"op": "W", "buf": "0x2bb9300", "round": 31, "day": 17, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ff71"}
+{"op": "S", "buf": "0x2bb9300", "round": 31, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ff81"}
+{"op": "W", "buf": "0x2bb9300", "round": 32, "day": 20, "month": 1, "day_off": 1, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x55ff9c"}
+{"op": "S", "buf": "0x2bb9300", "round": 32, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ffac"}
+{"op": "W", "buf": "0x2bb9300", "round": 33, "day": 24, "month": 1, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55ffc7"}
+{"op": "S", "buf": "0x2bb9300", "round": 33, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x55ffd7"}
+{"op": "W", "buf": "0x2bb9300", "round": 34, "day": 3, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x55fff2"}
+{"op": "S", "buf": "0x2bb9300", "round": 34, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x560002"}
+{"op": "W", "buf": "0x2bb9300", "round": 35, "day": 7, "month": 2, "day_off": 1, "flag": 2, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x56001d"}
+{"op": "S", "buf": "0x2bb9300", "round": 35, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x56002d"}
+{"op": "W", "buf": "0x2bb9300", "round": 36, "day": 10, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x560048"}
+{"op": "S", "buf": "0x2bb9300", "round": 36, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x560058"}
+{"op": "W", "buf": "0x2bb9300", "round": 37, "day": 17, "month": 2, "day_off": 1, "flag": 1, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x560073"}
+{"op": "S", "buf": "0x2bb9300", "round": 37, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x560083"}
+{"op": "W", "buf": "0x2bb9300", "round": 38, "day": 24, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x56009e"}
+{"op": "S", "buf": "0x2bb9300", "round": 38, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x5600ae"}
+{"op": "W", "buf": "0x2bb9300", "round": 39, "day": 31, "month": 2, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x5600c9"}
+{"op": "S", "buf": "0x2bb9300", "round": 39, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x5600d9"}
+{"op": "W", "buf": "0x2bb9300", "round": 40, "day": 7, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x5600f4"}
+{"op": "S", "buf": "0x2bb9300", "round": 40, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x560104"}
+{"op": "W", "buf": "0x2bb9300", "round": 41, "day": 14, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x56011f"}
+{"op": "S", "buf": "0x2bb9300", "round": 41, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x56012f"}
+{"op": "W", "buf": "0x2bb9300", "round": 42, "day": 16, "month": 3, "day_off": 1, "flag": 0, "type_byte": 2, "year": 2001, "prize": 0, "ret": "0x560149"}
+{"op": "S", "buf": "0x2bb9300", "round": 42, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x560159"}
+{"op": "W", "buf": "0x2bb9300", "round": 43, "day": 21, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x560174"}
+{"op": "S", "buf": "0x2bb9300", "round": 43, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x560184"}
+{"op": "W", "buf": "0x2bb9300", "round": 44, "day": 28, "month": 3, "day_off": 1, "flag": 5, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x56019f"}
+{"op": "S", "buf": "0x2bb9300", "round": 44, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x5601af"}
+{"op": "W", "buf": "0x2bb9300", "round": 45, "day": 6, "month": 4, "day_off": 1, "flag": 6, "type_byte": 1, "year": 2001, "prize": 0, "ret": "0x5601ca"}
+{"op": "S", "buf": "0x2bb9300", "round": 45, "slot": 0, "p4": -1, "p5": -1, "p6": -1, "payload": 0, "ret": "0x5601da"}
+{"op": "returned", "retval": "0x2bb9300", "round_count": 46}
+{"op": "buffer_dump", "ptr": "0x2bb9300", "size": 2990}
+{"op": "done"}

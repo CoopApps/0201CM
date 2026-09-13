@@ -1,13 +1,32 @@
 //! Byte-exact ports of CM 01/02's date-encoding helpers.
 //!
-//! Sources (all from `D:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/`):
-//!   - `00533b50.c` (`FUN_00533b50`) — packs (day, month, year) into a
-//!     4-short record: [day_of_year_0idx, year, is_leap, reserved].
-//!   - `0066f3b0.c` (`FUN_0066f3b0`) — writes one 65-byte round record
-//!     into the schedule buffer at `buffer + round_idx * 0x41`.
+//! **AUTHORITATIVE BINARY**: `D:/cm0102/cm0102_GDI.exe` (the GDI build).
+//! Not the DirectDraw `cm0102.exe`. See
+//! `reports/fixture_disasm/gdi_va_map.json` and
+//! `reports/fixture_disasm/GDI_CORRECTION_REPORT.md`.
 //!
-//! Data tables `DAT_009a4b28` (non-leap) and `DAT_009a4b40` (leap) were
-//! dumped from `cm0102.exe` .rdata at VA 0x009a4b28 / 0x009a4b40.
+//! **Every port in this module has been verified against the GDI spec.**
+//! Static disassembly of GDI 0x0066ef70 (round writer), 0x0066efd0 (slot
+//! writer), 0x005340e0 (flag-snap), 0x00533d80 (pack_date), and
+//! 0x0066ee40 (walker) shows each function is BYTE-IDENTICAL to its
+//! DirectDraw equivalent modulo two categories of address relocations:
+//!   1. Call targets shifting by -0x440 (fixture-cluster) or +0x230
+//!      (date-cluster) between builds.
+//!   2. DAT globals shifting by -0xb0/-0xb8 between builds.
+//! Neither category changes semantics.
+//!
+//! Runtime corroboration: schedule-getter direct-called on both
+//! running processes produces identical 2990-byte buffers
+//! (SHA256 `682a5ea6…`).
+//!
+//! GDI addresses referenced in this module:
+//!   - `0x00533d80` pack_date  (DirectDraw was 0x00533b50)
+//!   - `0x005340e0` flag-snap  (DirectDraw was 0x00533eb0)
+//!   - `0x0066ef70` round writer (DirectDraw was 0x0066f3b0)
+//!   - `0x0066efd0` slot writer (DirectDraw was 0x0066f410)
+//!
+//! Data tables `DAT_009a4b28` (non-leap) and `DAT_009a4b40` (leap)
+//! present in both builds at the same VAs.
 
 /// Cumulative days *before* each month, for a non-leap year.
 ///
@@ -346,22 +365,40 @@ mod tests {
     /// FUN_0066f410. Bytes +0x0c..+0x3c come from freshly-malloc'd
     /// memory (observed zero in this capture — heap arena chance,
     /// not an initialised state per the exe spec).
+    /// Authoritative capture: cm0102_GDI.exe schedule buffer for
+    /// English Second Division 2001/02.
     #[test]
-    fn full_buffer_matches_runtime_capture() {
+    fn full_buffer_matches_runtime_capture_gdi() {
+        const CAPTURE: &[u8] = include_bytes!(
+            "../../../reports/fixture_disasm/runtime/20260913_131323_gdi_buffer_0.bin"
+        );
+        assert_eq!(CAPTURE.len(), 2990);
+        let ours = super::build_eng_second_schedule(2001);
+        assert_eq!(ours.len(), 2990);
+        for i in 0..2990 {
+            if ours[i] != CAPTURE[i] {
+                let round = i / 0x41;
+                let off_in_rec = i % 0x41;
+                panic!("byte {} (round {} +0x{:02x}): ours={:#04x} gdi_capture={:#04x}",
+                       i, round, off_in_rec, ours[i], CAPTURE[i]);
+            }
+        }
+    }
+
+    /// Corroborating capture: DirectDraw build produces byte-identical
+    /// buffer. Kept to document that the schedule-getter code is the
+    /// same between builds; the GDI capture above is the authoritative
+    /// specification.
+    #[test]
+    fn full_buffer_matches_runtime_capture_dd_corroborates() {
         const CAPTURE: &[u8] = include_bytes!(
             "../../../reports/fixture_disasm/runtime/20260913_113106_direct_buffer_0.bin"
         );
         assert_eq!(CAPTURE.len(), 2990);
         let ours = super::build_eng_second_schedule(2001);
-        assert_eq!(ours.len(), 2990);
-        // Byte-exact for the entire buffer.
         for i in 0..2990 {
-            if ours[i] != CAPTURE[i] {
-                let round = i / 0x41;
-                let off_in_rec = i % 0x41;
-                panic!("byte {} (round {} +0x{:02x}): ours={:#04x} capture={:#04x}",
-                       i, round, off_in_rec, ours[i], CAPTURE[i]);
-            }
+            assert_eq!(ours[i], CAPTURE[i], "byte {} differs (round {} +0x{:02x})",
+                       i, i/0x41, i%0x41);
         }
     }
 
