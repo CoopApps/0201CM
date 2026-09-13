@@ -79,6 +79,44 @@ impl GameRng {
         (self.lcg_state >> 16) & 0x7fff                                                // 00935a9c
     }
 
+    /// Byte-exact `FUN_00935a94` (MSVC LCG `rand()`), exposed for
+    /// ports that consume the LCG directly (e.g. the fixture-
+    /// perturbation function `FUN_0066b900`, which draws two LCG
+    /// values per team to pick Fisher-Yates swap indices).
+    ///
+    /// Return domain: `[0, 0x8000)`. The `& 0x7fff` mask is baked
+    /// in — matches the MSVC 6.0 C-runtime rand() semantics.
+    pub fn lcg_next(&mut self) -> u32 {
+        self.msvc_rand()
+    }
+
+    /// Byte-exact `FUN_00935a8a` (MSVC LCG `srand`). Just sets the
+    /// LCG state; the pool cursor and jitter are untouched. This is
+    /// the operation the perturbation calls with
+    /// `(short)param_1[0x10] + DAT_00dbc3f8` to key the shuffle to
+    /// the season year deterministically.
+    pub fn lcg_srand(&mut self, seed: u32) {
+        self.lcg_state = seed;
+    }
+
+    /// Read the current LCG state without modifying it — supports
+    /// snapshot-then-restore in tests and RNG-state differential
+    /// assertions.
+    pub fn lcg_state(&self) -> u32 {
+        self.lcg_state
+    }
+
+    /// Read the current pool cursor byte-offset (relative to POOL
+    /// base). Snapshot-only, does not mutate.
+    pub fn pool_cursor(&self) -> u32 {
+        self.cursor
+    }
+
+    /// Read the current pool jitter value.
+    pub fn pool_jitter(&self) -> u32 {
+        self.jitter
+    }
+
     /// Byte-exact port of FUN_008fc4f0.  Returns a value in the range
     /// specified by the exe: for `n > 0` in `[0, n)`; for `n == 0`
     /// returns 0; for `n < 0` follows the exe's negated-remainder path.
