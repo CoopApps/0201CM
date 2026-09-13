@@ -447,6 +447,10 @@ pub fn matrix_perturb(
     d9_flags: u16,
     owner_comp_first_int: Option<i32>,
     clubs_table: &mut [u8],
+    // Resolves the double-indirect `+0x69` and `+0x48` fields the
+    // exe reaches through the entry's Club* pointer. `NullResolver`
+    // makes E2/E3 no-ops.
+    resolver: &dyn ClubResolver,
     // Single `GameRng` — the exe's pool RNG state
     // (`DAT_00dc7238`/`DAT_00dc7234`) and LCG state
     // (`DAT_00ac26c0`) are distinct fields on one struct so both
@@ -528,26 +532,18 @@ pub fn matrix_perturb(
         }
 
         // Sub-phase E2 — pair by shared +0x69 (lines 166..235).
-        // NOTE: +0x69 (=105) extends past the 0x3b (=59) record
-        // boundary. The exe reads adjacent memory here (via a
-        // pointer indirection that Rust can't emulate on a raw
-        // slice). Treat any OOB read as `0` — matches the exe's
-        // observed no-link default on a zero-filled table.
-        let read_69 = |slot: usize| -> i32 {
-            let base = slot * REC + 0x69;
-            if base + 4 > clubs_table.len() {
-                return 0;
-            }
-            i32::from_le_bytes(
-                clubs_table[base..base + 4].try_into().unwrap_or([0; 4]))
-        };
+        // NOTE: The exe pattern is
+        //   *(int *)( *(int *)(entry_i + 0) + 0x69)
+        // — a double-indirection through the entry's Club* pointer
+        // that a raw byte slice cannot reproduce. The
+        // `ClubResolver::e2_pair_shares_69` closure answers "do
+        // these two slots share a non-zero +0x69 field" without
+        // the byte-slice hack. See the type doc.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
             for j in (local_254 + 1)..n {
                 if used_dst[j] != 0 { continue; }
-                let a69 = read_69(i);
-                let b69 = read_69(j);
-                if a69 == 0 || b69 == 0 || a69 != b69 { continue; }
+                if !resolver.e2_pair_shares_69(i, j) { continue; }
                 if local_254 >= half { break; }
                 let slot_lo = local_254;
                 let slot_hi = n_even as usize / 2 + local_254;
@@ -564,13 +560,33 @@ pub fn matrix_perturb(
             }
         }
 
-        // Sub-phase E3 — TODO. See doc: dereferences pointers stored
-        // at +0x69, requires typed access to the Club record. For a
-        // raw byte-table where all readable +0x69 fields are 0 (or
-        // out-of-range), E3 is a no-op — matched by the E2 guards.
-        // A future refactor should replace this with a resolver
-        // closure; for now the driver only exercises the fixture-
-        // pipeline paths where E3 doesn't fire.
+        // Sub-phase E3 — pair by (+0x69)-cross-linked-via-+0x48
+        // (lines 236..306 of 0066bd40.c). Byte-exact port pending
+        // a runtime capture of a real Club record showing what
+        // `+0x48` actually holds. Routed through
+        // `resolver.e3_pair_cross_linked`; default returns false so
+        // E3 is a no-op for any caller that has not populated the
+        // cross-link table.
+        for i in 0..n.saturating_sub(1) {
+            if used_src[i] != 0 { continue; }
+            for j in (local_254 + 1)..n {
+                if used_dst[j] != 0 { continue; }
+                if !resolver.e3_pair_cross_linked(i, j) { continue; }
+                if local_254 >= half { break; }
+                let slot_lo = local_254;
+                let slot_hi = n_even as usize / 2 + local_254;
+                scratch[slot_lo * REC..slot_lo * REC + REC].copy_from_slice(
+                    &clubs_table[i * REC..i * REC + REC]);
+                scratch[slot_hi * REC..slot_hi * REC + REC].copy_from_slice(
+                    &clubs_table[j * REC..j * REC + REC]);
+                used_dst[slot_lo] = 1;
+                used_dst[slot_hi] = 1;
+                used_src[i] = 1;
+                used_src[j] = 1;
+                local_254 += 1;
+                break;
+            }
+        }
 
         // Sub-phase E4 — flush unconsumed sources (lines 307..334).
         for i in 0..n {
@@ -640,34 +656,41 @@ pub struct ResetEvent {
     pub year: i16,
 }
 
-/// Byte-exact port of `cm0102-gdi.exe 0x00668450` — round-robin
-/// driver used by every English division to generate fixtures.
+/// STRUCTURALLY PORTED — DIFFERENTIAL VALIDATION PENDING.
 ///
-/// DirectDraw corroboration: `0x00668890`. Spec:
+/// cm0102-gdi.exe `0x00668450` (DirectDraw `0x00668890`) —
+/// round-robin driver. Control-flow translated line-by-line from
 /// `D:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/00668890.c`.
-/// Structural map: `reports/fixture_disasm/FUN_00668890_DECODE.md`.
 ///
-/// The driver body itself makes **zero** direct RNG calls. All RNG
-/// draws come from:
-/// * [`matrix_perturb`] — variable count, called once unless
-///   `comp_id ∈ skip_perturb_ids`.
-/// * [`walker_step`] — one call per outer round, i.e.
-///   `matches_per_pair * (n_even - 1)` calls maximum. For eng_second
-///   that is **46 walker calls**, each drawing at most one
-///   `rand_mod(4)`.
+/// # Confidence
 ///
-/// Alt-path (`comp+0xea` non-null, decompile lines 314-392) is NOT
-/// ported — the caller must pass `alt_pair_list = None`. Passing
-/// `Some` panics (no English division reaches that branch during
-/// season generation).
+/// * BYTE-EXACT: schedule buffer, matrix seed, walker state
+///   machine, date primitives.
+/// * STATE-EXACT: perturbation RNG-call sequence for a mock
+///   resolver where E2/E3 are no-ops.
+/// * STRUCTURALLY PORTED: this driver's outer/inner loop, H/A flip
+///   4-way switch, mark-consumed step, reset-pass emission.
+/// * PENDING: comparison of the produced `(home_slot, away_slot,
+///   round)` sequence against a captured cm0102-gdi eng_second run.
+///   Blocked on obtaining a live GDI pair trace — the synthetic
+///   constructor direct-call at `0x00667090` still crashes, and
+///   the perturbation direct-call crashes in Phase E2 without valid
+///   Club pointer state.
 ///
-/// Returns `true` on success. The exe's allocation-failure returns
-/// are not modelled — Rust `Vec` alloc is infallible.
+/// # RNG consumption
 ///
-/// # Provenance
+/// * Driver body: **0** direct RNG calls (verified vs decompile).
+/// * `matrix_perturb` (0 or 1 invocation): pool RNG × 1 + LCG × 48
+///   + LCG srand × 2 for eng_second.
+/// * `walker_step` × `matches_per_pair * (n_even - 1)`: 46 for
+///   eng_second, each drawing at most one `rand_mod(4)`.
 ///
-/// Every non-obvious block cites its decompile line. Documented in
-/// `reports/fixture_disasm/INTEGRATION_PHASE_3.md`.
+/// # Alt path
+///
+/// `comp+0xea` non-null case (decompile lines 314-392) is not
+/// ported. Passing `alt_pair_list = Some(_)` panics via
+/// `unimplemented!()`. Reachability for eng_second is not proven
+/// impossible — see next-phase investigation.
 /// Extra constants the driver needs to invoke [`matrix_perturb`].
 /// Grouped in a struct so the driver's arg list stays readable.
 #[derive(Debug, Clone, Copy)]
@@ -713,9 +736,18 @@ pub fn run_round_robin_driver(
     special_comp_id: i32,
     skip_perturb_ids: [i32; 2],
     // Mutable — the perturbation phase reorders the club records
-    // in place. After perturb returns the driver reads them
-    // through the same slice.
+    // in place. Each entry is 0x3b bytes but its INTERNAL structure
+    // is opaque to the driver: it only preserves it across the
+    // Phase-D swap and reads the first int (a "club id" —
+    // conceptually the Club* pointer in the exe, an internal id
+    // in the Rust port). See `ClubResolver` for the pointer-
+    // indirect field lookups the exe does at `Club + 0x69`.
     clubs_table: &mut [u8],
+    // Pointer-indirect field resolver — replaces raw byte-slice
+    // reads at `entry + 0x69` (which are structurally wrong; see
+    // `ClubResolver` docs). Perturbation and host-nation swap
+    // route their `+0x69`/`+0x48` questions through this trait.
+    resolver: &dyn ClubResolver,
     schedule_buffer: &[u8],
     alt_pair_list: Option<&[u8]>,
     rng: &mut GameRng,
@@ -754,6 +786,7 @@ pub fn run_round_robin_driver(
             walker_flag_byte as u16, // comp+0xd9 in the exe
             Some(comp_id),
             clubs_table,
+            resolver,
             rng,
             n_even,
             perturb_consts.dbc340_cli_seed,
@@ -831,10 +864,13 @@ pub fn run_round_robin_driver(
             }
 
             // Host-nation constraint — lines 247-271.
+            // The exe reads `*(int*)(Club_ptr + 0x69)` via double-
+            // indirection through the entry's first int. The Rust
+            // port routes this through the resolver.
             let (home_slot, away_slot, swapped) = if host_nation == -1 {
                 (home_row, away_row, false)
             } else {
-                let away_nation = club_nation_id(clubs_table, away_row);
+                let away_nation = resolver.nation_of(away_row as usize);
                 if away_nation == Some(host_nation) {
                     (away_row, home_row, true)
                 } else {
@@ -883,40 +919,95 @@ pub fn run_round_robin_driver(
     true
 }
 
-/// Read the nation id for a club slot.
+/// Slot metadata that the caller pre-resolves from the pointer
+/// indirection the exe uses.
 ///
-/// **INCOMPLETE**: The exe layout at `comp+0xb1` is a 0x3b-byte
-/// stride array where each entry's `+0x00` field is a **pointer**
-/// to a full Club object (0x245 bytes). The Club object's `+0x69`
-/// field is a pointer to a Nation record whose first int is the
-/// nation id. To reproduce this exactly, the caller must either
-/// pass a slice of full 0x245-byte club records OR pre-resolve the
-/// nation id and stash it at a well-known offset inside each 0x3b
-/// entry.
+/// # Why this exists
 ///
-/// The current implementation treats bytes `slot*0x3b + 0x69..+0x6d`
-/// as a raw u32 (LE) with `0xffff_ffff` meaning "no nation". This
-/// works IFF the caller has pre-populated that region with the
-/// nation id. When `host_nation == -1` (no constraint, the common
-/// eng_second case) this function is never called — see the guard
-/// in [`run_round_robin_driver`].
+/// cm0102-gdi's addressing pattern at `fun00668890.c:256` is:
+/// ```text
+/// clubs_base = *(int *)(comp + 0xb1)                     // pointer to entry array
+/// entry_i    = clubs_base + i * 0x3b                     // 59-byte entry
+/// club_ptr   = *(int *)entry_i                           // first int is Club*
+/// nation_id  = *(int *)((int)club_ptr + 0x69)            // Club + 0x69
+/// ```
 ///
-/// TODO: replace with a typed `&[ClubRow]` accessor once the Rust
-/// domain model exposes an internal Club-slot type. Until then,
-/// the caller MUST NOT invoke the driver with `host_nation != -1`
-/// unless they have pre-encoded the nation id at `+0x69`.
-fn club_nation_id(clubs_table: &[u8], slot: i32) -> Option<i32> {
-    let base = (slot as usize) * 0x3b;
-    if base + 0x6d > clubs_table.len() {
-        return None;
+/// `+0x69` is inside a POINTED-TO Club object (0x245 bytes, per
+/// prior work). A raw byte slice of 0x3b entries cannot reproduce
+/// the dereference — reading `entry_i + 0x69` steps past the
+/// 0x3b-byte record boundary and hits either the next entry or
+/// out-of-bounds memory. Padding a Rust test allocation to hide
+/// that OOB is not a fix; it disguises a wrong data model.
+///
+/// The correct Rust representation is to pre-resolve each slot's
+/// exe-observable state (the nation id, and any `+0x48` cross-link
+/// used by perturb E3) OUT-OF-BAND, and hand the driver + perturb
+/// closures/arrays that answer the questions the exe answers via
+/// pointer chasing.
+#[derive(Debug, Clone, Default)]
+pub struct ClubSlotMeta {
+    /// Nation id at `Club + 0x69` in the exe. `None` if the slot's
+    /// Club pointer is null or the nation record is absent.
+    pub nation_id: Option<i32>,
+}
+
+/// Trait for resolving pointer-indirect fields off a club slot.
+///
+/// Implementations may be as simple as `Vec<ClubSlotMeta>` indexed
+/// by slot, or as rich as a full lookup through the game's
+/// Club/Nation pools.
+///
+/// Perturb sub-phases E2 and E3 also reach through the Club*
+/// indirection. `same_nation` and `linked_via_plus_48` express
+/// those relationships without the byte-slice hack.
+pub trait ClubResolver {
+    /// Nation id at `Club + 0x69` for the given entry slot.
+    fn nation_of(&self, slot: usize) -> Option<i32>;
+
+    /// Perturb E2 criterion: do slots `i` and `j` share a non-zero
+    /// `+0x69` field? Byte-exact port of `0066bd40.c:180` +
+    /// downstream comparisons. Default implementation derives from
+    /// `nation_of`.
+    fn e2_pair_shares_69(&self, i: usize, j: usize) -> bool {
+        match (self.nation_of(i), self.nation_of(j)) {
+            (Some(a), Some(b)) if a != 0 && b != 0 && a == b => true,
+            _ => false,
+        }
     }
-    let raw = u32::from_le_bytes([
-        clubs_table[base + 0x69],
-        clubs_table[base + 0x6a],
-        clubs_table[base + 0x6b],
-        clubs_table[base + 0x6c],
-    ]);
-    if raw == 0xffff_ffff { None } else { Some(raw as i32) }
+
+    /// Perturb E3 criterion: is there a `+0x48` cross-link between
+    /// `i` and `j`? Byte-exact port pending; default returns false
+    /// (matches a caller that has no cross-link data — the safe
+    /// no-op).
+    fn e3_pair_cross_linked(&self, _i: usize, _j: usize) -> bool {
+        false
+    }
+}
+
+impl ClubResolver for Vec<ClubSlotMeta> {
+    fn nation_of(&self, slot: usize) -> Option<i32> {
+        self.get(slot).and_then(|m| m.nation_id)
+    }
+}
+
+impl ClubResolver for [ClubSlotMeta] {
+    fn nation_of(&self, slot: usize) -> Option<i32> {
+        self.get(slot).and_then(|m| m.nation_id)
+    }
+}
+
+/// A resolver where no slot has any nation / cross-link info —
+/// causes E2/E3 to no-op and forces host-nation checks to always
+/// fail. Useful for tests that isolate the walker + matrix +
+/// double-round-robin symmetry from the pointer-indirect club
+/// state.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct NullResolver;
+
+impl ClubResolver for NullResolver {
+    fn nation_of(&self, _slot: usize) -> Option<i32> {
+        None
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1242,38 +1333,32 @@ mod tests {
     // Driver integration tests
     // ------------------------------------------------------------------
 
-    /// Full driver run with perturbation SKIPPED — verifies the
-    /// walker + matrix + H/A pipeline produces a valid double round-
-    /// robin: 46 rounds × 12 pairs = 552 fixtures for 24 clubs, each
-    /// pair (i, j) appearing exactly twice with H/A reversed.
+    /// **STRUCTURAL INVARIANT** — not a GDI-equivalence test.
+    ///
+    /// Verifies that the walker + matrix + H/A pipeline (with
+    /// perturbation SKIPPED) produces a mathematically valid double
+    /// round-robin: 552 fixtures for 24 clubs, each ordered pair
+    /// once and reverse present. Does NOT prove the sequence
+    /// matches cm0102-gdi's actual output — that requires a
+    /// captured pair trace.
     #[test]
-    fn driver_deterministic_no_perturb_double_rr() {
+    fn driver_structural_invariant_double_rr_symmetry() {
         const N_CLUBS: i16 = 24;
         const MATCHES_PER_PAIR: i16 = 2;
         const N_ROUNDS: i16 = 46;
-        // Zero clubs table (perturb skipped so its content doesn't matter,
-        // but the driver reads from it if host_nation != -1). Use -1.
+        // Clubs table: exact n_clubs * 0x3b bytes. No padding.
         let mut clubs = vec![0u8; (N_CLUBS as usize) * 0x3b];
-        // Zero schedule buffer of correct size; driver only reads
-        // schedule[round]+0x0b for the reset check.
         let sched = vec![0u8; (N_ROUNDS as usize) * 0x41];
         let mut rng = GameRng::new(42);
         let mut fixtures = Vec::new();
         let mut resets = 0usize;
-        // Force skip_perturb by passing our comp_id in the skip list.
         let comp_id = 9i32;
         let ok = run_round_robin_driver(
-            N_CLUBS,
-            MATCHES_PER_PAIR,
-            N_ROUNDS,
-            2001,       // year_base
-            0,          // weekday_parity_flag
-            0,          // walker_flag_byte (no override)
-            -1,         // host_nation (no constraint)
-            comp_id,
-            i32::MIN,   // special_comp_id (unreachable)
+            N_CLUBS, MATCHES_PER_PAIR, N_ROUNDS,
+            2001, 0, 0, -1, comp_id, i32::MIN,
             [comp_id, comp_id], // skip perturb by matching comp_id
             &mut clubs,
+            &NullResolver,       // no pointer-indirect data
             &sched,
             None,
             &mut rng,
@@ -1312,28 +1397,23 @@ mod tests {
         }
     }
 
-    /// Driver run with `host_nation != -1` and a clubs_table where
-    /// EVERY away's nation field matches — the host-nation swap
-    /// should fire on every pairing.
-    ///
-    /// NOTE: The exe's `+0x69` offset extends past the 0x3b-byte
-    /// per-record boundary (105 > 59) because in the exe it reads
-    /// through a Club-object pointer indirection that the raw byte
-    /// slice can't emulate. The test allocates
-    /// `n_clubs * 0x3b + 128` bytes so `slot=23`'s +0x69 read
-    /// (offset 1462, 4 bytes) has room; the driver's
-    /// `club_nation_id` helper reads from that region.
+    /// **STRUCTURAL INVARIANT** — verifies host-nation swap fires
+    /// via the `ClubResolver` abstraction. The clubs table is the
+    /// exact `n_clubs * 0x3b` bytes with NO padding; the nation-id
+    /// answer lives in a parallel `ClubSlotMeta` array (i.e.
+    /// resolved out-of-band, as the exe does through pointer
+    /// indirection).
     #[test]
-    fn driver_host_nation_swap_fires_when_away_matches() {
+    fn driver_host_nation_swap_via_resolver() {
         const N_CLUBS: i16 = 24;
         const HOST_NATION: i32 = 100;
-        // Extended allocation: n_clubs * 0x3b + padding for the
-        // +0x69 reads past the last record boundary.
-        let mut clubs = vec![0u8; (N_CLUBS as usize) * 0x3b + 256];
-        for slot in 0..N_CLUBS as usize {
-            let base = slot * 0x3b + 0x69;
-            clubs[base..base + 4].copy_from_slice(&HOST_NATION.to_le_bytes());
-        }
+        let mut clubs = vec![0u8; (N_CLUBS as usize) * 0x3b];
+        // Every slot's nation resolves to HOST_NATION → every
+        // pairing's away-team matches the host-nation constraint
+        // and the swap fires.
+        let meta: Vec<ClubSlotMeta> = (0..N_CLUBS as usize)
+            .map(|_| ClubSlotMeta { nation_id: Some(HOST_NATION) })
+            .collect();
         let sched = vec![0u8; 46 * 0x41];
         let mut rng = GameRng::new(1);
         let mut swap_count = 0usize;
@@ -1341,7 +1421,7 @@ mod tests {
         let _ = run_round_robin_driver(
             N_CLUBS, 2, 46, 2001, 0, 0, HOST_NATION, comp_id, i32::MIN,
             [comp_id, comp_id],
-            &mut clubs, &sched, None, &mut rng,
+            &mut clubs, &meta, &sched, None, &mut rng,
             PerturbConstants::default(),
             |f| if f.host_nation_swap { swap_count += 1 },
             |_| {},
@@ -1367,7 +1447,7 @@ mod tests {
         let _ = run_round_robin_driver(
             24, 2, N_ROUNDS, 2001, 0, 0, -1, comp_id, i32::MIN,
             [comp_id, comp_id],
-            &mut clubs, &sched, None, &mut rng,
+            &mut clubs, &NullResolver, &sched, None, &mut rng,
             PerturbConstants::default(),
             |_| {},
             |r| resets.push(r),
@@ -1392,7 +1472,7 @@ mod tests {
         let mut clubs = vec![0u8; 24 * 0x3b];
         matrix_perturb(
             24, 2001, 0, Some(9),
-            &mut clubs, &mut rng, 24, 0,
+            &mut clubs, &NullResolver, &mut rng, 24, 0,
             i32::MIN, i32::MIN, i32::MIN,
         );
         let lcg_state_after = rng.lcg_state();
