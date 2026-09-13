@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod african_nations;
+pub mod eng_second_fixtures;
 pub mod exe_date;
 pub mod americas_nations;
 pub mod arg_primera;
@@ -18351,9 +18352,40 @@ impl World {
                 .unwrap_or(GameDate { year: base_year, month: 7, day: 1 });
 
             let start_row = fixtures.len() as u32;
-            let generated = generate_double_round_robin(competition, &members, start_row, &start);
+            let mut generated = generate_double_round_robin(competition, &members, start_row, &start);
             if generated.is_empty() {
                 continue;
+            }
+
+            // cm0102-gdi.exe dispatch — English Second Division (comp
+            // id 9). The schedule-getter at 0x0055f540 has been
+            // recovered byte-exact; overlay its 46 exact dates onto
+            // the fixtures produced above. The Berger add-mod pair
+            // generator remains until the round-robin driver
+            // (0x00668450) is ported byte-exact (STRUCTURE VERIFIED —
+            // SEMANTICS PARTIAL as of 2026-09-13). Pair-order
+            // fidelity will be closed by a follow-up commit once a
+            // runtime capture of the exe pair sequence lands.
+            //
+            // At 24 clubs the Berger loop emits n/2 = 12 fixtures per
+            // round in round-consecutive order, so fixture index i
+            // maps to global round i / 12.
+            if competition.id == crate::eng_second_fixtures::COMP_ID_ENG_SECOND
+                && members.len() == crate::eng_second_fixtures::ENG_SECOND_CLUB_COUNT
+            {
+                let exact_dates =
+                    crate::eng_second_fixtures::generate_eng_second_dates(base_year);
+                let per_round = members.len() / 2;
+                for (i, f) in generated.iter_mut().enumerate() {
+                    let round_idx = i / per_round;
+                    if round_idx < exact_dates.len() {
+                        f.date = exact_dates[round_idx].clone();
+                        f.source = format!(
+                            "cm0102-gdi 0x0055f540 exact date (round {round_idx} of 46) + \
+                             Berger add-mod pair; pair-order fidelity pending runtime capture"
+                        );
+                    }
+                }
             }
             for (id, name) in &members {
                 standing_members.entry(*id).or_insert_with(|| name.clone());
