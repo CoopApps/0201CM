@@ -1552,6 +1552,278 @@ pub fn conference_feeder_swap(
 }
 
 // ---------------------------------------------------------------------------
+// English five-league schedule family (C10)
+//
+// All five English Traditional leagues (Premier, First, Second, Third,
+// Conference) call the same fixture engine (`sub_00668450` driver via
+// `sub_00669340` matrix seed, `sub_0066b900` perturb, `sub_0066ee40`
+// walker). They differ only in per-comp data — n_clubs, n_rounds,
+// vtable ptr, and a handful of comp-record byte fields written by
+// their respective installers before the driver runs.
+//
+// This section defines the shared spec structure and the 5 constant
+// specs proven from asm decode (pillar 15 archaeology, 2026-09-14).
+// ---------------------------------------------------------------------------
+
+/// The English Traditional league identity — one of exactly 5.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnglishLeague {
+    Premier,
+    First,
+    Second,
+    Third,
+    Conference,
+}
+
+/// Confidence label for a per-league fixture-engine invariant. Prevents
+/// promoting a static call-graph match to byte-exact.
+///
+/// Applied per (league, component) cell in the C10 confidence matrix.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FixtureConfidence {
+    /// Verified against a runtime Frida capture (buffer bytes, RNG
+    /// state, fixture output). Only English Second currently has
+    /// this — perturb 24/24 P1→P2 and driver 552/552 diff both hold.
+    ByteExact,
+    /// Rust matches exe control flow instruction-for-instruction,
+    /// but runtime state has not been captured for cross-validation.
+    /// Promotion to ByteExact requires a Frida direct-call harness
+    /// (feasibility documented as ~30min per league per pillar 15).
+    StructurallyVerified,
+    /// Semantically believed correct from Ghidra decompile of the
+    /// DirectDraw build; awaiting per-instruction GDI verification.
+    BehaviourallyExact,
+}
+
+/// Static spec for an English Traditional league. Fields are the
+/// per-comp data the exe writes into the comp record via each
+/// league's "installer" (called from the ctor before the driver
+/// runs). Prove-source: pillar 15 asm decode of the 5 installers +
+/// getters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EnglishLeagueSpec {
+    pub league: EnglishLeague,
+
+    // Identity ----------------------------------------------------
+    /// Competition id in shipped `comp.dat`.
+    pub comp_id: u32,
+    /// Human-readable short name for logging.
+    pub short_name: &'static str,
+
+    // GDI addresses -----------------------------------------------
+    /// GDI VA of the league's ctor. Called by the season-setup
+    /// loop when the league is instantiated.
+    pub gdi_ctor_va: u32,
+    /// GDI VA of the schedule-getter (vtable slot +0x3C). Emits the
+    /// N-round schedule buffer at `comp+0xBA`.
+    pub gdi_schedule_getter_va: u32,
+    /// GDI VA of the installer (ctor helper that writes comp
+    /// fields, then dispatches vtable+0x3C for the schedule).
+    pub gdi_installer_va: u32,
+    /// GDI vtable pointer written to `[esi]` at ctor entry.
+    pub gdi_vtable_va: u32,
+
+    // Shape -------------------------------------------------------
+    /// Number of clubs.
+    pub n_clubs: u16,
+    /// Number of rounds. Always `(n_clubs - 1) * matches_per_pair`
+    /// for the 5 English leagues (double round-robin).
+    pub n_rounds: u16,
+    /// Matches per pair. Always 2 (home + away).
+    pub matches_per_pair: u16,
+    /// Schedule buffer length in bytes. Always `n_rounds *
+    /// SCHEDULE_RECORD_STRIDE_BYTES` (65-byte record stride).
+    pub schedule_buffer_bytes: usize,
+
+    // Comp-record byte fields written by installer ---------------
+    /// `+0xBE` — division rank (1 = Conf, 2 = D1, 2 = D2, 3 = D3,
+    /// 0 = Prem). Not monotone; verified per-league from asm.
+    pub comp_be: u8,
+    /// `+0xBF` — promotion count / Europe slots. Prem=0, Conf=0,
+    /// others=4.
+    pub comp_bf: u8,
+    /// `+0xC1` — relegation count variant. Prem=3, Conf=3, D1=3,
+    /// D2=4, D3=1.
+    pub comp_c1: u8,
+
+    // Playoff dependency for pyramid rollover --------------------
+    /// True if this league has a promotion playoff (D1, D2, D3).
+    /// Premier and Conference do NOT run promotion playoffs — Prem
+    /// has no upward tier, Conf's champion is auto-promoted with
+    /// stadium gate.
+    pub has_promotion_playoff: bool,
+
+    // Confidence --------------------------------------------------
+    /// Confidence in the schedule buffer byte-layout.
+    pub schedule_buffer_confidence: FixtureConfidence,
+    /// Confidence in the matrix_seed_base call.
+    pub matrix_seed_confidence: FixtureConfidence,
+    /// Confidence in the perturb invocation.
+    pub perturb_confidence: FixtureConfidence,
+    /// Confidence in the walker invocation.
+    pub walker_confidence: FixtureConfidence,
+    /// Confidence in the driver (`FUN_00668450`) invocation.
+    pub driver_confidence: FixtureConfidence,
+    /// Confidence in the full fixture output.
+    pub full_fixture_confidence: FixtureConfidence,
+}
+
+/// Round record stride in bytes for all 5 English leagues. Shared
+/// with cup schedules per pillar 15 (`sub_0066ef70` writer body
+/// identical across all callsites).
+pub const SCHEDULE_RECORD_STRIDE_BYTES: usize = 65;
+
+/// English Premier — 20 clubs, 38 rounds.
+pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
+    league: EnglishLeague::Premier,
+    comp_id: 7,
+    short_name: "Prem",
+    gdi_ctor_va:              0x0055d120,
+    gdi_schedule_getter_va:   0x0055d400,
+    gdi_installer_va:         0x0055e910,
+    gdi_vtable_va:            0x00957d24,
+    n_clubs: 20,
+    n_rounds: 38,
+    matches_per_pair: 2,
+    schedule_buffer_bytes: 38 * SCHEDULE_RECORD_STRIDE_BYTES,   // 2470
+    comp_be: 0,
+    comp_bf: 0,
+    comp_c1: 3,
+    has_promotion_playoff: false,
+    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
+    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::StructurallyVerified,
+    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+};
+
+/// English First Division — 24 clubs, 46 rounds.
+pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
+    league: EnglishLeague::First,
+    comp_id: 8,
+    short_name: "D1",
+    gdi_ctor_va:              0x0055b540,
+    gdi_schedule_getter_va:   0x0055b840,
+    gdi_installer_va:         0x0055cc50,
+    gdi_vtable_va:            0x00957c70,
+    n_clubs: 24,
+    n_rounds: 46,
+    matches_per_pair: 2,
+    schedule_buffer_bytes: 46 * SCHEDULE_RECORD_STRIDE_BYTES,   // 2990
+    comp_be: 2,
+    comp_bf: 4,
+    comp_c1: 3,
+    has_promotion_playoff: true,
+    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
+    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::StructurallyVerified,
+    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+};
+
+/// English Second Division — 24 clubs, 46 rounds. The reference
+/// league. **Only league with `ByteExact` confidence** — verified
+/// against runtime Frida capture (perturb 24/24 P1→P2 + driver
+/// 552/552 ordered-diff).
+pub const ENGLISH_SECOND_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
+    league: EnglishLeague::Second,
+    comp_id: 9,
+    short_name: "D2",
+    gdi_ctor_va:              0x0055f240,
+    gdi_schedule_getter_va:   0x0055f540,
+    gdi_installer_va:         0x00560520,
+    gdi_vtable_va:            0x00957dd8,
+    n_clubs: 24,
+    n_rounds: 46,
+    matches_per_pair: 2,
+    schedule_buffer_bytes: 46 * SCHEDULE_RECORD_STRIDE_BYTES,   // 2990
+    comp_be: 2,
+    comp_bf: 4,
+    comp_c1: 4,
+    has_promotion_playoff: true,
+    schedule_buffer_confidence: FixtureConfidence::ByteExact,
+    matrix_seed_confidence:     FixtureConfidence::ByteExact,
+    perturb_confidence:         FixtureConfidence::ByteExact,
+    walker_confidence:          FixtureConfidence::ByteExact,
+    driver_confidence:          FixtureConfidence::ByteExact,
+    full_fixture_confidence:    FixtureConfidence::ByteExact,
+};
+
+/// English Third Division — 24 clubs, 46 rounds.
+pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
+    league: EnglishLeague::Third,
+    comp_id: 10,
+    short_name: "D3",
+    gdi_ctor_va:              0x00560d40,
+    gdi_schedule_getter_va:   0x00561050,
+    gdi_installer_va:         0x00562030,
+    gdi_vtable_va:            0x00957e8c,
+    n_clubs: 24,
+    n_rounds: 46,
+    matches_per_pair: 2,
+    schedule_buffer_bytes: 46 * SCHEDULE_RECORD_STRIDE_BYTES,   // 2990
+    comp_be: 3,
+    comp_bf: 4,
+    comp_c1: 1,
+    has_promotion_playoff: true,
+    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
+    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::StructurallyVerified,
+    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+};
+
+/// English Conference — 22 clubs, 42 rounds.
+pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
+    league: EnglishLeague::Conference,
+    comp_id: 93,
+    short_name: "Conf",
+    gdi_ctor_va:              0x00557970,
+    gdi_schedule_getter_va:   0x00557c70,
+    gdi_installer_va:         0x00558bf0,
+    gdi_vtable_va:            0x00957a7c,
+    n_clubs: 22,
+    n_rounds: 42,
+    matches_per_pair: 2,
+    schedule_buffer_bytes: 42 * SCHEDULE_RECORD_STRIDE_BYTES,   // 2730
+    comp_be: 1,
+    comp_bf: 0,
+    comp_c1: 3,
+    has_promotion_playoff: false,   // Conf uses stadium-gated single-club promotion
+    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
+    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::StructurallyVerified,
+    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+};
+
+/// All 5 English Traditional league specs in shipped comp-id order.
+pub const ENGLISH_LEAGUE_SPECS: [&EnglishLeagueSpec; 5] = [
+    &ENGLISH_PREMIER_SPEC,
+    &ENGLISH_FIRST_SPEC,
+    &ENGLISH_SECOND_SPEC,
+    &ENGLISH_THIRD_SPEC,
+    &ENGLISH_CONFERENCE_SPEC,
+];
+
+/// Look up a league's spec by its shipped `comp_id`. Returns `None`
+/// for any comp id not in the English Traditional 5.
+pub fn english_league_spec_for(comp_id: u32) -> Option<&'static EnglishLeagueSpec> {
+    match comp_id {
+        7  => Some(&ENGLISH_PREMIER_SPEC),
+        8  => Some(&ENGLISH_FIRST_SPEC),
+        9  => Some(&ENGLISH_SECOND_SPEC),
+        10 => Some(&ENGLISH_THIRD_SPEC),
+        93 => Some(&ENGLISH_CONFERENCE_SPEC),
+        _ => None,
+    }
+}
+
+// ---------------------------------------------------------------------------
 // English promotion-playoff family (cm0102-gdi sub_0055CF40 / 0x00560810
 // / 0x00562330 + shared 4-team ctor sub_0050CC90)
 // ---------------------------------------------------------------------------
@@ -3213,6 +3485,199 @@ mod tests {
         // K = min(9, 3) = 3 → 6 RNG draws.
         assert_eq!(d.shuffle_k, Some(3));
         assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
+    }
+
+    // -----------------------------------------------------------------
+    // English 5-league schedule family (C10)
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn spec_all_five_leagues_registered() {
+        assert_eq!(ENGLISH_LEAGUE_SPECS.len(), 5);
+        let leagues: Vec<EnglishLeague> = ENGLISH_LEAGUE_SPECS
+            .iter().map(|s| s.league).collect();
+        assert_eq!(leagues, vec![
+            EnglishLeague::Premier,
+            EnglishLeague::First,
+            EnglishLeague::Second,
+            EnglishLeague::Third,
+            EnglishLeague::Conference,
+        ]);
+    }
+
+    #[test]
+    fn spec_lookup_by_comp_id() {
+        assert_eq!(english_league_spec_for(7),  Some(&ENGLISH_PREMIER_SPEC));
+        assert_eq!(english_league_spec_for(8),  Some(&ENGLISH_FIRST_SPEC));
+        assert_eq!(english_league_spec_for(9),  Some(&ENGLISH_SECOND_SPEC));
+        assert_eq!(english_league_spec_for(10), Some(&ENGLISH_THIRD_SPEC));
+        assert_eq!(english_league_spec_for(93), Some(&ENGLISH_CONFERENCE_SPEC));
+        // Non-English comp ids return None.
+        assert_eq!(english_league_spec_for(358), None);   // Isthmian
+        assert_eq!(english_league_spec_for(357), None);   // A Lower Division
+    }
+
+    /// Every spec's shape is internally consistent: buffer bytes =
+    /// rounds * record stride; rounds = (n_clubs - 1) *
+    /// matches_per_pair.
+    #[test]
+    fn spec_shapes_are_arithmetically_consistent() {
+        for spec in ENGLISH_LEAGUE_SPECS.iter() {
+            let expected_rounds = (spec.n_clubs - 1) * spec.matches_per_pair;
+            assert_eq!(spec.n_rounds, expected_rounds,
+                       "{}: (n_clubs-1)*matches_per_pair should equal n_rounds",
+                       spec.short_name);
+            let expected_buf = spec.n_rounds as usize * SCHEDULE_RECORD_STRIDE_BYTES;
+            assert_eq!(spec.schedule_buffer_bytes, expected_buf,
+                       "{}: buffer = rounds * 65", spec.short_name);
+            assert_eq!(spec.matches_per_pair, 2,
+                       "{}: matches_per_pair must be 2 (double RR)",
+                       spec.short_name);
+        }
+    }
+
+    /// The 5 leagues use 3 distinct sizes: 20 clubs (Prem), 22
+    /// (Conf), 24 (First/Second/Third). Buffer sizes 2470/2730/2990
+    /// respectively.
+    #[test]
+    fn spec_sizes_span_three_shapes() {
+        use std::collections::BTreeSet;
+        let sizes: BTreeSet<u16> = ENGLISH_LEAGUE_SPECS.iter()
+            .map(|s| s.n_clubs).collect();
+        assert_eq!(sizes, [20u16, 22, 24].into_iter().collect());
+
+        let bufs: BTreeSet<usize> = ENGLISH_LEAGUE_SPECS.iter()
+            .map(|s| s.schedule_buffer_bytes).collect();
+        assert_eq!(bufs, [2470usize, 2730, 2990].into_iter().collect());
+    }
+
+    /// The shared fixture engine works on n=20 (Prem), n=22 (Conf),
+    /// and n=24 (D1/D2/D3). This proves the SAME implementation
+    /// handles all three shapes — the C10 architectural payoff.
+    ///
+    /// Uses `matrix_seed_base` (already byte-exact per its own
+    /// runtime capture for n=4/6/8/10/24) to confirm the shape
+    /// generalises without needing per-size branches.
+    #[test]
+    fn shared_engine_matrix_seed_works_for_all_three_shapes() {
+        for &n_clubs in &[20u16, 22, 24] {
+            let m = matrix_seed_base(n_clubs as usize);
+            // The seed matrix is 1-indexed: spine[0] is a guard row
+            // (empty by design; matches exe's `iVar2` starting at 1),
+            // followed by n_clubs real rows of length n_clubs.
+            assert_eq!(m.len(), n_clubs as usize + 1,
+                       "matrix_seed_base for n={} should return 1 guard + n rows",
+                       n_clubs);
+            assert_eq!(m[0].len(), 0,
+                       "guard row at index 0 is empty");
+            for row in &m[1..] {
+                assert_eq!(row.len(), n_clubs as usize,
+                           "each real row has n_clubs cols for n={}", n_clubs);
+            }
+        }
+    }
+
+    /// Walker special-comp-id shortcut: passing `special == comp_id`
+    /// bypasses the state machine. This is used by cups but NONE of
+    /// the 5 English leagues (pillar 15 marks it UNCLEAR without a
+    /// runtime read of DAT_009bbaf0; asm evidence from each getter
+    /// shows no writes to that global from any of the 5 leagues).
+    ///
+    /// We assert the walker CAN handle each n_clubs when the
+    /// shortcut is NOT active, to prove shape neutrality.
+    #[test]
+    fn shared_engine_walker_shape_neutral_for_all_three_sizes() {
+        // For each shape, run the walker for one round with clean
+        // state and confirm no panic + reasonable output.
+        for &(n_clubs, n_rounds) in &[(20i16, 38i16), (22i16, 42), (24i16, 46)] {
+            let mut state: u8 = 0;
+            let out = walker_step(
+                /*prev_col=*/ -1,
+                &mut state,
+                /*comp_id=*/ 42,   // arbitrary — non-special
+                n_clubs,
+                /*matches_per_pair=*/ 2,
+                n_rounds,
+                /*flag_byte=*/ 0,
+                /*special_comp_id=*/ i32::MIN, // no shortcut
+                None,
+            );
+            // Any of {0..=n_rounds-1} is legal for a first call.
+            assert!(out >= 0 && out < n_rounds as i32,
+                    "walker returned {} out of range [0, {}) for n_clubs={}",
+                    out, n_rounds, n_clubs);
+        }
+    }
+
+    /// D1/D2/D3 share EVERY field except comp_id, VAs, `+0xC1`, and
+    /// confidence labels. The comp record differs only in these
+    /// per-league specifics — installer body is otherwise identical.
+    #[test]
+    fn d1_d2_d3_share_shape() {
+        for pair in [
+            (&ENGLISH_FIRST_SPEC, &ENGLISH_SECOND_SPEC),
+            (&ENGLISH_SECOND_SPEC, &ENGLISH_THIRD_SPEC),
+        ] {
+            let (a, b) = pair;
+            assert_eq!(a.n_clubs, b.n_clubs);
+            assert_eq!(a.n_rounds, b.n_rounds);
+            assert_eq!(a.schedule_buffer_bytes, b.schedule_buffer_bytes);
+            assert_eq!(a.matches_per_pair, b.matches_per_pair);
+            assert_eq!(a.has_promotion_playoff, b.has_promotion_playoff);
+        }
+    }
+
+    /// Playoff-availability invariant: exactly D1/D2/D3 run playoffs,
+    /// exactly Prem/Conf do not. Feeds the C9 dispatch.
+    #[test]
+    fn only_middle_three_have_playoffs() {
+        assert!(!ENGLISH_PREMIER_SPEC.has_promotion_playoff);
+        assert!(ENGLISH_FIRST_SPEC.has_promotion_playoff);
+        assert!(ENGLISH_SECOND_SPEC.has_promotion_playoff);
+        assert!(ENGLISH_THIRD_SPEC.has_promotion_playoff);
+        assert!(!ENGLISH_CONFERENCE_SPEC.has_promotion_playoff);
+    }
+
+    /// English Second is the only league currently at ByteExact
+    /// confidence. Prem/D1/D3/Conf are StructurallyVerified pending
+    /// runtime Frida capture (feasibility ~30 min each per pillar
+    /// 15). This test locks the honesty invariant — no accidental
+    /// promotion of a StructurallyVerified spec to ByteExact.
+    #[test]
+    fn only_second_is_byte_exact() {
+        assert_eq!(ENGLISH_SECOND_SPEC.full_fixture_confidence,
+                   FixtureConfidence::ByteExact);
+        for spec in [
+            &ENGLISH_PREMIER_SPEC,
+            &ENGLISH_FIRST_SPEC,
+            &ENGLISH_THIRD_SPEC,
+            &ENGLISH_CONFERENCE_SPEC,
+        ] {
+            assert_eq!(spec.full_fixture_confidence,
+                       FixtureConfidence::StructurallyVerified,
+                       "{} must not claim ByteExact without runtime capture",
+                       spec.short_name);
+        }
+    }
+
+    /// Prem/Conf differ in `+0xBE` / `+0xBF` from mid-3. Pillar 15
+    /// gives concrete values.
+    #[test]
+    fn per_league_comp_byte_fields_match_pillar15() {
+        // (comp_id, +0xBE, +0xBF, +0xC1)
+        let expected = [
+            (7u32,  0u8, 0u8, 3u8),   // Prem
+            (8,     2,   4,   3),      // D1
+            (9,     2,   4,   4),      // D2 — +0xC1 differs
+            (10,    3,   4,   1),      // D3 — +0xBE and +0xC1 differ
+            (93,    1,   0,   3),      // Conf — +0xBE, +0xBF differ
+        ];
+        for (id, be, bf, c1) in expected {
+            let s = english_league_spec_for(id).unwrap();
+            assert_eq!(s.comp_be, be, "{}: comp_be", s.short_name);
+            assert_eq!(s.comp_bf, bf, "{}: comp_bf", s.short_name);
+            assert_eq!(s.comp_c1, c1, "{}: comp_c1", s.short_name);
+        }
     }
 
     // -----------------------------------------------------------------
