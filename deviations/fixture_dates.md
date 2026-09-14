@@ -1,5 +1,21 @@
 # Deviation: League fixture dates
 
+## Build provenance (2026-09-14, C1′ pass)
+
+TWO source binaries exist:
+
+* **`cm0102_GDI.exe`** — GDI build. **Authoritative for this project.**
+  Runtime captures and all byte-exact goldens target this binary. All
+  VAs in this file — driver, perturb, walker, eng_second ctor and
+  schedule-getter — are GDI VAs unless explicitly prefixed
+  `DirectDraw VA:`.
+* **`cm0102.exe`** — DirectDraw build. Source of most Ghidra
+  decompile reports; used only as a corroborating cross-reference.
+
+The two builds' VAs differ by non-uniform, region-dependent deltas.
+Never translate between them by applying a fixed offset. See
+`memory/gdi-vs-directdraw-builds.md` for the calibration table.
+
 ## Address-labelling correction (2026-09-14, C1 pass)
 
 The round-robin driver is a single outer function at **`0x00668450`**,
