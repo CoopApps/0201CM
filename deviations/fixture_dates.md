@@ -1,5 +1,37 @@
 # Deviation: League fixture dates
 
+## OPEN TRADITIONAL DEVIATION — Conference-fallback stadium-expansion (2026-09-14, C6)
+
+Traditional Conference-fallback (`sub_0055ec00` port at
+`ada5945`) is **decision-exact** but **NOT yet behaviourally exact
+on the passing branch**. The exe's stadium-gate `sub_00584150` is a
+471-instruction function that does much more than gate — on a
+passing candidate it ALSO:
+
+* mutates the stadium record's `+0x3c`, `+0x40`, and `+0x44`
+  capacity fields (max / current / peak-ever-required);
+* updates 8 club-ledger financial fields via the exe's stadium-cost
+  formula (`(need/1000 + 1) * 6000 + need) * 125 + local_14 * 75 +
+  iVar10 * 50`);
+* fires the "stadium expanded" news broadcast via `sub_0058a310`.
+
+The C5+C6 port in `crates/cm-domain/src/eng_second_fixtures.rs`
+covers only the **boolean-return subset** the fallback caller
+observes. `stadium_meets_capacity_target` is byte-exact for that
+return but the on-pass side effects are missing — meaning a
+Traditional save where Conference is not selected and the fallback
+fires with a passing candidate currently promotes the candidate
+WITHOUT paying the expansion cost, updating stadium capacity, or
+firing the "stadium expanded" news.
+
+**This deviation MUST NOT be closed out of C11.** Follow-up commit
+required: port the full expansion transaction as a companion helper
+(the "apply" layer for the fallback's Promoted outcome). Rough
+plan: extract stadium-cost formula → return an
+`ExpansionTransaction { capacity_delta, cost, ledger_deltas }`
+alongside the boolean → apply-layer writes stadium fields, deducts
+cost, fires news.
+
 ## Build provenance (2026-09-14, C1′ pass)
 
 TWO source binaries exist:
