@@ -4,7 +4,7 @@ fn main() {
     let dir = "D:/cm0102-rs/rust-db";
     let path = std::path::Path::new(dir);
     let world = cm_domain::World::read_rust_db_dir(path).expect("read rust-db");
-    let options = NewGameOptions { selected_nations: vec!["Australia".to_string()], background_nations: vec![], use_real_players: true, attribute_masking: true, start_year: 2001 };
+    let options = NewGameOptions { selected_nations: vec!["Australia".to_string()], background_nations: vec![], use_real_players: true, attribute_masking: true, start_year: 2001 , initial_game_rng_state: None };
     let mut save = world.new_game_from_rust_db(path, &options);
     match &save.aus_nsl { Some(s) => println!("NSL {}: {} clubs", s.year, s.teams.len()), None => { println!("NSL NOT built"); return; } }
     save.tick_to_date(GameDate { year: 2002, month: 8, day: 1 });

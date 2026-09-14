@@ -25,12 +25,14 @@
 //!      fixtures.
 
 use cm_domain::english_traditional::{
-    is_english_traditional_league, ENGLISH_TRADITIONAL_COMP_IDS,
+    english_dispatch_decision, is_english_traditional_league,
+    EnglishFixtureDispatch, GameMode, ENGLISH_TRADITIONAL_COMP_IDS,
 };
+use cm_domain::game_rng::{GameRng, GameRngState};
 use cm_domain::{
     ClubView, CoreBook, CoreSummary, DomainCompetition, DomainOpaqueRecord,
-    DomainStadium, ReferenceBook, ReferenceSummary, StaffBook, StaffSummary,
-    SchemaBook, World,
+    DomainStadium, NewGameOptions, ReferenceBook, ReferenceSummary,
+    SchemaBook, StaffBook, StaffSummary, World,
 };
 use std::collections::BTreeSet;
 
@@ -294,6 +296,163 @@ fn subset_selection_only_dispatches_selected_leagues() {
     for f in fixtures.iter().filter(|f| f.competition_id == 7 || f.competition_id == 8) {
         assert!(f.source.contains(EXACT_ENGINE_MARKER));
     }
+}
+
+#[test]
+fn c11_1_shared_rng_state_advances_across_selected_leagues_only() {
+    // C11.1 point 12: verify one shared RNG threads through the
+    // production dispatch, advances only for GENERATED leagues,
+    // and each subsequent league's state resumes from the prior's.
+    let world = build_world_with_five_english_leagues();
+    // All 5 selected — the exe-order chain: Prem -> First -> Second
+    // -> Third -> Conf.
+    let comp_ids: BTreeSet<u32> = ENGLISH_TRADITIONAL_COMP_IDS.iter().copied().collect();
+    let mut rng_all = GameRng::new(0xC110_ABCDu32);
+    let state_before_all = rng_all.snapshot();
+    let (_fixtures_all, _, _) =
+        world.generate_new_game_season_with_rng(&comp_ids, 2001, &mut rng_all);
+    let state_after_all = rng_all.snapshot();
+    assert_ne!(state_before_all, state_after_all,
+        "RNG must advance when the 5 English leagues generate");
+
+    // Subset (Prem + First only) starts from the SAME initial state
+    // must advance LESS than the full chain — proves skipped leagues
+    // don't consume RNG.
+    let mut rng_two = GameRng::new(0xC110_ABCDu32);
+    let comp_ids_two: BTreeSet<u32> = [7u32, 8].iter().copied().collect();
+    let (_, _, _) =
+        world.generate_new_game_season_with_rng(&comp_ids_two, 2001, &mut rng_two);
+    let state_after_two = rng_two.snapshot();
+    assert_ne!(state_after_two, state_after_all,
+        "subset selection must reach a DIFFERENT final RNG state \
+         than full selection (skipped leagues must not silently \
+         consume their would-have-been random calls)");
+
+    // Prem-only starts from same seed but produces yet-another state.
+    let mut rng_one = GameRng::new(0xC110_ABCDu32);
+    let comp_ids_one: BTreeSet<u32> = [7u32].iter().copied().collect();
+    let (_, _, _) =
+        world.generate_new_game_season_with_rng(&comp_ids_one, 2001, &mut rng_one);
+    let state_after_one = rng_one.snapshot();
+    assert_ne!(state_after_one, state_after_two);
+    assert_ne!(state_after_one, state_after_all);
+}
+
+#[test]
+fn c11_1_captured_rng_state_can_be_injected_into_production() {
+    // C11.1 point 11: prove GameRngState can round-trip through the
+    // real production dispatch. We inject a pinned state, run the
+    // real season builder, and confirm the RNG advanced (not
+    // reset) and the fixture engine produced the expected counts.
+    // (Byte-exact-vs-captured-GDI requires matching P1 club_ids —
+    // shipped rust-db uses different numeric ids than the captured
+    // build; a rust-db renumbering issue, out of C11.1 scope. P1
+    // NAME ordering does match, verified separately via
+    // captured_p1.json.)
+    let world = build_world_with_five_english_leagues();
+    let comp_ids: BTreeSet<u32> = ENGLISH_TRADITIONAL_COMP_IDS.iter().copied().collect();
+    let pinned = GameRngState { cursor: 1992, jitter: 26340, lcg_state: 1726273615 };
+    let mut rng = GameRng::from_state_snapshot(pinned);
+    let before = rng.snapshot();
+    assert_eq!(before, pinned);
+    let (fixtures, _, _) =
+        world.generate_new_game_season_with_rng(&comp_ids, 2001, &mut rng);
+    assert_eq!(fixtures.len(), 2498);
+    assert_ne!(rng.snapshot(), pinned, "RNG must have advanced");
+}
+
+#[test]
+fn c11_1_bootstrap_from_options_matches_direct_from_state() {
+    // Confirm NewGameOptions::bootstrap_game_rng() honors
+    // initial_game_rng_state, and skipping it reproducibly derives
+    // one from options (no invented magic constants).
+    let pinned = GameRngState { cursor: 100, jitter: 200, lcg_state: 300 };
+    let opts_pinned = NewGameOptions {
+        initial_game_rng_state: Some(pinned),
+        ..NewGameOptions::default()
+    };
+    let opts_derived_a = NewGameOptions {
+        selected_nations: vec!["England".into()],
+        ..NewGameOptions::default()
+    };
+    let opts_derived_b = NewGameOptions {
+        selected_nations: vec!["England".into()],
+        ..NewGameOptions::default()
+    };
+    let opts_derived_c = NewGameOptions {
+        selected_nations: vec!["France".into()],
+        ..NewGameOptions::default()
+    };
+    assert_eq!(opts_pinned.bootstrap_game_rng().snapshot(), pinned);
+    let da = opts_derived_a.bootstrap_game_rng().snapshot();
+    let db = opts_derived_b.bootstrap_game_rng().snapshot();
+    let dc = opts_derived_c.bootstrap_game_rng().snapshot();
+    assert_eq!(da, db, "same options -> same bootstrap state");
+    assert_ne!(da, dc, "different selected_nations -> different bootstrap state");
+}
+
+#[test]
+fn c11_1_dispatch_v4_never_routes_to_exact_english_engine() {
+    // C11.1 point 9: prove V4 mode is blocked from the exact engine
+    // by the dispatcher itself, not by surrounding assumptions.
+    for &id in &[7u32, 8, 9, 10, 93] {
+        let d = english_dispatch_decision(GameMode::V4, id, 2001);
+        assert!(matches!(d, EnglishFixtureDispatch::Skipped { .. }),
+            "V4 comp {id} routed as {d:?} — must be Skipped");
+    }
+    // And Traditional continues to route them exact.
+    for &id in &[7u32, 8, 9, 10, 93] {
+        assert_eq!(
+            english_dispatch_decision(GameMode::Traditional, id, 2001),
+            EnglishFixtureDispatch::ExactEnglish
+        );
+    }
+}
+
+#[test]
+fn c11_1_wrong_club_count_panics_no_silent_fallback() {
+    // C11.1 point 7: build a world where Prem (7) has only 15
+    // clubs. The dispatcher routes it to ExactEnglish (Traditional +
+    // 2001), the engine returns UnexpectedClubCount, and the
+    // production season builder MUST panic rather than silently
+    // fall through to Berger.
+    let mut world = build_world_with_five_english_leagues();
+    // Remove 5 clubs from Prem (comp 7). Use raw division_id at +0x57.
+    let mut removed = 0;
+    world.core.clubs.retain(|r| {
+        let cv = ClubView::new(r);
+        if cv.division_id() == Some(7) && removed < 5 {
+            removed += 1;
+            false
+        } else {
+            true
+        }
+    });
+    let comp_ids: BTreeSet<u32> = [7u32].iter().copied().collect();
+    let mut rng = GameRng::new(0);
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = world.generate_new_game_season_with_rng(&comp_ids, 2001, &mut rng);
+    }));
+    assert!(result.is_err(),
+        "production dispatch must panic (not silently fall back) on a \
+         Traditional English roster-shape violation");
+}
+
+#[test]
+fn c11_1_unsupported_base_year_skipped_by_dispatch() {
+    // C11.1 point 14: non-2001 base years fall to Skipped and the
+    // production dispatch does not run the exact engine at all.
+    let world = build_world_with_five_english_leagues();
+    let comp_ids: BTreeSet<u32> = ENGLISH_TRADITIONAL_COMP_IDS.iter().copied().collect();
+    let mut rng = GameRng::new(0);
+    let (fixtures, _, _) =
+        world.generate_new_game_season_with_rng(&comp_ids, 2002, &mut rng);
+    // None of the fixtures should be the exact-engine source string
+    // (the exact engine was skipped; the generic Berger builder may
+    // still produce fixtures for these ids in fallback mode).
+    assert!(!fixtures.iter().any(|f| f.source.contains(EXACT_ENGINE_MARKER)),
+        "base_year 2002 must NOT route through the exact engine — \
+         no proven templates for non-2001 seasons.");
 }
 
 #[test]

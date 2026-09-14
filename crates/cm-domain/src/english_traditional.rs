@@ -60,6 +60,132 @@ use crate::{
     HeadlessFixtureStatus, HeadlessSeasonFixture,
 };
 
+/// Top-level game mode discriminator — the mutually-exclusive choice
+/// documented in [[game-mode-traditional-vs-v4]]. Kept here because
+/// C11.1 must be able to prove Traditional and V4 dispatch through
+/// distinct code paths; a full `GameMode` model landing project-wide
+/// is a separate concern.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameMode {
+    /// 100% faithful CM01/02. Byte-exact goldens apply. Runs the
+    /// exact English fixture engine for 7/8/9/10/93.
+    Traditional,
+    /// Opt-in extended simulation. Has its own dispatch and MUST
+    /// NOT reuse the Traditional exact fixture engine as-is.
+    V4,
+}
+
+impl Default for GameMode {
+    fn default() -> Self { GameMode::Traditional }
+}
+
+/// Deliberate dispatch decision for one competition at new-game
+/// season build. C11.1 point 8: replaces the fragile "did the exact
+/// loop consume this? did the generic loop skip it?" pair with a
+/// single explicit answer per competition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnglishFixtureDispatch {
+    /// Run through
+    /// [`generate_english_traditional_league`] — the exact ported
+    /// perturb + walker + driver + native schedule engine.
+    ExactEnglish,
+    /// Not routed through this module; leave to the generic path
+    /// or any other dedicated engine that already claims the id.
+    Generic,
+    /// This module explicitly refuses the comp (mode gate,
+    /// unsupported base year for an English comp, etc.).
+    Skipped { reason: &'static str },
+}
+
+/// Errors from the exact English fixture engine. Prefer these
+/// over silent fallback so a broken exact path does not masquerade
+/// as a successful Berger run (C11.1 point 7).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExactEnglishGenerationError {
+    /// Club count on the incoming roster does not match the spec's
+    /// `n_clubs` for this comp id. Should be treated as a hard
+    /// invariant break — the 5 English simulated leagues have fixed
+    /// shapes in Traditional mode.
+    UnexpectedClubCount {
+        comp_id: u32,
+        expected: usize,
+        actual: usize,
+    },
+    /// A `base_year` other than the one this engine has proven
+    /// templates for was requested. The 2001/02 templates are
+    /// verified byte-exact against the shipped-year GDI capture;
+    /// applying them to another year without further archaeology
+    /// would produce silently wrong dates.
+    UnsupportedBaseYear {
+        comp_id: u32,
+        base_year: u16,
+        supported: &'static [u16],
+    },
+    /// The spec table's `n_rounds` is out of alignment with
+    /// `rounds_2001.len()`. Sanity guard — should be unreachable
+    /// on the shipped consts.
+    ScheduleTemplateShapeMismatch {
+        comp_id: u32,
+        expected_rounds: u16,
+        template_rounds: usize,
+    },
+}
+
+impl std::fmt::Display for ExactEnglishGenerationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnexpectedClubCount { comp_id, expected, actual } => write!(
+                f,
+                "exact English engine: comp {comp_id} expected {expected} clubs, got {actual}"
+            ),
+            Self::UnsupportedBaseYear { comp_id, base_year, supported } => write!(
+                f,
+                "exact English engine: comp {comp_id} base_year {base_year} not in supported set {supported:?}"
+            ),
+            Self::ScheduleTemplateShapeMismatch { comp_id, expected_rounds, template_rounds } => write!(
+                f,
+                "exact English engine: comp {comp_id} spec.n_rounds={expected_rounds} but rounds_2001 has {template_rounds} entries"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ExactEnglishGenerationError {}
+
+/// Base years the current template set is proven exact for.
+/// C11.1 point 14: the shipped 2001/02 templates are byte-exact
+/// only for that season year. Other years land in
+/// [`EnglishFixtureDispatch::Skipped`].
+pub const EXACT_SUPPORTED_BASE_YEARS: &[u16] = &[2001];
+
+/// C11.1 point 8 — the single dispatcher decision function. One
+/// clear answer to "which engine owns this competition?".
+///
+/// Traditional mode routes 7 / 8 / 9 / 10 / 93 to the exact
+/// English engine iff the base_year is in
+/// [`EXACT_SUPPORTED_BASE_YEARS`]. Everything else -> Generic.
+/// V4 mode NEVER routes through this module.
+pub fn english_dispatch_decision(
+    mode: GameMode,
+    comp_id: u32,
+    base_year: u16,
+) -> EnglishFixtureDispatch {
+    if !matches!(mode, GameMode::Traditional) {
+        return EnglishFixtureDispatch::Skipped {
+            reason: "V4 mode does not use the Traditional English engine",
+        };
+    }
+    if !is_english_traditional_league(comp_id) {
+        return EnglishFixtureDispatch::Generic;
+    }
+    if !EXACT_SUPPORTED_BASE_YEARS.contains(&base_year) {
+        return EnglishFixtureDispatch::Skipped {
+            reason: "unsupported base_year for the exact English engine (only 2001/02 templates are proven)",
+        };
+    }
+    EnglishFixtureDispatch::ExactEnglish
+}
+
 /// The 5 English Traditional simulated leagues, in exe boot order.
 ///   `[Premier, First, Second, Third, Conference]`
 ///   `[7, 8, 9, 10, 93]`
@@ -267,9 +393,18 @@ pub fn decode_clubs_table(table: &[u8]) -> Vec<i32> {
 /// rules, but pre-snap templates (needed for arbitrary year weekday
 /// snapping) exist only for Second so far.
 ///
-/// # Panics
+/// # Errors
 ///
-/// * `entries.len() != spec.n_clubs as usize`.
+/// * [`ExactEnglishGenerationError::UnexpectedClubCount`] when
+///   `entries.len() != spec.n_clubs`. The 5 Traditional English
+///   simulated leagues have fixed shapes; there is NO silent
+///   fallback to Berger for these ids (C11.1 point 7).
+/// * [`ExactEnglishGenerationError::UnsupportedBaseYear`] when the
+///   caller has skipped the `english_dispatch_decision` gate and
+///   invoked the engine on a `base_year` outside
+///   [`EXACT_SUPPORTED_BASE_YEARS`]. See point 14.
+/// * [`ExactEnglishGenerationError::ScheduleTemplateShapeMismatch`]
+///   — sanity guard on the shipped consts.
 pub fn generate_english_traditional_league(
     spec: &EnglishRuntimeSpec,
     competition: &DomainCompetition,
@@ -277,16 +412,28 @@ pub fn generate_english_traditional_league(
     base_year: u16,
     start_row: u32,
     rng: &mut GameRng,
-) -> Vec<HeadlessSeasonFixture> {
-    assert_eq!(
-        entries.len(),
-        spec.n_clubs as usize,
-        "generate_english_traditional_league: entries.len() ({}) != \
-         spec.n_clubs ({}) for comp {}",
-        entries.len(),
-        spec.n_clubs,
-        spec.comp_id
-    );
+) -> Result<Vec<HeadlessSeasonFixture>, ExactEnglishGenerationError> {
+    if entries.len() != spec.n_clubs as usize {
+        return Err(ExactEnglishGenerationError::UnexpectedClubCount {
+            comp_id: spec.comp_id,
+            expected: spec.n_clubs as usize,
+            actual: entries.len(),
+        });
+    }
+    if !EXACT_SUPPORTED_BASE_YEARS.contains(&base_year) {
+        return Err(ExactEnglishGenerationError::UnsupportedBaseYear {
+            comp_id: spec.comp_id,
+            base_year,
+            supported: EXACT_SUPPORTED_BASE_YEARS,
+        });
+    }
+    if spec.rounds_2001.len() != spec.n_rounds as usize {
+        return Err(ExactEnglishGenerationError::ScheduleTemplateShapeMismatch {
+            comp_id: spec.comp_id,
+            expected_rounds: spec.n_rounds,
+            template_rounds: spec.rounds_2001.len(),
+        });
+    }
 
     let mut clubs_table = build_clubs_table(entries);
     let resolver = build_stadium_resolver(entries);
@@ -435,7 +582,7 @@ pub fn generate_english_traditional_league(
         },
     );
 
-    fixtures
+    Ok(fixtures)
 }
 
 #[cfg(test)]
@@ -468,125 +615,185 @@ mod tests {
         }
     }
 
+    fn dummy_entries(n: u32, comp_id: u32) -> Vec<EnglishClubEntry> {
+        (0..n).map(|i| EnglishClubEntry {
+            club_id: (comp_id * 1000) + i,
+            club_name: format!("{comp_id}-{i}"),
+            stadium_id: Some(((comp_id * 10000) + i) as i32),
+            alt_stadium_id: None,
+        }).collect()
+    }
+
     #[test]
     fn premier_produces_380_fixtures() {
-        let mut entries = Vec::new();
-        for i in 0..20u32 {
-            entries.push(EnglishClubEntry {
-                club_id: 1000 + i,
-                club_name: format!("Prem-{i}"),
-                stadium_id: Some(2000 + i as i32),
-                alt_stadium_id: None,
-            });
-        }
+        let entries = dummy_entries(20, 7);
         let comp = tiny_comp(7, "English Premier Division");
         let mut rng = GameRng::new(0xC110_2001);
         let out = generate_english_traditional_league(
-            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng);
-        assert_eq!(out.len(), 380, "Prem must produce 20*19 = 380 fixtures");
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            .expect("Prem must generate");
+        assert_eq!(out.len(), 380);
         assert_eq!(out[0].row, 0);
         assert_eq!(out[379].row, 379);
-        // First-round date year is base_year.
         assert_eq!(out[0].date.year, 2001);
     }
 
     #[test]
     fn first_produces_552_fixtures() {
-        let entries: Vec<_> = (0..24u32).map(|i| EnglishClubEntry {
-            club_id: 2000 + i,
-            club_name: format!("D1-{i}"),
-            stadium_id: Some(3000 + i as i32),
-            alt_stadium_id: None,
-        }).collect();
+        let entries = dummy_entries(24, 8);
         let comp = tiny_comp(8, "English First Division");
         let mut rng = GameRng::new(0xC110_2002);
         let out = generate_english_traditional_league(
-            &ENGLISH_FIRST_RUNTIME, &comp, &entries, 2001, 100, &mut rng);
-        assert_eq!(out.len(), 552, "First must produce 24*23 = 552 fixtures");
+            &ENGLISH_FIRST_RUNTIME, &comp, &entries, 2001, 100, &mut rng)
+            .expect("First must generate");
+        assert_eq!(out.len(), 552);
         assert_eq!(out[0].row, 100);
     }
 
     #[test]
     fn second_produces_552_fixtures() {
-        let entries: Vec<_> = (0..24u32).map(|i| EnglishClubEntry {
-            club_id: 3000 + i, club_name: format!("D2-{i}"),
-            stadium_id: Some(4000 + i as i32), alt_stadium_id: None,
-        }).collect();
+        let entries = dummy_entries(24, 9);
         let comp = tiny_comp(9, "English Second Division");
         let mut rng = GameRng::new(0xC110_2003);
         let out = generate_english_traditional_league(
-            &ENGLISH_SECOND_RUNTIME, &comp, &entries, 2001, 0, &mut rng);
+            &ENGLISH_SECOND_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            .expect("Second must generate");
         assert_eq!(out.len(), 552);
     }
 
     #[test]
     fn third_produces_552_fixtures() {
-        let entries: Vec<_> = (0..24u32).map(|i| EnglishClubEntry {
-            club_id: 4000 + i, club_name: format!("D3-{i}"),
-            stadium_id: Some(5000 + i as i32), alt_stadium_id: None,
-        }).collect();
+        let entries = dummy_entries(24, 10);
         let comp = tiny_comp(10, "English Third Division");
         let mut rng = GameRng::new(0xC110_2004);
         let out = generate_english_traditional_league(
-            &ENGLISH_THIRD_RUNTIME, &comp, &entries, 2001, 0, &mut rng);
+            &ENGLISH_THIRD_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            .expect("Third must generate");
         assert_eq!(out.len(), 552);
     }
 
     #[test]
     fn conference_produces_462_fixtures() {
-        let entries: Vec<_> = (0..22u32).map(|i| EnglishClubEntry {
-            club_id: 5000 + i, club_name: format!("Conf-{i}"),
-            stadium_id: Some(6000 + i as i32), alt_stadium_id: None,
-        }).collect();
+        let entries = dummy_entries(22, 93);
         let comp = tiny_comp(93, "English Conference");
         let mut rng = GameRng::new(0xC110_2005);
         let out = generate_english_traditional_league(
-            &ENGLISH_CONFERENCE_RUNTIME, &comp, &entries, 2001, 0, &mut rng);
-        assert_eq!(out.len(), 462, "Conf must produce 22*21 = 462 fixtures");
+            &ENGLISH_CONFERENCE_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            .expect("Conf must generate");
+        assert_eq!(out.len(), 462);
     }
 
     #[test]
-    fn one_shared_rng_across_all_five_leagues_produces_matching_totals() {
+    fn one_shared_rng_across_all_five_leagues_produces_matching_totals_and_advances_state() {
         // C10.11 evidence: exe's RNG stream is one continuous chain
-        // across the 5 English leagues (prem.final == first.initial,
-        // and so on). Test that a shared GameRng can be threaded
-        // through all 5 dispatch calls without any per-league reset
-        // and each still produces its expected fixture count.
+        // across the 5 English leagues. Verify: (a) sharing works,
+        // (b) each league advances the state, (c) each subsequent
+        // league starts where the previous one left off (no reset).
         let mut rng = GameRng::new(0xC110_ABCD);
         let mut total = 0usize;
+        let mut prev_after = rng.snapshot();
         for spec in ENGLISH_RUNTIME_SPECS {
-            let entries: Vec<_> = (0..spec.n_clubs as u32).map(|i| EnglishClubEntry {
-                club_id: (spec.comp_id * 1000) + i,
-                club_name: format!("{}-{i}", spec.comp_id),
-                stadium_id: Some(((spec.comp_id * 10000) + i) as i32),
-                alt_stadium_id: None,
-            }).collect();
+            let entries = dummy_entries(spec.n_clubs as u32, spec.comp_id);
             let comp = tiny_comp(spec.comp_id, "English test comp");
+            let before = rng.snapshot();
+            assert_eq!(before, prev_after,
+                       "{}: shared RNG must resume from prior league's final state",
+                       spec.comp_id);
             let out = generate_english_traditional_league(
-                spec, &comp, &entries, 2001, total as u32, &mut rng);
+                spec, &comp, &entries, 2001, total as u32, &mut rng)
+                .expect("must generate");
             let expected = (spec.n_clubs as usize) * (spec.n_clubs as usize - 1);
-            assert_eq!(out.len(), expected,
-                       "{}: {} fixtures expected, got {}",
-                       spec.comp_id, expected, out.len());
+            assert_eq!(out.len(), expected);
+            let after = rng.snapshot();
+            assert_ne!(after, before,
+                       "{}: RNG state must have advanced during generation",
+                       spec.comp_id);
+            prev_after = after;
             total += out.len();
         }
-        // Prem 380 + First 552 + Second 552 + Third 552 + Conf 462 = 2498.
         assert_eq!(total, 380 + 552 + 552 + 552 + 462);
     }
 
     #[test]
-    #[should_panic(expected = "entries.len()")]
-    fn wrong_club_count_panics() {
-        // The exact engine is defined only at the shipped shape;
-        // callers must route mismatched counts to the fallback path.
+    fn wrong_club_count_returns_error_no_silent_fallback() {
+        // C11.1 point 7: The 5 English simulated leagues have a
+        // fixed shape in Traditional mode. Wrong club count is a
+        // hard invariant break — return an error rather than fall
+        // back silently to the generic Berger path.
         let entries: Vec<_> = (0..10u32).map(|i| EnglishClubEntry {
             club_id: i, club_name: String::new(),
             stadium_id: None, alt_stadium_id: None,
         }).collect();
         let comp = tiny_comp(7, "test");
         let mut rng = GameRng::new(0);
-        let _ = generate_english_traditional_league(
-            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng);
+        let err = generate_english_traditional_league(
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            .expect_err("must return UnexpectedClubCount");
+        match err {
+            ExactEnglishGenerationError::UnexpectedClubCount { comp_id, expected, actual } => {
+                assert_eq!(comp_id, 7);
+                assert_eq!(expected, 20);
+                assert_eq!(actual, 10);
+            }
+            other => panic!("wrong error variant: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn unsupported_base_year_returns_error_not_silent_success() {
+        // C11.1 point 14: only 2001/02 is proven exact. Anything
+        // else the caller sneaks in past the dispatch decision
+        // must be refused at the engine boundary.
+        let entries = dummy_entries(20, 7);
+        let comp = tiny_comp(7, "Prem");
+        let mut rng = GameRng::new(0);
+        let err = generate_english_traditional_league(
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2002, 0, &mut rng)
+            .expect_err("must reject 2002");
+        assert!(matches!(err, ExactEnglishGenerationError::UnsupportedBaseYear { .. }));
+    }
+
+    #[test]
+    fn dispatch_decision_covers_traditional_v4_generic_and_year_gate() {
+        // Traditional + English + 2001 -> exact.
+        for &id in &[7, 8, 9, 10, 93] {
+            assert_eq!(
+                english_dispatch_decision(GameMode::Traditional, id, 2001),
+                EnglishFixtureDispatch::ExactEnglish,
+                "Traditional/2001 comp {id} must be ExactEnglish"
+            );
+        }
+        // Traditional + English + non-2001 -> Skipped.
+        for &id in &[7, 8, 9, 10, 93] {
+            assert!(matches!(
+                english_dispatch_decision(GameMode::Traditional, id, 2002),
+                EnglishFixtureDispatch::Skipped { .. }
+            ));
+        }
+        // Traditional + non-English -> Generic.
+        for &id in &[4u32, 24, 34, 38, 63, 357, 358, 359, 360] {
+            assert_eq!(
+                english_dispatch_decision(GameMode::Traditional, id, 2001),
+                EnglishFixtureDispatch::Generic,
+                "Traditional non-English comp {id} must be Generic"
+            );
+        }
+        // V4 + English -> Skipped (mode gate). Critical: V4 must
+        // NEVER route through the exact Traditional engine.
+        for &id in &[7u32, 8, 9, 10, 93] {
+            match english_dispatch_decision(GameMode::V4, id, 2001) {
+                EnglishFixtureDispatch::Skipped { reason } => {
+                    assert!(reason.contains("V4"),
+                            "V4 skip reason must name the mode: {reason:?}");
+                }
+                other => panic!("V4 must be Skipped for English comp {id}, got {other:?}"),
+            }
+        }
+        // V4 + non-English also Skipped (this module owns no V4 dispatch at all).
+        assert!(matches!(
+            english_dispatch_decision(GameMode::V4, 38, 2001),
+            EnglishFixtureDispatch::Skipped { .. }
+        ));
     }
 
     fn tiny_comp(id: u32, name: &str) -> DomainCompetition {

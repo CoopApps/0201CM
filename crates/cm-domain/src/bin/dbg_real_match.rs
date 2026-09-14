@@ -11,6 +11,7 @@ fn main() {
         use_real_players: true,
         attribute_masking: true,
         start_year: 2001,
+        initial_game_rng_state: None,
     };
     let save = world.new_game_from_rust_db(rust_db, &options);
 

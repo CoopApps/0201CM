@@ -4,7 +4,7 @@ fn main() {
     let dir = std::env::var("CM_RUST_DB").unwrap_or_else(|_| "D:/cm0102-rs/rust-db".into());
     let world = cm_domain::World::read_rust_db_dir(Path::new(&dir)).expect("db");
     let opts = NewGameOptions { selected_nations: vec!["England".into()], background_nations: vec![],
-        use_real_players: true, attribute_masking: true, start_year: 2001 };
+        use_real_players: true, attribute_masking: true, start_year: 2001 , initial_game_rng_state: None };
     let mut save = world.new_game_from_rust_db(Path::new(&dir), &opts);
     // Add a manager, install at a club (Arsenal id 676).
     let h = save.add_manager(ManagerIdentity { first: "Alex".into(), second: "Ferguson".into(), nickname: "Fergie".into() });

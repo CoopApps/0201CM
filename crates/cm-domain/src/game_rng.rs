@@ -36,6 +36,36 @@ pub const POOL: &[u8] = include_bytes!("../assets/game_rng_pool.bin");
 /// trigger the wrap-and-reseed path.  50_999 * 4 = 203_996.
 pub const POOL_WRAP: u32 = 203_996;
 
+/// C10.11 / C11.1: a public snapshot of `GameRng` state — the
+/// three fields that identify the RNG's position in its
+/// process-lifetime stream (`(cursor, jitter, lcg_state)`).
+///
+/// Use as:
+///   * `GameRng::snapshot(&self) -> GameRngState` — read out at
+///     any boundary (e.g. after generating one league's fixtures).
+///   * `GameRng::from_state_snapshot(s) -> GameRng` — construct a
+///     fresh instance at a pinned state (for deterministic replay
+///     of a captured GDI run in tests).
+///   * `NewGameOptions::initial_game_rng_state: Option<GameRngState>`
+///     — production injection point so a captured GDI initial
+///     state can be re-run through the entire production
+///     dispatch, not just archaeology helpers.
+///
+/// This is Copy + Serialize + Deserialize so it can be stored in
+/// options / save-files / captures.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct GameRngState {
+    /// Pool cursor in bytes from the runtime memory base (matches
+    /// the harness's `cursor_off`; see [[c10-11-rng-byte-exact]]).
+    pub cursor: u32,
+    /// Pool jitter (`DAT_00dc717c` in GDI, `DAT_00dc7234` in
+    /// DirectDraw).
+    pub jitter: u32,
+    /// MSVC LCG state (`DAT_00ac2610` GDI / `DAT_00ac26c0`
+    /// DirectDraw).
+    pub lcg_state: u32,
+}
+
 /// C10.11: byte offset between the pool's runtime memory base
 /// (0x00a8de80 — the value the exe stores in `DAT_00dc7180` after
 /// srand-based cursor init) and this crate's asset extraction base
@@ -174,6 +204,24 @@ impl GameRng {
             cursor, jitter, lcg_state,
             playback_pool: std::collections::VecDeque::new(),
             playback_lcg: std::collections::VecDeque::new(),
+        }
+    }
+
+    /// Convenience over `from_state`: construct at a pinned
+    /// [`GameRngState`] snapshot. Same semantics; a `GameRngState`
+    /// value is what production captures/serialises. See
+    /// [[c10-11-rng-byte-exact]].
+    pub fn from_state_snapshot(s: GameRngState) -> Self {
+        Self::from_state(s.cursor, s.jitter, s.lcg_state)
+    }
+
+    /// Read out the current RNG position as a public snapshot.
+    /// Non-mutating.
+    pub fn snapshot(&self) -> GameRngState {
+        GameRngState {
+            cursor: self.cursor,
+            jitter: self.jitter,
+            lcg_state: self.lcg_state,
         }
     }
 

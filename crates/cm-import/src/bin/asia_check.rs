@@ -7,7 +7,7 @@ fn main() {
     let world = cm_domain::World::read_rust_db_dir(path).expect("read rust-db");
     let options = NewGameOptions {
         selected_nations: vec!["England".to_string()], background_nations: vec![],
-        use_real_players: true, attribute_masking: true, start_year: 2001,
+        use_real_players: true, attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
     };
     let mut save = world.new_game_from_rust_db(path, &options);
     for (label, st) in [

@@ -18,7 +18,7 @@ fn main() {
         background_nations: vec![],
         use_real_players: true,
         attribute_masking: true,
-        start_year: 2001,
+        start_year: 2001, initial_game_rng_state: None,
     };
     let mut save = world.new_game_from_rust_db(path, &options);
 

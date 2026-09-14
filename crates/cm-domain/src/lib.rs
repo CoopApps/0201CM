@@ -16071,6 +16071,24 @@ pub struct NewGameOptions {
     pub attribute_masking: bool,
     /// Calendar year the season starts in (2001 for the shipped database).
     pub start_year: u16,
+    /// C11.1 (point 1-3, 11): explicit new-game bootstrap RNG state.
+    ///
+    /// `None` (default) — the season builder derives a deterministic
+    /// bootstrap seed via [`Self::bootstrap_game_rng`]. This is
+    /// production's normal path: reproducible but not tied to any
+    /// specific captured GDI boot.
+    ///
+    /// `Some(state)` — the caller pins the exact GDI initial pool
+    /// cursor / jitter / LCG state (via
+    /// [`crate::game_rng::GameRngState`]). Used by:
+    ///   * regression tests to reproduce a captured GDI run
+    ///     byte-exactly through the real production dispatch;
+    ///   * scenarios where a bootstrap-state save file exists.
+    ///
+    /// Skipped by serde default = `None` so existing saves and old
+    /// options blobs continue to deserialise unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initial_game_rng_state: Option<crate::game_rng::GameRngState>,
 }
 
 impl Default for NewGameOptions {
@@ -16083,7 +16101,62 @@ impl Default for NewGameOptions {
             use_real_players: true,
             attribute_masking: true,
             start_year: 2001,
+            initial_game_rng_state: None,
         }
+    }
+}
+
+impl NewGameOptions {
+    /// C11.1 (point 1-3): bootstrap the single session `GameRng` for
+    /// the fixture generation pipeline.
+    ///
+    /// Contract:
+    ///   * If `initial_game_rng_state` is `Some(...)`, the RNG is
+    ///     pinned to that state — used by tests reproducing a
+    ///     captured GDI run byte-exactly through the real production
+    ///     dispatch.
+    ///   * Otherwise a deterministic default is computed from the
+    ///     options themselves. This is a documented policy, not an
+    ///     invented magic constant: we hash `(start_year,
+    ///     selected_nations, background_nations, use_real_players,
+    ///     attribute_masking)` — every input the user picked on the
+    ///     new-game screens — so two identical option sets yield the
+    ///     same simulation. The exe seeds from live boot entropy
+    ///     which the headless model does not thread through (see
+    ///     `deviations/c10_11_rng_source.md`); this deterministic
+    ///     replacement is the semantically-equivalent state model,
+    ///     not an approximation of the exe's clock-based entropy.
+    ///
+    /// Sharing this RNG across the 5 English simulated leagues is
+    /// the C10.11-proven correctness property; the exact seed
+    /// source is orthogonal to that.
+    pub fn bootstrap_game_rng(&self) -> crate::game_rng::GameRng {
+        if let Some(state) = self.initial_game_rng_state {
+            return crate::game_rng::GameRng::from_state_snapshot(state);
+        }
+        // Options-derived deterministic seed. Simple FNV-1a over the
+        // material fields (order-sensitive, encoding-stable).
+        let mut hash: u64 = 0xcbf29ce484222325;
+        let fnv_prime: u64 = 0x100000001b3;
+        let mut feed = |bytes: &[u8]| {
+            for b in bytes {
+                hash ^= *b as u64;
+                hash = hash.wrapping_mul(fnv_prime);
+            }
+        };
+        feed(&self.start_year.to_le_bytes());
+        for nation in &self.selected_nations {
+            feed(nation.as_bytes());
+            feed(b"\x00");
+        }
+        feed(b"\x1e");
+        for nation in &self.background_nations {
+            feed(nation.as_bytes());
+            feed(b"\x00");
+        }
+        feed(&[self.use_real_players as u8, self.attribute_masking as u8]);
+        let seed = (hash as u32) ^ ((hash >> 32) as u32);
+        crate::game_rng::GameRng::new(seed)
     }
 }
 
@@ -16128,8 +16201,11 @@ impl World {
         if !options.selected_nations.is_empty() {
             let ids = self.competition_ids_for_nations(&options.selected_nations);
             if !ids.is_empty() {
-                let (fixtures, proofs, standings) =
-                    self.generate_new_game_season(&ids, options.start_year);
+                // C11.1: session RNG bootstrapped from options.
+                let mut session_rng = options.bootstrap_game_rng();
+                let (fixtures, proofs, standings) = self
+                    .generate_new_game_season_with_rng(
+                        &ids, options.start_year, &mut session_rng);
                 if !fixtures.is_empty() {
                     save.season.fixtures = fixtures;
                     save.season.schedule_generation = proofs;
@@ -18311,39 +18387,78 @@ impl World {
         Vec<HeadlessScheduleGenerationProof>,
         Vec<HeadlessSeasonStanding>,
     ) {
+        // C11.1: the RNG-less overload derives the same bootstrap RNG
+        // an options-driven call would compute for a bare 2001 game.
+        // Kept for existing callers that don't own a
+        // `NewGameOptions`; production goes through
+        // `generate_new_game_season_with_rng` below via
+        // `new_game_from_rust_db`.
+        let mut rng = NewGameOptions {
+            start_year: base_year,
+            ..NewGameOptions::default()
+        }
+        .bootstrap_game_rng();
+        self.generate_new_game_season_with_rng(comp_ids, base_year, &mut rng)
+    }
+
+    /// C11.1: RNG-explicit form of `generate_new_game_season`.
+    ///
+    /// The season builder now takes an EXPLICIT `&mut GameRng` — one
+    /// shared instance per new-game session — rather than fabricating
+    /// its own. Production callers (`new_game_from_rust_db`) invoke
+    /// `NewGameOptions::bootstrap_game_rng()` and pass the result
+    /// through here. Tests that need to reproduce a captured GDI run
+    /// byte-exactly pass `initial_game_rng_state` on options; the
+    /// same code path then reproduces the exact simulation.
+    ///
+    /// The 5 English Traditional simulated leagues route through the
+    /// exact ported engine in exe boot order using this shared RNG,
+    /// preserving the C10.11-proved continuous stream across all
+    /// five. Non-English comps run through the generic path with
+    /// their own RNG semantics (which don't consume from this
+    /// `GameRng`).
+    pub fn generate_new_game_season_with_rng(
+        &self,
+        comp_ids: &BTreeSet<u32>,
+        base_year: u16,
+        english_rng: &mut crate::game_rng::GameRng,
+    ) -> (
+        Vec<HeadlessSeasonFixture>,
+        Vec<HeadlessScheduleGenerationProof>,
+        Vec<HeadlessSeasonStanding>,
+    ) {
         let mut fixtures = Vec::new();
         let mut proofs = Vec::new();
         let mut standing_members: BTreeMap<u32, String> = BTreeMap::new();
 
-        // C11: run the 5 English Traditional simulated leagues through
-        // the exact ported engine before the generic path. Shared
-        // GameRng across all 5, in exe boot order. See C10.11 for
-        // continuous-stream evidence.
+        // C11.1: single-decision dispatch. Traditional mode is
+        // assumed here; when V4 mode wires in, the caller
+        // constructs a different builder or passes GameMode through
+        // (`english_dispatch_decision(GameMode::V4, ...)` returns
+        // Skipped, so the exact loop is safe under V4 today).
         let english_dispatched_ids: BTreeSet<u32> = {
             use crate::english_traditional::{
-                english_runtime_spec_for, generate_english_traditional_league,
-                EnglishClubEntry, ENGLISH_TRADITIONAL_COMP_IDS,
+                english_dispatch_decision, english_runtime_spec_for,
+                generate_english_traditional_league, EnglishClubEntry,
+                EnglishFixtureDispatch, ENGLISH_TRADITIONAL_COMP_IDS,
+                GameMode,
             };
-            use crate::game_rng::GameRng;
             let stadium_alt: BTreeMap<i32, Option<i32>> = self
                 .references
                 .stadiums
                 .iter()
                 .map(|s| (s.id as i32, s.alt_stadium_id))
                 .collect();
-            // Boot RNG: seeded deterministically from base_year so the
-            // simulation is reproducible. The exe seeds from live
-            // system-clock RNG which the headless model does not thread
-            // through yet (see deviations/c10_11_rng_source.md). Sharing
-            // the RNG across the 5 English leagues is the important
-            // property; the seed can be threaded from a captured boot
-            // state later without changing this dispatch shape.
-            let mut english_rng =
-                GameRng::new(0xC110_0000u32.wrapping_add(base_year as u32));
             let mut dispatched: BTreeSet<u32> = BTreeSet::new();
             for eid in ENGLISH_TRADITIONAL_COMP_IDS {
                 if !comp_ids.contains(&eid) { continue; }
-                let Some(spec) = english_runtime_spec_for(eid) else { continue; };
+                match english_dispatch_decision(GameMode::Traditional, eid, base_year) {
+                    EnglishFixtureDispatch::ExactEnglish => {}
+                    EnglishFixtureDispatch::Generic
+                    | EnglishFixtureDispatch::Skipped { .. } => continue,
+                }
+                let spec = english_runtime_spec_for(eid)
+                    .expect("dispatch decision returned ExactEnglish for a comp with no runtime spec");
                 let Some(competition) = self
                     .references
                     .club_competitions
@@ -18351,11 +18466,6 @@ impl World {
                     .find(|c| c.id == eid)
                 else { continue; };
                 let members = self.club_members_of_competition(eid);
-                if members.len() != spec.n_clubs as usize {
-                    // Shape mismatch (data drift or non-shipped roster)
-                    // — leave this comp to the generic path.
-                    continue;
-                }
                 let entries: Vec<EnglishClubEntry> = members
                     .iter()
                     .map(|(cid, name)| {
@@ -18373,25 +18483,32 @@ impl World {
                     })
                     .collect();
                 let start_row = fixtures.len() as u32;
+                // C11.1 point 7: no silent fallback. A roster-shape
+                // violation is a hard invariant break for a shipped
+                // simulated league.
                 let generated = generate_english_traditional_league(
                     spec, competition, &entries, base_year, start_row,
-                    &mut english_rng,
-                );
-                if !generated.is_empty() {
-                    for (id, name) in &members {
-                        standing_members
-                            .entry(*id)
-                            .or_insert_with(|| name.clone());
-                    }
-                    proofs.push(headless_schedule_generation_proof(
-                        competition.id,
-                        &competition.long_name,
-                        members.len(),
-                        generated.len(),
-                    ));
-                    fixtures.extend(generated);
-                    dispatched.insert(eid);
+                    english_rng,
+                )
+                .unwrap_or_else(|e| panic!(
+                    "exact English engine refused a routed comp: {e}. \
+                     Traditional mode requires the shipped shape for \
+                     comps 7/8/9/10/93; roster-shape drift must be fixed \
+                     at its source, not silently redirected to Berger."
+                ));
+                for (id, name) in &members {
+                    standing_members
+                        .entry(*id)
+                        .or_insert_with(|| name.clone());
                 }
+                proofs.push(headless_schedule_generation_proof(
+                    competition.id,
+                    &competition.long_name,
+                    members.len(),
+                    generated.len(),
+                ));
+                fixtures.extend(generated);
+                dispatched.insert(eid);
             }
             dispatched
         };
@@ -22764,6 +22881,7 @@ mod tests {
             use_real_players: true,
             attribute_masking: true,
             start_year: 2001,
+            initial_game_rng_state: None,
         };
         let save = world.new_game_from_rust_db(rust_db, &opts);
 

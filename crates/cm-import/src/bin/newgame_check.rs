@@ -25,7 +25,7 @@ fn main() {
         background_nations: vec!["France".to_string(), "Germany".to_string()],
         use_real_players: true,
         attribute_masking: true,
-        start_year: 2001,
+        start_year: 2001, initial_game_rng_state: None,
     };
 
     println!("picker selection: {:?}", options.selected_nations);

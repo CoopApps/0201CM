@@ -31,7 +31,7 @@ fn app_tick_resolves_fixtures_via_simulate_one_fixture() {
         background_nations: vec![],
         use_real_players: true,
         attribute_masking: true,
-        start_year: 2001,
+        start_year: 2001, initial_game_rng_state: None,
     });
 
     // Pick two clubs from the Premier Division — the same source the tick
