@@ -40,6 +40,15 @@ pub struct GameRng {
     jitter: u32,
     /// MSVC srand state — `DAT_00ac26c0`, used by FUN_00935a94.
     lcg_state: u32,
+    /// Optional playback queue for `rand_mod` — when non-empty, each
+    /// call dequeues and returns the head instead of computing. Used
+    /// by C10.6 differentials to feed captured GDI `rand_mod` returns
+    /// into `matrix_perturb` and compare Rust P1→P2 output against
+    /// captured P2. When empty, falls through to the algorithmic
+    /// path. Production callers never populate it.
+    playback_pool: std::collections::VecDeque<i32>,
+    /// Same for `lcg_next`.
+    playback_lcg: std::collections::VecDeque<u32>,
 }
 
 impl GameRng {
@@ -55,7 +64,11 @@ impl GameRng {
     ///   if (cursor < base || cursor > sentinel)         ; guard
     ///       cursor = base;                              ;
     pub fn new(seed: u32) -> Self {
-        let mut rng = GameRng { cursor: 0, jitter: 0, lcg_state: seed };
+        let mut rng = GameRng {
+            cursor: 0, jitter: 0, lcg_state: seed,
+            playback_pool: std::collections::VecDeque::new(),
+            playback_lcg: std::collections::VecDeque::new(),
+        };
         let r1 = rng.msvc_rand();
         // `int*` pointer arith: base + N ints = +4*N bytes.
         let offset_ints = (r1 as u32) % 51_000;
@@ -87,6 +100,11 @@ impl GameRng {
     /// Return domain: `[0, 0x8000)`. The `& 0x7fff` mask is baked
     /// in — matches the MSVC 6.0 C-runtime rand() semantics.
     pub fn lcg_next(&mut self) -> u32 {
+        // Playback overrides algorithmic path when queue non-empty
+        // (see `queue_lcg_returns`).
+        if let Some(v) = self.playback_lcg.pop_front() {
+            return v;
+        }
         self.msvc_rand()
     }
 
@@ -126,13 +144,42 @@ impl GameRng {
     /// two rand() calls); it installs the given `(cursor, jitter,
     /// lcg_state)` verbatim.
     pub fn from_state(cursor: u32, jitter: u32, lcg_state: u32) -> Self {
-        GameRng { cursor, jitter, lcg_state }
+        GameRng {
+            cursor, jitter, lcg_state,
+            playback_pool: std::collections::VecDeque::new(),
+            playback_lcg: std::collections::VecDeque::new(),
+        }
     }
+
+    /// Push captured `rand_mod` return values into the playback
+    /// queue. Every subsequent `rand_mod` call dequeues and returns
+    /// the head; when the queue empties, calls fall through to the
+    /// algorithmic path. See [`GameRng::playback_pool`] doc.
+    pub fn queue_pool_returns(&mut self, values: impl IntoIterator<Item = i32>) {
+        self.playback_pool.extend(values);
+    }
+
+    /// Same for `lcg_next`.
+    pub fn queue_lcg_returns(&mut self, values: impl IntoIterator<Item = u32>) {
+        self.playback_lcg.extend(values);
+    }
+
+    /// Number of remaining playback `rand_mod` values (0 = queue
+    /// empty, algorithmic path active).
+    pub fn playback_pool_remaining(&self) -> usize { self.playback_pool.len() }
+
+    /// Same for LCG.
+    pub fn playback_lcg_remaining(&self) -> usize { self.playback_lcg.len() }
 
     /// Byte-exact port of FUN_008fc4f0.  Returns a value in the range
     /// specified by the exe: for `n > 0` in `[0, n)`; for `n == 0`
     /// returns 0; for `n < 0` follows the exe's negated-remainder path.
     pub fn rand_mod(&mut self, n: i32) -> i32 {
+        // Playback overrides algorithmic path when queue non-empty
+        // (see `queue_pool_returns`).
+        if let Some(v) = self.playback_pool.pop_front() {
+            return v;
+        }
         // 008fc4f0  push ecx / push esi / mov esi,[esp+c] / test esi,esi
         if n == 0 {
             return 0; // 008fc4fa xor eax,eax ; ret

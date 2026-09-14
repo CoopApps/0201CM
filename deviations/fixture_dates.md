@@ -1,5 +1,58 @@
 # Deviation: League fixture dates
 
+## OPEN TRADITIONAL DEVIATION — matrix_perturb resolver slot-vs-club-id (2026-09-14, C10.6)
+
+C10.6 five-league differential (capture
+`20260914_131616_five_leagues_*`) revealed the production
+`matrix_perturb + StadiumClubResolver` combo has a slot-vs-club-id
+bug in E2/E3 phases:
+
+| League | Rust P2 mismatches / total |
+|---|---|
+| Premier | 15/20 |
+| First | 21/24 |
+| Second | 9/24 |
+| Third | 0/24 |
+| Conference | 0/22 |
+
+`StadiumClubResolver` maps SLOT → stadium. Phase D shuffles clubs
+across slots. E2/E3 then call `resolver.e2_pair_shares_69(i, j)`
+with POST-shuffle slots, but the resolver returns pre-shuffle
+stadium data → stale.
+
+Driver output remains BehaviourallyExact for all 5 (0/all
+ordered mismatches with captured P2), so fixture generation is
+correct for the shipped 2001-02 data. But the perturb ALGORITHM
+is not reproducing the exe's P2. Third/Conf pass 0 by coincidence
+(their Phase-D outcome avoids the E2/E3 mismatch path); do not
+read as evidence the port is correct.
+
+**Must be fixed before C11 production wiring closes.** See
+`memory/perturb-resolver-slot-vs-club-bug.md` for the fix plan.
+
+## OPEN TRADITIONAL DEVIATION — walker per-call capture gap (2026-09-14, C10.6)
+
+C10.6 walker per-call differential shows 7-9 mismatches per league
+across all shapes:
+
+| League | walker Δ / n |
+|---|---|
+| Premier | 7/38 |
+| First | 9/46 |
+| Second | 8/46 |
+| Third | 9/46 |
+| Conference | 9/42 |
+
+Most likely a Frida harness capture gap — `walker_step`'s 8th arg
+`special_comp_id` (sp+0x20) is not captured. Diff feeds
+`i32::MIN` for that arg, mis-branching on rounds where the exe
+passes a non-sentinel value.
+
+Not a C11 blocker: driver output remains 0-diff for all 5. Needed
+to promote `walker_confidence` above `StructurallyVerified`. Fix:
+extend `gdi_five_league_lineage.py` to capture sp+0x20, re-run
+harness. See `memory/walker-capture-gap.md`.
+
 ## OPEN TRADITIONAL DEVIATION — Conference-fallback stadium-expansion (2026-09-14, C6)
 
 Traditional Conference-fallback (`sub_0055ec00` port at

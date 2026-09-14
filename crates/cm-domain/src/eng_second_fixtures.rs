@@ -1578,21 +1578,32 @@ pub enum EnglishLeague {
 /// Confidence label for a per-league fixture-engine invariant. Prevents
 /// promoting a static call-graph match to byte-exact.
 ///
-/// Applied per (league, component) cell in the C10 confidence matrix.
+/// Corrected label taxonomy per C10.6 gate. Used for the (league,
+/// component) cells in the confidence matrix.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FixtureConfidence {
-    /// Verified against a runtime Frida capture (buffer bytes, RNG
-    /// state, fixture output). Only English Second currently has
-    /// this — perturb 24/24 P1→P2 and driver 552/552 diff both hold.
+    /// Rust output compared byte-for-byte against runtime-captured
+    /// bytes. Only applies where an actual byte-for-byte comparison
+    /// exists (schedule buffers have captured SHA256s; a Rust
+    /// schedule regenerator has NOT yet been compared against
+    /// those buffers, so no component currently qualifies).
     ByteExact,
-    /// Rust matches exe control flow instruction-for-instruction,
-    /// but runtime state has not been captured for cross-validation.
-    /// Promotion to ByteExact requires a Frida direct-call harness
-    /// (feasibility documented as ~30min per league per pillar 15).
-    StructurallyVerified,
-    /// Semantically believed correct from Ghidra decompile of the
-    /// DirectDraw build; awaiting per-instruction GDI verification.
+    /// Rust output matches captured exe state at a semantic level —
+    /// e.g. sort key + swap indices deterministic; walker return
+    /// value deterministic per state input. Not literal byte
+    /// comparison of an output buffer.
+    StateExact,
+    /// Rust produces the same ordered emission stream / decisions
+    /// as the exe on a runtime capture, but the underlying
+    /// intermediate state has not been compared byte-for-byte.
+    /// Driver at 0 ordered mismatches on captured P2 + walker
+    /// inputs falls here.
     BehaviourallyExact,
+    /// Rust matches exe control flow instruction-for-instruction,
+    /// but runtime differential has not been run or has revealed
+    /// mismatches. Perturb/walker currently sit here after C10.6
+    /// (see deviations doc for the specific gaps).
+    StructurallyVerified,
 }
 
 /// Static spec for an English Traditional league. Fields are the
@@ -1673,7 +1684,14 @@ pub struct EnglishLeagueSpec {
 /// identical across all callsites).
 pub const SCHEDULE_RECORD_STRIDE_BYTES: usize = 65;
 
-/// English Premier — 20 clubs, 38 rounds. Runtime-verified.
+/// English Premier — 20 clubs, 38 rounds.
+///
+/// Confidence corrected by C10.6 evidence (capture
+/// 20260914_131616_five_leagues_prem, SHA256
+/// `33da4322be819d31baa50c6827fb156e1bd9772e2d5cb59c19041878773b0d45`).
+/// Driver: 0/380 ordered mismatches feeding captured P2 + walker.
+/// Perturb: **15/20 slot mismatches** — StadiumClubResolver slot
+/// vs club-id bug in `matrix_perturb` E2/E3 phases (deviation doc).
 pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Premier,
     comp_id: 7,
@@ -1690,17 +1708,18 @@ pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 0,
     comp_c1: 3,
     has_promotion_playoff: false,
-    schedule_buffer_confidence: FixtureConfidence::ByteExact,
-    matrix_seed_confidence:     FixtureConfidence::ByteExact,
-    perturb_confidence:         FixtureConfidence::ByteExact,
-    walker_confidence:          FixtureConfidence::ByteExact,
-    driver_confidence:          FixtureConfidence::ByteExact,
-    // Full fixture output verified via five_league_diff: 380/380
-    // ordered mismatches = 0 on capture 20260914_131616.
-    full_fixture_confidence:    FixtureConfidence::ByteExact,
+    schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
+    matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::BehaviourallyExact,
+    full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
 
-/// English First Division — 24 clubs, 46 rounds. Runtime-verified.
+/// English First Division — 24 clubs, 46 rounds.
+/// Capture SHA256:
+/// `e2f51e7952ca7faa0bd53222d78f430a5e94ffd204b6c894e3f141257594488a`.
+/// Driver 0/552, Perturb 21/24 (same resolver bug).
 pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::First,
     comp_id: 8,
@@ -1717,19 +1736,22 @@ pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 4,
     comp_c1: 3,
     has_promotion_playoff: true,
-    schedule_buffer_confidence: FixtureConfidence::ByteExact,
-    matrix_seed_confidence:     FixtureConfidence::ByteExact,
-    perturb_confidence:         FixtureConfidence::ByteExact,
-    walker_confidence:          FixtureConfidence::ByteExact,
-    driver_confidence:          FixtureConfidence::ByteExact,
-    // 552/552 ordered mismatches = 0 on capture 20260914_131616.
-    full_fixture_confidence:    FixtureConfidence::ByteExact,
+    schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
+    matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::BehaviourallyExact,
+    full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
 
-/// English Second Division — 24 clubs, 46 rounds. The reference
-/// league. **Only league with `ByteExact` confidence** — verified
-/// against runtime Frida capture (perturb 24/24 P1→P2 + driver
-/// 552/552 ordered-diff).
+/// English Second Division — 24 clubs, 46 rounds. Reference league.
+/// Capture SHA256:
+/// `facce25f11e88a6a4adc428e063449993b0dbc204859013583dc95ba14df7bc8`.
+/// Driver 0/552, Perturb 9/24 via the production
+/// `matrix_perturb + StadiumClubResolver` combo (resolver bug —
+/// see deviations). The INLINE perturb tested in
+/// `perturb_golden_p1_p2.rs` still passes 24/24, but that's a
+/// separate algorithm reimplementation.
 pub const ENGLISH_SECOND_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Second,
     comp_id: 9,
@@ -1746,15 +1768,21 @@ pub const ENGLISH_SECOND_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 4,
     comp_c1: 4,
     has_promotion_playoff: true,
-    schedule_buffer_confidence: FixtureConfidence::ByteExact,
-    matrix_seed_confidence:     FixtureConfidence::ByteExact,
-    perturb_confidence:         FixtureConfidence::ByteExact,
-    walker_confidence:          FixtureConfidence::ByteExact,
-    driver_confidence:          FixtureConfidence::ByteExact,
-    full_fixture_confidence:    FixtureConfidence::ByteExact,
+    schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
+    matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::BehaviourallyExact,
+    full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
 
-/// English Third Division — 24 clubs, 46 rounds. Runtime-verified.
+/// English Third Division — 24 clubs, 46 rounds.
+/// Capture SHA256:
+/// `cf1d6694739d2847d9ab139852b145628bab8e9b6bb4e0b143455e991b0dc597`.
+/// Driver 0/552. Perturb 0/24 — passes CURRENTLY due to no derby
+/// pair triggering E2/E3 in this roster's Phase-D shuffle order.
+/// The resolver bug still exists; do not read this as evidence
+/// the port is correct. See deviation.
 pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Third,
     comp_id: 10,
@@ -1771,16 +1799,18 @@ pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 4,
     comp_c1: 1,
     has_promotion_playoff: true,
-    schedule_buffer_confidence: FixtureConfidence::ByteExact,
-    matrix_seed_confidence:     FixtureConfidence::ByteExact,
-    perturb_confidence:         FixtureConfidence::ByteExact,
-    walker_confidence:          FixtureConfidence::ByteExact,
-    driver_confidence:          FixtureConfidence::ByteExact,
-    // 552/552 ordered mismatches = 0 on capture 20260914_131616.
-    full_fixture_confidence:    FixtureConfidence::ByteExact,
+    schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
+    matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::BehaviourallyExact,
+    full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
 
-/// English Conference — 22 clubs, 42 rounds. Runtime-verified.
+/// English Conference — 22 clubs, 42 rounds.
+/// Capture SHA256:
+/// `e23f549237d270a806eba3157e9a144aa7931d5efb0ad45a15c8eea40f6b59ac`.
+/// Driver 0/462. Perturb 0/22 — same lucky-shuffle caveat as D3.
 pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Conference,
     comp_id: 93,
@@ -1797,13 +1827,12 @@ pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 0,
     comp_c1: 3,
     has_promotion_playoff: false,   // Conf uses stadium-gated single-club promotion
-    schedule_buffer_confidence: FixtureConfidence::ByteExact,
-    matrix_seed_confidence:     FixtureConfidence::ByteExact,
-    perturb_confidence:         FixtureConfidence::ByteExact,
-    walker_confidence:          FixtureConfidence::ByteExact,
-    driver_confidence:          FixtureConfidence::ByteExact,
-    // 462/462 ordered mismatches = 0 on capture 20260914_131616.
-    full_fixture_confidence:    FixtureConfidence::ByteExact,
+    schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
+    matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
+    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    driver_confidence:          FixtureConfidence::BehaviourallyExact,
+    full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
 
 /// All 5 English Traditional league specs in shipped comp-id order.
@@ -3643,29 +3672,35 @@ mod tests {
         assert!(!ENGLISH_CONFERENCE_SPEC.has_promotion_playoff);
     }
 
-    /// All five English Traditional leagues are ByteExact after
-    /// the C10.5 five-league Frida capture (20260914_131616) proved
-    /// zero ordered fixture mismatches for all shapes:
+    /// Corrected C10.6 confidence: driver output is BehaviourallyExact
+    /// for all 5 (0 ordered mismatches feeding captured P2 + walker
+    /// returns into `run_round_robin_driver`), but perturb and walker
+    /// are only StructurallyVerified — the C10.6 differential
+    /// revealed real gaps (see deviations doc for details).
     ///
-    ///   Premier    380/380
-    ///   First      552/552
-    ///   Second     552/552
-    ///   Third      552/552
-    ///   Conference 462/462
-    ///
-    /// This test locks the honesty invariant — the byte-exact claim
-    /// must remain traceable to the specific capture file it was
-    /// verified against.
+    /// Capture reference: `20260914_131616_five_leagues_*`. Driver
+    /// results per league: Prem 0/380, First 0/552, Second 0/552,
+    /// Third 0/552, Conference 0/462.
     #[test]
-    fn all_five_leagues_byte_exact_post_c10_5() {
+    fn all_five_leagues_driver_behaviourally_exact() {
         for spec in ENGLISH_LEAGUE_SPECS.iter() {
-            assert_eq!(spec.full_fixture_confidence,
-                       FixtureConfidence::ByteExact,
-                       "{}: ByteExact from capture 20260914_131616",
-                       spec.short_name);
             assert_eq!(spec.driver_confidence,
-                       FixtureConfidence::ByteExact,
-                       "{}: driver ByteExact", spec.short_name);
+                       FixtureConfidence::BehaviourallyExact,
+                       "{}: driver BehaviourallyExact from capture 20260914_131616",
+                       spec.short_name);
+            assert_eq!(spec.full_fixture_confidence,
+                       FixtureConfidence::BehaviourallyExact,
+                       "{}: full-chain BehaviourallyExact", spec.short_name);
+            // Perturb + walker are known StructurallyVerified until
+            // resolver bug (perturb) and harness capture gap (walker)
+            // are resolved.
+            assert_eq!(spec.perturb_confidence,
+                       FixtureConfidence::StructurallyVerified,
+                       "{}: perturb honesty invariant — must not claim ByteExact",
+                       spec.short_name);
+            assert_eq!(spec.walker_confidence,
+                       FixtureConfidence::StructurallyVerified,
+                       "{}: walker honesty invariant", spec.short_name);
         }
     }
 
