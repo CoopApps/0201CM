@@ -1552,6 +1552,299 @@ pub fn conference_feeder_swap(
 }
 
 // ---------------------------------------------------------------------------
+// Generic 2-tier promotion/relegation swap (cm0102-gdi FUN_0066ea90)
+// ---------------------------------------------------------------------------
+
+/// Dispatch mode for [`promote_relegate_swap`]. Direct port of the
+/// `arg4` selector at exe GDI `0x0066ea90`.
+///
+/// * **Independent** (`mode == 0`) — two sequential loops:
+///   first every top-tier club with `+0x37 == 3` moves down,
+///   then every bottom-tier club with `+0x37 ∈ {0, 5}` moves up.
+///   No relationship between the two sides; different counts are
+///   fine.
+/// * **Paired** (`mode != 0`) — one outer loop over top-tier
+///   `+0x37 == 3` clubs. For each, scan bottom for the FIRST
+///   `+0x37 ∈ {0, 5}` and pair-swap them. Extras on either side
+///   don't move. Effective pair count = `min(#top-3s, #bottom-0/5s)`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PromotionRelegationMode {
+    Independent,
+    Paired,
+}
+
+/// One club's snapshot inside a comp's roster, as observed by
+/// [`promote_relegate_swap`]. Caller supplies these already extracted
+/// from World (roster-slot order from `FUN_00667560(comp, i)` for
+/// `i in 0..[+0x3e]`, which is a linear array walk at `[comp+0xb1]`
+/// with stride `0x3b`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClubRosterEntry {
+    pub club_id: u32,
+    /// Byte at `Club+0x37`. Values relevant to this primitive:
+    ///
+    /// * `3`   — top-tier relegated (moves down).
+    /// * `0`   — bottom-tier promoted (moves up).
+    /// * `5`   — bottom-tier promoted, alternative marker (playoff
+    ///   winner? — treated identically to `0` by this function).
+    /// * `0xFE` — reprieved (marked by an external gate; still reads
+    ///   as non-3 here so acts as "stayer").
+    /// * `0xFF` — already processed (set by the primitive itself
+    ///   after moving; would never appear as an input).
+    ///
+    /// The primitive treats any other value as "stayer" — no move,
+    /// no counter increment.
+    pub status_byte: u8,
+    /// Comp id at `Club+0x57` before the call. Written back into
+    /// `Club+0x5b` (the "previous comp" slot) when the club moves.
+    pub current_comp_id: u32,
+}
+
+/// One club moving from bottom tier UP into top tier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PromotionMove {
+    pub club_id: u32,
+    /// What was in `Club+0x57` before — written into `Club+0x5b`.
+    pub previous_comp_id: u32,
+    /// What goes into `Club+0x57` after — the top tier's comp id.
+    pub new_comp_id: u32,
+}
+
+/// One club moving from top tier DOWN into bottom tier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RelegationMove {
+    pub club_id: u32,
+    /// What was in `Club+0x57` before — written into `Club+0x5b`.
+    pub previous_comp_id: u32,
+    /// What goes into `Club+0x57` after — the bottom tier's comp id.
+    pub new_comp_id: u32,
+}
+
+/// Result of the post-work count check the exe performs against
+/// `arg5` (`expect_promoted`) and `arg6` (`expect_relegated`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CountCheck {
+    /// Caller passed `-1` (`0xFF`) — count check skipped.
+    NotChecked,
+    /// Expected count matched actual.
+    Match { count: u16 },
+    /// Expected count did NOT match actual — the exe fires a debug
+    /// message-box dialog (error id `0x1586` promoted /
+    /// `0x158c` relegated) and clears `[0xb4d4f0]` (the "operation
+    /// valid" flag).
+    Mismatch { actual: u16, expected: u16 },
+}
+
+/// Decision emitted by [`promote_relegate_swap`]. Pure data — the
+/// caller applies field writes via a separate helper (details are
+/// enumerated inside each move struct).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PromotionRelegationDecision {
+    pub promoted: Vec<PromotionMove>,
+    pub relegated: Vec<RelegationMove>,
+    /// Clubs in the bottom roster whose `+0x37` is neither `0`,
+    /// `3`, nor `5` — "stayers". Only populated when
+    /// `preprocess_flag` is true. The apply-layer records a
+    /// "stayed in this comp for this season" history entry for
+    /// each (`FUN_004d35a0(club, bottom_comp_id)` in the exe).
+    pub preprocess_stayers: Vec<u32>,
+    pub promoted_count_check: CountCheck,
+    pub relegated_count_check: CountCheck,
+}
+
+/// Byte-semantics port of the generic 2-tier promotion/relegation
+/// swap primitive at **`cm0102_GDI.exe 0x0066ea90`** (DirectDraw
+/// `FUN_0066eed0`), 941 bytes / 281 instructions. Shared by 56
+/// call sites across every national pyramid (English P/R chain,
+/// Belgian, Turkish, Spanish, Scottish, Dutch, Croatian, French,
+/// Brazilian, ...). One Rust function covers them all — callers
+/// differ only in argument selection.
+///
+/// # Signature (from asm, callee-cleanup `ret 0x18`)
+///
+/// ```text
+/// void __thiscall FUN_0066ea90(
+///     this*,                    // ECX — world/pyramid singleton, passed to FUN_00667f40
+///     int top_comp,             // arg1 — upper tier comp record ptr
+///     int bottom_comp,          // arg2 — lower tier comp record ptr
+///     int preprocess_flag,      // arg3 — non-zero: record stayer history first
+///     int mode,                 // arg4 — 0 = independent, else paired
+///     int8 expect_promoted,     // arg5 — expected #promoted, 0xFF to skip
+///     int8 expect_relegated     // arg6 — expected #relegated, 0xFF to skip
+/// )
+/// ```
+///
+/// # Selection rules (verified from asm)
+///
+/// * Promotion predicate: `Club+0x37 == 0 || Club+0x37 == 5`.
+///   Iterated over bottom-tier roster in linear slot order.
+/// * Relegation predicate: `Club+0x37 == 3`. Iterated over
+///   top-tier roster in linear slot order.
+/// * No sort, no shuffle, no additional filter. **0 RNG draws
+///   per call.**
+///
+/// # Field writes (see [`PromotionMove`] / [`RelegationMove`])
+///
+/// The primitive INLINES the relegation-side writes (identical to
+/// `FUN_00668470`) and DELEGATES the promotion-side writes to
+/// `FUN_00667f40` (= DirectDraw `FUN_00668380`). For each moved
+/// club the apply-layer must:
+///
+/// * `Club+0x5b = previous_comp_id`  (memory of old comp)
+/// * `Club+0x57 = new_comp_id`
+/// * `Club+0x37 = 0xFF`               (mark processed)
+/// * On the relegation side: also walk the club's 50-slot
+///   staff/player array at `+0xd7` and call
+///   `FUN_004d3700(club, old_comp_id)` — records "moved with club"
+///   history on each attached person.
+/// * On the promotion side: also invoke `FUN_004d3550` (membership
+///   install) and optionally `FUN_00583fc0` (stadium/press
+///   flagging) via `FUN_00667f40`'s own body.
+///
+/// The full apply-layer that mirrors these writes is a follow-up
+/// commit — this port covers the decision precisely.
+///
+/// # Imbalance behaviour
+///
+/// * Top has fewer `3`s than expected: fewer relegations happen.
+///   `promoted_count_check` and `relegated_count_check` surface
+///   the mismatch to the caller.
+/// * Bottom has fewer `0/5`s than expected: same, symmetric.
+/// * Paired mode with mismatch: outer loop is over top-tier only;
+///   each iteration seeks the FIRST bottom match then breaks. Top
+///   clubs without a bottom partner stay with `+0x37 == 3` (NOT
+///   renumbered). Bottom clubs beyond the first-per-top-iteration
+///   also stay.
+/// * NULL comp on either side: the exe has no defensive check —
+///   first dereference `[+0x3e]` crashes. The Rust port refuses
+///   NULL implicitly by using empty rosters.
+///
+/// # Not touched by this primitive
+///
+/// * Stadium capacity gates. Third↔Conference has stadium logic
+///   in the CALLER, not here.
+/// * News broadcasts.
+/// * RNG.
+/// * The `+0x37 == 0xFE` reprieve mark. It's applied by an
+///   upstream gate (see [`conference_fallback_promotion`]) so by
+///   the time this primitive sees the club its `+0x37` is either
+///   the reprieved value (treated as a stayer) or something else.
+#[allow(clippy::too_many_arguments)]
+pub fn promote_relegate_swap(
+    top_comp_id: u32,
+    bottom_comp_id: u32,
+    top_roster: &[ClubRosterEntry],
+    bottom_roster: &[ClubRosterEntry],
+    mode: PromotionRelegationMode,
+    preprocess_flag: bool,
+    expect_promoted: Option<u8>,
+    expect_relegated: Option<u8>,
+) -> PromotionRelegationDecision {
+    // Preprocess loop (arg3 non-zero) — enumerate bottom-tier
+    // "stayers" (anything that isn't a mover) so the apply layer
+    // can record their "stayed in this comp" history entries
+    // BEFORE any moves happen.
+    let preprocess_stayers = if preprocess_flag {
+        bottom_roster
+            .iter()
+            .filter(|c| c.status_byte != 0 && c.status_byte != 5)
+            .map(|c| c.club_id)
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+
+    let (promoted, relegated) = match mode {
+        PromotionRelegationMode::Independent => {
+            // Loop 1 (top→bottom): every top club with +0x37==3.
+            let relegated = top_roster
+                .iter()
+                .filter(|c| c.status_byte == 3)
+                .map(|c| RelegationMove {
+                    club_id: c.club_id,
+                    previous_comp_id: c.current_comp_id,
+                    new_comp_id: bottom_comp_id,
+                })
+                .collect::<Vec<_>>();
+
+            // Loop 2 (bottom→top): every bottom club with
+            // +0x37 in {0, 5}.
+            let promoted = bottom_roster
+                .iter()
+                .filter(|c| c.status_byte == 0 || c.status_byte == 5)
+                .map(|c| PromotionMove {
+                    club_id: c.club_id,
+                    previous_comp_id: c.current_comp_id,
+                    new_comp_id: top_comp_id,
+                })
+                .collect::<Vec<_>>();
+
+            (promoted, relegated)
+        }
+        PromotionRelegationMode::Paired => {
+            // Outer loop over top-tier +0x37==3 clubs. For each,
+            // find the FIRST bottom-tier +0x37∈{0,5} not yet used
+            // and pair them. Top-tier extras (unpaired) stay.
+            //
+            // Emit ORDER matches the exe's asm at 0x66eb36..
+            // 0x66eb93: for each top-3 in order, the paired
+            // bottom-0/5 is committed IMMEDIATELY before advancing
+            // to the next top. So a joint promoted[i]/relegated[i]
+            // stream is produced in pair order.
+            let mut relegated: Vec<RelegationMove> = Vec::new();
+            let mut promoted: Vec<PromotionMove> = Vec::new();
+            let mut bottom_used = vec![false; bottom_roster.len()];
+
+            for top in top_roster.iter().filter(|c| c.status_byte == 3) {
+                let match_ix = bottom_roster.iter().enumerate().find(|(i, c)| {
+                    !bottom_used[*i] && (c.status_byte == 0 || c.status_byte == 5)
+                });
+                if let Some((i, bot)) = match_ix {
+                    bottom_used[i] = true;
+                    relegated.push(RelegationMove {
+                        club_id: top.club_id,
+                        previous_comp_id: top.current_comp_id,
+                        new_comp_id: bottom_comp_id,
+                    });
+                    promoted.push(PromotionMove {
+                        club_id: bot.club_id,
+                        previous_comp_id: bot.current_comp_id,
+                        new_comp_id: top_comp_id,
+                    });
+                }
+                // No match — top club stays. Not renumbered.
+            }
+            (promoted, relegated)
+        }
+    };
+
+    let promoted_count_check = check_count(expect_promoted, promoted.len() as u16);
+    let relegated_count_check = check_count(expect_relegated, relegated.len() as u16);
+
+    PromotionRelegationDecision {
+        promoted,
+        relegated,
+        preprocess_stayers,
+        promoted_count_check,
+        relegated_count_check,
+    }
+}
+
+fn check_count(expected: Option<u8>, actual: u16) -> CountCheck {
+    match expected {
+        None => CountCheck::NotChecked,
+        Some(exp) => {
+            let exp16 = u16::from(exp);
+            if actual == exp16 {
+                CountCheck::Match { count: actual }
+            } else {
+                CountCheck::Mismatch { actual, expected: exp16 }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Stadium-capacity gate predicate (subset of cm0102-gdi FUN_00584150)
 // ---------------------------------------------------------------------------
 
@@ -2413,6 +2706,361 @@ mod tests {
         assert_eq!(d.shuffle_k, Some(3));
         assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
     }
+
+    // -----------------------------------------------------------------
+    // promote_relegate_swap — port of cm0102-gdi FUN_0066ea90
+    // -----------------------------------------------------------------
+
+    /// Independent mode — top has 3 clubs marked `+0x37==3`, bottom
+    /// has 3 clubs marked `+0x37==0`. All six move.
+    #[test]
+    fn pr_swap_independent_full() {
+        let top: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 100, status_byte: 0,   current_comp_id: 7 },
+            ClubRosterEntry { club_id: 101, status_byte: 0,   current_comp_id: 7 },
+            ClubRosterEntry { club_id: 118, status_byte: 3,   current_comp_id: 7 },
+            ClubRosterEntry { club_id: 119, status_byte: 3,   current_comp_id: 7 },
+            ClubRosterEntry { club_id: 120, status_byte: 3,   current_comp_id: 7 },
+        ];
+        let bot: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 200, status_byte: 0,   current_comp_id: 8 },
+            ClubRosterEntry { club_id: 201, status_byte: 0,   current_comp_id: 8 },
+            ClubRosterEntry { club_id: 202, status_byte: 5,   current_comp_id: 8 },
+            ClubRosterEntry { club_id: 210, status_byte: 3,   current_comp_id: 8 },
+        ];
+        let d = promote_relegate_swap(
+            /*top_comp_id=*/ 7, /*bottom_comp_id=*/ 8,
+            &top, &bot,
+            PromotionRelegationMode::Independent,
+            /*preprocess=*/ false,
+            /*expect_promoted=*/ None, /*expect_relegated=*/ None,
+        );
+        // 3 top→bottom (118, 119, 120 in top-order).
+        assert_eq!(d.relegated.len(), 3);
+        assert_eq!(d.relegated[0].club_id, 118);
+        assert_eq!(d.relegated[1].club_id, 119);
+        assert_eq!(d.relegated[2].club_id, 120);
+        for r in &d.relegated {
+            assert_eq!(r.previous_comp_id, 7);
+            assert_eq!(r.new_comp_id, 8);
+        }
+        // 3 bottom→top (200, 201, 202 — 0 or 5 counts, in bottom-order).
+        assert_eq!(d.promoted.len(), 3);
+        assert_eq!(d.promoted[0].club_id, 200);
+        assert_eq!(d.promoted[1].club_id, 201);
+        assert_eq!(d.promoted[2].club_id, 202);
+        for p in &d.promoted {
+            assert_eq!(p.previous_comp_id, 8);
+            assert_eq!(p.new_comp_id, 7);
+        }
+        // No preprocess → no stayers list.
+        assert_eq!(d.preprocess_stayers.len(), 0);
+        // No count check requested.
+        assert!(matches!(d.promoted_count_check, CountCheck::NotChecked));
+        assert!(matches!(d.relegated_count_check, CountCheck::NotChecked));
+    }
+
+    /// English pyramid **Premier↔First** golden — the exe passes
+    /// `(top=PremId=7, bottom=D1Id=8, preprocess=1, mode=1, -1, -1)`.
+    /// Independent-mode-vs-paired distinction determined by the
+    /// outer arg (`mode`). We test with `Paired` here to match how
+    /// pillar-11 characterised the English chain call convention.
+    #[test]
+    fn pr_swap_english_prem_to_first_paired() {
+        // 3 Premier clubs marked for relegation (positions 18/19/20
+        // in real 2001-02: Ipswich, Derby, Leicester).
+        let prem: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_arsenal(), status_byte: 0, current_comp_id: 7 },
+            ClubRosterEntry { club_id: n_2_liverpool(), status_byte: 0, current_comp_id: 7 },
+            ClubRosterEntry { club_id: n_18_ipswich(), status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: n_19_derby(), status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: n_20_leicester(), status_byte: 3, current_comp_id: 7 },
+        ];
+        // 3 First Division clubs marked for promotion (top-3 in real
+        // 2001-02: Man City champions, WBA runners-up, Birmingham
+        // playoff winners marked with 5).
+        let d1: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_manCity(), status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: n_2_wba(), status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: n_5_birmingham(), status_byte: 5, current_comp_id: 8 },
+            ClubRosterEntry { club_id: n_24_stockport(), status_byte: 3, current_comp_id: 8 },
+        ];
+        let d = promote_relegate_swap(
+            7, 8, &prem, &d1,
+            PromotionRelegationMode::Paired,
+            true,
+            None, None,
+        );
+        // Exactly 3 pairs.
+        assert_eq!(d.relegated.len(), 3);
+        assert_eq!(d.promoted.len(), 3);
+        // Pair order matches the exe's outer-top-loop / inner-first-
+        // bottom-match semantics.
+        assert_eq!(d.relegated[0].club_id, n_18_ipswich());
+        assert_eq!(d.promoted[0].club_id, n_1_manCity());
+        assert_eq!(d.relegated[1].club_id, n_19_derby());
+        assert_eq!(d.promoted[1].club_id, n_2_wba());
+        assert_eq!(d.relegated[2].club_id, n_20_leicester());
+        assert_eq!(d.promoted[2].club_id, n_5_birmingham(),
+                   "+0x37 == 5 (playoff winner) counts alongside 0");
+        // Field writes.
+        assert!(d.relegated.iter().all(|r| r.previous_comp_id == 7 && r.new_comp_id == 8));
+        assert!(d.promoted.iter().all(|p| p.previous_comp_id == 8 && p.new_comp_id == 7));
+        // Preprocess enabled → bottom-tier stayers are the clubs
+        // whose +0x37 is neither 0 nor 5. Only Stockport (24, status
+        // 3) qualifies.
+        assert_eq!(d.preprocess_stayers, vec![n_24_stockport()]);
+    }
+
+    /// **First↔Second** golden — same primitive, different comp ids,
+    /// same paired-mode behaviour. Proves the primitive is generic
+    /// across the chain.
+    #[test]
+    fn pr_swap_english_first_to_second_paired() {
+        let d1: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_manCity(), status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: n_22_crewe(), status_byte: 3, current_comp_id: 8 },
+            ClubRosterEntry { club_id: n_23_barnsley(), status_byte: 3, current_comp_id: 8 },
+            ClubRosterEntry { club_id: n_24_stockport(), status_byte: 3, current_comp_id: 8 },
+        ];
+        let d2: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_brighton(), status_byte: 0, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_2_reading(), status_byte: 0, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_5_stoke(), status_byte: 5, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_24_cambridge(), status_byte: 3, current_comp_id: 9 },
+        ];
+        let d = promote_relegate_swap(
+            8, 9, &d1, &d2,
+            PromotionRelegationMode::Paired,
+            true,
+            None, None,
+        );
+        assert_eq!(d.relegated.len(), 3);
+        assert_eq!(d.promoted.len(), 3);
+        assert_eq!(d.relegated[0].club_id, n_22_crewe());
+        assert_eq!(d.promoted[0].club_id, n_1_brighton());
+        assert_eq!(d.relegated[1].club_id, n_23_barnsley());
+        assert_eq!(d.promoted[1].club_id, n_2_reading());
+        assert_eq!(d.relegated[2].club_id, n_24_stockport());
+        assert_eq!(d.promoted[2].club_id, n_5_stoke());
+        assert_eq!(d.preprocess_stayers, vec![n_24_cambridge()]);
+    }
+
+    /// **Second↔Third** golden — third link of the chain, same
+    /// primitive.
+    #[test]
+    fn pr_swap_english_second_to_third_paired() {
+        let d2: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_brighton(), status_byte: 0, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_21_bournemouth(), status_byte: 3, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_22_bury(), status_byte: 3, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_23_wrexham(), status_byte: 3, current_comp_id: 9 },
+            ClubRosterEntry { club_id: n_24_cambridge(), status_byte: 3, current_comp_id: 9 },
+        ];
+        let d3: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_plymouth(), status_byte: 0, current_comp_id: 10 },
+            ClubRosterEntry { club_id: n_2_luton(), status_byte: 0, current_comp_id: 10 },
+            ClubRosterEntry { club_id: n_3_mansfield(), status_byte: 0, current_comp_id: 10 },
+            ClubRosterEntry { club_id: n_4_cheltenham(), status_byte: 5, current_comp_id: 10 },
+            ClubRosterEntry { club_id: n_24_halifax(), status_byte: 3, current_comp_id: 10 },
+        ];
+        // Second Division relegates 4 (real 2001-02); Third Division
+        // promotes 4. Paired mode → 4 pairs.
+        let d = promote_relegate_swap(
+            9, 10, &d2, &d3,
+            PromotionRelegationMode::Paired,
+            true,
+            None, None,
+        );
+        assert_eq!(d.relegated.len(), 4);
+        assert_eq!(d.promoted.len(), 4);
+        // Real 2001-02 movement — each Div-3 top-4 (in the order
+        // Plymouth, Luton, Mansfield, Cheltenham) fills the pair
+        // slots against each Div-2 bottom-4 in order (Bournemouth,
+        // Bury, Wrexham, Cambridge).
+        assert_eq!(d.relegated.iter().map(|r| r.club_id).collect::<Vec<_>>(),
+                   vec![n_21_bournemouth(), n_22_bury(), n_23_wrexham(), n_24_cambridge()]);
+        assert_eq!(d.promoted.iter().map(|p| p.club_id).collect::<Vec<_>>(),
+                   vec![n_1_plymouth(), n_2_luton(), n_3_mansfield(), n_4_cheltenham()]);
+        assert_eq!(d.preprocess_stayers, vec![n_24_halifax()]);
+    }
+
+    /// **Third↔Conference** — same generic swap, applied to a
+    /// pairing where the caller in the exe adds a stadium gate.
+    /// This test isolates the primitive: given roster state already
+    /// gated upstream, prove the swap output.
+    #[test]
+    fn pr_swap_english_third_to_conf_generic() {
+        let d3: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_plymouth(), status_byte: 0, current_comp_id: 10 },
+            ClubRosterEntry { club_id: n_24_halifax(), status_byte: 3, current_comp_id: 10 },
+        ];
+        let conf: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: n_1_boston(), status_byte: 0, current_comp_id: 93 },
+        ];
+        let d = promote_relegate_swap(
+            10, 93, &d3, &conf,
+            PromotionRelegationMode::Paired,
+            true,
+            None, None,
+        );
+        assert_eq!(d.relegated.len(), 1);
+        assert_eq!(d.promoted.len(), 1);
+        assert_eq!(d.relegated[0].club_id, n_24_halifax());
+        assert_eq!(d.promoted[0].club_id, n_1_boston());
+    }
+
+    /// Imbalance in paired mode — top has 3 relegatees, bottom has
+    /// only 2 promotable clubs. Result: 2 pairs, third top club
+    /// stays (unpaired).
+    #[test]
+    fn pr_swap_paired_imbalance_leaves_unpaired_top() {
+        let top: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 100, status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: 101, status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: 102, status_byte: 3, current_comp_id: 7 },
+        ];
+        let bot: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 200, status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 201, status_byte: 5, current_comp_id: 8 },
+        ];
+        let d = promote_relegate_swap(
+            7, 8, &top, &bot,
+            PromotionRelegationMode::Paired,
+            false, None, None,
+        );
+        assert_eq!(d.relegated.len(), 2, "third top club unpaired");
+        assert_eq!(d.promoted.len(), 2);
+        assert_eq!(d.relegated[0].club_id, 100);
+        assert_eq!(d.relegated[1].club_id, 101);
+        // Club 102 not in relegated (stayed).
+    }
+
+    /// Symmetric imbalance — bottom has more promotable than top has
+    /// relegatable. Independent mode does full sweep on each side
+    /// (so bottom sends up all its 0/5s even if top only sent down
+    /// fewer); paired mode caps at min.
+    #[test]
+    fn pr_swap_imbalance_independent_vs_paired() {
+        let top: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 100, status_byte: 3, current_comp_id: 7 },
+        ];
+        let bot: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 200, status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 201, status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 202, status_byte: 5, current_comp_id: 8 },
+        ];
+        let independent = promote_relegate_swap(
+            7, 8, &top, &bot,
+            PromotionRelegationMode::Independent, false, None, None,
+        );
+        assert_eq!(independent.relegated.len(), 1);
+        assert_eq!(independent.promoted.len(), 3,
+                   "independent mode moves all 3 bottom clubs regardless");
+
+        let paired = promote_relegate_swap(
+            7, 8, &top, &bot,
+            PromotionRelegationMode::Paired, false, None, None,
+        );
+        assert_eq!(paired.relegated.len(), 1);
+        assert_eq!(paired.promoted.len(), 1,
+                   "paired mode caps at min(top-3s, bottom-0/5s)");
+    }
+
+    /// Count-check pass and mismatch behaviour.
+    #[test]
+    fn pr_swap_count_checks() {
+        let top = vec![
+            ClubRosterEntry { club_id: 100, status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: 101, status_byte: 3, current_comp_id: 7 },
+        ];
+        let bot = vec![
+            ClubRosterEntry { club_id: 200, status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 201, status_byte: 0, current_comp_id: 8 },
+        ];
+        // Expect 2 promoted, 2 relegated → both match.
+        let d = promote_relegate_swap(
+            7, 8, &top, &bot,
+            PromotionRelegationMode::Independent, false,
+            Some(2), Some(2),
+        );
+        assert!(matches!(d.promoted_count_check, CountCheck::Match { count: 2 }));
+        assert!(matches!(d.relegated_count_check, CountCheck::Match { count: 2 }));
+
+        // Expect 3 promoted → mismatch, actual 2.
+        let d = promote_relegate_swap(
+            7, 8, &top, &bot,
+            PromotionRelegationMode::Independent, false,
+            Some(3), None,
+        );
+        assert!(matches!(d.promoted_count_check,
+                         CountCheck::Mismatch { actual: 2, expected: 3 }));
+        assert!(matches!(d.relegated_count_check, CountCheck::NotChecked));
+    }
+
+    /// Preprocess flag on with mixed stayers — every non-mover in
+    /// bottom (status ∉ {0, 5}) appears in `preprocess_stayers`.
+    #[test]
+    fn pr_swap_preprocess_stayers_enumeration() {
+        let top: Vec<ClubRosterEntry> = vec![];
+        let bot: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 200, status_byte: 0,   current_comp_id: 8 },
+            ClubRosterEntry { club_id: 201, status_byte: 5,   current_comp_id: 8 },
+            ClubRosterEntry { club_id: 202, status_byte: 1,   current_comp_id: 8 },  // stayer
+            ClubRosterEntry { club_id: 203, status_byte: 2,   current_comp_id: 8 },  // stayer
+            ClubRosterEntry { club_id: 204, status_byte: 3,   current_comp_id: 8 },  // stayer (rel-marker at wrong tier)
+            ClubRosterEntry { club_id: 205, status_byte: 0xFE, current_comp_id: 8 }, // stayer (reprieved)
+            ClubRosterEntry { club_id: 206, status_byte: 0xFF, current_comp_id: 8 }, // stayer (already-processed)
+        ];
+        let d = promote_relegate_swap(
+            7, 8, &top, &bot,
+            PromotionRelegationMode::Independent,
+            /*preprocess=*/ true,
+            None, None,
+        );
+        assert_eq!(d.preprocess_stayers, vec![202, 203, 204, 205, 206]);
+    }
+
+    /// Both rosters empty → nothing moves, no stayers, checks skip.
+    #[test]
+    fn pr_swap_empty_rosters() {
+        let d = promote_relegate_swap(
+            7, 8, &[], &[],
+            PromotionRelegationMode::Paired, true,
+            None, None,
+        );
+        assert!(d.promoted.is_empty());
+        assert!(d.relegated.is_empty());
+        assert!(d.preprocess_stayers.is_empty());
+    }
+
+    // Helper functions for readable club-id constants in the goldens
+    // — these are synthetic but map to real 2001-02 identities so
+    // the intent of each test is legible.
+    #[allow(non_snake_case)] fn n_1_arsenal()    -> u32 { 1 }
+    #[allow(non_snake_case)] fn n_2_liverpool()  -> u32 { 2 }
+    #[allow(non_snake_case)] fn n_18_ipswich()   -> u32 { 18 }
+    #[allow(non_snake_case)] fn n_19_derby()     -> u32 { 19 }
+    #[allow(non_snake_case)] fn n_20_leicester() -> u32 { 20 }
+    #[allow(non_snake_case)] fn n_1_manCity()    -> u32 { 101 }
+    #[allow(non_snake_case)] fn n_2_wba()        -> u32 { 102 }
+    #[allow(non_snake_case)] fn n_5_birmingham() -> u32 { 105 }
+    #[allow(non_snake_case)] fn n_22_crewe()     -> u32 { 122 }
+    #[allow(non_snake_case)] fn n_23_barnsley()  -> u32 { 123 }
+    #[allow(non_snake_case)] fn n_24_stockport() -> u32 { 124 }
+    #[allow(non_snake_case)] fn n_1_brighton()   -> u32 { 201 }
+    #[allow(non_snake_case)] fn n_2_reading()    -> u32 { 202 }
+    #[allow(non_snake_case)] fn n_5_stoke()      -> u32 { 205 }
+    #[allow(non_snake_case)] fn n_21_bournemouth() -> u32 { 221 }
+    #[allow(non_snake_case)] fn n_22_bury()      -> u32 { 222 }
+    #[allow(non_snake_case)] fn n_23_wrexham()   -> u32 { 223 }
+    #[allow(non_snake_case)] fn n_24_cambridge() -> u32 { 224 }
+    #[allow(non_snake_case)] fn n_1_plymouth()   -> u32 { 301 }
+    #[allow(non_snake_case)] fn n_2_luton()      -> u32 { 302 }
+    #[allow(non_snake_case)] fn n_3_mansfield()  -> u32 { 303 }
+    #[allow(non_snake_case)] fn n_4_cheltenham() -> u32 { 304 }
+    #[allow(non_snake_case)] fn n_24_halifax()   -> u32 { 324 }
+    #[allow(non_snake_case)] fn n_1_boston()     -> u32 { 401 }
 
     // -----------------------------------------------------------------
     // stadium_meets_capacity_target — subset of FUN_00584150
