@@ -1552,6 +1552,233 @@ pub fn conference_feeder_swap(
 }
 
 // ---------------------------------------------------------------------------
+// English promotion-playoff family (cm0102-gdi sub_0055CF40 / 0x00560810
+// / 0x00562330 + shared 4-team ctor sub_0050CC90)
+// ---------------------------------------------------------------------------
+
+/// Which English division's playoff to build. Encodes the (verified)
+/// per-division participant-slot ordering.
+///
+/// See [`english_playoff_participants`] for the exe evidence: the
+/// per-division builder reads four fixed offsets off the league-
+/// table struct at `parent_comp+0xB1`. The struct has 0x3B-byte
+/// entries in league-position order (`+0` = 1st, `+0x3B` = 2nd,
+/// `+0x76` = 3rd, ...). The four offsets map to the slot ordering
+/// documented per variant below.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnglishPlayoffDivision {
+    /// D1 (`sub_0055CF40`). Reads offsets 0x127, 0x76, 0xEC, 0xB1 →
+    /// slot order **{6th, 3rd, 5th, 4th}**. Semi-finals under the
+    /// shared ctor's consecutive-pair rule: 6th vs 3rd; 5th vs 4th.
+    First,
+    /// D2 (`sub_00560810`). Same offsets as D1 → **{6th, 3rd, 5th,
+    /// 4th}**. Semi-finals: 6th vs 3rd; 5th vs 4th.
+    Second,
+    /// D3 (`sub_00562330`). Reads offsets 0x162, 0xB1, 0x127, 0xEC →
+    /// slot order **{7th, 4th, 6th, 5th}**. Semi-finals: 7th vs 4th;
+    /// 6th vs 5th. D3 auto-promotes top-3 so the playoff fills the
+    /// fourth promotion slot from positions 4-7.
+    Third,
+}
+
+impl EnglishPlayoffDivision {
+    /// The four league-table-entry INDICES (zero-based; entry N =
+    /// league position N+1) the per-division builder reads, in the
+    /// exact slot order it fills the 4-participant array.
+    pub const fn participant_position_indices(self) -> [usize; 4] {
+        match self {
+            // D1/D2: {6th, 3rd, 5th, 4th} = zero-based {5, 2, 4, 3}
+            Self::First | Self::Second => [5, 2, 4, 3],
+            // D3: {7th, 4th, 6th, 5th} = zero-based {6, 3, 5, 4}
+            Self::Third => [6, 3, 5, 4],
+        }
+    }
+
+    /// The `leg_config` byte the exe passes to the shared ctor at
+    /// stack arg 10 (`+0x50`). D1 hardcodes `0xA0` (bit-packed slot
+    /// count + flags per pillar 14); D2 and D3 pull it from vfunc
+    /// `[+0x3C]`'s out-param `local_414`.
+    pub const fn hardcoded_leg_config(self) -> Option<u16> {
+        match self {
+            Self::First => Some(0xA0),
+            Self::Second | Self::Third => None, // data-driven per parent vfunc
+        }
+    }
+}
+
+/// The single league-table field the playoff builders read: the club
+/// pointer stored at the entry's first dword. Other struct fields
+/// (points, GD, form, ...) exist in the 0x3B-byte entry but are not
+/// consumed by playoff construction — the builder trusts prior
+/// finalize-table processing to have ordered the entries correctly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LeagueTableEntry {
+    /// Club pointer / id at the entry's first dword.
+    pub club_id: u32,
+}
+
+/// Extract the four playoff participants from an ordered league
+/// table. Byte-exact against `sub_0055CF40` / `sub_00560810` /
+/// `sub_00562330` participant-array assembly (asm reads at
+/// `[esi+0xB1] + <offset>`, offsets per
+/// [`EnglishPlayoffDivision::participant_position_indices`]).
+///
+/// `league_table` must be indexable to at least the maximum
+/// position each variant reads (up to 6 for D1/D2, up to 7 for D3).
+/// Callers ensure this by passing the parent comp's finalize-table
+/// output; the exe would crash on an undersized table.
+///
+/// Returns `[slot0, slot1, slot2, slot3]` in the exact order the
+/// shared ctor's participant array fills.
+pub fn english_playoff_participants(
+    division: EnglishPlayoffDivision,
+    league_table: &[LeagueTableEntry],
+) -> [u32; 4] {
+    let idx = division.participant_position_indices();
+    [
+        league_table[idx[0]].club_id,
+        league_table[idx[1]].club_id,
+        league_table[idx[2]].club_id,
+        league_table[idx[3]].club_id,
+    ]
+}
+
+/// The two semi-final ties. The shared bracket driver
+/// `sub_005026A0` uses consecutive-pair matching on the 4-slot
+/// participant array, so slot[0] vs slot[1] and slot[2] vs slot[3].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlayoffBracket {
+    /// slot[0] vs slot[1]
+    pub semifinal_1: (u32, u32),
+    /// slot[2] vs slot[3]
+    pub semifinal_2: (u32, u32),
+}
+
+impl PlayoffBracket {
+    pub const fn from_participants(p: &[u32; 4]) -> Self {
+        Self {
+            semifinal_1: (p[0], p[1]),
+            semifinal_2: (p[2], p[3]),
+        }
+    }
+}
+
+/// Snapshot of the fields the shared 4-team ctor `sub_0050CC90`
+/// writes into the freshly-allocated 0xB2-byte playoff subcomp.
+/// Corresponds to the `operator_new(0xB2)` + field-init block in
+/// each per-division builder + the shared ctor body.
+///
+/// This is decision data — the actual object allocation, bracket
+/// driver kickoff (`sub_005026A0`), match engine, and winner
+/// extraction all live downstream of C9.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlayoffSubcompSpec {
+    pub division: EnglishPlayoffDivision,
+    /// Participant club ids in slot order.
+    pub participants: [u32; 4],
+    /// Two semi-final ties derived from `participants`.
+    pub bracket: PlayoffBracket,
+    /// Parent comp id — the D1/D2/D3 comp record. Stored at
+    /// subcomp `+0x04` per shared-ctor decode.
+    pub parent_comp_id: u32,
+    /// Subcomp id — the ctor reads it from parent's `+0x40`.
+    pub subcomp_id: u16,
+    /// Season year bytes copied from parent `+0x49/+0x4A`.
+    pub parent_season_year_lo: u8,
+    pub parent_season_year_hi: u8,
+    /// Round count — `0x14` for all three English playoffs per
+    /// hardcoded arg 11.
+    pub round_count: u8,
+    /// `kind_byte` at `+0x42`. D1 = 0 (hardcoded arg 8); D2/D3
+    /// data-driven from vfunc's `local_414`.
+    pub kind_byte: u8,
+    /// `leg_config` at `+0x50`. D1 = 0xA0 hardcoded; D2/D3
+    /// data-driven from vfunc's `local_414`.
+    pub leg_config: u16,
+    /// `detail_count` = number of 0x68-byte per-match schedule
+    /// records the ctor memcpys into `subcomp+0xA3`.
+    pub detail_count: u16,
+}
+
+/// Byte-semantics port of the English promotion-playoff family
+/// construction. Combines the per-division participant assembly (one
+/// of `sub_0055CF40` / `sub_00560810` / `sub_00562330`) with the
+/// shared 4-team ctor `sub_0050CC90`'s subcomp field-init block.
+///
+/// # Scope
+///
+/// C9 covers **tournament construction only**:
+/// * Participant selection from the finalized league table.
+/// * Bracket structure (consecutive-pair semi-finals).
+/// * Subcomp field initialization (the 0xB2 struct's static fields).
+///
+/// # Explicitly NOT covered (out of scope, deferred)
+///
+/// * The actual bracket driver `sub_005026A0` — match generation +
+///   fixture emission. C9 does not port this.
+/// * The match engine that resolves scores.
+/// * `Club+0x37 = 5` write on the winner. The port confirms this
+///   byte is not written by any of the 4 C9 functions; it lands
+///   elsewhere after the subcomp's final concludes.
+/// * News broadcast on playoff result.
+/// * Two-leg / home-away / neutral-venue mechanics — encoded in the
+///   `leg_config` byte and executed by the bracket driver.
+///
+/// # RNG
+///
+/// **Zero** RNG draws in any of the 4 C9 functions. Participant
+/// order is deterministic from the league table alone.
+///
+/// # Callers in the exe
+///
+/// Each per-division builder is dispatched from vtable slot 10 of
+/// its comp class via a phase-advance wrapper (`sub_0055CEB0` /
+/// `sub_00560780` / `sub_005622A0`). The season loop drives the
+/// phase counter; when it reaches the pre-final playoff phase, the
+/// vfunc fires and the builder runs. This is INDEPENDENT of C8's
+/// orchestrator — the two dispatch mechanisms coexist in the
+/// year-end sequence.
+pub fn build_english_playoff(
+    division: EnglishPlayoffDivision,
+    league_table: &[LeagueTableEntry],
+    parent_comp_id: u32,
+    subcomp_id: u16,
+    parent_season_year_lo: u8,
+    parent_season_year_hi: u8,
+    detail_count: u16,
+    // D1 hardcodes leg_config/kind_byte; D2/D3 supply them via the
+    // parent's `+0x3C` vfunc. Caller resolves the correct pair per
+    // division and passes them here; hardcoded_leg_config() below
+    // documents D1's baked value.
+    leg_config_from_parent_vfunc: u16,
+    kind_byte_from_parent_vfunc: u8,
+) -> PlayoffSubcompSpec {
+    let participants = english_playoff_participants(division, league_table);
+    let bracket = PlayoffBracket::from_participants(&participants);
+    // D1 forces its own leg_config/kind_byte regardless of vfunc.
+    let (leg_config, kind_byte) = match division {
+        EnglishPlayoffDivision::First => (0xA0u16, 0u8),
+        EnglishPlayoffDivision::Second | EnglishPlayoffDivision::Third => (
+            leg_config_from_parent_vfunc,
+            kind_byte_from_parent_vfunc,
+        ),
+    };
+    PlayoffSubcompSpec {
+        division,
+        participants,
+        bracket,
+        parent_comp_id,
+        subcomp_id,
+        parent_season_year_lo,
+        parent_season_year_hi,
+        round_count: 0x14,
+        kind_byte,
+        leg_config,
+        detail_count,
+    }
+}
+
+// ---------------------------------------------------------------------------
 // English pyramid annual P/R orchestrator (cm0102-gdi sub_0055f080)
 // ---------------------------------------------------------------------------
 
@@ -2986,6 +3213,233 @@ mod tests {
         // K = min(9, 3) = 3 → 6 RNG draws.
         assert_eq!(d.shuffle_k, Some(3));
         assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
+    }
+
+    // -----------------------------------------------------------------
+    // English promotion-playoff family (C9)
+    // -----------------------------------------------------------------
+
+    /// D1 participant order — {6th, 3rd, 5th, 4th}. Zero-based
+    /// league-table indices {5, 2, 4, 3}.
+    #[test]
+    fn playoff_d1_participant_order() {
+        // Synthetic 24-club table with club_id == position for
+        // legibility (club id 1 = 1st, id 2 = 2nd, ...).
+        let table: Vec<LeagueTableEntry> = (1..=24)
+            .map(|pos| LeagueTableEntry { club_id: pos })
+            .collect();
+        let p = english_playoff_participants(
+            EnglishPlayoffDivision::First, &table,
+        );
+        assert_eq!(p, [6, 3, 5, 4],
+                   "D1 slot order: {{6th, 3rd, 5th, 4th}}");
+    }
+
+    /// D2 participant order — same as D1 per pillar-14 decode.
+    #[test]
+    fn playoff_d2_participant_order() {
+        let table: Vec<LeagueTableEntry> = (1..=24)
+            .map(|pos| LeagueTableEntry { club_id: pos })
+            .collect();
+        let p = english_playoff_participants(
+            EnglishPlayoffDivision::Second, &table,
+        );
+        assert_eq!(p, [6, 3, 5, 4]);
+    }
+
+    /// D3 participant order — {7th, 4th, 6th, 5th}. Different from
+    /// D1/D2 because D3 auto-promotes top-3.
+    #[test]
+    fn playoff_d3_participant_order() {
+        let table: Vec<LeagueTableEntry> = (1..=24)
+            .map(|pos| LeagueTableEntry { club_id: pos })
+            .collect();
+        let p = english_playoff_participants(
+            EnglishPlayoffDivision::Third, &table,
+        );
+        assert_eq!(p, [7, 4, 6, 5]);
+    }
+
+    /// Bracket derivation from participant slots — consecutive
+    /// pairs per shared bracket driver's `sub_005026A0` convention.
+    #[test]
+    fn playoff_bracket_consecutive_pairs() {
+        let bd1 = PlayoffBracket::from_participants(&[6, 3, 5, 4]);
+        assert_eq!(bd1.semifinal_1, (6, 3),
+                   "D1/D2 SF1: 6th vs 3rd");
+        assert_eq!(bd1.semifinal_2, (5, 4),
+                   "D1/D2 SF2: 5th vs 4th");
+
+        let bd3 = PlayoffBracket::from_participants(&[7, 4, 6, 5]);
+        assert_eq!(bd3.semifinal_1, (7, 4), "D3 SF1: 7th vs 4th");
+        assert_eq!(bd3.semifinal_2, (6, 5), "D3 SF2: 6th vs 5th");
+    }
+
+    /// D1 subcomp spec — D1 hardcodes `leg_config = 0xA0` and
+    /// `kind_byte = 0` regardless of what the parent vfunc returns.
+    /// D2/D3 use the vfunc-supplied values.
+    #[test]
+    fn playoff_d1_hardcoded_leg_config() {
+        let table: Vec<LeagueTableEntry> = (1..=24)
+            .map(|pos| LeagueTableEntry { club_id: pos })
+            .collect();
+        let s = build_english_playoff(
+            EnglishPlayoffDivision::First,
+            &table,
+            /*parent_comp_id=*/ 8, /*subcomp_id=*/ 42,
+            /*year_lo=*/ 0x02, /*year_hi=*/ 0x00,
+            /*detail_count=*/ 6,
+            /*leg_config_vfunc=*/ 0xBEEF,  // ignored by D1
+            /*kind_byte_vfunc=*/ 99,        // ignored by D1
+        );
+        assert_eq!(s.leg_config, 0xA0, "D1 forces 0xA0");
+        assert_eq!(s.kind_byte, 0, "D1 forces 0");
+        assert_eq!(s.round_count, 0x14);
+        assert_eq!(s.participants, [6, 3, 5, 4]);
+        assert_eq!(s.subcomp_id, 42);
+    }
+
+    #[test]
+    fn playoff_d2_data_driven_leg_config() {
+        let table: Vec<LeagueTableEntry> = (1..=24)
+            .map(|pos| LeagueTableEntry { club_id: pos })
+            .collect();
+        let s = build_english_playoff(
+            EnglishPlayoffDivision::Second, &table,
+            9, 43, 0x02, 0x00,
+            5,
+            /*leg_config_vfunc=*/ 0x1234,
+            /*kind_byte_vfunc=*/ 7,
+        );
+        assert_eq!(s.leg_config, 0x1234, "D2 takes vfunc value");
+        assert_eq!(s.kind_byte, 7);
+    }
+
+    #[test]
+    fn playoff_d3_data_driven_and_shifted_order() {
+        let table: Vec<LeagueTableEntry> = (1..=24)
+            .map(|pos| LeagueTableEntry { club_id: pos })
+            .collect();
+        let s = build_english_playoff(
+            EnglishPlayoffDivision::Third, &table,
+            10, 44, 0x02, 0x00,
+            4,
+            /*leg_config_vfunc=*/ 0xAABB,
+            /*kind_byte_vfunc=*/ 3,
+        );
+        assert_eq!(s.leg_config, 0xAABB);
+        assert_eq!(s.kind_byte, 3);
+        assert_eq!(s.participants, [7, 4, 6, 5],
+                   "D3 must be {{7th, 4th, 6th, 5th}}");
+        assert_eq!(s.bracket.semifinal_1, (7, 4));
+        assert_eq!(s.bracket.semifinal_2, (6, 5));
+    }
+
+    /// Real 2001-02 D2 playoff shape: Brentford (3), Cardiff (4),
+    /// Stoke-playoff-winners (5 = actually the 5th-placed side by
+    /// finish; the playoff itself surfaced Stoke), Huddersfield (6).
+    /// Verify the port picks {6, 3, 5, 4} = {Huddersfield, Brentford,
+    /// Stoke, Cardiff}.
+    #[test]
+    fn playoff_2001_02_d2_real_participants() {
+        // Real 2001-02 D2 final table positions (only ids matter).
+        let table: Vec<LeagueTableEntry> = vec![
+            LeagueTableEntry { club_id: 1 },   // Brighton (champion)
+            LeagueTableEntry { club_id: 2 },   // Reading (runners-up)
+            LeagueTableEntry { club_id: 3 },   // Brentford (3rd)
+            LeagueTableEntry { club_id: 4 },   // Cardiff (4th)
+            LeagueTableEntry { club_id: 5 },   // Stoke (5th)
+            LeagueTableEntry { club_id: 6 },   // Huddersfield (6th)
+            // Trailing table irrelevant.
+            LeagueTableEntry { club_id: 7 },
+        ];
+        let p = english_playoff_participants(
+            EnglishPlayoffDivision::Second, &table,
+        );
+        assert_eq!(p, [6, 3, 5, 4]);
+        let b = PlayoffBracket::from_participants(&p);
+        assert_eq!(b.semifinal_1, (6, 3),
+                   "SF1: Huddersfield vs Brentford");
+        assert_eq!(b.semifinal_2, (5, 4),
+                   "SF2: Stoke vs Cardiff");
+        // (Historical: Stoke and Brentford won their SFs, Stoke
+        // beat Brentford in the final — the +0x37=5 mark landing on
+        // Stoke matches what our C7/C8 goldens use.)
+    }
+
+    /// Real 2001-02 D3 playoff shape: with top-3 (Plymouth, Luton,
+    /// Mansfield) auto-promoted, the playoff is between positions
+    /// 4-7: Cheltenham (4), Rochdale (5), Rushden (6), Hartlepool (7).
+    /// D3 order = {7th, 4th, 6th, 5th} = {Hartlepool, Cheltenham,
+    /// Rushden, Rochdale}.
+    #[test]
+    fn playoff_2001_02_d3_real_participants() {
+        let table: Vec<LeagueTableEntry> = vec![
+            LeagueTableEntry { club_id: 1 },   // Plymouth
+            LeagueTableEntry { club_id: 2 },   // Luton
+            LeagueTableEntry { club_id: 3 },   // Mansfield
+            LeagueTableEntry { club_id: 4 },   // Cheltenham
+            LeagueTableEntry { club_id: 5 },   // Rochdale
+            LeagueTableEntry { club_id: 6 },   // Rushden & Diamonds
+            LeagueTableEntry { club_id: 7 },   // Hartlepool
+        ];
+        let p = english_playoff_participants(
+            EnglishPlayoffDivision::Third, &table,
+        );
+        assert_eq!(p, [7, 4, 6, 5]);
+        let b = PlayoffBracket::from_participants(&p);
+        assert_eq!(b.semifinal_1, (7, 4),
+                   "SF1: Hartlepool vs Cheltenham");
+        assert_eq!(b.semifinal_2, (6, 5),
+                   "SF2: Rushden vs Rochdale");
+        // (Historical: Cheltenham won the playoff.)
+    }
+
+    /// Composition test — a playoff winner marked `+0x37 = 5` in
+    /// D1's finalized roster feeds into C8's Prem↔First edge and
+    /// promotes correctly. Proves C9 output plugs into C8 without
+    /// modification.
+    ///
+    /// The +0x37=5 write itself is deferred (out of C9 scope per
+    /// pillar-14; happens in the subcomp finalize path elsewhere).
+    /// This test simulates that upstream marker and shows C8 handles
+    /// it.
+    #[test]
+    fn playoff_winner_status_5_feeds_into_c8_orchestrator() {
+        let comp_ids = EnglishPyramidCompIds {
+            prem: 7, first: 8, second: 9, third: 10, conference: 93,
+        };
+        // Prem: 3 relegated.
+        let prem = vec![
+            ClubRosterEntry { club_id: 1, status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: 2, status_byte: 3, current_comp_id: 7 },
+            ClubRosterEntry { club_id: 3, status_byte: 3, current_comp_id: 7 },
+        ];
+        // First: 2 auto-promoted (0) + 1 playoff winner (5) + 3 relegated.
+        let first = vec![
+            ClubRosterEntry { club_id: 10, status_byte: 0, current_comp_id: 8 }, // auto
+            ClubRosterEntry { club_id: 11, status_byte: 0, current_comp_id: 8 }, // auto
+            ClubRosterEntry { club_id: 12, status_byte: 5, current_comp_id: 8 }, // playoff winner (C9 output)
+            ClubRosterEntry { club_id: 13, status_byte: 3, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 14, status_byte: 3, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 15, status_byte: 3, current_comp_id: 8 },
+        ];
+        let d = english_pyramid_annual_rollover(
+            comp_ids, &prem, &first, &[], &[], &[],
+            /*conference_active=*/ false,
+            ThirdConferenceStadiumInputs {
+                champion_stadium_current_capacity: None,
+                required_capacity_a: 0, required_capacity_b: 0,
+                third_div_last_place_club_id: None,
+            },
+            PromotionRelegationMode::Paired,
+        );
+        // Prem↔First: 3 pairs. All 3 First promoted (10, 11, 12
+        // including the playoff-winner 12) go up.
+        let promoted_ids: std::collections::BTreeSet<u32> =
+            d.prem_first.promoted.iter().map(|p| p.club_id).collect();
+        assert_eq!(promoted_ids, [10u32, 11, 12].into_iter().collect(),
+                   "playoff winner id 12 (status 5) promoted alongside auto-promoted 10, 11");
     }
 
     // -----------------------------------------------------------------
