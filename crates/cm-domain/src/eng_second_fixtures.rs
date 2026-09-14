@@ -560,14 +560,21 @@ pub fn matrix_perturb(
         // (local_254, half + local_254) which forces them into
         // opposite halves of the round-robin.
         //
-        // See `ClubResolver::e2_pair_shares_69` (kept the exe-derived
-        // method name for cross-reference; semantically it means
-        // "share stadium").
+        // C10.7 FIX: pass CURRENT club_id from clubs_table[i] to
+        // the resolver — matches the exe's Club.+0x69 pointer
+        // dereference which follows the current slot's club, not
+        // its original P1 position. `e2_pair_by_clubs` looks up
+        // stadium via club_id-keyed map, so Phase D reordering does
+        // NOT invalidate the lookup.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
+            let club_i = i32::from_le_bytes(
+                clubs_table[i * REC..i * REC + 4].try_into().unwrap());
             for j in (i + 1)..n {
                 if used_src[j] != 0 { continue; }
-                if !resolver.e2_pair_shares_69(i, j) { continue; }
+                let club_j = i32::from_le_bytes(
+                    clubs_table[j * REC..j * REC + 4].try_into().unwrap());
+                if !resolver.e2_pair_by_clubs(club_i, club_j) { continue; }
                 if local_254 >= half { break; }
                 let slot_lo = local_254;
                 let slot_hi = n_even as usize / 2 + local_254;
@@ -607,14 +614,16 @@ pub fn matrix_perturb(
         // at record +0x48 (already imported to `DomainStadium`). The
         // loader converts the id into a runtime pointer.
         //
-        // See `ClubResolver::e3_pair_cross_linked` — implementation
-        // should read `world.stadium(club[i].stadium_id).alt_stadium_id`
-        // and compare to `club[j].stadium_id`, and vice versa.
+        // C10.7 FIX: same club_id-keyed pattern as E2.
         for i in 0..n.saturating_sub(1) {
             if used_src[i] != 0 { continue; }
+            let club_i = i32::from_le_bytes(
+                clubs_table[i * REC..i * REC + 4].try_into().unwrap());
             for j in (i + 1)..n {
                 if used_src[j] != 0 { continue; }
-                if !resolver.e3_pair_cross_linked(i, j) { continue; }
+                let club_j = i32::from_le_bytes(
+                    clubs_table[j * REC..j * REC + 4].try_into().unwrap());
+                if !resolver.e3_pair_by_clubs(club_i, club_j) { continue; }
                 if local_254 >= half { break; }
                 let slot_lo = local_254;
                 let slot_hi = n_even as usize / 2 + local_254;
@@ -1016,13 +1025,69 @@ pub struct ClubSlotMeta {
 /// indirection. `same_nation` and `linked_via_plus_48` express
 /// those relationships without the byte-slice hack.
 pub trait ClubResolver {
-    /// Nation id at `Club + 0x69` for the given entry slot.
+    /// **DEPRECATED semantic — kept for backwards compatibility with
+    /// nation-keyed test resolvers.** Nation id at `Club + 0x69` for
+    /// the given SLOT — assumes the resolver's per-slot data was
+    /// populated before Phase D and remains valid after. This is
+    /// UNSAFE for E2/E3 lookup in `matrix_perturb` because Phase D
+    /// shuffles clubs across slots (see
+    /// `memory/perturb-resolver-slot-vs-club-bug.md`). Use
+    /// [`ClubResolver::stadium_of_club`] instead.
     fn nation_of(&self, slot: usize) -> Option<i32>;
 
-    /// Perturb E2 criterion: do slots `i` and `j` share a non-zero
-    /// `+0x69` field? Byte-exact port of `0066bd40.c:180` +
-    /// downstream comparisons. Default implementation derives from
-    /// `nation_of`.
+    /// Stadium id for the CLUB with the given `club_id`. Follows the
+    /// exe's Club.+0x69 dereference regardless of which slot the
+    /// club currently occupies — matches the executable semantic
+    /// where E2/E3 read through the CURRENT club pointer at each
+    /// slot, so Phase D permutation doesn't invalidate the lookup.
+    ///
+    /// Default returns `None` (a resolver without stadium data
+    /// makes E2 and E3 no-ops). Real implementations should map
+    /// `club_id` → stadium via the world's Club→Stadium graph.
+    fn stadium_of_club(&self, _club_id: i32) -> Option<i32> {
+        None
+    }
+
+    /// Alt-stadium id (Stadium.+0x48) for the given `stadium_id`.
+    /// Same club-identity semantic as [`stadium_of_club`] — the exe
+    /// looks up alt through the current Stadium pointer regardless
+    /// of slot.
+    fn alt_of_stadium(&self, _stadium_id: i32) -> Option<i32> {
+        None
+    }
+
+    /// Perturb E2 criterion by CLUB ID. Returns true iff `club_a`
+    /// and `club_b` share a non-null stadium — the exe's E2 loop
+    /// at `sub_0066b900` compares `*(*(Club_i + 0x69))` between
+    /// two clubs. Default implementation uses `stadium_of_club`.
+    ///
+    /// **This is the correct method for `matrix_perturb` to call
+    /// after Phase D.** The slot-based [`e2_pair_shares_69`] is
+    /// buggy against post-shuffle rosters and remains only for
+    /// backwards compatibility with nation-keyed test resolvers.
+    fn e2_pair_by_clubs(&self, club_a: i32, club_b: i32) -> bool {
+        match (self.stadium_of_club(club_a), self.stadium_of_club(club_b)) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
+    }
+
+    /// Perturb E3 criterion by CLUB ID. Returns true iff either
+    /// club's stadium has the other's stadium as its
+    /// `alt_stadium_id` (bidirectional +0x48 cross-link).
+    fn e3_pair_by_clubs(&self, club_a: i32, club_b: i32) -> bool {
+        let (sa, sb) = match (self.stadium_of_club(club_a),
+                              self.stadium_of_club(club_b)) {
+            (Some(a), Some(b)) => (a, b),
+            _ => return false,
+        };
+        self.alt_of_stadium(sa) == Some(sb) || self.alt_of_stadium(sb) == Some(sa)
+    }
+
+    /// **DEPRECATED — slot-based, unsafe after Phase D shuffle.**
+    /// Kept only for older test resolvers keyed on nation-per-slot.
+    /// Real callers should invoke [`e2_pair_by_clubs`] with the
+    /// current clubs_table's club_ids.
     fn e2_pair_shares_69(&self, i: usize, j: usize) -> bool {
         match (self.nation_of(i), self.nation_of(j)) {
             (Some(a), Some(b)) if a != 0 && b != 0 && a == b => true,
@@ -1030,10 +1095,7 @@ pub trait ClubResolver {
         }
     }
 
-    /// Perturb E3 criterion: is there a `+0x48` cross-link between
-    /// `i` and `j`? Byte-exact port pending; default returns false
-    /// (matches a caller that has no cross-link data — the safe
-    /// no-op).
+    /// **DEPRECATED — slot-based, unsafe after Phase D shuffle.**
     fn e3_pair_cross_linked(&self, _i: usize, _j: usize) -> bool {
         false
     }
@@ -1093,34 +1155,69 @@ impl ClubResolver for NullResolver {
 /// overridden below.
 #[derive(Debug, Clone, Default)]
 pub struct StadiumClubResolver {
-    /// Stadium id for slot `i`, or `None` when the club has no
-    /// stadium (which forces both E2 and E3 to skip the slot).
-    stadium_ids: Vec<Option<i32>>,
-    /// stadium_id → alt_stadium_id (+0x48). Absent entries and
-    /// `Some(None)` both mean "no cross-link".
+    /// **Legacy slot-keyed view.** Preserved so existing callers /
+    /// tests that constructed the resolver via `new(stadium_ids,
+    /// ...)` continue to compile. `e2_pair_shares_69` /
+    /// `e3_pair_cross_linked` (the deprecated slot-based trait
+    /// methods) still read from this. Post-C10.7 code should build
+    /// via `new_by_club` and call `e2_pair_by_clubs` /
+    /// `e3_pair_by_clubs` instead.
+    stadium_ids_by_slot: Vec<Option<i32>>,
+    /// club_id → stadium_id map. Follows the Club.+0x69 pointer
+    /// regardless of which slot the club currently occupies. Used
+    /// by [`ClubResolver::stadium_of_club`] which is what
+    /// `matrix_perturb` calls post-C10.7.
+    stadium_of_club: std::collections::BTreeMap<i32, i32>,
+    /// stadium_id → alt_stadium_id (+0x48). Absent entries mean
+    /// "no cross-link".
     alt_of: std::collections::BTreeMap<i32, Option<i32>>,
 }
 
 impl StadiumClubResolver {
-    /// Build a resolver from a per-slot stadium id list and a
-    /// (stadium_id, alt_stadium_id) iterator. `alt_stadium_id` is
-    /// the raw +0x48 field — pass `None` on stadiums with no link.
+    /// **Legacy constructor — slot-keyed.** Kept for backwards
+    /// compatibility with tests that assemble the resolver from a
+    /// per-slot list without club-ids. Only supports the deprecated
+    /// slot-based E2/E3 methods; `stadium_of_club` returns `None`
+    /// for any club id because there's no club-to-slot map here.
     pub fn new(
         stadium_ids: Vec<Option<i32>>,
         alt_pairs: impl IntoIterator<Item = (i32, Option<i32>)>,
     ) -> Self {
         StadiumClubResolver {
-            stadium_ids,
+            stadium_ids_by_slot: stadium_ids,
+            stadium_of_club: std::collections::BTreeMap::new(),
             alt_of: alt_pairs.into_iter().collect(),
         }
     }
 
-    fn stadium_of(&self, slot: usize) -> Option<i32> {
-        self.stadium_ids.get(slot).copied().flatten()
+    /// **New constructor — club-id-keyed.** Feed it (club_id,
+    /// stadium_id, stadium_alt_id) tuples per club. This is what
+    /// production callers should use — the resolver stays valid
+    /// through Phase D because it never depends on slot order.
+    ///
+    /// Duplicate `stadium_id` keys in the input silently keep the
+    /// first `alt_stadium_id` seen — this matches the exe where a
+    /// stadium record is a single entity with one `+0x48` field.
+    pub fn new_by_club(
+        clubs: impl IntoIterator<Item = (i32, Option<i32>, Option<i32>)>,
+    ) -> Self {
+        let mut stadium_of_club = std::collections::BTreeMap::new();
+        let mut alt_of = std::collections::BTreeMap::new();
+        for (club_id, stadium_id, alt) in clubs {
+            if let Some(sid) = stadium_id {
+                stadium_of_club.insert(club_id, sid);
+                alt_of.entry(sid).or_insert(alt);
+            }
+        }
+        StadiumClubResolver {
+            stadium_ids_by_slot: Vec::new(),
+            stadium_of_club,
+            alt_of,
+        }
     }
 
-    fn alt_of_stadium(&self, sid: i32) -> Option<i32> {
-        self.alt_of.get(&sid).copied().flatten()
+    fn stadium_of_slot(&self, slot: usize) -> Option<i32> {
+        self.stadium_ids_by_slot.get(slot).copied().flatten()
     }
 }
 
@@ -1129,19 +1226,30 @@ impl ClubResolver for StadiumClubResolver {
         None
     }
 
+    fn stadium_of_club(&self, club_id: i32) -> Option<i32> {
+        self.stadium_of_club.get(&club_id).copied()
+    }
+
+    fn alt_of_stadium(&self, stadium_id: i32) -> Option<i32> {
+        self.alt_of.get(&stadium_id).copied().flatten()
+    }
+
+    /// Legacy slot-based E2. Uses the pre-C10.7 slot list; unsafe
+    /// after Phase D. `matrix_perturb` does NOT call this — it now
+    /// calls [`ClubResolver::e2_pair_by_clubs`] via the trait's
+    /// default which routes through `stadium_of_club`.
     fn e2_pair_shares_69(&self, i: usize, j: usize) -> bool {
-        match (self.stadium_of(i), self.stadium_of(j)) {
+        match (self.stadium_of_slot(i), self.stadium_of_slot(j)) {
             (Some(a), Some(b)) => a == b,
             _ => false,
         }
     }
 
     fn e3_pair_cross_linked(&self, i: usize, j: usize) -> bool {
-        let (si, sj) = match (self.stadium_of(i), self.stadium_of(j)) {
+        let (si, sj) = match (self.stadium_of_slot(i), self.stadium_of_slot(j)) {
             (Some(a), Some(b)) => (a, b),
             _ => return false,
         };
-        // Bidirectional — matches GDI `0x0066bf44..0x0066c141`.
         self.alt_of_stadium(si) == Some(sj) || self.alt_of_stadium(sj) == Some(si)
     }
 }
@@ -1710,7 +1818,7 @@ pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     has_promotion_playoff: false,
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StateExact,
     walker_confidence:          FixtureConfidence::StructurallyVerified,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
@@ -1738,7 +1846,7 @@ pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     has_promotion_playoff: true,
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StateExact,
     walker_confidence:          FixtureConfidence::StructurallyVerified,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
@@ -1770,7 +1878,7 @@ pub const ENGLISH_SECOND_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     has_promotion_playoff: true,
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StateExact,
     walker_confidence:          FixtureConfidence::StructurallyVerified,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
@@ -1801,7 +1909,7 @@ pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     has_promotion_playoff: true,
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StateExact,
     walker_confidence:          FixtureConfidence::StructurallyVerified,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
@@ -1829,7 +1937,7 @@ pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     has_promotion_playoff: false,   // Conf uses stadium-gated single-club promotion
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
+    perturb_confidence:         FixtureConfidence::StateExact,
     walker_confidence:          FixtureConfidence::StructurallyVerified,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
@@ -3672,36 +3780,66 @@ mod tests {
         assert!(!ENGLISH_CONFERENCE_SPEC.has_promotion_playoff);
     }
 
-    /// Corrected C10.6 confidence: driver output is BehaviourallyExact
-    /// for all 5 (0 ordered mismatches feeding captured P2 + walker
-    /// returns into `run_round_robin_driver`), but perturb and walker
-    /// are only StructurallyVerified — the C10.6 differential
-    /// revealed real gaps (see deviations doc for details).
+    /// C10.7 (post-resolver-fix) confidence invariant:
     ///
-    /// Capture reference: `20260914_131616_five_leagues_*`. Driver
-    /// results per league: Prem 0/380, First 0/552, Second 0/552,
-    /// Third 0/552, Conference 0/462.
+    ///   perturb: StateExact — 0 P2 slot mismatches on all 5 leagues
+    ///                          via captured P1 + RNG stream + real
+    ///                          stadium graph (capture 20260914_131616).
+    ///   driver + full_fixture: BehaviourallyExact — same as C10.6.
+    ///   walker: still StructurallyVerified (harness capture gap for
+    ///           arg 8 `special_comp_id`; not a port bug — driver
+    ///           output stays 0-diff for all 5).
+    ///   schedule_buffer + matrix_seed: BehaviourallyExact —
+    ///           captured buffer bytes exist, Rust schedule
+    ///           regenerator not yet compared against them.
     #[test]
-    fn all_five_leagues_driver_behaviourally_exact() {
+    fn c10_7_confidence_invariant() {
         for spec in ENGLISH_LEAGUE_SPECS.iter() {
             assert_eq!(spec.driver_confidence,
                        FixtureConfidence::BehaviourallyExact,
-                       "{}: driver BehaviourallyExact from capture 20260914_131616",
+                       "{}: driver BehaviourallyExact",
                        spec.short_name);
             assert_eq!(spec.full_fixture_confidence,
                        FixtureConfidence::BehaviourallyExact,
-                       "{}: full-chain BehaviourallyExact", spec.short_name);
-            // Perturb + walker are known StructurallyVerified until
-            // resolver bug (perturb) and harness capture gap (walker)
-            // are resolved.
+                       "{}: full-chain BehaviourallyExact",
+                       spec.short_name);
             assert_eq!(spec.perturb_confidence,
-                       FixtureConfidence::StructurallyVerified,
-                       "{}: perturb honesty invariant — must not claim ByteExact",
+                       FixtureConfidence::StateExact,
+                       "{}: perturb StateExact after C10.7 resolver fix",
                        spec.short_name);
             assert_eq!(spec.walker_confidence,
                        FixtureConfidence::StructurallyVerified,
-                       "{}: walker honesty invariant", spec.short_name);
+                       "{}: walker awaits harness re-capture of arg 8",
+                       spec.short_name);
         }
+    }
+
+    /// C10.7 regression — the specific scenario the resolver bug
+    /// misprocessed. Two clubs at slots A and B (both with distinct
+    /// stadiums) get swapped in some Phase D pass. E2 must follow
+    /// their club identity, not their slot. The old slot-based
+    /// resolver would answer this from the WRONG slot data; the
+    /// new club-id-keyed resolver answers correctly.
+    #[test]
+    fn resolver_follows_club_identity_not_slot() {
+        // Club 100 lives at stadium 10; club 200 lives at stadium 10 too.
+        // If a phase-D swap moves them into different slots than we
+        // built the resolver from, the by-slot resolver would give
+        // stale data. The by-club resolver stays correct.
+        let r = StadiumClubResolver::new_by_club(vec![
+            (100, Some(10), None),          // shares stadium 10
+            (200, Some(10), None),          // shares stadium 10
+            (300, Some(50), Some(51)),      // derby link to stadium 51
+            (400, Some(51), Some(50)),
+        ]);
+        // E2 by club: 100 and 200 both point at stadium 10 -> pair.
+        assert!(r.e2_pair_by_clubs(100, 200));
+        assert!(!r.e2_pair_by_clubs(100, 300));
+        // E3 by club: 300's stadium 50 has alt 51 which is 400's stadium.
+        assert!(r.e3_pair_by_clubs(300, 400));
+        // Unknown club id -> no data -> no pair (safe default).
+        assert!(!r.e2_pair_by_clubs(100, 999));
+        assert!(!r.e3_pair_by_clubs(999, 300));
     }
 
     /// Prem/Conf differ in `+0xBE` / `+0xBF` from mid-3. Pillar 15

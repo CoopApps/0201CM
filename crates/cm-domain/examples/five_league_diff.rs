@@ -161,18 +161,11 @@ fn load_capture(root: &Path, prefix: &str, lid: &str,
 // ---------------------------------------------------------------------------
 
 fn build_resolver(p1: &[DerefEntry]) -> StadiumClubResolver {
-    let stadium_ids: Vec<Option<i32>> = p1.iter()
-        .map(|e| e.stadium_id).collect();
-    // alt_of map from each stadium: (stadium_id, stadium_alt_id)
-    let mut alt_pairs: HashMap<i32, Option<i32>> = HashMap::new();
-    for e in p1 {
-        if let Some(sid) = e.stadium_id {
-            alt_pairs.entry(sid).or_insert(e.stadium_alt_id);
-        }
-    }
-    StadiumClubResolver::new(
-        stadium_ids,
-        alt_pairs.into_iter(),
+    // C10.7: build via new_by_club so E2/E3 lookup follows club
+    // identity (Club.+0x69), not slot. This survives Phase D
+    // reordering of the clubs table — matches the exe.
+    StadiumClubResolver::new_by_club(
+        p1.iter().map(|e| (e.club_id, e.stadium_id, e.stadium_alt_id))
     )
 }
 
