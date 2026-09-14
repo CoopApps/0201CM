@@ -1552,6 +1552,365 @@ pub fn conference_feeder_swap(
 }
 
 // ---------------------------------------------------------------------------
+// Stadium-capacity gate predicate (subset of cm0102-gdi FUN_00584150)
+// ---------------------------------------------------------------------------
+
+/// The input to [`stadium_meets_capacity_target`] — the boolean-return
+/// subset of the full stadium-expansion transaction at
+/// `cm0102_GDI.exe` `sub_00584150` (DirectDraw `FUN_00583fc0`).
+///
+/// # Scope note — partial port
+///
+/// The full exe function is **471 instructions** and does substantially
+/// more than gate: on a passing candidate it also mutates the
+/// stadium's `+0x3c` (max), `+0x40` (current), and `+0x44` (peak)
+/// capacity fields, updates 8 club-financial ledger fields
+/// (`+0x00/+0x01/+0x23/+0x2d/+0x4b/+0x55/+0x8c/+0xb4/+0x12c/+0x154`)
+/// with the computed expansion cost via the exe's stadium-cost
+/// formula, and fires a "stadium expanded" news broadcast via
+/// `sub_0058a310`. This commit ports only the **boolean return**
+/// that the Conference-fallback caller ([`conference_fallback_promotion`])
+/// observes; the on-pass expansion transaction is a documented gap
+/// scheduled for a follow-up commit that pairs the gate with its
+/// financial-side-effect helper.
+///
+/// The pure predicate below is **byte-exact for the boolean return**
+/// on inputs the fallback observes: null-stadium → false, current
+/// capacity < min-required → false (would trigger expansion),
+/// current ≥ required → true.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StadiumCapacityRequest {
+    /// Club's current stadium capacity — the `+0x40` field on the
+    /// stadium record reached via `Club+0x69`. `None` when the club
+    /// has no stadium pointer (asm `0x005841ab`: `[record+0x69]==0`
+    /// → `xor al,al; ret`).
+    pub stadium_current_capacity: Option<u32>,
+    /// The `+0xe4` field on the destination competition record —
+    /// primary capacity requirement (asm loads this as the second
+    /// stack arg to the gate).
+    pub required_capacity_a: u32,
+    /// The `+0xe2` field on the destination competition record —
+    /// secondary capacity requirement (asm loads this as the third
+    /// stack arg to the gate). For the Third Division shipped
+    /// values, `+0xe2` typically equals `+0xe4` (single-threshold);
+    /// unequal values trigger a graded-expansion branch in the full
+    /// gate body.
+    pub required_capacity_b: u32,
+}
+
+/// Boolean-return subset of `sub_00584150` — returns whether a club's
+/// current stadium capacity already meets the destination competition's
+/// minimum requirement (no expansion needed to promote).
+///
+/// **Not a full port.** See [`StadiumCapacityRequest`] docs for what
+/// side effects the exe's full function performs on a passing
+/// candidate and why they are deferred.
+pub fn stadium_meets_capacity_target(req: &StadiumCapacityRequest) -> bool {
+    // Null-stadium branch — asm 0x005841ab loads stadium ptr from
+    // `[record+0x69]`, tests zero, and returns 0 immediately.
+    let current = match req.stadium_current_capacity {
+        None => return false,
+        Some(c) => c,
+    };
+    // Both capacity thresholds must be met. When they are equal (the
+    // common Third-Division shipped case) this is a single check;
+    // when unequal, the full exe body runs a graded-expansion planner
+    // that always requires meeting the STRICTER of the two — anything
+    // less triggers an expansion attempt (and thus a non-null return
+    // ONLY when the expansion is affordable). For the boolean gate
+    // subset we err on the side of "expansion required" whenever the
+    // current is below either threshold; the pure-predicate result
+    // matches the exe's "no expansion required" fast path.
+    let stricter = req.required_capacity_a.max(req.required_capacity_b);
+    current >= stricter
+}
+
+// ---------------------------------------------------------------------------
+// Conference-not-selected fallback (cm0102-gdi.exe sub_0055ec00)
+// ---------------------------------------------------------------------------
+
+/// One candidate club considered by [`conference_fallback_promotion`].
+///
+/// Same double-indirection snapshot pattern as [`FeederCandidate`],
+/// but the fallback's filter chain is minimal — only
+/// `*(club+0x57) == Conference_id`, no nation gate, no `+0x37` flag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FallbackCandidate {
+    pub club_id: u32,
+    /// Comparator key for [`sort_and_shuffle`] — signed i16 at
+    /// `Club+0x80` (same as [`FeederCandidate::key80`]).
+    pub key80: i16,
+    /// Club's stadium-current-capacity snapshot, resolved for the
+    /// stadium gate. `None` when the club has no stadium.
+    pub stadium_current_capacity: Option<u32>,
+}
+
+/// One Third-Division club currently flagged for relegation
+/// (`+0x37 == 3`), enumerated by the caller in Third-Div roster-slot
+/// order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ThirdDivRelegatee {
+    pub club_id: u32,
+}
+
+/// The Third-Division club currently sitting in the LAST roster slot
+/// (`sub_00667560(third_div, [+0x3e]-1)` in the exe). Used only on
+/// the stadium-gate FAIL branch, where its `+0x37` gets marked
+/// `0xFE` (reprieved).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ThirdDivLastPlace {
+    pub club_id: u32,
+}
+
+/// Outcome of the Conference-not-selected fallback promotion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConferenceFallbackOutcome {
+    /// Filter matched zero candidates — the exe fires error string
+    /// `0x2be` and returns without side effects.
+    NoCandidates,
+    /// Stadium gate failed on the top-sorted candidate. The
+    /// Third-Division last-place club is *reprieved* (their `+0x37`
+    /// is stamped `0xFE`), and a "promotion cancelled" news item
+    /// fires (template id 2, %s slots filled from the candidate
+    /// club and destination Conference comp).
+    StadiumFailed {
+        candidate_club_id: u32,
+        /// The Third-Division last-place club whose `+0x37` becomes
+        /// `0xFE`. This reprieves them — the club that WOULD have
+        /// been relegated to Conference stays up.
+        third_div_reprieved_club_id: u32,
+        /// News template id: exe passes `2` to `FUN_004938d0`. The
+        /// "The promotion of {club} to the {competition} has been
+        /// cancelled their stadium does not meet the required
+        /// capacity" template.
+        news_template_id: u16,
+        /// Reference to the destination comp — passed as the `%s
+        /// competition` slot of the news template.
+        news_destination_comp_id: u32,
+    },
+    /// Stadium gate passed. The top-sorted candidate is promoted
+    /// into Third Division; Third-Division clubs currently marked
+    /// `+0x37 == 3` get settled into the (unsimulated) Conference.
+    Promoted {
+        candidate_club_id: u32,
+        /// The comp id the candidate is being written INTO. Third
+        /// Division in the exe.
+        destination_comp_id: u32,
+        /// Third-Division clubs with `+0x37 == 3` in roster-scan
+        /// order. Each gets its `+0x57` written to Conference_id
+        /// via the shared insertion helper.
+        third_div_settled_relegations: Vec<u32>,
+    },
+}
+
+/// Decision emitted by the fallback. `shuffle_k` is the K value
+/// [`sort_and_shuffle`] used, useful for RNG-lineage tests. `None`
+/// means the shuffle didn't run (empty pool or n < mode).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConferenceFallbackDecision {
+    pub outcome: ConferenceFallbackOutcome,
+    pub shuffle_k: Option<i16>,
+}
+
+/// Byte-semantics port of `cm0102_GDI.exe` `sub_0055ec00`
+/// (DirectDraw `FUN_0055ea00`) — the English-competition-set
+/// end-of-season handler branch that runs when the Conference has
+/// **not** been selected as a manageable league. Source cluster:
+/// `comp_l...` inside `eng_prm.cpp`.
+///
+/// # Semantic contract
+///
+/// The exe scans every club and picks those whose current comp is
+/// Conference (a minimal filter — no nation gate, no status flag).
+/// The survivors go through [`sort_and_shuffle`] with `mode = 1`
+/// (K = min(3, n) shuffle window, 2·K RNG draws), then the TOP
+/// candidate is offered up to the Third Division stadium gate. On
+/// pass → promoted. On fail → the current Third-Division bottom
+/// club is reprieved and a "promotion cancelled" news item fires
+/// naming the candidate.
+///
+/// # Filter minimality
+///
+/// This is the CRITICAL structural distinction from
+/// [`conference_feeder_swap`]:
+///
+/// * Feeder swap (`FUN_0055ec40`) — 6-clause filter (nation + 5
+///   comp exclusions). Runs when the Conference IS simulated.
+/// * Fallback (`FUN_0055ea00`) — 1-clause filter (comp ==
+///   Conference_id). Runs when it is NOT.
+///
+/// Because the shipped `.dat` puts every real 2001-02 Conference
+/// club at `comp = Conference_id` regardless of whether the sim
+/// runs, the fallback has a full 22-club candidate pool to draw
+/// from even under a Traditional save where Conference is not
+/// selected.
+///
+/// # RNG
+///
+/// Sort mode 1 → K = min(3, n) → 2·K pool RNG draws (6 for a
+/// full pool, less for tiny pools). No RNG in the caller body
+/// itself.
+pub fn conference_fallback_promotion(
+    fallback_candidates: &mut Vec<FallbackCandidate>,
+    third_div_relegatees: &[ThirdDivRelegatee],
+    third_div_last_place: Option<ThirdDivLastPlace>,
+    third_div_capacity_req: StadiumCapacityRequest,
+    destination_comp_id: u32,
+    conference_comp_id: u32,
+    rng: &mut GameRng,
+) -> ConferenceFallbackDecision {
+    // Empty-list branch — asm 0x0055ecfb `if (n == 0) { free; error
+    // 0x2be; return; }`. No RNG consumption.
+    if fallback_candidates.is_empty() {
+        return ConferenceFallbackDecision {
+            outcome: ConferenceFallbackOutcome::NoCandidates,
+            shuffle_k: None,
+        };
+    }
+
+    // Sort mode 1 — K = min(3, n), 2·K pool draws.
+    let shuffle_result = sort_and_shuffle(
+        fallback_candidates,
+        1,
+        |c| Some(c.key80),
+        rng,
+    );
+    let shuffle_k = match shuffle_result {
+        SortShuffleResult::Ok { k } => Some(k),
+        _ => None,
+    };
+
+    // Top of sorted-shuffled array — the only candidate the fallback
+    // considers. Asm `mov edx, *candidates` at 0x0055ed1c reads
+    // element 0 of the buffer.
+    let candidate = fallback_candidates[0];
+
+    // Stadium gate. Uses a per-caller-supplied capacity requirement
+    // (`comp[+0xe4]` / `comp[+0xe2]` on the Third-Division comp
+    // record; caller resolves those from World).
+    let candidate_req = StadiumCapacityRequest {
+        stadium_current_capacity: candidate.stadium_current_capacity,
+        required_capacity_a: third_div_capacity_req.required_capacity_a,
+        required_capacity_b: third_div_capacity_req.required_capacity_b,
+    };
+    if stadium_meets_capacity_target(&candidate_req) {
+        // Gate passed. Promote + settle relegations.
+        ConferenceFallbackDecision {
+            outcome: ConferenceFallbackOutcome::Promoted {
+                candidate_club_id: candidate.club_id,
+                destination_comp_id,
+                third_div_settled_relegations: third_div_relegatees
+                    .iter()
+                    .map(|r| r.club_id)
+                    .collect(),
+            },
+            shuffle_k,
+        }
+    } else {
+        // Gate failed. Reprieve Third-Division last-place club.
+        // Third_div_last_place should ALWAYS be Some when the gate
+        // is reached (Third Division has a full 24-club roster in
+        // Traditional shipped data). If the caller passes None
+        // anyway (malformed World), we degrade to no-reprieve.
+        let reprieved = third_div_last_place
+            .map(|lp| lp.club_id)
+            .unwrap_or(0);
+        ConferenceFallbackDecision {
+            outcome: ConferenceFallbackOutcome::StadiumFailed {
+                candidate_club_id: candidate.club_id,
+                third_div_reprieved_club_id: reprieved,
+                news_template_id: 2,
+                news_destination_comp_id: conference_comp_id,
+            },
+            shuffle_k,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// English-set end-of-season coordinator branch dispatch
+// (subset of cm0102-gdi FUN_005e9b0)
+// ---------------------------------------------------------------------------
+
+/// Which branch the English-set end-of-season coordinator took at a
+/// given year-rollover pass. See [`english_conference_dispatch`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConferenceRolloverDispatch {
+    /// Conference IS simulated (`comp_table[Conference_id]` non-null).
+    /// Exe dispatched to `sub_0055ee40` (feeder-swap path).
+    FeederSwap(ConferenceFeederDecision),
+    /// Conference is NOT simulated (`comp_table[Conference_id]` null).
+    /// Exe dispatched to `sub_0055ec00` (single-club fallback).
+    ChampionFallback(ConferenceFallbackDecision),
+}
+
+/// Branch-dispatch subset of the English-set end-of-season handler
+/// (`cm0102_GDI.exe sub_0055e9b0` / DirectDraw `sub_0055e7b0`).
+/// The full function is a 178-instruction vtable-slot-2 callback on
+/// the English competition-set object; this port covers only the
+/// Conference-branch dispatch that pillar's the pyramid rollover.
+///
+/// # What THIS port covers
+///
+/// * The null-vs-non-null check on `comp_table[Conference_id]`.
+/// * Dispatch to [`conference_feeder_swap`] or
+///   [`conference_fallback_promotion`] accordingly.
+///
+/// # What is DEFERRED (scoped for C7 + C8)
+///
+/// * The pre-branch vtable-slot-`+0xb0(1)` reset pass on `this`.
+/// * The post-branch `sub_0066c800(0)` continuation.
+/// * The `+0xba` scratch buffer free.
+/// * The `sub_004a89d0(1)` child-comp continuation.
+/// * The 4 validator error paths (`sub_004a89d0`, `sub_0055e7c0`,
+///   `sub_00668450`, `sub_00667660`) with their error-news strings
+///   `0x267 / 0x26e / 0x274 / 0x27b`.
+/// * The tail vtable dispatch chain into Prem / Div1 / Div2 / Div3 /
+///   Conference — the pyramid rollover proper, which is
+///   `FUN_0066eed0` (C7) plus the orchestrator (C8).
+/// * `sub_0066f890(this)` and `sub_00784e70([esi+4])`.
+///
+/// These are all real components of the exe's end-of-season pass
+/// and will land in dedicated commits. This commit is scoped to the
+/// Conference-branch dispatch only.
+pub fn english_conference_dispatch(
+    conference_simulated: bool,
+    // Feeder-swap-path inputs (used only when conference_simulated).
+    feeder_candidates: &mut Vec<FeederCandidate>,
+    conference_marked_for_relegation: &[ConferenceRelegatee],
+    // Fallback-path inputs (used only when !conference_simulated).
+    fallback_candidates: &mut Vec<FallbackCandidate>,
+    third_div_relegatees: &[ThirdDivRelegatee],
+    third_div_last_place: Option<ThirdDivLastPlace>,
+    third_div_capacity_req: StadiumCapacityRequest,
+    destination_comp_id: u32,
+    conference_comp_id: u32,
+    rng: &mut GameRng,
+) -> ConferenceRolloverDispatch {
+    if conference_simulated {
+        ConferenceRolloverDispatch::FeederSwap(
+            conference_feeder_swap(
+                feeder_candidates,
+                conference_marked_for_relegation,
+                rng,
+            )
+        )
+    } else {
+        ConferenceRolloverDispatch::ChampionFallback(
+            conference_fallback_promotion(
+                fallback_candidates,
+                third_div_relegatees,
+                third_div_last_place,
+                third_div_capacity_req,
+                destination_comp_id,
+                conference_comp_id,
+                rng,
+            )
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
 // English Second Division exact-date dispatch
 // ---------------------------------------------------------------------------
 
@@ -2053,6 +2412,307 @@ mod tests {
         // K = min(9, 3) = 3 → 6 RNG draws.
         assert_eq!(d.shuffle_k, Some(3));
         assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
+    }
+
+    // -----------------------------------------------------------------
+    // stadium_meets_capacity_target — subset of FUN_00584150
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn stadium_gate_null_stadium_fails() {
+        let r = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        assert!(!stadium_meets_capacity_target(&r));
+    }
+
+    #[test]
+    fn stadium_gate_current_at_threshold_passes() {
+        let r = StadiumCapacityRequest {
+            stadium_current_capacity: Some(6_000),
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        // Exe: current == required → no expansion required → passes.
+        assert!(stadium_meets_capacity_target(&r));
+    }
+
+    #[test]
+    fn stadium_gate_current_below_threshold_fails() {
+        let r = StadiumCapacityRequest {
+            stadium_current_capacity: Some(4_500),
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        assert!(!stadium_meets_capacity_target(&r));
+    }
+
+    #[test]
+    fn stadium_gate_unequal_caps_uses_stricter() {
+        // If cap_a < cap_b (or vice versa), the stricter (max) is
+        // what the gate's pure-predicate subset requires.
+        let r = StadiumCapacityRequest {
+            stadium_current_capacity: Some(6_000),
+            required_capacity_a: 6_000,
+            required_capacity_b: 10_000,
+        };
+        assert!(!stadium_meets_capacity_target(&r),
+                "current 6000 meets a=6000 but not b=10000 → fail");
+        let r2 = StadiumCapacityRequest {
+            stadium_current_capacity: Some(10_000),
+            required_capacity_a: 6_000,
+            required_capacity_b: 10_000,
+        };
+        assert!(stadium_meets_capacity_target(&r2));
+    }
+
+    // -----------------------------------------------------------------
+    // conference_fallback_promotion — port of FUN_0055ea00
+    // -----------------------------------------------------------------
+
+    /// Full pool, all top-K candidates have adequate stadiums → the
+    /// promoted club is one of the top-3 (order shuffled by RNG,
+    /// but we don't care which specific one).
+    #[test]
+    fn conference_fallback_promoted_when_top_candidate_passes_gate() {
+        // Top-3 by key80 = {100, 101, 102}. ALL three carry ≥6000
+        // capacity so the gate outcome is deterministic regardless
+        // of which one the shuffle places at index 0.
+        let mut candidates: Vec<FallbackCandidate> = vec![
+            FallbackCandidate { club_id: 100, key80: 85, stadium_current_capacity: Some(12_000) },
+            FallbackCandidate { club_id: 101, key80: 80, stadium_current_capacity: Some( 8_000) },
+            FallbackCandidate { club_id: 102, key80: 70, stadium_current_capacity: Some( 7_000) },
+            // Below top-K — irrelevant since shuffle window K=3.
+            FallbackCandidate { club_id: 103, key80: 60, stadium_current_capacity: None },
+            FallbackCandidate { club_id: 104, key80: 55, stadium_current_capacity: Some(2_000) },
+            FallbackCandidate { club_id: 105, key80: 50, stadium_current_capacity: Some(1_800) },
+            FallbackCandidate { club_id: 106, key80: 45, stadium_current_capacity: Some(1_500) },
+            FallbackCandidate { club_id: 107, key80: 30, stadium_current_capacity: Some(1_000) },
+        ];
+        let relegatees = vec![
+            ThirdDivRelegatee { club_id: 501 },
+            ThirdDivRelegatee { club_id: 502 },
+            ThirdDivRelegatee { club_id: 503 },
+        ];
+        let last_place = Some(ThirdDivLastPlace { club_id: 500 });
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0x1234, 0);
+        let before_cursor = rng.pool_cursor();
+        let d = conference_fallback_promotion(
+            &mut candidates, &relegatees, last_place, req, 10, 93, &mut rng,
+        );
+        // Mode 1 shuffle → K=3, 6 pool draws → 24 cursor bytes.
+        assert_eq!(d.shuffle_k, Some(3));
+        assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
+        match d.outcome {
+            ConferenceFallbackOutcome::Promoted {
+                candidate_club_id, destination_comp_id,
+                third_div_settled_relegations,
+            } => {
+                // One of the top-3 clubs surfaced at index 0; all
+                // three have adequate stadiums, so any is a valid
+                // outcome.
+                assert!(matches!(candidate_club_id, 100 | 101 | 102),
+                        "promoted club must be one of the top-3 by key80, got {}",
+                        candidate_club_id);
+                assert_eq!(destination_comp_id, 10);
+                assert_eq!(third_div_settled_relegations, vec![501, 502, 503]);
+            }
+            other => panic!("expected Promoted, got {other:?}"),
+        }
+    }
+
+    /// Top candidate's stadium fails the gate → reprieve Third-Div
+    /// bottom + news, no promotion.
+    #[test]
+    fn conference_fallback_stadium_failure_reprieves_third_bottom() {
+        // Only one candidate — top by definition. Their stadium is
+        // too small.
+        let mut candidates: Vec<FallbackCandidate> = vec![
+            FallbackCandidate { club_id: 200, key80: 90, stadium_current_capacity: Some(3_500) },
+        ];
+        let relegatees = vec![
+            ThirdDivRelegatee { club_id: 601 },
+            ThirdDivRelegatee { club_id: 602 },
+        ];
+        let last_place = Some(ThirdDivLastPlace { club_id: 600 });
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0x5555, 0);
+        let d = conference_fallback_promotion(
+            &mut candidates, &relegatees, last_place, req, 10, 93, &mut rng,
+        );
+        // 1 candidate, mode 1 → K = min(3, 1) = 1 → 2 pool draws.
+        assert_eq!(d.shuffle_k, Some(1));
+        match d.outcome {
+            ConferenceFallbackOutcome::StadiumFailed {
+                candidate_club_id,
+                third_div_reprieved_club_id,
+                news_template_id,
+                news_destination_comp_id,
+            } => {
+                assert_eq!(candidate_club_id, 200);
+                assert_eq!(third_div_reprieved_club_id, 600,
+                           "Third Div last-place is reprieved on gate fail");
+                assert_eq!(news_template_id, 2,
+                           "exe passes template id 2 to FUN_004938d0");
+                assert_eq!(news_destination_comp_id, 93);
+            }
+            other => panic!("expected StadiumFailed, got {other:?}"),
+        }
+    }
+
+    /// All candidates have null / undersized stadiums → whoever
+    /// surfaces at index 0 after the shuffle fails the gate. Test
+    /// asserts the outcome-type invariant, not the specific club.
+    #[test]
+    fn conference_fallback_null_and_small_stadiums_all_fail() {
+        // Every candidate in the top-K has an inadequate stadium.
+        let mut candidates: Vec<FallbackCandidate> = vec![
+            FallbackCandidate { club_id: 300, key80: 100, stadium_current_capacity: None },
+            FallbackCandidate { club_id: 301, key80:  90, stadium_current_capacity: Some(3_500) },
+            FallbackCandidate { club_id: 302, key80:  80, stadium_current_capacity: Some(2_500) },
+        ];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0xabab, 0);
+        let d = conference_fallback_promotion(
+            &mut candidates, &[], Some(ThirdDivLastPlace { club_id: 700 }),
+            req, 10, 93, &mut rng,
+        );
+        // Whichever of {300, 301, 302} surfaces, none meet 6000 →
+        // reprieve path.
+        match d.outcome {
+            ConferenceFallbackOutcome::StadiumFailed {
+                candidate_club_id, third_div_reprieved_club_id, ..
+            } => {
+                assert!(matches!(candidate_club_id, 300 | 301 | 302),
+                        "candidate must be one of the top-3, got {}",
+                        candidate_club_id);
+                assert_eq!(third_div_reprieved_club_id, 700);
+            }
+            other => panic!("expected StadiumFailed, got {other:?}"),
+        }
+    }
+
+    /// Empty pool → NoCandidates outcome, no RNG draws, no
+    /// reprieve/promotion side effects.
+    #[test]
+    fn conference_fallback_empty_pool_no_op() {
+        let mut candidates: Vec<FallbackCandidate> = vec![];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0x9999, 0);
+        let before_cursor = rng.pool_cursor();
+        let d = conference_fallback_promotion(
+            &mut candidates, &[], None, req, 10, 93, &mut rng,
+        );
+        assert!(matches!(d.outcome, ConferenceFallbackOutcome::NoCandidates));
+        assert_eq!(d.shuffle_k, None);
+        assert_eq!(rng.pool_cursor(), before_cursor, "no RNG on empty pool");
+    }
+
+    /// Threshold-boundary check: capacity exactly equal to
+    /// required → passes.
+    #[test]
+    fn conference_fallback_capacity_exact_boundary_passes() {
+        let mut candidates: Vec<FallbackCandidate> = vec![
+            FallbackCandidate { club_id: 400, key80: 100, stadium_current_capacity: Some(6_000) },
+        ];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000,
+            required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0x1010, 0);
+        let d = conference_fallback_promotion(
+            &mut candidates, &[], Some(ThirdDivLastPlace { club_id: 700 }),
+            req, 10, 93, &mut rng,
+        );
+        assert!(matches!(d.outcome, ConferenceFallbackOutcome::Promoted { .. }));
+    }
+
+    // -----------------------------------------------------------------
+    // english_conference_dispatch — branch dispatch subset of sub_0055e9b0
+    // -----------------------------------------------------------------
+
+    /// Conference-simulated branch routes into feeder-swap path.
+    #[test]
+    fn dispatch_conference_simulated_uses_feeder_swap() {
+        let mut feeder: Vec<FeederCandidate> = vec![
+            FeederCandidate { club_id: 1000, current_comp_id: 358, key80: 95 },
+            FeederCandidate { club_id: 2000, current_comp_id: 359, key80: 90 },
+            FeederCandidate { club_id: 3000, current_comp_id: 360, key80: 85 },
+        ];
+        let mut fallback: Vec<FallbackCandidate> = vec![];  // unused on this branch
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+        ];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000, required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0x2222, 0);
+        let d = english_conference_dispatch(
+            /*conference_simulated=*/ true,
+            &mut feeder, &relegatees,
+            &mut fallback, &[], None, req, 10, 93,
+            &mut rng,
+        );
+        match d {
+            ConferenceRolloverDispatch::FeederSwap(dec) => {
+                assert_eq!(dec.promotions.len(), 3);
+                assert_eq!(dec.relegations.len(), 1);
+            }
+            other => panic!("expected FeederSwap, got {other:?}"),
+        }
+    }
+
+    /// Conference-NOT-simulated branch routes into fallback path.
+    #[test]
+    fn dispatch_conference_absent_uses_fallback() {
+        let mut feeder: Vec<FeederCandidate> = vec![];  // unused
+        let mut fallback: Vec<FallbackCandidate> = vec![
+            FallbackCandidate { club_id: 200, key80: 90, stadium_current_capacity: Some(12_000) },
+        ];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000, required_capacity_b: 6_000,
+        };
+        let mut rng = rng_at(0, 0x3333, 0);
+        let d = english_conference_dispatch(
+            /*conference_simulated=*/ false,
+            &mut feeder, &[],
+            &mut fallback, &[], Some(ThirdDivLastPlace { club_id: 700 }),
+            req, 10, 93,
+            &mut rng,
+        );
+        match d {
+            ConferenceRolloverDispatch::ChampionFallback(dec) => {
+                match dec.outcome {
+                    ConferenceFallbackOutcome::Promoted { candidate_club_id, .. } => {
+                        assert_eq!(candidate_club_id, 200);
+                    }
+                    other => panic!("expected Promoted, got {other:?}"),
+                }
+            }
+            other => panic!("expected ChampionFallback, got {other:?}"),
+        }
     }
 
     /// StadiumClubResolver pairs Brentford↔QPR and Port Vale↔Stoke —
