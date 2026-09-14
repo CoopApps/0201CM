@@ -12867,7 +12867,9 @@ fn generate_double_round_robin(
     // property: NO team plays more than 2 consecutive home OR 2
     // consecutive away games across a leg. The exe achieves the same
     // property through FUN_00669780's Berger sign matrix + XOR in
-    // FUN_00668890:185-241 (see memory/fixtures-screen-decoded.md);
+    // sub_00668450:185-241 (older notes: FUN_00668890 — that's an
+    // inner label inside the same outer function 0x00668450..0x00668d70;
+    // see memory/fixtures-screen-decoded.md);
     // the algorithm here is the closed-form add-mod equivalent,
     // producing balanced H/A without byte-exact matching the exe's
     // pair order.
@@ -18358,14 +18360,19 @@ impl World {
             }
 
             // cm0102-gdi.exe dispatch — English Second Division (comp
-            // id 9). The schedule-getter at 0x0055f540 has been
-            // recovered byte-exact; overlay its 46 exact dates onto
-            // the fixtures produced above. The Berger add-mod pair
-            // generator remains until the round-robin driver
-            // (0x00668450) is ported byte-exact (STRUCTURE VERIFIED —
-            // SEMANTICS PARTIAL as of 2026-09-13). Pair-order
-            // fidelity will be closed by a follow-up commit once a
-            // runtime capture of the exe pair sequence lands.
+            // id 9). The schedule-getter at 0x0055f340 (inner entry
+            // of the linear-carve segment `sub_0055f240`, 540 bytes
+            // ending 0x0055f45c) has been recovered byte-exact;
+            // overlay its 46 exact dates onto the fixtures produced
+            // above. Berger add-mod pair generation is still used
+            // here; the round-robin driver at 0x00668450 (outer
+            // function 2336 bytes; older notes called this
+            // FUN_00668890 after an inner label at that address, but
+            // the outer function extent is 0x00668450..0x00668d70)
+            // IS PORTED and PROVEN 552/552 byte-exact on the tagged-
+            // this eng_second lineage (`examples/driver_diff_via_p2.rs`).
+            // Wire-through is deferred pending the pyramid-scope
+            // pass (C2..C9 in the 2026-09-14 pyramid synthesis).
             //
             // At 24 clubs the Berger loop emits n/2 = 12 fixtures per
             // round in round-consecutive order, so fixture index i

@@ -210,8 +210,10 @@ pub fn write_round_record(
 /// **VERIFIED STRUCTURE, SEMANTICS PARTIAL**: The three i8 fields have
 /// small enum ranges ([-1..6], [-1..2], [-1..4]) so they are NOT team
 /// IDs (English Div 2 has 24 teams). Likely per-round metadata (cup-round
-/// overlap flags, postponement state, TV pick). FUN_00668890 (the
-/// round-robin driver) READS +0x0b and checks for values 3 and 4 —
+/// overlap flags, postponement state, TV pick). FUN_00668450 (the
+/// round-robin driver — older notes called it FUN_00668890 after
+/// an inner label at that address; the outer function extent is
+/// 0x00668450..0x00668d70) READS +0x0b and checks for values 3 and 4 —
 /// suggesting +0x0b is a status flag with those values having meaning.
 ///
 /// The schedule-getter calls this once per round with

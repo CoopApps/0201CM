@@ -1,5 +1,22 @@
 # Deviation: League fixture dates
 
+## Address-labelling correction (2026-09-14, C1 pass)
+
+The round-robin driver is a single outer function at **`0x00668450`**,
+2336 bytes / 675 instructions, ending `0x00668d70` (linear-carve
+segment `03577_sub_00668450.asm`). Older notes in this file called it
+"`FUN_00668890`" — that address is an **internal label / basic-block
+inside the same outer function**, not a distinct function. All
+`FUN_00668890` mentions below have been mass-substituted to
+`FUN_00668450`. The Ghidra decompile file was initially named after
+the inner label, so references to `00668890.c` continue to point at
+the same source body; treat line numbers there as "line N of the
+`sub_00668450` decompile".
+
+The 552/552 ordered-diff pass in `examples/driver_diff_via_p2.rs` was
+run against the ported outer function, so byte-exact evidence stands
+under the corrected label.
+
 ## Status: PARTIALLY RECOVERED — flag-snap chain + walker + driver still to port
 
 - **Rust sites**:
@@ -28,7 +45,7 @@
   - `FUN_00533b50` — date encoder (day/month/year → 4-short pack).
   - **`FUN_00533eb0`** — flag-snap helper (weekday snap-back); NOT YET
     PORTED. This is the key remaining pre-buffer step.
-  - `FUN_00668890` — round-robin driver (writes the +0x09..+0x0b 0xFF
+  - `FUN_00668450` — round-robin driver (writes the +0x09..+0x0b 0xFF
     sentinels + is presumed to fill team-pair bytes later).
   - `FUN_0066f280` — schedule walker / nominal-date generator.
 
@@ -118,7 +135,7 @@ Complete report: `reports/fixture_disasm/TEAM_PAIRING_REPORT.md`.
 
 ### Answers
 
-- **FUN_00668890 IS called from eng_second_ctor** at `0x0055f136` (my
+- **FUN_00668450 IS called from eng_second_ctor** at `0x0055f136` (my
   earlier "not called from schedule-getter" was correct but
   misleading — the ctor calls it directly, but I had only direct-
   called the schedule-getter). See ctor decompile line 50.
@@ -131,7 +148,7 @@ Complete report: `reports/fixture_disasm/TEAM_PAIRING_REPORT.md`.
   fixture sub-slots (FUN_0066f410) + tail (4B, FUN_0066f3b0). The
   8-sub-slot structure was completely unknown before.
 - **Team pairings live in 79-byte TFixture records** (not in the
-  schedule buffer). Built on-stack by FUN_00668890 (round-robin
+  schedule buffer). Built on-stack by FUN_00668450 (round-robin
   driver), inserted into a `TFixList` calendar via FUN_00594d00
   (`fix_man.cpp`).
 - **TFixList container**: 0x1184 bytes per season year, chained
@@ -149,12 +166,12 @@ Complete report: `reports/fixture_disasm/TEAM_PAIRING_REPORT.md`.
 
 ### Remaining (still open)
 
-1. Byte-exact port of **FUN_00668890** (~425 lines) — the round-
+1. Byte-exact port of **FUN_00668450** (~425 lines) — the round-
    robin driver + fixture builder.
 2. Byte-exact port of **FUN_00594d00** (fixture inserter, ~250
    lines) and the TFixList container (0x1184-byte struct).
 3. Byte-exact port of **FUN_0066f280** walker — done conceptually,
-   pending FUN_00668890 to know how it's called.
+   pending FUN_00668450 to know how it's called.
 4. Runtime capture of a concrete pair sequence (blocked on safe
    direct-call of eng_second_ctor — currently crashes the exe).
 5. Save-file compatibility with the exe's `fixtures.<year>.tmp`

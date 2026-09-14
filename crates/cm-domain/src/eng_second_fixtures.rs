@@ -11,27 +11,29 @@
 //! |-------------------------------|---------------|---------------------------------------|-----------------------------|
 //! | [`walker_step`]               | `0x0066ee40`  | VERIFIED EXACT — PORTED               | 7 state-machine tests |
 //! | [`matrix_seed_base`]          | `0x00669340`  | VERIFIED EXACT — PORTED               | Byte-exact vs cm0102-gdi Frida direct-call capture for n=4,6,8,10,24 (`runtime/20260913_143506_gdi_matrix_seed.json`) |
-//! | [`matrix_perturb`]            | `0x0066b900`  | STRUCTURE VERIFIED — NOT YET PORTED   | Body panics on call to prevent silent divergence |
-//! | [`round_robin_driver_stub_returns_empty`] | `0x00668450`  | STRUCTURE VERIFIED — NOT YET PORTED   | Body is an intentionally-obvious no-op |
+//! | [`matrix_perturb`]            | `0x0066b900`  | VERIFIED EXACT — PORTED (branch A)    | 24/24 P1→P2 match on tagged-this eng_second lineage (`runtime/20260914_004421_eng2_true_lineage.jsonl`) |
+//! | [`run_round_robin_driver`]    | `0x00668450`  | VERIFIED EXACT — PORTED               | 552/552 ordered-diff match on the same lineage capture |
 //! | [`generate_eng_second_dates`] | (composite)   | VERIFIED EXACT — PORTED               | All 46 dates byte-exact vs GDI capture |
+//!
+//! # Function-boundary correction (2026-09-14)
+//!
+//! The round-robin driver is a single function occupying
+//! `0x00668450 .. 0x00668d70` (2336 bytes / 675 instructions, per
+//! `D:/cm0102-carve/gdi_carve/functions/00004-PE_section_.text/03577_sub_00668450.asm`).
+//! Some earlier notes in this port called it "`FUN_00668890`" — that
+//! is an **internal label / basic-block entry inside `sub_00668450`**,
+//! not a distinct function. The canonical outer-function address is
+//! `0x00668450`. Line-number references in comments below anchored to
+//! `fun00668890.c` refer to the same body (the Ghidra decompile file
+//! was named after the label the analyst first landed on); read them
+//! as "line N of the `sub_00668450` decompile".
 //!
 //! # Non-implementations
 //!
-//! Two functions are intentionally NOT implemented and will `panic`
-//! or return an obviously-wrong value if invoked:
-//!
-//! * [`matrix_perturb`] — panics with `unimplemented!()`. The
-//!   function's identity and signature exist so downstream code can
-//!   be authored against the correct contract, but the body's byte-
-//!   exact port is blocked on decode of `0x0066b900` (0x9b1 bytes)
-//!   + RNG-state-consumption differential validation.
-//! * [`round_robin_driver_stub_returns_empty`] — the name itself
-//!   flags that this is not the real driver. Kept only so the port
-//!   can grow around it once the perturbation is complete.
-//!
-//! Neither is called from any production Rust path. The only
-//! production-active symbol is [`generate_eng_second_dates`] via
-//! the `lib::generate_new_game_season` dispatch.
+//! `matrix_perturb` branch B (`comp+0xd9 & 0x100 != 0`) still
+//! `unimplemented!()` — no English pyramid competition triggers it.
+//! `run_round_robin_driver`'s `alt_pair_list` branch is likewise
+//! `unimplemented!()` for the same reason.
 //!
 //! # Integration architecture
 //!
@@ -667,7 +669,9 @@ pub struct FixtureEmission {
     /// stride 0x41.
     pub walker_col: i32,
     /// 0-based row index into the clubs table (stride 0x3b). Post
-    /// host-nation swap. cm0102-gdi.exe `fun00668890.c` line 246.
+    /// host-nation swap. cm0102-gdi.exe `sub_00668450` decompile
+    /// line 246 (older notes labelled this file "fun00668890.c" —
+    /// same body, inner-label naming).
     pub home_slot: i32,
     /// 0-based row index into the clubs table. Post host-nation swap.
     pub away_slot: i32,
@@ -696,10 +700,18 @@ pub struct ResetEvent {
     pub year: i16,
 }
 
-/// STRUCTURALLY PORTED — DIFFERENTIAL VALIDATION PENDING.
+/// PORTED — 552/552 ORDERED-DIFF PASS on tagged-this eng_second
+/// lineage capture (`runtime/20260914_004421_eng2_true_lineage.jsonl`,
+/// `examples/driver_diff_via_p2.rs`).
 ///
-/// cm0102-gdi.exe `0x00668450` (DirectDraw `0x00668890`) —
-/// round-robin driver. Control-flow translated line-by-line from
+/// cm0102-gdi.exe **`0x00668450`** — the shared round-robin driver
+/// (outer function, 2336 bytes, ends `0x00668d70`, per the
+/// linear-sweep carve at
+/// `D:/cm0102-carve/gdi_carve/functions/00004-PE_section_.text/03577_sub_00668450.asm`).
+/// Older port notes labelled this function "`FUN_00668890`" — that
+/// address is an internal label / basic-block entry INSIDE this same
+/// outer function, not a distinct function entry. The Ghidra decompile
+/// file was initially named after the inner label:
 /// `D:/cm0102-carve/ghidra_out/cm0102.exe/decompiled/00668890.c`.
 ///
 /// # Confidence
@@ -795,7 +807,8 @@ pub fn run_round_robin_driver(
     mut emit_fixture: impl FnMut(FixtureEmission),
     mut emit_reset: impl FnMut(ResetEvent),
 ) -> bool {
-    // fun00668890.c line 82: n_even = n_clubs + (n_clubs & 1)
+    // sub_00668450 decompile line 82: n_even = n_clubs + (n_clubs & 1)
+    // (older notes: fun00668890.c — inner-label naming)
     let n_even: i32 = {
         let nc = n_clubs as i32;
         nc + (nc & 1)
@@ -804,7 +817,7 @@ pub fn run_round_robin_driver(
     if alt_pair_list.is_some() {
         unimplemented!(
             "alt-path (comp+0xea pair-list replay) at \
-             fun00668890.c lines 314-392 is not ported; no English \
+             sub_00668450 decompile lines 314-392 is not ported; no English \
              pyramid competition triggers this branch during initial \
              season generation."
         );
@@ -964,7 +977,8 @@ pub fn run_round_robin_driver(
 ///
 /// # Why this exists
 ///
-/// cm0102-gdi's addressing pattern at `fun00668890.c:256` is:
+/// cm0102-gdi's addressing pattern at `sub_00668450` decompile
+/// line 256 (older notes: `fun00668890.c:256`) is:
 /// ```text
 /// clubs_base = *(int *)(comp + 0xb1)                     // pointer to entry array
 /// entry_i    = clubs_base + i * 0x3b                     // 59-byte entry
