@@ -1819,7 +1819,7 @@ pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
     perturb_confidence:         FixtureConfidence::StateExact,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StateExact,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
@@ -1847,7 +1847,7 @@ pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
     perturb_confidence:         FixtureConfidence::StateExact,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StateExact,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
@@ -1879,7 +1879,7 @@ pub const ENGLISH_SECOND_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
     perturb_confidence:         FixtureConfidence::StateExact,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StateExact,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
@@ -1910,7 +1910,7 @@ pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
     perturb_confidence:         FixtureConfidence::StateExact,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StateExact,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
@@ -1938,7 +1938,7 @@ pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     schedule_buffer_confidence: FixtureConfidence::BehaviourallyExact,
     matrix_seed_confidence:     FixtureConfidence::BehaviourallyExact,
     perturb_confidence:         FixtureConfidence::StateExact,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
+    walker_confidence:          FixtureConfidence::StateExact,
     driver_confidence:          FixtureConfidence::BehaviourallyExact,
     full_fixture_confidence:    FixtureConfidence::BehaviourallyExact,
 };
@@ -3780,20 +3780,21 @@ mod tests {
         assert!(!ENGLISH_CONFERENCE_SPEC.has_promotion_playoff);
     }
 
-    /// C10.7 (post-resolver-fix) confidence invariant:
+    /// C10.8 (post-walker-RNG-feed) confidence invariant.
     ///
-    ///   perturb: StateExact — 0 P2 slot mismatches on all 5 leagues
-    ///                          via captured P1 + RNG stream + real
-    ///                          stadium graph (capture 20260914_131616).
-    ///   driver + full_fixture: BehaviourallyExact — same as C10.6.
-    ///   walker: still StructurallyVerified (harness capture gap for
-    ///           arg 8 `special_comp_id`; not a port bug — driver
-    ///           output stays 0-diff for all 5).
-    ///   schedule_buffer + matrix_seed: BehaviourallyExact —
-    ///           captured buffer bytes exist, Rust schedule
-    ///           regenerator not yet compared against them.
+    ///   perturb: StateExact — 0 P2 slot mismatches on all 5 leagues.
+    ///   walker:  StateExact — 0 per-call mismatches when fed the
+    ///            captured DRIVER-phase pool RNG stream.
+    ///   driver + full_fixture: BehaviourallyExact — 0 ordered
+    ///            fixture mismatches on all 5.
+    ///   schedule_buffer + matrix_seed: BehaviourallyExact — Rust
+    ///            schedule regenerator not yet compared against
+    ///            captured bytes (capture SHA256s differ per boot
+    ///            due to DAT_00dbc340 time-derived seed).
+    ///
+    /// Latest capture reference: `20260914_151123_five_leagues_*`.
     #[test]
-    fn c10_7_confidence_invariant() {
+    fn c10_8_confidence_invariant() {
         for spec in ENGLISH_LEAGUE_SPECS.iter() {
             assert_eq!(spec.driver_confidence,
                        FixtureConfidence::BehaviourallyExact,
@@ -3805,11 +3806,10 @@ mod tests {
                        spec.short_name);
             assert_eq!(spec.perturb_confidence,
                        FixtureConfidence::StateExact,
-                       "{}: perturb StateExact after C10.7 resolver fix",
-                       spec.short_name);
+                       "{}: perturb StateExact", spec.short_name);
             assert_eq!(spec.walker_confidence,
-                       FixtureConfidence::StructurallyVerified,
-                       "{}: walker awaits harness re-capture of arg 8",
+                       FixtureConfidence::StateExact,
+                       "{}: walker StateExact after C10.8 RNG feed",
                        spec.short_name);
         }
     }

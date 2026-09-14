@@ -265,6 +265,19 @@ fn perturb_diff(cap: &Capture) -> (usize, usize) {
 // ---------------------------------------------------------------------------
 
 fn walker_diff(cap: &Capture) -> (usize, usize) {
+    // C10.8 fix: the walker's state 0 branch consumes rand_mod(4)
+    // from the game's POOL RNG. Feeding rng: None was making Rust
+    // always return prev+1 while the exe sometimes returns prev+3
+    // (diff = +2 in every observed mismatch). We now feed the
+    // captured DRIVER-phase pool returns as a playback queue.
+    let mut rng = GameRng::from_state(0, 0, 0);
+    let driver_pool_returns: Vec<i32> = cap.rng_calls.iter()
+        .filter(|c| c.phase == "DRIVER" && c.kind == "pool"
+                 && c.n == 4)
+        .map(|c| c.ret as i32)
+        .collect();
+    rng.queue_pool_returns(driver_pool_returns);
+
     let mut mismatches = 0;
     let mut first_mm: Option<(usize, &WalkerCall, i32)> = None;
     for (i, call) in cap.walker_calls.iter().enumerate() {
@@ -273,8 +286,8 @@ fn walker_diff(cap: &Capture) -> (usize, usize) {
             call.prev_col, &mut state,
             call.comp_id, call.n_clubs, call.matches_per_pair,
             call.n_rounds, call.flag_byte,
-            call.special_comp_id,   // C10.8: captured value
-            None,
+            call.special_comp_id,
+            Some(&mut rng),        // feed captured RNG stream
         );
         if retval != call.retval {
             mismatches += 1;
