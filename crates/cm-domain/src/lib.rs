@@ -17597,7 +17597,7 @@ impl World {
             let leagues: &[(i32, &str, u8, &str)] = &[
                 (7, "English Premier Division", 2, "eng_prm.cpp 0x0055cf20"),
                 (8, "English First Division", 2, "eng_first.cpp 0x0055b340"),
-                (9, "English Second Division", 2, "eng_second.cpp 0x0055f040"),
+                (9, "English Second Division", 2, "eng_second.cpp GDI 0x0055f240 (ctor); DD 0x0055f040"),
                 (10, "English Third Division", 2, "eng_third.cpp 0x00560b40"),
                 (93, "English Conference", 2, "eng_conf.cpp 0x005577a0"),
             ];
@@ -18360,9 +18360,10 @@ impl World {
             }
 
             // cm0102-gdi.exe dispatch — English Second Division (comp
-            // id 9). The schedule-getter at 0x0055f340 (inner entry
-            // of the linear-carve segment `sub_0055f240`, 540 bytes
-            // ending 0x0055f45c) has been recovered byte-exact;
+            // id 9). The schedule-getter at GDI `sub_0055f540`
+            // (3692 bytes, ending 0x005603ac; DirectDraw equivalent
+            // `sub_0055f340`; pillar-15 archaeology 2026-09-14) has
+            // been recovered byte-exact;
             // overlay its 46 exact dates onto the fixtures produced
             // above. Berger add-mod pair generation is still used
             // here; the round-robin driver at 0x00668450 (outer

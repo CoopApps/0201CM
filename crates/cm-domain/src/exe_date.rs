@@ -240,7 +240,8 @@ pub fn write_slot(
 }
 
 /// English Second Division 2001/02 schedule template — the exact
-/// `(day, month, day_off, flag, type)` sequence FUN_0055f340 feeds
+/// `(day, month, day_off, flag, type)` sequence the schedule-getter
+/// (GDI `sub_0055f540` / DirectDraw `FUN_0055f340`) feeds
 /// into FUN_0066f3b0 for arg1 = 0xFF (normal construction path).
 ///
 /// Runtime-verified 2026-09-13; every entry corresponds to a distinct
@@ -265,7 +266,8 @@ pub const ENG_SECOND_2001_TEMPLATE: [(i8, i8, i32, i32, u8); 46] = [
 ];
 
 /// Build the 2990-byte English Second Division schedule buffer using
-/// the exact call sequence FUN_0055f340 uses:
+/// the exact call sequence the schedule-getter (GDI `sub_0055f540` /
+/// DirectDraw `FUN_0055f340`) uses:
 ///   for round in 0..46:
 ///     FUN_0066f3b0(buf, round, day, month, day_off, flag, type, year, 0)
 ///     FUN_0066f410(buf, round, 0, -1, -1, -1, 0)

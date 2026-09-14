@@ -80,12 +80,12 @@ under the corrected label.
 - **Executable functions / addresses (VERIFIED)**:
   - `eng_prm.cpp`   at `0x0055cf20`  — Premier   ctor (comp id 7)
   - `eng_first.cpp` at `0x0055b340`  — First     ctor (comp id 8)
-  - **`eng_second.cpp` at `0x0055f040`** — Second ctor (comp id 9)
+  - **`eng_second.cpp` ctor** — GDI `sub_0055f240` / DirectDraw `0x0055f040` (comp id 9). Pillar-15 archaeology 2026-09-14.
   - `eng_third.cpp` at `0x00560b40`  — Third     ctor (comp id 10)
   - `eng_conf.cpp`  at `0x005577a0`  — Conference ctor (comp id 93)
   - `FUN_00560320` — sets `+0xba = vtable+0x3c()` (virtual dispatch to
     schedule-getter)
-  - **`0x0055f340`** — eng_second schedule-getter (vtable slot +0x3c on
+  - **eng_second schedule-getter** — GDI `sub_0055f540` (3692 bytes) / DirectDraw `0x0055f340` (vtable slot +0x3c on
     vtable `0x00957dc8`).
   - `FUN_0066f3b0` — round-record writer; 9 args
     `(buffer, round_idx, day, month, day_off, flag, type, year, prize)`;
@@ -102,7 +102,7 @@ under the corrected label.
 Full report: `reports/fixture_disasm/RUNTIME_CAPTURE_REPORT.md`.
 Raw artefacts: `reports/fixture_disasm/runtime/20260913_113106_*`.
 
-Method: Frida in-process attach + direct call to `FUN_0055f340` with
+Method: Frida in-process attach + direct call to the schedule-getter (GDI `sub_0055f540` / DirectDraw `FUN_0055f340`) with
 `arg1 = 0xFF` on a synthetic comp record (`this+0x40 = 2001`).
 
 ### Answers to standing questions
