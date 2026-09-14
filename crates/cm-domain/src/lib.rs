@@ -2,6 +2,7 @@
 
 pub mod african_nations;
 pub mod eng_second_fixtures;
+pub mod english_traditional;
 pub mod exe_date;
 pub mod americas_nations;
 pub mod arg_primera;
@@ -18289,7 +18290,19 @@ impl World {
     /// cap, no member truncation — this is the real league build.
     ///
     /// Returns `(fixtures, proofs, standings)`.
-    fn generate_new_game_season(
+    ///
+    /// # C11 dispatch (2026-09-14)
+    ///
+    /// The 5 English Traditional simulated leagues (7 Premier, 8 First,
+    /// 9 Second, 10 Third, 93 Conference) run FIRST, in exe boot order,
+    /// through the exact
+    /// [`english_traditional::generate_english_traditional_league`]
+    /// engine which shares one boot `GameRng` across all five. Every
+    /// other competition remains on the generic Berger + date-overlay
+    /// path below — the dispatch is scoped strictly to the 5 English
+    /// simulated leagues. Non-English leagues, feeder pools and V4
+    /// mode are unaffected.
+    pub fn generate_new_game_season(
         &self,
         comp_ids: &BTreeSet<u32>,
         base_year: u16,
@@ -18302,12 +18315,97 @@ impl World {
         let mut proofs = Vec::new();
         let mut standing_members: BTreeMap<u32, String> = BTreeMap::new();
 
+        // C11: run the 5 English Traditional simulated leagues through
+        // the exact ported engine before the generic path. Shared
+        // GameRng across all 5, in exe boot order. See C10.11 for
+        // continuous-stream evidence.
+        let english_dispatched_ids: BTreeSet<u32> = {
+            use crate::english_traditional::{
+                english_runtime_spec_for, generate_english_traditional_league,
+                EnglishClubEntry, ENGLISH_TRADITIONAL_COMP_IDS,
+            };
+            use crate::game_rng::GameRng;
+            let stadium_alt: BTreeMap<i32, Option<i32>> = self
+                .references
+                .stadiums
+                .iter()
+                .map(|s| (s.id as i32, s.alt_stadium_id))
+                .collect();
+            // Boot RNG: seeded deterministically from base_year so the
+            // simulation is reproducible. The exe seeds from live
+            // system-clock RNG which the headless model does not thread
+            // through yet (see deviations/c10_11_rng_source.md). Sharing
+            // the RNG across the 5 English leagues is the important
+            // property; the seed can be threaded from a captured boot
+            // state later without changing this dispatch shape.
+            let mut english_rng =
+                GameRng::new(0xC110_0000u32.wrapping_add(base_year as u32));
+            let mut dispatched: BTreeSet<u32> = BTreeSet::new();
+            for eid in ENGLISH_TRADITIONAL_COMP_IDS {
+                if !comp_ids.contains(&eid) { continue; }
+                let Some(spec) = english_runtime_spec_for(eid) else { continue; };
+                let Some(competition) = self
+                    .references
+                    .club_competitions
+                    .iter()
+                    .find(|c| c.id == eid)
+                else { continue; };
+                let members = self.club_members_of_competition(eid);
+                if members.len() != spec.n_clubs as usize {
+                    // Shape mismatch (data drift or non-shipped roster)
+                    // — leave this comp to the generic path.
+                    continue;
+                }
+                let entries: Vec<EnglishClubEntry> = members
+                    .iter()
+                    .map(|(cid, name)| {
+                        let stadium_id = self.core.clubs.iter()
+                            .find(|c| crate::typed_records::ClubView::new(c).id() == *cid)
+                            .and_then(|c| crate::typed_records::ClubView::new(c).stadium_id());
+                        let alt = stadium_id
+                            .and_then(|sid| stadium_alt.get(&sid).copied().flatten());
+                        EnglishClubEntry {
+                            club_id: *cid,
+                            club_name: name.clone(),
+                            stadium_id,
+                            alt_stadium_id: alt,
+                        }
+                    })
+                    .collect();
+                let start_row = fixtures.len() as u32;
+                let generated = generate_english_traditional_league(
+                    spec, competition, &entries, base_year, start_row,
+                    &mut english_rng,
+                );
+                if !generated.is_empty() {
+                    for (id, name) in &members {
+                        standing_members
+                            .entry(*id)
+                            .or_insert_with(|| name.clone());
+                    }
+                    proofs.push(headless_schedule_generation_proof(
+                        competition.id,
+                        &competition.long_name,
+                        members.len(),
+                        generated.len(),
+                    ));
+                    fixtures.extend(generated);
+                    dispatched.insert(eid);
+                }
+            }
+            dispatched
+        };
+
         for competition in self
             .references
             .club_competitions
             .iter()
             .filter(|c| comp_ids.contains(&c.id))
             .filter(|c| is_headless_league_like_competition(&c.long_name))
+            // C11: the 5 English Traditional simulated leagues just ran
+            // through the exact engine above — don't build them a second
+            // time on the generic path.
+            .filter(|c| !english_dispatched_ids.contains(&c.id))
             // The Argentine Primera/Second Division are handled by their own
             // ported classes (arg_prm.cpp / arg_second.cpp) — skip them here so
             // they are not also built as generic leagues (which would duplicate
@@ -18359,42 +18457,14 @@ impl World {
                 continue;
             }
 
-            // cm0102-gdi.exe dispatch — English Second Division (comp
-            // id 9). The schedule-getter at GDI `sub_0055f540`
-            // (3692 bytes, ending 0x005603ac; DirectDraw equivalent
-            // `sub_0055f340`; pillar-15 archaeology 2026-09-14) has
-            // been recovered byte-exact;
-            // overlay its 46 exact dates onto the fixtures produced
-            // above. Berger add-mod pair generation is still used
-            // here; the round-robin driver at 0x00668450 (outer
-            // function 2336 bytes; older notes called this
-            // FUN_00668890 after an inner label at that address, but
-            // the outer function extent is 0x00668450..0x00668d70)
-            // IS PORTED and PROVEN 552/552 byte-exact on the tagged-
-            // this eng_second lineage (`examples/driver_diff_via_p2.rs`).
-            // Wire-through is deferred pending the pyramid-scope
-            // pass (C2..C9 in the 2026-09-14 pyramid synthesis).
-            //
-            // At 24 clubs the Berger loop emits n/2 = 12 fixtures per
-            // round in round-consecutive order, so fixture index i
-            // maps to global round i / 12.
-            if competition.id == crate::eng_second_fixtures::COMP_ID_ENG_SECOND
-                && members.len() == crate::eng_second_fixtures::ENG_SECOND_CLUB_COUNT
-            {
-                let exact_dates =
-                    crate::eng_second_fixtures::generate_eng_second_dates(base_year);
-                let per_round = members.len() / 2;
-                for (i, f) in generated.iter_mut().enumerate() {
-                    let round_idx = i / per_round;
-                    if round_idx < exact_dates.len() {
-                        f.date = exact_dates[round_idx].clone();
-                        f.source = format!(
-                            "cm0102-gdi 0x0055f540 exact date (round {round_idx} of 46) + \
-                             Berger add-mod pair; pair-order fidelity pending runtime capture"
-                        );
-                    }
-                }
-            }
+            // C11: English Second Division (comp id 9) no longer hits this
+            // path — the 5 English Traditional simulated leagues route to
+            // english_traditional::generate_english_traditional_league
+            // (exact perturb + walker + driver + native schedule) above.
+            // The former `generate_eng_second_dates` overlay lived here to
+            // stitch exact dates onto Berger pair generation; obsolete now
+            // that the exact engine builds both together for all five
+            // English leagues in coherent dispatch.
             for (id, name) in &members {
                 standing_members.entry(*id).or_insert_with(|| name.clone());
             }
@@ -22336,7 +22406,7 @@ fn cumulative_days_before_month(year: u16, month_index: usize) -> u16 {
     }
 }
 
-fn is_leap_year(year: u16) -> bool {
+pub fn is_leap_year(year: u16) -> bool {
     let year = u32::from(year);
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
