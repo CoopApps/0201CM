@@ -1673,7 +1673,7 @@ pub struct EnglishLeagueSpec {
 /// identical across all callsites).
 pub const SCHEDULE_RECORD_STRIDE_BYTES: usize = 65;
 
-/// English Premier — 20 clubs, 38 rounds.
+/// English Premier — 20 clubs, 38 rounds. Runtime-verified.
 pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Premier,
     comp_id: 7,
@@ -1690,15 +1690,17 @@ pub const ENGLISH_PREMIER_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 0,
     comp_c1: 3,
     has_promotion_playoff: false,
-    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
-    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
-    driver_confidence:          FixtureConfidence::StructurallyVerified,
-    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+    schedule_buffer_confidence: FixtureConfidence::ByteExact,
+    matrix_seed_confidence:     FixtureConfidence::ByteExact,
+    perturb_confidence:         FixtureConfidence::ByteExact,
+    walker_confidence:          FixtureConfidence::ByteExact,
+    driver_confidence:          FixtureConfidence::ByteExact,
+    // Full fixture output verified via five_league_diff: 380/380
+    // ordered mismatches = 0 on capture 20260914_131616.
+    full_fixture_confidence:    FixtureConfidence::ByteExact,
 };
 
-/// English First Division — 24 clubs, 46 rounds.
+/// English First Division — 24 clubs, 46 rounds. Runtime-verified.
 pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::First,
     comp_id: 8,
@@ -1715,12 +1717,13 @@ pub const ENGLISH_FIRST_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 4,
     comp_c1: 3,
     has_promotion_playoff: true,
-    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
-    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
-    driver_confidence:          FixtureConfidence::StructurallyVerified,
-    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+    schedule_buffer_confidence: FixtureConfidence::ByteExact,
+    matrix_seed_confidence:     FixtureConfidence::ByteExact,
+    perturb_confidence:         FixtureConfidence::ByteExact,
+    walker_confidence:          FixtureConfidence::ByteExact,
+    driver_confidence:          FixtureConfidence::ByteExact,
+    // 552/552 ordered mismatches = 0 on capture 20260914_131616.
+    full_fixture_confidence:    FixtureConfidence::ByteExact,
 };
 
 /// English Second Division — 24 clubs, 46 rounds. The reference
@@ -1751,7 +1754,7 @@ pub const ENGLISH_SECOND_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     full_fixture_confidence:    FixtureConfidence::ByteExact,
 };
 
-/// English Third Division — 24 clubs, 46 rounds.
+/// English Third Division — 24 clubs, 46 rounds. Runtime-verified.
 pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Third,
     comp_id: 10,
@@ -1768,15 +1771,16 @@ pub const ENGLISH_THIRD_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 4,
     comp_c1: 1,
     has_promotion_playoff: true,
-    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
-    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
-    driver_confidence:          FixtureConfidence::StructurallyVerified,
-    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+    schedule_buffer_confidence: FixtureConfidence::ByteExact,
+    matrix_seed_confidence:     FixtureConfidence::ByteExact,
+    perturb_confidence:         FixtureConfidence::ByteExact,
+    walker_confidence:          FixtureConfidence::ByteExact,
+    driver_confidence:          FixtureConfidence::ByteExact,
+    // 552/552 ordered mismatches = 0 on capture 20260914_131616.
+    full_fixture_confidence:    FixtureConfidence::ByteExact,
 };
 
-/// English Conference — 22 clubs, 42 rounds.
+/// English Conference — 22 clubs, 42 rounds. Runtime-verified.
 pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     league: EnglishLeague::Conference,
     comp_id: 93,
@@ -1793,12 +1797,13 @@ pub const ENGLISH_CONFERENCE_SPEC: EnglishLeagueSpec = EnglishLeagueSpec {
     comp_bf: 0,
     comp_c1: 3,
     has_promotion_playoff: false,   // Conf uses stadium-gated single-club promotion
-    schedule_buffer_confidence: FixtureConfidence::StructurallyVerified,
-    matrix_seed_confidence:     FixtureConfidence::StructurallyVerified,
-    perturb_confidence:         FixtureConfidence::StructurallyVerified,
-    walker_confidence:          FixtureConfidence::StructurallyVerified,
-    driver_confidence:          FixtureConfidence::StructurallyVerified,
-    full_fixture_confidence:    FixtureConfidence::StructurallyVerified,
+    schedule_buffer_confidence: FixtureConfidence::ByteExact,
+    matrix_seed_confidence:     FixtureConfidence::ByteExact,
+    perturb_confidence:         FixtureConfidence::ByteExact,
+    walker_confidence:          FixtureConfidence::ByteExact,
+    driver_confidence:          FixtureConfidence::ByteExact,
+    // 462/462 ordered mismatches = 0 on capture 20260914_131616.
+    full_fixture_confidence:    FixtureConfidence::ByteExact,
 };
 
 /// All 5 English Traditional league specs in shipped comp-id order.
@@ -3638,25 +3643,29 @@ mod tests {
         assert!(!ENGLISH_CONFERENCE_SPEC.has_promotion_playoff);
     }
 
-    /// English Second is the only league currently at ByteExact
-    /// confidence. Prem/D1/D3/Conf are StructurallyVerified pending
-    /// runtime Frida capture (feasibility ~30 min each per pillar
-    /// 15). This test locks the honesty invariant — no accidental
-    /// promotion of a StructurallyVerified spec to ByteExact.
+    /// All five English Traditional leagues are ByteExact after
+    /// the C10.5 five-league Frida capture (20260914_131616) proved
+    /// zero ordered fixture mismatches for all shapes:
+    ///
+    ///   Premier    380/380
+    ///   First      552/552
+    ///   Second     552/552
+    ///   Third      552/552
+    ///   Conference 462/462
+    ///
+    /// This test locks the honesty invariant — the byte-exact claim
+    /// must remain traceable to the specific capture file it was
+    /// verified against.
     #[test]
-    fn only_second_is_byte_exact() {
-        assert_eq!(ENGLISH_SECOND_SPEC.full_fixture_confidence,
-                   FixtureConfidence::ByteExact);
-        for spec in [
-            &ENGLISH_PREMIER_SPEC,
-            &ENGLISH_FIRST_SPEC,
-            &ENGLISH_THIRD_SPEC,
-            &ENGLISH_CONFERENCE_SPEC,
-        ] {
+    fn all_five_leagues_byte_exact_post_c10_5() {
+        for spec in ENGLISH_LEAGUE_SPECS.iter() {
             assert_eq!(spec.full_fixture_confidence,
-                       FixtureConfidence::StructurallyVerified,
-                       "{} must not claim ByteExact without runtime capture",
+                       FixtureConfidence::ByteExact,
+                       "{}: ByteExact from capture 20260914_131616",
                        spec.short_name);
+            assert_eq!(spec.driver_confidence,
+                       FixtureConfidence::ByteExact,
+                       "{}: driver ByteExact", spec.short_name);
         }
     }
 
