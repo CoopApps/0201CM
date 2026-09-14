@@ -99,6 +99,22 @@ struct CtorLeave {
     d9_flags: u16,
     #[allow(dead_code)] alt_pair_list: String,
     owner_first_int: Option<i32>,
+    /// C10.11: RNG state at ctor entry / leave. Captured by the
+    /// harness via `snapshotRng()` from GDI globals `DAT_00dc7180`
+    /// (cursor_ptr), `DAT_00dc717c` (jitter), and `DAT_00ac2610`
+    /// (lcg_state). `cursor_off` is `cursor_ptr - 0x00a8de80` (byte
+    /// offset from POOL_BASE).
+    #[serde(default)] rng_initial: Option<RngSnap>,
+    #[serde(default)] rng_final:   Option<RngSnap>,
+}
+
+/// C10.11: captured RNG state snapshot.
+#[derive(Debug, Deserialize, Clone, Copy)]
+struct RngSnap {
+    /// Byte offset from POOL_BASE (0x00a8de80).
+    cursor_off: u32,
+    jitter:     u32,
+    lcg_state:  u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -375,6 +391,87 @@ fn driver_diff(cap: &Capture) -> (usize, usize) {
 }
 
 // ---------------------------------------------------------------------------
+// (3.5) C10.11 — RNG-source exactness: full-chain diff seeded from
+// captured initial state, no playback queues. Runs perturb + walker
+// calls off a shared `GameRng`, then compares final state against
+// captured `rng_final`.
+// ---------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct FullChainReport {
+    /// P2 club-id mismatches after algorithmic perturb.
+    perturb_mm: usize,
+    /// Walker retval mismatches when replayed with shared algorithmic RNG.
+    walker_mm: usize,
+    /// Rust RNG state after perturb + walker replay.
+    rust_final: RngSnap,
+    /// Captured RNG state at ctor_leave.
+    exe_final:  RngSnap,
+    /// Byte-level equal on (cursor_off, jitter, lcg_state).
+    final_match: bool,
+}
+
+fn full_chain_rng_diff(cap: &Capture) -> Option<FullChainReport> {
+    let init = cap.ctor.rng_initial?;
+    let fin  = cap.ctor.rng_final?;
+
+    // Seed the algorithmic RNG directly from captured state — no
+    // playback queues.
+    let mut rng = GameRng::from_state(init.cursor_off, init.jitter, init.lcg_state);
+
+    // (a) Perturb — no captured stream, pure algorithmic.
+    let phase_c = cap.rng_calls.iter().find(|c|
+        c.phase == "PERTURB" && c.kind == "srand");
+    let dbc340_cli_seed = match phase_c {
+        Some(c) => (c.seed as i32).wrapping_sub(cap.ctor.year_base as i32),
+        None => 0,
+    };
+    let mut clubs_table = build_clubs_table(&cap.p1_entries);
+    let resolver = build_resolver(&cap.p1_entries);
+    let n_even = cap.ctor.n_clubs as i32 + (cap.ctor.n_clubs as i32 & 1);
+    matrix_perturb(
+        cap.ctor.n_clubs, cap.ctor.year_base, cap.ctor.d9_flags,
+        cap.ctor.owner_first_int, &mut clubs_table, &resolver, &mut rng,
+        n_even, dbc340_cli_seed, i32::MIN, i32::MIN, i32::MIN,
+    );
+    let rust_p2 = decode_clubs_table(&clubs_table);
+    let expected_p2: Vec<i32> = {
+        let mut s = cap.p2_entries.iter().collect::<Vec<_>>();
+        s.sort_by_key(|e| e.slot);
+        s.iter().map(|e| e.club_id).collect()
+    };
+    let m = rust_p2.len().min(expected_p2.len());
+    let perturb_mm = (0..m).filter(|&i| rust_p2[i] != expected_p2[i]).count();
+
+    // (b) Walker replay — shares the same rng (algorithmic path).
+    let mut walker_mm = 0usize;
+    for call in &cap.walker_calls {
+        let mut state: u8 = call.state_before as u8;
+        let retval = walker_step(
+            call.prev_col, &mut state,
+            call.comp_id, call.n_clubs, call.matches_per_pair,
+            call.n_rounds, call.flag_byte,
+            call.special_comp_id,
+            Some(&mut rng),
+        );
+        if retval != call.retval { walker_mm += 1; }
+    }
+
+    let rust_final = RngSnap {
+        cursor_off: rng.pool_cursor(),
+        jitter:     rng.pool_jitter(),
+        lcg_state:  rng.lcg_state(),
+    };
+    let final_match = rust_final.cursor_off == fin.cursor_off
+        && rust_final.jitter == fin.jitter
+        && rust_final.lcg_state == fin.lcg_state;
+
+    Some(FullChainReport {
+        perturb_mm, walker_mm, rust_final, exe_final: fin, final_match,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // (4) SHA256
 // ---------------------------------------------------------------------------
 
@@ -472,6 +569,7 @@ fn main() {
         ("conf", "Conference"),
     ];
     let mut reports = Vec::new();
+    let mut chain_reports: Vec<(&'static str, FullChainReport)> = Vec::new();
     for (lid, disp) in &leagues {
         let cap = match load_capture(root, &prefix, lid, disp) {
             Some(c) => c,
@@ -480,6 +578,9 @@ fn main() {
         let (perturb_mm, _p2n) = perturb_diff(&cap);
         let (walker_mm, walker_n) = walker_diff(&cap);
         let (driver_mm, _drv_n) = driver_diff(&cap);
+        if let Some(fc) = full_chain_rng_diff(&cap) {
+            chain_reports.push((disp, fc));
+        }
         let sha = sha256_hex(&cap.schedule_bytes);
         let dates = decode_round_summary(&cap.schedule_bytes,
                                           cap.ctor.n_rounds as usize);
@@ -531,8 +632,38 @@ fn main() {
         println!("\n**** ALL FIVE LEAGUES: perturb + walker + driver zero-diff ****");
     } else {
         println!("\n(some mismatches — see matrix above)");
-        std::process::exit(1);
     }
+
+    // C10.11 — RNG-source exactness: seed GameRng from captured
+    // initial state, no playback queues, verify final state matches.
+    println!("\n=== C10.11: RNG-source exactness (no playback queues) ===");
+    println!("{:<11} {:>10} {:>10} {:>12} {:>12} {:>12} {:>7}",
+             "league", "perturbΔ", "walkerΔ", "rust.cursor",
+             "exe.cursor", "rust.lcg", "final=");
+    let mut all_chain_ok = true;
+    for (name, fc) in &chain_reports {
+        let ok = fc.perturb_mm == 0 && fc.walker_mm == 0 && fc.final_match;
+        if !ok { all_chain_ok = false; }
+        println!("{:<11} {:>10} {:>10} {:>12} {:>12} {:>12} {:>7}",
+                 name,
+                 fc.perturb_mm, fc.walker_mm,
+                 fc.rust_final.cursor_off,
+                 fc.exe_final.cursor_off,
+                 fc.rust_final.lcg_state,
+                 if fc.final_match { "✓" } else { "✗" });
+    }
+    for (name, fc) in &chain_reports {
+        if !fc.final_match {
+            println!("  [{name}] rust_final={:?} exe_final={:?}",
+                     fc.rust_final, fc.exe_final);
+        }
+    }
+    if all_chain_ok {
+        println!("\n**** C10.11 ALL FIVE LEAGUES: full-chain RNG algorithmic reproduction ****");
+    } else {
+        println!("\n(C10.11: RNG-source chain has divergences — see per-league detail)");
+    }
+    if !all_zero || !all_chain_ok { std::process::exit(1); }
     // Silence unused imports if only some paths are exercised
     let _ = (BTreeSet::<i32>::new(), HashSet::<i32>::new());
 }
