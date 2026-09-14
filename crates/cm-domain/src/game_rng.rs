@@ -64,6 +64,21 @@ pub struct GameRngState {
     /// MSVC LCG state (`DAT_00ac2610` GDI / `DAT_00ac26c0`
     /// DirectDraw).
     pub lcg_state: u32,
+    /// C11.2: `DAT_00dbc340` — the exe's boot-dependent perturb
+    /// srand offset. Added to the comp's `year_base` inside
+    /// `matrix_perturb` to seed the Phase-C `lcg_srand`. Captures
+    /// show this value varying across boots (6382, 4094, 5432,
+    /// 2823 seen for four independent runs), so it must be
+    /// captured alongside `(cursor, jitter, lcg_state)` to pin a
+    /// specific GDI boot for byte-exact reproduction. Value of
+    /// `-year_base` reproduces the doc-only "stock launch = 0"
+    /// case; `0` is a common default for headless/deterministic
+    /// runs.
+    ///
+    /// Kept `#[serde(default)]` so pre-C11.2 saved state
+    /// deserialises with `dbc340_cli_seed = 0`.
+    #[serde(default)]
+    pub dbc340_cli_seed: i32,
 }
 
 /// C10.11: byte offset between the pool's runtime memory base
@@ -222,6 +237,7 @@ impl GameRng {
             cursor: self.cursor,
             jitter: self.jitter,
             lcg_state: self.lcg_state,
+            dbc340_cli_seed: 0,
         }
     }
 

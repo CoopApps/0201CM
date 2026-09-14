@@ -41,20 +41,34 @@ fn strip_pad(s: &str) -> String {
 fn load_prem_initial_rng_state() -> Option<GameRngState> {
     let path = format!("{CAPTURE_PREFIX}_prem_lineage.jsonl");
     let text = std::fs::read_to_string(&path).ok()?;
+    let mut init: Option<serde_json::Value> = None;
+    let mut phase_c_seed: Option<i32> = None;
     for line in text.lines() {
         if line.is_empty() { continue; }
         let v: serde_json::Value = serde_json::from_str(line).ok()?;
-        if v.get("op").and_then(|s| s.as_str()) != Some("ctor_enter") {
-            continue;
+        let op = v.get("op").and_then(|s| s.as_str()).unwrap_or("");
+        if op == "ctor_enter" && init.is_none() {
+            init = v.get("rng_initial").cloned();
+        } else if op == "rng_trace" {
+            for c in v.get("calls")?.as_array()? {
+                if c.get("phase").and_then(|s| s.as_str()) == Some("PERTURB")
+                    && c.get("kind").and_then(|s| s.as_str()) == Some("srand")
+                {
+                    phase_c_seed = c.get("seed").and_then(|s| s.as_i64()).map(|i| i as i32);
+                    break;
+                }
+            }
         }
-        let init = v.get("rng_initial")?;
-        return Some(GameRngState {
-            cursor: init.get("cursor_off")?.as_u64()? as u32,
-            jitter: init.get("jitter")?.as_u64()? as u32,
-            lcg_state: init.get("lcg_state")?.as_u64()? as u32,
-        });
     }
-    None
+    let init = init?;
+    // C11.2: DAT_00dbc340 = phase_c_srand_seed - base_year (=2001).
+    let dbc340 = phase_c_seed.map(|s| s.wrapping_sub(2001)).unwrap_or(0);
+    Some(GameRngState {
+        cursor: init.get("cursor_off")?.as_u64()? as u32,
+        jitter: init.get("jitter")?.as_u64()? as u32,
+        lcg_state: init.get("lcg_state")?.as_u64()? as u32,
+        dbc340_cli_seed: dbc340,
+    })
 }
 
 /// Load captured primary fixtures for one league as ordered
@@ -113,9 +127,12 @@ fn run_production_and_diff(league: &str, comp_id: u32, expected_count: usize) {
 
     let world = World::read_rust_db_dir(rust_db).expect("read rust-db");
     let comp_ids: BTreeSet<u32> = ENGLISH_TRADITIONAL_COMP_IDS.iter().copied().collect();
+    let dbc340 = initial.dbc340_cli_seed;
     let mut rng = GameRng::from_state_snapshot(initial);
     let (fixtures, _proofs, _standings) =
-        world.generate_new_game_season_with_rng(&comp_ids, 2001, &mut rng);
+        world.generate_new_game_season_with_rng_and_dbc340(
+            &comp_ids, 2001, &mut rng, dbc340,
+        );
 
     // Rust produces all 5 leagues in one call — filter by comp_id.
     let rust: Vec<(String, String, i16)> = fixtures
@@ -157,19 +174,15 @@ fn run_production_and_diff(league: &str, comp_id: u32, expected_count: usize) {
     } else {
         println!("{league}: 0/{expected_count} ordered mismatches");
     }
-    // C11.1 point 10 / 13-17: the target is 0/N. Current state:
-    // production dispatch runs the exact engine, P1 order matches
-    // by name (proved in c11_1_p1_provenance), RNG initial state
-    // is injected via GameRngState, but the produced fixture SET
-    // is a Fisher-Yates outcome of perturb which currently drifts
-    // from the captured GDI Fisher-Yates result. The archaeology
-    // helpers (`examples/five_league_diff.rs`) achieve 0/N on the
-    // captured club_id list but the production path (which uses
-    // rust-db shipped ids and stadium graph) does not yet. Note
-    // as a remaining C11.1 gap; do NOT gate the tranche on this
-    // — see C11.1 report for scope.
-    let _ = mismatches;
-    let _ = expected_count;
+    // C11.2: hard-assert 0/N vs captured GDI. The pieces required
+    // — captured pool state via GameRngState, captured
+    // DAT_00dbc340 via GameRngState.dbc340_cli_seed, real rust-db
+    // P1 in shipped-dat order, native Rust schedule, production
+    // resolver — are all wired.
+    assert_eq!(mismatches, 0,
+        "{league}: {}/{} ordered production-fixture mismatches vs \
+         captured GDI",
+        mismatches, expected_count);
 }
 
 fn infer_round_within_half(f: &cm_domain::HeadlessSeasonFixture) -> i16 {
@@ -185,30 +198,27 @@ fn infer_round_within_half(f: &cm_domain::HeadlessSeasonFixture) -> i16 {
     -1
 }
 
-// C11.1 diagnostic-mode tests. Print per-league mismatch counts
-// against the captured GDI insert trace when run in this build.
-// The archaeology helpers (examples/five_league_diff.rs) already
-// prove 0/N through the captured club_id set + captured RNG; the
-// production dispatch runs the exact engine but a rust-db-vs-
-// captured stadium/id mapping mismatch prevents byte-exact
-// reproduction there. See deviations/c11_1_production_fixture_golden.md.
+// C11.2 production fixture golden. Hard-asserts 0/N ordered
+// mismatches for the real production dispatch fed a captured GDI
+// boot's (GameRngState + DAT_00dbc340) via
+// `NewGameOptions.initial_game_rng_state.dbc340_cli_seed`.
 #[test]
-fn premier_ordered_production_fixtures_diff() {
+fn premier_ordered_production_fixtures_match_captured() {
     run_production_and_diff("prem", 7, 380);
 }
 #[test]
-fn first_ordered_production_fixtures_diff() {
+fn first_ordered_production_fixtures_match_captured() {
     run_production_and_diff("first", 8, 552);
 }
 #[test]
-fn second_ordered_production_fixtures_diff() {
+fn second_ordered_production_fixtures_match_captured() {
     run_production_and_diff("second", 9, 552);
 }
 #[test]
-fn third_ordered_production_fixtures_diff() {
+fn third_ordered_production_fixtures_match_captured() {
     run_production_and_diff("third", 10, 552);
 }
 #[test]
-fn conference_ordered_production_fixtures_diff() {
+fn conference_ordered_production_fixtures_match_captured() {
     run_production_and_diff("conf", 93, 462);
 }

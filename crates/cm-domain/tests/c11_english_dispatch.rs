@@ -351,7 +351,7 @@ fn c11_1_captured_rng_state_can_be_injected_into_production() {
     // captured_p1.json.)
     let world = build_world_with_five_english_leagues();
     let comp_ids: BTreeSet<u32> = ENGLISH_TRADITIONAL_COMP_IDS.iter().copied().collect();
-    let pinned = GameRngState { cursor: 1992, jitter: 26340, lcg_state: 1726273615 };
+    let pinned = GameRngState { cursor: 1992, jitter: 26340, lcg_state: 1726273615 , dbc340_cli_seed: 0 };
     let mut rng = GameRng::from_state_snapshot(pinned);
     let before = rng.snapshot();
     assert_eq!(before, pinned);
@@ -366,7 +366,7 @@ fn c11_1_bootstrap_from_options_matches_direct_from_state() {
     // Confirm NewGameOptions::bootstrap_game_rng() honors
     // initial_game_rng_state, and skipping it reproducibly derives
     // one from options (no invented magic constants).
-    let pinned = GameRngState { cursor: 100, jitter: 200, lcg_state: 300 };
+    let pinned = GameRngState { cursor: 100, jitter: 200, lcg_state: 300 , dbc340_cli_seed: 0 };
     let opts_pinned = NewGameOptions {
         initial_game_rng_state: Some(pinned),
         ..NewGameOptions::default()

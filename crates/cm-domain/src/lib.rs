@@ -16202,10 +16202,15 @@ impl World {
             let ids = self.competition_ids_for_nations(&options.selected_nations);
             if !ids.is_empty() {
                 // C11.1: session RNG bootstrapped from options.
+                // C11.2: DAT_00dbc340 also threads from options.
                 let mut session_rng = options.bootstrap_game_rng();
+                let dbc340 = options
+                    .initial_game_rng_state
+                    .map(|s| s.dbc340_cli_seed)
+                    .unwrap_or(0);
                 let (fixtures, proofs, standings) = self
-                    .generate_new_game_season_with_rng(
-                        &ids, options.start_year, &mut session_rng);
+                    .generate_new_game_season_with_rng_and_dbc340(
+                        &ids, options.start_year, &mut session_rng, dbc340);
                 if !fixtures.is_empty() {
                     save.season.fixtures = fixtures;
                     save.season.schedule_generation = proofs;
@@ -18393,12 +18398,18 @@ impl World {
         // `NewGameOptions`; production goes through
         // `generate_new_game_season_with_rng` below via
         // `new_game_from_rust_db`.
-        let mut rng = NewGameOptions {
+        let opts = NewGameOptions {
             start_year: base_year,
             ..NewGameOptions::default()
-        }
-        .bootstrap_game_rng();
-        self.generate_new_game_season_with_rng(comp_ids, base_year, &mut rng)
+        };
+        let mut rng = opts.bootstrap_game_rng();
+        let dbc340 = opts
+            .initial_game_rng_state
+            .map(|s| s.dbc340_cli_seed)
+            .unwrap_or(0);
+        self.generate_new_game_season_with_rng_and_dbc340(
+            comp_ids, base_year, &mut rng, dbc340,
+        )
     }
 
     /// C11.1: RNG-explicit form of `generate_new_game_season`.
@@ -18422,6 +18433,30 @@ impl World {
         comp_ids: &BTreeSet<u32>,
         base_year: u16,
         english_rng: &mut crate::game_rng::GameRng,
+    ) -> (
+        Vec<HeadlessSeasonFixture>,
+        Vec<HeadlessScheduleGenerationProof>,
+        Vec<HeadlessSeasonStanding>,
+    ) {
+        self.generate_new_game_season_with_rng_and_dbc340(
+            comp_ids, base_year, english_rng, 0,
+        )
+    }
+
+    /// C11.2: RNG- and `DAT_00dbc340`-explicit form. Threads a
+    /// caller-provided `dbc340_cli_seed` into every English exact-
+    /// engine call, so a session initialised from a captured GDI
+    /// boot can reproduce that boot's Phase-C `lcg_srand` byte-
+    /// exactly. The seed value is unrelated to the pool RNG state
+    /// (`GameRngState`) — the exe stores it in `DAT_00dbc340` (GDI)
+    /// / `DAT_00dbc3f8` (DirectDraw), which captures show varying
+    /// per boot.
+    pub fn generate_new_game_season_with_rng_and_dbc340(
+        &self,
+        comp_ids: &BTreeSet<u32>,
+        base_year: u16,
+        english_rng: &mut crate::game_rng::GameRng,
+        english_rng_dbc340: i32,
     ) -> (
         Vec<HeadlessSeasonFixture>,
         Vec<HeadlessScheduleGenerationProof>,
@@ -18486,9 +18521,16 @@ impl World {
                 // C11.1 point 7: no silent fallback. A roster-shape
                 // violation is a hard invariant break for a shipped
                 // simulated league.
+                //
+                // C11.2: thread the caller-provided `dbc340_cli_seed`
+                // through so a session initialised from a captured
+                // GDI boot reproduces the same Phase-C `lcg_srand`
+                // seed (`year + DAT_00dbc340`). Default of 0 keeps
+                // pre-C11.2 behaviour.
+                let dbc340 = english_rng_dbc340;
                 let generated = generate_english_traditional_league(
                     spec, competition, &entries, base_year, start_row,
-                    english_rng,
+                    english_rng, dbc340,
                 )
                 .unwrap_or_else(|e| panic!(
                     "exact English engine refused a routed comp: {e}. \

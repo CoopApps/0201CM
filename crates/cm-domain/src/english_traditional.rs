@@ -412,6 +412,12 @@ pub fn generate_english_traditional_league(
     base_year: u16,
     start_row: u32,
     rng: &mut GameRng,
+    // C11.2: caller-provided `DAT_00dbc340` offset for perturb's
+    // Phase-C `lcg_srand(year + dbc340_cli_seed)`. Production takes
+    // this from `NewGameOptions.initial_game_rng_state` (or 0 if
+    // unset); tests pinning a captured GDI boot must pass the
+    // captured value derived as `phase_c_srand_seed - base_year`.
+    dbc340_cli_seed: i32,
 ) -> Result<Vec<HeadlessSeasonFixture>, ExactEnglishGenerationError> {
     if entries.len() != spec.n_clubs as usize {
         return Err(ExactEnglishGenerationError::UnexpectedClubCount {
@@ -456,7 +462,10 @@ pub fn generate_english_traditional_league(
     // reading `clubs_table` inside a closure that also holds it
     // mutably (the driver's arg).
     let n_even = spec.n_clubs as i32 + (spec.n_clubs as i32 & 1);
-    let perturb_consts = PerturbConstants::default();
+    let perturb_consts = PerturbConstants {
+        dbc340_cli_seed,
+        ..PerturbConstants::default()
+    };
     matrix_perturb(
         spec.n_clubs as i16,
         base_year as i16,
@@ -630,7 +639,7 @@ mod tests {
         let comp = tiny_comp(7, "English Premier Division");
         let mut rng = GameRng::new(0xC110_2001);
         let out = generate_english_traditional_league(
-            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng, 0)
             .expect("Prem must generate");
         assert_eq!(out.len(), 380);
         assert_eq!(out[0].row, 0);
@@ -644,7 +653,7 @@ mod tests {
         let comp = tiny_comp(8, "English First Division");
         let mut rng = GameRng::new(0xC110_2002);
         let out = generate_english_traditional_league(
-            &ENGLISH_FIRST_RUNTIME, &comp, &entries, 2001, 100, &mut rng)
+            &ENGLISH_FIRST_RUNTIME, &comp, &entries, 2001, 100, &mut rng, 0)
             .expect("First must generate");
         assert_eq!(out.len(), 552);
         assert_eq!(out[0].row, 100);
@@ -656,7 +665,7 @@ mod tests {
         let comp = tiny_comp(9, "English Second Division");
         let mut rng = GameRng::new(0xC110_2003);
         let out = generate_english_traditional_league(
-            &ENGLISH_SECOND_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            &ENGLISH_SECOND_RUNTIME, &comp, &entries, 2001, 0, &mut rng, 0)
             .expect("Second must generate");
         assert_eq!(out.len(), 552);
     }
@@ -667,7 +676,7 @@ mod tests {
         let comp = tiny_comp(10, "English Third Division");
         let mut rng = GameRng::new(0xC110_2004);
         let out = generate_english_traditional_league(
-            &ENGLISH_THIRD_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            &ENGLISH_THIRD_RUNTIME, &comp, &entries, 2001, 0, &mut rng, 0)
             .expect("Third must generate");
         assert_eq!(out.len(), 552);
     }
@@ -678,7 +687,7 @@ mod tests {
         let comp = tiny_comp(93, "English Conference");
         let mut rng = GameRng::new(0xC110_2005);
         let out = generate_english_traditional_league(
-            &ENGLISH_CONFERENCE_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            &ENGLISH_CONFERENCE_RUNTIME, &comp, &entries, 2001, 0, &mut rng, 0)
             .expect("Conf must generate");
         assert_eq!(out.len(), 462);
     }
@@ -700,7 +709,7 @@ mod tests {
                        "{}: shared RNG must resume from prior league's final state",
                        spec.comp_id);
             let out = generate_english_traditional_league(
-                spec, &comp, &entries, 2001, total as u32, &mut rng)
+                spec, &comp, &entries, 2001, total as u32, &mut rng, 0)
                 .expect("must generate");
             let expected = (spec.n_clubs as usize) * (spec.n_clubs as usize - 1);
             assert_eq!(out.len(), expected);
@@ -727,7 +736,7 @@ mod tests {
         let comp = tiny_comp(7, "test");
         let mut rng = GameRng::new(0);
         let err = generate_english_traditional_league(
-            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng)
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2001, 0, &mut rng, 0)
             .expect_err("must return UnexpectedClubCount");
         match err {
             ExactEnglishGenerationError::UnexpectedClubCount { comp_id, expected, actual } => {
@@ -748,7 +757,7 @@ mod tests {
         let comp = tiny_comp(7, "Prem");
         let mut rng = GameRng::new(0);
         let err = generate_english_traditional_league(
-            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2002, 0, &mut rng)
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2002, 0, &mut rng, 0)
             .expect_err("must reject 2002");
         assert!(matches!(err, ExactEnglishGenerationError::UnsupportedBaseYear { .. }));
     }
