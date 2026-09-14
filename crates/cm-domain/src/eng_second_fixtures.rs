@@ -1310,6 +1310,248 @@ pub fn cmp_key_desc_nulls_last(a: Option<i16>, b: Option<i16>) -> std::cmp::Orde
 }
 
 // ---------------------------------------------------------------------------
+// Conference feeder swap (cm0102-gdi.exe FUN_0055ec40)
+// ---------------------------------------------------------------------------
+
+/// One eligible feeder club considered by [`conference_feeder_swap`].
+///
+/// The exe reads three fields off each `Club` record via double
+/// indirection through `+0x53` (nation) and `+0x57` (comp). The port
+/// takes an already-resolved snapshot instead of raw pointers, so
+/// tests can construct these directly.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FeederCandidate {
+    /// Opaque handle identifying the club (matches `Club*` in the exe).
+    pub club_id: u32,
+    /// Opaque handle identifying the club's current competition
+    /// (matches `*(club+0x57)` — a competition record pointer /
+    /// stable comp id in the port). Used both as the "origin" that
+    /// gets recorded for the paired swap and as the exclusion filter
+    /// (the caller must have already ruled out `{357, top-5 English}`
+    /// before calling us — see [`ConferenceFeederFilter::eligible`]).
+    pub current_comp_id: u32,
+    /// Signed i16 at `Club+0x80`. This is the comparator key the
+    /// sort helper reads (see [`sort_and_shuffle`]) — a static
+    /// reputation-like attribute, NOT a live league position. In the
+    /// port this maps to whichever World field carries the same
+    /// semantic (currently a Club reputation short; wiring at the
+    /// call site).
+    pub key80: i16,
+}
+
+/// One Conference club currently flagged for relegation (`+0x37 == 3`
+/// in the exe). Same opaque-handle pattern as [`FeederCandidate`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ConferenceRelegatee {
+    pub club_id: u32,
+}
+
+/// Filter predicate for the caller. The exe walks the raw club pool
+/// and applies six clauses (see pillar 7):
+///
+///   +0x57 != 0                                (comp ptr set)
+///   +0x53 != 0                                (nation ptr set)
+///   *(club+0x57) NOT IN {357, Prem, D1, D2, D3, Conference}
+///   *(club+0x53) == English nation id
+///
+/// This helper packages those clauses so callers only have to
+/// supply the identity of the 6 excluded comps + English nation.
+#[derive(Debug, Clone, Copy)]
+pub struct ConferenceFeederFilter {
+    pub bucket_357_comp_id: u32,
+    pub prem_comp_id: u32,
+    pub d1_comp_id: u32,
+    pub d2_comp_id: u32,
+    pub d3_comp_id: u32,
+    pub conf_comp_id: u32,
+    pub english_nation_id: i32,
+}
+
+impl ConferenceFeederFilter {
+    /// True iff a club with the given resolved fields would pass
+    /// the six-clause chain at asm `0x55ef1b..0x55ef49`.
+    pub fn eligible(&self, club_current_comp_id: u32, club_nation_id: i32) -> bool {
+        club_current_comp_id != self.bucket_357_comp_id
+            && club_current_comp_id != self.prem_comp_id
+            && club_current_comp_id != self.d1_comp_id
+            && club_current_comp_id != self.d2_comp_id
+            && club_current_comp_id != self.d3_comp_id
+            && club_current_comp_id != self.conf_comp_id
+            && club_nation_id == self.english_nation_id
+    }
+}
+
+/// The decision `conference_feeder_swap` produces. Callers apply it
+/// to the World: for each promotion, write the club's `+0x57` to
+/// Conference; for each pair, write the paired Conference club's
+/// `+0x57` to the recorded feeder origin.
+///
+/// See `FUN_0055ec40` semantics at pillar 6/7 —
+///
+///   * Up to **3** promotions, each into Conference from a distinct
+///     feeder competition (dedupe by `current_comp_id`).
+///   * Up to **3** relegations, each paired 1:1 with a promotion.
+///     The `n`th Conference club with `+0x37==3` (in roster-scan
+///     order) is written into the `n`th promoted club's *former*
+///     comp.
+///   * If fewer than 3 unique feeders promoted, the extra
+///     relegations become **orphans** — their `+0x57` is set to
+///     NULL and `FUN_00668470`'s tail branch fires
+///     (`FUN_005ea590` + `FUN_006809e0(club,1,7,0)`, the
+///     player-release / dissolution path).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ConferenceFeederDecision {
+    /// Promotions, in the order picked. `origin_comp_id` is what the
+    /// club currently sits in; the caller writes `+0x57 = Conference`.
+    pub promotions: Vec<PromotionEntry>,
+    /// Paired relegations. Each element carries the club being
+    /// relegated and the target feeder competition (which is the
+    /// origin of the correspondingly-indexed promotion). Orphans
+    /// carry `target_feeder_comp_id = None`.
+    pub relegations: Vec<RelegationEntry>,
+    /// K value used by the sort-shuffle (for regression/logging).
+    /// `None` when the shuffle didn't run (empty candidate list, or
+    /// n_candidates < 3 → hits `sort_and_shuffle`'s `n<mode` path).
+    pub shuffle_k: Option<i16>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PromotionEntry {
+    pub club_id: u32,
+    pub origin_comp_id: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RelegationEntry {
+    pub club_id: u32,
+    /// `None` when this relegation is unpaired (orphan branch).
+    pub target_feeder_comp_id: Option<u32>,
+}
+
+/// Byte-semantics port of the English Conference feeder swap at
+/// `cm0102_GDI.exe` **`sub_0055ec00`** (asm-carve linear-sweep
+/// boundary; the true entry inside is at asm `0x0055ee40` per pillar
+/// 7). DirectDraw equivalent: `FUN_0055ec40`. Source file:
+/// `comp.c` cluster inside `eng_prm.cpp`, line reference 0x2f9.
+///
+/// # Contract
+///
+/// The exe walks the raw club pool with a six-clause filter (see
+/// [`ConferenceFeederFilter::eligible`]), sorts the survivors via
+/// [`sort_and_shuffle`] with `mode = 3` (K = min(3·3, n) = min(9, n),
+/// shuffles the top-K, then walks the shuffled list to pick up to 3
+/// clubs from 3 distinct feeder comps, promotes each into the
+/// Conference, and pair-relegates Conference clubs marked
+/// `+0x37 == 3` back into the recorded origin feeders.
+///
+/// The port receives the filtered candidate list already assembled —
+/// callers supply `feeder_candidates` — because the pool-walking
+/// step is a Rust idiom (iterator + filter over `&World.clubs`)
+/// rather than a call-graph structure worth reproducing at this
+/// level. The port targets the algorithmic core: sort + dedupe
+/// walk + pair.
+///
+/// `conference_marked_for_relegation` is likewise pre-assembled: the
+/// caller has scanned the Conference roster and picked out clubs
+/// with `+0x37 == 3`, in the exact order the exe would see them
+/// (which is roster-slot order via `FUN_006679a0` / `FUN_00667560`).
+///
+/// # RNG consumption
+///
+/// The sort-shuffle with mode=3 draws **2·K** pool values, where K =
+/// min(9, feeder_candidates.len()). For a healthy tier-6 pool of >=9
+/// clubs (typical in 2001-02 with Isthmian/Southern/Northern each
+/// holding 21-23 members), that's exactly **18** pool draws per
+/// English year-end. No RNG is consumed in the dedupe/pair loops.
+///
+/// # Order guarantees
+///
+/// * Promotions appear in the order they were picked from the sorted-
+///   shuffled candidate list (i.e. the top-of-list club whose comp
+///   isn't already a promotion origin gets picked first).
+/// * Relegations appear in Conference-roster-scan order (the caller
+///   pre-orders `conference_marked_for_relegation` accordingly).
+/// * Pair index N of relegations goes with pair index N of
+///   promotions. If fewer promotions than relegations, the excess
+///   relegations become orphans in order.
+pub fn conference_feeder_swap(
+    feeder_candidates: &mut Vec<FeederCandidate>,
+    conference_marked_for_relegation: &[ConferenceRelegatee],
+    rng: &mut GameRng,
+) -> ConferenceFeederDecision {
+    let mut decision = ConferenceFeederDecision::default();
+
+    // Empty pool early-out — matches asm 0x55ef7f `if ((short)iVar8 != 0)`.
+    // Note: pool-empty is a legitimate rollover state; the exe frees
+    // and returns without consuming RNG.
+    if feeder_candidates.is_empty() {
+        return decision;
+    }
+
+    // Sort + shuffle: mode 3 → K = min(9, n). Consumes 2·K pool draws.
+    let result = sort_and_shuffle(
+        feeder_candidates,
+        3,
+        |c| Some(c.key80),
+        rng,
+    );
+    decision.shuffle_k = match result {
+        SortShuffleResult::Ok { k } => Some(k),
+        _ => None,
+    };
+
+    // Dedupe-walk over the sorted-shuffled candidates. Pick up to
+    // 3 UNIQUE feeder comps (each promoted club must come from a
+    // different current comp). Corresponds to asm 0x55efb6..0x55f01a
+    // — the outer scan increments the dedupe cursor only when the
+    // new candidate's comp is not already saved.
+    //
+    // The exe records origins in a 3-slot stack at
+    // `[esp+0x1c..0x24]`. `PROMOTION_LIMIT` matches that width.
+    const PROMOTION_LIMIT: usize = 3;
+    let mut origin_stack: Vec<u32> = Vec::with_capacity(PROMOTION_LIMIT);
+
+    for cand in feeder_candidates.iter() {
+        if origin_stack.len() >= PROMOTION_LIMIT {
+            break;
+        }
+        if origin_stack.contains(&cand.current_comp_id) {
+            // Same feeder as a prior promotion — skip. This is the
+            // "unique feeder" rule pillar 7 flagged.
+            continue;
+        }
+        origin_stack.push(cand.current_comp_id);
+        decision.promotions.push(PromotionEntry {
+            club_id: cand.club_id,
+            origin_comp_id: cand.current_comp_id,
+        });
+    }
+
+    // Pair-swap loop: for each Conference club with +0x37==3, pair
+    // it with the correspondingly-indexed promotion's origin. Excess
+    // relegations get None (orphan branch).
+    //
+    // Matches asm 0x55f029..0x55f065 (`cmp bl,3; jge <exit>`; body
+    // reads `[esp+0x1c + cVar2*4]` = origin_stack[cVar2]).
+    // The exe's outer bound is also 3, so at most 3 relegations are
+    // ever processed per year even if more clubs carry +0x37==3.
+    // The Rust port mirrors that.
+    const RELEGATION_LIMIT: usize = 3;
+    for (i, reg) in conference_marked_for_relegation
+        .iter()
+        .take(RELEGATION_LIMIT)
+        .enumerate()
+    {
+        decision.relegations.push(RelegationEntry {
+            club_id: reg.club_id,
+            target_feeder_comp_id: origin_stack.get(i).copied(),
+        });
+    }
+
+    decision
+}
+
+// ---------------------------------------------------------------------------
 // English Second Division exact-date dispatch
 // ---------------------------------------------------------------------------
 
@@ -1573,6 +1815,244 @@ mod tests {
         let mut rng = rng_at(0, 0, 0);
         let r = sort_and_shuffle(&mut items, 1, |_| Some(0i16), &mut rng);
         assert_eq!(r, SortShuffleResult::LenOverflow);
+    }
+
+    // -----------------------------------------------------------------
+    // conference_feeder_swap — port of cm0102-gdi FUN_0055ec40
+    // -----------------------------------------------------------------
+
+    /// Filter alone: eligible iff comp not in exclusion set AND
+    /// nation matches English id.
+    #[test]
+    fn conference_feeder_filter_eligibility() {
+        let f = ConferenceFeederFilter {
+            bucket_357_comp_id: 357,
+            prem_comp_id: 7,
+            d1_comp_id: 8,
+            d2_comp_id: 9,
+            d3_comp_id: 10,
+            conf_comp_id: 93,
+            english_nation_id: 60,
+        };
+        // English + not-excluded → eligible.
+        assert!(f.eligible(358, 60));  // Isthmian
+        assert!(f.eligible(359, 60));  // Southern
+        assert!(f.eligible(360, 60));  // Northern
+        // Excluded comps → not eligible.
+        assert!(!f.eligible(357, 60));
+        assert!(!f.eligible(7, 60));
+        assert!(!f.eligible(9, 60));
+        assert!(!f.eligible(93, 60));
+        // Wrong nation → not eligible even for a valid feeder comp.
+        assert!(!f.eligible(358, 42));
+    }
+
+    /// Full-shape test: 12 feeder candidates spanning 3 distinct
+    /// feeder comps (like Isthmian/Southern/Northern each contributing
+    /// 4 candidates), 3 Conference relegatees. Verify the invariants:
+    /// exactly 3 promotions, exactly 3 relegations, each relegation
+    /// paired with a distinct feeder, shuffle window K=9 (18 pool
+    /// draws).
+    #[test]
+    fn conference_feeder_swap_full_shape_three_umbrellas() {
+        // 12 candidates: 4 from each of comp 358, 359, 360.
+        // key80 spread so that after descending sort, the top 9
+        // contain roughly the top 3 of each feeder.
+        let mut candidates: Vec<FeederCandidate> = vec![
+            FeederCandidate { club_id: 1000, current_comp_id: 358, key80: 95 },
+            FeederCandidate { club_id: 1001, current_comp_id: 358, key80: 60 },
+            FeederCandidate { club_id: 1002, current_comp_id: 358, key80: 45 },
+            FeederCandidate { club_id: 1003, current_comp_id: 358, key80: 20 },
+            FeederCandidate { club_id: 2000, current_comp_id: 359, key80: 90 },
+            FeederCandidate { club_id: 2001, current_comp_id: 359, key80: 70 },
+            FeederCandidate { club_id: 2002, current_comp_id: 359, key80: 40 },
+            FeederCandidate { club_id: 2003, current_comp_id: 359, key80: 15 },
+            FeederCandidate { club_id: 3000, current_comp_id: 360, key80: 100 },
+            FeederCandidate { club_id: 3001, current_comp_id: 360, key80: 65 },
+            FeederCandidate { club_id: 3002, current_comp_id: 360, key80: 35 },
+            FeederCandidate { club_id: 3003, current_comp_id: 360, key80: 10 },
+        ];
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+            ConferenceRelegatee { club_id: 9002 },
+            ConferenceRelegatee { club_id: 9003 },
+        ];
+        let mut rng = rng_at(0, 0x1234, 0);
+        let before_cursor = rng.pool_cursor();
+        let d = conference_feeder_swap(&mut candidates, &relegatees, &mut rng);
+        let after_cursor = rng.pool_cursor();
+
+        // Shuffle window K = min(9, 12) = 9.
+        assert_eq!(d.shuffle_k, Some(9));
+        // 2*K = 18 pool draws → cursor advances 72 bytes.
+        assert_eq!(after_cursor.wrapping_sub(before_cursor), 72);
+        // Exactly 3 promotions.
+        assert_eq!(d.promotions.len(), 3);
+        // Each from a distinct feeder.
+        let origins: std::collections::BTreeSet<u32> =
+            d.promotions.iter().map(|p| p.origin_comp_id).collect();
+        assert_eq!(origins.len(), 3, "3 unique feeders");
+        assert!(origins.contains(&358));
+        assert!(origins.contains(&359));
+        assert!(origins.contains(&360));
+        // Exactly 3 relegations, all paired.
+        assert_eq!(d.relegations.len(), 3);
+        for (i, r) in d.relegations.iter().enumerate() {
+            assert_eq!(r.target_feeder_comp_id, Some(d.promotions[i].origin_comp_id),
+                       "reg {i} pairs with promotion {i}'s origin");
+        }
+        // Relegation club-ids come out in supplied order.
+        assert_eq!(d.relegations[0].club_id, 9001);
+        assert_eq!(d.relegations[1].club_id, 9002);
+        assert_eq!(d.relegations[2].club_id, 9003);
+    }
+
+    /// Only 1 feeder umbrella eligible (e.g. exceptional year where
+    /// only Isthmian clubs meet the bar). Promotions dedupe to 1,
+    /// paired relegation gets that origin; the other 2 Conference
+    /// relegatees are orphaned (target = None).
+    #[test]
+    fn conference_feeder_swap_only_one_umbrella_orphans_extras() {
+        let mut candidates: Vec<FeederCandidate> = vec![
+            FeederCandidate { club_id: 1000, current_comp_id: 358, key80: 95 },
+            FeederCandidate { club_id: 1001, current_comp_id: 358, key80: 60 },
+            FeederCandidate { club_id: 1002, current_comp_id: 358, key80: 45 },
+        ];
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+            ConferenceRelegatee { club_id: 9002 },
+            ConferenceRelegatee { club_id: 9003 },
+        ];
+        let mut rng = rng_at(0, 0x2222, 0);
+        let d = conference_feeder_swap(&mut candidates, &relegatees, &mut rng);
+        // Only 1 unique feeder → 1 promotion.
+        assert_eq!(d.promotions.len(), 1);
+        assert_eq!(d.promotions[0].origin_comp_id, 358);
+        // 3 relegations still; first paired, rest orphaned.
+        assert_eq!(d.relegations.len(), 3);
+        assert_eq!(d.relegations[0].target_feeder_comp_id, Some(358));
+        assert_eq!(d.relegations[1].target_feeder_comp_id, None);
+        assert_eq!(d.relegations[2].target_feeder_comp_id, None);
+    }
+
+    /// Empty candidate pool → no work at all. Zero promotions, zero
+    /// relegations, zero RNG consumption. Matches the asm early-out
+    /// `if ((short)iVar8 != 0)`.
+    #[test]
+    fn conference_feeder_swap_empty_pool_is_noop() {
+        let mut candidates: Vec<FeederCandidate> = vec![];
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+        ];
+        let mut rng = rng_at(0, 0x3333, 0);
+        let before_cursor = rng.pool_cursor();
+        let d = conference_feeder_swap(&mut candidates, &relegatees, &mut rng);
+        assert_eq!(d.promotions.len(), 0);
+        assert_eq!(d.relegations.len(), 0,
+                   "no promotions -> no pair loop iterations either");
+        assert_eq!(d.shuffle_k, None);
+        assert_eq!(rng.pool_cursor(), before_cursor, "no RNG draws");
+    }
+
+    /// Fewer than 3 candidates in pool — sort_and_shuffle's `n<mode`
+    /// gate trips (n=2, mode=3 → NLessThanMode). The port's shuffle
+    /// returns without touching RNG. Promotions still walk the
+    /// unshuffled candidates in insertion order. This is a corner
+    /// case unlikely in real 2001-02 (feeder pools have 60+ members)
+    /// but must be handled cleanly.
+    #[test]
+    fn conference_feeder_swap_pool_smaller_than_mode() {
+        let mut candidates: Vec<FeederCandidate> = vec![
+            FeederCandidate { club_id: 100, current_comp_id: 358, key80: 50 },
+            FeederCandidate { club_id: 200, current_comp_id: 359, key80: 40 },
+        ];
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+        ];
+        let mut rng = rng_at(0, 0x4444, 0);
+        let before_cursor = rng.pool_cursor();
+        let d = conference_feeder_swap(&mut candidates, &relegatees, &mut rng);
+        // shuffle_k None because sort_and_shuffle rejected n<mode.
+        assert_eq!(d.shuffle_k, None);
+        assert_eq!(rng.pool_cursor(), before_cursor, "no RNG when n<mode");
+        // Both candidates promote (distinct feeders, only 2 available).
+        assert_eq!(d.promotions.len(), 2);
+        // First relegatee paired with first promotion's origin.
+        assert_eq!(d.relegations.len(), 1);
+        assert_eq!(d.relegations[0].target_feeder_comp_id,
+                   Some(d.promotions[0].origin_comp_id));
+    }
+
+    /// Multiple candidates from ONE feeder — dedupe rule guarantees
+    /// only the first (highest-key after shuffle) counts, even if a
+    /// lower-ranked candidate from that same feeder would have made
+    /// the top-9 window.
+    #[test]
+    fn conference_feeder_swap_dedupes_same_feeder() {
+        // 10 candidates all from comp 358. After shuffle+dedupe,
+        // exactly 1 promotion.
+        let mut candidates: Vec<FeederCandidate> = (0..10)
+            .map(|i| FeederCandidate {
+                club_id: 1000 + i as u32,
+                current_comp_id: 358,
+                key80: 100 - (i as i16 * 5),
+            })
+            .collect();
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+        ];
+        let mut rng = rng_at(0, 0x5678, 0);
+        let d = conference_feeder_swap(&mut candidates, &relegatees, &mut rng);
+        assert_eq!(d.promotions.len(), 1, "same-feeder dedupe caps at 1");
+        assert_eq!(d.promotions[0].origin_comp_id, 358);
+        assert_eq!(d.relegations.len(), 1);
+        assert_eq!(d.relegations[0].target_feeder_comp_id, Some(358));
+    }
+
+    /// More than 3 relegatees — extras are silently dropped (matches
+    /// asm bound `cmp bl,3; jge exit`). If Conference somehow had 5
+    /// clubs with +0x37==3, only the first 3 in scan order are
+    /// processed.
+    #[test]
+    fn conference_feeder_swap_caps_relegations_at_three() {
+        let mut candidates: Vec<FeederCandidate> = vec![
+            FeederCandidate { club_id: 1000, current_comp_id: 358, key80: 95 },
+            FeederCandidate { club_id: 2000, current_comp_id: 359, key80: 90 },
+            FeederCandidate { club_id: 3000, current_comp_id: 360, key80: 85 },
+        ];
+        let relegatees = vec![
+            ConferenceRelegatee { club_id: 9001 },
+            ConferenceRelegatee { club_id: 9002 },
+            ConferenceRelegatee { club_id: 9003 },
+            ConferenceRelegatee { club_id: 9004 },  // dropped
+            ConferenceRelegatee { club_id: 9005 },  // dropped
+        ];
+        let mut rng = rng_at(0, 0xbeef, 0);
+        let d = conference_feeder_swap(&mut candidates, &relegatees, &mut rng);
+        assert_eq!(d.relegations.len(), 3);
+        let processed: std::collections::BTreeSet<u32> =
+            d.relegations.iter().map(|r| r.club_id).collect();
+        assert_eq!(processed, [9001u32, 9002, 9003].into_iter().collect());
+    }
+
+    /// Zero relegatees + non-empty pool → promotions happen (RNG is
+    /// drawn), no pair-loop work. Legitimate rollover state
+    /// (Conference roster fully solvent).
+    #[test]
+    fn conference_feeder_swap_zero_relegatees_still_promotes() {
+        let mut candidates: Vec<FeederCandidate> = vec![
+            FeederCandidate { club_id: 1000, current_comp_id: 358, key80: 95 },
+            FeederCandidate { club_id: 2000, current_comp_id: 359, key80: 90 },
+            FeederCandidate { club_id: 3000, current_comp_id: 360, key80: 85 },
+        ];
+        let mut rng = rng_at(0, 0xcafe, 0);
+        let before_cursor = rng.pool_cursor();
+        let d = conference_feeder_swap(&mut candidates, &[], &mut rng);
+        assert_eq!(d.promotions.len(), 3, "still promote 3 distinct");
+        assert_eq!(d.relegations.len(), 0);
+        // K = min(9, 3) = 3 → 6 RNG draws.
+        assert_eq!(d.shuffle_k, Some(3));
+        assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
     }
 
     /// StadiumClubResolver pairs Brentford↔QPR and Port Vale↔Stoke —
