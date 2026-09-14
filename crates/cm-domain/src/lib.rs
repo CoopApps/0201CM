@@ -4,6 +4,7 @@ pub mod african_nations;
 pub mod eng_second_fixtures;
 pub mod english_traditional;
 pub mod exe_date;
+pub mod year_end_statuses;
 pub mod americas_nations;
 pub mod arg_primera;
 pub mod arg_rules;
