@@ -70,9 +70,17 @@ struct WalkerCall {
     matches_per_pair: i16,
     n_rounds: i16,
     flag_byte: u8,
+    /// C10.8: previously-missing arg 8. When the exe's caller
+    /// passes a non-sentinel value, walker takes a shortcut branch.
+    /// Default to `i32::MIN` if absent (compat with pre-C10.8
+    /// captures).
+    #[serde(default = "default_special")]
+    special_comp_id: i32,
     #[allow(dead_code)] state_after: i32,
     retval: i32,
 }
+
+fn default_special() -> i32 { i32::MIN }
 
 #[derive(Debug, Deserialize)]
 struct DerefEntry {
@@ -258,19 +266,28 @@ fn perturb_diff(cap: &Capture) -> (usize, usize) {
 
 fn walker_diff(cap: &Capture) -> (usize, usize) {
     let mut mismatches = 0;
-    // Per-call determinism: reset state to captured state_before
-    // before each invocation. This tests walker_step as a pure
-    // function of its inputs — matches what byte-exact means for
-    // a state-machine step.
-    for call in cap.walker_calls.iter() {
+    let mut first_mm: Option<(usize, &WalkerCall, i32)> = None;
+    for (i, call) in cap.walker_calls.iter().enumerate() {
         let mut state: u8 = call.state_before as u8;
         let retval = walker_step(
             call.prev_col, &mut state,
             call.comp_id, call.n_clubs, call.matches_per_pair,
             call.n_rounds, call.flag_byte,
-            /*special_comp_id=*/ i32::MIN, None,
+            call.special_comp_id,   // C10.8: captured value
+            None,
         );
-        if retval != call.retval { mismatches += 1; }
+        if retval != call.retval {
+            mismatches += 1;
+            if first_mm.is_none() { first_mm = Some((i, call, retval)); }
+        }
+    }
+    if let Some((i, c, got)) = first_mm {
+        eprintln!("  [{}] first walker mismatch @ call#{i}: \
+                   prev_col={} state_before={} comp_id={} n={} R={} \
+                   flag={} special={:#x} -> got {}, want {}",
+                  cap.league, c.prev_col, c.state_before, c.comp_id,
+                  c.n_clubs, c.n_rounds, c.flag_byte,
+                  c.special_comp_id as u32, got, c.retval);
     }
     (mismatches, cap.walker_calls.len())
 }
