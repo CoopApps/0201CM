@@ -1792,6 +1792,69 @@ pub struct EnglishLeagueSpec {
 /// identical across all callsites).
 pub const SCHEDULE_RECORD_STRIDE_BYTES: usize = 65;
 
+/// Byte offsets within a 0x41-byte round record that the schedule-
+/// getter (`sub_0066ef70` round-writer + `sub_0066efd0` slot-writer
+/// + `sub_00533d80` pack_date) is proven to write. Verified via
+/// C10.9 cross-boot byte-diff (captures 20260914_131616 vs
+/// 20260914_151123): zero of the offsets in this mask differed
+/// between two independent game boots on all 5 English leagues.
+///
+/// Offsets NOT in this set (i.e. `0x10..0x3C`) are the auxiliary
+/// region — post-getter mutations written by the round-robin
+/// driver / TFixList inserter as fixtures are emitted. Because
+/// fixture emission order can vary slightly between boots (even
+/// though the emitted SET is identical), the same fixtures land in
+/// different slots in this range, producing per-round byte
+/// differences that are NOT semantically meaningful. See
+/// `deviations/fixture_dates.md`.
+pub const SCHEDULE_GETTER_WRITTEN_MASK: [u8; SCHEDULE_RECORD_STRIDE_BYTES] = {
+    let mut m = [0u8; SCHEDULE_RECORD_STRIDE_BYTES];
+    let mut i = 0;
+    // +0x00..0x02  packed date
+    while i < 0x02 { m[i] = 1; i += 1; }
+    // +0x02..0x04  year offset
+    while i < 0x04 { m[i] = 1; i += 1; }
+    // +0x04..0x06  day-of-year
+    while i < 0x06 { m[i] = 1; i += 1; }
+    // +0x06..0x08  writer-initialised short
+    while i < 0x08 { m[i] = 1; i += 1; }
+    // +0x08..0x0C  sentinel bytes + type flag (0xFF, 0xFF, 0xFF, flag)
+    while i < 0x0C { m[i] = 1; i += 1; }
+    // +0x0C..0x10  writer clears (per pack_date byte pattern)
+    while i < 0x10 { m[i] = 1; i += 1; }
+    // 0x10..0x3D — AUXILIARY region, driver/inserter writes, NOT part
+    // of getter output. Bytes here vary per boot; do NOT include in
+    // the mask.
+    let mut j = 0x3D;
+    // +0x3D..0x41  prize (4 bytes)
+    while j < 0x41 { m[j] = 1; j += 1; }
+    m
+};
+
+/// Subset of `SCHEDULE_GETTER_WRITTEN_MASK` that the
+/// `run_round_robin_driver` port actually READS at each round to
+/// resolve dates and flags. Zero of these bytes ever differ
+/// between boots (C10.9 verified).
+pub const SCHEDULE_DRIVER_READ_OFFSETS: &[usize] =
+    &[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x0B];
+
+/// Return a canonical-fingerprint SHA256 of a schedule buffer,
+/// masking out the post-getter auxiliary region so the hash is
+/// boot-deterministic. Rust callers producing schedule buffers
+/// should hash their output through this function and compare
+/// against captured-buffer hashes to validate byte-exactness of
+/// the semantically meaningful subset.
+pub fn schedule_buffer_meaningful_bytes(buf: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(buf.len());
+    for (i, &b) in buf.iter().enumerate() {
+        let off = i % SCHEDULE_RECORD_STRIDE_BYTES;
+        if SCHEDULE_GETTER_WRITTEN_MASK[off] != 0 {
+            out.push(b);
+        }
+    }
+    out
+}
+
 /// English Premier — 20 clubs, 38 rounds.
 ///
 /// Confidence corrected by C10.6 evidence (capture
@@ -3778,6 +3841,48 @@ mod tests {
         assert!(ENGLISH_SECOND_SPEC.has_promotion_playoff);
         assert!(ENGLISH_THIRD_SPEC.has_promotion_playoff);
         assert!(!ENGLISH_CONFERENCE_SPEC.has_promotion_playoff);
+    }
+
+    /// C10.9: the getter-written mask captures the deterministic
+    /// subset of the schedule buffer. Post-getter aux bytes
+    /// (`0x10..0x3C`) are excluded because the round-robin driver
+    /// / TFixList inserter mutate them non-deterministically as
+    /// emissions fire.
+    #[test]
+    fn schedule_getter_mask_shape() {
+        // Full 0x00..0x10 (16 bytes) and 0x3D..0x41 (4 bytes) are in
+        // the mask; 0x10..0x3D (45 bytes) are excluded.
+        let ones: usize = SCHEDULE_GETTER_WRITTEN_MASK.iter()
+            .map(|&b| b as usize).sum();
+        assert_eq!(ones, 16 + 4);
+        // Every driver-read offset must be inside the mask (it's a
+        // subset).
+        for &off in SCHEDULE_DRIVER_READ_OFFSETS {
+            assert_eq!(SCHEDULE_GETTER_WRITTEN_MASK[off], 1,
+                       "driver-read offset +0x{:02x} missing from getter mask", off);
+        }
+    }
+
+    /// C10.9: schedule_buffer_meaningful_bytes strips the aux
+    /// region cleanly.
+    #[test]
+    fn schedule_meaningful_bytes_extracts_only_getter_written() {
+        // Two synthetic 1-round buffers that differ ONLY in the aux
+        // region (0x10..0x3D) must produce identical meaningful
+        // bytes.
+        let mut a = vec![0u8; SCHEDULE_RECORD_STRIDE_BYTES];
+        let mut b = vec![0u8; SCHEDULE_RECORD_STRIDE_BYTES];
+        for i in 0x10..0x3D {
+            a[i] = 0xAA;
+            b[i] = 0xBB;
+        }
+        // Set some getter-written bytes identically.
+        a[0x00] = 0x42; b[0x00] = 0x42;
+        a[0x3D] = 0x99; b[0x3D] = 0x99;
+        let ma = schedule_buffer_meaningful_bytes(&a);
+        let mb = schedule_buffer_meaningful_bytes(&b);
+        assert_eq!(ma, mb, "aux-only differences must not affect meaningful hash");
+        assert_eq!(ma.len(), 20);   // 16 head + 4 tail bytes
     }
 
     /// C10.8 (post-walker-RNG-feed) confidence invariant.
