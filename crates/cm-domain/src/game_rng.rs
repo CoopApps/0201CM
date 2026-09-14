@@ -117,6 +117,18 @@ impl GameRng {
         self.jitter
     }
 
+    /// Construct a `GameRng` at an explicit state — for deterministic
+    /// test-mode replay of a captured RNG lineage (perturb/walker/
+    /// driver differentials). Production callers should use
+    /// [`GameRng::new`] and let the boot-entropy source populate state.
+    ///
+    /// This does not run the normal `new()` bootstrap (srand + first
+    /// two rand() calls); it installs the given `(cursor, jitter,
+    /// lcg_state)` verbatim.
+    pub fn from_state(cursor: u32, jitter: u32, lcg_state: u32) -> Self {
+        GameRng { cursor, jitter, lcg_state }
+    }
+
     /// Byte-exact port of FUN_008fc4f0.  Returns a value in the range
     /// specified by the exe: for `n > 0` in `[0, n)`; for `n == 0`
     /// returns 0; for `n < 0` follows the exe's negated-remainder path.

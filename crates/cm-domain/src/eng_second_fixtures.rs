@@ -1050,6 +1050,87 @@ impl ClubResolver for NullResolver {
     }
 }
 
+/// Production resolver keyed on the shipped stadium graph.
+///
+/// Runtime sweep `runtime/20260913_233815_nation_array.jsonl` proved
+/// Club.+0x69 is a STADIUM pointer (not a nation pointer, as an
+/// earlier archaeology pass wrongly asserted). The stadium record
+/// then carries an `alt_stadium_id` at +0x48 that names the
+/// derby-partner stadium — so the two anti-clustering criteria the
+/// exe's perturb E2 / E3 phases check are:
+///
+///   * E2 — two slots share the *same* non-null stadium pointer
+///     (e.g. San Siro, or an English pyramid ground-share).
+///   * E3 — either slot's stadium `alt_stadium_id` equals the
+///     *other* slot's stadium id (bidirectional).
+///
+/// Confirmed English Second Division 2001-02 derbies via the sweep:
+/// Brentford↔QPR (Griffin Park↔Loftus Road) and
+/// Port Vale↔Stoke (Vale Park↔Britannia). Cardiff/Wrexham do NOT
+/// pair — different stadiums, no cross-link — despite an initial
+/// hunch during archaeology.
+///
+/// The resolver is intentionally *pure data*: one stadium id per
+/// slot plus a stadium→alt lookup. Callers assemble it from
+/// `World::stadiums` and the per-slot `DomainClub::stadium_id`.
+/// `nation_of` returns `None` since E2/E3 are stadium-keyed here —
+/// the trait default (which pairs on shared nation) is explicitly
+/// overridden below.
+#[derive(Debug, Clone, Default)]
+pub struct StadiumClubResolver {
+    /// Stadium id for slot `i`, or `None` when the club has no
+    /// stadium (which forces both E2 and E3 to skip the slot).
+    stadium_ids: Vec<Option<i32>>,
+    /// stadium_id → alt_stadium_id (+0x48). Absent entries and
+    /// `Some(None)` both mean "no cross-link".
+    alt_of: std::collections::BTreeMap<i32, Option<i32>>,
+}
+
+impl StadiumClubResolver {
+    /// Build a resolver from a per-slot stadium id list and a
+    /// (stadium_id, alt_stadium_id) iterator. `alt_stadium_id` is
+    /// the raw +0x48 field — pass `None` on stadiums with no link.
+    pub fn new(
+        stadium_ids: Vec<Option<i32>>,
+        alt_pairs: impl IntoIterator<Item = (i32, Option<i32>)>,
+    ) -> Self {
+        StadiumClubResolver {
+            stadium_ids,
+            alt_of: alt_pairs.into_iter().collect(),
+        }
+    }
+
+    fn stadium_of(&self, slot: usize) -> Option<i32> {
+        self.stadium_ids.get(slot).copied().flatten()
+    }
+
+    fn alt_of_stadium(&self, sid: i32) -> Option<i32> {
+        self.alt_of.get(&sid).copied().flatten()
+    }
+}
+
+impl ClubResolver for StadiumClubResolver {
+    fn nation_of(&self, _slot: usize) -> Option<i32> {
+        None
+    }
+
+    fn e2_pair_shares_69(&self, i: usize, j: usize) -> bool {
+        match (self.stadium_of(i), self.stadium_of(j)) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
+    }
+
+    fn e3_pair_cross_linked(&self, i: usize, j: usize) -> bool {
+        let (si, sj) = match (self.stadium_of(i), self.stadium_of(j)) {
+            (Some(a), Some(b)) => (a, b),
+            _ => return false,
+        };
+        // Bidirectional — matches GDI `0x0066bf44..0x0066c141`.
+        self.alt_of_stadium(si) == Some(sj) || self.alt_of_stadium(sj) == Some(si)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // English Second Division exact-date dispatch
 // ---------------------------------------------------------------------------
@@ -1106,6 +1187,75 @@ pub fn generate_eng_second_dates(season_base_year: u16) -> Vec<GameDate> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// StadiumClubResolver pairs Brentford↔QPR and Port Vale↔Stoke —
+    /// the two confirmed English Second Division 2001-02 derbies from
+    /// runtime sweep 20260913_233815 — and does NOT pair
+    /// Cardiff/Wrexham (different stadiums, no cross-link) even
+    /// though a preliminary hunch during archaeology suggested they
+    /// might. Slot layout is synthetic (stadium ids chosen for
+    /// legibility) but the graph is real: Griffin Park↔Loftus Road
+    /// and Vale Park↔Britannia both carry each other at +0x48.
+    #[test]
+    fn stadium_resolver_recognises_eng_second_derbies() {
+        // slot 0 Brentford  → Griffin Park  (100)
+        // slot 1 QPR        → Loftus Road   (101)
+        // slot 2 Port Vale  → Vale Park     (200)
+        // slot 3 Stoke      → Britannia     (201)
+        // slot 4 Cardiff    → Ninian Park   (300)
+        // slot 5 Wrexham    → Racecourse    (301)
+        let r = StadiumClubResolver::new(
+            vec![Some(100), Some(101), Some(200), Some(201),
+                 Some(300), Some(301)],
+            [(100, Some(101)), (101, Some(100)),
+             (200, Some(201)), (201, Some(200)),
+             (300, None),      (301, None)],
+        );
+
+        // E3 — bidirectional derby cross-link.
+        assert!(r.e3_pair_cross_linked(0, 1), "Brentford↔QPR");
+        assert!(r.e3_pair_cross_linked(1, 0), "QPR↔Brentford");
+        assert!(r.e3_pair_cross_linked(2, 3), "Port Vale↔Stoke");
+        assert!(r.e3_pair_cross_linked(3, 2), "Stoke↔Port Vale");
+        assert!(!r.e3_pair_cross_linked(4, 5),
+                "Cardiff/Wrexham must NOT pair — no cross-link");
+        assert!(!r.e3_pair_cross_linked(0, 3), "Brentford/Stoke unrelated");
+
+        // E2 — same-stadium pairing. None of these slots share a
+        // stadium, so E2 must be false for every pair.
+        for i in 0..6 {
+            for j in (i + 1)..6 {
+                assert!(!r.e2_pair_shares_69(i, j),
+                        "no shared-stadium pair among synthetic English Second slots");
+            }
+        }
+
+        // Slot with no stadium is inert.
+        let r2 = StadiumClubResolver::new(
+            vec![None, Some(100)],
+            [(100, Some(999))],
+        );
+        assert!(!r2.e2_pair_shares_69(0, 1));
+        assert!(!r2.e3_pair_cross_linked(0, 1));
+    }
+
+    /// StadiumClubResolver pairs ground-shares under E2 — two slots
+    /// carrying the same non-null stadium id. Synthetic setup
+    /// mirrors the San Siro case that motivates the phase in the
+    /// exe.
+    #[test]
+    fn stadium_resolver_pairs_shared_ground_under_e2() {
+        let r = StadiumClubResolver::new(
+            vec![Some(500), Some(500), Some(600)],
+            std::iter::empty(),
+        );
+        assert!(r.e2_pair_shares_69(0, 1), "shared-stadium pair");
+        assert!(!r.e2_pair_shares_69(0, 2));
+        assert!(!r.e2_pair_shares_69(1, 2));
+        // Shared-stadium slots do NOT also satisfy E3 unless they
+        // have a self-cross-link (they don't here).
+        assert!(!r.e3_pair_cross_linked(0, 1));
+    }
 
     /// Landmark subset — spot-check a few notable dates.
     #[test]
