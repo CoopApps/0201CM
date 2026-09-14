@@ -1552,6 +1552,287 @@ pub fn conference_feeder_swap(
 }
 
 // ---------------------------------------------------------------------------
+// English pyramid annual P/R orchestrator (cm0102-gdi sub_0055f080)
+// ---------------------------------------------------------------------------
+
+/// Outcome of the Third↔Conference edge inside the English pyramid
+/// orchestrator. This is the ONE edge that has a stadium gate; the
+/// three intra-league edges (Prem↔First, First↔Second,
+/// Second↔Third) always run unconditionally.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ThirdConferenceEdgeOutcome {
+    /// `comp_table[Conference_id] == NULL` in the exe — Conference
+    /// is not simulated. Fourth edge SKIPPED entirely.
+    ///
+    /// Traditional-mode note: when Conference is not selected as a
+    /// manageable league at game creation, the separate coordinator
+    /// `sub_0055e9b0` (peer vtable slot, not called from here)
+    /// handles the champion-fallback path via
+    /// [`conference_fallback_promotion`]. The two mechanisms are
+    /// PARALLEL — this orchestrator returns `ConferenceAbsent` and
+    /// does nothing more for the Conference tier.
+    ConferenceAbsent,
+    /// Stadium check failed on the Conference champion. The exe:
+    /// * writes `+0x37 = 0xFE` on Third-Division's LAST-PLACE club
+    ///   (reprieves them — they would have been relegated, but stay);
+    /// * fires a news event (template id derived from Conf comp);
+    /// * returns WITHOUT running the fourth C7 call.
+    StadiumFailed {
+        /// Club id that just had its `+0x37` written to `0xFE`.
+        third_div_reprieved_club_id: u32,
+        /// News template id passed to `FUN_004938d0`. For the
+        /// pyramid-orchestrator's specific news, template resolution
+        /// derives from the Conference comp record — exact id
+        /// documented as INFERRED pending an apply-layer runtime
+        /// capture.
+        news_template_hint: u16,
+    },
+    /// Stadium check passed. Fourth C7 swap ran normally.
+    Swapped(PromotionRelegationDecision),
+}
+
+/// Composed decision emitted by [`english_pyramid_annual_rollover`].
+/// The four edges appear in the exact execution order the exe uses
+/// (top-down: Prem↔First → First↔Second → Second↔Third →
+/// Third↔Conference).
+///
+/// Ordering matters because `FUN_0066ea90` writes `+0x37 = 0xFF` on
+/// every moved club, and the next edge's iteration observes the
+/// post-write state. The Rust orchestrator simulates that inter-edge
+/// state transition internally so each edge decision reflects what
+/// the exe would see.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnglishPyramidRolloverDecision {
+    pub prem_first: PromotionRelegationDecision,
+    pub first_second: PromotionRelegationDecision,
+    pub second_third: PromotionRelegationDecision,
+    pub third_conference: ThirdConferenceEdgeOutcome,
+}
+
+/// The 5 English-pyramid comp ids the orchestrator reads. In the exe
+/// these come from global comp-id slots at
+/// `[0x9BB9C4/9C8/9CC/9D0/BAA4]` (GDI). Callers resolve them from the
+/// World's `comp_ids` cache.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EnglishPyramidCompIds {
+    pub prem: u32,
+    pub first: u32,
+    pub second: u32,
+    pub third: u32,
+    pub conference: u32,
+}
+
+/// Stadium-check inputs the orchestrator supplies to the
+/// Third↔Conference gate. The exe reads the Third-Division comp
+/// record's `+0xE2` / `+0xE4` and probes the Conference top club's
+/// stadium at `Club+0x69` (see `stadium_meets_capacity_target`).
+///
+/// This struct is populated by the caller from World; the
+/// orchestrator itself doesn't reach through the comp records.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ThirdConferenceStadiumInputs {
+    /// Conference champion's current stadium capacity (via
+    /// `Club+0x69 → Stadium+0x40`). `None` when the top-Conf club
+    /// has no stadium pointer.
+    pub champion_stadium_current_capacity: Option<u32>,
+    /// Third Division's `+0xE4` (primary threshold).
+    pub required_capacity_a: u32,
+    /// Third Division's `+0xE2` (secondary threshold).
+    pub required_capacity_b: u32,
+    /// Third's last-place club (via `conf.vt.club_by_index(third,
+    /// [+0x3e]-1)`). Written `+0x37 = 0xFE` on stadium-fail.
+    pub third_div_last_place_club_id: Option<u32>,
+}
+
+/// Byte-semantics port of `cm0102_GDI.exe` **`sub_0055f080`**
+/// (DirectDraw `FUN_0055ee90`), 441 bytes / 142 instructions. This
+/// is the English-pyramid vtable slot 44 (offset +0xB0) on class
+/// `0x957D24`. Traditional-only.
+///
+/// # What this port covers
+///
+/// The four-edge P/R chain plus the Third↔Conference stadium gate
+/// as pure decision. Ordering matches the exe: top-down
+/// Prem→First→Second→Third→Conf. Between edges, the orchestrator
+/// simulates the `+0x37 = 0xFF` post-move stamping so the next
+/// edge's decision reflects the migrated state.
+///
+/// # What this port does NOT cover
+///
+/// * **`vfunc[+0xA4]` finalize-table calls.** The orchestrator
+///   fires them per league before the swaps in the exe; here we
+///   assume the caller has already run each comp's finalize step
+///   (i.e. `+0x37` markers reflect final league positions with
+///   `3` = relegated, `0` = auto-promoted, `5` = playoff winner).
+///   These vfuncs are per-comp responsibility and land in C11.
+/// * **News broadcast on stadium fail.** The exe's
+///   `FUN_004938d0(third, conf_derived_arg, first_conf_club, 2)`
+///   call is not replicated; the port surfaces the intent via
+///   `ThirdConferenceEdgeOutcome::StadiumFailed { .. }` so the
+///   apply-layer can emit the news.
+/// * **Actual World mutation.** All results are decisions; the
+///   caller applies field writes.
+///
+/// # Contract for callers
+///
+/// * `mode` is forwarded to every `promote_relegate_swap` call, as
+///   `FUN_0055ee90` forwards its single stack arg to all four
+///   `FUN_0066ea90` calls unchanged.
+/// * `conference_active == (comp_table[Conf_id] != NULL)` — direct
+///   null-pointer test as `sub_0055f080` does. This is the ONLY
+///   Conference gate; the pillar-3 `[0x11c] & 4` claim is refuted
+///   for this function.
+/// * Rosters pre-finalized — see "does not cover" above.
+///
+/// # Confirms no interaction with `sub_0055e9b0` coordinator
+///
+/// `sub_0055f080` and `sub_0055e9b0` are peer vtable slots. The
+/// pyramid orchestrator does NOT invoke the coordinator's
+/// feeder-swap or fallback paths, and vice versa. Both are
+/// dispatched from the year-end scheduler independently.
+#[allow(clippy::too_many_arguments)]
+pub fn english_pyramid_annual_rollover(
+    comp_ids: EnglishPyramidCompIds,
+    prem_roster: &[ClubRosterEntry],
+    first_roster: &[ClubRosterEntry],
+    second_roster: &[ClubRosterEntry],
+    third_roster: &[ClubRosterEntry],
+    conference_roster: &[ClubRosterEntry],
+    conference_active: bool,
+    stadium_inputs: ThirdConferenceStadiumInputs,
+    mode: PromotionRelegationMode,
+) -> EnglishPyramidRolloverDecision {
+    // Take mutable working copies so we can simulate the +0x37=0xFF
+    // stamping that the exe's C7 primitive writes on each moved
+    // club — subsequent edges observe the migrated state.
+    let mut prem: Vec<ClubRosterEntry> = prem_roster.to_vec();
+    let mut first: Vec<ClubRosterEntry> = first_roster.to_vec();
+    let mut second: Vec<ClubRosterEntry> = second_roster.to_vec();
+    let mut third: Vec<ClubRosterEntry> = third_roster.to_vec();
+    let conference: Vec<ClubRosterEntry> = conference_roster.to_vec();
+
+    // Edge 1 — Prem↔First. Preprocess=true, expect=(−1,−1).
+    let d1 = promote_relegate_swap(
+        comp_ids.prem, comp_ids.first,
+        &prem, &first,
+        mode, /*preprocess=*/ true,
+        /*expect_promoted=*/ None, /*expect_relegated=*/ None,
+    );
+    apply_moves_to_rosters(
+        &mut prem, &mut first,
+        comp_ids.prem, comp_ids.first,
+        &d1,
+    );
+
+    // Edge 2 — First↔Second. Rosters see post-edge-1 state.
+    let d2 = promote_relegate_swap(
+        comp_ids.first, comp_ids.second,
+        &first, &second,
+        mode, /*preprocess=*/ true,
+        None, None,
+    );
+    apply_moves_to_rosters(
+        &mut first, &mut second,
+        comp_ids.first, comp_ids.second,
+        &d2,
+    );
+
+    // Edge 3 — Second↔Third. Rosters see post-edge-2 state.
+    let d3 = promote_relegate_swap(
+        comp_ids.second, comp_ids.third,
+        &second, &third,
+        mode, /*preprocess=*/ true,
+        None, None,
+    );
+    apply_moves_to_rosters(
+        &mut second, &mut third,
+        comp_ids.second, comp_ids.third,
+        &d3,
+    );
+
+    // Edge 4 — Third↔Conference. Gated on comp_table[Conf] != NULL.
+    let d4 = if !conference_active {
+        ThirdConferenceEdgeOutcome::ConferenceAbsent
+    } else {
+        // Stadium check on the Conference champion.
+        let gate = StadiumCapacityRequest {
+            stadium_current_capacity: stadium_inputs.champion_stadium_current_capacity,
+            required_capacity_a: stadium_inputs.required_capacity_a,
+            required_capacity_b: stadium_inputs.required_capacity_b,
+        };
+        if !stadium_meets_capacity_target(&gate) {
+            // Fail branch — reprieve Third-Div last-place, no swap.
+            ThirdConferenceEdgeOutcome::StadiumFailed {
+                third_div_reprieved_club_id: stadium_inputs
+                    .third_div_last_place_club_id
+                    .unwrap_or(0),
+                news_template_hint: 2,
+            }
+        } else {
+            // Pass branch — fourth C7 call.
+            let decision = promote_relegate_swap(
+                comp_ids.third, comp_ids.conference,
+                &third, &conference,
+                mode, /*preprocess=*/ true,
+                None, None,
+            );
+            ThirdConferenceEdgeOutcome::Swapped(decision)
+        }
+    };
+
+    EnglishPyramidRolloverDecision {
+        prem_first: d1,
+        first_second: d2,
+        second_third: d3,
+        third_conference: d4,
+    }
+}
+
+/// Simulate the inter-edge roster mutation: each moved club leaves
+/// its source roster and joins its destination roster with
+/// `status_byte = 0xFF` (the "processed" marker the exe writes) and
+/// `current_comp_id` updated. Both are what the next edge's
+/// [`promote_relegate_swap`] iteration observes.
+fn apply_moves_to_rosters(
+    top: &mut Vec<ClubRosterEntry>,
+    bottom: &mut Vec<ClubRosterEntry>,
+    top_comp_id: u32,
+    bottom_comp_id: u32,
+    decision: &PromotionRelegationDecision,
+) {
+    // Remove promoted clubs from bottom, add them to top with +0x37=0xFF.
+    let promoted_ids: std::collections::BTreeSet<u32> =
+        decision.promoted.iter().map(|p| p.club_id).collect();
+    let mut moving_up: Vec<ClubRosterEntry> = bottom
+        .iter()
+        .filter(|c| promoted_ids.contains(&c.club_id))
+        .map(|c| ClubRosterEntry {
+            club_id: c.club_id,
+            status_byte: 0xFF,
+            current_comp_id: top_comp_id,
+        })
+        .collect();
+    bottom.retain(|c| !promoted_ids.contains(&c.club_id));
+
+    // Remove relegated clubs from top, add them to bottom with +0x37=0xFF.
+    let relegated_ids: std::collections::BTreeSet<u32> =
+        decision.relegated.iter().map(|r| r.club_id).collect();
+    let mut moving_down: Vec<ClubRosterEntry> = top
+        .iter()
+        .filter(|c| relegated_ids.contains(&c.club_id))
+        .map(|c| ClubRosterEntry {
+            club_id: c.club_id,
+            status_byte: 0xFF,
+            current_comp_id: bottom_comp_id,
+        })
+        .collect();
+    top.retain(|c| !relegated_ids.contains(&c.club_id));
+
+    top.append(&mut moving_up);
+    bottom.append(&mut moving_down);
+}
+
+// ---------------------------------------------------------------------------
 // Generic 2-tier promotion/relegation swap (cm0102-gdi FUN_0066ea90)
 // ---------------------------------------------------------------------------
 
@@ -2705,6 +2986,224 @@ mod tests {
         // K = min(9, 3) = 3 → 6 RNG draws.
         assert_eq!(d.shuffle_k, Some(3));
         assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 24);
+    }
+
+    // -----------------------------------------------------------------
+    // english_pyramid_annual_rollover — port of cm0102-gdi sub_0055f080
+    // -----------------------------------------------------------------
+
+    /// Real-shape 2001-02 English pyramid rollover with Conference
+    /// simulated and stadium check passing. All 4 edges fire; each
+    /// contributes 3-or-4 pair swaps depending on tier.
+    #[test]
+    fn pyramid_rollover_conference_active_stadium_pass() {
+        let comp_ids = EnglishPyramidCompIds {
+            prem: 7, first: 8, second: 9, third: 10, conference: 93,
+        };
+        let prem: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 1, status_byte: 3, current_comp_id: 7 },   // Ipswich
+            ClubRosterEntry { club_id: 2, status_byte: 3, current_comp_id: 7 },   // Derby
+            ClubRosterEntry { club_id: 3, status_byte: 3, current_comp_id: 7 },   // Leicester
+            ClubRosterEntry { club_id: 4, status_byte: 0, current_comp_id: 7 },   // Arsenal (mid)
+        ];
+        let first: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 10, status_byte: 0, current_comp_id: 8 },  // Man City champ
+            ClubRosterEntry { club_id: 11, status_byte: 0, current_comp_id: 8 },  // WBA
+            ClubRosterEntry { club_id: 12, status_byte: 5, current_comp_id: 8 },  // Birmingham (PO)
+            ClubRosterEntry { club_id: 13, status_byte: 3, current_comp_id: 8 },  // Crewe
+            ClubRosterEntry { club_id: 14, status_byte: 3, current_comp_id: 8 },  // Barnsley
+            ClubRosterEntry { club_id: 15, status_byte: 3, current_comp_id: 8 },  // Stockport
+        ];
+        let second: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 20, status_byte: 0, current_comp_id: 9 },  // Brighton
+            ClubRosterEntry { club_id: 21, status_byte: 0, current_comp_id: 9 },  // Reading
+            ClubRosterEntry { club_id: 22, status_byte: 5, current_comp_id: 9 },  // Stoke (PO)
+            ClubRosterEntry { club_id: 23, status_byte: 3, current_comp_id: 9 },  // Bournemouth
+            ClubRosterEntry { club_id: 24, status_byte: 3, current_comp_id: 9 },  // Bury
+            ClubRosterEntry { club_id: 25, status_byte: 3, current_comp_id: 9 },  // Wrexham
+            ClubRosterEntry { club_id: 26, status_byte: 3, current_comp_id: 9 },  // Cambridge
+        ];
+        let third: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 30, status_byte: 0, current_comp_id: 10 }, // Plymouth
+            ClubRosterEntry { club_id: 31, status_byte: 0, current_comp_id: 10 }, // Luton
+            ClubRosterEntry { club_id: 32, status_byte: 0, current_comp_id: 10 }, // Mansfield
+            ClubRosterEntry { club_id: 33, status_byte: 5, current_comp_id: 10 }, // Cheltenham (PO)
+            ClubRosterEntry { club_id: 34, status_byte: 3, current_comp_id: 10 }, // Halifax
+        ];
+        let conference: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 40, status_byte: 0, current_comp_id: 93 }, // Boston champ
+            ClubRosterEntry { club_id: 41, status_byte: 0, current_comp_id: 93 }, // Dagenham
+        ];
+        let stadium = ThirdConferenceStadiumInputs {
+            champion_stadium_current_capacity: Some(8_000),
+            required_capacity_a: 6_000, required_capacity_b: 6_000,
+            third_div_last_place_club_id: Some(34),
+        };
+        let d = english_pyramid_annual_rollover(
+            comp_ids, &prem, &first, &second, &third, &conference,
+            /*conference_active=*/ true,
+            stadium,
+            PromotionRelegationMode::Paired,
+        );
+        // Edge 1: Prem↔First. 3 Prem-relegated pair with 3 First-promoted.
+        assert_eq!(d.prem_first.promoted.len(), 3);
+        assert_eq!(d.prem_first.relegated.len(), 3);
+        // Edge 2: First↔Second. First's original bottom-3 (13/14/15)
+        // pair with Second's top-3 (20/21/22).
+        assert_eq!(d.first_second.promoted.len(), 3);
+        assert_eq!(d.first_second.relegated.len(), 3);
+        // Edge 3: Second↔Third. Second's remaining bottom-4 (23-26)
+        // pair with Third's top-4 (30-33).
+        assert_eq!(d.second_third.promoted.len(), 4);
+        assert_eq!(d.second_third.relegated.len(), 4);
+        // Edge 4: Third↔Conf. Boston (top-Conf) pairs with Halifax
+        // (Third bottom).
+        match &d.third_conference {
+            ThirdConferenceEdgeOutcome::Swapped(dec) => {
+                assert_eq!(dec.promoted.len(), 1);
+                assert_eq!(dec.promoted[0].club_id, 40);
+                assert_eq!(dec.relegated.len(), 1);
+                assert_eq!(dec.relegated[0].club_id, 34);
+            }
+            other => panic!("expected Swapped, got {other:?}"),
+        }
+    }
+
+    /// Conference inactive — orchestrator's 4th edge is
+    /// `ConferenceAbsent`; only 3 edges' worth of moves emitted.
+    #[test]
+    fn pyramid_rollover_conference_inactive() {
+        let comp_ids = EnglishPyramidCompIds {
+            prem: 7, first: 8, second: 9, third: 10, conference: 93,
+        };
+        let prem: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 1, status_byte: 3, current_comp_id: 7 },
+        ];
+        let first: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 10, status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 13, status_byte: 3, current_comp_id: 8 },
+        ];
+        let second: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 20, status_byte: 0, current_comp_id: 9 },
+            ClubRosterEntry { club_id: 23, status_byte: 3, current_comp_id: 9 },
+        ];
+        let third: Vec<ClubRosterEntry> = vec![
+            ClubRosterEntry { club_id: 30, status_byte: 0, current_comp_id: 10 },
+            ClubRosterEntry { club_id: 34, status_byte: 3, current_comp_id: 10 },
+        ];
+        let stadium = ThirdConferenceStadiumInputs {
+            champion_stadium_current_capacity: None,
+            required_capacity_a: 0, required_capacity_b: 0,
+            third_div_last_place_club_id: None,
+        };
+        let d = english_pyramid_annual_rollover(
+            comp_ids, &prem, &first, &second, &third, &[],
+            /*conference_active=*/ false,
+            stadium,
+            PromotionRelegationMode::Paired,
+        );
+        // Top 3 edges still fire.
+        assert_eq!(d.prem_first.promoted.len(), 1);
+        assert_eq!(d.first_second.promoted.len(), 1);
+        assert_eq!(d.second_third.promoted.len(), 1);
+        // 4th edge is Absent — no swap, no stadium check.
+        assert!(matches!(d.third_conference, ThirdConferenceEdgeOutcome::ConferenceAbsent));
+    }
+
+    /// Conference active but champion's stadium fails the gate —
+    /// Third-Division last-place is reprieved, no 4th swap runs.
+    #[test]
+    fn pyramid_rollover_conference_active_stadium_fail() {
+        let comp_ids = EnglishPyramidCompIds {
+            prem: 7, first: 8, second: 9, third: 10, conference: 93,
+        };
+        let prem = vec![
+            ClubRosterEntry { club_id: 1, status_byte: 3, current_comp_id: 7 },
+        ];
+        let first = vec![
+            ClubRosterEntry { club_id: 10, status_byte: 0, current_comp_id: 8 },
+        ];
+        let second = vec![];
+        let third = vec![
+            ClubRosterEntry { club_id: 34, status_byte: 3, current_comp_id: 10 },
+        ];
+        let conference = vec![
+            ClubRosterEntry { club_id: 40, status_byte: 0, current_comp_id: 93 },
+        ];
+        let stadium = ThirdConferenceStadiumInputs {
+            champion_stadium_current_capacity: Some(3_500),  // below 6000
+            required_capacity_a: 6_000, required_capacity_b: 6_000,
+            third_div_last_place_club_id: Some(34),
+        };
+        let d = english_pyramid_annual_rollover(
+            comp_ids, &prem, &first, &second, &third, &conference,
+            true, stadium, PromotionRelegationMode::Paired,
+        );
+        match d.third_conference {
+            ThirdConferenceEdgeOutcome::StadiumFailed {
+                third_div_reprieved_club_id, news_template_hint,
+            } => {
+                assert_eq!(third_div_reprieved_club_id, 34);
+                assert_eq!(news_template_hint, 2);
+            }
+            other => panic!("expected StadiumFailed, got {other:?}"),
+        }
+    }
+
+    /// Inter-edge mutation invariant: a club promoted in Prem↔First
+    /// must NOT appear as a candidate in First↔Second (its +0x37 is
+    /// now 0xFF and its comp is Prem, so subsequent iterations
+    /// naturally exclude it).
+    ///
+    /// This is the key correctness property the C8 orchestrator adds
+    /// on top of the C7 primitive: composition works because the
+    /// exe's `+0x37 = 0xFF` post-move stamp guarantees no double-
+    /// move, and the Rust port simulates that stamping between edges.
+    #[test]
+    fn pyramid_rollover_inter_edge_migration_invariant() {
+        let comp_ids = EnglishPyramidCompIds {
+            prem: 7, first: 8, second: 9, third: 10, conference: 93,
+        };
+        // Prem has one relegatee, First has one promoted club.
+        let prem = vec![
+            ClubRosterEntry { club_id: 1, status_byte: 3, current_comp_id: 7 },
+        ];
+        // First has ONE promotion candidate AND one relegation candidate.
+        // The promoted club (id 10) MUST NOT be re-selected in the
+        // First↔Second edge — its +0x37 becomes 0xFF after Prem↔First.
+        let first = vec![
+            ClubRosterEntry { club_id: 10, status_byte: 0, current_comp_id: 8 },
+            ClubRosterEntry { club_id: 13, status_byte: 3, current_comp_id: 8 },
+        ];
+        let second = vec![
+            ClubRosterEntry { club_id: 20, status_byte: 0, current_comp_id: 9 },
+        ];
+        let third = vec![];
+        let d = english_pyramid_annual_rollover(
+            comp_ids, &prem, &first, &second, &third, &[],
+            false,
+            ThirdConferenceStadiumInputs {
+                champion_stadium_current_capacity: None,
+                required_capacity_a: 0, required_capacity_b: 0,
+                third_div_last_place_club_id: None,
+            },
+            PromotionRelegationMode::Paired,
+        );
+        // Edge 1: 10 (First promoted) moves to Prem, 1 (Prem
+        // relegated) moves to First.
+        assert_eq!(d.prem_first.promoted[0].club_id, 10);
+        assert_eq!(d.prem_first.relegated[0].club_id, 1);
+        // Edge 2: 20 (Second promoted) moves to First, 13 (First
+        // relegated) moves to Second. Crucially, club 10 does NOT
+        // appear again despite technically still being marked as
+        // "0" in the source input roster — the inter-edge
+        // simulation stamped it to 0xFF.
+        assert_eq!(d.first_second.promoted[0].club_id, 20);
+        assert_eq!(d.first_second.relegated[0].club_id, 13);
+        // Club 10 must not appear as a mover in the second edge at
+        // all.
+        assert!(!d.first_second.promoted.iter().any(|p| p.club_id == 10));
+        assert!(!d.first_second.relegated.iter().any(|r| r.club_id == 10));
     }
 
     // -----------------------------------------------------------------
