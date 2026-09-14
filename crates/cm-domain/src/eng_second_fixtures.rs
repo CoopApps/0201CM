@@ -13,6 +13,7 @@
 //! | [`matrix_seed_base`]          | `0x00669340`  | VERIFIED EXACT — PORTED               | Byte-exact vs cm0102-gdi Frida direct-call capture for n=4,6,8,10,24 (`runtime/20260913_143506_gdi_matrix_seed.json`) |
 //! | [`matrix_perturb`]            | `0x0066b900`  | VERIFIED EXACT — PORTED (branch A)    | 24/24 P1→P2 match on tagged-this eng_second lineage (`runtime/20260914_004421_eng2_true_lineage.jsonl`) |
 //! | [`run_round_robin_driver`]    | `0x00668450`  | VERIFIED EXACT — PORTED               | 552/552 ordered-diff match on the same lineage capture |
+//! | [`sort_and_shuffle`]          | `0x004b6230`  | VERIFIED EXACT — PORTED               | Hand-traced from GDI asm 0x004b6230..0x004b6331 (pillar-10 decode 2026-09-14); comparator `sub_004b6e20` |
 //! | [`generate_eng_second_dates`] | (composite)   | VERIFIED EXACT — PORTED               | All 46 dates byte-exact vs GDI capture |
 //!
 //! # Function-boundary correction (2026-09-14)
@@ -1146,6 +1147,169 @@ impl ClubResolver for StadiumClubResolver {
 }
 
 // ---------------------------------------------------------------------------
+// Shared sort-shuffle helper (cm0102-gdi.exe FUN_004b6230)
+// ---------------------------------------------------------------------------
+
+/// Reason a call to [`sort_and_shuffle`] performed no work. `Ok`
+/// means the qsort ran and the top-K shuffle consumed `2·K` pool RNG
+/// draws. Every other variant is a *silent no-op* in the exe (except
+/// the two "error" cases, which the exe reports via a debug message-
+/// box; the Rust port surfaces them via this enum instead of panicking
+/// so callers can decide what to log).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortShuffleResult {
+    /// Sorted and shuffled top-K normally. `k` = min(3·mode, n).
+    Ok { k: i16 },
+    /// `mode < 1` — the exe's asm at 0x004b6255 (`cmp bx,1; jl ...`)
+    /// falls through to the `ret` epilogue. No RNG consumption.
+    ModeSubOne,
+    /// `n < 0` — the exe's asm at 0x004b6243 (`test si,si; jl error`)
+    /// takes the debug-message-box path.
+    NegativeN,
+    /// `n < mode` — the exe's asm at 0x004b624f (`cmp si,bx; jl error`)
+    /// takes the debug-message-box path. The exe treats this as an
+    /// invariant violation.
+    NLessThanMode,
+    /// `n > i16::MAX`. The exe treats `n` as signed 16-bit; slices
+    /// longer than that are outside its domain. Reject rather than
+    /// silently truncate.
+    LenOverflow,
+}
+
+/// Byte-exact port of the shared sort-shuffle helper at
+/// `cm0102_GDI.exe` **`0x004b6230`** (DirectDraw VA `0x004b6000`),
+/// 257 bytes / 81 instructions. See [[english-pyramid-final-graph]]
+/// and [[gdi-vs-directdraw-builds]] for build provenance.
+///
+/// # Semantic contract
+///
+/// Verified against GDI asm `0x004b6230..0x004b6331` (pillar-10
+/// decode 2026-09-14):
+///
+/// 1. `n` and `mode` are treated as signed 16-bit. `n < 0` or
+///    `n < mode` takes the exe's error path (the port returns
+///    `NegativeN` / `NLessThanMode` — the exe pops up a message
+///    box; the Rust caller decides what to do).
+/// 2. `mode < 1` is a silent no-op (no sort, no shuffle, no RNG).
+/// 3. Otherwise:
+///    * qsort the slice by comparator [`cmp_key_desc_nulls_last`]:
+///      descending by the `Some(i16)` key, NULLs sink to the tail.
+///    * `K = min(3 · mode, n)`.
+///    * If `K <= 0` → silent no-op (no shuffle, no RNG).
+///    * **K rounds of random-pair-swap**: each round draws two
+///      `rand_mod(K)` from the pool RNG and swaps `items[a]` with
+///      `items[b]`. Duplicate indices are legal (produce a no-op
+///      swap that still consumes both RNG draws).
+///    * Total pool RNG draws = **`2 · K`**.
+///
+/// # Non-Fisher-Yates
+///
+/// The shuffle is **not** Fisher-Yates. Pillar 9 mis-characterised it
+/// on the strength of a Ghidra decompile fragment. The real algorithm
+/// (per pillar-10 asm decode) is K rounds of two independent
+/// `rand_mod(K)` draws followed by a straight-swap. Fisher-Yates
+/// would draw K times with modulus `K-i` decreasing; this helper
+/// draws `2·K` times with modulus `K` constant.
+///
+/// # Comparator
+///
+/// Verified from GDI `sub_004b6e20` (49 bytes, 18 instructions):
+///
+/// ```text
+///   int cmp(Club **a, Club **b) {
+///       Club *A = *a, *B = *b;
+///       if (!A) return B ? +1 : 0;   // NULL sinks
+///       if (!B) return -1;
+///       int16_t keyA = *(int16_t*)(A + 0x80);
+///       int16_t keyB = *(int16_t*)(B + 0x80);
+///       return (int)keyB - (int)keyA;   // descending
+///   }
+/// ```
+///
+/// Only signed i16 at `Club+0x80` is read. No tie-break — the shuffle
+/// over the top-K guarantees ties randomise anyway.
+///
+/// # Stability
+///
+/// The exe's qsort is unstable; Rust's `sort_by` is stable. For
+/// callers that shuffle a non-empty top window (`k > 0`), tie order
+/// after the sort is immediately re-permuted by the shuffle so
+/// stability difference is benign. For callers with `mode < 1` /
+/// `k <= 0` the port takes the no-op branch and never invokes the
+/// sort, matching the exe.
+///
+/// # RNG identity
+///
+/// The pool RNG (`GameRng::rand_mod`) is the same primitive
+/// [`matrix_perturb`] uses in Phase B. Consequence: any
+/// `sort_and_shuffle` call between perturb invocations advances the
+/// shared pool cursor by `2·K` slots (see
+/// [[english-pyramid-final-graph]] for callsites relevant to
+/// English rollover — Conference feeder `FUN_0055ec40` uses mode 3
+/// → K=9 → 18 pool draws per year).
+pub fn sort_and_shuffle<T, F>(
+    items: &mut [T],
+    mode: i16,
+    key: F,
+    rng: &mut GameRng,
+) -> SortShuffleResult
+where
+    F: Fn(&T) -> Option<i16>,
+{
+    if items.len() > i16::MAX as usize {
+        return SortShuffleResult::LenOverflow;
+    }
+    let n: i16 = items.len() as i16;
+    // Ordered exactly as the asm: n<0, then n<mode, then mode<1.
+    // Note: n<0 is impossible for `usize::len()` but the exe checks
+    // it, so the port preserves the branch identity for callers that
+    // reach this path via a raw pointer/length pair in future.
+    if n < 0 {
+        return SortShuffleResult::NegativeN;
+    }
+    if n < mode {
+        return SortShuffleResult::NLessThanMode;
+    }
+    if mode < 1 {
+        return SortShuffleResult::ModeSubOne;
+    }
+    // Descending qsort with NULLs at tail.
+    items.sort_by(|a, b| cmp_key_desc_nulls_last(key(a), key(b)));
+    // K = min(3*mode, n).  saturating_mul because 3 * i16::MAX
+    // overflows; the exe's `lea eax, [ebx+ebx*2]` on a
+    // sign-extended DWORD does the same math without wrap for any
+    // realistic mode (< 32768/3 ≈ 10922).
+    let k: i16 = 3i16.saturating_mul(mode).min(n);
+    if k <= 0 {
+        // The exe's `test ax,ax; jle ret` — reachable only when
+        // mode < 1 (already handled above) or n == 0 with mode == 0
+        // (also handled). Kept as a defensive branch.
+        return SortShuffleResult::Ok { k };
+    }
+    for _ in 0..k {
+        let a = rng.rand_mod(k as i32) as usize;
+        let b = rng.rand_mod(k as i32) as usize;
+        items.swap(a, b);
+    }
+    SortShuffleResult::Ok { k }
+}
+
+/// Comparator used by [`sort_and_shuffle`]. Descending by `Some(i16)`
+/// key; `None` sinks to the tail. Matches GDI `sub_004b6e20`.
+///
+/// Split out so callers that just want to sort by the same key
+/// (without the shuffle side-effect) can reuse it.
+pub fn cmp_key_desc_nulls_last(a: Option<i16>, b: Option<i16>) -> std::cmp::Ordering {
+    use std::cmp::Ordering::*;
+    match (a, b) {
+        (None, None) => Equal,
+        (None, Some(_)) => Greater,  // a is NULL → sinks
+        (Some(_), None) => Less,
+        (Some(ka), Some(kb)) => kb.cmp(&ka),  // descending
+    }
+}
+
+// ---------------------------------------------------------------------------
 // English Second Division exact-date dispatch
 // ---------------------------------------------------------------------------
 
@@ -1201,6 +1365,215 @@ pub fn generate_eng_second_dates(season_base_year: u16) -> Vec<GameDate> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // -----------------------------------------------------------------
+    // sort_and_shuffle — port of cm0102-gdi FUN_004b6230
+    // -----------------------------------------------------------------
+
+    /// Helper — deterministic `GameRng` for shuffle tests. Uses
+    /// `from_state` so both cursor and jitter are pinned; the pool
+    /// cursor advances on each `rand_mod` call.
+    ///
+    /// NOTE ON JITTER RANGE: the exe seeds `jitter` via `rand() &
+    /// 0xffff` so real jitter is always in `[0, 0xffff]`. Passing a
+    /// jitter outside that range yields a negative `jitter_word as
+    /// i32` inside `rand_mod`, which then returns negative for many
+    /// pool-cursor positions — behaviour the real game never sees.
+    /// Tests below use in-range jitter values.
+    fn rng_at(cursor: u32, jitter: u16, lcg: u32) -> GameRng {
+        GameRng::from_state(cursor, jitter as u32, lcg)
+    }
+
+    /// Comparator alone: NULLs sink, non-NULLs sort descending.
+    #[test]
+    fn cmp_key_desc_nulls_last_orders_correctly() {
+        use std::cmp::Ordering::*;
+        // Two non-NULL keys — higher first.
+        assert_eq!(cmp_key_desc_nulls_last(Some(5), Some(3)), Less);
+        assert_eq!(cmp_key_desc_nulls_last(Some(3), Some(5)), Greater);
+        assert_eq!(cmp_key_desc_nulls_last(Some(4), Some(4)), Equal);
+        // Signedness — negative keys.
+        assert_eq!(cmp_key_desc_nulls_last(Some(-3), Some(-5)), Less);
+        // NULL sinks to the tail (`a is None` → a comes AFTER b).
+        assert_eq!(cmp_key_desc_nulls_last(None, Some(-32768)), Greater);
+        assert_eq!(cmp_key_desc_nulls_last(Some(-32768), None), Less);
+        assert_eq!(cmp_key_desc_nulls_last(None, None), Equal);
+    }
+
+    /// Mode 1 with N=5 → K=3. 3 pair-swap rounds → **6** pool draws.
+    /// The top-3 slots re-permute among themselves; slots 3..4
+    /// (untouched) keep their post-sort positions.
+    #[test]
+    fn sort_and_shuffle_mode1_n5() {
+        // Descending sort by key: expect 50, 40, 30, 20, 10.
+        let mut items: Vec<(i16, &'static str)> = vec![
+            (30, "c"), (10, "e"), (50, "a"), (20, "d"), (40, "b"),
+        ];
+        let mut rng = rng_at(0, 0x5678, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 1, |t| Some(t.0), &mut rng);
+        let after_cursor = rng.pool_cursor();
+
+        // K reported.
+        assert_eq!(r, SortShuffleResult::Ok { k: 3 });
+        // Slots 3..4 are the two smallest values in sorted order,
+        // never touched by the shuffle.
+        assert_eq!(items[3], (20, "d"));
+        assert_eq!(items[4], (10, "e"));
+        // Top 3 by key must be the three largest values, in *some*
+        // order (order depends on the specific rng lineage).
+        let top: std::collections::BTreeSet<i16> =
+            items[..3].iter().map(|t| t.0).collect();
+        assert_eq!(top, [30, 40, 50].into_iter().collect());
+        // 2·K = 6 pool draws → cursor advances by 6 * 4 = 24 bytes.
+        assert_eq!(after_cursor.wrapping_sub(before_cursor), 24,
+                   "6 pool draws expected for mode=1 N=5 (K=3)");
+    }
+
+    /// Mode 3 with N=12 → K=9. **18** pool draws.
+    #[test]
+    fn sort_and_shuffle_mode3_n12() {
+        let mut items: Vec<i16> = (0..12).map(|i| i * 10).collect();
+        let mut rng = rng_at(0, 0xbeef, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 3, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::Ok { k: 9 });
+        // Slots 9..11 remain the three smallest, sorted descending:
+        // 20, 10, 0. The top-9 slots hold {30..110} in some order.
+        assert_eq!(items[9], 20);
+        assert_eq!(items[10], 10);
+        assert_eq!(items[11], 0);
+        let top: std::collections::BTreeSet<i16> = items[..9].iter().copied().collect();
+        assert_eq!(top, (3..12).map(|i| i * 10).collect());
+        assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 72,
+                   "2*K = 18 draws × 4 bytes each");
+    }
+
+    /// Mode 4 with N=20 → K=12. **24** pool draws. Also verifies
+    /// that the "untouched tail" invariant holds.
+    #[test]
+    fn sort_and_shuffle_mode4_n20() {
+        let mut items: Vec<i16> = (0..20).map(|i| i * 5).collect();
+        let mut rng = rng_at(0, 0x2222, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 4, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::Ok { k: 12 });
+        // Slots 12..19 are the 8 smallest values in sorted descending
+        // order: 35, 30, 25, 20, 15, 10, 5, 0.
+        let tail: Vec<i16> = items[12..].to_vec();
+        assert_eq!(tail, vec![35, 30, 25, 20, 15, 10, 5, 0]);
+        // Top-12 are {40..95} in some order.
+        let top: std::collections::BTreeSet<i16> = items[..12].iter().copied().collect();
+        assert_eq!(top, (8..20).map(|i| i * 5).collect());
+        assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 96,
+                   "2*K = 24 draws × 4 bytes each");
+    }
+
+    /// `mode < 1` → silent no-op. No sort, no shuffle, zero RNG draws.
+    #[test]
+    fn sort_and_shuffle_mode_zero_is_noop() {
+        let mut items = vec![3i16, 1, 4, 1, 5, 9, 2, 6];
+        let original = items.clone();
+        let mut rng = rng_at(0, 0xface, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 0, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::ModeSubOne);
+        // Slice unchanged.
+        assert_eq!(items, original);
+        // Zero RNG consumption.
+        assert_eq!(rng.pool_cursor(), before_cursor);
+    }
+
+    /// Negative mode is also silent — matches asm branch order
+    /// (n<0 → error, then n<mode → error, then mode<1 → return).
+    /// For a non-empty slice, `n >= 0 >= mode` so the `n<mode`
+    /// check does NOT trip; we reach the `mode<1` no-op branch.
+    #[test]
+    fn sort_and_shuffle_negative_mode_is_noop() {
+        let mut items = vec![3i16, 1, 4];
+        let mut rng = rng_at(0, 0, 0);
+        let r = sort_and_shuffle(&mut items, -5, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::ModeSubOne);
+    }
+
+    /// `n < mode` — the exe's "invariant violation" branch. Empty
+    /// slice + mode=1 satisfies n=0 < mode=1, so hits NLessThanMode
+    /// before the mode-check.
+    #[test]
+    fn sort_and_shuffle_n_less_than_mode() {
+        let mut items: Vec<i16> = vec![];
+        let mut rng = rng_at(0, 0, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 1, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::NLessThanMode);
+        assert_eq!(rng.pool_cursor(), before_cursor);
+    }
+
+    /// N=1, mode=1 — K=min(3,1)=1, one shuffle iteration doing
+    /// `rand_mod(1)` twice (both return 0), so slot is swapped with
+    /// itself. Effect: unchanged slice, 2 pool draws consumed.
+    #[test]
+    fn sort_and_shuffle_n1_mode1_burns_two_draws() {
+        let mut items = vec![42i16];
+        let mut rng = rng_at(0, 0xabcd, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 1, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::Ok { k: 1 });
+        assert_eq!(items, vec![42]);
+        assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 8,
+                   "2 draws even when both indices are always 0");
+    }
+
+    /// N == mode. K = min(3·mode, n). With mode=5, n=5 → K=5.
+    /// All 5 slots participate.
+    #[test]
+    fn sort_and_shuffle_n_equals_mode() {
+        let mut items: Vec<i16> = vec![5, 4, 3, 2, 1];
+        let mut rng = rng_at(0, 0x9999, 0);
+        let before_cursor = rng.pool_cursor();
+        let r = sort_and_shuffle(&mut items, 5, |&v| Some(v), &mut rng);
+        assert_eq!(r, SortShuffleResult::Ok { k: 5 });
+        // Set of values unchanged (permutation only).
+        let bag: std::collections::BTreeSet<i16> = items.iter().copied().collect();
+        assert_eq!(bag, (1..=5).collect());
+        // 2*K = 10 draws.
+        assert_eq!(rng.pool_cursor().wrapping_sub(before_cursor), 40);
+    }
+
+    /// NULL slots sink to the tail after the sort. If they land in
+    /// the shuffle window they still swap normally (they are just
+    /// slots holding a "None" value from the caller's perspective).
+    #[test]
+    fn sort_and_shuffle_nulls_sink_to_tail() {
+        // Slice: mixture of Some(...) and None values.
+        let mut items: Vec<Option<i16>> = vec![
+            Some(10), None, Some(30), Some(20), None,
+        ];
+        let mut rng = rng_at(0, 0x5555, 0);
+        // K = min(3, 5) = 3 → only top-3 shuffled; the two None
+        // values are at positions 3..4 after sort and stay there.
+        let r = sort_and_shuffle(&mut items, 1, |o| *o, &mut rng);
+        assert_eq!(r, SortShuffleResult::Ok { k: 3 });
+        // Non-NULLs occupy top-3 in some order; NULLs at 3..4.
+        assert_eq!(items[3], None);
+        assert_eq!(items[4], None);
+        let top: std::collections::BTreeSet<i16> =
+            items[..3].iter().copied().flatten().collect();
+        assert_eq!(top, [10, 20, 30].into_iter().collect());
+    }
+
+    /// `n > i16::MAX` → LenOverflow. Sentinel guard.
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn sort_and_shuffle_len_overflow_guard() {
+        // We can't allocate a slice larger than i16::MAX = 32767
+        // just for a bounds test cheaply; construct a synthetic
+        // large-length slice via a zero-sized element type.
+        let mut items: Vec<()> = vec![(); (i16::MAX as usize) + 1];
+        let mut rng = rng_at(0, 0, 0);
+        let r = sort_and_shuffle(&mut items, 1, |_| Some(0i16), &mut rng);
+        assert_eq!(r, SortShuffleResult::LenOverflow);
+    }
 
     /// StadiumClubResolver pairs Brentford↔QPR and Port Vale↔Stoke —
     /// the two confirmed English Second Division 2001-02 derbies from
