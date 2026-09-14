@@ -292,9 +292,361 @@ pub fn build_eng_second_schedule(season_base_year: u16) -> Vec<u8> {
     buf
 }
 
+// ---------------------------------------------------------------------------
+// C10.10 — post-snap intermediate templates + shared 5-league writer.
+//
+// The existing `ENG_SECOND_2001_TEMPLATE` above stores PRE-snap dates
+// (day, month, day_off, flag, type) — the exact tuple the exe's
+// schedule getter feeds into `FUN_0066f3b0`. That's the highest-
+// fidelity representation and it correctly handles arbitrary
+// `base_year` via `pack_date` + `apply_flag_snap`.
+//
+// For Premier/First/Third/Conference we haven't yet extracted the
+// pre-snap tuples from the getter asm bodies. Instead, we extracted
+// the POST-snap intermediate output — the exact bytes each getter
+// writes into the round record at +0x00..+0x0C. That's:
+//
+//   +0x00..+0x02  doy_post_snap (i16, post `apply_flag_snap`)
+//   +0x02..+0x04  year_off      (i16, packed - base_year)
+//   +0x04         type_byte
+//   +0x05..+0x09  aux_payload = 0 (writer-cleared)
+//   +0x09..+0x0C  field_a, field_b, field_c (per-round slot flags,
+//                                             not always -1/-1/-1)
+//
+// The shared writer `build_league_schedule_from_intermediate` replays
+// these bytes without needing to know pre-snap dates.
+//
+// SCOPE NOTE: These four intermediates are 2001-season-specific. To
+// support other base_years the pre-snap templates need extraction
+// from each getter's asm. Documented as a follow-up. eng_second's
+// full pre-snap template above IS multi-year-capable via pack_date.
+// ---------------------------------------------------------------------------
+
+/// One round's post-snap intermediate state — the bytes each schedule
+/// getter writes into `record[0..12]`. See module-level C10.10
+/// comment for context.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RoundIntermediate {
+    /// Signed i16 at +0x00 — post-`apply_flag_snap` day-of-year.
+    pub doy_post_snap: i16,
+    /// Signed i16 at +0x02 — year offset from `base_year`. 0 for
+    /// first-half rounds, 1 for second-half.
+    pub year_off: i16,
+    /// u8 at +0x04.
+    pub type_byte: u8,
+    /// i8 at +0x09 (`write_slot` field_a).
+    pub field_a: i8,
+    /// i8 at +0x0A.
+    pub field_b: i8,
+    /// i8 at +0x0B — driver reads this and checks for 3/4.
+    pub field_c: i8,
+}
+
+/// Byte-writer equivalent to the 5 English schedule getters:
+/// allocates N × 0x41 bytes, iterates rounds, writes each round's
+/// intermediate state at the correct offsets.
+///
+/// Reproduces the getter's meaningful output byte-for-byte. Post-
+/// getter aux bytes at +0x0C..+0x3D and prize at +0x3D..+0x41 are
+/// left as `malloc`-returned residue (zero here). See
+/// [`crate::eng_second_fixtures::SCHEDULE_GETTER_WRITTEN_MASK`] for
+/// the meaningful-byte mask that scopes comparability.
+pub fn build_league_schedule_from_intermediate(
+    rounds: &[RoundIntermediate],
+) -> Vec<u8> {
+    let mut buf = vec![0u8; rounds.len() * 0x41];
+    for (idx, r) in rounds.iter().enumerate() {
+        let off = idx * 0x41;
+        buf[off + 0..off + 2].copy_from_slice(&r.doy_post_snap.to_le_bytes());
+        buf[off + 2..off + 4].copy_from_slice(&r.year_off.to_le_bytes());
+        buf[off + 4] = r.type_byte;
+        // +0x05..+0x09 aux payload = 0 (already from vec![0])
+        buf[off + 9] = r.field_a as u8;
+        buf[off + 10] = r.field_b as u8;
+        buf[off + 11] = r.field_c as u8;
+        // +0x0C..+0x3D — post-getter aux, malloc residue in the exe.
+        // +0x3D..+0x41 — prize = 0 (default per capture).
+    }
+    buf
+}
+
+/// English Premier Division 2001/02 — 38 rounds. Extracted from
+/// capture `20260914_151123_five_leagues_prem_sched_buf.bin`.
+/// Verified against a second independent boot (20260914_131616): all
+/// getter-written bytes identical (C10.9 finding).
+pub const ENG_PREM_2001_ROUNDS: [RoundIntermediate; 38] = {
+    use RoundIntermediate as R;
+    [
+    R { doy_post_snap: 229, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 233, year_off: 0, type_byte: 2, field_a:  1, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 236, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 247, year_off: 0, type_byte: 2, field_a:  1, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 250, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 257, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 264, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 271, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 285, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 292, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 299, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 306, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 313, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 320, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 327, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 334, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 341, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 348, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 355, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 359, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 362, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:   0, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  11, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  18, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  32, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  32, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  39, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  53, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  60, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  74, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  88, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap:  95, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 102, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 106, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 109, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 116, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 123, year_off: 1, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 138, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+]};
+
+/// English First Division 2001/02 — 46 rounds.
+pub const ENG_FIRST_2001_ROUNDS: [RoundIntermediate; 46] = {
+    use RoundIntermediate as R;
+    [
+    R { doy_post_snap: 222, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 229, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 236, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 238, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 243, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 250, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 254, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 257, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 264, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 271, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 278, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 285, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 288, year_off: 0, type_byte: 2, field_a:  2, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 292, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 295, year_off: 0, type_byte: 2, field_a:  2, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 299, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 306, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 313, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 320, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 327, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 334, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 341, year_off: 0, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 348, year_off: 0, type_byte: 1, field_a:  6, field_b:  1, field_c:  2 },
+    R { doy_post_snap: 355, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 359, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 362, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:   0, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  11, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  18, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  32, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  39, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  46, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  49, year_off: 1, type_byte: 2, field_a:  2, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  53, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  60, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  64, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  67, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  77, year_off: 1, type_byte: 2, field_a:  2, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  81, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  88, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap:  95, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 102, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 104, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 109, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 116, year_off: 1, type_byte: 1, field_a:  4, field_b:  2, field_c:  2 },
+    R { doy_post_snap: 124, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+]};
+
+/// English Third Division 2001/02 — 46 rounds. Byte-for-byte identical
+/// to English Second (shipped D2/D3 use the same round template + prize).
+pub const ENG_THIRD_2001_ROUNDS: [RoundIntermediate; 46] = ENG_SECOND_2001_ROUNDS;
+
+/// English Second Division 2001/02 — extracted intermediate; used as
+/// a check that `build_league_schedule_from_intermediate` produces
+/// the same meaningful bytes as the pre-snap-template pathway of
+/// `build_eng_second_schedule`.
+pub const ENG_SECOND_2001_ROUNDS: [RoundIntermediate; 46] = {
+    use RoundIntermediate as R;
+    [
+    R { doy_post_snap: 222, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 229, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 236, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 238, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 243, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 250, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 254, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 257, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 264, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 271, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 278, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 285, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 288, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 292, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 295, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 299, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 306, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 313, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 320, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 327, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 334, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 341, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 348, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 355, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 359, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 362, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:   0, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  11, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  18, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  32, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  39, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  46, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  49, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  53, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  60, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  64, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  67, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  77, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  81, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  88, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  95, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 102, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 104, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 109, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 116, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 124, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+]};
+
+/// English Conference 2001/02 — 42 rounds.
+pub const ENG_CONF_2001_ROUNDS: [RoundIntermediate; 42] = {
+    use RoundIntermediate as R;
+    [
+    R { doy_post_snap: 229, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 232, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 236, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 240, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 243, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 245, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 250, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 253, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 257, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 264, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 267, year_off: 0, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 271, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 278, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 285, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 299, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 313, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 320, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 334, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 341, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 348, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 355, year_off: 0, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 359, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 362, year_off: 0, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:   4, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  11, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  18, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  25, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  32, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  39, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  46, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  53, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  60, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  67, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  70, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap:  74, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  81, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  88, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  95, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap:  97, year_off: 1, type_byte: 2, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 102, year_off: 1, type_byte: 1, field_a:  5, field_b:  0, field_c:  2 },
+    R { doy_post_snap: 116, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+    R { doy_post_snap: 123, year_off: 1, type_byte: 1, field_a: -1, field_b: -1, field_c: -1 },
+]};
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// C10.10 — each of the 5 league round tables must produce
+    /// meaningful bytes (getter-written subset) that match BOTH
+    /// captured schedule buffers.
+    ///
+    /// Uses `schedule_buffer_meaningful_bytes` from
+    /// `crate::eng_second_fixtures` to strip the aux region
+    /// (0x10..0x3D) before hashing — that region is post-getter
+    /// driver state and NOT part of the schedule invariant (C10.9
+    /// finding).
+    ///
+    /// Verified against 2 independent boots per league (SHA256s
+    /// stable across boots on the meaningful subset).
+    #[test]
+    fn all_five_leagues_meaningful_bytes_match_expected_sha256() {
+        use crate::eng_second_fixtures::schedule_buffer_meaningful_bytes;
+        use sha2::{Digest, Sha256};
+
+        fn sha256_hex(b: &[u8]) -> String {
+            let mut h = Sha256::new();
+            h.update(b);
+            let out = h.finalize();
+            let mut s = String::with_capacity(64);
+            for byte in out { s.push_str(&format!("{:02x}", byte)); }
+            s
+        }
+
+        // Full SHA256 of `schedule_buffer_meaningful_bytes(...)` —
+        // stable across BOTH captured boots (20260914_131616 and
+        // 20260914_151123) per C10.9 finding.
+        let cases: &[(&str, &[RoundIntermediate], &str)] = &[
+            ("Premier", &ENG_PREM_2001_ROUNDS,
+             "f4983a94a87cedb96e9cac745eb8316e7b6a1ea793b681a9a9c35a99d2ec1f79"),
+            ("First", &ENG_FIRST_2001_ROUNDS,
+             "95cfad1cb4a0a0ce0d52aff0242c8d93d40e597439dc15f0c2cce72b028e0527"),
+            ("Second", &ENG_SECOND_2001_ROUNDS,
+             "cf94ae9eaabec058355ccbcbc3367ef9caa032092fcf80c57f10d5279daf964e"),
+            ("Third", &ENG_THIRD_2001_ROUNDS,
+             "cf94ae9eaabec058355ccbcbc3367ef9caa032092fcf80c57f10d5279daf964e"),
+            ("Conference", &ENG_CONF_2001_ROUNDS,
+             "dc428d644e7e83d085e5326331b446e986b32a11361708e2965aae47211e2246"),
+        ];
+
+        for (name, rounds, expected) in cases {
+            let buf = build_league_schedule_from_intermediate(rounds);
+            let meaningful = schedule_buffer_meaningful_bytes(&buf);
+            let sha = sha256_hex(&meaningful);
+            assert_eq!(sha, *expected,
+                       "{name}: meaningful SHA256 mismatch");
+        }
+    }
+
+    /// C10.10 — verify the intermediate-based writer produces the
+    /// same meaningful bytes as the pre-snap-template
+    /// `build_eng_second_schedule` for the reference league. Locks
+    /// the two representations against divergence.
+    #[test]
+    fn second_intermediate_matches_pre_snap_template_meaningful() {
+        use crate::eng_second_fixtures::schedule_buffer_meaningful_bytes;
+        let via_intermediate = build_league_schedule_from_intermediate(
+            &ENG_SECOND_2001_ROUNDS);
+        let via_pre_snap = build_eng_second_schedule(2001);
+        let m_i = schedule_buffer_meaningful_bytes(&via_intermediate);
+        let m_p = schedule_buffer_meaningful_bytes(&via_pre_snap);
+        assert_eq!(m_i, m_p,
+                   "Second: intermediate table and pre-snap template \
+                    must produce identical meaningful bytes");
+    }
 
     /// Ground truth from FUN_00533b50 dump. Round 0 of eng_second
     /// 2001/02: (day=12, month=7, year=2001).
