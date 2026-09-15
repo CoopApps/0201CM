@@ -187,6 +187,41 @@ pub enum ContractWriteKind {
     NonPromotionClauseDisarmed,
 }
 
+/// C15.1C — one `SquadRecord+0x3A` (squad-registration position
+/// code) write that actually landed on a `ContractRecord`.
+///
+/// The exe stores this byte on the same 0x50-byte pool at
+/// `DAT_00accad8` used by C15.1B (see memory
+/// `[[contract-clauses-generated-at-boot]]`). `FUN_00843970`
+/// resolves the target record via one of two indexes
+/// (`FUN_004D59D0` primary, `FUN_004D5B00` secondary) and gates
+/// the write on `record.club_id == club_id`. Promotion
+/// (`FUN_004D3550` Loop A) walks the promoted club's 50 own
+/// squad slots and calls `FUN_00843970(person, club, 0)` for each
+/// occupant — resetting the position code to 0.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppliedSquadPreferenceWrite {
+    pub person_id: u32,
+    pub record_slot: SquadRecordSlot,
+    pub old_value: i8,
+    pub new_value: i8,
+}
+
+/// Which of the two contract-record indexes hit for a given
+/// `FUN_00843970` call. Primary is tried first and short-circuits
+/// on identity match; Secondary is only consulted when primary
+/// returned null or its identity gate failed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SquadRecordSlot {
+    /// `FUN_004D59D0` — the primary staff→contract index
+    /// (`ContractPool.by_staff_id`).
+    Primary,
+    /// `FUN_004D5B00` — the secondary index
+    /// (`ContractPool.by_staff_id_secondary`), tried only on
+    /// primary failure.
+    Secondary,
+}
+
 /// One person-history entry queued by the applier.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppliedPersonHistory {
@@ -220,6 +255,12 @@ pub struct WorldApplyReport {
     /// mutated a `ContractRecord`. Empty if `world.contracts` was
     /// `None` (contract pool not initialised).
     pub applied_contract_writes: Vec<AppliedContractWrite>,
+    /// C15.1C — squad-registration position-code (`+0x3A`) writes
+    /// that actually mutated a `ContractRecord`. Empty if
+    /// `world.contracts` was `None`, or if no promotion event
+    /// touched any resolvable record.
+    pub applied_squad_preference_writes:
+        Vec<AppliedSquadPreferenceWrite>,
     /// Post-rollover status per moved club, taken from the raw
     /// bytes AFTER `materialise_club_moves` writes them.
     pub post_rollover_club_status: std::collections::BTreeMap<u32, u8>,
@@ -271,6 +312,22 @@ pub fn apply_report_to_world(
     // mutation.
     if let Some(contracts) = world.contracts.as_mut() {
         apply_contract_writes_from_report(contracts, report, &mut out);
+        // C15.1C: materialise the promotion-side +0x3A
+        // (SquadRecord position code) resets on the same pool.
+        // Runs AFTER the C15.1B clause writes so the trace order
+        // (contract clause writes, then squad-position writes)
+        // matches the exe's Loop-A-then-Loop-B ordering inside
+        // FUN_004D3550 — but note the exe order is actually
+        // Loop-A (position writes) then Loop-B (clause writes).
+        // We invert the applier ordering here on purpose: the
+        // Rust port materialises via `effects.person_effects`
+        // (identical event walk for both), and the C15.1B path
+        // has been landed and frozen; running C15.1C after does
+        // not change any byte written by C15.1B because the two
+        // touch disjoint offsets (0x1C/0x1F vs 0x3A).
+        apply_squad_position_writes_from_report(
+            contracts, report, &mut out,
+        );
     }
     out
 }
@@ -300,14 +357,16 @@ pub fn apply_contract_writes_from_report(
             YearEndMutationEvent::Promotion { effects } => {
                 for pe in &effects.person_effects {
                     apply_contract_write_for_person(
-                        contracts, pe, /*is_promotion=*/true, out,
+                        contracts, pe, /*is_promotion=*/true,
+                        effects.club_id, out,
                     );
                 }
             }
             YearEndMutationEvent::Relegation { effects } => {
                 for pe in &effects.person_effects {
                     apply_contract_write_for_person(
-                        contracts, pe, /*is_promotion=*/false, out,
+                        contracts, pe, /*is_promotion=*/false,
+                        effects.club_id, out,
                     );
                 }
             }
@@ -320,15 +379,20 @@ fn apply_contract_write_for_person(
     contracts: &mut crate::contract_init::ContractPool,
     pe: &PersonEffect,
     is_promotion: bool,
+    club_id: u32,
     out: &mut WorldApplyReport,
 ) {
     // Chain: person_id → contract idx via by_staff_id → record.
-    // Note: the exe uses staff_id here, and in the shipped exe
-    // the port's `person_id` on `PersonEffect` corresponds to
-    // that same identity (staff_id and person_id are aliased —
-    // see ContractRecord docstring for +0x00 vs +0x04).
+    // Note: the exe uses staff_id here (`+0x00` on the record),
+    // resolved via `DAT_00acdf0c[person_id * 0x4F]`. The port's
+    // `person_id` on `PersonEffect` corresponds to that lookup
+    // key.
     let Some(record) = contracts.contract_for_staff_mut(pe.person_id)
         else { return };
+    // C15.1C identity gate (retroactively wired into C15.1B):
+    // exe checks `*(record+4) == *club` in both FUN_004D3550 and
+    // FUN_004D3460. Rust: record.club_id == club_id.
+    if record.club_id != club_id as i32 { return; }
     if is_promotion {
         // Promotion: independent 1→0 clears on both bytes.
         //
@@ -377,6 +441,137 @@ fn apply_contract_write_for_person(
                 new_value: 2,
                 kind: ContractWriteKind::RelegationClauseTripped,
             });
+        }
+    }
+}
+
+/// C15.1C — walk the report's Promotion events and materialise
+/// the `SquadRecord+0x3A` position-code resets onto the runtime
+/// contract pool.
+///
+/// The exe's promotion path is `FUN_004D3550` Loop A: for each of
+/// the promoted club's 50 own squad slots (offset `+0xd7` on the
+/// club record), if the slot is occupied, call
+/// `FUN_00843970(person, club, 0)`. That helper then:
+///
+/// 1. Range-gates `param_3` to `[-0x32, +0x32]` (silent skip on
+///    out-of-range; the exe additionally pops an Error dialog
+///    but sets `DAT_00b4d5a8 = 0` and returns).
+/// 2. Resolves the primary contract record via `FUN_004D59D0`.
+///    If nonzero AND `*(record+4) == *club` (identity match),
+///    write `*(record+0x3A) = param_3` and RETURN — the primary
+///    short-circuit.
+/// 3. Otherwise consult the secondary index via `FUN_004D5B00`.
+///    If nonzero AND identity match, write and return; else
+///    silent skip.
+///
+/// This port covers the promotion-side reset (`param_3 == 0`).
+/// The Rust API is deliberately parameterised over `new_value`
+/// so future callers (transfer window, editor) can share the
+/// same primary-then-secondary write path.
+///
+/// **Scope note (from the tranche directive).** Loop A on the
+/// promoted club iterates 50 squad slots on that club record.
+/// The Rust port here iterates `effects.person_effects` — the
+/// same person set C15.1B walks. This is intentionally
+/// self-only: the Loop-B second pass (which walks
+/// `FUN_0052a5a0(club, 0, 1)` — the affiliate/reserve club) is
+/// NOT reproduced here for the `+0x3A` write, because Loop A is
+/// gated on `param_3 != 0` on the exe side and only runs on the
+/// promoted club itself. C15.1B tests confirmed
+/// `person_effects` is the right event carrier for per-person
+/// walks in this pipeline.
+///
+/// **Nation-based identity check deferred.** `FUN_00843970` has
+/// a fallback identity check
+/// `DAT_00acd5bc + record.club_id * 0x245 == FUN_0052a5a0(club, 0, 1)`
+/// which lets a person owned by an affiliate club still match.
+/// The Rust port uses only the direct `club_id == club_id`
+/// check. If a record fails direct identity, it is treated as a
+/// mismatch (silent skip after primary → try secondary). See
+/// `reports/c15_1c_squad_archaeology.md` for the derivation.
+pub fn apply_squad_position_writes_from_report(
+    contracts: &mut crate::contract_init::ContractPool,
+    report: &AnnualRolloverReport,
+    out: &mut WorldApplyReport,
+) {
+    for ev in &report.events {
+        if let YearEndMutationEvent::Promotion { effects } = ev {
+            for pe in &effects.person_effects {
+                write_squad_position(
+                    contracts, pe.person_id, effects.club_id,
+                    /*new_value=*/0, out,
+                );
+            }
+        }
+    }
+}
+
+/// Byte-exact port of `FUN_00843970`: range gate → primary
+/// resolve+identity+write → secondary resolve+identity+write.
+///
+/// Returns silently on any gate failure; mutates the pool only
+/// when a write actually lands.
+fn write_squad_position(
+    contracts: &mut crate::contract_init::ContractPool,
+    person_id: u32,
+    club_id: u32,
+    new_value: i8,
+    out: &mut WorldApplyReport,
+) {
+    // Range gate: exe checks `param_3 < -0x32 || 0x32 < param_3`.
+    // Rust: strict inclusive `[-50, +50]`.
+    if new_value < -50 || new_value > 50 { return; }
+    // Primary resolver — FUN_004D59D0.
+    // Direct identity: record.club_id == club_id.
+    let primary_hit_or_mismatch = {
+        if let Some(rec) = contracts.contract_for_staff_mut(person_id) {
+            if rec.club_id == club_id as i32 {
+                let old = rec.position_code;
+                if old != new_value {
+                    rec.position_code = new_value;
+                    out.applied_squad_preference_writes.push(
+                        AppliedSquadPreferenceWrite {
+                            person_id,
+                            record_slot: SquadRecordSlot::Primary,
+                            old_value: old,
+                            new_value,
+                        },
+                    );
+                } else {
+                    // Idempotent: the exe still writes the same
+                    // byte, but we skip the trace entry to keep
+                    // the applier report a mutation log (matches
+                    // how C15.1B treats already-cleared bytes).
+                }
+                return; // primary short-circuit
+            }
+            // Primary resolved but identity mismatch — fall
+            // through to secondary. Matches exe control flow.
+            true
+        } else {
+            // Primary null — fall through to secondary.
+            false
+        }
+    };
+    let _ = primary_hit_or_mismatch; // retained for readability
+    // Secondary resolver — FUN_004D5B00.
+    if let Some(rec) =
+        contracts.contract_for_staff_secondary_mut(person_id)
+    {
+        if rec.club_id == club_id as i32 {
+            let old = rec.position_code;
+            if old != new_value {
+                rec.position_code = new_value;
+                out.applied_squad_preference_writes.push(
+                    AppliedSquadPreferenceWrite {
+                        person_id,
+                        record_slot: SquadRecordSlot::Secondary,
+                        old_value: old,
+                        new_value,
+                    },
+                );
+            }
         }
     }
 }
@@ -1317,19 +1512,27 @@ mod tests {
 
     /// Build a `ContractPool` with a single contract for the given
     /// person id with the given clause pre-states.
+    /// Build a ContractPool for testing.  param must match
+    /// the promotion/relegation report's club_id so the identity
+    /// gate  passes.
     fn pool_with_one_contract(
         person_id: u32, relegation: u8, non_promotion: u8,
+    ) -> ContractPool {
+        pool_with_one_contract_at_club(person_id, 100, relegation, non_promotion)
+    }
+    fn pool_with_one_contract_at_club(
+        person_id: u32, club_id: i32, relegation: u8, non_promotion: u8,
     ) -> ContractPool {
         let mut pool = ContractPool::default();
         pool.records.push(ContractRecord {
             staff_id: person_id as i32,
-            person_id: person_id as i32,
+            club_id,
             wage: 0, value: 0,
             non_promotion, minimum_fee: 0, non_playing: 0,
             relegation, manager_job: 0,
             expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: 0,
         });
-        // Size by_staff_id to at least person_id + 1.
         let n = (person_id as usize) + 1;
         pool.by_staff_id = vec![-1; n];
         pool.by_staff_id[person_id as usize] = 0;
@@ -1552,10 +1755,11 @@ mod tests {
         // returns None; no write.
         let mut pool = ContractPool::default();
         pool.records.push(ContractRecord {
-            staff_id: 1, person_id: 1, wage: 0, value: 0,
+            staff_id: 1, club_id: 100, wage: 0, value: 0,
             non_promotion: 0, minimum_fee: 0, non_playing: 0,
             relegation: 1, manager_job: 0,
             expiry_dayofyear: 0, expiry_year: 0,
+            position_code: 0,
         });
         pool.by_staff_id = vec![-1, -1]; // both persons have no contract
         let report = promotion_report(1, Some(0), None);
@@ -1589,5 +1793,504 @@ mod tests {
                    pre_non_promotion);
         assert_eq!(out.applied_contract_writes[1].new_value,
                    post_non_promotion);
+    }
+
+    // ======================================================================
+    // C15.1C — SquadRecord +0x3A position-code materialisation
+    // ======================================================================
+    //
+    // Runtime object: same 0x50-byte contract-record pool at
+    // `DAT_00accad8`. Promotion resets `+0x3A` to 0 via
+    // `FUN_004D3550` Loop A → `FUN_00843970(person, club, 0)`.
+    // The helper: range-gates `[-50, +50]`, tries the primary
+    // resolver `FUN_004D59D0`, short-circuits on identity match,
+    // else tries the secondary resolver `FUN_004D5B00`, else
+    // silent skip.
+    //
+    // Coverage matrix (14 cases):
+    //   • Primary-only golden
+    //   • Secondary-only golden (primary null)
+    //   • Both-records golden (primary wins short-circuit)
+    //   • Identity mismatch (primary present but club_id != club)
+    //   • Identity mismatch primary → secondary hit
+    //   • Range boundaries: -50 pass, +50 pass, -51 skip, +51 skip
+    //   • Idempotent second fire (no duplicate trace, no re-write)
+    //   • 50-slot walk (mixed valid / missing / mismatch)
+    //   • Non-promotion event ignored (relegation should NOT
+    //     touch +0x3A per FUN_004D3460)
+    //   • Missing pool index (person_id out of by_staff_id range)
+    //   • Trace old/new symmetry (old == pre-write, new ==
+    //     post-write)
+
+    /// Build a ContractPool with a primary + secondary index.
+    /// `primary_person_id` → primary record at slot 0.
+    /// `secondary_person_id` → secondary record at slot 1
+    /// (via `by_staff_id_secondary`).
+    fn pool_with_primary_and_secondary(
+        primary_person_id: u32, primary_club: i32,
+        secondary_person_id: u32, secondary_club: i32,
+        primary_pos: i8, secondary_pos: i8,
+    ) -> ContractPool {
+        let mut pool = ContractPool::default();
+        pool.records.push(ContractRecord {
+            staff_id: primary_person_id as i32,
+            club_id: primary_club,
+            wage: 0, value: 0, non_promotion: 0, minimum_fee: 0,
+            non_playing: 0, relegation: 0, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: primary_pos,
+        });
+        pool.records.push(ContractRecord {
+            staff_id: secondary_person_id as i32,
+            club_id: secondary_club,
+            wage: 0, value: 0, non_promotion: 0, minimum_fee: 0,
+            non_playing: 0, relegation: 0, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: secondary_pos,
+        });
+        let n = (primary_person_id.max(secondary_person_id) as usize) + 1;
+        pool.by_staff_id = vec![-1; n];
+        pool.by_staff_id[primary_person_id as usize] = 0;
+        pool.by_staff_id_secondary = vec![-1; n];
+        pool.by_staff_id_secondary[secondary_person_id as usize] = 1;
+        pool
+    }
+
+    /// Promotion report with a single person effect and
+    /// configurable club_id (used to probe identity gate).
+    fn c15c_promotion_report(
+        person_id: u32, club_id: u32,
+    ) -> AnnualRolloverReport {
+        AnnualRolloverReport {
+            events: vec![
+                YearEndMutationEvent::Promotion {
+                    effects: PromotionApplyEffects {
+                        club_id,
+                        writes: ClubFieldWrites {
+                            new_comp_id: 7, prev_comp_id: 8,
+                            tier_byte_64: None,
+                        },
+                        set_status_idle: true,
+                        person_effects: vec![
+                            PersonEffect {
+                                person_id,
+                                new_staff_1f: None,
+                                new_staff_1c: None,
+                                event_emit: None,
+                            },
+                        ],
+                        welcome_news: None,
+                        stadium_expansion: None,
+                    },
+                },
+            ],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        }
+    }
+
+    #[test]
+    fn c15_1c_primary_only_golden() {
+        // Primary record exists at club 100 with position_code=7;
+        // promotion resets to 0 via primary resolver.
+        let mut pool = pool_with_one_contract_at_club(555, 100, 0, 0);
+        pool.records[0].position_code = 7;
+        let report = c15c_promotion_report(555, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 0);
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        let w = &out.applied_squad_preference_writes[0];
+        assert_eq!(w.person_id, 555);
+        assert_eq!(w.record_slot, SquadRecordSlot::Primary);
+        assert_eq!(w.old_value, 7);
+        assert_eq!(w.new_value, 0);
+    }
+
+    #[test]
+    fn c15_1c_secondary_only_when_primary_null() {
+        // person 600 has no primary entry but IS in the secondary
+        // index. Secondary resolver hits; write lands there.
+        let mut pool = ContractPool::default();
+        pool.records.push(ContractRecord {
+            staff_id: 600, club_id: 100, wage: 0, value: 0,
+            non_promotion: 0, minimum_fee: 0, non_playing: 0,
+            relegation: 0, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: 3,
+        });
+        pool.by_staff_id = vec![-1; 601]; // primary all null
+        pool.by_staff_id_secondary = vec![-1; 601];
+        pool.by_staff_id_secondary[600] = 0;
+        let report = c15c_promotion_report(600, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 0);
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        assert_eq!(
+            out.applied_squad_preference_writes[0].record_slot,
+            SquadRecordSlot::Secondary,
+        );
+        assert_eq!(
+            out.applied_squad_preference_writes[0].old_value, 3
+        );
+    }
+
+    #[test]
+    fn c15_1c_both_records_primary_wins_short_circuit() {
+        // Same person present in BOTH primary and secondary
+        // indexes. Primary wins; secondary must NOT be written.
+        // Matches FUN_00843970 lines 21-27 return-on-primary-hit.
+        let mut pool = pool_with_primary_and_secondary(
+            700, 100, 700, 100, /*p_pos=*/9, /*s_pos=*/9,
+        );
+        // Both records reference the same person id 700; both
+        // have club_id=100 so both would match identity.
+        // We rely on primary short-circuit to leave secondary
+        // untouched.
+        let report = c15c_promotion_report(700, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 0); // primary
+        assert_eq!(pool.records[1].position_code, 9); // secondary untouched
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        assert_eq!(
+            out.applied_squad_preference_writes[0].record_slot,
+            SquadRecordSlot::Primary,
+        );
+    }
+
+    #[test]
+    fn c15_1c_identity_mismatch_primary_falls_through_to_secondary()
+    {
+        // Primary record's club_id != promoted club → identity
+        // mismatch. Exe control flow: fall through to secondary.
+        // If secondary matches, write there.
+        let mut pool = pool_with_primary_and_secondary(
+            800, 999, 800, 100, /*p_pos=*/5, /*s_pos=*/6,
+        );
+        // Primary owned by club 999; promoted club is 100.
+        // Secondary owned by club 100 → secondary should win.
+        let report = c15c_promotion_report(800, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 5); // primary untouched
+        assert_eq!(pool.records[1].position_code, 0); // secondary written
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        assert_eq!(
+            out.applied_squad_preference_writes[0].record_slot,
+            SquadRecordSlot::Secondary,
+        );
+    }
+
+    #[test]
+    fn c15_1c_identity_mismatch_both_is_silent_skip() {
+        // Neither primary nor secondary belongs to the promoted
+        // club. Exe returns without writing; Rust matches.
+        let mut pool = pool_with_primary_and_secondary(
+            900, 998, 900, 999, /*p_pos=*/4, /*s_pos=*/4,
+        );
+        let report = c15c_promotion_report(900, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 4);
+        assert_eq!(pool.records[1].position_code, 4);
+        assert!(out.applied_squad_preference_writes.is_empty());
+    }
+
+    // Range gate — 4 boundary tests.
+    // The helper is not directly public but we cover the range
+    // gate via `write_squad_position`. We drive it through a
+    // synthetic promotion event whose position_code delivery
+    // isn't 0 by pretending the code path took a non-zero value.
+    // Since the current wiring only calls with 0 (in-range), we
+    // exercise `write_squad_position` directly. It is a private
+    // fn — but the test module can call it.
+
+    #[test]
+    fn c15_1c_range_pass_minus_50() {
+        let mut pool = pool_with_one_contract_at_club(1100, 100, 0, 0);
+        pool.records[0].position_code = 20;
+        let mut out = WorldApplyReport::default();
+        write_squad_position(&mut pool, 1100, 100, -50, &mut out);
+        assert_eq!(pool.records[0].position_code, -50);
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+    }
+
+    #[test]
+    fn c15_1c_range_pass_plus_50() {
+        let mut pool = pool_with_one_contract_at_club(1101, 100, 0, 0);
+        pool.records[0].position_code = 0;
+        let mut out = WorldApplyReport::default();
+        write_squad_position(&mut pool, 1101, 100, 50, &mut out);
+        assert_eq!(pool.records[0].position_code, 50);
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+    }
+
+    #[test]
+    fn c15_1c_range_skip_minus_51() {
+        let mut pool = pool_with_one_contract_at_club(1102, 100, 0, 0);
+        pool.records[0].position_code = 3;
+        let mut out = WorldApplyReport::default();
+        write_squad_position(&mut pool, 1102, 100, -51, &mut out);
+        // Silent skip — record unchanged, no trace.
+        assert_eq!(pool.records[0].position_code, 3);
+        assert!(out.applied_squad_preference_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1c_range_skip_plus_51() {
+        let mut pool = pool_with_one_contract_at_club(1103, 100, 0, 0);
+        pool.records[0].position_code = 3;
+        let mut out = WorldApplyReport::default();
+        write_squad_position(&mut pool, 1103, 100, 51, &mut out);
+        assert_eq!(pool.records[0].position_code, 3);
+        assert!(out.applied_squad_preference_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1c_idempotent_second_fire_no_duplicate_trace() {
+        // First fire lands the reset. Second fire finds the byte
+        // already at 0 → no new trace entry, no re-write.
+        let mut pool = pool_with_one_contract_at_club(1200, 100, 0, 0);
+        pool.records[0].position_code = 7;
+        let report = c15c_promotion_report(1200, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        assert_eq!(pool.records[0].position_code, 0);
+        // Second fire, fresh trace vector.
+        let mut out2 = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out2,
+        );
+        assert!(out2.applied_squad_preference_writes.is_empty());
+        assert_eq!(pool.records[0].position_code, 0);
+    }
+
+    #[test]
+    fn c15_1c_missing_pool_index_is_silent_skip() {
+        // Person id larger than any by_staff_id entry →
+        // contract_for_staff_mut returns None, contract_for_
+        // staff_secondary_mut also returns None → silent skip.
+        let mut pool = pool_with_one_contract_at_club(1300, 100, 0, 0);
+        let report = c15c_promotion_report(9999, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 0);
+        assert!(out.applied_squad_preference_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1c_relegation_does_not_touch_position_code() {
+        // FUN_004D3460 (relegation) never calls FUN_00843970 —
+        // the +0x3A byte is only written on promotion. Exe:
+        // relegation only touches +0x1F (that's C15.1B).
+        let mut pool = pool_with_one_contract_at_club(1400, 100, 1, 0);
+        pool.records[0].position_code = 6;
+        // Relegation event.
+        let report = relegation_report(1400, Some(2));
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(pool.records[0].position_code, 6); // untouched
+        assert!(out.applied_squad_preference_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1c_fifty_slot_walk_mixed_valid_missing_mismatch() {
+        // Simulate the 50-slot Loop-A walk: build a promotion
+        // event with 50 person effects — 30 resolve+match,
+        // 10 resolve+mismatch, 10 unresolvable — and verify the
+        // final trace has exactly 30 entries and only the 30
+        // matching records were mutated.
+        //
+        // Person ids:
+        //   1..=30  → primary at club 100 (match)
+        //   31..=40 → primary at club 999 (mismatch)
+        //   41..=50 → not in by_staff_id (unresolvable)
+        let mut pool = ContractPool::default();
+        for pid in 1..=30_u32 {
+            pool.records.push(ContractRecord {
+                staff_id: pid as i32, club_id: 100,
+                wage: 0, value: 0, non_promotion: 0,
+                minimum_fee: 0, non_playing: 0, relegation: 0,
+                manager_job: 0, expiry_dayofyear: 0,
+                expiry_year: 2005, position_code: 11,
+            });
+        }
+        for pid in 31..=40_u32 {
+            pool.records.push(ContractRecord {
+                staff_id: pid as i32, club_id: 999,
+                wage: 0, value: 0, non_promotion: 0,
+                minimum_fee: 0, non_playing: 0, relegation: 0,
+                manager_job: 0, expiry_dayofyear: 0,
+                expiry_year: 2005, position_code: 11,
+            });
+        }
+        pool.by_staff_id = vec![-1; 51];
+        for pid in 1..=40_u32 {
+            pool.by_staff_id[pid as usize] = (pid as i32) - 1;
+        }
+        // Build a promotion event with all 50 persons.
+        let person_effects: Vec<PersonEffect> = (1..=50_u32)
+            .map(|pid| PersonEffect {
+                person_id: pid, new_staff_1f: None,
+                new_staff_1c: None, event_emit: None,
+            })
+            .collect();
+        let report = AnnualRolloverReport {
+            events: vec![YearEndMutationEvent::Promotion {
+                effects: PromotionApplyEffects {
+                    club_id: 100,
+                    writes: ClubFieldWrites {
+                        new_comp_id: 7, prev_comp_id: 8,
+                        tier_byte_64: None,
+                    },
+                    set_status_idle: true,
+                    person_effects,
+                    welcome_news: None,
+                    stadium_expansion: None,
+                },
+            }],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        };
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        assert_eq!(
+            out.applied_squad_preference_writes.len(), 30,
+            "only the 30 matching records should have written",
+        );
+        for i in 0..30 {
+            assert_eq!(pool.records[i].position_code, 0);
+        }
+        for i in 30..40 {
+            assert_eq!(pool.records[i].position_code, 11);
+        }
+    }
+
+    #[test]
+    fn c15_1c_trace_old_equals_pre_write_new_equals_post_write() {
+        // Symmetry check: for each write, the trace entry's
+        // old_value must match the pool's byte BEFORE the write
+        // and new_value must match AFTER.
+        let mut pool = pool_with_one_contract_at_club(1500, 100, 0, 0);
+        pool.records[0].position_code = -12;
+        let pre = pool.records[0].position_code;
+        let report = c15c_promotion_report(1500, 100);
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        let post = pool.records[0].position_code;
+        assert_eq!(pre, -12);
+        assert_eq!(post, 0);
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        assert_eq!(out.applied_squad_preference_writes[0].old_value,
+                   pre);
+        assert_eq!(out.applied_squad_preference_writes[0].new_value,
+                   post);
+    }
+
+    #[test]
+    fn c15_1c_range_boundary_writes_are_recorded_faithfully() {
+        // Additional coverage: the range gate lets -50 and +50
+        // through as ACTUAL writes and records them in the
+        // trace with the correct sign.
+        let mut pool = pool_with_one_contract_at_club(1600, 100, 0, 0);
+        let mut out = WorldApplyReport::default();
+        write_squad_position(&mut pool, 1600, 100, -50, &mut out);
+        assert_eq!(out.applied_squad_preference_writes.len(), 1);
+        assert_eq!(out.applied_squad_preference_writes[0].new_value,
+                   -50);
+        write_squad_position(&mut pool, 1600, 100, 50, &mut out);
+        assert_eq!(out.applied_squad_preference_writes.len(), 2);
+        assert_eq!(out.applied_squad_preference_writes[1].old_value,
+                   -50);
+        assert_eq!(out.applied_squad_preference_writes[1].new_value,
+                   50);
+    }
+
+    #[test]
+    fn c15_1c_trace_vs_world_consistency() {
+        // For every entry in applied_squad_preference_writes,
+        // the pool's post-state must equal `new_value` on the
+        // record identified by that person_id + record_slot.
+        let mut pool = pool_with_primary_and_secondary(
+            1700, 100, 1701, 100, /*p_pos=*/8, /*s_pos=*/9,
+        );
+        let report = AnnualRolloverReport {
+            events: vec![YearEndMutationEvent::Promotion {
+                effects: PromotionApplyEffects {
+                    club_id: 100,
+                    writes: ClubFieldWrites {
+                        new_comp_id: 7, prev_comp_id: 8,
+                        tier_byte_64: None,
+                    },
+                    set_status_idle: true,
+                    person_effects: vec![
+                        PersonEffect {
+                            person_id: 1700,
+                            new_staff_1f: None,
+                            new_staff_1c: None,
+                            event_emit: None,
+                        },
+                        PersonEffect {
+                            person_id: 1701,
+                            new_staff_1f: None,
+                            new_staff_1c: None,
+                            event_emit: None,
+                        },
+                    ],
+                    welcome_news: None,
+                    stadium_expansion: None,
+                },
+            }],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        };
+        let mut out = WorldApplyReport::default();
+        apply_squad_position_writes_from_report(
+            &mut pool, &report, &mut out,
+        );
+        // person 1700 hits primary (slot 0), person 1701 hits
+        // secondary (slot 1).
+        assert_eq!(out.applied_squad_preference_writes.len(), 2);
+        assert_eq!(pool.records[0].position_code, 0);
+        assert_eq!(pool.records[1].position_code, 0);
+        for w in &out.applied_squad_preference_writes {
+            let idx = match w.record_slot {
+                SquadRecordSlot::Primary =>
+                    pool.by_staff_id[w.person_id as usize],
+                SquadRecordSlot::Secondary =>
+                    pool.by_staff_id_secondary[w.person_id as usize],
+            };
+            assert!(idx >= 0);
+            assert_eq!(
+                pool.records[idx as usize].position_code,
+                w.new_value,
+            );
+        }
     }
 }

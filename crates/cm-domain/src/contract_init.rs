@@ -42,16 +42,29 @@ use serde::{Deserialize, Serialize};
 use crate::typed_records::{ClubView, PlayerView, ReleaseClauses};
 use crate::{DomainStaffType6, DomainStaffType10, World};
 
-/// Runtime "current employment contract" record — the exe's stride-
-/// 0x50 struct allocated by `FUN_004cd930`. Field offsets on the exe
-/// struct are noted per field.
+/// Runtime "current employment contract / squad registration"
+/// record — the exe's stride-0x50 struct allocated by
+/// `FUN_004cd930`. This record is dual-purpose: contract-clause
+/// state at `+0x1C..+0x20` AND squad-registration position
+/// preference at `+0x3A` — the C15.1B and C15.1C archaeology
+/// proved these are the same 0x50-byte pool viewed through
+/// different offsets.
+///
+/// Field offsets on the exe struct are noted per field.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractRecord {
-    /// `+0x00` — staff_id sanity check.
+    /// `+0x00` — staff_id (self-index / sanity).
     pub staff_id: i32,
-    /// `+0x04` — Person id (redundant with staff_id in shipped exe;
-    /// kept for parity).
-    pub person_id: i32,
+    /// `+0x04` — **club id** (verified by C15.1B + C15.1C
+    /// agents against the identity gate `*(record+4) == *club`
+    /// in FUN_00843970 / FUN_004D3550 / FUN_004D3460).
+    /// Historical name in this codebase was `person_id`; the
+    /// C15.1C archaeology proved that was mis-labelled and this
+    /// byte is the OWNING CLUB, not a person id (the person id
+    /// is implicit — it's the index used against
+    /// `by_staff_id`).
+    #[serde(alias = "person_id")]
+    pub club_id: i32,
     /// `+0x0C` — cached wage on the contract record (`param_1[3]`
     /// in FUN_00847a80). Same value that also gets echoed onto
     /// Person +0x52.
@@ -72,6 +85,16 @@ pub struct ContractRecord {
     pub expiry_dayofyear: u16,
     /// `+0x29` contract expiry — year.
     pub expiry_year: u16,
+    /// `+0x3A` — **position preference / squad-registration
+    /// role code** (i8, range `[-50, +50]` strict inclusive).
+    /// Written by FUN_00843970 (and reset to `0` by promotion's
+    /// Loop A). Read by FUN_00843880 for squad evaluations.
+    /// Semantic per C15.1C archaeology: signed rank/preference;
+    /// positive = wanted at position of magnitude |v|; negative
+    /// = ranked/away. `0` = neutral (fall back to
+    /// `Person+0x61+4` clamp source).
+    #[serde(default)]
+    pub position_code: i8,
 }
 
 impl ContractRecord {
@@ -87,16 +110,32 @@ impl ContractRecord {
     }
 }
 
-/// Pool of generated contracts, indexed by staff_id via `by_staff_id`.
-/// Mirrors the exe's `DAT_00accad8` (stride-0x50 records) +
-/// `DAT_00acdf0c` (staff_id → contract_idx) pairing.
+/// Pool of generated contracts, indexed by staff_id via
+/// `by_staff_id` (primary) and `by_staff_id_secondary`
+/// (secondary / alternate). Mirrors the exe's `DAT_00accad8`
+/// (stride-0x50 records) + `DAT_00acdf0c` (0x4F stride per
+/// person, first int = primary staff_idx, second int at +4 =
+/// secondary staff_idx).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractPool {
     /// Contract records in insertion order.
     pub records: Vec<ContractRecord>,
-    /// staff_id → index into `records`. `-1` means no contract.
-    /// Vec-indexed for O(1) lookup — sized to `max_staff_id + 1`.
+    /// staff_id → primary contract index into `records`.
+    /// `-1` means no primary contract. Vec-indexed for O(1)
+    /// lookup — sized to `max_staff_id + 1`. Corresponds to
+    /// `DAT_00acdf0c[person_id * 0x4F + 0]` in the exe.
     pub by_staff_id: Vec<i32>,
+    /// staff_id → **secondary / alternate** contract index —
+    /// corresponds to `DAT_00acdf0c[person_id * 0x4F + 4]`.
+    /// Very rarely populated (the shipped-data loader does not
+    /// fill this in the current C15.1B/C archaeology tranche;
+    /// most persons have `-1` here). Present so the C15.1C
+    /// primary-then-secondary short-circuit can be exercised
+    /// in tests + honoured whenever runtime state populates
+    /// it. See `reports/c15_1c_squad_archaeology.md` §11 for
+    /// the deferred loader trace.
+    #[serde(default)]
+    pub by_staff_id_secondary: Vec<i32>,
 }
 
 impl ContractPool {
@@ -108,12 +147,25 @@ impl ContractPool {
 
     /// C15.1B — mutable form of [`contract_for_staff`]. Used by the
     /// promotion / relegation apply layer to write bytes `+0x1C`
-    /// (non_promotion) and `+0x1F` (relegation) on the resolved
-    /// contract record.
+    /// (non_promotion), `+0x1F` (relegation), and `+0x3A`
+    /// (position_code, C15.1C) on the resolved contract record.
     pub fn contract_for_staff_mut(
         &mut self, staff_id: u32,
     ) -> Option<&mut ContractRecord> {
         let idx = *self.by_staff_id.get(staff_id as usize)? as isize;
+        if idx < 0 { return None; }
+        self.records.get_mut(idx as usize)
+    }
+
+    /// C15.1C — secondary / alternate contract lookup via
+    /// `DAT_00acdf0c[person_id * 0x4F + 4]`. Used by
+    /// `FUN_00843970`'s fallback branch when the primary
+    /// record either doesn't exist or fails the identity gate.
+    pub fn contract_for_staff_secondary_mut(
+        &mut self, staff_id: u32,
+    ) -> Option<&mut ContractRecord> {
+        let idx = *self.by_staff_id_secondary
+            .get(staff_id as usize)? as isize;
         if idx < 0 { return None; }
         self.records.get_mut(idx as usize)
     }
@@ -397,7 +449,16 @@ pub fn initialise_all(world: &World) -> ContractPool {
         by_staff_id[person.id as usize] = idx;
         records.push(ContractRecord {
             staff_id:  person.id as i32,
-            person_id: person.id as i32,
+            // C15.1C archaeology proved `+0x04` is `club_id`, not
+            // `person_id`. The disk→runtime loader trace has NOT
+            // established the correct per-contract club id at
+            // boot; setting to 0 means the identity gate
+            // `record.club_id == effects.club_id` will always
+            // fail in production until the loader trace lands
+            // (deferred item — see
+            // `reports/c15_1c_squad_archaeology.md` §11). Tests
+            // set this explicitly.
+            club_id: 0,
             wage,
             value,
             non_promotion: clauses.non_promotion,
@@ -407,12 +468,19 @@ pub fn initialise_all(world: &World) -> ContractPool {
             manager_job:   clauses.manager_job,
             expiry_dayofyear,
             expiry_year,
+            position_code: 0,
         });
     }
 
     eprintln!("[contract_init] {} contracts generated from {} staff (max_id={})",
               records.len(), world.staff.type6.len(), max_id);
-    ContractPool { records, by_staff_id }
+    ContractPool {
+        records,
+        by_staff_id,
+        // Secondary index is empty at boot — populated only when
+        // runtime state warrants it (rare per shipped data).
+        by_staff_id_secondary: Vec::new(),
+    }
 }
 
 #[cfg(test)]
