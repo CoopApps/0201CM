@@ -92,17 +92,47 @@ pub struct StadiumExpansionInput {
     /// Current stadium `+0x44` — high-water peak (never decreases).
     pub stadium_peak: i32,
 
-    /// Current club cash (64-bit LE pair at `Club[0]`/`Club[1]`).
+    /// Current club cash. Runtime storage: **i64, signed**, at
+    /// runtime finance-object byte offset **`+0x00..+0x08`**
+    /// (Ghidra `*param_1` low half + `param_1[1]` high half —
+    /// the canonical i64 borrow/carry idiom is used by 5
+    /// independent finance writers). Signed: negative cash
+    /// permitted (287 clubs ship bankrupt per
+    /// `[[club-record-decoded]]`).
+    ///
+    /// C15.1A archaeology (`reports/c15_1a_finance_archaeology.md`):
+    /// `ClubView::cash() -> i32 @ +0x65` is unconfirmed; no
+    /// finance writer touches byte 0x65. That field is likely
+    /// disk-only or a display cache. The runtime finance object
+    /// this input models is written at `+0x00`.
     pub club_cash: i64,
 
-    /// `Club[0x2d]` — owner-contribution accumulator A (lifetime).
-    pub club_owner_accum_a: i64,
-    /// `Club[0x55]` — owner-contribution accumulator B (season).
-    pub club_owner_accum_b: i64,
-    /// `Club[0x23]` — stadium-expense YTD.
-    pub club_stadium_expense_ytd: i64,
-    /// `Club[0x4b]` — stadium-expense lifetime.
-    pub club_stadium_expense_lifetime: i64,
+    /// **Season subsidy income** accumulator (i32, at runtime
+    /// object byte `+0xB4`). Ghidra's `param_1[0x2d]` is a
+    /// DWORD index = byte `0x2D * 4 = 0xB4`. Reset annually by
+    /// `FUN_00585AE0` (season roll). Written by:
+    /// `FUN_00583FC0` (this fn's owner-subsidy branch),
+    /// `FUN_00587C40` (chairman injection),
+    /// `FUN_00586EC0` (inter-club wage rescue),
+    /// `FUN_00584790` (parent-owner gate-day top-up).
+    pub club_season_subsidy_income: i32,
+    /// **Lifetime subsidy income** accumulator (i32, at runtime
+    /// byte `+0x154`). Ghidra `param_1[0x55]` = byte `0x55*4 = 0x154`.
+    /// Never reset. Monotone-increasing lifetime mirror of
+    /// `club_season_subsidy_income`.
+    pub club_lifetime_subsidy_income: i32,
+    /// **Season misc operating expense** accumulator (i32, at
+    /// runtime byte `+0x8C`). Ghidra `param_1[0x23]` = byte
+    /// `0x23*4 = 0x8C`. Reset annually. Bumped by stadium
+    /// expansion, signing bonuses, manager compensation,
+    /// gate-day operating costs. **NOT stadium-specific** —
+    /// the C14 label "stadium YTD" is too narrow.
+    pub club_season_misc_expense: i32,
+    /// **Lifetime misc operating expense** (i32, at runtime byte
+    /// `+0x12C`). Ghidra `param_1[0x4b]` = byte `0x4B*4 = 0x12C`.
+    /// Never reset. Lifetime mirror of
+    /// `club_season_misc_expense`.
+    pub club_lifetime_misc_expense: i32,
 
     /// Parent/owner-club presence — `Club[+0xBF]` non-null and its
     /// stadium `+0x69` non-null pick the "owner-backed" path in
@@ -152,21 +182,32 @@ pub struct StadiumWrites {
     pub new_peak: i32,
 }
 
-/// Club finance writes.
+/// Club finance writes. Widths, offsets, semantics all
+/// evidence-confirmed by C15.1A archaeology
+/// (`reports/c15_1a_finance_archaeology.md`) against 5
+/// independent finance-cluster writers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ClubFinanceWrites {
-    /// New `Club[0]`/`Club[1]` (64-bit cash).
+    /// New cash (i64 signed, runtime object byte `+0x00`).
     pub new_cash: i64,
-    /// New `Club[0x23]` — stadium YTD.
-    pub new_stadium_expense_ytd: i64,
-    /// New `Club[0x4b]` — stadium lifetime.
-    pub new_stadium_expense_lifetime: i64,
-    /// New `Club[0x2d]` — owner accumulator A.
-    pub new_owner_accum_a: i64,
-    /// New `Club[0x55]` — owner accumulator B.
-    pub new_owner_accum_b: i64,
-    /// True when the owner-parent subsidised this transaction
-    /// (both `+0x2d` and `+0x55` incremented; cash net-zero).
+    /// New season misc operating expense (i32, byte `+0x8C`).
+    /// Prior name: `new_season_misc_expense` — incorrect,
+    /// bucket is not stadium-specific.
+    pub new_season_misc_expense: i32,
+    /// New lifetime misc operating expense (i32, byte `+0x12C`).
+    /// Prior name: `new_lifetime_misc_expense`.
+    pub new_lifetime_misc_expense: i32,
+    /// New season subsidy income (i32, byte `+0xB4`).
+    /// Prior name: `new_season_subsidy_income`.
+    pub new_season_subsidy_income: i32,
+    /// New lifetime subsidy income (i32, byte `+0x154`).
+    /// Prior name: `new_lifetime_subsidy_income`.
+    pub new_lifetime_subsidy_income: i32,
+    /// True when the owner-parent subsidised this transaction.
+    /// Semantic on cash: net-zero delta (credit then debit, in
+    /// that order per DD 00583fc0 lines 145 → 151). Semantic
+    /// on the four accumulators: all four bump by cost (season
+    /// & lifetime, both expense & subsidy-income).
     pub owner_subsidised: bool,
 }
 
@@ -379,10 +420,10 @@ pub fn apply_stadium_expansion(
         let new_cash = inp.club_cash - cost;
         let cw = ClubFinanceWrites {
             new_cash,
-            new_stadium_expense_ytd: inp.club_stadium_expense_ytd + cost,
-            new_stadium_expense_lifetime: inp.club_stadium_expense_lifetime + cost,
-            new_owner_accum_a: inp.club_owner_accum_a,
-            new_owner_accum_b: inp.club_owner_accum_b,
+            new_season_misc_expense: inp.club_season_misc_expense.wrapping_add(cost as i32),
+            new_lifetime_misc_expense: inp.club_lifetime_misc_expense.wrapping_add(cost as i32),
+            new_season_subsidy_income: inp.club_season_subsidy_income,
+            new_lifetime_subsidy_income: inp.club_lifetime_subsidy_income,
             owner_subsidised: false,
         };
         let reason = ReturnReason::ForcedSuccess;
@@ -425,10 +466,10 @@ pub fn apply_stadium_expansion(
             let new_cash = inp.club_cash - cost;
             let cw = ClubFinanceWrites {
                 new_cash,
-                new_stadium_expense_ytd: inp.club_stadium_expense_ytd + cost,
-                new_stadium_expense_lifetime: inp.club_stadium_expense_lifetime + cost,
-                new_owner_accum_a: inp.club_owner_accum_a,
-                new_owner_accum_b: inp.club_owner_accum_b,
+                new_season_misc_expense: inp.club_season_misc_expense.wrapping_add(cost as i32),
+                new_lifetime_misc_expense: inp.club_lifetime_misc_expense.wrapping_add(cost as i32),
+                new_season_subsidy_income: inp.club_season_subsidy_income,
+                new_lifetime_subsidy_income: inp.club_lifetime_subsidy_income,
                 owner_subsidised: false,
             };
             StadiumExpansionOutcome {
@@ -475,18 +516,18 @@ pub fn apply_stadium_expansion(
 
             let mut cw = ClubFinanceWrites {
                 new_cash: inp.club_cash,
-                new_stadium_expense_ytd: inp.club_stadium_expense_ytd + cost,
-                new_stadium_expense_lifetime: inp.club_stadium_expense_lifetime + cost,
-                new_owner_accum_a: inp.club_owner_accum_a,
-                new_owner_accum_b: inp.club_owner_accum_b,
+                new_season_misc_expense: inp.club_season_misc_expense.wrapping_add(cost as i32),
+                new_lifetime_misc_expense: inp.club_lifetime_misc_expense.wrapping_add(cost as i32),
+                new_season_subsidy_income: inp.club_season_subsidy_income,
+                new_lifetime_subsidy_income: inp.club_lifetime_subsidy_income,
                 owner_subsidised: subsidise,
             };
             if subsidise {
                 // (DD 143-146.) Owner tops up cash, both
                 // accumulators bump, then club pays as normal
                 // (net-zero cash net effect).
-                cw.new_owner_accum_a = inp.club_owner_accum_a + cost;
-                cw.new_owner_accum_b = inp.club_owner_accum_b + cost;
+                cw.new_season_subsidy_income = inp.club_season_subsidy_income.wrapping_add(cost as i32);
+                cw.new_lifetime_subsidy_income = inp.club_lifetime_subsidy_income.wrapping_add(cost as i32);
                 cw.new_cash = inp.club_cash;
                 // Cash net-zero: (cash += cost) then (cash -= cost).
             } else {
@@ -530,10 +571,10 @@ pub fn c13_request_to_c14_input(
     stadium_seated: i32,
     stadium_peak: i32,
     club_cash: i64,
-    club_owner_accum_a: i64,
-    club_owner_accum_b: i64,
-    club_stadium_expense_ytd: i64,
-    club_stadium_expense_lifetime: i64,
+    club_season_subsidy_income: i32,
+    club_lifetime_subsidy_income: i32,
+    club_season_misc_expense: i32,
+    club_lifetime_misc_expense: i32,
     parent_club_stadium: Option<ParentStadium>,
     news_ctx: u32,
     affordability_checked: bool,
@@ -544,10 +585,10 @@ pub fn c13_request_to_c14_input(
         stadium_seated,
         stadium_peak,
         club_cash,
-        club_owner_accum_a,
-        club_owner_accum_b,
-        club_stadium_expense_ytd,
-        club_stadium_expense_lifetime,
+        club_season_subsidy_income,
+        club_lifetime_subsidy_income,
+        club_season_misc_expense,
+        club_lifetime_misc_expense,
         parent_club_stadium,
         desired_seated: req.desired_seating,
         desired_total: req.desired_capacity,
@@ -572,10 +613,10 @@ mod tests {
             stadium_seated: 12_000,
             stadium_peak: 20_000,
             club_cash: 100_000_000,
-            club_owner_accum_a: 0,
-            club_owner_accum_b: 0,
-            club_stadium_expense_ytd: 0,
-            club_stadium_expense_lifetime: 0,
+            club_season_subsidy_income: 0,
+            club_lifetime_subsidy_income: 0,
+            club_season_misc_expense: 0,
+            club_lifetime_misc_expense: 0,
             parent_club_stadium: None,
             desired_seated: 20_000,   // add 8000 seated
             desired_total: 25_000,    // add 5000 standing net
@@ -646,11 +687,11 @@ mod tests {
         assert_eq!(out.cost, 7_750_000);
         let cw = out.club_writes.unwrap();
         assert_eq!(cw.new_cash, 100_000_000 - 7_750_000);
-        assert_eq!(cw.new_stadium_expense_ytd, 7_750_000);
-        assert_eq!(cw.new_stadium_expense_lifetime, 7_750_000);
+        assert_eq!(cw.new_season_misc_expense, 7_750_000);
+        assert_eq!(cw.new_lifetime_misc_expense, 7_750_000);
         assert!(!cw.owner_subsidised);
-        assert_eq!(cw.new_owner_accum_a, 0);
-        assert_eq!(cw.new_owner_accum_b, 0);
+        assert_eq!(cw.new_season_subsidy_income, 0);
+        assert_eq!(cw.new_lifetime_subsidy_income, 0);
 
         // Stadium writes.
         // new_total = 20000 + 0 + 8000 = 28_000
@@ -701,8 +742,8 @@ mod tests {
         assert!(subsidised, "expected an owner-subsidy seed within 2000 tries");
         let cw = out.club_writes.unwrap();
         // cost with bare_input's deltas: 7_750_000 (see forced test).
-        assert_eq!(cw.new_owner_accum_a, 7_750_000);
-        assert_eq!(cw.new_owner_accum_b, 7_750_000);
+        assert_eq!(cw.new_season_subsidy_income, 7_750_000);
+        assert_eq!(cw.new_lifetime_subsidy_income, 7_750_000);
         assert_eq!(cw.new_cash, 0); // net zero (topped up then debited)
         assert!(!out.refuse_counter_increment);
         assert!(out.success);

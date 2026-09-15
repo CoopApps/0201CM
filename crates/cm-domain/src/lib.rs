@@ -2429,6 +2429,13 @@ pub struct RuntimeSaveGame {
     /// (both `Fired` and `Skipped`). Diagnostic; safe to prune.
     #[serde(default)]
     pub season_roll_events: Vec<SeasonRollAppliedEvent>,
+    /// C15.1A per-club finance ledger — cash + season/lifetime
+    /// operating expense + season/lifetime subsidy income, at the
+    /// widths and semantics proven by C15.1A archaeology (see
+    /// `reports/c15_1a_finance_archaeology.md`). Populated by
+    /// `apply_report_to_world` from C14 stadium-expansion outputs.
+    #[serde(default)]
+    pub finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger,
     /// The current Argentine Primera split-season (Apertura + Clausura), if
     /// drawn for this game. Port of `arg_prm.cpp` (see [`crate::arg_primera`]):
     /// built at new-game time, its two champions and promedios relegation
@@ -13545,6 +13552,7 @@ impl World {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24216,6 +24224,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24450,6 +24459,7 @@ mod tests {
             season_roll_comp_years: Default::default(),
             pending_season_roll_regens: Default::default(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24690,6 +24700,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24797,6 +24808,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24899,6 +24911,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24989,6 +25002,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25081,6 +25095,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),

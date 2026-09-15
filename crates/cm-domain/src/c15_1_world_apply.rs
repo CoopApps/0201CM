@@ -57,16 +57,86 @@ pub struct AppliedStadiumWrite {
     pub new_peak: u32,
 }
 
-/// Finance writes surfaced but not applied — held pending until
-/// the club raw finance offsets are re-confirmed.
+/// One club's persistent finance state — the materialised
+/// destination of C14 stadium-expansion (and, in follow-ups, other
+/// finance-cluster) writes.
+///
+/// C15.1A archaeology (`reports/c15_1a_finance_archaeology.md`)
+/// proved these five fields are the FUN_00583FC0 targets, at these
+/// widths, at these runtime object offsets. The RUNTIME OBJECT
+/// identity (Club record vs a separate finance pool) is not yet
+/// fully proven — that requires tracing `FUN_005121A0`'s loader
+/// copy path. For now the ledger holds the semantically-correct
+/// values in a typed sidecar. When the loader trace lands
+/// (planned follow-up), we know whether to move these into
+/// `Club.raw[…]` bytes or keep the sidecar.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq,
+         serde::Serialize, serde::Deserialize)]
+pub struct ClubFinanceState {
+    /// Cash — i64 signed. Runtime object byte offset `+0x00`.
+    pub cash: i64,
+    /// Season misc operating expense — i32.
+    /// Runtime byte `+0x8C`. Reset annually by season roll.
+    pub season_misc_expense: i32,
+    /// Lifetime misc operating expense — i32.
+    /// Runtime byte `+0x12C`. Never reset; monotone-increasing.
+    pub lifetime_misc_expense: i32,
+    /// Season subsidy income — i32. Runtime byte `+0xB4`.
+    /// Reset annually by season roll.
+    pub season_subsidy_income: i32,
+    /// Lifetime subsidy income — i32. Runtime byte `+0x154`.
+    /// Never reset; monotone-increasing.
+    pub lifetime_subsidy_income: i32,
+}
+
+/// Per-club finance ledger. Populated by C15.1A's finance apply
+/// pass from C14 outputs. Keyed by club id.
+#[derive(Debug, Clone, Default, PartialEq, Eq,
+         serde::Serialize, serde::Deserialize)]
+pub struct ClubFinanceLedger {
+    pub per_club: std::collections::BTreeMap<u32, ClubFinanceState>,
+}
+
+impl ClubFinanceLedger {
+    pub fn new() -> Self { Self::default() }
+
+    /// Read the club's current finance state (or default if absent).
+    pub fn get(&self, club_id: u32) -> ClubFinanceState {
+        self.per_club.get(&club_id).copied().unwrap_or_default()
+    }
+
+    /// Apply one finance write from C14 (via `PendingFinanceWrite`).
+    /// C14 has already computed the NEW post-transaction values
+    /// (cash after debit/subsidy, accumulators after add). The
+    /// ledger just stores them.
+    pub fn apply_write(&mut self, write: &PendingFinanceWrite) {
+        let s = self.per_club.entry(write.club_id).or_default();
+        s.cash = write.new_cash;
+        s.season_misc_expense = write.new_season_misc_expense;
+        s.lifetime_misc_expense = write.new_lifetime_misc_expense;
+        s.season_subsidy_income = write.new_season_subsidy_income;
+        s.lifetime_subsidy_income = write.new_lifetime_subsidy_income;
+    }
+}
+
+/// Finance writes emitted by the apply layer for post-hoc trace
+/// (both intent and result). After C15.1A, these are materialised
+/// into `RuntimeSaveGame.finance_ledger`; the pending vector on
+/// `WorldApplyReport` remains as diagnostic evidence that a
+/// finance transaction fired.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PendingFinanceWrite {
     pub club_id: u32,
+    /// Cash (i64 signed, runtime object byte `+0x00`).
     pub new_cash: i64,
-    pub new_stadium_expense_ytd: i64,
-    pub new_stadium_expense_lifetime: i64,
-    pub new_owner_accum_a: i64,
-    pub new_owner_accum_b: i64,
+    /// Season misc operating expense (i32, byte `+0x8C`).
+    pub new_season_misc_expense: i32,
+    /// Lifetime misc operating expense (i32, byte `+0x12C`).
+    pub new_lifetime_misc_expense: i32,
+    /// Season subsidy income (i32, byte `+0xB4`).
+    pub new_season_subsidy_income: i32,
+    /// Lifetime subsidy income (i32, byte `+0x154`).
+    pub new_lifetime_subsidy_income: i32,
 }
 
 /// Squad-position writes surfaced but not applied — the
@@ -143,9 +213,17 @@ pub fn apply_report_to_world(
 ) -> WorldApplyReport {
     let date = save.date.clone();
     let day = save.elapsed_days;
-    apply_report_to_world_parts(
+    let out = apply_report_to_world_parts(
         world, &mut save.pending_events, &date, day, report,
-    )
+    );
+    // C15.1A: materialise the finance writes surfaced by the
+    // apply pass into the save's finance ledger. This is
+    // trace-derived: PendingFinanceWrite records what C14
+    // produced; the ledger reflects what actually landed.
+    for w in &out.pending_finance {
+        save.finance_ledger.apply_write(w);
+    }
+    out
 }
 
 /// Lower-level entry: mutate World + a supplied event queue,
@@ -431,10 +509,10 @@ fn apply_stadium_expansion_outcome(
         out.pending_finance.push(PendingFinanceWrite {
             club_id: club_id_hint,
             new_cash: cw.new_cash,
-            new_stadium_expense_ytd: cw.new_stadium_expense_ytd,
-            new_stadium_expense_lifetime: cw.new_stadium_expense_lifetime,
-            new_owner_accum_a: cw.new_owner_accum_a,
-            new_owner_accum_b: cw.new_owner_accum_b,
+            new_season_misc_expense: cw.new_season_misc_expense,
+            new_lifetime_misc_expense: cw.new_lifetime_misc_expense,
+            new_season_subsidy_income: cw.new_season_subsidy_income,
+            new_lifetime_subsidy_income: cw.new_lifetime_subsidy_income,
         });
     }
 
@@ -740,10 +818,10 @@ mod tests {
             }),
             club_writes: Some(ClubFinanceWrites {
                 new_cash: 50_000_000,
-                new_stadium_expense_ytd: 1_000_000,
-                new_stadium_expense_lifetime: 1_000_000,
-                new_owner_accum_a: 0,
-                new_owner_accum_b: 0,
+                new_season_misc_expense: 1_000_000,
+                new_lifetime_misc_expense: 1_000_000,
+                new_season_subsidy_income: 0,
+                new_lifetime_subsidy_income: 0,
                 owner_subsidised: false,
             }),
             refuse_counter_increment: false,
@@ -829,5 +907,250 @@ mod tests {
         assert_eq!(raw[0x37], 0xFF);
         // Applier trace reflects the actual byte.
         assert_eq!(out.post_rollover_club_status.get(&500), Some(&0xFF));
+    }
+
+    // ======================================================================
+    // C15.1A — finance ledger materialisation tests
+    // ======================================================================
+
+    use crate::c14_stadium_expansion::{
+        apply_stadium_expansion, StadiumExpansionInput,
+    };
+    use crate::game_rng::GameRng;
+
+    /// Build a `StadiumExpansionInput` with the specified pre-state
+    /// finance fields, a fixed cost of £8_000_000 (matching
+    /// `bare_input` in c14 tests: seated 12k→20k etc.).
+    fn c15_1a_input_for_forced_path(
+        club_id: u32, cash: i64,
+        expense_ytd: i32, expense_life: i32,
+        subsidy_a: i32, subsidy_b: i32,
+    ) -> StadiumExpansionInput {
+        StadiumExpansionInput {
+            club_id,
+            stadium_total: 20_000, stadium_seated: 12_000,
+            stadium_peak: 20_000,
+            club_cash: cash,
+            club_season_subsidy_income: subsidy_a,
+            club_lifetime_subsidy_income: subsidy_b,
+            club_season_misc_expense: expense_ytd,
+            club_lifetime_misc_expense: expense_life,
+            parent_club_stadium: None,
+            desired_seated: 20_000, desired_total: 25_000,
+            affordability_checked: false,
+            news_ctx: 0, news_comp_id: 7,
+        }
+    }
+
+    fn to_pending(
+        outcome: &crate::c14_stadium_expansion::StadiumExpansionOutcome,
+        club_id: u32,
+    ) -> PendingFinanceWrite {
+        let cw = outcome.club_writes.unwrap();
+        PendingFinanceWrite {
+            club_id,
+            new_cash: cw.new_cash,
+            new_season_misc_expense: cw.new_season_misc_expense,
+            new_lifetime_misc_expense: cw.new_lifetime_misc_expense,
+            new_season_subsidy_income: cw.new_season_subsidy_income,
+            new_lifetime_subsidy_income: cw.new_lifetime_subsidy_income,
+        }
+    }
+
+    #[test]
+    fn c15_1a_forced_path_ledger_bytes() {
+        // Cost £7,750,000 (bare_input deltas: 8000 seated + 5000
+        // standing + 0 stand_to_seat). Starting from cash £50M,
+        // expense_ytd £2M, expense_life £10M.
+        let mut rng = GameRng::new(0xC151_A000);
+        let inp = c15_1a_input_for_forced_path(
+            42,
+            50_000_000, 2_000_000, 10_000_000, 100_000, 500_000,
+        );
+        let outcome = apply_stadium_expansion(&inp, &mut rng);
+        assert!(outcome.success);
+        assert_eq!(outcome.cost, 7_750_000);
+        let write = to_pending(&outcome, 42);
+        // Byte-exact expected new state.
+        assert_eq!(write.new_cash, 50_000_000 - 7_750_000);
+        assert_eq!(write.new_season_misc_expense,
+                   2_000_000 + 7_750_000);
+        assert_eq!(write.new_lifetime_misc_expense,
+                   10_000_000 + 7_750_000);
+        // Subsidies unchanged (forced path).
+        assert_eq!(write.new_season_subsidy_income, 100_000);
+        assert_eq!(write.new_lifetime_subsidy_income, 500_000);
+        // Ledger applies exactly.
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.apply_write(&write);
+        let s = ledger.get(42);
+        assert_eq!(s.cash, 42_250_000);
+        assert_eq!(s.season_misc_expense, 9_750_000);
+        assert_eq!(s.lifetime_misc_expense, 17_750_000);
+        assert_eq!(s.season_subsidy_income, 100_000);
+        assert_eq!(s.lifetime_subsidy_income, 500_000);
+    }
+
+    #[test]
+    fn c15_1a_owner_subsidy_net_cash_zero_but_all_four_accum_bump() {
+        // DD FUN_00583FC0 lines 143-153: subsidy credits cash then
+        // debits cash by cost (net zero), and bumps BOTH expense
+        // and subsidy accumulators (season + lifetime) by cost.
+        //
+        // Find a seed for which the subsidy RNG gate fires,
+        // matching the c14 test pattern.
+        use crate::c14_stadium_expansion::ParentStadium;
+        let mut inp = c15_1a_input_for_forced_path(
+            77, 0, 500_000, 1_500_000, 200_000, 600_000,
+        );
+        inp.affordability_checked = true;
+        inp.parent_club_stadium = Some(ParentStadium { refuse_counter: 20 });
+        let mut seed = 0u32;
+        let outcome = loop {
+            let mut rng = GameRng::new(0xC151_A100u32.wrapping_add(seed));
+            let out = apply_stadium_expansion(&inp, &mut rng);
+            if let Some(cw) = out.club_writes {
+                if cw.owner_subsidised { break out; }
+            }
+            seed += 1;
+            if seed > 5000 { panic!("no subsidy seed"); }
+        };
+        let write = to_pending(&outcome, 77);
+        // Net-zero cash.
+        assert_eq!(write.new_cash, 0);
+        // Both expense accumulators bumped by cost.
+        assert_eq!(write.new_season_misc_expense, 500_000 + 7_750_000);
+        assert_eq!(write.new_lifetime_misc_expense, 1_500_000 + 7_750_000);
+        // Both subsidy accumulators bumped by cost.
+        assert_eq!(write.new_season_subsidy_income, 200_000 + 7_750_000);
+        assert_eq!(write.new_lifetime_subsidy_income, 600_000 + 7_750_000);
+        // Ledger reflects all four.
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.apply_write(&write);
+        let s = ledger.get(77);
+        assert_eq!(s.cash, 0);
+        assert_eq!(s.season_misc_expense, 8_250_000);
+        assert_eq!(s.lifetime_misc_expense, 9_250_000);
+        assert_eq!(s.season_subsidy_income, 7_950_000);
+        assert_eq!(s.lifetime_subsidy_income, 8_350_000);
+    }
+
+    #[test]
+    fn c15_1a_noop_deltas_produce_no_finance_write() {
+        // Already at desired capacity → NoOpDeltas → no
+        // club_writes. Ledger untouched.
+        let mut rng = GameRng::new(0);
+        let mut inp = c15_1a_input_for_forced_path(
+            99, 25_000_000, 0, 0, 0, 0,
+        );
+        inp.desired_seated = 12_000; // already at that
+        inp.desired_total = 20_000;
+        let outcome = apply_stadium_expansion(&inp, &mut rng);
+        assert!(outcome.success);
+        assert!(outcome.club_writes.is_none());
+        // Ledger stays empty.
+        let mut ledger = ClubFinanceLedger::new();
+        if let Some(cw) = outcome.club_writes {
+            let _ = cw; // avoid warning
+            ledger.apply_write(&PendingFinanceWrite {
+                club_id: 99,
+                new_cash: 0,
+                new_season_misc_expense: 0,
+                new_lifetime_misc_expense: 0,
+                new_season_subsidy_income: 0,
+                new_lifetime_subsidy_income: 0,
+            });
+        }
+        assert_eq!(ledger.per_club.len(), 0);
+    }
+
+    #[test]
+    fn c15_1a_refusal_path_produces_no_finance_write() {
+        // affordability_checked + broke + big-ticket + rand_mod(5)!=0
+        // → reschedule (return 0, no club_writes). Ledger untouched.
+        use crate::c14_stadium_expansion::ReturnReason;
+        let inp = {
+            let mut i = c15_1a_input_for_forced_path(
+                123, 0, 0, 0, 0, 0,
+            );
+            i.affordability_checked = true;
+            i.parent_club_stadium = None;
+            i
+        };
+        // Iterate seeds until we hit a refused path.
+        let mut seed = 0u32;
+        let outcome = loop {
+            let mut rng = GameRng::new(0xC151_A200u32.wrapping_add(seed));
+            let out = apply_stadium_expansion(&inp, &mut rng);
+            if out.return_reason == ReturnReason::RescheduledIndependent {
+                break out;
+            }
+            seed += 1;
+            if seed > 5000 { panic!("no refusal seed"); }
+        };
+        assert!(!outcome.success);
+        assert!(outcome.club_writes.is_none());
+    }
+
+    #[test]
+    fn c15_1a_ledger_overflow_wraps_like_i32() {
+        // The exe uses i32 arithmetic for the accumulators; overflow
+        // wraps naturally. Verify that a value near i32::MAX bumped
+        // by cost wraps rather than saturates.
+        let mut rng = GameRng::new(0xC151_A300);
+        let inp = c15_1a_input_for_forced_path(
+            555,
+            50_000_000,
+            i32::MAX - 3_000_000,   // near max
+            0, 0, 0,
+        );
+        let outcome = apply_stadium_expansion(&inp, &mut rng);
+        assert!(outcome.success);
+        let write = to_pending(&outcome, 555);
+        // Cost is 7_750_000; season_misc_expense wraps.
+        let expected = (i32::MAX - 3_000_000).wrapping_add(7_750_000);
+        assert_eq!(write.new_season_misc_expense, expected);
+        assert!(expected < 0, "wrapped into negative territory");
+    }
+
+    #[test]
+    fn c15_1a_negative_cash_is_representable() {
+        // The exe permits debt (287 clubs ship bankrupt per
+        // memory [[club-record-decoded]]; DD 00587c40 injects
+        // chairman rescue when high half <= 0).
+        let mut rng = GameRng::new(0xC151_A400);
+        let inp = c15_1a_input_for_forced_path(
+            999, 1_000_000, 0, 0, 0, 0,   // £1M cash
+        );
+        let outcome = apply_stadium_expansion(&inp, &mut rng);
+        let write = to_pending(&outcome, 999);
+        // £1M - £7.75M = -£6.75M
+        assert_eq!(write.new_cash, -6_750_000i64);
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.apply_write(&write);
+        assert_eq!(ledger.get(999).cash, -6_750_000);
+    }
+
+    #[test]
+    fn c15_1a_trace_matches_world_ledger_state_after_apply() {
+        // C15.1A trace-vs-state consistency: the PendingFinanceWrite
+        // vector on the report reflects EXACTLY what landed in the
+        // ledger.
+        let mut rng = GameRng::new(0xC151_A500);
+        let inp = c15_1a_input_for_forced_path(
+            314, 20_000_000, 0, 0, 0, 0,
+        );
+        let outcome = apply_stadium_expansion(&inp, &mut rng);
+        let write = to_pending(&outcome, 314);
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.apply_write(&write);
+        let s = ledger.get(314);
+        // Every field of the ledger = corresponding field of the
+        // pending write. Byte-exact.
+        assert_eq!(s.cash, write.new_cash);
+        assert_eq!(s.season_misc_expense, write.new_season_misc_expense);
+        assert_eq!(s.lifetime_misc_expense, write.new_lifetime_misc_expense);
+        assert_eq!(s.season_subsidy_income, write.new_season_subsidy_income);
+        assert_eq!(s.lifetime_subsidy_income, write.new_lifetime_subsidy_income);
     }
 }

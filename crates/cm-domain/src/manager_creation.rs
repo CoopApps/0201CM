@@ -482,6 +482,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
