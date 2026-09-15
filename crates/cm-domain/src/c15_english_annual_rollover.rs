@@ -164,7 +164,11 @@ pub enum YearEndMutationEvent {
     SwapStatusIdle {
         club_id: u32, pre_swap_status: u8, post_swap_status: u8,
     },
-    StadiumExpansion { outcome: StadiumExpansionOutcome },
+    StadiumExpansion {
+        outcome: StadiumExpansionOutcome,
+        club_id: u32,
+        stadium_id: Option<u32>,
+    },
     StadiumFailReprieve {
         third_div_bottom_club_id: u32,
         candidate_club_id: u32,
@@ -500,7 +504,11 @@ fn materialise_pr_edge(
                 false, // affordability_checked
             );
             let outcome = apply_stadium_expansion(&c14_input, rng);
-            events.push(YearEndMutationEvent::StadiumExpansion { outcome });
+            events.push(YearEndMutationEvent::StadiumExpansion {
+                outcome,
+                club_id: pm.club_id,
+                stadium_id: state.stadium_id.map(|i| i as u32),
+            });
         }
         events.push(YearEndMutationEvent::Promotion { effects });
         events.push(YearEndMutationEvent::SwapStatusIdle {
@@ -925,7 +933,7 @@ mod tests {
         };
         let out = compute_annual_rollover(inp).unwrap();
         let expansions: Vec<_> = out.events.iter().filter_map(|e| match e {
-            YearEndMutationEvent::StadiumExpansion { outcome } => Some(outcome),
+            YearEndMutationEvent::StadiumExpansion { outcome, .. } => Some(outcome),
             _ => None,
         }).collect();
         assert!(!expansions.is_empty(),
