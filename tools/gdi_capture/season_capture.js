@@ -164,17 +164,26 @@ function decodeArgs(shape, args, ctx) {
         };
         case 'club_finance': return { club_pre: readClubFinance(args[0]) };
         case 'comp_first':   return { comp_ptr: args[0].toString() };
-        // C11.3: common enriched decoder for schedule_getter AND
-        // shared_driver — both take a Comp* (or sentinel) as arg0
-        // and both need caller archaeology.
+        // C11.3 Phase A.2 fix: sub_0055F540 (and likely the
+        // driver) is __thiscall — `this` is in ECX, not on the
+        // stack. args[0] is the first STACK arg (`mode`: -1 or 0
+        // for the getter). Read ECX from the Interceptor context
+        // to recover `this` (the competition instance), then
+        // dereference IT for the comp record.
         case 'schedule_getter':
-        case 'comp_and_caller': return {
-            arg0_raw:    args[0].toString(),
-            arg0_int:    args[0].toInt32(),
-            comp_record: readCompFromPtr(args[0]),
-            return_addr: (ctx && ctx.returnAddress)
-                            ? ctx.returnAddress.toString() : null,
-        };
+        case 'comp_and_caller': {
+            const stackArg0 = args[0];
+            const thisPtr = (ctx && ctx.context && ctx.context.ecx)
+                ? ctx.context.ecx : null;
+            return {
+                stack_arg0_raw: stackArg0.toString(),
+                stack_arg0_int: stackArg0.toInt32(),
+                this_ptr:  thisPtr ? thisPtr.toString() : null,
+                this_record: thisPtr ? readCompFromPtr(thisPtr) : null,
+                return_addr: (ctx && ctx.returnAddress)
+                                ? ctx.returnAddress.toString() : null,
+            };
+        }
         case 'generic':      return { arg0: args[0].toString() };
         default:             return { arg0: args[0].toString() };
     }

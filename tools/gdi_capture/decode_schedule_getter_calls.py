@@ -85,23 +85,30 @@ def main() -> int:
         n_getter += 1
 
         ms = rec.get("ms")
-        arg0_raw = rec.get("arg0_raw") or rec.get("arg0")
-        arg0_int = rec.get("arg0_int")
+        # v1 harness (pre A.2): arg0_raw + comp_record.
+        # v2 harness (post A.2 __thiscall fix):
+        #   stack_arg0_raw + this_ptr + this_record.
+        mode_raw = rec.get("stack_arg0_raw") or rec.get("arg0_raw") or rec.get("arg0")
+        mode_int = (rec.get("stack_arg0_int")
+                    if "stack_arg0_int" in rec else rec.get("arg0_int"))
+        this_ptr = rec.get("this_ptr")
         ret_addr = rec.get("return_addr")
         rng      = rec.get("rng")
-        comp     = rec.get("comp_record") or {}
-        decoded  = decode_comp_record(comp.get("hex128"))
-        sentinel = comp.get("sentinel")
+        this_rec = rec.get("this_record") or rec.get("comp_record") or {}
+        decoded  = decode_comp_record(this_rec.get("hex128"))
+        sentinel = this_rec.get("sentinel")
 
         short_hook = hook.split("_", 1)[1] if "_" in hook else hook
-        print(f"call #{n_getter}  {short_hook}  ms={ms}  rng={rng}  "
-              f"arg0={arg0_raw}  (signed={arg0_int})  ret_addr={ret_addr}")
+        print(f"call #{n_getter}  {short_hook}  ms={ms}  rng={rng}")
+        print(f"    mode (stack arg0) = {mode_raw}  (signed={mode_int})")
+        print(f"    this  (ecx)       = {this_ptr}")
+        print(f"    ret_addr          = {ret_addr}")
         if sentinel is not None:
-            print(f"    arg0 is a sentinel value ({sentinel}); no comp record to decode")
-        elif comp.get("err"):
-            print(f"    comp deref error: {comp['err']}")
+            print(f"    this is a sentinel value ({sentinel}); no record to decode")
+        elif this_rec.get("err"):
+            print(f"    this deref error: {this_rec['err']}")
         elif decoded:
-            print(f"    comp id={decoded.get('id')}  name={decoded.get('name')!r}  "
+            print(f"    this-> id={decoded.get('id')}  name={decoded.get('name')!r}  "
                   f"3l={decoded.get('three_letter')!r}  "
                   f"nation={decoded.get('nation_id')}  "
                   f"rep={decoded.get('reputation')}")
