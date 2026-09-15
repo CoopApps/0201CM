@@ -32,6 +32,7 @@ __pycache__/
 *.pyc
 
 # Frida capture outputs — user-generated, may be large
-season_*.jsonl
-year_end*.jsonl
-season_split/
+/season_*.jsonl
+/year_end*.jsonl
+/season_split/
+# fixtures/ IS checked in — those are curated reference captures
