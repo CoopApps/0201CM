@@ -62,12 +62,14 @@
     "B_fixtures": {
       "description": "Fixture pipeline. Pre-crash log shows year-cache fired 10 times in 170s — genuinely cold. Full group re-enabled.",
       "hooks": [
-        { "name": "FUN_00668450_shared_driver",        "va": "0x00668450", "arg_shape": "comp_first",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_00668450_shared_driver",        "va": "0x00668450", "arg_shape": "comp_and_caller", "enabled": true, "sample_rate": 1,
+          "note": "C11.3: driver enter now records arg0 raw+int, comp record (id + first 128 bytes), and return address. That lets us identify the specific competition (e.g. runtime ptr 0x6014fb0 in the previous capture) and the immediate caller." },
         { "name": "FUN_0066B900_perturb",              "va": "0x0066B900", "arg_shape": "generic",      "enabled": true, "sample_rate": 1 },
         { "name": "FUN_0066EE40_walker",               "va": "0x0066EE40", "arg_shape": "generic",      "enabled": true, "sample_rate": 10 },
         { "name": "FUN_00669340_seed_base",            "va": "0x00669340", "arg_shape": "generic",      "enabled": true, "sample_rate": 1 },
         { "name": "sub_0055F240_eng_second_ctor",      "va": "0x0055F240", "arg_shape": "generic",      "enabled": true, "sample_rate": 1 },
-        { "name": "sub_0055F540_schedule_getter",      "va": "0x0055F540", "arg_shape": "generic",      "enabled": true, "sample_rate": 1 },
+        { "name": "sub_0055F540_schedule_getter",      "va": "0x0055F540", "arg_shape": "schedule_getter", "enabled": true, "sample_rate": 1,
+          "note": "C11.3: schedule_getter enter now records arg0 raw+int, comp record (id + first 128 bytes) if arg0 is a plausible pointer, and the return address on the stack. Enables mid-season regen trigger archaeology." },
         { "name": "FUN_00594EB0_year_cache_selfcall",  "va": "0x00594EB0", "arg_shape": "generic",      "enabled": true, "sample_rate": 5 }
       ]
     },

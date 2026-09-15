@@ -109,7 +109,35 @@ function readClubFinance(p) {
     } catch (e) { return { err: String(e) }; }
 }
 
-function decodeArgs(shape, args) {
+// C11.3 Phase A — schedule_getter needs richer decoding to prove
+// the mid-season regen trigger. Read the arg0 raw + signed +
+// plausible-pointer competition record + first N bytes of the comp
+// buffer so post-processing can identify the competition, and grab
+// the return address so we can chase the caller in Ghidra.
+function readCompFromPtr(p) {
+    // Only try to dereference plausible user-space pointers.
+    // GDI runs at IMAGEBASE 0x00400000; heap addresses are much
+    // higher; small integers (0..0x10000) are sentinels not ptrs.
+    const asInt = p.toInt32();
+    if (asInt >= 0 && asInt < 0x10000) return { sentinel: asInt };
+    if (asInt === -1)                  return { sentinel: -1 };
+    try {
+        // Comp id typically at +0x00 (pool record convention).
+        // Also dump the first 128 bytes so a decoder can extract
+        // any embedded name/nation/three-letter fields.
+        const id = p.readU32();
+        const bytes = p.readByteArray(128);
+        // Hex-encode the byte dump so it survives JSONL.
+        const u8 = new Uint8Array(bytes);
+        let hex = '';
+        for (let i = 0; i < u8.length; i++) {
+            hex += (u8[i] < 0x10 ? '0' : '') + u8[i].toString(16);
+        }
+        return { id, hex128: hex };
+    } catch (e) { return { err: String(e) }; }
+}
+
+function decodeArgs(shape, args, ctx) {
     switch (shape) {
         case 'club_first':   return { club_pre: readClub(args[0]) };
         case 'club_promo':   return {
@@ -136,6 +164,17 @@ function decodeArgs(shape, args) {
         };
         case 'club_finance': return { club_pre: readClubFinance(args[0]) };
         case 'comp_first':   return { comp_ptr: args[0].toString() };
+        // C11.3: common enriched decoder for schedule_getter AND
+        // shared_driver — both take a Comp* (or sentinel) as arg0
+        // and both need caller archaeology.
+        case 'schedule_getter':
+        case 'comp_and_caller': return {
+            arg0_raw:    args[0].toString(),
+            arg0_int:    args[0].toInt32(),
+            comp_record: readCompFromPtr(args[0]),
+            return_addr: (ctx && ctx.returnAddress)
+                            ? ctx.returnAddress.toString() : null,
+        };
         case 'generic':      return { arg0: args[0].toString() };
         default:             return { arg0: args[0].toString() };
     }
@@ -161,7 +200,7 @@ function installHook(groupName, def) {
             if (!shouldLog) { this._skip = true; return; }
             this._ctx = { group: groupName, hook: def.name, va: def.va,
                           call_n: counter };
-            const decoded = decodeArgs(def.arg_shape, args);
+            const decoded = decodeArgs(def.arg_shape, args, this);
             emit(Object.assign({ phase: 'enter' }, this._ctx, decoded));
         },
         onLeave(retval) {
