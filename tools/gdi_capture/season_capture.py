@@ -58,6 +58,25 @@ def main() -> int:
 
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
 
+    # PRE-FLIGHT: every enabled hook must land on a real GDI function
+    # start. Interceptor.attach at a mid-function address corrupts
+    # nearby instructions and crashes the exe when execution walks
+    # through them. See verify_manifest_vas.py.
+    verifier = Path(__file__).parent / "verify_manifest_vas.py"
+    if verifier.exists():
+        import subprocess
+        print("preflight: verifying every enabled hook VA …",
+              file=sys.stderr)
+        rc = subprocess.run(
+            [sys.executable, str(verifier)],
+            check=False,
+        ).returncode
+        if rc != 0:
+            print("ABORT: at least one enabled hook targets a "
+                  "non-function address. Fix the manifest, then rerun.",
+                  file=sys.stderr)
+            return 4
+
     print(f"attaching to {args.process_name} …", file=sys.stderr)
     try:
         session = frida.attach(args.process_name)
