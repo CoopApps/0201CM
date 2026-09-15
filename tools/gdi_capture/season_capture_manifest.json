@@ -1,0 +1,98 @@
+{
+  "_readme": [
+    "One hook per line under each group. `enabled: true` arms it.",
+    "`va` is the GDI VA. `dd_va_hint` records the DirectDraw equivalent from",
+    "the Ghidra dump for cross-reference — the GDI delta is NON-UNIFORM,",
+    "so it CANNOT be a fixed offset. Every dd_va_hint entry needs a live",
+    "confirmation of the corresponding gdi va before enabling the hook",
+    "(see reports/c15_1_season_capture.md §VA resolution).",
+    "`arg_shape` selects a decoder inside season_capture.js.",
+    "`sample_rate` = 1 logs every call; N > 1 logs every Nth call for hot paths.",
+    "Comment out (or set enabled:false) any hook while iterating."
+  ],
+  "groups": {
+    "A_year_end": {
+      "description": "C15.1 year-end chain — GDI VAs confirmed (from C15.1).",
+      "hooks": [
+        { "name": "FUN_00669FA0_status_stamper",       "va": "0x00669FA0", "arg_shape": "club_first",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_0066EED0_pr_swap",              "va": "0x0066EED0", "arg_shape": "club_first",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_00668380_promotion_install",    "va": "0x00668380", "arg_shape": "club_promo",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_00668470_relegation_install",   "va": "0x00668470", "arg_shape": "club_promo",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_004D3550_promotion_walk",       "va": "0x004D3550", "arg_shape": "club_first",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_004D3460_relegation_walk",      "va": "0x004D3460", "arg_shape": "club_first",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_00583FC0_stadium_expansion",    "va": "0x00583FC0", "arg_shape": "stadium_exp",  "enabled": true, "sample_rate": 1 },
+        { "name": "sub_0055EC00_conf_coord",           "va": "0x0055EC00", "arg_shape": "club_first",   "enabled": true, "sample_rate": 1 },
+        { "name": "FUN_0055F080_pyramid_orch",         "va": "0x0055F080", "arg_shape": "club_first",   "enabled": true, "sample_rate": 1,
+          "note": "eng_prm.cpp pyramid orchestrator per memory driver-outer-function; DirectDraw FUN_0055EE90" },
+        { "name": "FUN_0055EA00_conf_fallback",        "va": "0x0055EC00", "arg_shape": "club_first",   "enabled": false, "sample_rate": 1,
+          "note": "Same as conf_coord in GDI carve; DirectDraw FUN_0055EA00 has different offset. Disable until GDI VA confirmed." },
+        { "name": "FUN_004938D0_news_publisher_ye",    "va": "0x004938D0", "arg_shape": "news",         "enabled": true, "sample_rate": 1 }
+      ]
+    },
+
+    "B_fixtures": {
+      "description": "Weekly fixture pipeline — GDI VAs confirmed from the fixture-frozen tranche (see memory driver-outer-function).",
+      "hooks": [
+        { "name": "FUN_00668450_shared_driver",        "va": "0x00668450", "arg_shape": "comp_first",   "enabled": true,  "sample_rate": 1 },
+        { "name": "FUN_0066B900_perturb",              "va": "0x0066B900", "arg_shape": "generic",      "enabled": true,  "sample_rate": 1 },
+        { "name": "FUN_0066EE40_walker",               "va": "0x0066EE40", "arg_shape": "generic",      "enabled": true,  "sample_rate": 10 },
+        { "name": "FUN_00669340_seed_base",            "va": "0x00669340", "arg_shape": "generic",      "enabled": true,  "sample_rate": 1 },
+        { "name": "sub_0055F240_eng_second_ctor",      "va": "0x0055F240", "arg_shape": "generic",      "enabled": true,  "sample_rate": 1,
+          "note": "eng_second.cpp ctor per memory eng-second-ctor-identity-confirmed." },
+        { "name": "sub_0055F540_schedule_getter",      "va": "0x0055F540", "arg_shape": "generic",      "enabled": true,  "sample_rate": 1 },
+        { "name": "FUN_00594EB0_year_cache_selfcall", "va": "0x00594EB0", "arg_shape": "generic",       "enabled": true,  "sample_rate": 5,
+          "note": "recursive self-call at +0x5953C6 is the 240-extra-fixture explainer" }
+      ]
+    },
+
+    "C_match": {
+      "description": "Match resolve + post-match writer. GDI VAs need confirmation — DirectDraw addresses from memory below.",
+      "hooks": [
+        { "name": "FUN_0069C6F0_post_match_writer",    "va": null, "dd_va_hint": "0x0069C6F0", "arg_shape": "club_first",   "enabled": false, "sample_rate": 1,
+          "note": "Writes type10+0x45 (form byte). GDI VA unknown — confirm before enabling." },
+        { "name": "FUN_006C5C40_team_score",           "va": null, "dd_va_hint": "0x006C5C40", "arg_shape": "generic",       "enabled": false, "sample_rate": 20,
+          "note": "Tactics team-score. Hot path — sample_rate 20." },
+        { "name": "FUN_006C8930_position_rating",      "va": null, "dd_va_hint": "0x006C8930", "arg_shape": "generic",       "enabled": false, "sample_rate": 50 }
+      ]
+    },
+
+    "D_news_predicate": {
+      "description": "Weekly news cascade. All from memory news-generation-logic. DirectDraw VAs — GDI needs confirmation.",
+      "hooks": [
+        { "name": "FUN_0067CE90_weekly_predicate",     "va": null, "dd_va_hint": "0x0067CE90", "arg_shape": "club_first",   "enabled": false, "sample_rate": 1,
+          "note": "Per-club weekly predicate cascade → picks type_code." },
+        { "name": "FUN_00733610_news_formatter",       "va": null, "dd_va_hint": "0x00733610", "arg_shape": "news",         "enabled": false, "sample_rate": 1,
+          "note": "type_code → template_id switch. Gate: record[0]==0xbdf." },
+        { "name": "FUN_00493650_news_channel_post",    "va": null, "dd_va_hint": "0x00493650", "arg_shape": "news",         "enabled": false, "sample_rate": 1 }
+      ]
+    },
+
+    "E_finance": {
+      "description": "Weekly/monthly finance calls. Reads finance-relevant club bytes pre+post so we can settle the +0x00 vs +0x65 cash-offset dispute (C15.1 §26.1).",
+      "hooks": [
+        { "name": "FUN_00586EC0_wage_cascade",         "va": null, "dd_va_hint": "0x00586EC0", "arg_shape": "club_finance", "enabled": false, "sample_rate": 1 },
+        { "name": "FUN_00587C40_board_debt_payment",   "va": null, "dd_va_hint": "0x00587C40", "arg_shape": "club_finance", "enabled": false, "sample_rate": 1 },
+        { "name": "FUN_00584790_gate_receipts",        "va": null, "dd_va_hint": "0x00584790", "arg_shape": "club_finance", "enabled": false, "sample_rate": 1 },
+        { "name": "FUN_00582870_status_classifier",    "va": null, "dd_va_hint": "0x00582870", "arg_shape": "club_finance", "enabled": false, "sample_rate": 10 },
+        { "name": "FUN_00588C70_board_confidence",     "va": null, "dd_va_hint": "0x00588C70", "arg_shape": "club_finance", "enabled": false, "sample_rate": 1 }
+      ]
+    },
+
+    "F_boot_state": {
+      "description": "One-shot boot pin. Serialises the initial pre-season state of the 5 English leagues' clubs + stadiums.",
+      "hooks": [
+        { "name": "FUN_005121A0_load_static_pools",    "va": null, "dd_va_hint": "0x005121A0", "arg_shape": "generic",     "enabled": false, "sample_rate": 1,
+          "note": "Called once at game start; onLeave dumps English-scoped state to pre_season.bin." },
+        { "name": "FUN_008120D0_initialise_runtime",   "va": null, "dd_va_hint": "0x008120D0", "arg_shape": "generic",     "enabled": false, "sample_rate": 1 }
+      ]
+    },
+
+    "G_rng_timeline": {
+      "description": "RNG state sampler + game-date read.",
+      "settings": {
+        "rng_va":       "0x00AC2610",
+        "sample_period_ms": 1000
+      }
+    }
+  }
+}
