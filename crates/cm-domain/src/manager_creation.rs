@@ -474,6 +474,14 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            season_roll_scheduler: {
+                let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
+                crate::season_roll_scheduler::register_english_pyramid(&mut s);
+                s
+            },
+            season_roll_comp_years: std::collections::BTreeMap::new(),
+            pending_season_roll_regens: std::collections::BTreeMap::new(),
+            season_roll_events: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),

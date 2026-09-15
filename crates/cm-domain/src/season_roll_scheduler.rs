@@ -174,7 +174,7 @@ pub struct SeasonRollContext<'a> {
 /// after a fire prevents a second fire within one calendar year
 /// even if the day-of-year re-matches (leap-year edge case,
 /// game holidayed backward-then-forward, etc.).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SlotEntry {
     /// 1-based day of year (matches how the exe stores the
     /// trigger). `1` = Jan 1, `365` = Dec 31 (or 366 in a leap
@@ -207,7 +207,7 @@ impl SlotEntry {
 /// the exe's dispatcher effectively works — walk slots, day-match,
 /// fire per-comp. The `slots` count on the exe is a static-data
 /// artefact; nothing about the algorithm depends on 34 exactly.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SeasonRollScheduler {
     slots: BTreeMap<u16, SlotEntry>,
 }
