@@ -175,6 +175,20 @@ function decodeArgs(shape, args, ctx) {
             const stackArg0 = args[0];
             const thisPtr = (ctx && ctx.context && ctx.context.ecx)
                 ? ctx.context.ecx : null;
+            // C11.3A: walk up the call stack to find the daily-tick
+            // dispatcher. Frida's Backtracer.ACCURATE follows frame
+            // pointers where present; FUZZY scans the stack for
+            // return-address-shaped values. Take up to 12 frames.
+            let stackTrace = null;
+            try {
+                if (ctx && ctx.context) {
+                    const bt = Thread.backtrace(ctx.context,
+                                                 Backtracer.ACCURATE);
+                    stackTrace = bt.slice(0, 12).map(p => p.toString());
+                }
+            } catch (e) {
+                stackTrace = ['bt_err: ' + String(e)];
+            }
             return {
                 stack_arg0_raw: stackArg0.toString(),
                 stack_arg0_int: stackArg0.toInt32(),
@@ -182,6 +196,7 @@ function decodeArgs(shape, args, ctx) {
                 this_record: thisPtr ? readCompFromPtr(thisPtr) : null,
                 return_addr: (ctx && ctx.returnAddress)
                                 ? ctx.returnAddress.toString() : null,
+                stack_trace: stackTrace,
             };
         }
         case 'generic':      return { arg0: args[0].toString() };
