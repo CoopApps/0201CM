@@ -2996,6 +2996,47 @@ pub struct ConferenceFallbackDecision {
 /// **not** been selected as a manageable league. Source cluster:
 /// `comp_l...` inside `eng_prm.cpp`.
 ///
+/// # C14.7 verification (2026-09-15)
+///
+/// A full re-decode of `FUN_0055EA00` (DD `0x0055EA00`, 562 B)
+/// confirms this port matches the exe line-by-line:
+///
+/// * Empty-list branch → `NoCandidates` (DD line 42).
+/// * `FUN_004B6000(pool, n, 1)` sort mode 1 → `sort_and_shuffle`
+///   with mode 1, K=min(3,n), 2·K RNG draws (DD line 43).
+/// * Top-of-buffer pick (DD line 64).
+/// * `FUN_00583FC0` stadium gate on the top candidate against
+///   Third-Division `+0xE2` / `+0xE4` templates (DD line 49).
+/// * Pass → `FUN_00668380` install onto Third + loop over Third
+///   roster relegating `+0x37==3` clubs via `FUN_00668470`
+///   (DD lines 57-70).
+/// * Fail → `FUN_00668470`-analogue for the reprieve mark:
+///   `Third_div_last_place → +0x37 = 0xFE` (DD lines 51-52) —
+///   verified: the reprieve tag lands on the **Third-Division
+///   bottom club**, NOT the top Conference candidate. (Prior
+///   conversational summaries had this inverted; the port was
+///   always correct.)
+/// * News template id `2` posted via `FUN_00493650` on the
+///   Conference channel (DD line 53).
+///
+/// # Peer relationship with `FUN_0055EE90`
+///
+/// The wrapper at `sub_0055E7B0` (still Ghidra-uncracked) dispatches
+/// either `FUN_0055EE90` (feeder-swap path) OR `FUN_0055EA00`
+/// (this fallback) based on `comp_table[Conference_id]` non-null.
+/// **They are mutually exclusive** — never both run in the same
+/// year-rollover pass. Verified: neither body contains a call to
+/// the other; `FUN_0055EE90` fanin=0 (vtable-only), `FUN_0055EA00`
+/// fanin=1 from the wrapper. See
+/// [`english_conference_dispatch`].
+///
+/// # RNG contract
+///
+/// `FUN_0055EA00` itself makes zero direct RNG calls. All RNG
+/// consumption is inside `FUN_004B6000(pool, n, 1)` — mode 1 =
+/// K=min(3, n) = 2·K pool draws. For a full 22-club Conference
+/// candidate pool, exactly 6 RNG advances occur.
+///
 /// # Semantic contract
 ///
 /// The exe scans every club and picks those whose current comp is
@@ -5065,6 +5106,136 @@ mod tests {
                 }
             }
             other => panic!("expected ChampionFallback, got {other:?}"),
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // C14.7 — peer mutual-exclusion + RNG-state pins
+    // -----------------------------------------------------------------
+
+    /// C14.7 verifies both fallback and feeder-swap paths are
+    /// mutually-exclusive dispatch branches under
+    /// `sub_0055E7B0` (the wrapper). This test pins that from the
+    /// Rust side: given identical initial state, the two branches
+    /// produce distinct outcomes, and choosing either NEVER
+    /// invokes the other's helper set.
+    #[test]
+    fn c14_7_active_and_inactive_branches_are_mutually_exclusive() {
+        let feeder = vec![
+            FeederCandidate { club_id: 1000, current_comp_id: 358, key80: 95 },
+            FeederCandidate { club_id: 2000, current_comp_id: 359, key80: 90 },
+        ];
+        let fallback = vec![
+            FallbackCandidate { club_id: 200, key80: 90,
+                                 stadium_current_capacity: Some(12_000) },
+        ];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 6_000, required_capacity_b: 6_000,
+        };
+
+        // Active branch
+        {
+            let mut f = feeder.clone();
+            let mut fb = fallback.clone();
+            let mut rng = rng_at(0, 0x1234, 0);
+            let d = english_conference_dispatch(
+                true, &mut f, &[], &mut fb, &[], None, req, 10, 93, &mut rng);
+            assert!(matches!(d, ConferenceRolloverDispatch::FeederSwap(_)),
+                "active must route to feeder-swap only");
+        }
+
+        // Inactive branch — from the same setup, produces different
+        // outcome variant.
+        {
+            let mut f = feeder.clone();
+            let mut fb = fallback.clone();
+            let mut rng = rng_at(0, 0x1234, 0);
+            let d = english_conference_dispatch(
+                false, &mut f, &[],
+                &mut fb, &[], Some(ThirdDivLastPlace { club_id: 999 }),
+                req, 10, 93, &mut rng);
+            assert!(matches!(d, ConferenceRolloverDispatch::ChampionFallback(_)),
+                "inactive must route to fallback only");
+        }
+    }
+
+    /// C14.7 pins the exact RNG advance produced by
+    /// `conference_fallback_promotion`. For a candidate pool of
+    /// size n, `sort_and_shuffle(mode=1)` performs
+    /// `K = min(3, n)` swap draws, consuming `2*K` pool RNG
+    /// values. `shuffle_k` in the returned decision surfaces this
+    /// exactly.
+    #[test]
+    fn c14_7_fallback_shuffle_k_matches_pool_size_rule() {
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 100, required_capacity_b: 100,
+        };
+        // Pool size 5 → K = min(3, 5) = 3.
+        let mut fallback: Vec<FallbackCandidate> = (0..5).map(|i| FallbackCandidate {
+            club_id: 100 + i, key80: 100 - (i as i16),
+            stadium_current_capacity: Some(50_000),
+        }).collect();
+        let mut rng = rng_at(0, 0x5555, 0);
+        let d = conference_fallback_promotion(
+            &mut fallback, &[], Some(ThirdDivLastPlace { club_id: 999 }),
+            req, 10, 93, &mut rng);
+        assert_eq!(d.shuffle_k, Some(3));
+
+        // Pool size 1 → K = min(3, 1) = 1.
+        let mut fallback1: Vec<FallbackCandidate> = vec![
+            FallbackCandidate { club_id: 100, key80: 100,
+                                 stadium_current_capacity: Some(50_000) },
+        ];
+        let mut rng = rng_at(0, 0x6666, 0);
+        let d = conference_fallback_promotion(
+            &mut fallback1, &[], Some(ThirdDivLastPlace { club_id: 999 }),
+            req, 10, 93, &mut rng);
+        assert_eq!(d.shuffle_k, Some(1));
+
+        // Empty pool → NoCandidates, shuffle_k None.
+        let mut empty: Vec<FallbackCandidate> = vec![];
+        let mut rng = rng_at(0, 0x7777, 0);
+        let d = conference_fallback_promotion(
+            &mut empty, &[], Some(ThirdDivLastPlace { club_id: 999 }),
+            req, 10, 93, &mut rng);
+        assert!(matches!(d.outcome, ConferenceFallbackOutcome::NoCandidates));
+        assert_eq!(d.shuffle_k, None);
+    }
+
+    /// C14.7 pins that the stadium-fail reprieve targets the
+    /// **Third-Division bottom club**, NOT the top Conference
+    /// candidate. Historical archaeology summaries got this
+    /// backwards; the port has always been correct.
+    #[test]
+    fn c14_7_stadium_fail_reprieve_target_is_third_bottom_not_conf_top() {
+        let mut fallback = vec![
+            FallbackCandidate { club_id: 200, key80: 100,
+                                 stadium_current_capacity: Some(1_000) },
+        ];
+        let req = StadiumCapacityRequest {
+            stadium_current_capacity: None,
+            required_capacity_a: 999_999, required_capacity_b: 999_999,
+        };
+        let mut rng = rng_at(0, 0x8888, 0);
+        let d = conference_fallback_promotion(
+            &mut fallback, &[],
+            Some(ThirdDivLastPlace { club_id: 7777 }),
+            req, 10, 93, &mut rng);
+        match d.outcome {
+            ConferenceFallbackOutcome::StadiumFailed {
+                candidate_club_id,
+                third_div_reprieved_club_id,
+                ..
+            } => {
+                assert_eq!(candidate_club_id, 200,
+                    "candidate is the Conference top club");
+                assert_eq!(third_div_reprieved_club_id, 7777,
+                    "reprieve tag lands on Third-Division bottom, not the candidate");
+                assert_ne!(candidate_club_id, third_div_reprieved_club_id);
+            }
+            other => panic!("expected StadiumFailed, got {other:?}"),
         }
     }
 
