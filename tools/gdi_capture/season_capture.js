@@ -221,6 +221,126 @@ function installHook(groupName, def) {
     return { hooked: true, va: def.va };
 }
 
+// C11.3A Path B — one-shot snapshot of the 34-slot season-roll
+// scheduler table at DAT_00b4bc70 (DirectDraw VA) / GDI TBD.
+// Called at agent load, AFTER the game has already booted and
+// filled the table. Emits one JSONL event per slot with its
+// count, trigger_day, last_year, and every comp pointer's
+// identity (first 128 bytes of the record, hex-encoded, for
+// name/vtable extraction post-hoc).
+function snapshotSlotTable() {
+    // Try both the DirectDraw VA and a couple of GDI candidates.
+    // The DirectDraw VA is documented in the decompile; the GDI
+    // delta for the b4____ region isn't in memory but likely
+    // shares the ac____ -0xB0 delta. Try all three candidates
+    // and log which one produced plausible slot data (count in
+    // [0..100], trigger_day in [0..366]).
+    const candidates = [
+        { name: 'DD_0x00B4BC70',       va: '0x00B4BC70' },
+        { name: 'GDI_minus0xB0_0x00B4BBC0', va: '0x00B4BBC0' },
+        { name: 'GDI_minus0xB8_0x00B4BBB8', va: '0x00B4BBB8' },
+    ];
+    const RECORD_SIZE   = 0x48;    // per-slot stride
+    const N_SLOTS       = 34;
+    const OFF_COUNT     = 0x0c;
+    const OFF_POOL_PTR  = 0x10;
+    const OFF_TRIGGER   = 0x15;
+    const OFF_LAST_YEAR = 0x35;
+
+    for (const c of candidates) {
+        let base;
+        try { base = ptrFromVA(c.va); }
+        catch (e) {
+            emit({ hook: '__slot_table_probe__', candidate: c.name,
+                   error: String(e) });
+            continue;
+        }
+        // Read one probe slot first — if trigger_day + count look
+        // plausible we log the whole table under this candidate.
+        let looksReal = false;
+        try {
+            const s0 = base;
+            const count0     = s0.add(OFF_COUNT).readS32();
+            const trigger0   = s0.add(OFF_TRIGGER).readU8();
+            const lastYear0  = s0.add(OFF_LAST_YEAR).readU16();
+            looksReal = (count0 >= 0 && count0 < 100
+                         && trigger0 <= 200 && lastYear0 < 3000);
+            emit({ hook: '__slot_table_probe__',
+                   candidate: c.name, va: c.va,
+                   slot0_count: count0, slot0_trigger: trigger0,
+                   slot0_last_year: lastYear0,
+                   looks_real: looksReal });
+        } catch (e) {
+            emit({ hook: '__slot_table_probe__', candidate: c.name,
+                   error: String(e) });
+            continue;
+        }
+        if (!looksReal) continue;
+        // Dump all 34 slots.
+        for (let i = 0; i < N_SLOTS; i++) {
+            const slotBase = base.add(i * RECORD_SIZE);
+            let count = 0, trigger = 0, lastYear = 0, poolPtrStr = '?';
+            const comps = [];
+            try {
+                count      = slotBase.add(OFF_COUNT).readS32();
+                trigger    = slotBase.add(OFF_TRIGGER).readU8();
+                lastYear   = slotBase.add(OFF_LAST_YEAR).readU16();
+                const poolPtr = slotBase.add(OFF_POOL_PTR).readPointer();
+                poolPtrStr = poolPtr.toString();
+                if (count > 0 && count < 100 && !poolPtr.isNull()) {
+                    for (let j = 0; j < count; j++) {
+                        try {
+                            const compPtr = poolPtr.add(j * 4).readPointer();
+                            if (compPtr.isNull()) {
+                                comps.push({ idx: j, comp_ptr: null });
+                                continue;
+                            }
+                            // Dump 128 bytes so post-processing
+                            // can extract vtable ptr (+0x00),
+                            // year (+0x40), name (+0x54).
+                            const bytes = compPtr.readByteArray(128);
+                            const u8 = new Uint8Array(bytes);
+                            let hex = '';
+                            for (let k = 0; k < u8.length; k++) {
+                                hex += (u8[k] < 0x10 ? '0' : '')
+                                       + u8[k].toString(16);
+                            }
+                            comps.push({
+                                idx: j,
+                                comp_ptr: compPtr.toString(),
+                                hex128: hex,
+                            });
+                        } catch (e) {
+                            comps.push({ idx: j, err: String(e) });
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                emit({ hook: '__slot_table_entry__',
+                       candidate: c.name, slot: i,
+                       error: String(e) });
+                continue;
+            }
+            emit({
+                hook: '__slot_table_entry__',
+                candidate: c.name,
+                slot: i,
+                count, trigger_day: trigger,
+                last_processed_year: lastYear,
+                pool_ptr: poolPtrStr,
+                comps,
+            });
+        }
+        // Only dump for the first-plausible candidate. Break so
+        // we don't emit 3x34 = 102 entries for wrong candidates.
+        return c.name;
+    }
+    emit({ hook: '__slot_table_snapshot_failed__',
+           reason: 'no candidate VA produced plausible slot 0' });
+    return null;
+}
+
 function main() {
     const installReport = { groups: {} };
     for (const [gname, gdef] of Object.entries(MANIFEST.groups || {})) {
@@ -239,6 +359,17 @@ function main() {
         }, G.settings.sample_period_ms);
     }
     emit({ hook: '__init__', install_report: installReport });
+
+    // C11.3A Path B — one-shot snapshot of DAT_00b4bc70 (34-slot
+    // season-roll scheduler table). Runs AFTER the game has
+    // booted (Frida attach happens post-boot) so the table is
+    // already populated. Emits one JSONL event per slot with
+    // count/trigger_day/last_year/pool_ptr + each pooled comp's
+    // 128-byte hex header (for post-hoc name / vtable / year
+    // extraction). Cheap: 34 slots × ~15 comps avg × 128 bytes.
+    const snapshotResult = snapshotSlotTable();
+    emit({ hook: '__slot_table_snapshot_done__',
+           winning_candidate: snapshotResult });
 }
 
 main();
