@@ -1,6 +1,68 @@
 //! C14.5 — comp_s.cpp squad-manager helpers required by C13
 //! promotion apply.
 //!
+//! # C14.6 RECONCILIATION NOTICE (2026-09-15)
+//!
+//! A follow-up archaeology pass (C14.6) reconciled two contradictory
+//! readings of `Club+0x57` and `DAT_00ac688c`:
+//!
+//! * **Reading A** (`typed_records::ClubView`, 2026-08-20): `Club+0x57`
+//!   is a competition pointer (on disk an `i32 division_id`, in memory
+//!   a `Comp*` after loader fixup).
+//! * **Reading B** (C14.5 initial archaeology): `param_1+0x57` in
+//!   `FUN_00843EF0` was inferred to be a person pointer via
+//!   `DAT_00ac688c` being labelled a "person pointer table".
+//!
+//! **Verdict — Reading A is correct.** C14.6 proved
+//! `DAT_00ac688c` is the **Comp pointer table** (indexed by comp_id,
+//! stride 4). Evidence: 10+ independent call sites use it with
+//! comp_id globals (`DAT_009bbb14`, etc.); one site derefs the
+//! resulting pointer's `+0xB1` (comp league-table pointer); another
+//! calls its `+0x34` vtable method (a Comp virtual). Person records
+//! are addressed by a different base (`DAT_00acd5bc`, stride 0x245).
+//!
+//! **Implications**:
+//!
+//! * `Club+0x57` is unchanged from C13: primary comp id (on disk) /
+//!   `Comp*` (in memory). **C13's port stays correct.**
+//! * `Club+0x5B` is confirmed as secondary/previous comp.
+//! * `FUN_00843EF0` is really **`is_club_primary_comp_active`** —
+//!   it checks the club's primary comp against the active-comp table
+//!   and tests the comp's own `+0x52 & 2` "eligible" flag, NOT a
+//!   person eligibility bit.
+//! * `appointment_transition_register_flag` is renamed conceptually
+//!   to `comp_activation_register_flag`: `register_flag = 1` iff
+//!   **old comp was inactive AND new comp is active** — a promotion
+//!   into a newly-simulated tier — not a person swap.
+//! * The `PersonEligibility` name in this module is retained for
+//!   type-signature stability, but it now represents a
+//!   **`CompEligibility`** record (a `comp_id` and its `+0x52` flag
+//!   byte). Semantic name aliases below.
+//! * `FUN_00843970` operates on a **club-staff-slot pointer**
+//!   (`Club+0xD7 + i*4`), not a `Comp*`. It looks up per-slot
+//!   `SquadRecord` pointers via `FUN_004d59d0`/`FUN_004d5b00`
+//!   (primary + fallback/reserve) and writes a signed
+//!   **position/role preference byte** at `+0x3A` (range
+//!   `-50..=50`; the field is a preference weight, not a slot
+//!   index or an XI position).
+//! * **`DAT_00acdf0c` is NOT the person → squad-slot table**.
+//!   C14.6 grep shows it's a per-person **job/interest tracker**
+//!   (fields: `+0x04` target-index with `-1` sentinel, `+0x08`
+//!   count, `+0x09` 0..100 rating, `+0x0B` bit flags 0x40/0x80).
+//!   Boot-allocated dense array; not a lazy structure. The actual
+//!   squad-slot lookup goes through `FUN_004d59d0`/`FUN_004d5b00`
+//!   from a club-staff slot pointer, not through this DAT. Retract
+//!   the C14.5 provisional recommendation to add
+//!   `World.squad_registrations`; C15 does not need it.
+//! * `SquadRecord+0x3A` is a **signed position/role preference byte**
+//!   in the range `[-50, +50]` (verified by 20+ writers doing
+//!   negations, increments, and copies from `Person+0x32` = preferred
+//!   position field).
+//!
+//! Byte-level writes and gates in this module are all still
+//! correct against the DD source — only the semantic labels have
+//! been corrected.
+//!
 //! Ports two functions from the DirectDraw decompile:
 //!
 //! * **`FUN_00843EF0`** (`0x00843EF0`, ~33 lines) — pure person-
@@ -134,6 +196,31 @@ pub fn probe_person_eligibility(
     }
     1
 }
+
+// ---------------------------------------------------------------------------
+// Semantic aliases (C14.6 correction)
+// ---------------------------------------------------------------------------
+
+/// C14.6-correct alias for [`PersonEligibility`]. This is really a
+/// **`CompEligibility`** record — `person_id` is the comp id (from
+/// `Comp+0`) and `flags_52` is the comp's `+0x52 & 2` "active"
+/// flag. Kept as a re-export for callers migrating to the corrected
+/// semantic name.
+pub type CompEligibility = PersonEligibility;
+
+/// C14.6-correct alias for [`probe_person_eligibility`]. What
+/// `FUN_00843EF0` actually asks: *is this club's primary
+/// competition active in the live comp table, and (optionally) is
+/// a second club's primary comp also active?*
+pub use self::probe_person_eligibility as probe_club_primary_comp_active;
+
+/// C14.6-correct alias for
+/// [`appointment_transition_register_flag`]. What it computes:
+/// *did the club just transition FROM an inactive/absent primary
+/// comp TO an active one?* — i.e., a promotion into a newly-
+/// simulated tier.
+pub use self::appointment_transition_register_flag
+    as comp_activation_register_flag;
 
 // ---------------------------------------------------------------------------
 // FUN_00668380 double-probe wrapper (register_flag computation)
@@ -531,6 +618,39 @@ mod tests {
         let b = apply_squad_registration(&inp).primary_write.unwrap();
         assert_eq!(a.slot_index, b.slot_index);
         assert_ne!(a.new_position_code, b.new_position_code);
+    }
+
+    // --- C14.6 aliases + Reading A semantics ---
+
+    #[test]
+    fn c14_6_alias_comp_eligibility_matches_original_type() {
+        // CompEligibility is a re-export of PersonEligibility with
+        // the corrected semantic name.
+        let c: CompEligibility = PersonEligibility {
+            person_id: 7, // really: comp_id for Premier
+            flags_52: 0x02,
+        };
+        assert!(c.is_eligible());
+        assert_eq!(
+            probe_club_primary_comp_active(Some(&c), None),
+            1,
+        );
+    }
+
+    #[test]
+    fn c14_6_comp_activation_transition_matches_underlying_predicate() {
+        // "old inactive → new active" = register_flag 1.
+        let inactive = CompEligibility { person_id: 999, flags_52: 0 };
+        let active   = CompEligibility { person_id: 7,   flags_52: 0x02 };
+        assert_eq!(
+            comp_activation_register_flag(Some(&inactive), Some(&active)),
+            1,
+        );
+        // Both active = flag 0 (no fresh activation).
+        assert_eq!(
+            comp_activation_register_flag(Some(&active), Some(&active)),
+            0,
+        );
     }
 
     // --- 50-slot promotion walk simulation ---
