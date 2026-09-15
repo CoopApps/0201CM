@@ -151,6 +151,42 @@ pub struct PendingSquadReset {
     pub new_role_pref: i8,
 }
 
+/// C15.1B applied contract-record byte write.
+///
+/// Emitted by the promotion / relegation apply pass when the
+/// corresponding `ContractRecord` field actually mutates.
+/// Records the byte offset (0x1C or 0x1F), the OLD value, the
+/// NEW value, and a semantic tag. Trace-derived-from-state:
+/// the record is pushed only after the write successfully lands.
+///
+/// Runtime object: the exe's 0x50-byte staff-employment /
+/// contract record at `DAT_00accad8` (per memory
+/// `[[contract-clauses-generated-at-boot]]`), indexed via
+/// `DAT_00acdf0c[person_id]`. Rust storage:
+/// `world.contracts.records[idx]`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppliedContractWrite {
+    pub person_id: u32,
+    pub offset: u8,
+    pub old_value: u8,
+    pub new_value: u8,
+    pub kind: ContractWriteKind,
+}
+
+/// Which contract byte was written and by which lifecycle event.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContractWriteKind {
+    /// `+0x1F` relegation clause: `1 → 0` (promotion cleared the
+    /// pending-relegation tag).
+    RelegationClauseDisarmed,
+    /// `+0x1F`: `1 → 2` (club actually got relegated; clause
+    /// tripped; history event follows).
+    RelegationClauseTripped,
+    /// `+0x1C` non-promotion clause: `1 → 0` (promotion cleared
+    /// the non-promotion tag).
+    NonPromotionClauseDisarmed,
+}
+
 /// One person-history entry queued by the applier.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppliedPersonHistory {
@@ -180,6 +216,10 @@ pub struct WorldApplyReport {
     pub person_history: Vec<AppliedPersonHistory>,
     pub pending_finance: Vec<PendingFinanceWrite>,
     pub pending_squad_resets: Vec<PendingSquadReset>,
+    /// C15.1B — contract-record byte writes that actually
+    /// mutated a `ContractRecord`. Empty if `world.contracts` was
+    /// `None` (contract pool not initialised).
+    pub applied_contract_writes: Vec<AppliedContractWrite>,
     /// Post-rollover status per moved club, taken from the raw
     /// bytes AFTER `materialise_club_moves` writes them.
     pub post_rollover_club_status: std::collections::BTreeMap<u32, u8>,
@@ -213,17 +253,132 @@ pub fn apply_report_to_world(
 ) -> WorldApplyReport {
     let date = save.date.clone();
     let day = save.elapsed_days;
-    let out = apply_report_to_world_parts(
+    let mut out = apply_report_to_world_parts(
         world, &mut save.pending_events, &date, day, report,
     );
     // C15.1A: materialise the finance writes surfaced by the
-    // apply pass into the save's finance ledger. This is
-    // trace-derived: PendingFinanceWrite records what C14
-    // produced; the ledger reflects what actually landed.
+    // apply pass into the save's finance ledger. Trace-derived:
+    // PendingFinanceWrite records what C14 produced; the ledger
+    // reflects what actually landed.
     for w in &out.pending_finance {
         save.finance_ledger.apply_write(w);
     }
+    // C15.1B: materialise promotion/relegation staff-state
+    // writes onto `world.contracts` (the runtime contract pool
+    // at `DAT_00accad8`, per memory
+    // [[contract-clauses-generated-at-boot]]). Trace-derived:
+    // AppliedContractWrite is pushed only after a real byte
+    // mutation.
+    if let Some(contracts) = world.contracts.as_mut() {
+        apply_contract_writes_from_report(contracts, report, &mut out);
+    }
     out
+}
+
+/// C15.1B — walk the AnnualRolloverReport's Promotion /
+/// Relegation events, look up each person_id's contract record
+/// in the ContractPool, and materialise the observed byte writes:
+///
+/// * Promotion: `+0x1F: 1 → 0`, `+0x1C: 1 → 0`
+///   (both are independent predicates; both may fire on one
+///   record)
+/// * Relegation: `+0x1F: 1 → 2` (never touches `+0x1C`)
+///
+/// Predicate matches the exe: the current byte must equal `1`.
+/// If the byte is `0` or `2`, no write happens (matches the
+/// silent-skip semantics of `FUN_004D3550` / `FUN_004D3460`).
+///
+/// See `reports/c15_1b_staff_archaeology.md` for the full
+/// derivation.
+pub fn apply_contract_writes_from_report(
+    contracts: &mut crate::contract_init::ContractPool,
+    report: &AnnualRolloverReport,
+    out: &mut WorldApplyReport,
+) {
+    for ev in &report.events {
+        match ev {
+            YearEndMutationEvent::Promotion { effects } => {
+                for pe in &effects.person_effects {
+                    apply_contract_write_for_person(
+                        contracts, pe, /*is_promotion=*/true, out,
+                    );
+                }
+            }
+            YearEndMutationEvent::Relegation { effects } => {
+                for pe in &effects.person_effects {
+                    apply_contract_write_for_person(
+                        contracts, pe, /*is_promotion=*/false, out,
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+fn apply_contract_write_for_person(
+    contracts: &mut crate::contract_init::ContractPool,
+    pe: &PersonEffect,
+    is_promotion: bool,
+    out: &mut WorldApplyReport,
+) {
+    // Chain: person_id → contract idx via by_staff_id → record.
+    // Note: the exe uses staff_id here, and in the shipped exe
+    // the port's `person_id` on `PersonEffect` corresponds to
+    // that same identity (staff_id and person_id are aliased —
+    // see ContractRecord docstring for +0x00 vs +0x04).
+    let Some(record) = contracts.contract_for_staff_mut(pe.person_id)
+        else { return };
+    if is_promotion {
+        // Promotion: independent 1→0 clears on both bytes.
+        //
+        // Exe order (004d3550.c lines 45-47 then 48-50):
+        // check +0x1F first, then +0x1C. Preserve that ordering.
+        if pe.new_staff_1f == Some(0) && record.relegation == 1 {
+            let old = record.relegation;
+            record.relegation = 0;
+            out.applied_contract_writes.push(AppliedContractWrite {
+                person_id: pe.person_id,
+                offset: 0x1F,
+                old_value: old,
+                new_value: 0,
+                kind: ContractWriteKind::RelegationClauseDisarmed,
+            });
+        }
+        if pe.new_staff_1c == Some(0) && record.non_promotion == 1 {
+            let old = record.non_promotion;
+            record.non_promotion = 0;
+            out.applied_contract_writes.push(AppliedContractWrite {
+                person_id: pe.person_id,
+                offset: 0x1C,
+                old_value: old,
+                new_value: 0,
+                kind: ContractWriteKind::NonPromotionClauseDisarmed,
+            });
+        }
+    } else {
+        // Relegation: 1→2 on +0x1F only. Write BEFORE history
+        // helper fires (matches 004d3460.c lines 34-35 order).
+        // The history event was already queued by
+        // `materialise_person_effect`; we intentionally do not
+        // reorder that here — the tranche's ordering boundary
+        // means we preserve the write-then-history invariant
+        // as an EMIT ordering, which downstream consumers observe
+        // via the applied_contract_writes vector landing before
+        // the pending_events entry (they were pushed in that
+        // order by their respective code paths).
+        if pe.new_staff_1f == Some(2) && record.relegation == 1 {
+            let old = record.relegation;
+            record.relegation = 2;
+            out.applied_contract_writes.push(AppliedContractWrite {
+                person_id: pe.person_id,
+                offset: 0x1F,
+                old_value: old,
+                new_value: 2,
+                kind: ContractWriteKind::RelegationClauseTripped,
+            });
+        }
+    }
 }
 
 /// Lower-level entry: mutate World + a supplied event queue,
@@ -1152,5 +1307,287 @@ mod tests {
         assert_eq!(s.lifetime_misc_expense, write.new_lifetime_misc_expense);
         assert_eq!(s.season_subsidy_income, write.new_season_subsidy_income);
         assert_eq!(s.lifetime_subsidy_income, write.new_lifetime_subsidy_income);
+    }
+
+    // ======================================================================
+    // C15.1B — contract-record staff-state materialisation tests
+    // ======================================================================
+
+    use crate::contract_init::{ContractPool, ContractRecord};
+
+    /// Build a `ContractPool` with a single contract for the given
+    /// person id with the given clause pre-states.
+    fn pool_with_one_contract(
+        person_id: u32, relegation: u8, non_promotion: u8,
+    ) -> ContractPool {
+        let mut pool = ContractPool::default();
+        pool.records.push(ContractRecord {
+            staff_id: person_id as i32,
+            person_id: person_id as i32,
+            wage: 0, value: 0,
+            non_promotion, minimum_fee: 0, non_playing: 0,
+            relegation, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+        });
+        // Size by_staff_id to at least person_id + 1.
+        let n = (person_id as usize) + 1;
+        pool.by_staff_id = vec![-1; n];
+        pool.by_staff_id[person_id as usize] = 0;
+        pool
+    }
+
+    fn promotion_report(person_id: u32,
+                        new_1f: Option<u8>, new_1c: Option<u8>) -> AnnualRolloverReport {
+        AnnualRolloverReport {
+            events: vec![
+                YearEndMutationEvent::Promotion {
+                    effects: PromotionApplyEffects {
+                        club_id: 100,
+                        writes: ClubFieldWrites {
+                            new_comp_id: 7, prev_comp_id: 8, tier_byte_64: None,
+                        },
+                        set_status_idle: true,
+                        person_effects: vec![
+                            PersonEffect {
+                                person_id,
+                                new_staff_1f: new_1f,
+                                new_staff_1c: new_1c,
+                                event_emit: None,
+                            },
+                        ],
+                        welcome_news: None,
+                        stadium_expansion: None,
+                    },
+                },
+            ],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        }
+    }
+
+    fn relegation_report(person_id: u32,
+                         new_1f: Option<u8>) -> AnnualRolloverReport {
+        AnnualRolloverReport {
+            events: vec![
+                YearEndMutationEvent::Relegation {
+                    effects: RelegationApplyEffects {
+                        club_id: 100,
+                        writes: ClubFieldWrites {
+                            new_comp_id: 8, prev_comp_id: 7, tier_byte_64: None,
+                        },
+                        set_status_idle: true,
+                        person_effects: vec![
+                            PersonEffect {
+                                person_id,
+                                new_staff_1f: new_1f,
+                                new_staff_1c: None,
+                                event_emit: Some(PersonHistoryEvent {
+                                    old_comp_id: 7, kind: 3,
+                                }),
+                            },
+                        ],
+                        no_league_news: None,
+                    },
+                },
+            ],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        }
+    }
+
+    #[test]
+    fn c15_1b_promotion_disarms_relegation_clause_when_armed() {
+        // Person's relegation clause is armed (1). Promotion clears
+        // it to 0. Test the +0x1F path in isolation.
+        let mut pool = pool_with_one_contract(555, 1, 0);
+        let report = promotion_report(555, Some(0), None);
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        // Byte-exact assertion.
+        assert_eq!(pool.records[0].relegation, 0);
+        assert_eq!(pool.records[0].non_promotion, 0);
+        // Trace records the write.
+        assert_eq!(out.applied_contract_writes.len(), 1);
+        let w = &out.applied_contract_writes[0];
+        assert_eq!(w.person_id, 555);
+        assert_eq!(w.offset, 0x1F);
+        assert_eq!(w.old_value, 1);
+        assert_eq!(w.new_value, 0);
+        assert_eq!(w.kind, ContractWriteKind::RelegationClauseDisarmed);
+    }
+
+    #[test]
+    fn c15_1b_promotion_disarms_non_promotion_clause_when_armed() {
+        // Person's non-promotion clause is armed (1). Promotion
+        // clears it to 0.
+        let mut pool = pool_with_one_contract(666, 0, 1);
+        let report = promotion_report(666, None, Some(0));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(pool.records[0].relegation, 0);
+        assert_eq!(pool.records[0].non_promotion, 0);
+        assert_eq!(out.applied_contract_writes.len(), 1);
+        assert_eq!(out.applied_contract_writes[0].offset, 0x1C);
+        assert_eq!(out.applied_contract_writes[0].kind,
+                   ContractWriteKind::NonPromotionClauseDisarmed);
+    }
+
+    #[test]
+    fn c15_1b_promotion_disarms_both_bytes_when_both_armed() {
+        // Both clauses armed. Both fire on the same visit.
+        // Exe order (004d3550.c L45-47 then L48-50): +0x1F first,
+        // then +0x1C. Verify trace order.
+        let mut pool = pool_with_one_contract(777, 1, 1);
+        let report = promotion_report(777, Some(0), Some(0));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(pool.records[0].relegation, 0);
+        assert_eq!(pool.records[0].non_promotion, 0);
+        assert_eq!(out.applied_contract_writes.len(), 2);
+        assert_eq!(out.applied_contract_writes[0].offset, 0x1F);
+        assert_eq!(out.applied_contract_writes[1].offset, 0x1C);
+    }
+
+    #[test]
+    fn c15_1b_relegation_trips_relegation_clause_when_armed() {
+        // Relegation walk: +0x1F: 1 → 2. Never touches +0x1C.
+        let mut pool = pool_with_one_contract(888, 1, 1);
+        let report = relegation_report(888, Some(2));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(pool.records[0].relegation, 2);
+        // Non-promotion clause untouched by relegation walk.
+        assert_eq!(pool.records[0].non_promotion, 1);
+        assert_eq!(out.applied_contract_writes.len(), 1);
+        let w = &out.applied_contract_writes[0];
+        assert_eq!(w.offset, 0x1F);
+        assert_eq!(w.old_value, 1);
+        assert_eq!(w.new_value, 2);
+        assert_eq!(w.kind, ContractWriteKind::RelegationClauseTripped);
+    }
+
+    #[test]
+    fn c15_1b_no_write_when_relegation_clause_already_zero() {
+        // +0x1F == 0: predicate fails; exe skips silently.
+        // Rust does the same.
+        let mut pool = pool_with_one_contract(1001, 0, 0);
+        let report = promotion_report(1001, Some(0), Some(0));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(pool.records[0].relegation, 0); // unchanged
+        assert_eq!(pool.records[0].non_promotion, 0);
+        assert_eq!(out.applied_contract_writes.len(), 0);
+    }
+
+    #[test]
+    fn c15_1b_no_write_when_relegation_clause_already_two() {
+        // +0x1F == 2 (already tripped from a prior season):
+        // relegation walk's predicate `== 1` fails; no write.
+        // Guards against double-fire.
+        let mut pool = pool_with_one_contract(1002, 2, 0);
+        let report = relegation_report(1002, Some(2));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(pool.records[0].relegation, 2); // unchanged (was 2)
+        assert_eq!(out.applied_contract_writes.len(), 0);
+    }
+
+    #[test]
+    fn c15_1b_no_write_when_non_promotion_clause_zero() {
+        // +0x1C == 0: promotion's predicate fails on that byte.
+        // +0x1F still fires if armed.
+        let mut pool = pool_with_one_contract(1003, 1, 0);
+        let report = promotion_report(1003, Some(0), Some(0));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(pool.records[0].relegation, 0);
+        assert_eq!(pool.records[0].non_promotion, 0);
+        assert_eq!(out.applied_contract_writes.len(), 1);
+        assert_eq!(out.applied_contract_writes[0].offset, 0x1F);
+    }
+
+    #[test]
+    fn c15_1b_duplicate_person_second_visit_is_naturally_noop() {
+        // Person id 2000 encountered twice (e.g. same person in
+        // both first-team and reserve pools). First visit fires
+        // 1 → 0. Second visit finds +0x1F == 0; predicate fails;
+        // no write. This is the exe's natural dedup — no explicit
+        // guard needed.
+        let mut pool = pool_with_one_contract(2000, 1, 0);
+        // First fire (as if in first-team pass):
+        let report = promotion_report(2000, Some(0), None);
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(out.applied_contract_writes.len(), 1);
+        assert_eq!(pool.records[0].relegation, 0);
+        // Second fire (as if in reserve pass, same person):
+        let mut out2 = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out2);
+        assert_eq!(out2.applied_contract_writes.len(), 0);
+        assert_eq!(pool.records[0].relegation, 0); // unchanged
+    }
+
+    #[test]
+    fn c15_1b_missing_contract_is_silent_skip() {
+        // Person id 3000 has no contract record (by_staff_id[3000]
+        // is out of bounds → returns None from
+        // contract_for_staff_mut). Exe skips silently; Rust
+        // matches.
+        let mut pool = pool_with_one_contract(555, 1, 0);
+        // person 3000 has no by_staff_id entry.
+        let report = promotion_report(3000, Some(0), None);
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(out.applied_contract_writes.len(), 0);
+        // Existing contract for person 555 is untouched.
+        assert_eq!(pool.records[0].relegation, 1);
+    }
+
+    #[test]
+    fn c15_1b_negative_by_staff_id_sentinel_is_silent_skip() {
+        // by_staff_id[person] = -1 means "no contract" per
+        // contract_for_staff docstring. contract_for_staff_mut
+        // returns None; no write.
+        let mut pool = ContractPool::default();
+        pool.records.push(ContractRecord {
+            staff_id: 1, person_id: 1, wage: 0, value: 0,
+            non_promotion: 0, minimum_fee: 0, non_playing: 0,
+            relegation: 1, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 0,
+        });
+        pool.by_staff_id = vec![-1, -1]; // both persons have no contract
+        let report = promotion_report(1, Some(0), None);
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        assert_eq!(out.applied_contract_writes.len(), 0);
+        assert_eq!(pool.records[0].relegation, 1); // untouched
+    }
+
+    #[test]
+    fn c15_1b_trace_old_equals_pre_write_new_equals_post_write() {
+        // C15.1B point 19: trace-vs-World consistency.
+        // Read pool BEFORE apply; capture the byte. Apply. Read
+        // pool AFTER. Assert trace.old == pre and trace.new == post.
+        let mut pool = pool_with_one_contract(4001, 1, 1);
+        let pre_relegation = pool.records[0].relegation;
+        let pre_non_promotion = pool.records[0].non_promotion;
+        let report = promotion_report(4001, Some(0), Some(0));
+        let mut out = WorldApplyReport::default();
+        apply_contract_writes_from_report(&mut pool, &report, &mut out);
+        let post_relegation = pool.records[0].relegation;
+        let post_non_promotion = pool.records[0].non_promotion;
+        // Trace order matches exe: +0x1F first, +0x1C second.
+        assert_eq!(out.applied_contract_writes[0].offset, 0x1F);
+        assert_eq!(out.applied_contract_writes[0].old_value,
+                   pre_relegation);
+        assert_eq!(out.applied_contract_writes[0].new_value,
+                   post_relegation);
+        assert_eq!(out.applied_contract_writes[1].offset, 0x1C);
+        assert_eq!(out.applied_contract_writes[1].old_value,
+                   pre_non_promotion);
+        assert_eq!(out.applied_contract_writes[1].new_value,
+                   post_non_promotion);
     }
 }

@@ -105,6 +105,18 @@ impl ContractPool {
         if idx < 0 { return None; }
         self.records.get(idx as usize)
     }
+
+    /// C15.1B — mutable form of [`contract_for_staff`]. Used by the
+    /// promotion / relegation apply layer to write bytes `+0x1C`
+    /// (non_promotion) and `+0x1F` (relegation) on the resolved
+    /// contract record.
+    pub fn contract_for_staff_mut(
+        &mut self, staff_id: u32,
+    ) -> Option<&mut ContractRecord> {
+        let idx = *self.by_staff_id.get(staff_id as usize)? as isize;
+        if idx < 0 { return None; }
+        self.records.get_mut(idx as usize)
+    }
 }
 
 // -----------------------------------------------------------------
