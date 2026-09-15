@@ -255,33 +255,44 @@ function snapshotSlotTable() {
                    error: String(e) });
             continue;
         }
-        // Read one probe slot first — if trigger_day + count look
-        // plausible we log the whole table under this candidate.
-        let looksReal = false;
+        // Dump the FULL slot 0 as raw hex — the agent's Ghidra
+        // decode of the layout may not translate byte-perfect to
+        // GDI; better to have the raw bytes and decode offline.
+        let slot0Hex = null, slot0Ok = false;
         try {
-            const s0 = base;
-            const count0     = s0.add(OFF_COUNT).readS32();
-            const trigger0   = s0.add(OFF_TRIGGER).readU8();
-            const lastYear0  = s0.add(OFF_LAST_YEAR).readU16();
-            looksReal = (count0 >= 0 && count0 < 100
-                         && trigger0 <= 200 && lastYear0 < 3000);
-            emit({ hook: '__slot_table_probe__',
-                   candidate: c.name, va: c.va,
-                   slot0_count: count0, slot0_trigger: trigger0,
-                   slot0_last_year: lastYear0,
-                   looks_real: looksReal });
+            const bytes = base.readByteArray(0x48);
+            const u8 = new Uint8Array(bytes);
+            let hex = '';
+            for (let k = 0; k < u8.length; k++) {
+                hex += (u8[k] < 0x10 ? '0' : '') + u8[k].toString(16);
+            }
+            slot0Hex = hex;
+            slot0Ok = true;
         } catch (e) {
             emit({ hook: '__slot_table_probe__', candidate: c.name,
-                   error: String(e) });
+                   error: 'read failed: ' + String(e) });
             continue;
         }
-        if (!looksReal) continue;
-        // Dump all 34 slots.
+        emit({ hook: '__slot_table_probe__',
+               candidate: c.name, va: c.va,
+               slot0_raw_hex: slot0Hex });
+        if (!slot0Ok) continue;
+        // Dump all 34 slots. Include the full 0x48-byte raw dump
+        // per slot so post-processing can re-decode if the
+        // assumed field offsets prove wrong.
         for (let i = 0; i < N_SLOTS; i++) {
             const slotBase = base.add(i * RECORD_SIZE);
             let count = 0, trigger = 0, lastYear = 0, poolPtrStr = '?';
+            let rawHex = null;
             const comps = [];
             try {
+                const rawBytes = slotBase.readByteArray(RECORD_SIZE);
+                const u8 = new Uint8Array(rawBytes);
+                let hex = '';
+                for (let k = 0; k < u8.length; k++) {
+                    hex += (u8[k] < 0x10 ? '0' : '') + u8[k].toString(16);
+                }
+                rawHex = hex;
                 count      = slotBase.add(OFF_COUNT).readS32();
                 trigger    = slotBase.add(OFF_TRIGGER).readU8();
                 lastYear   = slotBase.add(OFF_LAST_YEAR).readU16();
@@ -326,14 +337,18 @@ function snapshotSlotTable() {
                 hook: '__slot_table_entry__',
                 candidate: c.name,
                 slot: i,
-                count, trigger_day: trigger,
-                last_processed_year: lastYear,
-                pool_ptr: poolPtrStr,
+                raw_hex: rawHex,
+                interpreted: {
+                    count, trigger_day: trigger,
+                    last_processed_year: lastYear,
+                    pool_ptr: poolPtrStr,
+                },
                 comps,
             });
         }
-        // Only dump for the first-plausible candidate. Break so
-        // we don't emit 3x34 = 102 entries for wrong candidates.
+        // Only dump for the first candidate (the DirectDraw VA
+        // works as-is in GDI for this region). If it turns out
+        // wrong we'll see from the raw hex.
         return c.name;
     }
     emit({ hook: '__slot_table_snapshot_failed__',

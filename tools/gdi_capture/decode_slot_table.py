@@ -93,11 +93,17 @@ def main() -> int:
 
     print(f"{len(probes)} candidate probe(s):")
     for p in probes:
-        print(f"    {p.get('candidate'):>35s}  va={p.get('va'):<12s}  "
-              f"count={p.get('slot0_count')}  "
-              f"trigger={p.get('slot0_trigger')}  "
-              f"last_year={p.get('slot0_last_year')}  "
-              f"looks_real={p.get('looks_real')}")
+        raw = p.get('slot0_raw_hex')
+        if raw:
+            # Pretty-print the raw 0x48 bytes as 16-per-line offsets.
+            print(f"    {p.get('candidate'):>35s}  va={p.get('va')}")
+            for off in range(0, min(len(raw), 0x48*2), 32):
+                bytes16 = raw[off:off+32]
+                # Interpret common candidate widths at this row.
+                print(f"        +0x{off//2:02x}: {bytes16}")
+        else:
+            print(f"    {p.get('candidate'):>35s}  va={p.get('va')}  "
+                  f"error={p.get('error')}")
     if snapshot_done:
         print(f"    winner: {snapshot_done.get('winning_candidate')}")
     print()
@@ -111,14 +117,23 @@ def main() -> int:
     print(f"{len(slots)} slot entries dumped:")
     print()
 
-    # Print each slot with its comps.
+    # Print each slot with its raw hex + comps.
     slots_sorted = sorted(slots, key=lambda s: s["slot"])
     for s in slots_sorted:
-        idx = s["slot"]; trig = s["trigger_day"]
-        count = s["count"]; last_year = s["last_processed_year"]
-        print(f"slot {idx:>2}  trigger_day={trig:>3d} ({dow_label(trig)})  "
-              f"count={count:>3d}  last_year={last_year}  "
-              f"pool={s['pool_ptr']}")
+        idx = s["slot"]
+        interp = s.get("interpreted") or {}
+        trig = interp.get("trigger_day", s.get("trigger_day", 0))
+        count = interp.get("count", s.get("count", 0))
+        last_year = interp.get("last_processed_year",
+                               s.get("last_processed_year", 0))
+        pool_ptr = interp.get("pool_ptr", s.get("pool_ptr", "?"))
+        raw = s.get("raw_hex") or ""
+        print(f"slot {idx:>2}  interp: trig={trig}  count={count}  "
+              f"last_year={last_year}  pool={pool_ptr}")
+        if raw:
+            for off in range(0, min(len(raw), 0x48*2), 32):
+                bytes16 = raw[off:off+32]
+                print(f"        +0x{off//2:02x}: {bytes16}")
         for c in s.get("comps", []):
             if c.get("err"):
                 print(f"    idx={c.get('idx')}: ERROR {c['err']}")
