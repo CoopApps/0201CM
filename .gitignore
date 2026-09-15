@@ -30,3 +30,8 @@ build.log
 bash.exe.stackdump
 __pycache__/
 *.pyc
+
+# Frida capture outputs — user-generated, may be large
+season_*.jsonl
+year_end*.jsonl
+season_split/
