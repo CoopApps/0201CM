@@ -2020,7 +2020,7 @@ impl App {
             background_nations: vec![],
             use_real_players: true,
             attribute_masking: true,
-            start_year: 2001,
+            start_year: 2001, initial_game_rng_state: None,
         };
         let mut save = world.new_game_from_rust_db(std::path::Path::new(&db_dir), &options);
         let identity = cm_domain::ManagerIdentity {
@@ -2090,7 +2090,7 @@ fn new_game_options(
             .map(|s| s.primary_name.clone()).collect(),
         use_real_players: leagues.options.use_real_players,
         attribute_masking: leagues.options.attribute_masking,
-        start_year: 2001,
+        start_year: 2001, initial_game_rng_state: None,
     }
 }
 
@@ -2539,7 +2539,7 @@ fn dump(path: &str, which: &str) {
                         background_nations: vec![],
                         use_real_players: true,
                         attribute_masking: true,
-                        start_year: 2001,
+                        start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2569,7 +2569,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2594,7 +2594,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2624,7 +2624,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2658,7 +2658,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2698,7 +2698,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2721,7 +2721,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
@@ -2746,7 +2746,7 @@ fn dump(path: &str, which: &str) {
                     let opts = cm_domain::NewGameOptions {
                         selected_nations: vec!["England".into()],
                         background_nations: vec![], use_real_players: true,
-                        attribute_masking: true, start_year: 2001,
+                        attribute_masking: true, start_year: 2001, initial_game_rng_state: None,
                     };
                     let mut save = world.new_game_from_rust_db(std::path::Path::new(&dir), &opts);
                     let h = save.add_manager(cm_domain::ManagerIdentity {
