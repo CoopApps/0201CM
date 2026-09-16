@@ -474,6 +474,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);

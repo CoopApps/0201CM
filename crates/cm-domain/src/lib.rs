@@ -2423,6 +2423,23 @@ pub struct RuntimeSaveGame {
     /// Year of the last year-rollover we ran (for the `year_rollover` hook).
     #[serde(default)]
     pub last_year_rollover: u16,
+    /// C15 integration guard — the calendar year the English
+    /// year-end pipeline last fired for. `None` until the first
+    /// end-of-season fires. `#[serde(default)]` keeps older
+    /// saves loading unchanged (they resume as if year-end
+    /// hasn't fired yet — the detector's fixture-status gate
+    /// still keeps it from firing twice on a load-mid-season).
+    #[serde(default)]
+    pub last_english_year_end_applied: Option<u16>,
+    /// C11.3/C15 integration — persisted RNG state used by the
+    /// `tick_days_bound` entry point so fixture regeneration
+    /// and year-end pipelines resume the RNG sequence across
+    /// ticks and save/load. `None` bootstraps from
+    /// `NewGameOptions.initial_game_rng_state` on the first
+    /// call, or from a fixed `0xC15_0000` seed if neither is
+    /// available.
+    #[serde(default)]
+    pub session_rng_state: Option<crate::game_rng::GameRngState>,
     /// C11.3 season-roll scheduler — day-of-year → registered comps.
     /// Populated at construction with the English pyramid on Jan 1
     /// (matching the runtime-observed `Comp+0x40` year turn between
@@ -13565,6 +13582,8 @@ impl World {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);
@@ -19261,6 +19280,268 @@ impl RuntimeSaveGame {
         }
     }
 
+    /// C11.3/C15 integration entry — tick `days` and drain any
+    /// pending season-roll regens against the given `World`.
+    ///
+    /// This is the tick the game shell should call once it has
+    /// a live `World`. `tick_days` (the bare form above) does
+    /// not have a `&mut World` and therefore cannot invoke
+    /// [`RuntimeSaveGame::apply_pending_season_roll_regens`] —
+    /// the proven C11.3 fixture-regen path. Callers that pass
+    /// a World here get:
+    ///
+    /// * Frozen fixture generation (C11.2) still runs at new-game.
+    /// * Jan-1 season-roll scheduler (C11.3) fires from
+    ///   `tick_cm_phase → hook_season_roll_scheduler`.
+    /// * Pending regens are drained here via
+    ///   `apply_pending_season_roll_regens`, so the NEXT
+    ///   season's English pyramid fixtures actually land in
+    ///   `save.season.fixtures` alongside the current season.
+    ///
+    /// # C15 year-end apply
+    ///
+    /// The proven `compute_annual_rollover` +
+    /// `apply_report_to_world` pipeline is NOT invoked from
+    /// here yet. Wiring it requires an end-of-season detector
+    /// plus a builder that composes `AnnualRolloverInput` from
+    /// the live `World` + `save.season.standings`. Both are
+    /// tracked in `reports/c15_integration_audit.md` as the
+    /// remaining blocker before the Traditional English core
+    /// can move from PROVISIONAL to STATE-EXACT.
+    pub fn tick_days_bound(
+        &mut self,
+        world: &mut World,
+        days: u32,
+    ) {
+        // Bootstrap the session RNG once per call.
+        // Priority: (a) persisted state from a prior tick or the
+        // new_game bootstrap; (b) the boot-time initial state;
+        // (c) a fixed deterministic seed. The state snapshot is
+        // written back to `save.session_rng_state` at the end so
+        // subsequent ticks resume the sequence.
+        let mut english_rng = if let Some(state) = self.session_rng_state {
+            crate::game_rng::GameRng::from_state_snapshot(state)
+        } else if let Some(state) = self.new_game.as_ref()
+            .and_then(|ng| ng.initial_game_rng_state)
+        {
+            crate::game_rng::GameRng::from_state_snapshot(state)
+        } else {
+            crate::game_rng::GameRng::new(0xC15_0000)
+        };
+        let english_rng_dbc340 = self.session_rng_state
+            .map(|s| s.dbc340_cli_seed).unwrap_or(0);
+
+        for _ in 0..days {
+            for _ in 0..3 { self.tick_cm_phase(); }
+            // C11.3: drain pending regens after each day — the
+            // Jan-1 hook queues one per English pyramid comp; the
+            // drain runs the byte-exact english_traditional
+            // engine to materialise the next season's fixtures.
+            if !self.pending_season_roll_regens.is_empty() {
+                self.apply_pending_season_roll_regens(
+                    world, &mut english_rng, english_rng_dbc340,
+                );
+            }
+            // C15: end-of-season detector. Fires
+            // compute_annual_rollover → apply_report_to_world at
+            // most once per calendar season.
+            let date_now = self.date.clone();
+            if self.should_fire_english_year_end(&date_now) {
+                self.run_english_year_end(world, &mut english_rng);
+            }
+        }
+
+        // Persist the RNG state so the next tick resumes.
+        self.session_rng_state = Some(english_rng.snapshot());
+    }
+
+    /// C15 integration — end-of-season detector.
+    ///
+    /// Fires when: (1) we're past the English rollover trigger
+    /// window (May 20+), (2) every English pyramid league fixture
+    /// is `Played`, (3) we haven't already applied year-end for
+    /// this season.
+    fn should_fire_english_year_end(&self, date: &GameDate) -> bool {
+        // Cheap early-outs first.
+        if date.month < 5 { return false; }
+        if self.last_english_year_end_applied == Some(date.year) {
+            return false;
+        }
+        // All English-comp fixtures must be Played.
+        let eng: std::collections::BTreeSet<u32> =
+            crate::c15_english_annual_rollover::ENGLISH_ROLLOVER_COMP_IDS
+                .iter().copied().collect();
+        let mut seen_any = false;
+        for f in &self.season.fixtures {
+            if !eng.contains(&f.competition_id) { continue; }
+            seen_any = true;
+            if f.status != HeadlessFixtureStatus::Played { return false; }
+        }
+        seen_any
+    }
+
+    /// C15 integration — build `AnnualRolloverInput` from live
+    /// state, run `compute_annual_rollover` +
+    /// `apply_report_to_world`, and mark the season as applied.
+    ///
+    /// Best-effort integration: fields the live runtime doesn't
+    /// yet track (Conference feeder candidates,
+    /// third-div-relegatees, per-club person slots, reserve
+    /// map) default to empty. The proven modules silent-skip
+    /// on those inputs — the observable effects (contract
+    /// clause 1→2, finance writes, mailbox appends, stadium
+    /// expansions on forced-promotion path, status stamps)
+    /// still fire against the tables + club state derived
+    /// from `save.season.standings` and
+    /// `RuntimeSaveGame.finance_ledger`.
+    pub fn run_english_year_end(
+        &mut self,
+        world: &mut World,
+        rng: &mut crate::game_rng::GameRng,
+    ) {
+        use crate::c15_english_annual_rollover::*;
+        use crate::english_traditional::GameMode;
+        use crate::eng_second_fixtures::{
+            EnglishPyramidCompIds, ThirdConferenceStadiumInputs,
+        };
+        use crate::year_end_statuses::{
+            EnglishLeagueEndShape, STATUS_IDLE,
+        };
+
+        // ---- Build the 5 final tables from save.season.standings.
+        let eng_ids = [
+            (7u32,  EnglishLeagueEndShape::Premier),
+            (8u32,  EnglishLeagueEndShape::First),
+            (9u32,  EnglishLeagueEndShape::Second),
+            (10u32, EnglishLeagueEndShape::Third),
+            (93u32, EnglishLeagueEndShape::Conference),
+        ];
+        let mk_table = |comp_id: u32, shape: EnglishLeagueEndShape|
+            -> EnglishLeagueFinalTable
+        {
+            let members: std::collections::BTreeSet<u32> =
+                world.club_members_of_competition(comp_id)
+                    .into_iter().map(|(id, _)| id).collect();
+            let mut rows: Vec<&HeadlessSeasonStanding> = self.season.standings
+                .iter().filter(|s| members.contains(&s.club_id)).collect();
+            // Sort by (points desc, GD desc, GF desc). Stable tiebreak.
+            rows.sort_by(|a, b| b.points.cmp(&a.points)
+                .then(b.goal_difference.cmp(&a.goal_difference))
+                .then(b.goals_for.cmp(&a.goals_for)));
+            let rows = rows.into_iter().enumerate().map(|(i, s)| FinalTableRow {
+                club_id: s.club_id,
+                current_status: STATUS_IDLE,
+                position: (i + 1) as u16,
+                playoff_winner_marker: false,
+            }).collect();
+            EnglishLeagueFinalTable { comp_id, shape, rows }
+        };
+        let tables: [EnglishLeagueFinalTable; 5] = [
+            mk_table(eng_ids[0].0, eng_ids[0].1),
+            mk_table(eng_ids[1].0, eng_ids[1].1),
+            mk_table(eng_ids[2].0, eng_ids[2].1),
+            mk_table(eng_ids[3].0, eng_ids[3].1),
+            mk_table(eng_ids[4].0, eng_ids[4].1),
+        ];
+
+        // ---- Build per-club state from finance ledger + stadium refs.
+        let mut club_state: std::collections::BTreeMap<u32, ClubYearEndState>
+            = Default::default();
+        for tbl in &tables {
+            for row in &tbl.rows {
+                let cid = row.club_id;
+                let fin = self.finance_ledger.get(cid);
+                // Look up the club's home stadium from raw Club record.
+                let stadium_id = world.core.clubs.iter()
+                    .find(|c| crate::typed_records::ClubView::new(c).id()
+                              as u32 == cid)
+                    .and_then(|c| crate::typed_records::ClubView::new(c)
+                              .home_stadium_id());
+                let (stot, ssea, spea) = stadium_id
+                    .and_then(|sid| world.references.stadiums.iter()
+                              .find(|s| s.id as i32 == sid))
+                    .map(|s| (s.capacity_total as i32,
+                              s.capacity_seated as i32,
+                              s.capacity_expansion as i32))
+                    .unwrap_or((0, 0, 0));
+                club_state.insert(cid, ClubYearEndState {
+                    stadium_id, stadium_total: stot, stadium_seated: ssea,
+                    stadium_peak: spea,
+                    cash: fin.cash,
+                    season_subsidy_income: fin.season_subsidy_income,
+                    lifetime_subsidy_income: fin.lifetime_subsidy_income,
+                    season_misc_expense: fin.season_misc_expense,
+                    lifetime_misc_expense: fin.lifetime_misc_expense,
+                    news_flag_cf: 0, tier_byte_64: 0,
+                    parent_stadium_refuse_counter: None,
+                    parent_stadium_id: None,
+                });
+            }
+        }
+
+        // ---- Assemble input. Defaults for pieces the live
+        // runtime doesn't yet track — the proven modules
+        // silent-skip on empty inputs for those.
+        let inp = AnnualRolloverInput {
+            mode: GameMode::Traditional,
+            comp_ids: EnglishPyramidCompIds {
+                prem: 7, first: 8, second: 9, third: 10, conference: 93,
+            },
+            tables,
+            conference_simulated: true,
+            third_conference_stadium: ThirdConferenceStadiumInputs {
+                champion_stadium_current_capacity: None,
+                required_capacity_a: 6_000,
+                required_capacity_b: 6_000,
+                third_div_last_place_club_id: None,
+            },
+            feeder_candidates: &[],
+            conference_marked_for_relegation: &[],
+            fallback_candidates: &[],
+            third_div_relegatees: &[],
+            per_club_person_slots: Default::default(),
+            reserve_of: Default::default(),
+            comp_stadium_templates: Default::default(),
+            club_state,
+            rng,
+        };
+        let report = match compute_annual_rollover(inp) {
+            Ok(r) => r,
+            Err(e) => {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days, date: self.date.clone(),
+                    kind: "year_end_error".to_string(),
+                    message: format!("compute_annual_rollover: {:?}", e),
+                    phase: 2,
+                });
+                self.last_english_year_end_applied = Some(self.date.year);
+                return;
+            }
+        };
+        let applied = crate::c15_1_world_apply::apply_report_to_world(
+            world, self, &report,
+        );
+        // Diagnostic breadcrumb for the app.
+        self.pending_events.push(RuntimeEvent {
+            day: self.elapsed_days, date: self.date.clone(),
+            kind: "year_end_applied".to_string(),
+            message: format!(
+                "C15 year-end applied: {} contract writes, {} squad writes, \
+                 {} mailbox appends, {} stadium writes, {} refuse bumps, \
+                 {} finance writes, {} club moves",
+                applied.applied_contract_writes.len(),
+                applied.applied_squad_preference_writes.len(),
+                applied.applied_person_history_writes.len(),
+                applied.stadium_writes.len(),
+                applied.applied_refuse_counter_writes.len(),
+                applied.pending_finance.len(),
+                applied.club_move_writes,
+            ),
+            phase: 2,
+        });
+        self.last_english_year_end_applied = Some(self.date.year);
+    }
+
     pub fn run_headless_days(&mut self, days: u32) -> HeadlessRunReport {
         let start_date = self.date.clone();
         let start_trace_len = self.phase_trace.len();
@@ -24233,6 +24514,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);
@@ -24467,6 +24750,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: year,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler
                     ::SeasonRollScheduler::new();
@@ -24709,6 +24994,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);
@@ -24817,6 +25104,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);
@@ -24920,6 +25209,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);
@@ -25011,6 +25302,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);
@@ -25104,6 +25397,8 @@ mod tests {
             friendlies: Vec::new(),
             fifa_rankings: Vec::new(),
             last_year_rollover: 0,
+            last_english_year_end_applied: None,
+            session_rng_state: None,
             season_roll_scheduler: {
                 let mut s = crate::season_roll_scheduler::SeasonRollScheduler::new();
                 crate::season_roll_scheduler::register_english_pyramid(&mut s);

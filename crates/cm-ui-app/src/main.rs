@@ -1856,9 +1856,18 @@ impl App {
     /// refuses to close without a save.
     fn advance_active_day(&mut self) {
         {
+            // C11.3/C15 integration — use tick_days_bound when we
+            // have a live World so the proven pipelines fire:
+            // Jan-1 fixture regen (english_traditional engine)
+            // drains here, and end-of-season detection triggers
+            // compute_annual_rollover → apply_report_to_world.
             let Some(game) = self.game.as_mut() else { return };
             let before = game.save.date.clone();
-            game.save.tick_days(1);
+            if let Some(world) = self.world.as_mut() {
+                game.save.tick_days_bound(world, 1);
+            } else {
+                game.save.tick_days(1);
+            }
             game.dirty = true;
             eprintln!(
                 "[tick] {} -> {} ({} days elapsed)",
