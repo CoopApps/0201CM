@@ -1708,7 +1708,7 @@ pub fn try_render_club_preview_faithful(
     // rendered honestly as an empty body.
     if is_fixtures {
         use cm_render::screen_club_fixtures_faithful::{
-            FixtureRow, render_fixture_rows, format_row_date,
+            FixtureRow, render_fixture_rows_scrolled, format_row_date,
         };
         let font = fonts.pixel_slot(2).clone();
         let rows: Vec<FixtureRow> = if let Some(s) = save {
@@ -1747,7 +1747,7 @@ pub fn try_render_club_preview_faithful(
             }
         } else { Vec::new() };
         // (Diagnostic eprintln stripped; enable if debugging fixture H/A.)
-        render_fixture_rows(&mut packed, &font, &rows);
+        render_fixture_rows_scrolled(&mut packed, &font, &rows, *scroll);
     }
     if is_transfers && view_menu_open_effective {
         // The Transfers view dropdown uses the same shared widget

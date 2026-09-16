@@ -2257,16 +2257,20 @@ impl ApplicationHandler for App {
                         changed = true;
                     }
                     Screen::ClubFixturesTab { choice, scroll, .. } => {
-                        // Count this club's fixtures in save.season so the
-                        // scroll clamp knows the true max — the tab
-                        // renderer walks the same filter.
+                        // 14 visible rows on the fixtures tab (matches
+                        // render_fixture_rows_scrolled's take(14) cap
+                        // in cm-render/src/screen_club_fixtures_faithful.rs).
+                        // Count this club's fixtures via the same filter
+                        // World::club_fixtures_for uses so the clamp is
+                        // accurate.
+                        const VISIBLE_ROWS: usize = 14;
                         let total = self.game.as_ref().map(|g| {
                             g.save.season.fixtures.iter()
                                 .filter(|f| f.home_club_id == choice.club_id
                                          || f.away_club_id == choice.club_id)
                                 .count()
                         }).unwrap_or(0);
-                        let max = total.saturating_sub(screens::FIXTURE_ROWS_VISIBLE);
+                        let max = total.saturating_sub(VISIBLE_ROWS);
                         *scroll = if dy > 0.0 { scroll.saturating_sub(1) }
                                   else        { (*scroll + 1).min(max) };
                         changed = true;

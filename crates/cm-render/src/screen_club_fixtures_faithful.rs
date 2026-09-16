@@ -87,6 +87,16 @@ pub fn render_fixture_rows(
     surface: &mut PackedSurface,
     font: &PixelFont,
     rows: &[FixtureRow],
+) { render_fixture_rows_scrolled(surface, font, rows, 0); }
+
+/// Same as [`render_fixture_rows`] but paints starting at `scroll`
+/// entries down the row list. Scrollbar sizing still uses the FULL
+/// `rows.len()` so the thumb reflects total-vs-visible correctly.
+pub fn render_fixture_rows_scrolled(
+    surface: &mut PackedSurface,
+    font: &PixelFont,
+    rows: &[FixtureRow],
+    scroll: usize,
 ) {
     use crate::packed_text::{draw_wrapped_text, W_LEFT};
     use crate::packed_panel::{draw_panel, PanelPalette,
@@ -123,7 +133,7 @@ pub fn render_fixture_rows(
 
     let palette = PanelPalette::default();
 
-    for (i, r) in rows.iter().take(14).enumerate() {
+    for (i, r) in rows.iter().skip(scroll).take(14).enumerate() {
         let y0 = ROW_FIRST_Y + (i as i32) * ROW_STRIDE;
         let y1 = y0 + ROW_HEIGHT;
 
