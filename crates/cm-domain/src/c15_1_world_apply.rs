@@ -207,6 +207,48 @@ pub struct AppliedSquadPreferenceWrite {
     pub new_value: i8,
 }
 
+/// C15.1E — one persistent per-person news-mailbox append that
+/// actually landed on `world.person_news_mailboxes`.
+///
+/// Runtime object: the exe's per-person mailbox descriptor
+/// table at `DAT_00ACD5C4 + person_id * 0x6E`, indirected via
+/// `+0xCF` into the shared 222-byte news-item pool
+/// (`FUN_0076DCE0`). The Rust port collapses that two-hop
+/// indirection into a `BTreeMap<person_id, Vec<PersonNewsItem>>`
+/// keyed by the same `person_id` the exe uses to reach the
+/// mailbox descriptor. See
+/// `reports/c15_1e_history_archaeology.md` for the derivation
+/// and for why the previously-assumed "13-list-per-person"
+/// model is refuted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AppliedPersonHistoryWrite {
+    /// Subject person id (slot 0 of the appended news item;
+    /// also the mailbox key).
+    pub person_id: u32,
+    /// News category (always `0x0FBF` for the two `FUN_008D0D90`
+    /// callers). Held as a field rather than a constant so
+    /// consumers can filter without cross-referencing).
+    pub category: u32,
+    /// `kind` value (`param_3` on the caller side; stored to
+    /// slot 6 of the news item). 3 = relegated (this tranche's
+    /// only wired caller), 0 = retirement (out of scope).
+    pub kind: u8,
+    /// Old-competition id (slot 5). Comes from the C13
+    /// `PersonHistoryEvent.old_comp_id`.
+    pub old_comp_id: u32,
+    /// Staff row id (slot 7). Resolved by the applier via
+    /// `ContractPool.contract_for_staff_mut(person_id)`.`staff_id`
+    /// — mirrors the exe's `*(u32*)(param_4 + 0x21)` read on
+    /// the contract row `param_4` points to.
+    pub staff_id: u32,
+    /// Mailbox length BEFORE the append.
+    pub old_len: usize,
+    /// Mailbox length AFTER the append (always `old_len + 1`).
+    pub new_len: usize,
+    /// Monotonic news id the pool assigned to this item.
+    pub news_id: u32,
+}
+
 /// C15.1D — one `Stadium+0x20` owner-refuse counter increment
 /// that actually landed on a `DomainStadium`.
 ///
@@ -299,6 +341,13 @@ pub struct WorldApplyReport {
     /// the counter was already saturated at 20.
     pub applied_refuse_counter_writes:
         Vec<AppliedRefuseCounterWrite>,
+    /// C15.1E — per-person news-mailbox appends that actually
+    /// landed on `world.person_news_mailboxes`. Empty when no
+    /// relegation event carried a `PersonHistoryEvent`, when
+    /// the person's staff_id could not be resolved (no
+    /// `ContractRecord`), or when the identity gate failed.
+    pub applied_person_history_writes:
+        Vec<AppliedPersonHistoryWrite>,
     /// Post-rollover status per moved club, taken from the raw
     /// bytes AFTER `materialise_club_moves` writes them.
     pub post_rollover_club_status: std::collections::BTreeMap<u32, u8>,
@@ -341,31 +390,6 @@ pub fn apply_report_to_world(
     // reflects what actually landed.
     for w in &out.pending_finance {
         save.finance_ledger.apply_write(w);
-    }
-    // C15.1B: materialise promotion/relegation staff-state
-    // writes onto `world.contracts` (the runtime contract pool
-    // at `DAT_00accad8`, per memory
-    // [[contract-clauses-generated-at-boot]]). Trace-derived:
-    // AppliedContractWrite is pushed only after a real byte
-    // mutation.
-    if let Some(contracts) = world.contracts.as_mut() {
-        apply_contract_writes_from_report(contracts, report, &mut out);
-        // C15.1C: materialise the promotion-side +0x3A
-        // (SquadRecord position code) resets on the same pool.
-        // Runs AFTER the C15.1B clause writes so the trace order
-        // (contract clause writes, then squad-position writes)
-        // matches the exe's Loop-A-then-Loop-B ordering inside
-        // FUN_004D3550 — but note the exe order is actually
-        // Loop-A (position writes) then Loop-B (clause writes).
-        // We invert the applier ordering here on purpose: the
-        // Rust port materialises via `effects.person_effects`
-        // (identical event walk for both), and the C15.1B path
-        // has been landed and frozen; running C15.1C after does
-        // not change any byte written by C15.1B because the two
-        // touch disjoint offsets (0x1C/0x1F vs 0x3A).
-        apply_squad_position_writes_from_report(
-            contracts, report, &mut out,
-        );
     }
     out
 }
@@ -614,6 +638,114 @@ fn write_squad_position(
     }
 }
 
+/// C15.1E — walk the report's Relegation events and append a
+/// persistent news-mailbox entry per person with an
+/// `event_emit` payload, mirroring
+/// `FUN_004D3460 → FUN_008D0D90(slot, old_comp, 3, contract_row)`.
+///
+/// # Ordering
+///
+/// This pass runs AFTER `apply_contract_writes_from_report`
+/// (C15.1B). The exe order inside `FUN_004D3460` lines 34-35 is
+/// `contract[+0x1F] = 2; FUN_008D0D90(...);` — contract byte
+/// write first, then news append. `FUN_008D0D90` does NOT read
+/// the just-written `+0x1F` byte (only `+0x21` = staff_id), so
+/// the ordering is behaviourally moot at the byte level — but
+/// this port preserves it anyway.
+///
+/// # Identity gate
+///
+/// Consistent with C15.1B, a person whose contract is not
+/// found in the pool (or whose contract's club_id does not
+/// match the event's club_id) produces no mailbox append. The
+/// exe reaches this write via a squad-slot walk on the
+/// relegated club, so the identity gate is a natural
+/// consequence of iterating that club's occupants.
+pub fn apply_person_history_from_report(
+    world: &mut World,
+    report: &AnnualRolloverReport,
+    year: u16,
+    out: &mut WorldApplyReport,
+) {
+    for ev in &report.events {
+        if let YearEndMutationEvent::Relegation { effects } = ev {
+            for pe in &effects.person_effects {
+                if let Some(h) = &pe.event_emit {
+                    append_person_history_entry(
+                        world, pe.person_id, effects.club_id,
+                        h.old_comp_id, h.kind, year, out,
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// Byte-image port of `FUN_008D0D90`'s effect on the news
+/// mailbox pool. Resolves `staff_id` via the current contract
+/// pool (populated by C15.1B before this pass) and appends a
+/// [`PersonNewsItem`] to the person's mailbox.
+///
+/// Silent-skips on:
+/// * No `ContractPool` (a World with no contract data was
+///   still valid before this tranche existed).
+/// * `person_id` not resolvable via `by_staff_id` (matches the
+///   exe's early return on a null resolver).
+/// * Contract's `club_id` mismatches the event's `club_id`.
+///   Mirrors the identity gate `*(record+4) == *param_2` the
+///   exe applies in the surrounding squad-slot walk.
+fn append_person_history_entry(
+    world: &mut World,
+    person_id: u32,
+    club_id: u32,
+    old_comp_id: u32,
+    kind: u8,
+    year: u16,
+    out: &mut WorldApplyReport,
+) {
+    let staff_id = {
+        let Some(contracts) = world.contracts.as_ref() else { return };
+        let Some(record) = contracts.contract_for_staff(person_id)
+            else { return };
+        if record.club_id != club_id as i32 { return; }
+        record.staff_id as u32
+    };
+    let item = crate::person_news::PersonNewsItem {
+        category: crate::person_news::NEWS_CATEGORY_PERSON_CAREER,
+        severity: 0,
+        params: [
+            person_id,          // slot 0 — subject person
+            0, 0, 0,            // slots 1..=3 (pointer chains not modelled)
+            0,                  // slot 4 (club/nation base id)
+            old_comp_id,        // slot 5
+            kind as u32,        // slot 6
+            staff_id,           // slot 7
+        ],
+        year,
+        news_id: 0,             // filled by pool.push
+    };
+    let receipt = world.person_news_mailboxes.push(person_id, item);
+    // Read back the pool-assigned monotonic id from the last
+    // slot we just wrote.
+    let news_id = world.person_news_mailboxes
+        .mailbox_for(person_id)
+        .last()
+        .map(|it| it.news_id)
+        .unwrap_or(0);
+    out.applied_person_history_writes.push(
+        AppliedPersonHistoryWrite {
+            person_id,
+            category: crate::person_news::NEWS_CATEGORY_PERSON_CAREER,
+            kind,
+            old_comp_id,
+            staff_id,
+            old_len: receipt.old_len,
+            new_len: receipt.new_len,
+            news_id,
+        },
+    );
+}
+
 /// Lower-level entry: mutate World + a supplied event queue,
 /// tagged with a specific date + elapsed-days count. Useful in
 /// tests where standing up a full `RuntimeSaveGame` would be
@@ -708,6 +840,32 @@ pub fn apply_report_to_world_parts(
             out.post_rollover_club_status.insert(id, club.raw[0x37]);
         }
     }
+
+    // ---- C15.1B / C15.1C / C15.1E — persistent-state passes ---------
+    //
+    // Run against `world.contracts` (C15.1B / C15.1C) and
+    // `world.person_news_mailboxes` (C15.1E). All three passes
+    // key on the same event stream we just walked above and
+    // land on the same World; running them here from
+    // `apply_report_to_world_parts` means both the full
+    // `apply_report_to_world` entry AND direct callers share
+    // one canonical pipeline order:
+    //
+    //     C15.1B contract writes  (byte-write on contract row)
+    //     C15.1C squad position   (byte-write on contract row)
+    //     C15.1E history append   (mailbox entry keyed by
+    //                              already-written staff_id)
+    //
+    // This matches the exe order (contract byte then news
+    // append inside FUN_004D3460, disjoint offsets in
+    // FUN_004D3550), and gives C15.1E the C15.1B-updated
+    // contract state to read `staff_id` from — same as the
+    // exe's `FUN_008D0D90(param_4 = contract_row)` call.
+    if let Some(contracts) = world.contracts.as_mut() {
+        apply_contract_writes_from_report(contracts, report, &mut out);
+        apply_squad_position_writes_from_report(contracts, report, &mut out);
+    }
+    apply_person_history_from_report(world, report, date.year, &mut out);
 
     out
 }
@@ -2760,5 +2918,464 @@ mod tests {
                 .find(|s| s.id == *sid).unwrap();
             assert_eq!(s.owner_refuse_counter, *expected);
         }
+    }
+
+    // ======================================================================
+    // C15.1E — persistent person-history (news-mailbox) materialisation
+    // ======================================================================
+    //
+    // Storage owner (decompile-proven): the exe's per-person
+    // news-mailbox pool at `DAT_00ACD5C4 + person_id * 0x6E →
+    // +0xCF → shared news slab (stride 0xDF, age-bucket rings
+    // of 100 entries)`. The Rust port collapses the age-bucket
+    // routing into a `BTreeMap<person_id, Vec<PersonNewsItem>>`
+    // — see `crates/cm-domain/src/person_news.rs` and
+    // `reports/c15_1e_history_archaeology.md` for the full
+    // derivation (including the refutation of the earlier
+    // "13-list-per-person" hypothesis: `kind` is a stored data
+    // field on the item, not a list index).
+
+    use crate::person_news::{NEWS_CATEGORY_PERSON_CAREER, kinds};
+
+    /// Build a world whose ContractPool resolves `person_id`
+    /// to a contract at `club_id` with the given
+    /// `relegation` byte. Mirrors the C15.1B helper so
+    /// C15.1E tests can start from a state whose C15.1B
+    /// materialisation is meaningful.
+    fn world_with_contract(
+        club_id: u32, person_id: u32, staff_id: i32,
+        relegation: u8,
+    ) -> World {
+        let mut world = make_world_with_one_club(club_id);
+        let mut pool = ContractPool::default();
+        pool.records.push(ContractRecord {
+            staff_id,
+            club_id: club_id as i32,
+            wage: 0, value: 0,
+            non_promotion: 0, minimum_fee: 0, non_playing: 0,
+            relegation, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: 0,
+        });
+        let n = (person_id as usize) + 1;
+        pool.by_staff_id = vec![-1; n];
+        pool.by_staff_id[person_id as usize] = 0;
+        world.contracts = Some(pool);
+        world
+    }
+
+    fn c15e_relegation_report(
+        club_id: u32, people: &[(u32, /*kind=*/u8, /*old_comp=*/u32)],
+    ) -> AnnualRolloverReport {
+        AnnualRolloverReport {
+            events: vec![
+                YearEndMutationEvent::Relegation {
+                    effects: RelegationApplyEffects {
+                        club_id,
+                        writes: ClubFieldWrites {
+                            new_comp_id: 8, prev_comp_id: 7,
+                            tier_byte_64: None,
+                        },
+                        set_status_idle: true,
+                        person_effects: people.iter().map(|&(pid, kind, oc)| {
+                            PersonEffect {
+                                person_id: pid,
+                                new_staff_1f: Some(2),
+                                new_staff_1c: None,
+                                event_emit: Some(PersonHistoryEvent {
+                                    old_comp_id: oc, kind,
+                                }),
+                            }
+                        }).collect(),
+                        no_league_news: None,
+                    },
+                },
+            ],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        }
+    }
+
+    #[test]
+    fn c15_1e_relegation_golden_end_to_end() {
+        // Golden: armed clause on a person attached to the
+        // relegated club, old_comp=7. Apply. Assert:
+        //   * C15.1B contract 1 → 2 landed
+        //   * C15.1E mailbox entry landed
+        //   * category = 0xFBF, kind = 3, old_comp = 7,
+        //     staff_id resolved via ContractPool
+        //   * trace old_len=0, new_len=1
+        let mut world = world_with_contract(100, 555, 12345, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(
+            100, &[(555, kinds::RELEGATED, 7)],
+        );
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        // C15.1B invariant: contract byte transitioned.
+        let pool = world.contracts.as_ref().unwrap();
+        assert_eq!(pool.records[0].relegation, 2);
+        // C15.1E: mailbox populated.
+        let mb = world.person_news_mailboxes.mailbox_for(555);
+        assert_eq!(mb.len(), 1);
+        let item = &mb[0];
+        assert_eq!(item.category, NEWS_CATEGORY_PERSON_CAREER);
+        assert_eq!(item.person_id(), 555);
+        assert_eq!(item.old_comp_id(), 7);
+        assert_eq!(item.kind(), kinds::RELEGATED);
+        assert_eq!(item.staff_id(), 12345);
+        assert_eq!(item.year, date.year);
+        assert_eq!(item.news_id, 0);
+        // Trace: one entry, old_len 0, new_len 1.
+        assert_eq!(out.applied_person_history_writes.len(), 1);
+        let w = &out.applied_person_history_writes[0];
+        assert_eq!(w.person_id, 555);
+        assert_eq!(w.category, NEWS_CATEGORY_PERSON_CAREER);
+        assert_eq!(w.kind, kinds::RELEGATED);
+        assert_eq!(w.old_comp_id, 7);
+        assert_eq!(w.staff_id, 12345);
+        assert_eq!(w.old_len, 0);
+        assert_eq!(w.new_len, 1);
+        assert_eq!(w.news_id, 0);
+    }
+
+    #[test]
+    fn c15_1e_multiple_persons_one_event_each_ordered() {
+        // Three armed persons on the relegated club, distinct
+        // ids and staff ids. Assert one mailbox entry per
+        // qualifying person in the report's event iteration
+        // order. news_id is monotonic.
+        let mut world = make_world_with_one_club(100);
+        // Build a pool with three contracts at club 100.
+        let mut pool = ContractPool::default();
+        for (pid, sid) in [(11u32, 1001i32), (22, 1002), (33, 1003)] {
+            pool.records.push(ContractRecord {
+                staff_id: sid, club_id: 100,
+                wage: 0, value: 0, non_promotion: 0,
+                minimum_fee: 0, non_playing: 0,
+                relegation: 1, manager_job: 0,
+                expiry_dayofyear: 0, expiry_year: 2005,
+                position_code: 0,
+            });
+            let n = (pid as usize) + 1;
+            if pool.by_staff_id.len() < n {
+                pool.by_staff_id.resize(n, -1);
+            }
+            pool.by_staff_id[pid as usize] =
+                (pool.records.len() - 1) as i32;
+        }
+        world.contracts = Some(pool);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(100, &[
+            (11, kinds::RELEGATED, 7),
+            (22, kinds::RELEGATED, 7),
+            (33, kinds::RELEGATED, 7),
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert_eq!(out.applied_person_history_writes.len(), 3);
+        // Ordered by iteration.
+        for (i, expected_pid) in [11u32, 22, 33].iter().enumerate() {
+            let w = &out.applied_person_history_writes[i];
+            assert_eq!(w.person_id, *expected_pid);
+            assert_eq!(w.news_id, i as u32);
+        }
+        // Each mailbox has exactly one entry.
+        for pid in [11u32, 22, 33] {
+            assert_eq!(
+                world.person_news_mailboxes.mailbox_for(pid).len(),
+                1,
+            );
+        }
+    }
+
+    #[test]
+    fn c15_1e_duplicate_person_only_first_transition_writes_history() {
+        // Same person emitted twice in one event. C15.1B
+        // transitions +0x1F 1 → 2 on the first visit; the
+        // second visit's contract-write predicate fails
+        // silently. But — CRITICAL — the PersonHistoryEvent
+        // still fires from the C13 payload, so from this
+        // tranche's perspective the mailbox appends TWICE.
+        //
+        // This is the frozen boundary: C15.1E consumes the C13
+        // event stream, not the C15.1B mutation outcome. If
+        // real capture shows the exe emits only once, that's a
+        // C13 filter concern, not a C15.1E one. Pin it here as
+        // observed behaviour so future changes are conscious.
+        let mut world = world_with_contract(100, 555, 12345, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(100, &[
+            (555, kinds::RELEGATED, 7),
+            (555, kinds::RELEGATED, 7),
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let mb = world.person_news_mailboxes.mailbox_for(555);
+        assert_eq!(mb.len(), 2, "documented C15.1E semantic — see test comment");
+        assert_eq!(out.applied_person_history_writes.len(), 2);
+        assert_eq!(mb[0].news_id, 0);
+        assert_eq!(mb[1].news_id, 1);
+    }
+
+    #[test]
+    fn c15_1e_non_qualifying_contract_no_history() {
+        // Person id has no contract → applier silent-skip.
+        let mut world = world_with_contract(100, 555, 12345, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        // The event carries a different person id (999) with no
+        // ContractPool entry.
+        let report = c15e_relegation_report(
+            100, &[(999, kinds::RELEGATED, 7)],
+        );
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert!(out.applied_person_history_writes.is_empty());
+        assert!(world.person_news_mailboxes
+            .mailbox_for(999).is_empty());
+    }
+
+    #[test]
+    fn c15_1e_identity_mismatch_no_history() {
+        // Person's contract belongs to a different club → the
+        // C15.1E identity gate mirrors C15.1B's, so no
+        // mailbox append fires.
+        let mut world = world_with_contract(999, 555, 12345, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(
+            100, &[(555, kinds::RELEGATED, 7)],
+        );
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert!(out.applied_person_history_writes.is_empty());
+        assert!(world.person_news_mailboxes
+            .mailbox_for(555).is_empty());
+    }
+
+    #[test]
+    fn c15_1e_no_contract_pool_is_silent_skip() {
+        // World.contracts == None (contract subsystem not
+        // initialised) → applier silent-skip. No panic.
+        let mut world = make_world_with_one_club(100);
+        assert!(world.contracts.is_none());
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(
+            100, &[(555, kinds::RELEGATED, 7)],
+        );
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert!(out.applied_person_history_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1e_multi_season_appends() {
+        // Two apply passes back to back, second at a later
+        // year. Both should append. Mailbox length after two
+        // seasons is 2. news_ids continue monotonically.
+        let mut world = world_with_contract(100, 555, 12345, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date_y1 = GameDate { year: 2002, month: 6, day: 30 };
+        let date_y2 = GameDate { year: 2003, month: 6, day: 30 };
+        let report = c15e_relegation_report(
+            100, &[(555, kinds::RELEGATED, 7)],
+        );
+        let _ = apply_report_to_world_parts(
+            &mut world, &mut pending, &date_y1, 0, &report,
+        );
+        // Re-arm the contract so C15.1B fires again (only for
+        // this multi-season exercise; the exe would re-arm as
+        // part of a fresh season's C13 pass).
+        world.contracts.as_mut().unwrap()
+            .records[0].relegation = 1;
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date_y2, 400, &report,
+        );
+        let mb = world.person_news_mailboxes.mailbox_for(555);
+        assert_eq!(mb.len(), 2);
+        assert_eq!(mb[0].year, 2002);
+        assert_eq!(mb[1].year, 2003);
+        assert_eq!(mb[0].news_id, 0);
+        assert_eq!(mb[1].news_id, 1);
+        assert_eq!(out.applied_person_history_writes.len(), 1);
+        assert_eq!(out.applied_person_history_writes[0].news_id, 1);
+    }
+
+    #[test]
+    fn c15_1e_kind_isolation_between_persons() {
+        // Two persons in one event, different old_comp_ids.
+        // Each mailbox holds ONLY its own item; no cross-write.
+        let mut world = make_world_with_one_club(100);
+        let mut pool = ContractPool::default();
+        pool.records.push(ContractRecord {
+            staff_id: 100, club_id: 100, wage: 0, value: 0,
+            non_promotion: 0, minimum_fee: 0, non_playing: 0,
+            relegation: 1, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: 0,
+        });
+        pool.records.push(ContractRecord {
+            staff_id: 200, club_id: 100, wage: 0, value: 0,
+            non_promotion: 0, minimum_fee: 0, non_playing: 0,
+            relegation: 1, manager_job: 0,
+            expiry_dayofyear: 0, expiry_year: 2005,
+            position_code: 0,
+        });
+        pool.by_staff_id = vec![-1; 6];
+        pool.by_staff_id[3] = 0;
+        pool.by_staff_id[5] = 1;
+        world.contracts = Some(pool);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(100, &[
+            (3, kinds::RELEGATED, 7),
+            (5, kinds::RELEGATED, 8),
+        ]);
+        let _ = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let mb3 = world.person_news_mailboxes.mailbox_for(3);
+        let mb5 = world.person_news_mailboxes.mailbox_for(5);
+        assert_eq!(mb3.len(), 1);
+        assert_eq!(mb5.len(), 1);
+        assert_eq!(mb3[0].old_comp_id(), 7);
+        assert_eq!(mb5[0].old_comp_id(), 8);
+        assert_eq!(mb3[0].staff_id(), 100);
+        assert_eq!(mb5[0].staff_id(), 200);
+    }
+
+    #[test]
+    fn c15_1e_boundary_no_max_size_is_an_intentional_deviation() {
+        // The exe rings each age-bucket at 100 entries and
+        // silently overwrites. Rust uses append-only Vec. This
+        // test PINS the deviation: 150 appends produce 150
+        // entries, never wrapping.
+        //
+        // The deviation is safe because at year-end scope the
+        // exe emits at most one entry per person per season.
+        // If a downstream tranche introduces per-day mailbox
+        // dispatches, revisit.
+        let mut world = world_with_contract(100, 42, 4200, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        for _ in 0..150 {
+            world.contracts.as_mut().unwrap()
+                .records[0].relegation = 1;
+            let report = c15e_relegation_report(
+                100, &[(42, kinds::RELEGATED, 7)],
+            );
+            let _ = apply_report_to_world_parts(
+                &mut world, &mut pending, &date, 0, &report,
+            );
+        }
+        assert_eq!(
+            world.person_news_mailboxes.mailbox_for(42).len(),
+            150,
+        );
+    }
+
+    #[test]
+    fn c15_1e_trace_matches_world_state() {
+        // For every trace entry, mailbox_for(person_id)
+        // .last() equals the trace's new_id, kind, old_comp
+        // and staff_id.
+        let mut world = make_world_with_one_club(100);
+        let mut pool = ContractPool::default();
+        for (pid, sid) in [(4u32, 40i32), (5, 50), (6, 60), (7, 70)] {
+            pool.records.push(ContractRecord {
+                staff_id: sid, club_id: 100,
+                wage: 0, value: 0, non_promotion: 0,
+                minimum_fee: 0, non_playing: 0,
+                relegation: 1, manager_job: 0,
+                expiry_dayofyear: 0, expiry_year: 2005,
+                position_code: 0,
+            });
+            let n = (pid as usize) + 1;
+            if pool.by_staff_id.len() < n {
+                pool.by_staff_id.resize(n, -1);
+            }
+            pool.by_staff_id[pid as usize] =
+                (pool.records.len() - 1) as i32;
+        }
+        world.contracts = Some(pool);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = c15e_relegation_report(100, &[
+            (4, kinds::RELEGATED, 7),
+            (5, kinds::RELEGATED, 7),
+            (6, kinds::RELEGATED, 7),
+            (7, kinds::RELEGATED, 7),
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert_eq!(out.applied_person_history_writes.len(), 4);
+        for w in &out.applied_person_history_writes {
+            let mb = world.person_news_mailboxes
+                .mailbox_for(w.person_id);
+            let last = mb.last().unwrap();
+            assert_eq!(last.news_id, w.news_id);
+            assert_eq!(last.kind(), w.kind);
+            assert_eq!(last.old_comp_id(), w.old_comp_id);
+            assert_eq!(last.staff_id(), w.staff_id);
+            assert_eq!(last.person_id(), w.person_id);
+        }
+    }
+
+    #[test]
+    fn c15_1e_promotion_does_not_touch_mailbox() {
+        // Only Relegation events consume this path in the
+        // year-end pipeline. Promotion path in the exe uses a
+        // different helper chain (FUN_004D3550 → no
+        // FUN_008D0D90 call). Rust matches.
+        let mut world = world_with_contract(100, 555, 12345, 1);
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        // Build a Promotion event with a PersonHistoryEvent
+        // payload (unusual but explicit — the walk is
+        // event-variant-gated, not payload-gated).
+        let report = AnnualRolloverReport {
+            events: vec![YearEndMutationEvent::Promotion {
+                effects: PromotionApplyEffects {
+                    club_id: 100,
+                    writes: ClubFieldWrites {
+                        new_comp_id: 7, prev_comp_id: 8,
+                        tier_byte_64: None,
+                    },
+                    set_status_idle: true,
+                    person_effects: vec![PersonEffect {
+                        person_id: 555,
+                        new_staff_1f: Some(0),
+                        new_staff_1c: None,
+                        event_emit: Some(PersonHistoryEvent {
+                            old_comp_id: 8, kind: kinds::RELEGATED,
+                        }),
+                    }],
+                    welcome_news: None,
+                    stadium_expansion: None,
+                },
+            }],
+            pyramid_decision: None,
+            conference_dispatch: None,
+            club_moves: Default::default(),
+        };
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert!(out.applied_person_history_writes.is_empty());
+        assert!(world.person_news_mailboxes
+            .mailbox_for(555).is_empty());
     }
 }

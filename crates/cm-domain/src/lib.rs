@@ -6,6 +6,7 @@ pub mod c14_stadium_expansion;
 pub mod c14_5_squad_manager;
 pub mod c15_english_annual_rollover;
 pub mod c15_1_world_apply;
+pub mod person_news;
 pub mod season_roll_scheduler;
 pub mod eng_second_fixtures;
 pub mod english_traditional;
@@ -601,6 +602,15 @@ pub struct World {
     /// corrupt the real form value.
     #[serde(default)]
     pub squad_numbers: std::collections::BTreeMap<u32, u8>,
+    /// C15.1E — persistent per-person news mailbox pool. The exe
+    /// stores this at `DAT_00ACD5C4 + person_id * 0x6E → +0xCF →
+    /// shared news slab` (stride 0xDF per item, 100-entry
+    /// age-bucket rings). See
+    /// `reports/c15_1e_history_archaeology.md` for the full
+    /// derivation. Keyed by person_id — the same key
+    /// `FUN_008D0D90` writes to slot 0 of the news item.
+    #[serde(default)]
+    pub person_news_mailboxes: person_news::PersonNewsMailboxPool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -13141,6 +13151,7 @@ impl World {
             staff_summary,
             contracts: None,
             squad_numbers: std::collections::BTreeMap::new(),
+            person_news_mailboxes: person_news::PersonNewsMailboxPool::default(),
         }
     }
 
@@ -13894,6 +13905,7 @@ impl World {
             staff_summary: StaffSummary::default(),
             contracts: None,
             squad_numbers: std::collections::BTreeMap::new(),
+            person_news_mailboxes: person_news::PersonNewsMailboxPool::default(),
         };
         world.normalize_base_data();
         world.init_missing_player_sides();
