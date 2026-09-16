@@ -6,6 +6,7 @@ pub mod c14_stadium_expansion;
 pub mod c14_5_squad_manager;
 pub mod c15_english_annual_rollover;
 pub mod c15_1_world_apply;
+pub mod c15_1g_snapshot;
 pub mod person_news;
 pub mod season_roll_scheduler;
 pub mod eng_second_fixtures;
