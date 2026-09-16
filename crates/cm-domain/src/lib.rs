@@ -17761,32 +17761,27 @@ impl World {
         // eng_fa_cup/cc_cup/fa_trophy/auto_cup.cpp (knockouts) + eng_charity.cpp
         // (super cup: Premier champion vs FA Cup winner).
         {
-            // (comp_id, name, legs, va)
-            let leagues: &[(i32, &str, u8, &str)] = &[
-                (7, "English Premier Division", 2, "eng_prm.cpp 0x0055cf20"),
-                (8, "English First Division", 2, "eng_first.cpp 0x0055b340"),
-                (9, "English Second Division", 2, "eng_second.cpp GDI 0x0055f240 (ctor); DD 0x0055f040"),
-                (10, "English Third Division", 2, "eng_third.cpp 0x00560b40"),
-                (93, "English Conference", 2, "eng_conf.cpp 0x005577a0"),
-            ];
-            for &(comp_id, name, legs, va) in leagues {
-                let teams = arg_primera::clubs_in_division(&self.core.clubs, comp_id);
-                let start = GameDate { year: options.start_year, month: 8, day: 18 };
-                if let Some(state) = simple_league::SimpleLeagueState::from_teams(
-                    teams,
-                    comp_id,
-                    name,
-                    options.start_year,
-                    start,
-                    honours::ARG_PRIMERA_CHAMPION_HONOUR,
-                    legs,
-                    va,
-                ) {
-                    let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
-                    save.season.fixtures.extend(simple_league::generate(&state, next_row));
-                    save.simple_leagues.push(state);
-                }
-            }
+            // C11.2 (Sep 14 `10734b5`) landed the dedicated English
+            // Traditional fixture engine that reproduces captured GDI
+            // ordered fixtures 0/N for comps 7/8/9/10/93. It runs
+            // near the bottom of this fn (see `english_dispatched_ids`
+            // block, ~line 18570), which is why the generic
+            // `for competition in ...club_competitions` loop that
+            // follows filters English comps out via
+            // `english_dispatched_ids` and
+            // `LEAGUES_BUILT_BY_DEDICATED_ENGINES`.
+            //
+            // A pre-C11.2 `simple_league::from_teams` block for
+            // English comps 7/8/9/10/93 used to live here. It was
+            // NOT removed when C11.2 landed, so every English club
+            // ended up with TWO seasons: one at the real comp id
+            // (from the exact engine) AND one at
+            // `RUNTIME_BASE + real_id` (from this stale block —
+            // e.g. comp 9 → 0x7009 = 28681, both labelled
+            // "English Second Division"). See
+            // `crates/cm-import/src/bin/dump_fixtures.rs` for the
+            // repro. The stale block is removed here; English
+            // fixtures come from `english_traditional::…` only.
             // English knockout cups. (comp_id, name, entry-pool of league comp ids, month, day, va)
             let cups: &[(i32, &str, &[i32], u8, u8, &str)] = &[
                 // FA Cup date VERIFIED from FUN_00558f60 round helper decode

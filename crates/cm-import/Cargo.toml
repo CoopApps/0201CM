@@ -76,3 +76,11 @@ path = "src/bin/regen_simple.rs"
 [[bin]]
 name = "c15_year_end_diff"
 path = "src/bin/c15_year_end_diff.rs"
+
+[[bin]]
+name = "season_check"
+path = "src/bin/season_check.rs"
+
+[[bin]]
+name = "dump_fixtures"
+path = "src/bin/dump_fixtures.rs"

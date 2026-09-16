@@ -2247,6 +2247,21 @@ impl ApplicationHandler for App {
                         *scroll = if dy > 0.0 { scroll.saturating_sub(1) } else { (*scroll + 1).min(max) };
                         changed = true;
                     }
+                    Screen::ClubFixturesTab { choice, scroll, .. } => {
+                        // Count this club's fixtures in save.season so the
+                        // scroll clamp knows the true max — the tab
+                        // renderer walks the same filter.
+                        let total = self.game.as_ref().map(|g| {
+                            g.save.season.fixtures.iter()
+                                .filter(|f| f.home_club_id == choice.club_id
+                                         || f.away_club_id == choice.club_id)
+                                .count()
+                        }).unwrap_or(0);
+                        let max = total.saturating_sub(screens::FIXTURE_ROWS_VISIBLE);
+                        *scroll = if dy > 0.0 { scroll.saturating_sub(1) }
+                                  else        { (*scroll + 1).min(max) };
+                        changed = true;
+                    }
                     Screen::SelectLeagues(state) => {
                         // 34 total, 16 visible → max scroll = 18.
                         // Match the same-signed convention above (wheel-up
