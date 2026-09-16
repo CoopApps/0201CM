@@ -29,6 +29,14 @@ pub struct CupState {
     /// The current round number (1 = first round created).
     pub round: u32,
     pub start_date: GameDate,
+    /// Optional per-round leg-A dates decoded from the exe's cup
+    /// round-helper tables (see `reports/cup_round_schedules.md`).
+    /// Index 0 = round 1, index 1 = round 2, ... When set, the
+    /// `advance()` function uses `round_dates[next_round - 1]`
+    /// instead of the naive `start_date + round * 14` fallback.
+    /// `#[serde(default)]` keeps older saves loading unchanged.
+    #[serde(default)]
+    pub round_dates: Vec<GameDate>,
     pub champion_honour: u32,
     pub complete: bool,
     pub provenance: String,
@@ -69,10 +77,19 @@ impl CupState {
             teams: pool,
             round: 0,
             start_date,
+            round_dates: Vec::new(),
             champion_honour,
             complete: false,
             provenance: format!("{name} {year}: {count}-team single-elimination cup; ported from {source_va}."),
         })
+    }
+
+    /// Attach the decoded per-round leg-A dates (index 0 = round 1).
+    /// Passes-through unchanged; the effect is on the `advance()`
+    /// scheduling step.
+    pub fn with_round_dates(mut self, dates: Vec<GameDate>) -> Self {
+        self.round_dates = dates;
+        self
     }
 
     fn tag(&self, round: u32) -> String {
@@ -184,8 +201,16 @@ pub fn advance(state: &CupState, fixtures: &[HeadlessSeasonFixture], next_row: u
     }
     // Pair winners into the next round.
     let next_round = state.round + 1;
-    let base = CmPackedDate::from_game_date(state.start_date.clone());
-    let date = base.add_days((state.round as i16) * 14).to_game_date();
+    // Prefer the decoded per-round leg-A date when available
+    // (populated from cup_round_schedules.md via
+    // `with_round_dates`); otherwise fall back to a +14 days
+    // per round approximation.
+    let date = state.round_dates.get((next_round as usize) - 1)
+        .cloned()
+        .unwrap_or_else(|| {
+            let base = CmPackedDate::from_game_date(state.start_date.clone());
+            base.add_days((state.round as i16) * 14).to_game_date()
+        });
     let mut row = next_row;
     for pair in winners.chunks(2) {
         if let [h, a] = pair {
