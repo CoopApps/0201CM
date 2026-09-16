@@ -11,6 +11,7 @@ cm-data = { path = "../cm-data" }
 cm-db = { path = "../cm-db" }
 cm-rng = { path = "../cm-rng" }
 cm-render = { path = "../cm-render" }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [[bin]]
@@ -71,3 +72,7 @@ path = "src/bin/regen_clubs.rs"
 [[bin]]
 name = "regen_simple"
 path = "src/bin/regen_simple.rs"
+
+[[bin]]
+name = "c15_year_end_diff"
+path = "src/bin/c15_year_end_diff.rs"
