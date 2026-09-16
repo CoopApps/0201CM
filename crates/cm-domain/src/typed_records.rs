@@ -245,12 +245,47 @@ impl<'a> ClubView<'a> {
         le_i32(self.raw, 0x7b)
     }
 
-    /// **`club_cash` (i32, £)** at record +0x65 — VERIFIED against the shipped
-    /// 2001-02 database: Real Madrid £100M, Man Utd £30M, Sheffield Wednesday
-    /// -£14M (bankrupt), Sheffield United -£8M. Distribution across all 10,580
-    /// clubs: p50=£0, p90=£260k, max=£102M, min=-£22.5M; 287 clubs (2.7%) ship
-    /// with negative balances — those are the "Bankrupt" ones the editor shows.
-    pub fn cash(&self) -> i32 { le_i32(self.raw, 0x65) }
+    /// **New-game cash seed (i32, £)** at disk `Club+0x65`.
+    ///
+    /// C15.1F archaeology confirmed this is the ONE-TIME boot
+    /// seed the exe uses to initialise runtime cash: the sole
+    /// reader is `FUN_005803D0` (per-club finance ctor,
+    /// `005803d0.c:47/96/100`), which reads this i32 and stores
+    /// it — via `__ftol` — into the runtime finance record's
+    /// i64 cash at `+0x00`. After boot, live cash lives on the
+    /// separate 0x167-byte runtime finance pool
+    /// (`RuntimeSaveGame.finance_ledger`), and `Club+0x65`
+    /// becomes dead data on the disk record.
+    ///
+    /// Verified against the shipped 2001-02 database: Real
+    /// Madrid £100M, Man Utd £30M, Sheffield Wednesday -£14M
+    /// (bankrupt), Sheffield United -£8M. Distribution across
+    /// all 10,580 clubs: p50=£0, p90=£260k, max=£102M,
+    /// min=-£22.5M; 287 clubs (2.7%) ship with negative
+    /// balances — those are the "Bankrupt" ones the editor
+    /// shows.
+    pub fn initial_cash_seed(&self) -> i32 {
+        le_i32(self.raw, 0x65)
+    }
+
+    /// **Deprecated** alias for [`Self::initial_cash_seed`].
+    ///
+    /// Prior to C15.1F this method was named `cash`, which
+    /// suggested it returned live runtime cash. It never did —
+    /// the value is the disk seed only. Existing callers
+    /// (importer, forced-path finance seed helper) are correct
+    /// but misnamed; new code should read
+    /// `initial_cash_seed()` for clarity and, when live cash is
+    /// needed, look it up via
+    /// `RuntimeSaveGame.finance_ledger.get(club_id).cash`
+    /// instead.
+    #[deprecated(
+        since = "C15.1F",
+        note = "reads the disk SEED at +0x65 only; for live \
+                runtime cash query RuntimeSaveGame.finance_ledger. \
+                Rename to initial_cash_seed()."
+    )]
+    pub fn cash(&self) -> i32 { self.initial_cash_seed() }
 
     // --- newly confirmed offsets (editor decode agent, 2026-08-30) ---
     // The three fields at +0x73/+0x77/+0x7b were previously flagged as

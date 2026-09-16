@@ -39,8 +39,9 @@ fn main() {
         ins!("field_60",        cv.field_60());
         ins!("field_65",        cv.field_65());
         ins!("field_6e",        cv.field_6e());
-        // Cash balance (£) — negative = bankrupt
-        ins!("cash",               cv.cash());
+        // New-game cash seed at disk +0x65 (£) — negative = bankrupt-at-start.
+        // Post-boot, live cash lives on RuntimeSaveGame.finance_ledger; see C15.1F.
+        ins!("cash",               cv.initial_cash_seed());
         // Attendance figures (scale with stadium capacity)
         ins!("attendance_average", cv.attendance_average());
         ins!("attendance_minimum", cv.attendance_minimum());
@@ -93,7 +94,7 @@ fn main() {
         println!("  division_id: {:?}", cv.division_id());
         println!("  reputation: {}", cv.reputation());
         println!("  stadium_id: {:?}", cv.stadium_id());
-        println!("  cash: £{}", cv.cash());
+        println!("  cash: £{}", cv.initial_cash_seed());
         println!("  attendance avg/min/max: {} / {} / {}",
                  cv.attendance_average(), cv.attendance_minimum(), cv.attendance_maximum());
         println!("  manager_id: {:?}", cv.manager_id());

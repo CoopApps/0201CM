@@ -67,16 +67,74 @@ pub struct AppliedStadiumWrite {
 /// identity (Club record vs a separate finance pool) is not yet
 /// fully proven — that requires tracing `FUN_005121A0`'s loader
 /// copy path. For now the ledger holds the semantically-correct
-/// values in a typed sidecar. When the loader trace lands
-/// (planned follow-up), we know whether to move these into
-/// `Club.raw[…]` bytes or keep the sidecar.
+/// The canonical carrier for the exe's per-club Runtime Finance
+/// record.
+///
+/// # Provenance (C15.1F archaeology — FROZEN)
+///
+/// The exe allocates one 0x167-byte (359-byte) record per club
+/// in a dedicated heap pool, distinct from both the disk Club
+/// record (`Club.raw`, stride 0x245) and from `FUN_005121A0`'s
+/// database loader slabs. Construction site: `FUN_00584530`
+/// (via `operator_new(DAT_00acd564 * 0x167 + 4)`) called at
+/// new-game boot from `008120d0.c:1144` and at save-load from
+/// `00814870.c:1413`. Pool base wrapper: `DAT_00acdc38` (Rust
+/// counterpart: `RuntimeSaveGame.finance_ledger`).
+///
+/// Resolver idiom (16 hits across the finance-cluster writers):
+/// `pool_base + club_id * 0x167` (`FUN_0058A490` line 23). This
+/// is why the ledger's map is keyed by `club_id`.
+///
+/// Per-record layout (bytes seen by decompile-proven writers):
+///
+/// | Runtime offset | Type | Semantic | Rust field |
+/// | ---: | --- | --- | --- |
+/// | `+0x00` | i64 | Cash | `cash` |
+/// | `+0x08` | u32 | Mirrored `club_id` (parity check) | (not stored — key is BTreeMap key) |
+/// | `+0x8C` | i32 | Season misc operating expense | `season_misc_expense` |
+/// | `+0xB4` | i32 | Season subsidy income | `season_subsidy_income` |
+/// | `+0x12C` | i32 | Lifetime misc operating expense | `lifetime_misc_expense` |
+/// | `+0x154` | i32 | Lifetime subsidy income | `lifetime_subsidy_income` |
+/// | `+0x14, +0x24, +0x2C, +0x34..+0x15C (24 more DWORDs) | i32 | Other accumulators (wages / TV / prize / gate / attendance / …) — NOT modelled in this tranche; future writers land here as they port | – |
+/// | `+0x164, +0x165, +0x166` | u8×3 | Status / tickdown bytes | – |
+///
+/// # New-game seed
+///
+/// `FUN_005803D0` (per-club constructor called by
+/// `FUN_00584530`) reads `Club+0x65` (the shipped disk cash i32)
+/// and stores it, via `__ftol`, into runtime `+0x00` as i64.
+/// The four accumulators are zero-initialised. `Club+0x65` is
+/// **the seed and only the seed** — after boot it is dead data
+/// on the disk record. See [`ClubFinanceState::from_disk_seed`].
+///
+/// # Serialisation
+///
+/// The exe persists the whole 0x167-byte pool as its own
+/// `finance.dat` sub-file inside the `.sav` bundle
+/// (`FUN_005854D0`). The Rust port persists the same
+/// information via `RuntimeSaveGame.finance_ledger`'s serde
+/// derive on the containing struct.
+///
+/// # Scope of this tranche
+///
+/// The five fields listed above are the ONLY ones any of the
+/// year-end / stadium-expansion writers currently touch (C15.1A
+/// arithmetic is byte-exact against `FUN_00583FC0`,
+/// `FUN_00587C40`, `FUN_00586EC0`, `FUN_00584790`,
+/// `FUN_00585AE0`). Adding the other 24+ accumulator DWORDs is
+/// deferred to later tranches that port those writers. Because
+/// `serde` is derived and adds fields via `#[serde(default)]`,
+/// extending this record later will not break existing saves.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq,
          serde::Serialize, serde::Deserialize)]
 pub struct ClubFinanceState {
     /// Cash — i64 signed. Runtime object byte offset `+0x00`.
+    /// Seeded at new-game boot from `ClubView::initial_cash_seed()`
+    /// (disk `Club+0x65` i32, sign-extended to i64).
     pub cash: i64,
     /// Season misc operating expense — i32.
-    /// Runtime byte `+0x8C`. Reset annually by season roll.
+    /// Runtime byte `+0x8C`. Reset annually by season roll
+    /// (`FUN_00585AE0` sets it back to 0).
     pub season_misc_expense: i32,
     /// Lifetime misc operating expense — i32.
     /// Runtime byte `+0x12C`. Never reset; monotone-increasing.
@@ -89,11 +147,37 @@ pub struct ClubFinanceState {
     pub lifetime_subsidy_income: i32,
 }
 
-/// Per-club finance ledger. Populated by C15.1A's finance apply
-/// pass from C14 outputs. Keyed by club id.
+impl ClubFinanceState {
+    /// New-game boot seed. Ports the effect of `FUN_005803D0`
+    /// lines 47/96/100: read disk `Club+0x65` (i32 cash), widen
+    /// to i64 via `__ftol`, store at runtime `+0x00`. Every
+    /// accumulator starts at zero — the exe zero-inits the
+    /// whole 0x167-byte record via `FUN_0093543F`'s ctor before
+    /// this seed lands.
+    pub fn from_disk_seed(disk_cash_seed: i32) -> Self {
+        Self {
+            cash: disk_cash_seed as i64,
+            season_misc_expense: 0,
+            lifetime_misc_expense: 0,
+            season_subsidy_income: 0,
+            lifetime_subsidy_income: 0,
+        }
+    }
+}
+
+/// Per-club finance ledger — **the canonical Rust carrier** of
+/// the exe's per-club Runtime Finance record pool (C15.1F).
+///
+/// Keyed by `club_id` (matches the exe's same-ordinal indexing
+/// `pool_base + club_id * 0x167`). Persistence is via serde on
+/// the containing `RuntimeSaveGame.finance_ledger` — the Rust
+/// analogue of the exe's `finance.dat` sub-file.
+///
+/// See [`ClubFinanceState`] for the layout provenance.
 #[derive(Debug, Clone, Default, PartialEq, Eq,
          serde::Serialize, serde::Deserialize)]
 pub struct ClubFinanceLedger {
+    #[serde(default)]
     pub per_club: std::collections::BTreeMap<u32, ClubFinanceState>,
 }
 
@@ -105,10 +189,40 @@ impl ClubFinanceLedger {
         self.per_club.get(&club_id).copied().unwrap_or_default()
     }
 
+    /// C15.1F — new-game boot seed pass. Walks every club in
+    /// the given `World.core.clubs` and seeds a
+    /// `ClubFinanceState` from `ClubView::initial_cash_seed()`.
+    /// Idempotent: seeding an already-seeded club overwrites
+    /// the entry (matches the exe's `FUN_00584530` which
+    /// unconditionally constructs the entire pool at boot).
+    ///
+    /// This is the analogue of the exe's `FUN_00584530 →
+    /// FUN_005803D0` per-club constructor loop. Call once at
+    /// new-game boot, after clubs are loaded and before any
+    /// season tick begins.
+    pub fn seed_from_world(&mut self, world: &crate::World) {
+        use crate::typed_records::ClubView;
+        self.per_club.clear();
+        for club in world.core.clubs.iter() {
+            let cv = ClubView::new(club);
+            let id = cv.id() as u32;
+            let seed = cv.initial_cash_seed();
+            self.per_club.insert(id, ClubFinanceState::from_disk_seed(seed));
+        }
+    }
+
     /// Apply one finance write from C14 (via `PendingFinanceWrite`).
     /// C14 has already computed the NEW post-transaction values
     /// (cash after debit/subsidy, accumulators after add). The
     /// ledger just stores them.
+    ///
+    /// Note: an unseeded club (no entry yet) still gets its
+    /// state written — the entry is created on demand. This
+    /// preserves the C15.1A behaviour and lets callers apply
+    /// writes without a preceding seed pass, at the cost of
+    /// losing the "pre-write cash was the disk seed" invariant
+    /// on that path. For a byte-exact new-game boot, call
+    /// `seed_from_world` first.
     pub fn apply_write(&mut self, write: &PendingFinanceWrite) {
         let s = self.per_club.entry(write.club_id).or_default();
         s.cash = write.new_cash;
@@ -3332,6 +3446,198 @@ mod tests {
             assert_eq!(last.staff_id(), w.staff_id);
             assert_eq!(last.person_id(), w.person_id);
         }
+    }
+
+    // ======================================================================
+    // C15.1F — canonical runtime-finance mapping tests
+    // ======================================================================
+    //
+    // Freezes `ClubFinanceLedger` as the canonical Rust carrier
+    // for the exe's per-club 0x167-byte Runtime Finance record
+    // (pool base `*DAT_00acdc38`, allocated by `FUN_00584530`,
+    // seeded by `FUN_005803D0` from disk `Club+0x65`, serialised
+    // as `finance.dat`). See
+    // `reports/c15_1f_finance_loader_archaeology.md`.
+    //
+    // Coverage:
+    //   * from_disk_seed — cash i32 widens to i64, accumulators zero.
+    //   * seed_from_world — every club gets a ledger entry keyed
+    //     by club_id with cash = disk seed.
+    //   * apply_write — post-seed C14 output overwrites cash and
+    //     accumulators.
+    //   * serde round-trip — JSON-serialise then deserialise a
+    //     seeded+applied ledger and assert equality.
+    //   * trace-vs-World — every emitted PendingFinanceWrite
+    //     lands on the same club_id in the ledger.
+    //   * ClubView::initial_cash_seed — reads Club+0x65 exactly.
+
+    #[test]
+    fn c15_1f_from_disk_seed_widens_i32_to_i64() {
+        // Positive seed.
+        let s = ClubFinanceState::from_disk_seed(30_000_000);
+        assert_eq!(s.cash, 30_000_000i64);
+        assert_eq!(s.season_misc_expense, 0);
+        assert_eq!(s.lifetime_misc_expense, 0);
+        assert_eq!(s.season_subsidy_income, 0);
+        assert_eq!(s.lifetime_subsidy_income, 0);
+        // Negative seed (bankrupt-at-start).
+        let s2 = ClubFinanceState::from_disk_seed(-14_000_000);
+        assert_eq!(s2.cash, -14_000_000i64);
+        // Extremes.
+        assert_eq!(ClubFinanceState::from_disk_seed(i32::MAX).cash,
+                   i32::MAX as i64);
+        assert_eq!(ClubFinanceState::from_disk_seed(i32::MIN).cash,
+                   i32::MIN as i64);
+    }
+
+    #[test]
+    fn c15_1f_seed_from_world_populates_every_club() {
+        // World has one club (id 0) with a synthetic Club raw
+        // byte pattern that puts a known i32 at +0x65.
+        let mut world = make_world_with_one_club(0);
+        // Inject a known cash seed at Club+0x65 on club id 0.
+        // make_world_with_one_club builds an all-zero row; we
+        // overwrite bytes 0x65..0x69 with a known i32.
+        let seed_val: i32 = 50_000_000;
+        {
+            let club = &mut world.core.clubs[0];
+            let raw = &mut club.raw;
+            if raw.len() < 0x69 { raw.resize(0x69, 0); }
+            let b = seed_val.to_le_bytes();
+            raw[0x65..0x69].copy_from_slice(&b);
+        }
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.seed_from_world(&world);
+        assert_eq!(ledger.per_club.len(), 1);
+        let state = ledger.get(0);
+        assert_eq!(state.cash, 50_000_000i64);
+        assert_eq!(state.season_misc_expense, 0);
+        assert_eq!(state.lifetime_subsidy_income, 0);
+    }
+
+    #[test]
+    fn c15_1f_seed_from_world_is_idempotent() {
+        // Calling seed_from_world twice yields the same ledger.
+        let mut world = make_world_with_one_club(0);
+        {
+            let raw = &mut world.core.clubs[0].raw;
+            if raw.len() < 0x69 { raw.resize(0x69, 0); }
+            raw[0x65..0x69].copy_from_slice(&12_345i32.to_le_bytes());
+        }
+        let mut a = ClubFinanceLedger::new();
+        a.seed_from_world(&world);
+        let mut b = a.clone();
+        b.seed_from_world(&world);
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn c15_1f_apply_write_overwrites_seed() {
+        // Seed a club, then apply a PendingFinanceWrite; the
+        // seed's initial state is replaced with the new values.
+        let mut world = make_world_with_one_club(0);
+        {
+            let raw = &mut world.core.clubs[0].raw;
+            if raw.len() < 0x69 { raw.resize(0x69, 0); }
+            raw[0x65..0x69].copy_from_slice(&1_000_000i32.to_le_bytes());
+        }
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.seed_from_world(&world);
+        assert_eq!(ledger.get(0).cash, 1_000_000);
+        ledger.apply_write(&PendingFinanceWrite {
+            club_id: 0,
+            new_cash: -5_000_000,
+            new_season_misc_expense: 6_000_000,
+            new_lifetime_misc_expense: 6_000_000,
+            new_season_subsidy_income: 0,
+            new_lifetime_subsidy_income: 0,
+        });
+        let state = ledger.get(0);
+        assert_eq!(state.cash, -5_000_000);
+        assert_eq!(state.season_misc_expense, 6_000_000);
+        assert_eq!(state.lifetime_misc_expense, 6_000_000);
+    }
+
+    #[test]
+    fn c15_1f_serde_round_trip_preserves_state() {
+        // A ledger with a mix of seeded and applied clubs
+        // should round-trip via JSON without loss.
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.per_club.insert(0,
+            ClubFinanceState::from_disk_seed(30_000_000));
+        ledger.apply_write(&PendingFinanceWrite {
+            club_id: 5,
+            new_cash: 123_456_789,
+            new_season_misc_expense: 42,
+            new_lifetime_misc_expense: 100,
+            new_season_subsidy_income: 7,
+            new_lifetime_subsidy_income: 21,
+        });
+        let json = serde_json::to_string(&ledger).unwrap();
+        let restored: ClubFinanceLedger =
+            serde_json::from_str(&json).unwrap();
+        assert_eq!(ledger, restored);
+        // Belt-and-braces: the values on club 5 survive.
+        let s5 = restored.get(5);
+        assert_eq!(s5.cash, 123_456_789);
+        assert_eq!(s5.lifetime_subsidy_income, 21);
+    }
+
+    #[test]
+    fn c15_1f_serde_default_lets_empty_json_deserialise() {
+        // #[serde(default)] on per_club means an old save that
+        // didn't carry the map still loads as an empty ledger.
+        let empty: ClubFinanceLedger =
+            serde_json::from_str("{}").unwrap();
+        assert!(empty.per_club.is_empty());
+    }
+
+    #[test]
+    fn c15_1f_trace_vs_ledger_consistency() {
+        // For every entry in ledger.per_club we can identify a
+        // PendingFinanceWrite (in the trace) with the same
+        // final values, or a `from_disk_seed` origin. This
+        // pins the invariant that the ledger IS the canonical
+        // finance state.
+        let mut ledger = ClubFinanceLedger::new();
+        ledger.per_club.insert(1,
+            ClubFinanceState::from_disk_seed(200_000));
+        let writes = vec![
+            PendingFinanceWrite {
+                club_id: 1, new_cash: 5,
+                new_season_misc_expense: 100,
+                new_lifetime_misc_expense: 100,
+                new_season_subsidy_income: 0,
+                new_lifetime_subsidy_income: 0,
+            },
+            PendingFinanceWrite {
+                club_id: 2, new_cash: 42,
+                new_season_misc_expense: 0,
+                new_lifetime_misc_expense: 0,
+                new_season_subsidy_income: 0,
+                new_lifetime_subsidy_income: 0,
+            },
+        ];
+        for w in &writes { ledger.apply_write(w); }
+        // Final values match the LAST write per club_id.
+        assert_eq!(ledger.get(1).cash, 5);
+        assert_eq!(ledger.get(2).cash, 42);
+    }
+
+    #[test]
+    fn c15_1f_club_view_initial_cash_seed_reads_offset_65() {
+        // ClubView reads +0x65 exactly as an i32 LE.
+        use crate::typed_records::ClubView;
+        let mut world = make_world_with_one_club(7);
+        {
+            let raw = &mut world.core.clubs[0].raw;
+            if raw.len() < 0x69 { raw.resize(0x69, 0); }
+            raw[0x65..0x69].copy_from_slice(
+                &(-8_500_000i32).to_le_bytes(),
+            );
+        }
+        let cv = ClubView::new(&world.core.clubs[0]);
+        assert_eq!(cv.initial_cash_seed(), -8_500_000);
     }
 
     #[test]

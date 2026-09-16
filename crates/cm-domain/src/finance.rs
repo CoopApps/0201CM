@@ -546,7 +546,7 @@ impl FinanceBook {
             // flag_6d/+0x6d which reads 0 for every club). ~25% of shipped
             // clubs carry a chairman; the rest are chairman-less.
             let has_chair = cv.has_chairman();
-            let mut cfinance = ClubFinance::seed_from(cv.id(), cv.reputation(), false, cv.cash(), has_chair);
+            let mut cfinance = ClubFinance::seed_from(cv.id(), cv.reputation(), false, cv.initial_cash_seed(), has_chair);
             cfinance.home_stadium_id = cv.home_stadium_id();
             cf.push(cfinance);
             att.insert(cv.id(), (cv.attendance_average(), cv.attendance_minimum(), cv.attendance_maximum()));
