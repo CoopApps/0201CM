@@ -397,6 +397,15 @@ pub struct DomainStadium {
     /// Alternative-stadium link (+0x48 → stadium.dat, self-referential).
     #[serde(default)]
     pub alt_stadium_id: Option<i32>,
+    /// Runtime owner-refuse counter (+0x20 on the runtime stadium
+    /// object; NOT part of the shipped 78-byte stadium.dat record).
+    /// Incremented by FUN_00583FC0 line 125 when an owner-backed
+    /// stadium expansion is refused (broke club, owner subsidy
+    /// coverage insufficient); saturates at 20. See
+    /// [[stadium-expansion-transaction-deferred]] and
+    /// reports/c15_1d_stadium_refuse_archaeology.md.
+    #[serde(default)]
+    pub owner_refuse_counter: i8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

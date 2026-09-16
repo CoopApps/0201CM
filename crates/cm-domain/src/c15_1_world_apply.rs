@@ -207,6 +207,35 @@ pub struct AppliedSquadPreferenceWrite {
     pub new_value: i8,
 }
 
+/// C15.1D — one `Stadium+0x20` owner-refuse counter increment
+/// that actually landed on a `DomainStadium`.
+///
+/// The exe writes this byte inside `FUN_00583FC0` line 125
+/// (`0055ee90.c` / `0055ea00.c` affordability-checked path)
+/// when an owner-backed stadium expansion is refused because
+/// the parent club can't cover the cost via its subsidy chain.
+/// The write is a plain `+= 1`, saturating via a `< 0x14`
+/// (i.e. `< 20`) guard: once the byte reaches 20, no further
+/// increment ever fires.
+///
+/// Runtime object: `Stadium+0x20`, a byte on the parent's
+/// stadium record — reached via the owner-parent-club pointer
+/// chain `Club[+0xBF] → Stadium[+0x69] → +0x20`. This is a
+/// runtime-only field (not part of the shipped 78-byte
+/// `stadium.dat` layout), stored in
+/// `DomainStadium.owner_refuse_counter`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AppliedRefuseCounterWrite {
+    /// The parent stadium id that received the write. Refers to
+    /// `DomainStadium.id` on `world.references.stadiums`.
+    pub stadium_id: u32,
+    /// Value BEFORE the increment. Always `< 20` — a write with
+    /// `old == 20` is skipped and not traced.
+    pub old_value: i8,
+    /// Value AFTER the increment. Always `old + 1`.
+    pub new_value: i8,
+}
+
 /// Which of the two contract-record indexes hit for a given
 /// `FUN_00843970` call. Primary is tried first and short-circuits
 /// on identity match; Secondary is only consulted when primary
@@ -261,6 +290,15 @@ pub struct WorldApplyReport {
     /// touched any resolvable record.
     pub applied_squad_preference_writes:
         Vec<AppliedSquadPreferenceWrite>,
+    /// C15.1D — parent-stadium `+0x20` owner-refuse counter
+    /// increments that actually landed on a `DomainStadium`.
+    /// Empty when no stadium-expansion event carried
+    /// `refuse_counter_increment == true`, when
+    /// `parent_stadium_id` was `None`, when the parent stadium
+    /// was not found in `world.references.stadiums`, or when
+    /// the counter was already saturated at 20.
+    pub applied_refuse_counter_writes:
+        Vec<AppliedRefuseCounterWrite>,
     /// Post-rollover status per moved club, taken from the raw
     /// bytes AFTER `materialise_club_moves` writes them.
     pub post_rollover_club_status: std::collections::BTreeMap<u32, u8>,
@@ -617,11 +655,12 @@ pub fn apply_report_to_world_parts(
                 );
             }
             YearEndMutationEvent::StadiumExpansion {
-                outcome, club_id, stadium_id,
+                outcome, club_id, stadium_id, parent_stadium_id,
             } => {
                 apply_stadium_expansion_outcome(
                     world, pending_events, &date, day, outcome,
-                    *club_id, *stadium_id, &mut out,
+                    *club_id, *stadium_id, *parent_stadium_id,
+                    &mut out,
                 );
             }
             YearEndMutationEvent::StadiumFailReprieve {
@@ -825,6 +864,7 @@ fn apply_stadium_expansion_outcome(
     outcome: &StadiumExpansionOutcome,
     club_id_hint: u32,
     stadium_id_hint: Option<u32>,
+    parent_stadium_id: Option<u32>,
     out: &mut WorldApplyReport,
 ) {
     // News is emitted whether the transaction succeeded or not
@@ -864,6 +904,42 @@ fn apply_stadium_expansion_outcome(
             new_season_subsidy_income: cw.new_season_subsidy_income,
             new_lifetime_subsidy_income: cw.new_lifetime_subsidy_income,
         });
+    }
+
+    // C15.1D — parent owner-refuse counter bump. Fires
+    // INDEPENDENT of `outcome.success` (in the exe the write is
+    // in the failure branch of FUN_00583FC0 — line 125 — so
+    // `success == false` is exactly when it can be true; the
+    // C14 port also only sets the flag on that path, so the two
+    // are consistent). The write is:
+    //
+    //   if refuse_counter_increment && parent_stadium.owner_refuse_counter < 20:
+    //       parent_stadium.owner_refuse_counter += 1
+    //
+    // A silent skip on any of:
+    //   * `refuse_counter_increment == false`
+    //   * `parent_stadium_id == None`
+    //   * parent stadium not found in world.references.stadiums
+    //   * counter already saturated (== 20). Matches the exe's
+    //     `cVar1 < '\x14'` gate on line 124.
+    if outcome.refuse_counter_increment {
+        if let Some(psid) = parent_stadium_id {
+            if let Some(parent_stadium) =
+                find_stadium_mut(&mut world.references.stadiums, psid)
+            {
+                let old = parent_stadium.owner_refuse_counter;
+                if old < 20 {
+                    parent_stadium.owner_refuse_counter = old + 1;
+                    out.applied_refuse_counter_writes.push(
+                        AppliedRefuseCounterWrite {
+                            stadium_id: psid,
+                            old_value: old,
+                            new_value: old + 1,
+                        },
+                    );
+                }
+            }
+        }
     }
 
     // Stadium capacity writes only on success.
@@ -1186,6 +1262,7 @@ mod tests {
         let report = empty_report_with_events(vec![
             YearEndMutationEvent::StadiumExpansion {
                 outcome, club_id: 300, stadium_id: Some(500),
+                parent_stadium_id: None,
             },
         ]);
         let out = apply_report_to_world_parts(&mut world, &mut pending, &date, 0, &report);
@@ -1224,6 +1301,7 @@ mod tests {
         let report = empty_report_with_events(vec![
             YearEndMutationEvent::StadiumExpansion {
                 outcome, club_id: 400, stadium_id: Some(500),
+                parent_stadium_id: None,
             },
         ]);
         let out = apply_report_to_world_parts(&mut world, &mut pending, &date, 0, &report);
@@ -2291,6 +2369,396 @@ mod tests {
                 pool.records[idx as usize].position_code,
                 w.new_value,
             );
+        }
+    }
+
+    // ======================================================================
+    // C15.1D — Stadium+0x20 owner-refuse counter materialisation
+    // ======================================================================
+    //
+    // The exe writes `parent_stadium.owner_refuse_counter += 1`
+    // inside FUN_00583FC0 line 125 when an owner-backed stadium
+    // expansion is refused. Saturation gate on line 124:
+    // `cVar1 < '\x14'` (i.e. `< 20`).
+    //
+    // Coverage (10 cases):
+    //   * Applier bumps on refuse_counter_increment == true
+    //   * Applier records old/new correctly in trace
+    //   * Saturation at 20 (no write, no trace)
+    //   * refuse_counter_increment == false → no write
+    //   * parent_stadium_id == None → silent skip
+    //   * Parent stadium not in world.references.stadiums → skip
+    //   * Multiple refuse events bump the SAME parent additively
+    //   * Bump lands on parent even when success == false
+    //   * The stadium.dat receipt shows the byte on the RIGHT id
+    //     (isolated from other stadiums)
+    //   * Idempotency: replaying the same event bumps again
+    //     (mirrors the exe — the write is not state-dependent).
+
+    /// Build a `World` with two stadiums (`primary_sid` and
+    /// `parent_sid`) so tests can drive both the capacity write
+    /// path AND the refuse-counter path against distinct rows.
+    fn world_with_two_stadiums(
+        club_id: u32, primary_sid: u32, parent_sid: u32,
+        parent_counter: i8,
+    ) -> World {
+        let mut world = make_world_with_one_club(club_id);
+        // Rewire stadium id 500 (from the fixture) to primary_sid,
+        // then push the parent stadium as a second row.
+        if let Some(s) = world.references.stadiums
+            .iter_mut().find(|s| s.id == 500)
+        {
+            s.id = primary_sid;
+        }
+        world.references.stadiums.push(DomainStadium {
+            id: parent_sid,
+            name: format!("Parent-{}", parent_sid),
+            unknown_tail: Vec::new(),
+            name_set: false,
+            city_id: None,
+            capacity_total: 5_000,
+            capacity_seated: 3_000,
+            capacity_expansion: 8_000,
+            alt_stadium_id: None,
+            owner_refuse_counter: parent_counter,
+        });
+        world
+    }
+
+    /// A `StadiumExpansionOutcome` with `refuse_counter_increment`
+    /// set and everything else null/false — this is a pure
+    /// refusal outcome, matching the exe's `OwnerRefused`
+    /// path (FUN_00583FC0 line 127: return 0).
+    fn refused_outcome() -> StadiumExpansionOutcome {
+        StadiumExpansionOutcome {
+            return_value: 0,
+            success: false,
+            return_reason: ReturnReason::OwnerRefused,
+            stadium_writes: None,
+            club_writes: None,
+            refuse_counter_increment: true,
+            news_event: None,
+            cost: 6_000_000,
+        }
+    }
+
+    #[test]
+    fn c15_1d_refuse_bump_lands_on_parent_stadium() {
+        let mut world = world_with_two_stadiums(
+            700, /*primary=*/500, /*parent=*/501,
+            /*counter=*/3,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700,
+                stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        // Byte-exact assertion.
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 4);
+        // Primary stadium's counter untouched.
+        let primary = world.references.stadiums.iter()
+            .find(|s| s.id == 500).unwrap();
+        assert_eq!(primary.owner_refuse_counter, 0);
+        // Trace records old/new.
+        assert_eq!(out.applied_refuse_counter_writes.len(), 1);
+        let w = &out.applied_refuse_counter_writes[0];
+        assert_eq!(w.stadium_id, 501);
+        assert_eq!(w.old_value, 3);
+        assert_eq!(w.new_value, 4);
+    }
+
+    #[test]
+    fn c15_1d_saturates_at_20() {
+        // Parent already at 20 → exe skips the increment (line
+        // 124 `if (cVar1 < '\x14')`). Rust matches.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/20,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 20);
+        assert!(out.applied_refuse_counter_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1d_no_write_when_flag_false() {
+        // `refuse_counter_increment == false` — nothing to do.
+        let mut outcome = refused_outcome();
+        outcome.refuse_counter_increment = false;
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/3,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome, club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 3);
+        assert!(out.applied_refuse_counter_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1d_no_write_when_parent_stadium_id_none() {
+        // The event carries no parent_stadium_id (the club has no
+        // owner-parent, or the pre-C15.1D fixture didn't seed it).
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/3,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: None,
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 3);
+        assert!(out.applied_refuse_counter_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1d_no_write_when_parent_stadium_missing_in_world() {
+        // parent_stadium_id points at an id that does not exist.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/3,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(9999),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        assert!(out.applied_refuse_counter_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1d_multiple_refuse_events_bump_additively() {
+        // Two refuse events against the same parent → counter
+        // bumps twice.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/2,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 4);
+        assert_eq!(out.applied_refuse_counter_writes.len(), 2);
+        assert_eq!(out.applied_refuse_counter_writes[0].old_value, 2);
+        assert_eq!(out.applied_refuse_counter_writes[0].new_value, 3);
+        assert_eq!(out.applied_refuse_counter_writes[1].old_value, 3);
+        assert_eq!(out.applied_refuse_counter_writes[1].new_value, 4);
+    }
+
+    #[test]
+    fn c15_1d_bump_fires_when_success_false() {
+        // The exe's write is on the FAILURE branch of
+        // FUN_00583FC0 (return 0). success == false is the norm
+        // for this event. Also verify no capacity write leaks.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/5,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let outcome = refused_outcome(); // success = false
+        assert!(!outcome.success);
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome, club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 6);
+        // No capacity writes (the outcome carries none).
+        assert!(out.stadium_writes.is_empty());
+    }
+
+    #[test]
+    fn c15_1d_saturation_streak_stops_writes() {
+        // Five refuse events against a parent that starts at 18:
+        // 18 → 19 → 20 → skip → skip → skip. Trace length is 2.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/18,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let evs: Vec<_> = (0..5).map(|_| {
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            }
+        }).collect();
+        let report = empty_report_with_events(evs);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let parent = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        assert_eq!(parent.owner_refuse_counter, 20);
+        assert_eq!(out.applied_refuse_counter_writes.len(), 2);
+        assert_eq!(out.applied_refuse_counter_writes[0].new_value, 19);
+        assert_eq!(out.applied_refuse_counter_writes[1].new_value, 20);
+    }
+
+    #[test]
+    fn c15_1d_trace_isolates_by_stadium_id() {
+        // Three refuse events, two targeting parent 501 and one
+        // parent 502. Verify each counter ends up on the right row.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/0,
+        );
+        world.references.stadiums.push(DomainStadium {
+            id: 502,
+            name: "Parent-502".to_string(),
+            unknown_tail: Vec::new(),
+            name_set: false,
+            city_id: None,
+            capacity_total: 5_000,
+            capacity_seated: 3_000,
+            capacity_expansion: 8_000,
+            alt_stadium_id: None,
+            owner_refuse_counter: 10,
+        });
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(502),
+            },
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let p501 = world.references.stadiums.iter()
+            .find(|s| s.id == 501).unwrap();
+        let p502 = world.references.stadiums.iter()
+            .find(|s| s.id == 502).unwrap();
+        assert_eq!(p501.owner_refuse_counter, 2);
+        assert_eq!(p502.owner_refuse_counter, 11);
+        assert_eq!(out.applied_refuse_counter_writes.len(), 3);
+        let by_id: std::collections::BTreeMap<u32, Vec<i8>> =
+            out.applied_refuse_counter_writes.iter().fold(
+                Default::default(),
+                |mut acc, w| {
+                    acc.entry(w.stadium_id).or_default()
+                        .push(w.new_value);
+                    acc
+                },
+            );
+        assert_eq!(by_id.get(&501).unwrap(), &vec![1i8, 2]);
+        assert_eq!(by_id.get(&502).unwrap(), &vec![11i8]);
+    }
+
+    #[test]
+    fn c15_1d_trace_new_equals_pool_state() {
+        // For every trace entry, world.references.stadiums'
+        // owner_refuse_counter for that stadium_id must equal
+        // the LAST new_value emitted for it.
+        let mut world = world_with_two_stadiums(
+            700, 500, 501, /*counter=*/0,
+        );
+        let mut pending: Vec<RuntimeEvent> = vec![];
+        let date = today();
+        let report = empty_report_with_events(vec![
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+            YearEndMutationEvent::StadiumExpansion {
+                outcome: refused_outcome(),
+                club_id: 700, stadium_id: Some(500),
+                parent_stadium_id: Some(501),
+            },
+        ]);
+        let out = apply_report_to_world_parts(
+            &mut world, &mut pending, &date, 0, &report,
+        );
+        let last_by_sid: std::collections::BTreeMap<u32, i8> =
+            out.applied_refuse_counter_writes.iter()
+                .fold(Default::default(), |mut m, w| {
+                    m.insert(w.stadium_id, w.new_value);
+                    m
+                });
+        for (sid, expected) in &last_by_sid {
+            let s = world.references.stadiums.iter()
+                .find(|s| s.id == *sid).unwrap();
+            assert_eq!(s.owner_refuse_counter, *expected);
         }
     }
 }

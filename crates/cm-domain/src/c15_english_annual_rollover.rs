@@ -114,6 +114,16 @@ pub struct ClubYearEndState {
     pub news_flag_cf: u8,
     pub tier_byte_64: u8,
     pub parent_stadium_refuse_counter: Option<i8>,
+    /// C15.1D — the parent (owner) club's stadium id, used to
+    /// route the refuse-counter increment onto the right
+    /// `DomainStadium` in `World.references.stadiums`. Chain in
+    /// the exe: `Club[+0xBF]` (owner-parent club ptr) →
+    /// `+0x69` (that club's stadium ptr) → `+0x20` (counter).
+    /// `None` when the club has no owner-parent, when the parent
+    /// has no stadium, or when this state was seeded pre-C15.1D
+    /// (matches present-day fixtures — refuse-counter increment
+    /// is then a silent skip in the applier).
+    pub parent_stadium_id: Option<u32>,
 }
 
 impl Default for ClubYearEndState {
@@ -126,6 +136,7 @@ impl Default for ClubYearEndState {
             season_misc_expense: 0, lifetime_misc_expense: 0,
             news_flag_cf: 0, tier_byte_64: 0,
             parent_stadium_refuse_counter: None,
+            parent_stadium_id: None,
         }
     }
 }
@@ -168,6 +179,13 @@ pub enum YearEndMutationEvent {
         outcome: StadiumExpansionOutcome,
         club_id: u32,
         stadium_id: Option<u32>,
+        /// C15.1D — the parent (owner) club's stadium id. Only
+        /// consumed by the applier when
+        /// `outcome.refuse_counter_increment == true`. `None`
+        /// means "no parent stadium routing available" — the
+        /// applier then silent-skips the counter bump (matches
+        /// the exe's dereference chain returning null earlier).
+        parent_stadium_id: Option<u32>,
     },
     StadiumFailReprieve {
         third_div_bottom_club_id: u32,
@@ -508,6 +526,7 @@ fn materialise_pr_edge(
                 outcome,
                 club_id: pm.club_id,
                 stadium_id: state.stadium_id.map(|i| i as u32),
+                parent_stadium_id: state.parent_stadium_id,
             });
         }
         events.push(YearEndMutationEvent::Promotion { effects });
