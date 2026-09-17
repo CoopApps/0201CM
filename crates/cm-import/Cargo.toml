@@ -84,3 +84,7 @@ path = "src/bin/season_check.rs"
 [[bin]]
 name = "dump_fixtures"
 path = "src/bin/dump_fixtures.rs"
+
+[[bin]]
+name = "tick_profile"
+path = "src/bin/tick_profile.rs"

@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+pub mod tick_profile;
 pub mod african_nations;
 pub mod c13_promotion_apply;
 pub mod c14_stadium_expansion;
@@ -20236,7 +20237,11 @@ impl RuntimeSaveGame {
         // Steps 3-5: build + play today's fixtures (only in phase 2 evening;
         // exe: FUN_00699640 build -> FUN_00699cd0 pre-play -> FUN_00699d90 play).
         if phase_before == 2 {
-            self.execute_due_fixture_batch(&date_before_phase, rng);
+            {
+                let _s = crate::tick_profile::span("execute_due_fixture_batch");
+                self.execute_due_fixture_batch(&date_before_phase, rng);
+            }
+            let _comps = crate::tick_profile::span("advance_competitions");
             // Step 6a: competition subsystem dispatch, arg 0 (post-match, for
             // every registered competition). Our ported comps run their own
             // advance_* below; the exe's iteration over unported comps is a
@@ -20259,6 +20264,7 @@ impl RuntimeSaveGame {
             self.advance_argentine_primera(&date_before_phase);
             self.advance_argentine_second(&date_before_phase);
             self.advance_argentine_transfer_window(&date_before_phase);
+            drop(_comps);
 
             // Step 7: post-comp dispatch hook (exe: FUN_00856d50, FUN_00699cd0).
             self.hook_post_comp(&date_before_phase);
@@ -20266,7 +20272,10 @@ impl RuntimeSaveGame {
             // Step 10: the giant evening daily-AI dispatcher (exe: FUN_005b85b0
             // — 30 467 bytes / 395 RNG calls; staff_contracts + transfers +
             // human_manager + player_stats + media). See daily_ai() docs.
-            self.hook_evening_daily_ai(&date_before_phase, rng);
+            {
+                let _s = crate::tick_profile::span("hook_evening_daily_ai");
+                self.hook_evening_daily_ai(&date_before_phase, rng);
+            }
 
             // Step 10b: background subsystems (exe: FUN_005b7f10, FUN_009123a0,
             // FUN_00614e90, FUN_0053fe40, FUN_008f2900, FUN_00413980).
@@ -20706,6 +20715,7 @@ impl RuntimeSaveGame {
         let news_before = self.pending_events.len();
         let mut result_summary = Vec::new();
         for fixture_row in &due_fixture_rows {
+            let _lookup = crate::tick_profile::span("fixture_row_lookup");
             let Some(fixture_index) = self
                 .season
                 .fixtures
@@ -20714,6 +20724,7 @@ impl RuntimeSaveGame {
             else {
                 continue;
             };
+            drop(_lookup);
             let fixture = &mut self.season.fixtures[fixture_index];
             let home_id = fixture.home_club_id;
             let away_id = fixture.away_club_id;
@@ -20721,6 +20732,7 @@ impl RuntimeSaveGame {
             let home_name = fixture.home_club_name.clone();
             let away_name = fixture.away_club_name.clone();
 
+            let _legacy = crate::tick_profile::span("legacy_scenario_pipeline");
             let mut scenario = default_match_engine_runtime_scenario();
             apply_fixture_to_match_engine_scenario(&mut scenario, fixture, self.elapsed_days);
             let evaluation_output = match_player_evaluation_output(&scenario);
@@ -20755,6 +20767,7 @@ impl RuntimeSaveGame {
                 &event_queue_outputs,
             );
             let goal_events = headless_goal_events_from_match_events(&match_events);
+            drop(_legacy);
             // Score comes from the honest exe-port match engine (see
             // crates/cm-domain/src/match_engine_exe.rs — ports of
             // FUN_0069D950, FUN_0069F2F0, FUN_006BC8D0). The old
@@ -20762,9 +20775,12 @@ impl RuntimeSaveGame {
             // runtime-store frontiers stay coherent, but the SCORE it
             // produces (via `score_from_goal_events`) is discarded in
             // favour of the real ported engine.
-            let (home_score, away_score) = match self.resolve_fixture_via_exe_port(
+            let _exe_port = crate::tick_profile::span("resolve_fixture_via_exe_port");
+            let resolved = self.resolve_fixture_via_exe_port(
                 home_id, away_id, *fixture_row,
-            ) {
+            );
+            drop(_exe_port);
+            let (home_score, away_score) = match resolved {
                 Some(outcome) => {
                     // Accumulate REAL season stats from the actual match events
                     // (kill #B): every scored/assisted goal lands on its player.

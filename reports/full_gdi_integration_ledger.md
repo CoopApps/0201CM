@@ -4,6 +4,35 @@ Cross-reference of every executable-derived subsystem: what was
 decoded, where it lives in the Rust port, whether it is invoked
 from the actual running game, and where the gap is.
 
+## FIDELITY CONTRACT (set 2026-09-17 — governs every row below)
+
+The goal is **observational equivalence**, not internal replication. The
+port should look, respond and play like CM 01/02 GDI from the player's
+seat. Internals may differ freely where the difference is invisible.
+
+**Free to differ:** `Vec` instead of C arrays, IDs instead of
+reconstructed pointers, whole-DB-in-memory instead of paging, typed
+structs instead of packed blobs, `i64` where the exe split `i32`, richer
+indices, modern serialization, parallelism that preserves observable
+ordering.
+
+**Not free to differ:** RNG draw order/count where it affects outcomes,
+decision gates, thresholds, formulas, sort order and tiebreaks,
+promotion/relegation rules, fixture structure, match outcomes, financial
+outcomes, contract effects, season lifecycle, screen geometry, fonts,
+colours, draw order, clipping, control behaviour, player-visible data.
+
+> Do not reproduce **how** CM 01/02 was programmed. Reproduce **what** it
+> does.
+
+**Effect on this ledger.** A row is no longer judged by whether the Rust
+mirrors the exe's data structures. It is judged by whether the
+observable contract holds. Reconstructing pointer chains purely for
+architectural similarity is now explicitly out of scope — decode further
+only to answer an observable question. Rows describing internal plumbing
+that has no observable consequence should be closed as *contract
+satisfied*, not pursued to byte level.
+
 **Provenance rule (always).** Authoritative binary =
 `cm0102_GDI.exe`. `cm0102.exe` (DirectDraw) is corroborative
 only. **VA deltas between builds are not uniform** — never

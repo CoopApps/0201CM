@@ -3,6 +3,14 @@
 **Date:** 2026-09-17
 **Subject:** `crates/cm-ui-app` (binary `app`) + `crates/cm-render`.
 
+**Governing contract (2026-09-17):** observational equivalence — see the
+fidelity contract at the head of `full_gdi_integration_ledger.md`. For
+the front end, almost everything is observable, so this ledger's bar is
+essentially unchanged: geometry, fonts, colours, draw order, clipping and
+control behaviour must match. What IS newly free is how we get there —
+the renderer's internal structure, caching and data flow may differ from
+the exe's as long as the pixels and interactions do not.
+
 ## The rule this ledger enforces
 
 We are **not designing a UI that looks like CM 01/02**. We are

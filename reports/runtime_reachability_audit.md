@@ -5,6 +5,12 @@
 `crates/cm-app` is a dev/web inspection tool and is NOT the game — nothing
 in it counts as player reachability.
 
+**Governing contract (2026-09-17):** the target is *observational
+equivalence* — see the fidelity contract at the head of
+`full_gdi_integration_ledger.md`. Internals may differ where invisible;
+player-visible behaviour, data and outcomes may not. That makes this
+report the primary scorecard: reachability by a player IS the measure.
+
 This report answers a different question from
 `full_gdi_integration_ledger.md`. That ledger asks *"does production call
 the proven implementation?"*. This one asks *"can a real player reach it,
