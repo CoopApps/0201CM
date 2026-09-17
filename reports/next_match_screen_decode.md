@@ -138,11 +138,19 @@ Note the **WRAP call's colour is the same (`0x739C`) either way** — the
 enabled/disabled distinction lives in the TEXT calls, not the layout
 call. Do not infer state from the WRAP.
 
-*(Caveat: the sidebar's `Add Manager` / `Restart Game` also draw twice,
-with different colour pairs, and those are enabled. So "drawn twice" by
-itself is a shadow technique; it is the specific dark-main colour
-`0x294A` that reads as disabled. A second capture with `<< Date` enabled
-would settle it — see §5.)*
+**The disabled reading is confirmed, not inferred.** `<< Date` is
+disabled here *because this is the club's first fixture — there is no
+earlier match to step back to* (confirmed by the user against the
+original game). So the engraved two-pass rendering above IS the disabled
+rendering, and the `0x294A` dark main is its signature.
+
+*(Open detail, not needed for this screen: the sidebar's `Add Manager` /
+`Restart Game` / `Exit Game` also draw twice, with near-black colour
+pairs — `(0x0013, 0x0007)`, `(0x0012, 0x0007)`, `(0x0010, 0x0006)` — and
+they render dim in the framebuffer. That may be the same disabled
+treatment in a different palette, or a separate shadow technique. It does
+not affect the rule for list/navigation controls, which is what §3
+covers.)*
 
 ---
 
@@ -152,8 +160,17 @@ From the user's description of the original, plus what the capture shows:
 
 1. Opens on the **next upcoming fixture** for the club.
 2. **`Date >>`** advances to the following match in the fixture list;
-   **`<< Date`** steps back. `<< Date` is disabled on the first match —
-   observed.
+   **`<< Date`** steps back.
+
+   **Enablement rule (confirmed):** each arrow is enabled only when a
+   fixture exists in that direction. `<< Date` is disabled here because
+   this is the club's first fixture — there is no earlier match. By the
+   same rule `Date >>` should disable on the last fixture of the list
+   (not yet observed — §5).
+
+   So the port must gate these two controls on the club's position
+   within its own fixture list, and render the disabled state with the
+   engraved treatment in §3 — not simply grey the text.
 3. The `<Club> News` block lists **players unavailable for this match**,
    with the reason in parentheses — observed (three injuries).
 4. It also lists **players who would make their debut** — *not observed
@@ -168,8 +185,11 @@ Per the project rule, these are recorded as unknown rather than guessed:
 
 * **The debut line's wording, colour and position.** Requires a capture
   of a match where a player would debut.
-* **`<< Date` in its ENABLED state** — needed to confirm the disabled
-  rendering rule in §3 rather than infer it.
+* **`<< Date` in its ENABLED state.** Expected to match `Date >>` (one
+  flat call), but unobserved. Low priority now that the disabled case is
+  confirmed.
+* **`Date >>` on the LAST fixture**, to confirm it disables by the same
+  rule.
 * **A competitive fixture.** Everything here is a friendly; league and
   cup matches may populate `Match Rules`, `Last Meeting` and the
   competition label differently.
