@@ -198,6 +198,50 @@ builds its tables by filtering standings on club membership, so it would
 see duplicate rows. Needs a per-comp-per-season key on
 `HeadlessSeasonStanding` — tracked, not yet fixed.
 
+## 0e. PHASE E/F AUDIT — playoffs and status stamping (2026-09-17, IN PROGRESS)
+
+### Playoffs: EXACT HELPER EXISTS BUT NOT LIVE
+
+`run_english_year_end` builds every `FinalTableRow` with
+`playoff_winner_marker: false` and `current_status: STATUS_IDLE`,
+hardcoded. In `compute_annual_rollover` step 2 the propagation is
+
+```rust
+let winner = table.rows.iter().find(|r| r.playoff_winner_marker);
+let Some(w) = winner else { continue };
+```
+
+so with no marker the whole playoff step is skipped. **The fourth
+promotion place in divisions 1/2/3 — the playoff slot — is never filled
+in a real game.** `propagate_english_playoff_winner` and the C9
+selection helpers are byte-exact and tested; nothing reaches them.
+
+`advance_league_playoffs` in the tick is **not** this: it is the
+Brazilian championship playoff (`bra_champ_cup.cpp`), keyed off
+`league_playoffs` + `simple_leagues` by name. No English promotion
+playoff competition is ever constructed, so there are no semi-finals or
+final to produce a winner.
+
+Closing this needs the playoff competition itself built between season
+end and the year-end apply (4 clubs from the stamped status-3 rows →
+2 semis → final → winner marked), not just a wiring change. Tracked as
+the top Phase E item.
+
+### Sticky statuses are never carried in
+
+`current_status` is hardcoded `STATUS_IDLE` for every row, so the
+sticky states (3 playoff participant, 5 playoff winner, 0xFE stadium
+reprieve, 0xFC) from the previous season never reach the stamper, and
+the "movement consumes to 0xFF" path has nothing to consume. The C12
+stamper itself is correct and tested; the runtime feeds it a blank
+slate each year.
+
+Phase F's expected auto-promotion and relegation position bands are
+implemented in `year_end_statuses` and exercised by the live path —
+`live_year_end_moves_clubs_between_divisions` observes real moves across
+all four edges — but positions alone drive them today, without the
+playoff slot or sticky carry-in.
+
 ## 1. Foundations (pre-C10 and cross-cutting)
 
 | System | Canonical Rust | Status | Notes |
