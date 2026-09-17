@@ -14,7 +14,7 @@
 //! Promotion welcome news        | `RuntimeSaveGame.pending_events`      | yes
 //! No-league relegation news     | `RuntimeSaveGame.pending_events`      | yes
 //! Conference stadium-fail news  | `RuntimeSaveGame.pending_events`      | yes
-//! Club finance writes           | `Club.raw` finance offsets            | DEFERRED — the cash offset is disputed (`ClubView::cash() -> i32 @ +0x65` vs the C14 `i64 @ Club[0]`); surfaced as `PendingFinanceWrite` until the archaeology is settled
+//! Club finance writes           | `RuntimeSaveGame.finance` (`FinanceBook`) | MATERIALISED — C15.1F resolved the offset dispute (disk `Club+0x65` is a one-time seed; runtime cash is the 0x167-byte record's `+0x00` i64 = `ClubFinance.balance`); writes land via `FinanceBook::apply_year_end_write`
 //!
 //! Ownership rules:
 //!
@@ -79,7 +79,8 @@ pub struct AppliedStadiumWrite {
 /// (via `operator_new(DAT_00acd564 * 0x167 + 4)`) called at
 /// new-game boot from `008120d0.c:1144` and at save-load from
 /// `00814870.c:1413`. Pool base wrapper: `DAT_00acdc38` (Rust
-/// counterpart: `RuntimeSaveGame.finance_ledger`).
+/// counterpart: `RuntimeSaveGame.finance`, a `finance::FinanceBook`
+/// whose `ClubFinance.balance` is this record's `+0x00` cash).
 ///
 /// Resolver idiom (16 hits across the finance-cluster writers):
 /// `pool_base + club_id * 0x167` (`FUN_0058A490` line 23). This
@@ -112,8 +113,8 @@ pub struct AppliedStadiumWrite {
 /// The exe persists the whole 0x167-byte pool as its own
 /// `finance.dat` sub-file inside the `.sav` bundle
 /// (`FUN_005854D0`). The Rust port persists the same
-/// information via `RuntimeSaveGame.finance_ledger`'s serde
-/// derive on the containing struct.
+/// information via `RuntimeSaveGame.finance` (`FinanceBook`,
+/// serde-derived on the containing struct).
 ///
 /// # Scope of this tranche
 ///
@@ -165,13 +166,23 @@ impl ClubFinanceState {
     }
 }
 
-/// Per-club finance ledger — **the canonical Rust carrier** of
-/// the exe's per-club Runtime Finance record pool (C15.1F).
+/// Per-club finance ledger — a **value-type helper**, NOT runtime
+/// state.
 ///
-/// Keyed by `club_id` (matches the exe's same-ordinal indexing
-/// `pool_base + club_id * 0x167`). Persistence is via serde on
-/// the containing `RuntimeSaveGame.finance_ledger` — the Rust
-/// analogue of the exe's `finance.dat` sub-file.
+/// History: C15.1F promoted this to "the canonical carrier" and
+/// persisted it as `RuntimeSaveGame.finance_ledger`, not noticing
+/// that `finance.rs::FinanceBook` was already the live runtime
+/// finance store (seeded at boot, mutated by the weekly-wage /
+/// match-income / board / debt ticks). That left two finance
+/// stores, and the year-end path read the one that was never
+/// seeded in production. The persisted field is gone; production
+/// reads/writes go through [`crate::finance::FinanceBook::year_end_state`]
+/// and [`crate::finance::FinanceBook::apply_year_end_write`].
+///
+/// This type survives for the C15.1A/F arithmetic tests and for
+/// building a `YearEndSnapshot` finance map (`per_club`) from a
+/// hand-seeded state. Keyed by `club_id` like the exe's
+/// same-ordinal `pool_base + club_id * 0x167`.
 ///
 /// See [`ClubFinanceState`] for the layout provenance.
 #[derive(Debug, Clone, Default, PartialEq, Eq,
@@ -235,7 +246,7 @@ impl ClubFinanceLedger {
 
 /// Finance writes emitted by the apply layer for post-hoc trace
 /// (both intent and result). After C15.1A, these are materialised
-/// into `RuntimeSaveGame.finance_ledger`; the pending vector on
+/// into `RuntimeSaveGame.finance` (`FinanceBook`); the pending vector on
 /// `WorldApplyReport` remains as diagnostic evidence that a
 /// finance transaction fired.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -499,11 +510,12 @@ pub fn apply_report_to_world(
         world, &mut save.pending_events, &date, day, report,
     );
     // C15.1A: materialise the finance writes surfaced by the
-    // apply pass into the save's finance ledger. Trace-derived:
-    // PendingFinanceWrite records what C14 produced; the ledger
+    // apply pass into the ONE runtime finance store
+    // (`RuntimeSaveGame.finance`, a `FinanceBook`). Trace-derived:
+    // PendingFinanceWrite records what C14 produced; the book
     // reflects what actually landed.
     for w in &out.pending_finance {
-        save.finance_ledger.apply_write(w);
+        save.finance.apply_year_end_write(w);
     }
     out
 }

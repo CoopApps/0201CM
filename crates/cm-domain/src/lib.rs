@@ -2466,13 +2466,6 @@ pub struct RuntimeSaveGame {
     /// (both `Fired` and `Skipped`). Diagnostic; safe to prune.
     #[serde(default)]
     pub season_roll_events: Vec<SeasonRollAppliedEvent>,
-    /// C15.1A per-club finance ledger — cash + season/lifetime
-    /// operating expense + season/lifetime subsidy income, at the
-    /// widths and semantics proven by C15.1A archaeology (see
-    /// `reports/c15_1a_finance_archaeology.md`). Populated by
-    /// `apply_report_to_world` from C14 stadium-expansion outputs.
-    #[serde(default)]
-    pub finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger,
     /// The current Argentine Primera split-season (Apertura + Clausura), if
     /// drawn for this game. Port of `arg_prm.cpp` (see [`crate::arg_primera`]):
     /// built at new-game time, its two champions and promedios relegation
@@ -13592,7 +13585,6 @@ impl World {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -16288,6 +16280,13 @@ impl World {
         let (year, month, day) =
             crate::league_calendar::earliest_start(&options.selected_nations, options.start_year);
         save.date = GameDate { year, month, day };
+        // The tick derives `save.date` from the packed date every step
+        // (`tick_cm_phase`: cm_packed_date.add_days(1) → date). Without
+        // syncing the packed form here the picker's normalised start was
+        // silently discarded on the first tick (boot 07-10 → tick 1 =
+        // 07-02, observed in boot_check). The packed date is canonical;
+        // `save.date` mirrors it.
+        save.simulation.cm_packed_date = CmPackedDate::from_game_date(save.date.clone());
         for event in &mut save.pending_events {
             event.date = save.date.clone();
         }
@@ -19485,7 +19484,7 @@ impl RuntimeSaveGame {
     /// expansions on forced-promotion path, status stamps)
     /// still fire against the tables + club state derived
     /// from `save.season.standings` and
-    /// `RuntimeSaveGame.finance_ledger`.
+    /// `RuntimeSaveGame.finance` (the one `FinanceBook` store).
     pub fn run_english_year_end(
         &mut self,
         world: &mut World,
@@ -19542,7 +19541,9 @@ impl RuntimeSaveGame {
         for tbl in &tables {
             for row in &tbl.rows {
                 let cid = row.club_id;
-                let fin = self.finance_ledger.get(cid);
+                // Live runtime finance (wage-depleted balance + the 4
+                // accumulators) — the single store, see ledger §12a.
+                let fin = self.finance.year_end_state(cid);
                 // Look up the club's home stadium from raw Club record.
                 let stadium_id = world.core.clubs.iter()
                     .find(|c| crate::typed_records::ClubView::new(c).id()
@@ -24616,7 +24617,6 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -24853,7 +24853,6 @@ mod tests {
             season_roll_comp_years: Default::default(),
             pending_season_roll_regens: Default::default(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25096,7 +25095,6 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25206,7 +25204,6 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25311,7 +25308,6 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25404,7 +25400,6 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25499,7 +25494,6 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
-            finance_ledger: crate::c15_1_world_apply::ClubFinanceLedger::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),

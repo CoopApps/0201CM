@@ -45,7 +45,7 @@ superseded hypotheses live in the individual reports.
 | **Stadium** (0x4B on-disk) | `DomainStadium` | WIRED | Includes runtime-only `owner_refuse_counter: i8` (C15.1D). |
 | **Person / Type10** | `DomainStaffType10` | WIRED | Real attribute offsets past +0x24 corrected in memory `[[type10-real-attribute-offsets]]`. |
 | **Contract** (0x50 shared pool at `DAT_00accad8`) | `contract_init::ContractRecord` | WIRED | Fields: staff_id, club_id (was mislabelled `person_id`), non_promotion (+0x1C), relegation (+0x1F), position_code (+0x3A). Dual-purpose = ContractRecord AND SquadRecord. |
-| **Runtime Finance** (0x167 pool at `*DAT_00acdc38`) | `ClubFinanceLedger` on `RuntimeSaveGame.finance_ledger` (C15.1F) | WIRED | Cash i64 at +0x00 (widened from disk +0x65 seed via `__ftol`). Four accumulator DWORDs at +0x8C/+0xB4/+0x12C/+0x154. ~24 more DWORDs deferred. |
+| **Runtime Finance** (0x167 pool at `*DAT_00acdc38`) | `finance::FinanceBook` (`clubs: Vec<ClubFinance>`) on `RuntimeSaveGame.finance` — the ONE runtime store (see §12a) | WIRED | `balance` = cash i64 at +0x00 (disk +0x65 seed widened, `FUN_005803D0` START_CASH fallback). Four accumulator DWORDs at +0x8C/+0xB4/+0x12C/+0x154 (`season_/lifetime_misc_expense`, `season_/lifetime_subsidy_income`). Also `+0x165` in_administration, `+0x166` board_confidence, `+0x110` month block, `+0x6d`/`+0x82` latches. ~20 more DWORDs deferred. |
 | **News mailbox** (222-byte item, per-person mailbox at `DAT_00ACD5C4 + person_id * 0x6E`) | `person_news::PersonNewsMailboxPool` on `World` (C15.1E) | WIRED | Semantic parity — DOB-age routing + 100-ring not modelled (deferred). |
 | **Fixture** | `HeadlessSeasonFixture` | WIRED | |
 | **News (UI)** | `NewsView` + `NewsItem` | WIRED | Display side, not the mailbox pool. |
@@ -108,7 +108,7 @@ superseded hypotheses live in the individual reports.
 | C15.1C squad position writes | | same | Called by tick_days_bound | WIRED |
 | C15.1D stadium refuse counter | | same | Called by tick_days_bound | WIRED |
 | C15.1E person news mailbox | | same | Called by tick_days_bound | WIRED |
-| C15.1F finance ledger | | same | Called by tick_days_bound | WIRED |
+| C15.1F finance writes | | `FinanceBook::apply_year_end_write` (via `apply_report_to_world`) | Called by tick_days_bound; reads `FinanceBook::year_end_state` | WIRED (single store since §12a) |
 | C15.1G runtime differential | | `c15_1g_snapshot` + `c15_year_end_diff` bin + Frida harness | User-run tooling | PORTED-NOT-WIRED (needs runtime capture) |
 
 ## 7. Season lifecycle
@@ -137,7 +137,7 @@ superseded hypotheses live in the individual reports.
 | Player init (FUN_0051f5d0) | `PlayerInitState` | WIRED at new-game |
 | Contract pool | `contract_init::initialise_all` | WIRED at new-game |
 | Squad numbers | `World.squad_numbers` | WIRED at new-game |
-| Finance ledger seed | `ClubFinanceLedger::seed_from_world` | **NOT WIRED — production never calls it** (only tests + the diff CLI). At runtime `save.finance_ledger` is empty, so `run_english_year_end` reads cash = 0 for every club. See §12 "TWO FINANCE STORES". |
+| Finance seed | `FinanceBook::seed_from_clubs` in `new_runtime_save_from_rust_db` | WIRED — every one of the 10,580 clubs gets `balance` from disk `+0x65` (i32→i64) or the `FUN_005803D0` START_CASH-by-reputation fallback. (`ClubFinanceLedger::seed_from_world` is now test-only; the persisted ledger field was removed — §12a.) |
 | Person news mailboxes | allocated on `World` | WIRED |
 | FIFA rankings | `fifa_rankings.rs` | WIRED at boot + hook_year_rollover cache clear |
 | Player regen — squad fill (`FUN_0078E970` driver / `FUN_0078F200` selector / `FUN_0078F4F0` scorer) | `player_regen::regen_fill_club_squad`, called from `new_game_from_rust_db` after fixture gen on the shared session RNG | **WIRED-PARTIAL** — the selector + scorer are byte-exact and now actually used (replaced the removed CA-ranked `assign_free_agents_to_empty_clubs` duplicate). The **scheduling is an approximation**: the port does a one-off boot sweep (clubs with scheduled fixtures, <8 real players → fill to 14). The exe does NOT do a boot sweep — `FUN_0078E970()` is called with no args once per day from the daily tick driver `FUN_005B6F10` (right after `FUN_0078DD80()`, before `FUN_0089DE30`); its "param_1" is one global regen context. `FUN_0078DD80` (323 lines) is the departure scheduler: scans date-gated staff, schedules departures 1–65 days ahead (`rand(0x41)+1+today` / `rand(0x23)`), and qsorts the 12-byte departure list (`FUN_009343C3` with comparator `FUN_00796590`). The fill target club (`ctx+0x1c`) and count (`ctx+0x20 − 2`) are set by a still-unidentified writer (`FUN_00790600` is the candidate). Follow-up to make scheduling exact: decode `FUN_0078DD80` + that writer and move the fill into the daily tick. RNG note: the boot sweep consumes pool RNG the exe would not consume at boot; the C11.2 fixture golden is unaffected (regen runs after fixture gen) and the Jan-1 state is already non-reproducible until the daily pool consumers (form rolls etc.) are ported. **Other known fidelity gaps (pre-existing in the port, now documented):** (1) the exe driver's opening loop drains a per-club *departure list* (`param_1+0x10`, 12-byte entries, `FUN_00793e10` release + compaction) — not an age-based retirement, and not modelled; (2) fill count comes from the caller as `param_1+0x20 − 2` — the port's 8/14 thin/target thresholds are inherited and NOT exe-verified (caller decode pending); (3) after each pick the exe links the staff record into club attach slots (`club+0xd3`, or one of 5 at `club+0x19f`, setting `staff+0x3d` = 0xf/0xd) and, when the pick has no type10 record, seeds a `+0x69` record with `rand(0x5dc)+1, rand(0x5dc)+1, rand(500)+1` — the port writes `staff+0x39` only and skips those rolls, so the session RNG stream diverges from the exe's after such a pick (fixture golden unaffected since regen runs after fixture gen). Picks propagate to `save.player_ratings` (persisted); `SaveWorldOverlay.staff_overrides` has no loader yet so is not written. |
@@ -190,14 +190,32 @@ C15.1F chose "promote the ledger" believing no canonical runtime finance
 object existed; `finance.rs::ClubFinance` already was one (it even carries
 +0x165/+0x166/+0x110 offsets).
 
-**Plan (separate commit):** `FinanceBook` becomes the single owner. Add the
-4 accumulators to `ClubFinance`; expose `FinanceBook::year_end_state(club)
--> ClubFinanceState` (cash = balance) and `apply_year_end_write(&PendingFinanceWrite)`
-(writes balance + accumulators); delete `RuntimeSaveGame.finance_ledger`
-and its 9 constructor inits; repoint `run_english_year_end`,
-`apply_report_to_world`, `YearEndSnapshot::from_apply`, the diff CLI, and
-the C15.1F/G tests. `ClubFinanceState` survives as a value-type snapshot.
-The C15.1A arithmetic is untouched — only the storage owner changes.
+**Resolved (2026-09-17):** `FinanceBook` is the single owner. The 4
+accumulators now live on `ClubFinance`; `FinanceBook::year_end_state(club)
+-> ClubFinanceState` (cash = balance), `year_end_states(ids)` and
+`apply_year_end_write(&PendingFinanceWrite)` are the year-end seam;
+`RuntimeSaveGame.finance_ledger` and its 9 constructor inits are deleted;
+`run_english_year_end`, `apply_report_to_world`, the diff CLI and the
+diagnostic bins read/write `save.finance`. `YearEndSnapshot::from_apply`
+now takes a plain `BTreeMap<u32, ClubFinanceState>` so it is decoupled from
+any store. `ClubFinanceLedger` survives only as a documented **value-type
+helper** for the C15.1A/F arithmetic tests and hand-seeded snapshots — it
+is no longer persisted anywhere. C15.1A arithmetic untouched.
+
+## 12b. Boot date sync + tick cost (found 2026-09-17, boot_check evidence)
+
+* **Date model (FIXED):** `new_game_from_rust_db` set `save.date` to the
+  picker's normalised start (07-10) but not `simulation.cm_packed_date`
+  (left at 07-01 by the runtime-save constructor); `tick_cm_phase` derives
+  `date` from the packed form every step, so the picker's start was
+  silently discarded on tick 1 (boot 07-10 → tick 1 = 07-02). Fixed by
+  syncing the packed date at boot. The packed date is canonical;
+  `save.date` mirrors it.
+* **Tick cost (OPEN, pre-existing):** `tick_days(1)` took **199 s** on the
+  England boot (708 matches ≈ 0.28 s each through the match batch). Any
+  multi-season headless run is impractical until the per-match cost drops
+  by ~2 orders of magnitude. Not a correctness defect; blocks the C15.1G
+  full-season differential in practice.
 
 ## 12. Known deviations (semantic parity, not byte-exact)
 

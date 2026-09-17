@@ -205,7 +205,7 @@ fn run_demo_rollover() -> Result<YearEndSnapshot, String> {
         ledger.apply_write(w);
     }
     Ok(YearEndSnapshot::from_apply(
-        date.year, &world, &ledger, &applier,
+        date.year, &world, &ledger.per_club, &applier,
     ))
 }
 

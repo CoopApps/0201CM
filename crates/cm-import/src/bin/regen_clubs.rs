@@ -40,7 +40,7 @@ fn main() {
         ins!("field_65",        cv.field_65());
         ins!("field_6e",        cv.field_6e());
         // New-game cash seed at disk +0x65 (£) — negative = bankrupt-at-start.
-        // Post-boot, live cash lives on RuntimeSaveGame.finance_ledger; see C15.1F.
+        // Post-boot, live cash lives on RuntimeSaveGame.finance (FinanceBook.balance); see C15.1F + ledger §12a.
         ins!("cash",               cv.initial_cash_seed());
         // Attendance figures (scale with stadium capacity)
         ins!("attendance_average", cv.attendance_average());

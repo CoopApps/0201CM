@@ -112,6 +112,22 @@ pub struct ClubFinance {
     pub month_gate: i64,
     #[serde(default)]
     pub month_tv_prize: i64,
+    /// Season misc operating expense — runtime finance record `+0x8C`
+    /// (i32). Reset annually by the season roll (`FUN_00585AE0`).
+    /// Written by the C14 stadium-expansion transaction (C15.1A) via
+    /// [`FinanceBook::apply_year_end_write`]. Moved here from the former
+    /// `ClubFinanceLedger` so the port has ONE runtime finance store.
+    #[serde(default)]
+    pub season_misc_expense: i32,
+    /// Lifetime misc operating expense — `+0x12C` (i32). Never reset.
+    #[serde(default)]
+    pub lifetime_misc_expense: i32,
+    /// Season subsidy income — `+0xB4` (i32). Reset annually.
+    #[serde(default)]
+    pub season_subsidy_income: i32,
+    /// Lifetime subsidy income — `+0x154` (i32). Never reset.
+    #[serde(default)]
+    pub lifetime_subsidy_income: i32,
     /// Home stadium id (club record +0x69 in the exe). Clubs that share a
     /// stadium (Bayern & 1860 München at Olympiastadion; Alemannia Aachen &
     /// its reserves; many reserve/first-team pairs worldwide) share this
@@ -258,6 +274,14 @@ impl ClubFinance {
             last_takeover_amount: 0,
             month_owner_gift: 0,
             year_owner_gift: 0,
+            // Year-end accumulators (+0x8C / +0x12C / +0xB4 / +0x154):
+            // the exe zero-inits the whole 0x167 record before the
+            // cash seed lands (FUN_0093543F ctor loop), so these start
+            // at 0 regardless of the START_CASH path taken above.
+            season_misc_expense: 0,
+            lifetime_misc_expense: 0,
+            season_subsidy_income: 0,
+            lifetime_subsidy_income: 0,
         }
     }
 
@@ -523,6 +547,60 @@ impl FinanceBook {
 impl FinanceBook {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Mutable lookup by club id (linear, like [`Self::for_club`]).
+    pub fn for_club_mut(&mut self, club_id: u32) -> Option<&mut ClubFinance> {
+        self.clubs.iter_mut().find(|c| c.club_id == club_id)
+    }
+
+    /// The five fields the year-end pipeline (C14 stadium expansion,
+    /// C15 rollover) reads/writes, as a value snapshot. `cash` is
+    /// `balance` — the runtime record's `+0x00` i64. Absent club →
+    /// all-zero (mirrors the old ledger's `get` default).
+    ///
+    /// This is THE runtime finance store: `balance` is what the weekly
+    /// wage / match-income / board / debt ticks mutate, so year-end
+    /// affordability sees the real, wage-depleted cash — the former
+    /// `ClubFinanceLedger` field on the save never saw those and was
+    /// never seeded in production (see ledger §12a).
+    pub fn year_end_state(&self, club_id: u32) -> crate::c15_1_world_apply::ClubFinanceState {
+        match self.for_club(club_id) {
+            Some(c) => crate::c15_1_world_apply::ClubFinanceState {
+                cash: c.balance,
+                season_misc_expense: c.season_misc_expense,
+                lifetime_misc_expense: c.lifetime_misc_expense,
+                season_subsidy_income: c.season_subsidy_income,
+                lifetime_subsidy_income: c.lifetime_subsidy_income,
+            },
+            None => crate::c15_1_world_apply::ClubFinanceState::default(),
+        }
+    }
+
+    /// Snapshot [`Self::year_end_state`] for a set of clubs (used by
+    /// `YearEndSnapshot::from_apply` for the clubs a rollover touched).
+    pub fn year_end_states(
+        &self,
+        club_ids: impl IntoIterator<Item = u32>,
+    ) -> std::collections::BTreeMap<u32, crate::c15_1_world_apply::ClubFinanceState> {
+        club_ids.into_iter().map(|id| (id, self.year_end_state(id))).collect()
+    }
+
+    /// Apply one C14/C15.1A finance write. C14 has already computed the
+    /// NEW post-transaction values; this stores them: `balance` ←
+    /// `new_cash`, the four accumulators ← `new_*`. A club absent from
+    /// the book (only possible in tests — boot seeds all 10,580) is
+    /// created on demand so the write is never silently dropped.
+    pub fn apply_year_end_write(&mut self, w: &crate::c15_1_world_apply::PendingFinanceWrite) {
+        if self.for_club(w.club_id).is_none() {
+            self.clubs.push(ClubFinance { club_id: w.club_id, ..Default::default() });
+        }
+        let c = self.for_club_mut(w.club_id).expect("just ensured present");
+        c.balance = w.new_cash;
+        c.season_misc_expense = w.new_season_misc_expense;
+        c.lifetime_misc_expense = w.new_lifetime_misc_expense;
+        c.season_subsidy_income = w.new_season_subsidy_income;
+        c.lifetime_subsidy_income = w.new_lifetime_subsidy_income;
     }
 
     pub fn seed_from_clubs(clubs: &[crate::DomainOpaqueRecord]) -> Self {

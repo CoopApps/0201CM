@@ -196,15 +196,16 @@ impl YearEndSnapshot {
     /// This is the ONLY sanctioned way to build a snapshot on
     /// the Rust side — it drives from the same real production
     /// output the exe would produce, not from ad-hoc test data.
-    /// The ledger is passed as a bare reference (not the full
-    /// `RuntimeSaveGame`) because it's the only piece the
-    /// snapshot reads out of the save; keeping the coupling
-    /// narrow keeps the snapshot module callable from tests
-    /// that don't stand up a full runtime save.
+    /// Finance is passed as a plain `club_id → ClubFinanceState` map
+    /// so the snapshot is decoupled from whichever store produced
+    /// it: production builds it from the ONE runtime store via
+    /// `save.finance.year_end_states(ids)` (ids = clubs the
+    /// rollover wrote, matching what the GDI analyser emits);
+    /// tests can hand it a `ClubFinanceLedger::per_club`.
     pub fn from_apply(
         year: u16,
         world: &crate::World,
-        ledger: &crate::c15_1_world_apply::ClubFinanceLedger,
+        finance_states: &std::collections::BTreeMap<u32, crate::c15_1_world_apply::ClubFinanceState>,
         applier: &crate::c15_1_world_apply::WorldApplyReport,
     ) -> Self {
         use crate::c15_1_world_apply::ContractWriteKind;
@@ -290,7 +291,7 @@ impl YearEndSnapshot {
         }
 
         // -------- Post-rollover state maps --------
-        let finance = ledger.per_club.iter()
+        let finance = finance_states.iter()
             .map(|(&id, s)| (id, FinanceSnapshotEntry {
                 cash: s.cash,
                 season_misc_expense: s.season_misc_expense,
@@ -741,7 +742,7 @@ mod tests {
 
         // Build the snapshot.
         let snap = YearEndSnapshot::from_apply(
-            date.year, &world, &ledger, &applier,
+            date.year, &world, &ledger.per_club, &applier,
         );
 
         // C15.1B assertion: contract clause tripped.
@@ -908,7 +909,7 @@ mod tests {
                 ledger.apply_write(w);
             }
             YearEndSnapshot::from_apply(
-                date.year, &world, &ledger, &applier,
+                date.year, &world, &ledger.per_club, &applier,
             )
         }
         let a = build_and_snapshot();

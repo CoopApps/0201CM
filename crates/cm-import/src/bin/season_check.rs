@@ -57,12 +57,12 @@ fn main() {
     println!("  fixtures scheduled : {}", save.season.fixtures.len());
     println!("  standings          : {}", save.season.standings.len());
     println!("  finance ledger     : {} clubs seeded",
-             save.finance_ledger.per_club.len());
+             save.finance.clubs.len());
     println!();
 
     let pre_events    = save.pending_events.len();
     let pre_mailboxes = save.new_game.as_ref().map(|_| 0).unwrap_or(0);
-    let pre_ledger    = save.finance_ledger.per_club.len();
+    let pre_ledger    = save.finance.clubs.len();
     let start_date    = save.date.clone();
 
     print!("ticking {days} days................ ");
@@ -95,7 +95,7 @@ fn main() {
     println!("  pending_events     : {} (was {})",
              save.pending_events.len(), pre_events);
     println!("  finance ledger     : {} clubs (was {})",
-             save.finance_ledger.per_club.len(), pre_ledger);
+             save.finance.clubs.len(), pre_ledger);
     println!("  played fixtures    : {} / {}",
              played_fixtures, save.season.fixtures.len());
     println!("  match reports      : {}", match_reports);
@@ -117,12 +117,12 @@ fn main() {
     }
 
     // Show finance range.
-    if !save.finance_ledger.per_club.is_empty() {
+    if !save.finance.clubs.is_empty() {
         let mut min_cash = i64::MAX;
         let mut max_cash = i64::MIN;
-        for s in save.finance_ledger.per_club.values() {
-            min_cash = min_cash.min(s.cash);
-            max_cash = max_cash.max(s.cash);
+        for s in save.finance.clubs.iter() {
+            min_cash = min_cash.min(s.balance);
+            max_cash = max_cash.max(s.balance);
         }
         println!();
         println!("  finance cash range : £{} to £{}",

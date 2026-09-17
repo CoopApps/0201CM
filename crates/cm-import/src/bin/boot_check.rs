@@ -73,7 +73,7 @@ fn main() {
     tick(&format!("      played fixtures : {} / {}",
                   played, save.season.fixtures.len()));
     tick(&format!("      finance ledger  : {} clubs",
-                  save.finance_ledger.per_club.len()));
+                  save.finance.clubs.len()));
     for n in save.notes.iter().filter(|n| n.contains("regen")) {
         tick(&format!("      {n}"));
     }

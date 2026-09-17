@@ -254,7 +254,7 @@ impl<'a> ClubView<'a> {
     /// it — via `__ftol` — into the runtime finance record's
     /// i64 cash at `+0x00`. After boot, live cash lives on the
     /// separate 0x167-byte runtime finance pool
-    /// (`RuntimeSaveGame.finance_ledger`), and `Club+0x65`
+    /// (`RuntimeSaveGame.finance`, a `FinanceBook`), and `Club+0x65`
     /// becomes dead data on the disk record.
     ///
     /// Verified against the shipped 2001-02 database: Real
@@ -277,12 +277,12 @@ impl<'a> ClubView<'a> {
     /// but misnamed; new code should read
     /// `initial_cash_seed()` for clarity and, when live cash is
     /// needed, look it up via
-    /// `RuntimeSaveGame.finance_ledger.get(club_id).cash`
+    /// `RuntimeSaveGame.finance.for_club(club_id).balance`
     /// instead.
     #[deprecated(
         since = "C15.1F",
         note = "reads the disk SEED at +0x65 only; for live \
-                runtime cash query RuntimeSaveGame.finance_ledger. \
+                runtime cash query RuntimeSaveGame.finance (FinanceBook). \
                 Rename to initial_cash_seed()."
     )]
     pub fn cash(&self) -> i32 { self.initial_cash_seed() }
