@@ -211,6 +211,35 @@ Interceptor.attach(VA.WRAPPED, {
 });
 
 rpc.exports = {
+    // Force a full repaint of the game window.
+    //
+    // CM 01/02 does NOT read synthetic mouse input — posting
+    // WM_MOUSEMOVE/WM_LBUTTONDOWN/WM_LBUTTONUP to its top-level HWND
+    // produces no redraw at all (verified twice, including with the
+    // window foregrounded), so it must poll the mouse directly. That
+    // made the click-driven capture path unusable.
+    //
+    // InvalidateRect + UpdateWindow does work: it drives the exe's own
+    // paint path and emits the complete primitive stream for whatever
+    // screen is currently displayed. Measured: 985 calls on the Next
+    // Match screen (803 line, 58 panel, 52 glyph, 46 wrapped_text, 19
+    // rect, 4 darken, 2 restore, 1 present).
+    //
+    // So: a human navigates to the state ONCE, then captures need no
+    // clicking and no timing window.
+    forceRedraw(hwnd) {
+        const user32 = Process.getModuleByName('user32.dll');
+        const InvalidateRect = new NativeFunction(
+            user32.getExportByName('InvalidateRect'),
+            'int', ['pointer', 'pointer', 'int'], 'stdcall');
+        const UpdateWindow = new NativeFunction(
+            user32.getExportByName('UpdateWindow'),
+            'int', ['pointer'], 'stdcall');
+        const h = ptr(hwnd);
+        InvalidateRect(h, NULL, 1);
+        UpdateWindow(h);
+        return { ok: true };
+    },
     start(screen) {
         if (capturing) return { ok: false, error: 'already capturing' };
         currentFixture = {

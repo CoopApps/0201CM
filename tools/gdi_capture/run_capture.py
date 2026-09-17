@@ -43,6 +43,30 @@ except ImportError:
 
 
 PROCESS_NAME = "cm0102_GDI.exe"
+
+
+def _main_window_hwnd(pid: int):
+    """The OS-reported top-level visible HWND for `pid`.
+
+    The exe's own `DAT_00b4d4e8` points at a different (inner) window,
+    so redraws must be driven through this one.
+    """
+    import ctypes
+
+    user32 = ctypes.windll.user32
+    found = [None]
+
+    def cb(h, _lparam):
+        owner = ctypes.c_ulong()
+        user32.GetWindowThreadProcessId(h, ctypes.byref(owner))
+        if owner.value == pid and user32.IsWindowVisible(h):
+            found[0] = h
+            return False
+        return True
+
+    proc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(cb)
+    user32.EnumWindows(proc, 0)
+    return found[0]
 SCRIPT_PATH = Path(__file__).with_name("capture.js")
 FONT_STRIDE = 0x1404   # 5124 bytes per font
 CHAR_RECORD_STRIDE = 0x14  # 20 bytes per char
@@ -118,6 +142,14 @@ def main() -> int:
     p.add_argument("screen", help="Human-readable screen label for the fixture")
     p.add_argument("output", type=Path, help="Fixture JSON path")
     p.add_argument("--process", default=PROCESS_NAME)
+    p.add_argument(
+        "--auto",
+        action="store_true",
+        help="Capture without human interaction: start, force a full "
+             "repaint via InvalidateRect+UpdateWindow, stop. Records the "
+             "complete primitive stream for whatever screen is currently "
+             "displayed. Navigate the game to the state first.",
+    )
     args = p.parse_args()
 
     device = frida.get_local_device()
@@ -133,16 +165,32 @@ def main() -> int:
     script.load()
     api = script.exports_sync
 
-    print(f"Attached to {args.process} (pid {pid}). Navigate the game to the screen state,")
-    print(f"then press Enter to start capture...", end=" ", flush=True)
-    input()
-    r = api.start(args.screen)
-    if not r.get("ok"):
-        sys.stderr.write(f"start failed: {r}\n")
-        return 3
-    print("Capturing. Trigger a redraw (click/hover/scroll), then press Enter to stop.", end=" ", flush=True)
-    input()
-    r = api.stop()
+    if args.auto:
+        # No human needed: force the exe's own paint path.
+        hwnd = _main_window_hwnd(pid)
+        if hwnd is None:
+            sys.stderr.write("could not resolve the game's top-level HWND\n")
+            return 5
+        print(f"Attached to {args.process} (pid {pid}); auto-capturing "
+              f"hwnd 0x{hwnd:x}...", flush=True)
+        r = api.start(args.screen)
+        if not r.get("ok"):
+            sys.stderr.write(f"start failed: {r}\n")
+            return 3
+        api.force_redraw(hex(hwnd))
+        time.sleep(1.5)
+        r = api.stop()
+    else:
+        print(f"Attached to {args.process} (pid {pid}). Navigate the game to the screen state,")
+        print(f"then press Enter to start capture...", end=" ", flush=True)
+        input()
+        r = api.start(args.screen)
+        if not r.get("ok"):
+            sys.stderr.write(f"start failed: {r}\n")
+            return 3
+        print("Capturing. Trigger a redraw (click/hover/scroll), then press Enter to stop.", end=" ", flush=True)
+        input()
+        r = api.stop()
     if not r.get("ok"):
         sys.stderr.write(f"stop failed: {r}\n")
         return 4
