@@ -19711,6 +19711,119 @@ impl RuntimeSaveGame {
             }
         }
 
+        // ---- Conference feeder inputs (C14.7 / Phase H).
+        //
+        // `english_conference_dispatch` promotes up to 3 clubs from the
+        // static feeder pools (358 Isthmian / 359 Southern / 360
+        // Northern) into the Conference, each from a distinct feeder,
+        // and pairs each with a Conference club going the other way.
+        // Both pools used to be passed empty, so the dispatch had
+        // nothing to work with and the bottom of the pyramid never
+        // moved: the Conference's relegated clubs stayed put and no
+        // feeder club was ever promoted.
+        //
+        // Candidates are the six-clause scan at asm 0x55ef1b..0x55ef49,
+        // packaged as `ConferenceFeederFilter::eligible`: an English
+        // club whose current comp is none of {357, 7, 8, 9, 10, 93}.
+        // `key80` is the `Club+0x80` reputation short the sort helper
+        // compares on.
+        let english_nation_id = world.core.clubs.iter()
+            .map(crate::typed_records::ClubView::new)
+            .find(|cv| cv.division_id() == Some(93))
+            .and_then(|cv| cv.nation_id())
+            .unwrap_or(-1);
+        let feeder_filter = crate::eng_second_fixtures::ConferenceFeederFilter {
+            bucket_357_comp_id: 357,
+            prem_comp_id: 7, d1_comp_id: 8, d2_comp_id: 9, d3_comp_id: 10,
+            conf_comp_id: 93,
+            english_nation_id,
+        };
+        let feeder_candidates: Vec<crate::eng_second_fixtures::FeederCandidate> =
+            world.core.clubs.iter()
+                .map(crate::typed_records::ClubView::new)
+                .filter_map(|cv| {
+                    let comp = cv.division_id()?;
+                    if comp < 0 { return None; }
+                    let nation = cv.nation_id()?;
+                    if !feeder_filter.eligible(comp as u32, nation) { return None; }
+                    Some(crate::eng_second_fixtures::FeederCandidate {
+                        club_id: cv.id(),
+                        current_comp_id: comp as u32,
+                        key80: cv.reputation() as i16,
+                    })
+                })
+                .collect();
+        // The Conference clubs going down are its bottom `n_auto_relegate`
+        // rows, the same positions the C12 stamper marks.
+        let conference_marked_for_relegation:
+            Vec<crate::eng_second_fixtures::ConferenceRelegatee> = {
+            let conf = &tables[4];
+            let n = conf.shape.n_auto_relegate();
+            conf.rows.iter().rev().take(n)
+                .map(|r| crate::eng_second_fixtures::ConferenceRelegatee {
+                    club_id: r.club_id,
+                })
+                .collect()
+        };
+
+        // ---- Conference-ABSENT fallback inputs (C14.7 / Phase I).
+        //
+        // Mutually exclusive with the feeder swap above: when the
+        // Conference is not simulated, one feeder club is promoted
+        // straight into the Third Division, gated on its stadium
+        // capacity. On a gate FAIL the Third Division's last club is
+        // reprieved (`+0x37 = 0xFE`) instead of going down.
+        //
+        // Built unconditionally — `english_conference_dispatch` picks
+        // exactly one branch from `conference_simulated`, so supplying
+        // both pools cannot make both fire.
+        let stadium_capacity_of = |cv: &crate::typed_records::ClubView| -> Option<u32> {
+            let sid = cv.home_stadium_id()?;
+            world.references.stadiums.iter()
+                .find(|s| s.id as i32 == sid)
+                .map(|s| s.capacity_total as u32)
+        };
+        let fallback_candidates: Vec<crate::eng_second_fixtures::FallbackCandidate> =
+            world.core.clubs.iter()
+                .map(crate::typed_records::ClubView::new)
+                .filter_map(|cv| {
+                    let comp = cv.division_id()?;
+                    if comp < 0 { return None; }
+                    let nation = cv.nation_id()?;
+                    if !feeder_filter.eligible(comp as u32, nation) { return None; }
+                    Some(crate::eng_second_fixtures::FallbackCandidate {
+                        club_id: cv.id(),
+                        key80: cv.reputation() as i16,
+                        stadium_current_capacity: stadium_capacity_of(&cv),
+                    })
+                })
+                .collect();
+        // Third Division clubs going down, in table order.
+        let third_div_relegatees: Vec<crate::eng_second_fixtures::ThirdDivRelegatee> = {
+            let third = &tables[3];
+            let n = third.shape.n_auto_relegate();
+            third.rows.iter().rev().take(n)
+                .map(|r| crate::eng_second_fixtures::ThirdDivRelegatee {
+                    club_id: r.club_id,
+                })
+                .collect()
+        };
+        // Stadium gate inputs: the Conference champion's capacity (the
+        // club that would come up) and the Third Division's last club
+        // (the one reprieved if the gate fails). Both were `None`, so
+        // the gate never evaluated either branch.
+        let conference_champion_capacity = tables[4].rows.first()
+            .and_then(|r| {
+                world.core.clubs.iter()
+                    .map(crate::typed_records::ClubView::new)
+                    .find(|cv| cv.id() == r.club_id)
+                    .and_then(|cv| stadium_capacity_of(&cv))
+            });
+        let third_div_last_place_club_id =
+            tables[3].rows.last().map(|r| r.club_id);
+        // Read before `tables` is moved into the input below.
+        let conference_simulated = !tables[4].rows.is_empty();
+
         // ---- Person slots per club, from the boot contract pool.
         //
         // `PersonSlot` carries exactly the two contract bytes the
@@ -19759,17 +19872,22 @@ impl RuntimeSaveGame {
                 prem: 7, first: 8, second: 9, third: 10, conference: 93,
             },
             tables,
-            conference_simulated: true,
+            // Whether the Conference is actually being simulated in
+            // THIS game, not an assumption. Drives the mutually
+            // exclusive Phase H (feeder swap) vs Phase I (fallback
+            // promotion) dispatch; hardcoding `true` would silently
+            // pick the feeder path in a game without a Conference.
+            conference_simulated,
             third_conference_stadium: ThirdConferenceStadiumInputs {
-                champion_stadium_current_capacity: None,
+                champion_stadium_current_capacity: conference_champion_capacity,
                 required_capacity_a: 6_000,
                 required_capacity_b: 6_000,
-                third_div_last_place_club_id: None,
+                third_div_last_place_club_id,
             },
-            feeder_candidates: &[],
-            conference_marked_for_relegation: &[],
-            fallback_candidates: &[],
-            third_div_relegatees: &[],
+            feeder_candidates: &feeder_candidates,
+            conference_marked_for_relegation: &conference_marked_for_relegation,
+            fallback_candidates: &fallback_candidates,
+            third_div_relegatees: &third_div_relegatees,
             per_club_person_slots,
             reserve_of: Default::default(),
             comp_stadium_templates: Default::default(),

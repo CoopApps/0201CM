@@ -242,6 +242,80 @@ fn live_year_end_promotes_a_playoff_winner() {
     }
 }
 
+/// Phase H: the Conference↔feeder edge must move clubs.
+///
+/// `english_conference_dispatch` promotes up to 3 clubs from the static
+/// feeder pools (358/359/360) into the Conference and pairs each with a
+/// Conference club going down. Both input pools used to be passed
+/// empty, so the bottom of the pyramid never moved at all.
+#[test]
+fn live_year_end_moves_the_conference_feeder_edge() {
+    let Some((mut world, mut save)) = boot_england() else { return };
+
+    let division_of = |w: &World, club_id: u32| -> Option<i32> {
+        w.core
+            .clubs
+            .iter()
+            .map(cm_domain::typed_records::ClubView::new)
+            .find(|v| v.id() == club_id)
+            .and_then(|v| v.division_id())
+    };
+
+    // Snapshot the feeder pools and the Conference.
+    let mut before: std::collections::BTreeMap<u32, i32> = Default::default();
+    for comp in [93u32, 358, 359, 360] {
+        for (cid, _) in world.club_members_of_competition(comp) {
+            if let Some(d) = division_of(&world, cid) {
+                before.insert(cid, d);
+            }
+        }
+    }
+
+    let eng = [7u32, 8, 9, 10, 93];
+    for f in save.season.fixtures.iter_mut() {
+        if eng.contains(&f.competition_id) {
+            f.status = cm_domain::HeadlessFixtureStatus::Played;
+        }
+    }
+    save.date.month = 6;
+    let mut rng = cm_domain::game_rng::GameRng::new(0xC15_0000);
+    save.run_english_year_end(&mut world, &mut rng);
+
+    let promoted: Vec<(u32, i32)> = before
+        .iter()
+        .filter_map(|(cid, old)| {
+            let now = division_of(&world, *cid)?;
+            // A feeder club that has come up into the Conference.
+            if [358, 359, 360].contains(old) && now == 93 {
+                Some((*cid, *old))
+            } else {
+                None
+            }
+        })
+        .collect();
+    for (cid, from) in &promoted {
+        eprintln!("feeder club {cid}: comp {from} -> 93");
+    }
+    assert!(
+        !promoted.is_empty(),
+        "at least one feeder club must be promoted into the Conference — \
+         an empty result means the feeder pools never reached the dispatch"
+    );
+    // Each promotion is paired 1:1 with a Conference club going the
+    // other way, so the Conference cannot simply grow.
+    let demoted = before
+        .iter()
+        .filter(|(cid, old)| {
+            **old == 93 && division_of(&world, **cid).map_or(false, |n| n != 93)
+        })
+        .count();
+    assert_eq!(
+        demoted,
+        promoted.len(),
+        "each feeder promotion must be paired with a Conference club going down"
+    );
+}
+
 /// Phase D: the season roll must produce a SECOND season of English
 /// fixtures.
 ///

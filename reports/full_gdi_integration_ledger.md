@@ -289,6 +289,49 @@ promotion/relegation code at all, and comps 7/8/9/10/93 are not in
 
 State: **LIVE + EXACT.**
 
+## 0g. PHASE H / I AUDIT — the Conference edge (2026-09-17)
+
+### Before: the bottom of the pyramid never moved
+
+`run_english_year_end` passed `feeder_candidates`,
+`conference_marked_for_relegation`, `fallback_candidates` and
+`third_div_relegatees` **all empty**, and both stadium-gate inputs as
+`None`. `english_conference_dispatch` therefore had nothing to dispatch:
+no feeder club was ever promoted into the Conference, no Conference club
+was ever relegated out of it, and the stadium gate never evaluated
+either branch. `conference_simulated` was additionally hardcoded `true`,
+which would have picked the feeder path even in a game with no
+Conference.
+
+State before: **EXACT HELPER EXISTS BUT NOT LIVE** for both the active
+and fallback paths.
+
+### After: both paths live, still mutually exclusive
+
+| Input | Now built from |
+| --- | --- |
+| `feeder_candidates` | The six-clause scan at asm `0x55ef1b..0x55ef49`, packaged as `ConferenceFeederFilter::eligible`: English clubs whose comp is none of {357, 7, 8, 9, 10, 93}. `key80` = `Club+0x80` reputation. |
+| `conference_marked_for_relegation` | The Conference table's bottom `n_auto_relegate` rows — the same positions the C12 stamper marks. |
+| `fallback_candidates` | Same scan, plus each club's stadium capacity for the gate. |
+| `third_div_relegatees` | Third Division's bottom `n_auto_relegate` rows. |
+| `champion_stadium_current_capacity` | The Conference champion's stadium capacity (the club that would come up). |
+| `third_div_last_place_club_id` | Third Division's last row — the club reprieved to `0xFE` on a gate FAIL. |
+| `conference_simulated` | Whether the Conference table actually has rows in THIS game, not an assumption. |
+
+Mutual exclusivity is preserved by construction: both pools are built
+unconditionally, and `english_conference_dispatch` selects exactly one
+branch from `conference_simulated`, so supplying both cannot make both
+fire.
+
+Proven by `live_year_end_moves_the_conference_feeder_edge`: three feeder
+clubs are promoted into the Conference — **one from each distinct
+feeder** (358, 359, 360), which is the exe's dedupe-by-competition rule
+— and the number of Conference clubs going down equals the number
+coming up, so the pairing is 1:1 and the division cannot grow.
+
+State: **LIVE + EXACT** (active path measured; fallback path live but
+not exercised in an England game, where the Conference is simulated).
+
 ## 1. Foundations (pre-C10 and cross-cutting)
 
 | System | Canonical Rust | Status | Notes |
