@@ -1282,6 +1282,98 @@ mod tests {
         }
     }
 
+    // ---- Year-end seam (single-store consolidation, ledger §12a) ----
+
+    /// `year_end_state` reads the LIVE balance. This is the property the
+    /// consolidation exists for: the tick debits `balance`, and year-end
+    /// stadium affordability must see that, not a separately-seeded copy.
+    #[test]
+    fn year_end_state_reads_live_balance_after_tick_mutation() {
+        let mut book = FinanceBook::new();
+        book.clubs.push(club(30_000_000, 0, 100));
+        assert_eq!(book.year_end_state(1).cash, 30_000_000);
+        // Any tick-side mutation of balance is visible immediately.
+        book.for_club_mut(1).unwrap().balance -= 1_250_000;
+        assert_eq!(book.year_end_state(1).cash, 28_750_000);
+        // Absent club -> all-zero snapshot (mirrors the old ledger's get).
+        let z = book.year_end_state(999);
+        assert_eq!((z.cash, z.season_misc_expense, z.lifetime_misc_expense,
+                    z.season_subsidy_income, z.lifetime_subsidy_income),
+                   (0, 0, 0, 0, 0));
+    }
+
+    /// `apply_year_end_write` lands every field of a PendingFinanceWrite on
+    /// the book and `year_end_state` reads them back — the FinanceBook
+    /// analogue of c15_1a_trace_matches_world_ledger_state_after_apply.
+    #[test]
+    fn apply_year_end_write_round_trips_all_five_fields() {
+        use crate::c15_1_world_apply::PendingFinanceWrite;
+        let mut book = FinanceBook::new();
+        book.clubs.push(club(50_000_000, 0, 100));
+        let w = PendingFinanceWrite {
+            club_id: 1,
+            new_cash: 42_250_000,
+            new_season_misc_expense: 9_750_000,
+            new_lifetime_misc_expense: 17_750_000,
+            new_season_subsidy_income: 100_000,
+            new_lifetime_subsidy_income: 500_000,
+        };
+        book.apply_year_end_write(&w);
+        let s = book.year_end_state(1);
+        assert_eq!(s.cash, w.new_cash);
+        assert_eq!(s.season_misc_expense, w.new_season_misc_expense);
+        assert_eq!(s.lifetime_misc_expense, w.new_lifetime_misc_expense);
+        assert_eq!(s.season_subsidy_income, w.new_season_subsidy_income);
+        assert_eq!(s.lifetime_subsidy_income, w.new_lifetime_subsidy_income);
+        // The write went to `balance` itself (single store, no shadow).
+        assert_eq!(book.for_club(1).unwrap().balance, 42_250_000);
+        // Other ClubFinance state is untouched by a year-end write.
+        assert_eq!(book.for_club(1).unwrap().board_confidence, 100);
+    }
+
+    /// A write for a club the book doesn't hold creates it rather than
+    /// dropping the write (only reachable in tests — boot seeds all clubs).
+    #[test]
+    fn apply_year_end_write_creates_absent_club() {
+        use crate::c15_1_world_apply::PendingFinanceWrite;
+        let mut book = FinanceBook::new();
+        assert!(book.for_club(7).is_none());
+        book.apply_year_end_write(&PendingFinanceWrite {
+            club_id: 7, new_cash: -5, new_season_misc_expense: 1,
+            new_lifetime_misc_expense: 2, new_season_subsidy_income: 3,
+            new_lifetime_subsidy_income: 4,
+        });
+        let c = book.for_club(7).expect("created on demand");
+        assert_eq!((c.balance, c.season_misc_expense, c.lifetime_misc_expense,
+                    c.season_subsidy_income, c.lifetime_subsidy_income),
+                   (-5, 1, 2, 3, 4));
+        assert_eq!(book.clubs.len(), 1);
+    }
+
+    /// `year_end_states` snapshots exactly the requested ids, in a map.
+    #[test]
+    fn year_end_states_snapshots_requested_clubs_only() {
+        let mut book = FinanceBook::new();
+        book.clubs.push(club(10, 0, 50));
+        let mut other = club(20, 0, 50); other.club_id = 2; book.clubs.push(other);
+        let m = book.year_end_states([2u32, 1, 42]);
+        assert_eq!(m.len(), 3);
+        assert_eq!(m[&1].cash, 10);
+        assert_eq!(m[&2].cash, 20);
+        assert_eq!(m[&42].cash, 0); // absent -> zeros, still present as a key
+    }
+
+    /// seed_from zero-inits the four year-end accumulators (the exe
+    /// zero-inits the whole 0x167 record before the cash seed lands).
+    #[test]
+    fn seed_from_zeroes_year_end_accumulators() {
+        let c = ClubFinance::seed_from(9, 4000, false, 1_000_000, false);
+        assert_eq!(c.balance, 1_000_000);
+        assert_eq!((c.season_misc_expense, c.lifetime_misc_expense,
+                    c.season_subsidy_income, c.lifetime_subsidy_income),
+                   (0, 0, 0, 0));
+    }
+
     #[test]
     fn half_time_oranges_always_out_of_scope() {
         let c = club(1_000_000_000, 100_000, 100);

@@ -151,9 +151,9 @@ superseded hypotheses live in the individual reports.
 | **Scouting reports** | `scouting.rs` | **PORTED-APPROXIMATE — deliberately NOT wired.** `ScoutBook::weekly_tick` exists but its own doc says it is not a faithful port: it uses invented 25/50/75/100 coverage thresholds (the exe scout cluster has no such literals) and an integrative weeks-watched model the exe doesn't have (the exe is snapshot-based). Wiring it would reintroduce a silent approximation. Blocked on decoding staff+0x113 semantics + `FUN_00489790` (see `reports/scout_knowledge_formula_decode.md`). Also note: fog is a human-display filter only — AI transfers see full CA/PA regardless. | Decode first (Medium), then wire |
 | **Player regen at year-end** | `player_regen.rs` | Boot-time only; no annual youth intake | Medium |
 | **Aging / retirement** | Task #48 says `in_progress`; no code | Not archaeologised → needs decode first | Large (archaeology + port + wire) |
-| **TV / prize money** | Task #49 `in_progress`; no code | Not archaeologised → needs decode first | Large |
-| **Weekly wage accumulator** | Referenced in transfer.rs but no tick action | Cascade fn `FUN_00586EC0` decoded, not wired to tick | Medium |
-| **Board debt payment** | Referenced in finance.rs | `FUN_00587C40` decoded, not wired | Medium |
+| **Gate / TV / prize income per match** (`FUN_00584790` + `FUN_00585060`) | `FinanceBook::record_match_income(home, away, is_cup)`, fired per played fixture | **WIRED-APPROXIMATE — correction to an earlier row that said "no code".** The `FUN_00584790` gate form (`rand(250)+rand(250)` league / `rand(400|200)` cup, × `(rep/500+3|4)`) is ported but only as the *fallback*; the live path uses an invented attendance model ("60% avg + 40% draw between shipped min/max, × ticket = rep/500 + 15|20") layered over it, plus a local `MatchRng` keyed by club ids (§12c). Which of the two is exe-exact needs `00584790.c` re-read; do not flip blindly. Month accumulators `month_gate` / `month_tv_prize` on `ClubFinance` mirror the exe's +0x110 block. | Decode-check `FUN_00584790` gate arithmetic (Small) + RNG source (§12c) |
+| **Weekly wages** (`FUN_00586EC0:363-421`) | `finance::FinanceBook::pay_weekly_wages`, fired every Wednesday from `hook_weekly_wednesday` | **WIRED — correction to an earlier row that said "not wired".** It is a port: the exe draws a reputation-banded weekly amount (three tiers by balance-vs-reputation), it does NOT sum contract wages (see `reports/weekly_wage_bill_decode.md`), so a contract-sum replacement would be less faithful. Deviations: (1) uses a **local `MatchRng::new(0x0058_6ec0)`** re-seeded with the same constant every week → identical draw sequence each Wednesday (exe: shared pool rand `FUN_008fc4f0`) — see §12c; (2) `takeover_pending` stands in for the +0x82 chairman-boost flag. | Fix RNG source (§12c) |
+| **Board debt payment / takeover / stadium-share** (`FUN_00587C40`, `FUN_005884A0`, `FUN_00586EC0:56-114`) | `FinanceBook::board_debt_payment`, `takeover_check`, `stadium_share_transfers`, monthly `tick_month_board`; fired from the monthly cascade in the tick | **WIRED — correction to an earlier row.** Ported with line-cited gates. Deviation: the cascade order is "approximated with the ported fns available" (comment at the call site) and it draws from a local `MatchRng::new(seed ^ 0xA5A5A5A5)` — §12c. | Fix RNG source (§12c) |
 | **Domestic cup rounds 1-8** | `domestic_cup.rs` | Fixed this session for FA Cup 351 + League Cup 352. FA Trophy 94, Vans 354, French Cup 335, etc. still need round dates. | Small each |
 | **`FUN_005121A0` full loader trace** | | Partially traced in C15.1F; full loader-chain wiring deferred | Medium |
 
@@ -217,6 +217,29 @@ is no longer persisted anywhere. C15.1A arithmetic untouched.
   by ~2 orders of magnitude. Not a correctness defect; blocks the C15.1G
   full-season differential in practice.
 
+## 12c. Finance ticks use LOCAL RNGs (OPEN, found 2026-09-17)
+
+The directive's RNG rule ("use the shared session `GameRng`; do not
+instantiate local RNGs") is violated across the finance tick:
+
+| Site | RNG | Effect |
+| --- | --- | --- |
+| `pay_weekly_wages` | `MatchRng::new(0x0058_6ec0)` — same constant every call | **Identical draw sequence every Wednesday** for every club, forever. Observable. |
+| `record_match_income` | `MatchRng::new(0x0058_4790 ^ (home<<16) ^ away)` | Deterministic per fixture pairing; repeats for the same pairing each season. |
+| monthly cascade (`board_debt_payment`, `takeover_check`) | `MatchRng::new(seed ^ 0xA5A5A5A5)`, seed from elapsed_days/year/month | Deterministic per calendar month. |
+| `tick_month_board(seed)` | same seed family | same |
+
+The exe draws all of these from the shared pool rand (`FUN_008fc4f0`),
+which the finance cluster calls directly (see the `FUN_008fc4f0(0x32)`
+etc. calls in `00583fc0.c`). Fix: thread the session `GameRng` (now
+persisted as `RuntimeSaveGame.session_rng_state`) into the finance tick
+(`tick_cm_phase` must bootstrap/persist it the way `tick_days_bound`
+does) and pass `&mut impl FnMut(i32) -> i32` built from `rand_mod` to
+these methods. Note this removes the repeating-sequence defect but does
+NOT by itself make the pool stream exe-exact — that needs every daily
+pool consumer (form rolls in `FUN_005B6F10`, regen scheduling, …) ported
+in the exe's order.
+
 ## 12. Known deviations (semantic parity, not byte-exact)
 
 * Person mailbox: DOB-age routing + 100-entry ring + 0xDF stride not modelled. Semantics preserved.
@@ -239,7 +262,7 @@ PROVISIONAL to STATE-EXACT for observed branches. Not run
 2. **Player regen annual intake** at end-of-season (medium; the primitive is there).
 3. **Scouting per-tick dispatch** (medium).
 4. **Aging / retirement archaeology + port** (needs new decode).
-5. **TV / prize money archaeology + port** (needs new decode).
+5. **Match income**: already wired (`record_match_income`); remaining work is a decode-check of the `FUN_00584790` gate arithmetic vs the attendance override, then the §12c RNG fix.
 6. **Transfer window tick** (big — full AI port).
 7. **Friendlies arranging AI** (big — ~35 helpers).
 
@@ -255,7 +278,7 @@ PROVISIONAL to STATE-EXACT for observed branches. Not run
 
 - Transfer window logic.
 - Scouting per-tick.
-- Aging / retirement / TV / prize money — archaeology not done.
+- Aging / retirement — archaeology not done. (TV/prize: wired, see §10; only the gate-arithmetic check remains.)
 - Friendlies AI.
 - Non-English nations' year-end pipelines (only Traditional English is wired end-to-end).
 - The C15.1G runtime differential (Frida capture unstable).
