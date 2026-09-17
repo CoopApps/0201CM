@@ -883,7 +883,20 @@ pub fn try_render_club_preview_faithful(
         let mut c: Vec<String> = vec![String::new(); 13];
         // Col 2 = Name — pulled from SquadPlayer.name in the renderer;
         // leave the vector cell empty to avoid double-painting.
-        let value = pv.value();
+        //
+        // Value: read the CONTRACT POOL, not the raw shipped-DB value.
+        // The pool (contract_init.rs) already fills in a computed value
+        // (compute_value from wage/CA/PA/age) for the ~majority of
+        // players whose shipped record has value=0 — a contracted player
+        // always has a value. Reading pv.value() directly showed £0 for
+        // everyone the DB didn't happen to pre-value. Falls back to the
+        // PlayerView value only when the pool has no record for the
+        // player (e.g. a truly contract-less person). This mirrors the
+        // Traditional-view path below.
+        let value = world.contracts.as_ref()
+            .and_then(|p| p.contract_for_staff(person.id))
+            .map(|r| r.value)
+            .unwrap_or_else(|| pv.value());
         c[12] = format_money_k(value as i64);
         match mode {
             Traditional => unreachable!(),
