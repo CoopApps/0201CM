@@ -2561,12 +2561,12 @@ impl ApplicationHandler for App {
                                 | Screen::LeagueTable { .. }
                                 | Screen::PlayerProfile { .. }
                                 | Screen::ClubFixtures { .. }
+                                | Screen::ClubFixturesTab { .. }
                                 | Screen::AutoRoute { .. }
                                 | Screen::SelectNationality { .. }
                                 | Screen::SelectClub { .. }
                                 | Screen::ClubPreview { .. }
                                 | Screen::ClubTransfers { .. }
-                                | Screen::ClubFixtures { .. }
                         );
                         if same || in_game {
                             self.on_release(self.cursor.0, self.cursor.1);
