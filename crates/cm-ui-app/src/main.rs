@@ -299,6 +299,34 @@ pub enum ClubPreviewButton {
     BottomTab(u8),   // 0..=4
 }
 
+/// The five club-screen top tabs, y 80..115, at their captured x ranges
+/// (see `fixtures/club_squad_screen/structure.txt`).
+///   0 Squad · 1 Transfers · 2 Next Match · 3 Fixtures · 4 General Info
+const CLUB_TOP_TABS: [(i32, i32); 5] = [
+    (100, 237), // Squad
+    (239, 375), // Transfers
+    (377, 513), // Next Match
+    (515, 651), // Fixtures
+    (653, 790), // General Info
+];
+
+/// Which top tab a click landed on, or `None`.
+///
+/// One hit-test shared by every club screen. Before this, each screen
+/// wired only a couple of tabs by hand, so navigation was one-way and
+/// full of dead tabs — you could reach Transfers from Squad but not the
+/// reverse from some screens, and Next Match / General Info did nothing
+/// anywhere.
+fn club_top_tab_hit(x: i32, y: i32) -> Option<u8> {
+    if y < 80 || y > 115 {
+        return None;
+    }
+    CLUB_TOP_TABS
+        .iter()
+        .position(|(x0, x1)| x >= *x0 && x <= *x1)
+        .map(|i| i as u8)
+}
+
 /// A working game instance — held in memory, never auto-written. The master
 /// database (`rust-db`) is LOCKED and read-only; a new game produces one of
 /// these in memory, and it only becomes a file when the user explicitly saves.
@@ -334,6 +362,10 @@ struct App {
     /// keyed only on the database, not on the league selection, so one run
     /// per loaded database is equivalent to the exe's per-new-game run.
     world_init_done: bool,
+    /// Active scrollbar thumb drag: the offset from the thumb's top to
+    /// where the button went down, so the thumb does not jump under the
+    /// cursor. `None` when not dragging.
+    sb_drag: Option<i32>,
     /// The current in-memory working game (temporary until saved). `None` on
     /// the menu screens before a game is started.
     game: Option<GameInstance>,
@@ -999,6 +1031,11 @@ impl App {
         let mut goto_club_squad: Option<cm_domain::ManagerClubChoice> = None;
         // Deferred: Fixtures top tab -> switch to ClubFixtures.
         let mut goto_club_fixtures: Option<cm_domain::ManagerClubChoice> = None;
+        // Deferred: a club-screen top tab was clicked. `(tab_index, choice)`.
+        // Handled uniformly for every club screen so navigation is never
+        // one-way. Tabs 2 (Next Match) and 4 (General Info) have no screen
+        // yet and surface a status line rather than being dead clicks.
+        let mut goto_top_tab: Option<(u8, cm_domain::ManagerClubChoice)> = None;
         // Deferred: a News control without a ported target was clicked.
         let mut news_note = false;
         // Deferred: run the exe's post-league-selection init pass
@@ -1291,12 +1328,8 @@ impl App {
                 } else if x >= FILTER_BUTTON_RECT.0 && x <= FILTER_BUTTON_RECT.2
                        && y >= FILTER_BUTTON_RECT.1 && y <= FILTER_BUTTON_RECT.3 {
                     *filter_menu_open = true;
-                } else if y >= 80 && y <= 115 && x >= 239 && x <= 375 {
-                    // Top tab #1 — Transfers.
-                    goto_club_transfers = Some(choice.clone());
-                } else if y >= 80 && y <= 115 && x >= 515 && x <= 651 {
-                    // Top tab #3 — Fixtures.
-                    goto_club_fixtures = Some(choice.clone());
+                } else if let Some(tab) = club_top_tab_hit(x, y) {
+                    goto_top_tab = Some((tab, choice.clone()));
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
@@ -1377,12 +1410,8 @@ impl App {
                 } else if x >= VIEW_BUTTON_RECT.0 && x <= VIEW_BUTTON_RECT.2
                        && y >= VIEW_BUTTON_RECT.1 && y <= VIEW_BUTTON_RECT.3 {
                     *view_menu_open = true;
-                } else if y >= 80 && y <= 115 && x >= 100 && x <= 237 {
-                    // Top tab #0 — Squad. Back to ClubPreview.
-                    goto_club_squad = Some(choice.clone());
-                } else if y >= 80 && y <= 115 && x >= 515 && x <= 651 {
-                    // Top tab #3 — Fixtures.
-                    goto_club_fixtures = Some(choice.clone());
+                } else if let Some(tab) = club_top_tab_hit(x, y) {
+                    goto_top_tab = Some((tab, choice.clone()));
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
@@ -1421,10 +1450,8 @@ impl App {
                 } else if x >= JUMP_BUTTON_RECT.0 && x <= JUMP_BUTTON_RECT.2
                        && y >= JUMP_BUTTON_RECT.1 && y <= JUMP_BUTTON_RECT.3 {
                     *jump_menu_open = true;
-                } else if y >= 80 && y <= 115 && x >= 100 && x <= 237 {
-                    goto_club_squad = Some(choice.clone());
-                } else if y >= 80 && y <= 115 && x >= 239 && x <= 375 {
-                    goto_club_transfers = Some(choice.clone());
+                } else if let Some(tab) = club_top_tab_hit(x, y) {
+                    goto_top_tab = Some((tab, choice.clone()));
                 } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
@@ -1614,6 +1641,27 @@ impl App {
         }
         if goto_reopen_select_team {
             self.goto_select_club();
+        }
+        // A top tab was clicked on some club screen — route it. The
+        // current tab routes to itself harmlessly (a repaint), so we
+        // don't special-case "already here".
+        if let Some((tab, choice)) = goto_top_tab {
+            match tab {
+                0 => goto_club_squad = Some(choice),
+                1 => goto_club_transfers = Some(choice),
+                3 => goto_club_fixtures = Some(choice),
+                2 => {
+                    // Next Match: decoded (reports/next_match_screen_decode.md)
+                    // but the renderer is not built yet.
+                    self.status = Some(
+                        "Next Match screen — not yet built".to_string());
+                }
+                4 => {
+                    self.status = Some(
+                        "General Info screen — not yet built".to_string());
+                }
+                _ => {}
+            }
         }
         if let Some(choice) = goto_club_fixtures {
             self.screen = Screen::ClubFixturesTab {
@@ -1970,6 +2018,91 @@ impl App {
     /// of the contract pool (the C15.1B clause writes, C15.1C squad-position
     /// writes and C15.1E person-news appends all early-return on a missing
     /// pool) silently did nothing.
+    /// The current screen's scrollbar, if it has one:
+    /// `(bar, total_rows, visible_rows, current_scroll)`.
+    ///
+    /// `visible_rows` must match what the RENDERER actually paints, so
+    /// the thumb agrees with the list under it.
+    fn scroll_ctx(&self) -> Option<(cm_render::scrollbar::Scrollbar, usize, usize, usize)> {
+        use cm_render::scrollbar::Scrollbar;
+        match &self.screen {
+            Screen::ClubFixturesTab { choice, scroll, .. } => {
+                let total = self.game.as_ref().map(|g| {
+                    g.save.season.fixtures.iter()
+                        .filter(|f| f.home_club_id == choice.club_id
+                                 || f.away_club_id == choice.club_id)
+                        .count()
+                }).unwrap_or(0);
+                Some((Scrollbar::SQUAD, total, 14, *scroll))
+            }
+            Screen::ClubPreview { choice, scroll, .. } => {
+                let total = self.world.as_ref().map(|w| {
+                    w.staff.type6.iter()
+                        .filter(|p| p.current_club_id() == Some(choice.club_id))
+                        .filter(|p| cm_domain::typed_records::PlayerView::from_split(
+                            p.id, &p.body).is_player())
+                        .count()
+                }).unwrap_or(0);
+                Some((Scrollbar::SQUAD, total, 28, *scroll))
+            }
+            Screen::SelectClub { clubs, scroll, .. } => {
+                Some((Scrollbar::CLUB_SELECT, clubs.len(), 34, *scroll))
+            }
+            _ => None,
+        }
+    }
+
+    /// Write a new scroll position back to the current screen.
+    fn set_scroll(&mut self, value: usize) {
+        match &mut self.screen {
+            Screen::ClubFixturesTab { scroll, .. }
+            | Screen::ClubPreview { scroll, .. }
+            | Screen::SelectClub { scroll, .. } => *scroll = value,
+            _ => {}
+        }
+    }
+
+    /// Handle a left-button press on a scrollbar. Returns true if the
+    /// press was consumed (so normal hit-testing is skipped).
+    ///
+    /// Row steps for the arrows and page regions use the same units the
+    /// wheel handler uses for that screen: the Squad and Club-select
+    /// grids are two columns, so one visual row is two entries.
+    fn scrollbar_press(&mut self, x: i32, y: i32) -> bool {
+        use cm_render::scrollbar::Hit;
+        let Some((bar, total, visible, scroll)) = self.scroll_ctx() else { return false };
+        let Some(hit) = bar.hit(x, y, total, visible, scroll) else { return false };
+        let two_col = matches!(self.screen,
+            Screen::ClubPreview { .. } | Screen::SelectClub { .. });
+        let step = if two_col { 2 } else { 1 };
+        let page = visible.max(1);
+        let max = total.saturating_sub(visible);
+        let next = match hit {
+            Hit::Up => scroll.saturating_sub(step),
+            Hit::Down => (scroll + step).min(max),
+            Hit::PageUp => scroll.saturating_sub(page),
+            Hit::PageDown => (scroll + page).min(max),
+            Hit::Thumb { grab } => {
+                self.sb_drag = Some(grab);
+                scroll
+            }
+        };
+        self.set_scroll(next);
+        if let Some(w) = self.window.as_ref() { w.request_redraw(); }
+        true
+    }
+
+    /// Continue an in-progress thumb drag.
+    fn scrollbar_drag_to(&mut self, y: i32) {
+        let Some(grab) = self.sb_drag else { return };
+        let Some((bar, total, visible, scroll)) = self.scroll_ctx() else { return };
+        let next = bar.scroll_for_thumb_top(y - grab, total, visible);
+        if next != scroll {
+            self.set_scroll(next);
+            if let Some(w) = self.window.as_ref() { w.request_redraw(); }
+        }
+    }
+
     fn ensure_world_initialised(&mut self) -> bool {
         if self.world.is_none() {
             let dir = std::env::var("CM_RUST_DB")
@@ -2178,6 +2311,7 @@ impl Default for App {
             screen: Screen::Setup,
             world: None,
             world_init_done: false,
+            sb_drag: None,
             game: None,
             menu_open: None,
             status: None,
@@ -2224,6 +2358,12 @@ impl ApplicationHandler for App {
             }
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor = (position.x as i32, position.y as i32);
+                // A thumb drag tracks the pointer even outside the bar's
+                // x range, as GDI scrollbars do.
+                if self.sb_drag.is_some() {
+                    self.scrollbar_drag_to(self.cursor.1);
+                    return;
+                }
                 // Any open dropdown menu needs the hover-yellow to
                 // follow the mouse — force a redraw. All other cursor
                 // moves cost nothing (no re-render).
@@ -2374,6 +2514,11 @@ impl ApplicationHandler for App {
             {
                 match state {
                     winit::event::ElementState::Pressed => {
+                        // Scrollbar first: it owns its 20px column, and a
+                        // press there must not also fire a list-row hit.
+                        if self.scrollbar_press(self.cursor.0, self.cursor.1) {
+                            return;
+                        }
                         self.pressed = self.hit_test_at(self.cursor.0, self.cursor.1);
                         // Wake the window so the pressed-invert bevel
                         // paints immediately instead of waiting for
@@ -2382,6 +2527,11 @@ impl ApplicationHandler for App {
                         if !matches!(self.pressed, Pressed::None) {
                             if let Some(w) = self.window.as_ref() { w.request_redraw(); }
                         }
+                    }
+                    winit::event::ElementState::Released if self.sb_drag.is_some() => {
+                        // End of a thumb drag — consumes the release so
+                        // it cannot also count as a click on the list.
+                        self.sb_drag = None;
                     }
                     winit::event::ElementState::Released => {
                         // Only fire the action if release lands on the same target as press;

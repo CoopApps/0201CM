@@ -576,13 +576,23 @@ const NUM_R:  (i32, i32) = (435, 467);
 const NAME_R: (i32, i32) = (497, 665);
 const POS_R:  (i32, i32) = (667, 756);
 
-// Scrollbar
-const SB_X0: i32 = 759;
-const SB_X1: i32 = 778;
-const SB_TOP_ARROW: (i32, i32) = (198, 217);
-const SB_BOT_ARROW: (i32, i32) = (473, 492);
-const SB_TRACK_Y0: i32 = 218;
-const SB_TRACK_Y1: i32 = 472;
+// Scrollbar geometry now lives in `crate::scrollbar` —
+// `Scrollbar::SQUAD` is this screen's bar, (759,198)-(778,492).
+
+/// How many rows the bar is scrolling, and how many are on screen.
+///
+/// The Squad tab paints two columns of 14; every other tab (Fixtures,
+/// Transfers) paints a single 14-row body whose length the caller
+/// reports via `external_body_row_count`.
+pub fn scroll_extent(state: &SquadState<'_>) -> (usize, usize) {
+    if state.top_tab_active == 0 {
+        (state.players.len(), VISIBLE_ENTRIES)
+    } else if state.external_body_row_count > 0 {
+        (state.external_body_row_count, 14)
+    } else {
+        (state.players.len(), 14)
+    }
+}
 
 // Bottom tab bar. Slot 3 (currently "Conference" for Chester) is the
 // competition menu — its label is DYNAMIC per club (Premier League for
@@ -868,7 +878,7 @@ pub fn render_squad(
                 &body_font, &c_string(subtitle_owned.as_bytes()),
                 INK_YELLOW, TS_CENTRE, -1);
 
-            let list_right = SB_X0 - 1;
+            let list_right = crate::scrollbar::X0 - 1;
             let slices = pack.slices(LIST_X0, list_right);
 
             // Column header row — grey bevel + cyan labels, ~22 px
@@ -1070,27 +1080,19 @@ pub fn render_squad(
     // Fixtures signals its row count separately since its body isn't
     // painted through state.players.
     let want_scrollbar = want_scrollbar || state.external_body_row_count > 14;
-    if !want_scrollbar {
-        // Skip all scrollbar geometry — leave the body area clean.
-    } else {
-    draw_panel(surface, SB_X0, SB_TOP_ARROW.0, SB_X1, SB_TOP_ARROW.1,
-        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
-    draw_panel(surface, SB_X0, SB_TRACK_Y0, SB_X1, SB_TRACK_Y1,
-        P_DARKEN, 0, 0, palette);
-    let total = state.players.len().max(1);
-    let track_h = (SB_TRACK_Y1 - SB_TRACK_Y0).max(1) as f32;
-    let visible_frac = (VISIBLE_ENTRIES as f32 / total as f32).min(1.0);
-    let thumb_h = (track_h * visible_frac).max(20.0).min(track_h) as i32;
-    let max_scroll = total.saturating_sub(VISIBLE_ENTRIES);
-    let thumb_y0 = if max_scroll == 0 { SB_TRACK_Y0 } else {
-        SB_TRACK_Y0
-            + ((track_h - thumb_h as f32) * (state.scroll as f32 / max_scroll as f32)) as i32
-    };
-    let thumb_y1 = (thumb_y0 + thumb_h).min(SB_TRACK_Y1);
-    draw_panel(surface, SB_X0, thumb_y0, SB_X1, thumb_y1,
-        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
-    draw_panel(surface, SB_X0, SB_BOT_ARROW.0, SB_X1, SB_BOT_ARROW.1,
-        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    if want_scrollbar {
+        // Canonical GDI scrollbar — one shared primitive, geometry and
+        // thumb maths verified against the exe captures. See
+        // `crate::scrollbar`.
+        //
+        // The list being scrolled depends on the active tab. This used
+        // to use `players.len()` and `VISIBLE_ENTRIES` unconditionally,
+        // so on the Fixtures and Transfers tabs the thumb was sized and
+        // positioned from the SQUAD — which is why it never tracked the
+        // fixture list and appeared frozen.
+        let (total, visible) = scroll_extent(state);
+        crate::scrollbar::Scrollbar::SQUAD
+            .draw(surface, total, visible, state.scroll, GREY_BAR, palette);
     }
 
     // ---- Bottom tab bar (visual only — click handling comes later).
@@ -1762,7 +1764,7 @@ pub fn jump_menu_hit(x: i32, y: i32, item_count: usize) -> Option<usize> {
 /// (Inf / Pkd) that can't be sorted.
 pub fn header_hit(pack: &ColumnPack, x: i32, y: i32) -> Option<usize> {
     if y < COL_HDR_Y0 || y > COL_HDR_Y1 { return None; }
-    let list_right = SB_X0 - 1;
+    let list_right = crate::scrollbar::X0 - 1;
     let kinds = pack.kinds();
     for (col_idx, sx0, sx1) in pack.slices(LIST_X0, list_right) {
         if x >= sx0 && x <= sx1 {

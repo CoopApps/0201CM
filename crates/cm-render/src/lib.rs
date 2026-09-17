@@ -32,6 +32,7 @@ pub mod layout;
 pub mod line;
 pub mod packed;
 pub mod packed_glyph;
+pub mod scrollbar;
 pub mod packed_panel;
 pub mod packed_capture;
 pub mod packed_widget;
