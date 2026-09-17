@@ -104,15 +104,24 @@ pub fn render_fixture_rows_scrolled(
     use crate::screen_club_squad_faithful::c_string_latin1;
     use crate::screen_pre_boot_chrome::TS_CENTRE;
 
-    const ROW_FIRST_Y: i32 = 207;
+    // Geometry from the exe capture fixtures/club_fixtures_screen
+    // (structure.txt): body panel (110,190)-(780,500); first date box
+    // (112,198)-(208,218); rows on a 21px pitch (text y = 201, 222,
+    // 243 … 475). The box is 20px tall (198..218).
+    //
+    // Was ROW_FIRST_Y=207 / ROW_HEIGHT=19, which pushed all 14 rows 9px
+    // too low so the last row sat flush against the panel bottom (500)
+    // with no gap. The exe leaves the last box at 471..491, a 9px gap
+    // above the panel edge.
+    const ROW_FIRST_Y: i32 = 198;
     const ROW_STRIDE:  i32 = 21;
-    const ROW_HEIGHT:  i32 = 19;
-    // Column x-ranges (PIL-verified from fixtures_gdi.png):
-    //   Date  bevel 112..207 (no scrollbar) / 112..203 (with scrollbar)
-    //   Result bevel 699..755
-    let scrollbar = rows.len() > 14;
-    let (date_x0, date_x1) = if scrollbar { (112, 203) } else { (112, 207) };
-    let (res_x0,  res_x1)  = if scrollbar { (699, 751) } else { (699, 755) };
+    const ROW_HEIGHT:  i32 = 20;
+    // Date box 112..208 and result box 699..756, unchanged by the
+    // scrollbar (the exe keeps these x-ranges whether or not the bar is
+    // shown — this capture HAS the bar and the date box still ends at
+    // 208).
+    let (date_x0, date_x1) = (112, 208);
+    let (res_x0,  res_x1)  = (699, 756);
     const NAME_X0:     i32 = 220;
     const NAME_X1:     i32 = 405;
     const NATION_X0:   i32 = 410;
