@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod tick_profile;
+pub mod next_match;
 pub mod african_nations;
 pub mod c13_promotion_apply;
 pub mod c14_stadium_expansion;

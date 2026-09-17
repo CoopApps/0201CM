@@ -33,6 +33,7 @@ pub mod line;
 pub mod packed;
 pub mod packed_glyph;
 pub mod scrollbar;
+pub mod screen_next_match_faithful;
 pub mod packed_panel;
 pub mod packed_capture;
 pub mod packed_widget;
