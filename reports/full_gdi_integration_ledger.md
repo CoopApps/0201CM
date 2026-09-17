@@ -332,6 +332,18 @@ coming up, so the pairing is 1:1 and the division cannot grow.
 State: **LIVE + EXACT** (active path measured; fallback path live but
 not exercised in an England game, where the Conference is simulated).
 
+## 0h. PHASE J–P AUDIT (2026-09-17)
+
+| Phase | Subject | State | Evidence / blocker |
+| --- | --- | --- | --- |
+| **J** | C13 apply — `Club+0x57` / `+0x5B` / `+0x37` | **LIVE + EXACT** | `materialise_club_moves` writes the raw club bytes that `ClubView::division_id()` reads; `live_year_end_moves_clubs_between_divisions` observes real moves on all four pyramid edges. |
+| **K** | Contract clauses — `world.contracts.records[]`, `non_promotion` / `relegation` | **LIVE + EXACT (since §12d)** | Canonical store is the boot `ContractPool`; the old `person_id` name survives only as a serde alias. No intent-only path remains. |
+| **L** | Squad position — `ContractRecord.position_code` (+0x3A) | **LIVE + EXACT (since §12d)** | `apply_squad_position_writes_from_report`, primary then secondary (`by_staff_id_secondary`) with the identity gate. Reachable now that contracts carry their owning club. |
+| **M** | Stadium transaction at promotion (C14) | **EXACT HELPER EXISTS BUT NOT LIVE — blocked on data** | `comp_stadium_templates` is still passed empty, so `CompPreApply.capacity_template_e2/e4` never carry a real pair and the expansion branch cannot fire. The values live at `Comp+0x43` / `+0xE2` / `+0xE4`, and **rust-db does not import them**: `club_competitions.json` carries a 3-byte `unknown_tail` (e.g. `[255, 12, 0]`), while those offsets need ~0x90 bytes of tail. Unblocking needs a comp.dat re-import, not a wiring change. The C15.1D refuse counter is separate and IS live. |
+| **N** | Finance | **LIVE + EXACT** | One store (`RuntimeSaveGame.finance`); §12a. Disk `Club+0x65` is seed-only (A5). Save/load unverifiable until §12e. |
+| **O** | Person career / news — `World.person_news_mailboxes` | **LIVE (write)** | `append_person_history_entry` on the live path; the refuted 13-list model is not present. No screen reads the mailbox yet (A11). |
+| **P** | News side effects reach the playable news system | **LIVE** | `apply_report_to_world` pushes into `save.pending_events`, and `World::news_for` — what the app's News screen renders — builds its items from exactly that vec. Covers promotion welcome, no-league relegation, stadium expansion, refusal/reprieve and person-career events. |
+
 ## 1. Foundations (pre-C10 and cross-cutting)
 
 | System | Canonical Rust | Status | Notes |
@@ -671,6 +683,22 @@ CLI are shipped and ready. Running a real GDI capture against a
 PROVISIONAL to STATE-EXACT for observed branches. Not run
 (three attempts crashed the exe — documented in
 `[[frida-instrumentation-crash-evidence]]`).
+
+## 13b. INTEGRATION AUDIT — remaining open items (2026-09-17)
+
+Phases A–D and E–Q are audited. What is still not closed for
+*previously completed* work:
+
+| Item | State | Blocker |
+| --- | --- | --- |
+| **Save / load** (Phase A.14, Phase R) | **NOT YET PORTED** | No serializer call exists in the playable app. Everything derives serde, so this is wiring. Phase R (round-trip of fixtures, scheduler, contracts, position codes, stadiums, refuse counter, finance, mailboxes, news, RNG state, dbc340) cannot start until it exists. Note `season_roll_scheduler` is `#[serde(default)]`, so a loaded save must have its registrations reconstructed or Jan-1 will never fire. |
+| **Stadium templates** (Phase M) | **EXACT HELPER EXISTS BUT NOT LIVE** | `Comp+0x43/+0xE2/+0xE4` are not in rust-db (3-byte `unknown_tail`). Needs a comp.dat re-import. |
+| **Play-off bracket format** (Phase E) | **LIVE BUT APPROXIMATE** | Ties resolve as one match at the higher seed; the exe plays two legs plus a final on dated May matchdays. Decode those fixtures and the tick plays them. |
+| **Later-season matchday dates** (Phase D) | **LIVE BUT APPROXIMATE** | Seasons after 2001/02 reuse the 2001 round-date template. |
+| **Sticky status carry-in** (Phase F) | **NOT LIVE** | Every table row is built with `current_status: STATUS_IDLE`, so 3 / 5 / 0xFE / 0xFC never survive into the next season and the "movement consumes to 0xFF" path has nothing to consume. |
+| **Duplicate standings from season 2** (Phase D) | **OPEN** | `apply_pending_season_roll_regens` extends `season.standings` without a per-season key, so a club appears twice from the second season on, and the year-end's table build would see both. |
+| **Person mailbox has no reader** (Phase A11/O) | **display gap** | Written on the live path; no screen renders it. |
+| **Phase S — V4 separation** | **AUDITED — V4 is NOT REACHABLE** | `GameMode` appears in production in exactly two places, both hardcoded `GameMode::Traditional` (`lib.rs:18705` dispatch, `lib.rs:19870` rollover input). There is no mode field on `RuntimeSaveGame` or `NewGameOptions`, and the app never offers the choice — so no V4 game can exist and no Traditional behaviour can leak into one. The separation guard is real and tested (`english_dispatch_decision(GameMode::V4, …)` returns `Skipped` naming the mode), but the discriminator described in `[[game-mode-traditional-vs-v4]]` is not in the runtime. When V4 lands, the season builder must take the mode from the save instead of assuming Traditional — the call site says so itself. |
 
 ## 14. Prioritised next wire-ups
 
