@@ -293,9 +293,70 @@ pub fn draw_nav_button(
 // String helper
 // -----------------------------------------------------------------------
 
+/// Build a NUL-terminated draw buffer for the exe's bitmap font.
+///
+/// The font is indexed by **CP1252 byte** (one glyph per byte). Rust
+/// strings are UTF-8, so any non-ASCII char (é, ü, ñ, £, …) is multiple
+/// bytes and would draw as several wrong glyphs — 'é' as 'Ã©'. This
+/// collapses each `char` back to a single CP1252/Latin-1 byte before the
+/// NUL. ASCII is unchanged, so this is correct for every caller,
+/// including plain label literals.
+///
+/// Codepoints above 0xFF (which the 256-glyph font cannot represent
+/// anyway) fall back to '?' so a bad input never crashes the renderer.
 pub fn c_string(bytes: &[u8]) -> Vec<u8> {
-    let mut v = Vec::with_capacity(bytes.len() + 1);
-    v.extend_from_slice(bytes);
-    v.push(0);
-    v
+    match std::str::from_utf8(bytes) {
+        Ok(text) => {
+            let mut v = Vec::with_capacity(text.len() + 1);
+            for ch in text.chars() {
+                let cp = ch as u32;
+                v.push(if cp < 0x100 { cp as u8 } else { b'?' });
+            }
+            v.push(0);
+            v
+        }
+        // Not valid UTF-8 — already raw bytes (e.g. a pre-built buffer).
+        // Pass through unchanged.
+        Err(_) => {
+            let mut v = Vec::with_capacity(bytes.len() + 1);
+            v.extend_from_slice(bytes);
+            v.push(0);
+            v
+        }
+    }
+}
+
+#[cfg(test)]
+mod cstring_tests {
+    use super::c_string;
+
+    #[test]
+    fn accented_names_collapse_to_one_cp1252_byte_each() {
+        // "Ménétrier" — é is U+00E9, two UTF-8 bytes (0xC3 0xA9). The
+        // exe's font is CP1252-indexed, so each é must become the single
+        // byte 0xE9, not two glyphs 'Ã' + '©'.
+        let out = c_string("Ménétrier".as_bytes());
+        assert_eq!(
+            out,
+            vec![b'M', 0xE9, b'n', 0xE9, b't', b'r', b'i', b'e', b'r', 0]
+        );
+    }
+
+    #[test]
+    fn pound_sign_collapses() {
+        // '£' is U+00A3 (0xC2 0xA3 in UTF-8) → single byte 0xA3.
+        assert_eq!(c_string("£5".as_bytes()), vec![0xA3, b'5', 0]);
+    }
+
+    #[test]
+    fn ascii_is_unchanged() {
+        assert_eq!(c_string(b"Squad"), vec![b'S', b'q', b'u', b'a', b'd', 0]);
+    }
+
+    #[test]
+    fn umlaut_collapses() {
+        // "München" — ü is U+00FC → 0xFC.
+        let out = c_string("München".as_bytes());
+        assert_eq!(out, vec![b'M', 0xFC, b'n', b'c', b'h', b'e', b'n', 0]);
+    }
 }

@@ -932,10 +932,15 @@ pub fn render_squad(
                         2 => {
                             let mut buf = format!("  {}", p.name);
                             if p.marker != ' ' { buf.push(p.marker); }
-                            buf.push('\0');
+                            // Names may carry accents (é, ü, ñ). The
+                            // exe's bitmap font is indexed by CP1252
+                            // byte, so UTF-8 must be collapsed to one
+                            // byte per char — otherwise 'é' (0xC3 0xA9)
+                            // draws as 'Ã©'. c_string_latin1 appends the
+                            // NUL, so we do not push one here.
                             draw_wrapped_text(surface, *sx0, y0, *sx1 - 2, y1,
-                                &small_font, buf.as_bytes(), WHITE,
-                                TS_CENTRE | W_LEFT, -1);
+                                &small_font, &c_string_latin1(buf.as_bytes()),
+                                WHITE, TS_CENTRE | W_LEFT, -1);
                             continue;
                         }
                         12 => {
@@ -1018,9 +1023,10 @@ pub fn render_squad(
                 let name_ink = if p.marker != ' ' { WHITE } else { INK_CYAN };
                 let mut buf = format!("  {}", p.name);
                 if p.marker != ' ' { buf.push(p.marker); }
-                buf.push('\0');
+                // Accented names → CP1252 single bytes (see the other
+                // name cell above); c_string_latin1 appends the NUL.
                 draw_wrapped_text(surface, name.0, y0, name.1, y1,
-                    &body_font, buf.as_bytes(), name_ink,
+                    &body_font, &c_string_latin1(buf.as_bytes()), name_ink,
                     TS_CENTRE | W_LEFT, -1);
                 // Right column reflects the Sort By pick — Position(s)
                 // shows the position code, Squad Number the digit,
