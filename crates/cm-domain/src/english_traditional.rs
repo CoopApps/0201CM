@@ -519,11 +519,32 @@ pub fn generate_english_traditional_league(
         .iter()
         .map(|r| {
             let year = base_year.wrapping_add(r.year_off as u16);
-            let doy = if r.doy_post_snap <= 0 {
-                1
-            } else {
-                r.doy_post_snap as u16
-            };
+            // The exe's day-of-year is ZERO-BASED (0 = 1 January);
+            // `CmPackedDate::day_of_year` is one-based. Converting
+            // without the +1 put every English fixture exactly one day
+            // early — the whole season landed on Fridays instead of
+            // Saturdays.
+            //
+            // Proof, from this very table:
+            //   * `doy_post_snap: 359` (2001) read one-based is 25 Dec —
+            //     Christmas Day. English football has not played on
+            //     Christmas Day since 1965. Zero-based it is 26 Dec,
+            //     Boxing Day, the most certain fixture date in the
+            //     English calendar.
+            //   * `doy_post_snap: 11` (2002) read one-based is Fri 11
+            //     Jan; zero-based it is Sat 12 Jan, when those
+            //     Conference games were actually played.
+            //   * Most rounds carry `field_a: 5`, and `apply_flag_snap`
+            //     documents the flag as a target weekday `0=Mon..6=Sun`
+            //     — so 5 is SATURDAY. The stored post-snap values must
+            //     therefore denote Saturdays, which they only do
+            //     zero-based.
+            //   * A value of `0` is legitimate (1 January) — which is
+            //     why this code previously needed a `<= 0` clamp.
+            //
+            // The fixture GOLDEN does not cover dates (it asserts
+            // home/away/round only), which is why this survived.
+            let doy = (r.doy_post_snap.max(0) as u16).saturating_add(1);
             let packed = CmPackedDate {
                 day_of_year: doy,
                 year,
