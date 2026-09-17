@@ -663,10 +663,12 @@ impl TransferMarket {
         finance: &mut FinanceBook,
         current_year: u16,
         sample: usize,
-        seed: u64,
+        // Days since game start — feeds `predict_wage`'s `game_day`
+        // argument (was folded out of this pass's local RNG seed).
+        game_day: u32,
+        rng: &mut impl crate::game_rng::PoolRand,
     ) -> usize {
         use std::collections::HashMap;
-        let mut rng = crate::match_engine_exe::MatchRng::new(seed);
 
         // Index by club — needed for both squad-avg CA and position quotas.
         // A RatedPlayer knows its role-band via `is_gk` (already populated
@@ -784,7 +786,7 @@ impl TransferMarket {
             //     FUN_0052df60 cap; the true source is the agent-staff record).
             //   rep_bucket    = seller_rep / 50 (real FUN_0052a330 output).
             //   contract_field = current weekly_wage (renewal starts here).
-            //   game_day       = seed as u32 (deterministic per-pass).
+            //   game_day       = days since game start.
             let agent_q = (target.ca as i32).clamp(1, 20);
             let seller_rep_now = finance.club_reputation.get(&seller).copied().unwrap_or(1000);
             let rep_bucket = (seller_rep_now as i32) / 50;
@@ -792,7 +794,7 @@ impl TransferMarket {
                 target.weekly_wage as i32,
                 agent_q, rep_bucket,
                 target.age_est, target.is_gk,
-                target.staff_id, seed as u32,
+                target.staff_id, game_day,
                 /*mode=*/1,
             ).max(175) as u32;
             // Squad-status promotion delta — verified port of FUN_004d79c0.

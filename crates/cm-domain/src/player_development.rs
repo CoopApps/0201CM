@@ -242,7 +242,7 @@ impl PlayerDevelopmentBook {
         is_gk_cat: bool,
         weeks: u32,
         prior: i8,
-        rng: &mut crate::match_engine_exe::MatchRng,
+        rng: &mut impl crate::game_rng::PoolRand,
     ) -> i8 {
         let mut acc: i32 = 0;
         for _ in 0..weeks {
@@ -284,7 +284,7 @@ impl PlayerDevelopmentBook {
 
     /// One training pass over every player, advancing `weeks` weeks (the exe's
     /// lazy catch-up, capped at 30). Mutates attributes in place.
-    pub fn weekly_tick(&mut self, weeks: u32, rng: &mut crate::match_engine_exe::MatchRng) {
+    pub fn weekly_tick(&mut self, weeks: u32, rng: &mut impl crate::game_rng::PoolRand) {
         let weeks = weeks.min(0x1e).max(1);
         for dev in &mut self.players {
             let coach = dev.club_id

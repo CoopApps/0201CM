@@ -31,13 +31,14 @@ fn main() {
     let mut fees: Vec<i64> = Vec::new();
     // Split the borrow: pull the three books out is awkward; call via the save's
     // own method surface by ticking the AI pass directly.
-    for w in 0..weeks {
-        let seed = 0x008a_c0c0u64 ^ (w as u64).wrapping_mul(0x9E3779B97F4A7C15);
-        let done = save.transfers.run_ai_transfer_pass(
-            &mut save.player_ratings, &mut save.finance, 2001, 40, seed,
-        );
-        total += done;
-    }
+    // Draws come from the session pool RNG exactly as the live tick does.
+    save.with_session_rng(|save, rng, _| {
+        for w in 0..weeks {
+            total += save.transfers.run_ai_transfer_pass(
+                &mut save.player_ratings, &mut save.finance, 2001, 40, w * 7, rng,
+            );
+        }
+    });
     // Recompute fees from moves (approximate via current value).
     let moved: Vec<&cm_domain::player_rating::RatedPlayer> = save.player_ratings.players.iter()
         .filter(|p| before.get(&p.staff_id).copied().flatten() != p.club_id).collect();

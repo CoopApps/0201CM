@@ -100,6 +100,26 @@ pub struct GameRngState {
 /// algorithmically with this shift.
 pub const POOL_ADDR_SHIFT_GDI: u32 = 184;
 
+/// The exe has exactly one pool rand (`FUN_008fc4f0`). Tick-time
+/// subsystems that draw from it take `&mut impl PoolRand` so production
+/// threads the session [`GameRng`] (via
+/// `RuntimeSaveGame::with_session_rng`) while value-type tests may pass
+/// any other implementor. Do not construct a local RNG inside a
+/// subsystem — that is the "same draw sequence every Wednesday" defect
+/// recorded in `reports/full_gdi_integration_ledger.md` §12c.
+pub trait PoolRand {
+    /// `FUN_008fc4f0(n)` — uniform in `[0, n)`; `n == 0` returns 0.
+    fn range(&mut self, n: u32) -> u32;
+    /// `FUN_008fc4f0(n) == 0` — the exe's most common gate shape.
+    fn hit(&mut self, n: u32) -> bool { self.range(n) == 0 }
+}
+
+impl PoolRand for GameRng {
+    fn range(&mut self, n: u32) -> u32 {
+        self.rand_mod(n as i32).max(0) as u32
+    }
+}
+
 /// Byte-exact port of FUN_008fc4f0.  Deterministic given the initial
 /// state established by `GameRng::new` (which mimics FUN_008fc5d0).
 pub struct GameRng {

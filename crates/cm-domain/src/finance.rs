@@ -479,9 +479,17 @@ impl FinanceBook {
     ///   3. If patience is now 0, roll `chairman_will_sack`; on fire,
     ///      push club onto the return list.
     ///   4. Roll `chairman_takeover_fires`; on fire, reroll stats.
-    pub fn tick_month_board(&mut self, seed: u64) -> Vec<u32> {
-        use crate::match_engine_exe::MatchRng;
-        let mut rng = MatchRng::new(seed);
+    ///
+    /// `elapsed_days` is days since game start; the cash-injection gate
+    /// compares the exe's compact 16-bit day counter against
+    /// `generosity * 750`, so this must be the real elapsed count (it
+    /// used to be folded out of the per-month RNG seed, which made a
+    /// nonsense counter).
+    pub fn tick_month_board(
+        &mut self,
+        elapsed_days: u32,
+        rng: &mut impl crate::game_rng::PoolRand,
+    ) -> Vec<u32> {
         let club_ids: Vec<u32> = self.clubs.iter().map(|c| c.club_id).collect();
         let mut fired_by: Vec<u32> = Vec::new();
         // Chairman-presence read at raw offset +0xbf (ClubView::has_chairman).
@@ -526,12 +534,10 @@ impl FinanceBook {
             let rep = self.club_reputation.get(&cid).copied().unwrap_or(1000);
             let status = club.status(rep);
             if matches!(status, FinanceStatus::InTheRed | FinanceStatus::Admin) {
-                // Date-short: pack (year-1900)*365 + day-of-year — the exe
-                // uses a compact 16-bit day counter from game start. Here
-                // we use elapsed_days modulo the i16 range as an
-                // approximation; the gate compares to generosity*750 so
-                // the ordering is what matters.
-                let date_short = (seed & 0x7FFF) as i16;
+                // The exe uses a compact 16-bit day counter from game
+                // start; the gate compares it to generosity*750, so the
+                // counter must grow monotonically with game time.
+                let date_short = (elapsed_days & 0x7FFF) as i16;
                 let inject = chairman_cash_inject_cap(cs, date_short, |cap| {
                     rng.range(cap.max(1) as u32) as i32
                 });
@@ -675,7 +681,7 @@ impl FinanceBook {
     /// This is the mechanism the game uses to rescue clubs from administration
     /// via a new owner. NOT the same as the stadium-share £20M transfer below
     /// (`FUN_00586ec0`) which is a rich→sibling in-family transfer.
-    pub fn takeover_check(&mut self, rng: &mut crate::match_engine_exe::MatchRng) {
+    pub fn takeover_check(&mut self, rng: &mut impl crate::game_rng::PoolRand) {
         // Exempt nations (verified — FUN_005f71d0 sets DAT_009bb79c/8a4/9d0 to
         // Republic of Ireland, Northern Ireland, Wales respectively from a
         // strcmpi ladder over nation names during startup):
@@ -783,7 +789,7 @@ impl FinanceBook {
     ///     club from falling into receivership" (0x009b53dc)
     ///   * Does NOT clear admin flag on its own — the balance-based classifier
     ///     will re-evaluate next tick.
-    pub fn board_debt_payment(&mut self, rng: &mut crate::match_engine_exe::MatchRng) {
+    pub fn board_debt_payment(&mut self, rng: &mut impl crate::game_rng::PoolRand) {
         let candidates: Vec<u32> = self.clubs.iter()
             .filter(|c| {
                 let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(0);
@@ -920,11 +926,13 @@ impl FinanceBook {
     /// per-rep wage draw; deducted from balance and accumulated into the
     /// month_wages ledger. Skint clubs (balance < rep×3000) pay no wages that
     /// week (matches the exe's `return` at the bottom of the cascade).
-    pub fn pay_weekly_wages(&mut self) {
+    ///
+    /// `rng` is the session pool rand (exe: `FUN_008fc4f0`); it must be the
+    /// shared stream, not a per-call seed, or every week rolls the same draws.
+    pub fn pay_weekly_wages(&mut self, rng: &mut impl crate::game_rng::PoolRand) {
         // Stadium-share £20M transfer fires FIRST (FUN_00586ec0:56-114 sits
         // above the wage cascade in the exe).
         self.stadium_share_transfers();
-        let mut rng = crate::match_engine_exe::MatchRng::new(0x0058_6ec0);
         for c in &mut self.clubs {
             let rep = self.club_reputation.get(&c.club_id).copied().unwrap_or(1000) as i64;
             // Chairman-satisfaction adjustment (FUN_00586ec0:374-378) —
@@ -971,12 +979,11 @@ impl FinanceBook {
     /// this-month ledger accumulators; increments/resets the in-red counter;
     /// runs the board-confidence tick per real `FUN_00588c70` dispatch on the
     /// real status classifier.
-    pub fn end_of_month(&mut self) {
+    pub fn end_of_month(&mut self, rng: &mut impl crate::game_rng::PoolRand) {
         // Board-driven cash events fire FIRST at month end, since they can
         // pull a club out of admin before the classifier below reads status.
-        let mut rng = crate::match_engine_exe::MatchRng::new(0x0058_84a0);
-        self.takeover_check(&mut rng);
-        self.board_debt_payment(&mut rng);
+        self.takeover_check(rng);
+        self.board_debt_payment(rng);
         for c in &mut self.clubs {
             // Also reset the this-month owner-gift ledger.
             c.month_owner_gift = 0;
@@ -1199,9 +1206,13 @@ impl FinanceBook {
     /// (all in the exe's inline float form, collapsed here). Reputation of the
     /// scoring/hosting side scales it via `FUN_00585060` — `(rep/500 + 3)`
     /// multiplier (league) or `+4` (cup). Awards split between home and away.
-    pub fn record_match_income(&mut self, home_club: u32, away_club: u32, is_cup: bool) {
-        let mut rng = crate::match_engine_exe::MatchRng::new(
-            0x0058_4790 ^ ((home_club as u64) << 16) ^ (away_club as u64));
+    pub fn record_match_income(
+        &mut self,
+        home_club: u32,
+        away_club: u32,
+        is_cup: bool,
+        rng: &mut impl crate::game_rng::PoolRand,
+    ) {
         let home_rep = self.club_reputation.get(&(home_club as u32)).copied().unwrap_or(1000) as i64;
         let away_rep = self.club_reputation.get(&(away_club as u32)).copied().unwrap_or(1000) as i64;
 

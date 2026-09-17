@@ -16412,6 +16412,12 @@ impl World {
                         "Boot regen (FUN_0078E970 port): {thin} scheduled club(s) under {REGEN_THIN_SQUAD} real players; {assigned} free agent(s) assigned to reach {REGEN_TARGET_SQUAD}."
                     ));
                 }
+                // Persist the advanced stream so the first tick CONTINUES
+                // it. Before this the tick re-bootstrapped from the options
+                // and replayed the fixture-generation draws.
+                let mut snap = session_rng.snapshot();
+                snap.dbc340_cli_seed = dbc340;
+                save.session_rng_state = Some(snap);
             }
         }
 
@@ -19404,24 +19410,6 @@ impl RuntimeSaveGame {
         world: &mut World,
         days: u32,
     ) {
-        // Bootstrap the session RNG once per call.
-        // Priority: (a) persisted state from a prior tick or the
-        // new_game bootstrap; (b) the boot-time initial state;
-        // (c) a fixed deterministic seed. The state snapshot is
-        // written back to `save.session_rng_state` at the end so
-        // subsequent ticks resume the sequence.
-        let mut english_rng = if let Some(state) = self.session_rng_state {
-            crate::game_rng::GameRng::from_state_snapshot(state)
-        } else if let Some(state) = self.new_game.as_ref()
-            .and_then(|ng| ng.initial_game_rng_state)
-        {
-            crate::game_rng::GameRng::from_state_snapshot(state)
-        } else {
-            crate::game_rng::GameRng::new(0xC15_0000)
-        };
-        let english_rng_dbc340 = self.session_rng_state
-            .map(|s| s.dbc340_cli_seed).unwrap_or(0);
-
         for _ in 0..days {
             for _ in 0..3 { self.tick_cm_phase(); }
             // C11.3: drain pending regens after each day — the
@@ -19429,21 +19417,57 @@ impl RuntimeSaveGame {
             // drain runs the byte-exact english_traditional
             // engine to materialise the next season's fixtures.
             if !self.pending_season_roll_regens.is_empty() {
-                self.apply_pending_season_roll_regens(
-                    world, &mut english_rng, english_rng_dbc340,
-                );
+                self.with_session_rng(|save, rng, dbc340| {
+                    save.apply_pending_season_roll_regens(world, rng, dbc340)
+                });
             }
             // C15: end-of-season detector. Fires
             // compute_annual_rollover → apply_report_to_world at
             // most once per calendar season.
             let date_now = self.date.clone();
             if self.should_fire_english_year_end(&date_now) {
-                self.run_english_year_end(world, &mut english_rng);
+                self.with_session_rng(|save, rng, _| save.run_english_year_end(world, rng));
             }
         }
+    }
 
-        // Persist the RNG state so the next tick resumes.
-        self.session_rng_state = Some(english_rng.snapshot());
+    /// The ONE session pool RNG — the exe's `FUN_008fc4f0` state
+    /// (`DAT_00dc7238` cursor / `DAT_00dc7234` jitter / `DAT_00ac26c0`
+    /// LCG) plus the C11.2 `DAT_00dbc340` seed — persisted as
+    /// `session_rng_state`. Every tick-time draw goes through here so
+    /// all subsystems share a single stream, as in the exe.
+    ///
+    /// Loads the persisted snapshot, runs `f(save, rng, dbc340)`, and
+    /// writes the advanced state back, preserving `dbc340_cli_seed`
+    /// (which `GameRng::snapshot()` does not carry — the old
+    /// `tick_days_bound` write-back zeroed it after day one).
+    ///
+    /// Bootstrap when nothing is persisted yet: the new-game options'
+    /// stream (`NewGameOptions::bootstrap_game_rng`, the same source
+    /// fixture generation used — `new_game_from_rust_db` now persists
+    /// its advanced position, so this branch only serves saves made
+    /// before that), else the fixed headless seed for option-less test
+    /// saves. Neither is a silent fallback: both are the only source a
+    /// save of that shape has.
+    pub fn with_session_rng<R>(
+        &mut self,
+        f: impl FnOnce(&mut Self, &mut crate::game_rng::GameRng, i32) -> R,
+    ) -> R {
+        let (mut rng, dbc340) = match self.session_rng_state {
+            Some(s) => (crate::game_rng::GameRng::from_state_snapshot(s), s.dbc340_cli_seed),
+            None => match self.new_game.as_ref() {
+                Some(ng) => (
+                    ng.bootstrap_game_rng(),
+                    ng.initial_game_rng_state.map(|s| s.dbc340_cli_seed).unwrap_or(0),
+                ),
+                None => (crate::game_rng::GameRng::new(0xC15_0000), 0),
+            },
+        };
+        let out = f(self, &mut rng, dbc340);
+        let mut snap = rng.snapshot();
+        snap.dbc340_cli_seed = dbc340;
+        self.session_rng_state = Some(snap);
+        out
     }
 
     /// C15 integration — end-of-season detector.
@@ -19856,6 +19880,12 @@ impl RuntimeSaveGame {
     }
 
     pub fn tick_cm_phase(&mut self) {
+        // Every tick-time draw comes from the one session pool RNG — see
+        // `with_session_rng`. Subsystems receive it as a parameter.
+        self.with_session_rng(|save, rng, _| save.tick_cm_phase_with_rng(rng));
+    }
+
+    fn tick_cm_phase_with_rng(&mut self, rng: &mut crate::game_rng::GameRng) {
         let phase_before = self.simulation.phase;
         let date_before_phase = self.date.clone();
         let elapsed_days_before_phase = self.elapsed_days;
@@ -19875,7 +19905,7 @@ impl RuntimeSaveGame {
         // Steps 3-5: build + play today's fixtures (only in phase 2 evening;
         // exe: FUN_00699640 build -> FUN_00699cd0 pre-play -> FUN_00699d90 play).
         if phase_before == 2 {
-            self.execute_due_fixture_batch(&date_before_phase);
+            self.execute_due_fixture_batch(&date_before_phase, rng);
             // Step 6a: competition subsystem dispatch, arg 0 (post-match, for
             // every registered competition). Our ported comps run their own
             // advance_* below; the exe's iteration over unported comps is a
@@ -19905,7 +19935,7 @@ impl RuntimeSaveGame {
             // Step 10: the giant evening daily-AI dispatcher (exe: FUN_005b85b0
             // — 30 467 bytes / 395 RNG calls; staff_contracts + transfers +
             // human_manager + player_stats + media). See daily_ai() docs.
-            self.hook_evening_daily_ai(&date_before_phase);
+            self.hook_evening_daily_ai(&date_before_phase, rng);
 
             // Step 10b: background subsystems (exe: FUN_005b7f10, FUN_009123a0,
             // FUN_00614e90, FUN_0053fe40, FUN_008f2900, FUN_00413980).
@@ -19931,7 +19961,7 @@ impl RuntimeSaveGame {
 
             // Step 10g: monthly hook (exe: `if date % 0x1e == 0 FUN_00823210(0)`).
             if u32::from(date_before_phase.day) % 30 == 0 {
-                self.hook_monthly(&date_before_phase);
+                self.hook_monthly(&date_before_phase, rng);
             }
 
             // Step 10h: further per-tick subsystems (exe: FUN_00823ad0,
@@ -19989,7 +20019,7 @@ impl RuntimeSaveGame {
             if self.date.day % 7 == 3 {
                 // Rough "every 7 days" trigger; exact "Wednesday" needs the
                 // day-of-week calendar port.
-                self.hook_weekly_wednesday();
+                self.hook_weekly_wednesday(rng);
             }
         }
 
@@ -20324,7 +20354,11 @@ impl RuntimeSaveGame {
         })
     }
 
-    fn execute_due_fixture_batch(&mut self, date: &GameDate) {
+    fn execute_due_fixture_batch(
+        &mut self,
+        date: &GameDate,
+        rng: &mut crate::game_rng::GameRng,
+    ) {
         let due_fixture_rows = self
             .season
             .fixtures
@@ -20438,7 +20472,7 @@ impl RuntimeSaveGame {
                         self.injuries.add_injury_stamped(*pid, severity, self.elapsed_days);
                     }
                     // Post-match gate + TV/prize income (kill #8d).
-                    self.finance.record_match_income(home_id, away_id, false);
+                    self.finance.record_match_income(home_id, away_id, false, rng);
                     // Post-match morale wire (kill #9b): benched players get
                     // ±3 per FUN_004d0b00. The "played XI" here is approximated
                     // as the first 11 of each side's contracted squad; benched
@@ -21259,7 +21293,7 @@ impl RuntimeSaveGame {
     /// player_stats (17×), human_manager (13×), transfer_manager (9×),
     /// contract_manager (8×), media/news (7×). NOT YET PORTED — each of those
     /// subsystems is its own TU to lift. See `reports/game_cpp_analysis.md` §3.
-    fn hook_evening_daily_ai(&mut self, date: &GameDate) {
+    fn hook_evening_daily_ai(&mut self, date: &GameDate, rng: &mut crate::game_rng::GameRng) {
         // game.cpp step 10 — the giant evening daily-AI dispatcher.
         // Exe: FUN_005b85b0 (30 467 bytes, staff_contracts + transfers +
         // human_manager + player_stats + media). Full port is huge; this
@@ -21272,11 +21306,9 @@ impl RuntimeSaveGame {
         //
         // Bounded sample size keeps a single evening tick cheap even in a
         // 5000-club world; the exe visits ~40-60 clubs per evening via a
-        // rolling cursor (DAT_005b85b0's per-run index). Seed folds the
-        // date so replays reproduce.
-        let seed = (self.elapsed_days as u64).wrapping_mul(0x9E3779B97F4A7C15)
-                 ^ ((date.year as u64) << 16 | date.month as u64) << 8
-                 ^ date.day as u64;
+        // rolling cursor (DAT_005b85b0's per-run index). Draws come from
+        // the shared session pool RNG, so replays reproduce from the save's
+        // persisted `session_rng_state`.
         let year = date.year;
         // Sample size: match the exe's per-evening cursor stride (roughly
         // 50 clubs). A smaller value under-hits big worlds; a larger one
@@ -21287,7 +21319,8 @@ impl RuntimeSaveGame {
             &mut self.finance,
             year,
             sample,
-            seed,
+            self.elapsed_days as u32,
+            rng,
         );
         if moved > 0 {
             self.pending_events.push(RuntimeEvent {
@@ -21318,7 +21351,7 @@ impl RuntimeSaveGame {
     /// Fires Player of the Month for every registered league via
     /// [`crate::awards_engine::award_month_player_of_month`] — ports
     /// `month_award.cpp` + `month_ratings.cpp` into the tick.
-    fn hook_monthly(&mut self, _date: &GameDate) {
+    fn hook_monthly(&mut self, _date: &GameDate, rng: &mut crate::game_rng::GameRng) {
         let ratings = self.player_ratings.clone();
         let year = self.date.year;
         let month = self.date.month;
@@ -21346,9 +21379,7 @@ impl RuntimeSaveGame {
         // Monthly board tick — verified port of the chairman decision
         // cascade (patience decrement → sack roll → takeover roll).
         // See finance.rs::tick_month_board + reports/chairman_gates_decode.md.
-        let seed = (self.elapsed_days as u64).wrapping_mul(0x100000001B3)
-                 ^ (year as u64) << 8 ^ month as u64;
-        let fired_clubs = self.finance.tick_month_board(seed);
+        let fired_clubs = self.finance.tick_month_board(self.elapsed_days as u32, rng);
         for cid in fired_clubs {
             self.pending_events.push(RuntimeEvent {
                 day: elapsed,
@@ -21374,9 +21405,8 @@ impl RuntimeSaveGame {
         //   3. big gift (chairman writes a large one-off cheque),
         //   4. silent takeover (change of ownership + reroll).
         // We approximate that ordering with the ported fns available.
-        let mut rng = crate::match_engine_exe::MatchRng::new(seed ^ 0xA5A5A5A5);
-        self.finance.board_debt_payment(&mut rng);
-        self.finance.takeover_check(&mut rng);
+        self.finance.board_debt_payment(rng);
+        self.finance.takeover_check(rng);
         self.finance.stadium_share_transfers();
     }
 
@@ -21402,12 +21432,12 @@ impl RuntimeSaveGame {
     /// morning of a Wednesday (exe: `if DAT_009b979c && DAT_acde88 == 0`, then
     /// per-nation loop). Wired to fire weekly wage payment through the
     /// finance substrate (crates/cm-domain/src/finance.rs).
-    fn hook_weekly_wednesday(&mut self) {
+    fn hook_weekly_wednesday(&mut self, rng: &mut crate::game_rng::GameRng) {
         // Every Wednesday, deduct each club's weekly_wage_bill from balance.
-        self.finance.pay_weekly_wages();
+        self.finance.pay_weekly_wages(rng);
         // If it's the 1st Wednesday of the month, run month-end accounting.
         if self.date.day <= 7 {
-            self.finance.end_of_month();
+            self.finance.end_of_month(rng);
             // Yearly rollover for the stadium-share latch (+0x6d) and the
             // takeover-pending latch (+0x82). Fires on the first month-end
             // of each calendar year (i.e., the first Wednesday of January).
@@ -21417,30 +21447,26 @@ impl RuntimeSaveGame {
         }
         // Weekly training pass — moves CA toward PA (or slowly declines old
         // resters) via the fractional-growth accumulator (interim CA feed).
-        // Scout knowledge tick (weekly): every active scout on every human's
-        // book grows coverage against its watch target, and per-attribute
-        // reveal bits flip at 25/50/75/100% checkpoints. See scouting.rs.
-        self.scouts.weekly_tick();
+        //
+        // NOT called here: `self.scouts.weekly_tick()`. Its own doc says it
+        // is not a faithful port (invented 25/50/75/100 coverage
+        // checkpoints; the exe scout cluster is snapshot-based). It was
+        // found wired on 2026-09-17 and unwired — see the integration
+        // ledger's Scouting row; re-wire only after FUN_00489790 is decoded.
         self.training.apply_weekly_growth(&mut self.player_ratings);
         // Faithful per-attribute development (kill #TR): real CM0102 training —
         // each player's attributes grow/decline by category effectiveness
         // (schedule intensity + club coach quality), one week per Wednesday.
-        {
-            let seed = 0x0089_de50u64 ^ (self.elapsed_days as u64).wrapping_mul(0x9E3779B97F4A7C15);
-            let mut rng = crate::match_engine_exe::MatchRng::new(seed);
-            self.training.development.weekly_tick(1, &mut rng);
-        }
+        self.training.development.weekly_tick(1, rng);
         // Bosman flags — anyone in contract's last 6 months is available
         // to negotiate with foreign clubs. Ported from contract_manager.cpp.
         self.transfers.update_bosman_flags(self.date.year as u16, self.date.month as u8);
         // AI-club transfer activity (kill #4): budget-holding clubs bid for
         // affordable upgrades, priced at the real valuation. Bounded sample.
-        {
-            let seed = 0x008a_c0c0u64 ^ (self.elapsed_days as u64).wrapping_mul(0x9E3779B97F4A7C15);
-            self.transfers.run_ai_transfer_pass(
-                &mut self.player_ratings, &mut self.finance, self.date.year as u16, 40, seed,
-            );
-        }
+        self.transfers.run_ai_transfer_pass(
+            &mut self.player_ratings, &mut self.finance,
+            self.date.year as u16, 40, self.elapsed_days as u32, rng,
+        );
     }
 
     fn apply_fixture_to_standings(

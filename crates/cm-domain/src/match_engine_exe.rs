@@ -34,7 +34,10 @@
 use serde::{Deserialize, Serialize};
 
 // ============================================================================
-// RNG — port of FUN_008FC4F0(n) → uint in [0, n).
+// RNG — stand-in for FUN_008FC4F0(n) → uint in [0, n). NOT the byte-exact
+// port: that is `crate::game_rng::GameRng::rand_mod`. Match simulation keeps
+// its own per-match splitmix64 stream so replays reproduce; tick-time
+// subsystems must draw from the session GameRng via `PoolRand` instead.
 // ============================================================================
 
 /// Match RNG. Seeded per-match so replays reproduce. splitmix64.
@@ -68,6 +71,12 @@ impl MatchRng {
     pub fn hit(&mut self, n: u32) -> bool {
         self.range(n) == 0
     }
+}
+
+/// Lets value-type tests and per-match code satisfy subsystem `PoolRand`
+/// bounds. Production ticks pass the session `GameRng`, never this.
+impl crate::game_rng::PoolRand for MatchRng {
+    fn range(&mut self, n: u32) -> u32 { MatchRng::range(self, n) }
 }
 
 // ============================================================================

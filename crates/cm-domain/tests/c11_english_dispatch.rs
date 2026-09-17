@@ -171,6 +171,7 @@ fn build_world_with_five_english_leagues() -> World {
     World {
         base_data: Vec::new(),
         save: None,
+        person_news_mailboxes: Default::default(),
         schema: SchemaBook::default(),
         core: CoreBook {
             clubs,

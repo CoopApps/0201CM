@@ -38,16 +38,19 @@ fn main() {
     // Simulate a season of weekly wages + a match-income event per week + monthly rollover.
     // (Directly, to avoid the very slow full-world daily tick.)
     let club_ids: Vec<u32> = save.finance.clubs.iter().map(|c| c.club_id).take(200).collect();
-    for w in 0..weeks {
-        save.finance.pay_weekly_wages();
-        // Simulate 20 matches per week between paired sample clubs.
-        for i in 0..20 {
-            let h = club_ids[i % club_ids.len()];
-            let a = club_ids[(i + 7) % club_ids.len()];
-            save.finance.record_match_income(h, a, false);
+    // Draws come from the session pool RNG exactly as the live tick does.
+    save.with_session_rng(|save, rng, _| {
+        for w in 0..weeks {
+            save.finance.pay_weekly_wages(rng);
+            // Simulate 20 matches per week between paired sample clubs.
+            for i in 0..20 {
+                let h = club_ids[i % club_ids.len()];
+                let a = club_ids[(i + 7) % club_ids.len()];
+                save.finance.record_match_income(h, a, false, rng);
+            }
+            if w % 4 == 3 { save.finance.end_of_month(rng); }
         }
-        if w % 4 == 3 { save.finance.end_of_month(); }
-    }
+    });
 
     // After a season.
     let mut bals: Vec<i64> = save.finance.clubs.iter().map(|c| c.balance).collect();
