@@ -158,14 +158,23 @@ mod season_exclusion_tests {
     }
 
     #[test]
-    fn english_leagues_are_not_excluded_from_the_generic_builder() {
-        // 7 Premier, 8 First, 9 Second, 10 Third, 93 Conference — declared as
-        // ported but with no new-game builder; the generic path must build them.
-        for id in [7, 8, 9, 10, 93] {
-            assert!(PORTED_COMPETITION_IDS.contains(&id), "precondition: {id} is declared");
+    fn english_leagues_are_never_built_by_the_generic_builder() {
+        // SUPERSEDED ASSUMPTION: this test used to assert the opposite —
+        // that comps 7/8/9/10/93 must NOT be excluded from the generic
+        // builder because "nothing builds it". That was true before
+        // C11.2. They are now built by
+        // `english_traditional::generate_english_traditional_league`
+        // (exact perturb + walker + driver), and the generic Berger path
+        // must never touch them: running both produced the duplicate
+        // season fixed in 2aa4aed.
+        for id in [7u32, 8, 9, 10, 93] {
             assert!(
-                !LEAGUES_BUILT_BY_DEDICATED_ENGINES.contains(&id),
-                "England {id} must NOT be excluded — nothing builds it"
+                PORTED_COMPETITION_IDS.contains(&(id as i32)),
+                "precondition: {id} is declared ported"
+            );
+            assert!(
+                crate::english_traditional::is_english_traditional_league(id),
+                "comp {id} must route to the exact English engine"
             );
         }
     }
@@ -18695,8 +18704,21 @@ impl World {
                 if !comp_ids.contains(&eid) { continue; }
                 match english_dispatch_decision(GameMode::Traditional, eid, base_year) {
                     EnglishFixtureDispatch::ExactEnglish => {}
-                    EnglishFixtureDispatch::Generic
-                    | EnglishFixtureDispatch::Skipped { .. } => continue,
+                    EnglishFixtureDispatch::Generic => continue,
+                    EnglishFixtureDispatch::Skipped { reason } => {
+                        // Loud, not silent. The generic Berger builder
+                        // refuses these comps outright (see the filter
+                        // below), so a skip leaves the league with NO
+                        // fixtures rather than fake ones. Today the only
+                        // trigger is an unsupported base_year.
+                        eprintln!(
+                            "[english] comp {eid} NOT built: {reason}. \
+                             It will have no fixtures — the generic \
+                             builder is not allowed to stand in for a \
+                             Traditional English league."
+                        );
+                        continue;
+                    }
                 }
                 let spec = english_runtime_spec_for(eid)
                     .expect("dispatch decision returned ExactEnglish for a comp with no runtime spec");
@@ -18771,6 +18793,15 @@ impl World {
             // through the exact engine above — don't build them a second
             // time on the generic path.
             .filter(|c| !english_dispatched_ids.contains(&c.id))
+            // Stronger than the line above: the 5 Traditional English
+            // leagues are NEVER built generically, even when the exact
+            // engine declined them. Excluding only the *dispatched* set
+            // left a silent fallback — `english_dispatch_decision`
+            // returns `Skipped` outside base years 2001/02, and those
+            // comps then dropped through to Berger pair generation and
+            // produced a plausible-looking but non-exact English season.
+            // A missing season is a visible bug; a fake one is not.
+            .filter(|c| !crate::english_traditional::is_english_traditional_league(c.id))
             // The Argentine Primera/Second Division are handled by their own
             // ported classes (arg_prm.cpp / arg_second.cpp) — skip them here so
             // they are not also built as generic leagues (which would duplicate
@@ -21107,6 +21138,33 @@ impl RuntimeSaveGame {
         v
     }
 
+    /// Every league the awards engines should consider: the generic
+    /// `simple_leagues` PLUS the Traditional English pyramid.
+    ///
+    /// The award hooks used to read `simple_leagues` alone. Comps
+    /// 7/8/9/10/93 stopped appearing there when the generic English
+    /// block was removed (2aa4aed) in favour of the exact engine, so
+    /// Player of the Month and the end-of-season slate silently stopped
+    /// firing for the entire English pyramid — the one pyramid the port
+    /// simulates exactly. Names come from the scheduled fixtures, which
+    /// is live save state.
+    fn award_league_ids_and_names(&self) -> Vec<(i32, String)> {
+        let mut out: Vec<(i32, String)> = self.simple_leagues.iter()
+            .map(|lg| (lg.real_comp_id, lg.name.clone()))
+            .collect();
+        let mut seen: std::collections::BTreeSet<i32> =
+            out.iter().map(|(id, _)| *id).collect();
+        for f in &self.season.fixtures {
+            let id = f.competition_id as i32;
+            if !crate::english_traditional::is_english_traditional_league(
+                f.competition_id) { continue; }
+            if seen.insert(id) {
+                out.push((id, f.competition_name.clone()));
+            }
+        }
+        out
+    }
+
     // ==== game.cpp main-loop hooks ====
     // Every method below corresponds to a decoded call in `game_init`'s forever
     // loop (see `reports/game_cpp_analysis.md`). Where the target subsystem is
@@ -21132,9 +21190,7 @@ impl RuntimeSaveGame {
             let ratings = self.player_ratings.clone();
             let year = self.date.year;
             let date = self.date.clone();
-            let leagues: Vec<(i32, String)> = self.simple_leagues.iter()
-                .map(|lg| (lg.real_comp_id, lg.name.clone()))
-                .collect();
+            let leagues = self.award_league_ids_and_names();
             for (comp_id, name) in leagues {
                 let awards = crate::awards_engine::award_league_season_end(
                     year, comp_id, &name, &ratings,
@@ -21309,9 +21365,28 @@ impl RuntimeSaveGame {
                 world.generate_new_game_season_with_rng_and_dbc340(
                     &comp_set, new_year, english_rng, english_rng_dbc340,
                 );
-            // Empty result = comp doesn't dispatch to exact-English
-            // (e.g. Skipped). Nothing to append.
-            if fixtures.is_empty() { continue; }
+            // Empty result = the engine declined this comp. That is a
+            // broken season, not a no-op: the league will have no
+            // fixtures for `new_year`. Report it instead of dropping it
+            // silently (which is how the "one season only" defect went
+            // unnoticed — see ledger Phase D).
+            if fixtures.is_empty() {
+                self.pending_events.push(RuntimeEvent {
+                    day: self.elapsed_days,
+                    date: self.date.clone(),
+                    kind: "season_roll_error".to_string(),
+                    message: format!(
+                        "season roll for comp {comp_id} produced no fixtures \
+                         for {new_year} — that league has no schedule",
+                    ),
+                    phase: 2,
+                });
+                eprintln!(
+                    "[season-roll] WARNING: comp {comp_id} produced no \
+                     fixtures for {new_year}"
+                );
+                continue;
+            }
             // Append (do not replace) — the CURRENT season's remaining
             // fixtures continue playing; the NEW season's fixtures are
             // added so subsequent ticks can execute them once the
@@ -21423,9 +21498,7 @@ impl RuntimeSaveGame {
         let month = self.date.month;
         let date = self.date.clone();
         let elapsed = self.elapsed_days;
-        let leagues: Vec<(i32, String)> = self.simple_leagues.iter()
-            .map(|lg| (lg.real_comp_id, lg.name.clone()))
-            .collect();
+        let leagues = self.award_league_ids_and_names();
         for (comp_id, name) in leagues {
             if let Some(a) = crate::awards_engine::award_month_player_of_month(
                 year, month, comp_id, &name, &ratings,

@@ -1853,6 +1853,7 @@ mod tests {
         let mut surface = PackedSurface::rgb555(800, 600);
         let mut fonts = Fonts::new("D:/cm0102/Data");
         let players: Vec<SquadPlayer> = vec![];
+        let jump: [&str; 0] = [];
         let state = SquadState {
             club_name: "Chester City",
             players: &players,
@@ -1862,6 +1863,26 @@ mod tests {
             division_name: "Conference",
             kit_bg_rgb565: 0,
             kit_fg_rgb565: 0,
+            view: SquadView::Traditional,
+            view_menu_open: false,
+            cursor_x: 0,
+            cursor_y: 0,
+            jump_menu_open: false,
+            jump_items: &jump,
+            sort_by: SortByKey::Name,
+            sort_menu_open: false,
+            comp_scope: CompScope::League,
+            comp_menu_open: false,
+            attr_group: AttrGroup::Physical,
+            attr_menu_open: false,
+            filter: SquadFilter::default(),
+            filter_menu_open: false,
+            pressed: PressedButton::None,
+            top_tab_active: 0,
+            subtitle_override: None,
+            hide_middle_and_filter_buttons: false,
+            view_button_label_override: None,
+            external_body_row_count: 0,
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_squad(&mut surface, &mut fonts, &state);

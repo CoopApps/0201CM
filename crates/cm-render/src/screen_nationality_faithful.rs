@@ -253,6 +253,8 @@ mod tests {
             filter_open: false,
             filter_options: opts,
             filter_highlight: 1,
+            cursor_x: 0,
+            cursor_y: 0,
         };
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             render_nationality(&mut surface, &mut fonts, &state);

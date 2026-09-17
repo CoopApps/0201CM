@@ -156,7 +156,18 @@ impl std::error::Error for ExactEnglishGenerationError {}
 /// C11.1 point 14: the shipped 2001/02 templates are byte-exact
 /// only for that season year. Other years land in
 /// [`EnglishFixtureDispatch::Skipped`].
+/// Base years whose output has been diffed byte-for-byte against a
+/// real GDI capture. Only the shipped 2001/02 season has a capture, so
+/// only 2001 is *verified* — see `tests/c11_1_production_fixture_golden.rs`.
+///
+/// This is a statement about evidence, NOT about capability: the engine
+/// (perturb → walker → driver) is year-parameterised and runs for any
+/// season. Do not use this list as a dispatch gate.
 pub const EXACT_SUPPORTED_BASE_YEARS: &[u16] = &[2001];
+
+/// Earliest season the engine will build. The shipped database starts
+/// in 2001/02; anything earlier is a caller bug.
+pub const EARLIEST_SUPPORTED_BASE_YEAR: u16 = 2001;
 
 /// C11.1 point 8 — the single dispatcher decision function. One
 /// clear answer to "which engine owns this competition?".
@@ -178,9 +189,25 @@ pub fn english_dispatch_decision(
     if !is_english_traditional_league(comp_id) {
         return EnglishFixtureDispatch::Generic;
     }
-    if !EXACT_SUPPORTED_BASE_YEARS.contains(&base_year) {
+    // Any season from the database's first onward routes to the exact
+    // engine.
+    //
+    // This used to gate on `EXACT_SUPPORTED_BASE_YEARS` (= [2001]),
+    // which broke the game after one season: the Jan-1 season roll asks
+    // for `base_year + 1`, got `Skipped`, and the regen drain silently
+    // appended nothing. A save could therefore never have a second
+    // season of English fixtures. Gating *dispatch* on which years
+    // happen to have a capture conflated "unverified" with
+    // "unsupported".
+    //
+    // Seasons after 2001/02 reuse the 2001 round-date template for
+    // matchday dates, so they are semantically right but not
+    // capture-verified — recorded as LIVE BUT APPROXIMATE in the
+    // integration ledger. The 2001 path is unchanged and still byte-exact
+    // against the GDI capture.
+    if base_year < EARLIEST_SUPPORTED_BASE_YEAR {
         return EnglishFixtureDispatch::Skipped {
-            reason: "unsupported base_year for the exact English engine (only 2001/02 templates are proven)",
+            reason: "base_year predates the shipped database (2001/02)",
         };
     }
     EnglishFixtureDispatch::ExactEnglish
@@ -426,7 +453,7 @@ pub fn generate_english_traditional_league(
             actual: entries.len(),
         });
     }
-    if !EXACT_SUPPORTED_BASE_YEARS.contains(&base_year) {
+    if base_year < EARLIEST_SUPPORTED_BASE_YEAR {
         return Err(ExactEnglishGenerationError::UnsupportedBaseYear {
             comp_id: spec.comp_id,
             base_year,

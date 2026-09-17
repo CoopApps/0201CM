@@ -36,11 +36,17 @@ fn app_tick_resolves_fixtures_via_simulate_one_fixture() {
 
     // Pick two clubs from the Premier Division — the same source the tick
     // draws from when it builds a matchday snapshot.
-    let prem = save.simple_leagues.iter().find(|l| l.real_comp_id == 7)
-        .expect("Premier Division present");
-    let mut clubs = prem.teams.iter().map(|t| t.club_id);
-    let home_id = clubs.next().expect("club 0");
-    let away_id = clubs.next().expect("club 1");
+    //
+    // This used to read `save.simple_leagues` for comp 7. Comp 7 is no
+    // longer a generic simple league: the Traditional English pyramid is
+    // built by `english_traditional`, and the generic block for
+    // 7/8/9/10/93 was removed in 2aa4aed. Take the clubs from the
+    // scheduled fixtures instead, which is what the tick actually plays.
+    let prem_fixture = save.season.fixtures.iter()
+        .find(|f| f.competition_id == 7)
+        .expect("Premier Division fixtures present");
+    let home_id = prem_fixture.home_club_id;
+    let away_id = prem_fixture.away_club_id;
 
     let home = save.snapshot_team_for_engine(home_id)
         .expect("home snapshot from real player_ratings");

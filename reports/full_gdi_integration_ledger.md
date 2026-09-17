@@ -27,6 +27,177 @@ superseded hypotheses live in the individual reports.
 * **NOT-PORTED** — decoded elsewhere (report only) but no
   Rust implementation.
 
+## 0. PHASE A AUDIT — engine foundations vs the live runtime (2026-09-17)
+
+State vocabulary (no vague "implemented"): **LIVE + EXACT**, **LIVE BUT
+APPROXIMATE**, **EXACT HELPER EXISTS BUT NOT LIVE**, **TRACE-ONLY**,
+**STATE MATERIALISED BUT CALLER NOT LIVE**, **SUPERSEDED / DEAD**,
+**NOT YET PORTED**.
+
+The question for every row is only: *does the playable runtime call the
+proven implementation?*
+
+| # | Foundation | State | Production callsite / evidence |
+| --- | --- | --- | --- |
+| A1 | Authoritative GDI data + assets | **LIVE + EXACT** | RNG pool is `include_bytes!("assets/game_rng_pool.bin")`, 204,000 bytes, SHA-256 pinned by `pool_sha256_matches_documented`. The GDI address shift (`POOL_ADDR_SHIFT_GDI` = 184) is applied inside `rand_mod` itself, so every production consumer gets the GDI-authoritative stream. Fonts/`Data/*.dat` load from `rust-db`. |
+| A2 | Global GameRng ownership | **LIVE + EXACT** | `RuntimeSaveGame::with_session_rng` is the single owner; `tick_cm_phase` threads it to every subsystem. See §12c. |
+| A3 | RNG persistence across new game / tick | **LIVE + EXACT** | `session_rng_state` persisted by `with_session_rng`; `new_game_from_rust_db` now saves the post-fixture-gen position so tick 1 continues rather than replaying. §12c. |
+| A4 | `DAT_00DBC340` ownership / persistence | **LIVE + EXACT** | Carried on `GameRngState.dbc340_cli_seed`, preserved across every write-back (`GameRng::snapshot()` drops it; `with_session_rng` restores it). §12c. |
+| A5 | Runtime-vs-disk object distinction | **LIVE + EXACT** | Disk `Club+0x65` is `ClubView::initial_cash_seed()`, consumed only by `ClubFinance::seed_from` at boot and by the `regen_clubs` dump tool. `ClubView::cash()` is `#[deprecated]`. No production code treats disk cash as live cash. |
+| A6 | Club field semantics | **LIVE + EXACT** | `materialise_club_moves` writes `+0x57` / `+0x5B` / `+0x37` on `World.core.clubs[i].raw`, which is exactly what `ClubView::division_id()` and the league-table/club screens read back. Proven end-to-end by `live_year_end_moves_clubs_between_divisions` (real promotions observed, e.g. club 1953 comp 10 → 9). |
+| A7 | Competition identity (current / previous) | **LIVE + EXACT** | Same write path: current comp `+0x57`, previous comp `+0x5B`, status `+0x37`. Test above asserts the observable move. |
+| A8 | Stadium identity / references | **LIVE + EXACT** | `Club+0x69` → `DomainStadium`; `run_english_year_end` resolves each club's stadium via `ClubView::home_stadium_id()` into `world.references.stadiums` for the C14 affordability inputs. |
+| A9 | ContractPool identity / indexing | **LIVE + EXACT (fixed §12d)** | Was **EXACT HELPER EXISTS BUT NOT LIVE** — pool never built in the app, and every record carried `club_id == 0` so the identity gate could not pass. Now built by `run_start_game_init` and keyed to the employing club. |
+| A10 | Person / staff resolution | **LIVE + EXACT (fixed §12d)** | `ContractPool.by_staff_id` → `contract_for_staff`; the year-end now builds `per_club_person_slots` from the pool so the C13 per-person walk has real persons. |
+| A11 | News / mailbox storage | **LIVE (write) + display gap** | `world.person_news_mailboxes` is appended by `append_person_history_entry` on the live path (§12d). **No screen reads it yet** — the playable News screen renders `save.pending_events`, which the apply layer does push to. So the *simulation* state is live; the mailbox has no reader. Tracked under Phase P. |
+| A12 | Runtime finance store | **LIVE + EXACT** | One store: `RuntimeSaveGame.finance` (`FinanceBook`). Second store deleted (§12a); year-end seam is `year_end_state` / `apply_year_end_write`. |
+| A13 | Date lifecycle | **LIVE + EXACT** | `simulation.cm_packed_date` canonical, `save.date` mirrors it, synced at boot (§12b). |
+| A14 | Save / load reconstruction | **NOT YET PORTED** | There is no serializer call in the playable app at all. See §12e — blocks Phase R entirely. |
+
+Phase A is closed except A14 (no save/load) and the A11 display gap.
+
+## 0b. PHASE B AUDIT — fixture engine foundations (2026-09-17)
+
+| Primitive | State | Evidence |
+| --- | --- | --- |
+| `matrix_seed_base` / `matrix_perturb` / `walker_step` / outer driver / P1-P2 ordering / schedule buffers / fixture insertion | **LIVE + EXACT** | All reached through `generate_english_traditional_league`, called from `generate_new_game_season_with_rng_and_dbc340` — the fn `new_game_from_rust_db` uses. `tests/c11_1_production_fixture_golden.rs` runs that production dispatch against the captured GDI trace: 0 mismatches across 380/552/552/552/462. |
+| Club / stadium resolver | **LIVE + EXACT** | `EnglishClubEntry` built in the dispatch from `ClubView::stadium_id()` + `DomainStadium.alt_stadium_id`. |
+| GameRng consumption | **LIVE + EXACT** | Fixture generation draws from the session `GameRng`; the post-generation position is now persisted so the tick continues the stream (§12c). |
+| Stored-vs-generated | **LIVE + EXACT** | `simulate_season`'s `england_boot_wires_premiership` now asserts against `new_game_from_rust_db`'s stored output: comp 7 holds exactly 380 fixtures. |
+
+**Old paths — all confirmed inactive for Traditional England:**
+
+* Generic Berger (`generate_double_round_robin`) — excluded.
+* `simple_league::from_teams` block for 7/8/9/10/93 — deleted in `2aa4aed`
+  (it was generating a parallel season at `RUNTIME_BASE + id`, which is
+  what made Cambridge show 94 fixtures and play Colchester twice in two
+  days).
+* `generate_eng_second_dates` overlay — obsolete, the exact engine
+  carries native dates.
+
+**Silent fallback found and closed.** The generic builder excluded only
+comps the exact engine had *dispatched*
+(`!english_dispatched_ids.contains(id)`). But
+`english_dispatch_decision` returns `Skipped` for any base year outside
+2001/02 — and those comps then dropped through to Berger pair
+generation, producing a plausible-looking but non-exact English season
+with no indication anything was wrong. Now the generic builder refuses
+comps 7/8/9/10/93 unconditionally
+(`!is_english_traditional_league(c.id)`), and a skip logs loudly and
+leaves the league with no fixtures. A missing season is a visible bug;
+a fake one is not. (Roster-shape failures already panicked rather than
+falling back — that guard was correct and is untouched.)
+
+**Superseded test corrected.**
+`season_exclusion_tests::english_leagues_are_not_excluded_from_the_generic_builder`
+asserted that 7/8/9/10/93 must NOT be excluded from the generic builder,
+on the grounds that "nothing builds it". True pre-C11.2, false since.
+Replaced by `english_leagues_are_never_built_by_the_generic_builder`.
+
+**Workspace test targets did not compile.** `cargo test --workspace`
+failed to build `app` (bin test) and `cm-render` (lib test) on stale
+struct literals — `Screen::SelectClub` missing `selected`,
+`NewGameOptions` missing `initial_game_rng_state`, `NationalityState`
+missing `cursor_x/cursor_y`, `SquadState` missing 20 fields. Those
+targets had therefore been running zero tests for some time. Fixed; the
+workspace now builds and runs end to end.
+
+## 0c. PHASE C AUDIT — the pyramid distinction, measured (2026-09-17)
+
+Measured on a real England boot through `new_game_from_rust_db`:
+
+| Comp | Members | Fixtures built | Verdict |
+| --- | --- | --- | --- |
+| 7 Premier | 20 | **380** | simulated, exact engine |
+| 8 First | 24 | **552** | simulated, exact engine |
+| 9 Second | 24 | **552** | simulated, exact engine |
+| 10 Third | 24 | **552** | simulated, exact engine |
+| 93 Conference | 22 | **462** | simulated, exact engine |
+| 357 A Lower Division | 2,351 | **0** | shared sink — correctly unscheduled |
+| 358 Isthmian Premier | 21 | **0** | static feeder — no fake season |
+| 359 Southern Premier | 22 | **0** | static feeder — no fake season |
+| 360 Northern Premier | 23 | **0** | static feeder — no fake season |
+
+`save.simple_leagues` contains **no** entry for 357/358/359/360, so no
+generic league state is fabricated for them either.
+
+State: **LIVE + EXACT.** The runtime does distinguish the three classes,
+and it does so through the manageable-league filter rather than the
+constant this ledger used to cite — worth knowing, because the constant
+would not have excluded them.
+
+## 0d. PHASE D AUDIT — fixture lifecycle (2026-09-17)
+
+Live route: `tick_cm_phase` day rollover → `hook_season_roll_scheduler`
+(34-slot table, Jan-1 trigger) → `pending_season_roll_regens` →
+`apply_pending_season_roll_regens` → exact engine → appended to
+`save.season.fixtures` on the SAME `World.references.club_competitions`
+entry (no competition object is rebuilt).
+
+| Link | State | Notes |
+| --- | --- | --- |
+| Date advance → scheduler | **LIVE + EXACT** | Fires from the day-rollover branch of `tick_cm_phase`, after the date advances, as `FUN_005BFD90` does. |
+| Scheduler registration | **LIVE + EXACT (new games)** | `register_english_pyramid` runs in the `RuntimeSaveGame` constructor. |
+| Jan-1 trigger → pending regen | **LIVE + EXACT** | `season_roll_comp_years` mirrors `Comp+0x40`; slot guard prevents a double fire. |
+| Pending regen → exact generator | **LIVE + EXACT (season 1), LIVE BUT APPROXIMATE (season 2+)** | See the defect below. |
+| Install into existing competition | **LIVE + EXACT** | Appends; the current season keeps playing. |
+
+### The game stopped after one season (FIXED)
+
+`english_dispatch_decision` gated on `EXACT_SUPPORTED_BASE_YEARS`,
+which is `[2001]`. The Jan-1 roll asks the engine for `year + 1`, so
+from 2002 the decision was `Skipped`, the generator was never called,
+and `apply_pending_season_roll_regens` hit `if fixtures.is_empty() {
+continue }` — **silently**. A save could therefore never have a second
+season of English fixtures, and nothing anywhere said so. The ledger
+recorded this lifecycle as "FROZEN".
+
+The gate conflated *unverified* with *unsupported*. Only 2001 has a GDI
+capture to diff against, but the engine is year-parameterised and runs
+for any season. Fixed:
+
+* `EARLIEST_SUPPORTED_BASE_YEAR = 2001` is the dispatch gate (a year
+  before the shipped database is a caller bug);
+  `EXACT_SUPPORTED_BASE_YEARS` remains, re-documented as a statement
+  about *evidence*, explicitly not a dispatch gate.
+* An empty regen result now emits a `season_roll_error` event and logs,
+  rather than being dropped.
+
+**Fidelity note, deliberate:** seasons after 2001/02 reuse the 2001
+round-date template for matchday dates, so they are **LIVE BUT
+APPROXIMATE** — right shape, unverified calendar. The 2001 path is
+untouched and still byte-exact against the capture. A game that stops
+after one season is worse than one whose later matchday dates are not
+capture-verified.
+
+Proven by `tests/production_year_end_path.rs::
+season_roll_produces_a_second_season_of_fixtures`, which drives the real
+drain method: comp 7 goes from 380 to 760 fixtures.
+
+### Awards were blind to the English pyramid (FIXED)
+
+`hook_year_rollover` (end-of-season slate) and `hook_monthly` (Player of
+the Month) both iterated `self.simple_leagues` for their league list.
+Comps 7/8/9/10/93 stopped appearing there when the generic English block
+was removed, so **no English award had fired since** — for the one
+pyramid the port simulates exactly. Both now use
+`RuntimeSaveGame::award_league_ids_and_names`, which merges
+`simple_leagues` with the English comps taken from the live fixture list.
+
+### Still open
+
+Old-save scheduler reconstruction is moot until save/load exists
+(§12e). Note `season_roll_scheduler` is `#[serde(default)]`, so a
+deserialised save would load with an EMPTY scheduler and never fire
+Jan-1 — this must be reconstructed on load when Phase R is built.
+
+Also open: `apply_pending_season_roll_regens` extends
+`save.season.standings` with the new season's rows while the old rows
+remain, so from season 2 a club appears twice. `run_english_year_end`
+builds its tables by filtering standings on club membership, so it would
+see duplicate rows. Needs a per-comp-per-season key on
+`HeadlessSeasonStanding` — tracked, not yet fixed.
+
 ## 1. Foundations (pre-C10 and cross-cutting)
 
 | System | Canonical Rust | Status | Notes |
@@ -71,10 +242,10 @@ superseded hypotheses live in the individual reports.
 | 9 Second | Dynamic simulated | `english_traditional::ExactEnglish` | WIRED |
 | 10 Third | Dynamic simulated | `english_traditional::ExactEnglish` | WIRED |
 | 93 Conference | Dynamic simulated | `english_traditional::ExactEnglish` | WIRED |
-| 358 Isthmian Premier | Static data pool (feeder) | `LEAGUES_BUILT_BY_DEDICATED_ENGINES` exclusion | WIRED (correctly excluded) |
-| 359 Southern Premier | Static feeder | same | WIRED |
-| 360 Northern Premier | Static feeder | same | WIRED |
-| 357 A Lower Division (multi-nation catch-all) | Shared sink | `generate_double_round_robin` `MAX_LEAGUE_CLUBS` = 30 gate skips it | WIRED |
+| 358 Isthmian Premier | Static data pool (feeder) | Excluded by `manageable_league_ids_for_nations` — a static pool is not a manageable league, so it never enters `comp_ids`. (The ledger previously credited `LEAGUES_BUILT_BY_DEDICATED_ENGINES`; 357-360 are **not** in that list. Mechanism corrected 2026-09-17.) | **LIVE + EXACT** — measured 21 members, 0 fixtures |
+| 359 Southern Premier | Static feeder | same | **LIVE + EXACT** — 22 members, 0 fixtures |
+| 360 Northern Premier | Static feeder | same | **LIVE + EXACT** — 23 members, 0 fixtures |
+| 357 A Lower Division (multi-nation catch-all) | Shared sink | Same manageable-league filter; `MAX_LEAGUE_CLUBS` = 30 is a second guard behind it | **LIVE + EXACT** — 2,351 members, 0 fixtures |
 | **Duplicate simple_league block for 7/8/9/10/93** (pre-C11.2 stale code) | REMOVED (`2aa4aed`) | — | Was causing Cambridge's 94-fixture duplicate season. |
 
 ## 5. Cups

@@ -729,6 +729,7 @@ mod tests {
             use_real_players: true,
             attribute_masking: false,
             start_year: 2001,
+            initial_game_rng_state: None,
         };
         let mut pool = GuiRecordPool::new();
         build_selected_leagues_from_view(&mut pool, &rows, Some(&opts)).unwrap();

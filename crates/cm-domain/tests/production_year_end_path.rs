@@ -170,3 +170,103 @@ fn live_year_end_runs_with_a_contract_pool() {
         "year-end must latch so it cannot fire twice in one season"
     );
 }
+
+/// Phase D: the season roll must produce a SECOND season of English
+/// fixtures.
+///
+/// `hook_season_roll_scheduler` queues a regen for `year + 1` each
+/// Jan 1, and `apply_pending_season_roll_regens` runs the exact engine
+/// for it. That engine used to be gated on
+/// `EXACT_SUPPORTED_BASE_YEARS == [2001]`, so the 2002 roll returned
+/// nothing and the drain skipped it silently — a save could never have a
+/// second season of English football. This drives the real drain method.
+#[test]
+fn season_roll_produces_a_second_season_of_fixtures() {
+    let Some((world, mut save)) = boot_england() else { return };
+
+    // A season spans two calendar years (Aug 2001 → May 2002), so count
+    // comp-7 fixtures in total rather than by year.
+    let total = |s: &cm_domain::RuntimeSaveGame| {
+        s.season.fixtures.iter().filter(|f| f.competition_id == 7).count()
+    };
+    assert_eq!(total(&save), 380, "first season built");
+
+    // Exactly what the Jan-1 hook queues.
+    save.pending_season_roll_regens = [(7u32, 2002u16)].into_iter().collect();
+    let mut rng = cm_domain::game_rng::GameRng::new(0xC15_0000);
+    let applied = save.apply_pending_season_roll_regens(&world, &mut rng, 0);
+
+    assert_eq!(applied, 1, "the 2002 season roll must materialise comp 7");
+    assert_eq!(
+        total(&save),
+        760,
+        "comp 7 must hold a full SECOND season alongside the first"
+    );
+    assert!(
+        !save.pending_events.iter().any(|e| e.kind == "season_roll_error"),
+        "no league may be left without a schedule"
+    );
+}
+
+/// Phases F/G/J: the year-end must actually MOVE clubs between
+/// divisions on the live World — status stamped (C12), promotion /
+/// relegation applied (C7/C8/C13), and the club's own record rewritten
+/// (`Club+0x57` current comp, `+0x5B` previous comp, `+0x37` status).
+///
+/// `ClubView::division_id()` reads `+0x57`, and that is what the league
+/// tables and club screens read, so this proves the rollover is visible
+/// to the rest of the game rather than confined to a report object.
+#[test]
+fn live_year_end_moves_clubs_between_divisions() {
+    let Some((mut world, mut save)) = boot_england() else { return };
+
+    let division_of = |w: &World, club_id: u32| -> Option<i32> {
+        w.core
+            .clubs
+            .iter()
+            .map(cm_domain::typed_records::ClubView::new)
+            .find(|v| v.id() == club_id)
+            .and_then(|v| v.division_id())
+    };
+
+    // Snapshot every English club's division before the rollover.
+    let eng = [7u32, 8, 9, 10, 93];
+    let mut before: std::collections::BTreeMap<u32, i32> = Default::default();
+    for comp in eng {
+        for (cid, _) in world.club_members_of_competition(comp) {
+            if let Some(d) = division_of(&world, cid) {
+                before.insert(cid, d);
+            }
+        }
+    }
+    assert!(!before.is_empty(), "England boot must populate the pyramid");
+
+    for f in save.season.fixtures.iter_mut() {
+        if eng.contains(&f.competition_id) {
+            f.status = cm_domain::HeadlessFixtureStatus::Played;
+        }
+    }
+    save.date.month = 6;
+
+    let mut rng = cm_domain::game_rng::GameRng::new(0xC15_0000);
+    save.run_english_year_end(&mut world, &mut rng);
+
+    let moved: Vec<(u32, i32, i32)> = before
+        .iter()
+        .filter_map(|(cid, old)| {
+            division_of(&world, *cid).and_then(|now| {
+                if now != *old { Some((*cid, *old, now)) } else { None }
+            })
+        })
+        .collect();
+
+    for (cid, old, now) in moved.iter().take(10) {
+        eprintln!("club {cid}: comp {old} -> {now}");
+    }
+    assert!(
+        !moved.is_empty(),
+        "the year-end must move at least one club between divisions on the \
+         live World — an empty result means the rollover ran but nothing \
+         reached Club+0x57"
+    );
+}

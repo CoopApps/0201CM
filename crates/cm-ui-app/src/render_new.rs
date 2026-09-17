@@ -2192,7 +2192,7 @@ mod tests {
             division_id: 1,
             division_name: "Premier".into(),
         }];
-        let screen = Screen::SelectClub { clubs, scroll: 0 };
+        let screen = Screen::SelectClub { clubs, scroll: 0, selected: None };
         let mut out = Surface::new();
         let f = font();
         let ok = try_render_pre_boot(&screen, None, &mut out, &f);
@@ -2213,7 +2213,7 @@ mod tests {
                 game_state::real_34_slots(),
             )),
             Screen::EnterName,
-            Screen::SelectClub { clubs: Vec::new(), scroll: 0 },
+            Screen::SelectClub { clubs: Vec::new(), scroll: 0, selected: None },
         ] {
             assert!(try_render_pre_boot(s, None, &mut out, &f));
         }
