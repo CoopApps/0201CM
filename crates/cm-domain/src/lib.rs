@@ -1906,7 +1906,11 @@ impl World {
             .season
             .standings
             .iter()
-            .filter(|s| members.contains(&s.club_id))
+            // Must match BOTH the club set and the competition: a club's
+            // cup rows carry the same club_id and would otherwise be
+            // rendered as extra league rows.
+            .filter(|s| s.competition_id == division_id as u32
+                     && members.contains(&s.club_id))
             .enumerate()
             .map(|(i, s)| LeagueTableRow {
                 position: i + 1,
@@ -12453,6 +12457,24 @@ pub enum HeadlessFixtureStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HeadlessSeasonStanding {
     pub club_id: u32,
+    /// Which competition this row belongs to.
+    ///
+    /// Added 2026-09-17. Without it there was ONE row per club for the
+    /// whole game, and `apply_fixture_to_standings` ran for every played
+    /// fixture — so FA Cup, League Cup, play-off and continental results
+    /// added P/W/D/L and **league points** into the club's league row.
+    /// The League Table screen rendered those totals, and
+    /// `run_english_year_end` derived promotion, relegation and play-off
+    /// places from them.
+    ///
+    /// A row is now identified by `(club_id, competition_id)`.
+    ///
+    /// STILL OPEN: there is no season dimension, so from the second
+    /// season the Jan-1 regen's appended rows collide with the current
+    /// season's. That needs a `season_year` on the fixture as well —
+    /// see the integration ledger's Phase D notes.
+    #[serde(default)]
+    pub competition_id: u32,
     pub club_name: String,
     pub played: u32,
     pub won: u32,
@@ -12478,9 +12500,10 @@ pub struct HeadlessFixtureBatchReport {
 }
 
 impl HeadlessSeasonStanding {
-    fn new(club_id: u32, club_name: String) -> Self {
+    fn new(club_id: u32, competition_id: u32, club_name: String) -> Self {
         Self {
             club_id,
+            competition_id,
             club_name,
             played: 0,
             won: 0,
@@ -13650,17 +13673,24 @@ impl World {
             .collect::<Vec<_>>();
         let (fixtures, schedule_generation) =
             self.generate_competition_aware_headless_fixtures(&all_clubs, &clubs);
-        let mut standing_members = BTreeMap::new();
+        // Keyed by (club_id, competition_id) — see HeadlessSeasonStanding.
+        let mut standing_members: BTreeMap<(u32, u32), String> = BTreeMap::new();
         for fixture in &fixtures {
-            standing_members.insert(fixture.home_club_id, fixture.home_club_name.clone());
-            standing_members.insert(fixture.away_club_id, fixture.away_club_name.clone());
+            standing_members.insert(
+                (fixture.home_club_id, fixture.competition_id),
+                fixture.home_club_name.clone());
+            standing_members.insert(
+                (fixture.away_club_id, fixture.competition_id),
+                fixture.away_club_name.clone());
         }
         if standing_members.is_empty() {
-            standing_members.extend(clubs.into_iter());
+            standing_members.extend(
+                clubs.into_iter().map(|(id, name)| ((id, 0u32), name)));
         }
         let standings = standing_members
             .into_iter()
-            .map(|(club_id, club_name)| HeadlessSeasonStanding::new(club_id, club_name))
+            .map(|((club_id, comp), club_name)|
+                 HeadlessSeasonStanding::new(club_id, comp, club_name))
             .collect();
         HeadlessSeasonState {
             fixtures,
@@ -18679,7 +18709,9 @@ impl World {
     ) {
         let mut fixtures = Vec::new();
         let mut proofs = Vec::new();
-        let mut standing_members: BTreeMap<u32, String> = BTreeMap::new();
+        // Keyed by (club_id, competition_id): a club can appear in more
+        // than one competition, and each needs its own standings row.
+        let mut standing_members: BTreeMap<(u32, u32), String> = BTreeMap::new();
 
         // C11.1: single-decision dispatch. Traditional mode is
         // assumed here; when V4 mode wires in, the caller
@@ -18768,7 +18800,7 @@ impl World {
                 ));
                 for (id, name) in &members {
                     standing_members
-                        .entry(*id)
+                        .entry((*id, eid))
                         .or_insert_with(|| name.clone());
                 }
                 proofs.push(headless_schedule_generation_proof(
@@ -18862,7 +18894,9 @@ impl World {
             // that the exact engine builds both together for all five
             // English leagues in coherent dispatch.
             for (id, name) in &members {
-                standing_members.entry(*id).or_insert_with(|| name.clone());
+                standing_members
+                    .entry((*id, competition.id))
+                    .or_insert_with(|| name.clone());
             }
             let rounds = ((members.len() + members.len() % 2).saturating_sub(1) * 2) as u32;
             proofs.push(headless_schedule_generation_proof(
@@ -18877,7 +18911,7 @@ impl World {
 
         let standings = standing_members
             .into_iter()
-            .map(|(id, name)| HeadlessSeasonStanding::new(id, name))
+            .map(|((id, comp), name)| HeadlessSeasonStanding::new(id, comp, name))
             .collect();
         (fixtures, proofs, standings)
     }
@@ -19577,8 +19611,15 @@ impl RuntimeSaveGame {
             let members: std::collections::BTreeSet<u32> =
                 world.club_members_of_competition(comp_id)
                     .into_iter().map(|(id, _)| id).collect();
+            // Competition-keyed: promotion, relegation and play-off
+            // places must be derived from LEAGUE results only. Before
+            // the standings carried a competition_id, cup and play-off
+            // results were folded into these same rows.
             let mut rows: Vec<&HeadlessSeasonStanding> = self.season.standings
-                .iter().filter(|s| members.contains(&s.club_id)).collect();
+                .iter()
+                .filter(|s| s.competition_id == comp_id
+                         && members.contains(&s.club_id))
+                .collect();
             // Sort by (points desc, GD desc, GF desc). Stable tiebreak.
             rows.sort_by(|a, b| b.points.cmp(&a.points)
                 .then(b.goal_difference.cmp(&a.goal_difference))
@@ -20676,6 +20717,7 @@ impl RuntimeSaveGame {
             let fixture = &mut self.season.fixtures[fixture_index];
             let home_id = fixture.home_club_id;
             let away_id = fixture.away_club_id;
+            let fixture_comp_id = fixture.competition_id;
             let home_name = fixture.home_club_name.clone();
             let away_name = fixture.away_club_name.clone();
 
@@ -20843,8 +20885,12 @@ impl RuntimeSaveGame {
             let report = headless_match_report(fixture, &packet);
             fixture.match_packet = Some(packet);
             fixture.match_report = Some(report.clone());
-            self.apply_fixture_to_standings(home_id, &home_name, home_score, away_score);
-            self.apply_fixture_to_standings(away_id, &away_name, away_score, home_score);
+            // Keyed by competition: a cup tie must not add league points
+            // to the club's league row.
+            self.apply_fixture_to_standings(
+                home_id, fixture_comp_id, &home_name, home_score, away_score);
+            self.apply_fixture_to_standings(
+                away_id, fixture_comp_id, &away_name, away_score, home_score);
             self.pending_events.push(RuntimeEvent {
                 day: self.elapsed_days,
                 date: date.clone(),
@@ -21801,9 +21847,25 @@ impl RuntimeSaveGame {
         );
     }
 
+    /// Test-visible wrapper over [`Self::apply_fixture_to_standings`] so
+    /// integration tests can prove the competition keying without
+    /// simulating a whole match batch.
+    pub fn apply_fixture_to_standings_for_test(
+        &mut self,
+        club_id: u32,
+        competition_id: u32,
+        club_name: &str,
+        goals_for: u8,
+        goals_against: u8,
+    ) {
+        self.apply_fixture_to_standings(
+            club_id, competition_id, club_name, goals_for, goals_against);
+    }
+
     fn apply_fixture_to_standings(
         &mut self,
         club_id: u32,
+        competition_id: u32,
         club_name: &str,
         goals_for: u8,
         goals_against: u8,
@@ -21812,11 +21874,11 @@ impl RuntimeSaveGame {
             .season
             .standings
             .iter()
-            .position(|row| row.club_id == club_id)
+            .position(|row| row.club_id == club_id
+                         && row.competition_id == competition_id)
             .unwrap_or_else(|| {
-                self.season
-                    .standings
-                    .push(HeadlessSeasonStanding::new(club_id, club_name.to_string()));
+                self.season.standings.push(HeadlessSeasonStanding::new(
+                    club_id, competition_id, club_name.to_string()));
                 self.season.standings.len() - 1
             });
         let row = &mut self.season.standings[row_index];

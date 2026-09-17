@@ -242,6 +242,52 @@ fn live_year_end_promotes_a_playoff_winner() {
     }
 }
 
+/// Standings must be keyed by competition: a cup tie must never add
+/// league points to a club's league row.
+///
+/// Before `HeadlessSeasonStanding.competition_id` existed there was one
+/// row per club for the whole game, and `apply_fixture_to_standings`
+/// ran for every played fixture — so FA Cup, League Cup and play-off
+/// results inflated the league table the player reads AND the table the
+/// year-end derives promotion and relegation from.
+#[test]
+fn cup_results_do_not_add_league_points() {
+    let Some((world, mut save)) = boot_england() else { return };
+
+    // Pick a Premier League club that also has a cup tie scheduled.
+    let prem_members = world.club_members_of_competition(7);
+    let (club_id, _) = prem_members.first().expect("comp 7 has members");
+    let club_id = *club_id;
+
+    let league_row = |s: &cm_domain::RuntimeSaveGame| {
+        s.season
+            .standings
+            .iter()
+            .find(|r| r.club_id == club_id && r.competition_id == 7)
+            .map(|r| (r.played, r.points))
+            .unwrap_or((0, 0))
+    };
+    let before = league_row(&save);
+
+    // Feed the club a 5-0 win in a CUP competition (351 = FA Cup).
+    save.apply_fixture_to_standings_for_test(club_id, 351, "Cup Club", 5, 0);
+
+    let after = league_row(&save);
+    assert_eq!(
+        before, after,
+        "a cup result must not touch the club's LEAGUE row"
+    );
+
+    // It must have landed on its own cup row instead.
+    let cup_row = save
+        .season
+        .standings
+        .iter()
+        .find(|r| r.club_id == club_id && r.competition_id == 351)
+        .expect("the cup result must be recorded against the cup");
+    assert_eq!((cup_row.played, cup_row.points), (1, 3));
+}
+
 /// Phase H: the Conference↔feeder edge must move clubs.
 ///
 /// `english_conference_dispatch` promotes up to 3 clubs from the static
