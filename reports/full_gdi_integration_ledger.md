@@ -200,7 +200,28 @@ see duplicate rows. Needs a per-comp-per-season key on
 
 ## 0e. PHASE E/F AUDIT — playoffs and status stamping (2026-09-17, IN PROGRESS)
 
-### Playoffs: EXACT HELPER EXISTS BUT NOT LIVE
+### Playoffs: now LIVE (fixed 2026-09-17) — bracket format still undecoded
+
+`run_english_year_end` now plays the promotion play-offs for divisions
+1/2/3 before building the rollover input, and stamps the winner's row
+with `playoff_winner_marker` so `propagate_english_playoff_winner`
+fires. Bracket positions come from the same `EnglishLeagueEndShape`
+(`n_auto_promote` / `n_playoff`) the C12 stamper uses, so the bracket
+cannot drift from the statuses; ties are played by the ported match
+engine (`simulate_one_fixture`) drawing from the shared session RNG.
+
+Proven by `live_year_end_promotes_a_playoff_winner`: three play-off
+finals resolve (comps 8, 9, 10) and each winner has left its division on
+the live `World`.
+
+**Still approximate, deliberately:** the exe plays two-legged semi-finals
+and a final on dated May matchdays; this resolves each tie as a single
+match at the higher-placed club. When those fixtures are decoded they
+should become real dated fixtures played by the tick, at which point the
+year-end reads a result instead of producing one. Recorded as **LIVE BUT
+APPROXIMATE**.
+
+### The original finding (for the record)
 
 `run_english_year_end` builds every `FinalTableRow` with
 `playoff_winner_marker: false` and `current_status: STATUS_IDLE`,
@@ -241,6 +262,32 @@ implemented in `year_end_statuses` and exercised by the live path —
 `live_year_end_moves_clubs_between_divisions` observes real moves across
 all four edges — but positions alone drive them today, without the
 playoff slot or sticky carry-in.
+
+## 0f. PHASE G / Q AUDIT — one production path (2026-09-17)
+
+Phase Q asks for exactly one production route into the year end, and
+Phase G forbids an older generic rollover running on the English comps
+in parallel. Both hold, verified by callsite census:
+
+| Primitive | Non-test callers |
+| --- | --- |
+| `stamp_league_end_of_season_statuses` (C12) | 1 — `c15_english_annual_rollover:271` |
+| `apply_promotion_install` (C13) | 1 — `c15_english_annual_rollover:506` |
+| `apply_relegation_install` (C13) | 1 — `c15_english_annual_rollover:551` |
+| `compute_annual_rollover` (C15) | 1 — `lib.rs:19779`, inside `run_english_year_end` |
+| `apply_report_to_world` (C15.1) | 1 — `lib.rs:19792`, same function |
+
+`run_english_year_end` is itself called from exactly one place:
+`tick_days_bound`, the tick the playable app runs. So the chain
+**season end → `compute_annual_rollover` → `apply_report_to_world` →
+`World` + `RuntimeSaveGame`** is single, and C15 is not merely something
+tests call.
+
+No generic rollover competes for these comps: `simple_league` has no
+promotion/relegation code at all, and comps 7/8/9/10/93 are not in
+`simple_leagues` in the first place (Phase C).
+
+State: **LIVE + EXACT.**
 
 ## 1. Foundations (pre-C10 and cross-cutting)
 

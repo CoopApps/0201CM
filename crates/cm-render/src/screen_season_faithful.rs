@@ -10,7 +10,7 @@
 //! selecting England + Russia).
 //!
 //! Op recipe (from `fixtures/season_screen/structure.txt`):
-//! ```
+//! ```text
 //!  80 PANEL  (110,145)-(444,209) c=0x0010 p=0x7fe0 s=0x822   <- SELECTED
 //!  81 darken (110,145)-(444,209)
 //!  90 rect   (109,144)-(445,210) c=0x7fe0 s=2                 <- yellow frame

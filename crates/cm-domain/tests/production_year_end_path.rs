@@ -171,6 +171,77 @@ fn live_year_end_runs_with_a_contract_pool() {
     );
 }
 
+/// Phase E: divisions 1/2/3 promote a FOURTH club through the
+/// promotion play-offs.
+///
+/// `compute_annual_rollover` only propagates a play-off winner when a
+/// table row carries `playoff_winner_marker`. `run_english_year_end`
+/// used to hardcode that to `false` on every row, so the fourth
+/// promotion place was never filled in a real game. This asserts the
+/// live path both plays the play-offs and promotes their winner.
+#[test]
+fn live_year_end_promotes_a_playoff_winner() {
+    let Some((mut world, mut save)) = boot_england() else { return };
+
+    let division_of = |w: &World, club_id: u32| -> Option<i32> {
+        w.core
+            .clubs
+            .iter()
+            .map(cm_domain::typed_records::ClubView::new)
+            .find(|v| v.id() == club_id)
+            .and_then(|v| v.division_id())
+    };
+
+    let eng = [7u32, 8, 9, 10, 93];
+    for f in save.season.fixtures.iter_mut() {
+        if eng.contains(&f.competition_id) {
+            f.status = cm_domain::HeadlessFixtureStatus::Played;
+        }
+    }
+    save.date.month = 6;
+
+    let mut rng = cm_domain::game_rng::GameRng::new(0xC15_0000);
+    save.run_english_year_end(&mut world, &mut rng);
+
+    // One play-off final per division that has a bracket (8, 9, 10).
+    let finals: Vec<&cm_domain::RuntimeEvent> = save
+        .pending_events
+        .iter()
+        .filter(|e| e.message.contains("play-offs and are promoted"))
+        .collect();
+    for e in &finals {
+        eprintln!("{}", e.message);
+    }
+    assert_eq!(
+        finals.len(),
+        3,
+        "divisions 1, 2 and 3 must each resolve a promotion play-off"
+    );
+
+    // Each winner must actually be promoted on the live World.
+    for e in &finals {
+        let cid: u32 = e
+            .message
+            .split("club #")
+            .nth(1)
+            .and_then(|s| s.split_whitespace().next())
+            .and_then(|s| s.parse().ok())
+            .expect("event names the winning club");
+        let now = division_of(&world, cid).expect("winner has a division");
+        let comp: i32 = e
+            .message
+            .split("comp ")
+            .nth(1)
+            .and_then(|s| s.split_whitespace().next())
+            .and_then(|s| s.parse().ok())
+            .expect("event names the comp");
+        assert_ne!(
+            now, comp,
+            "play-off winner {cid} must have LEFT comp {comp}, but is still there"
+        );
+    }
+}
+
 /// Phase D: the season roll must produce a SECOND season of English
 /// fixtures.
 ///

@@ -450,10 +450,12 @@ impl PackedSurface {
 /// `None`, the exe falls back to `DAT_00acde98`
 /// (asm 005ce2e6..005ce2ec):
 ///
-///     test ebx, ebx
-///     mov  esi, ebx
-///     jne  005ce2f1
-///     mov  esi, 0xacde98
+/// ```text
+/// test ebx, ebx
+/// mov  esi, ebx
+/// jne  005ce2f1
+/// mov  esi, 0xacde98
+/// ```
 ///
 /// The static `DAT_00ACDE98` in [`packed_widget_globals`] carries the
 /// RGB555 mask set that `FUN_005cc4f0` writes there at GDI init.
@@ -530,12 +532,14 @@ pub fn colour_scale(
 ///
 /// The compiler emits:
 ///
-///     mov  eax, 0x51eb851f    ; signed multiplicative inverse of 100
-///     imul edx                 ; edx:eax = value * 0x51eb851f  (64-bit signed)
-///     sar  edx, 5              ; edx = high dword >> 5      (= value/100 flooring)
-///     mov  eax, edx
-///     shr  eax, 31             ; eax = sign bit  (0 for non-negative)
-///     add  edx, eax            ; round toward zero
+/// ```text
+/// mov  eax, 0x51eb851f    ; signed multiplicative inverse of 100
+/// imul edx                 ; edx:eax = value * 0x51eb851f  (64-bit signed)
+/// sar  edx, 5              ; edx = high dword >> 5      (= value/100 flooring)
+/// mov  eax, edx
+/// shr  eax, 31             ; eax = sign bit  (0 for non-negative)
+/// add  edx, eax            ; round toward zero
+/// ```
 ///
 /// The `sar edx, 5` step takes only the upper 32 bits of the 64-bit
 /// signed product before the shift — Rust's `wrapping_mul` on a 64-bit

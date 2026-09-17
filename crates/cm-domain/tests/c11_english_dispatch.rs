@@ -440,20 +440,36 @@ fn c11_1_wrong_club_count_panics_no_silent_fallback() {
 }
 
 #[test]
-fn c11_1_unsupported_base_year_skipped_by_dispatch() {
-    // C11.1 point 14: non-2001 base years fall to Skipped and the
-    // production dispatch does not run the exact engine at all.
+fn c11_1_later_base_years_still_route_to_the_exact_engine() {
+    // INVERTED 2026-09-17. This asserted that base_year 2002 must NOT
+    // reach the exact engine, and its own comment conceded that "the
+    // generic Berger builder may still produce fixtures for these ids
+    // in fallback mode" — i.e. it blessed a silent fallback that
+    // handed Traditional England a fake season.
+    //
+    // Two defects came out of that (ledger Phases B and D): the Jan-1
+    // season roll asks for year+1, so from the second season the exact
+    // engine was never called and the drain silently appended nothing;
+    // and where the generic builder did run for these ids it produced
+    // non-exact fixtures indistinguishable from real ones.
+    //
+    // The guarantee now: comps 7/8/9/10/93 ALWAYS route to the exact
+    // engine, for every season from the database's first onward, and
+    // the generic builder never touches them.
     let world = build_world_with_five_english_leagues();
     let comp_ids: BTreeSet<u32> = ENGLISH_TRADITIONAL_COMP_IDS.iter().copied().collect();
     let mut rng = GameRng::new(0);
     let (fixtures, _, _) =
         world.generate_new_game_season_with_rng(&comp_ids, 2002, &mut rng);
-    // None of the fixtures should be the exact-engine source string
-    // (the exact engine was skipped; the generic Berger builder may
-    // still produce fixtures for these ids in fallback mode).
-    assert!(!fixtures.iter().any(|f| f.source.contains(EXACT_ENGINE_MARKER)),
-        "base_year 2002 must NOT route through the exact engine — \
-         no proven templates for non-2001 seasons.");
+    assert!(!fixtures.is_empty(), "2002 must produce a season");
+    for f in &fixtures {
+        assert!(
+            f.source.contains(EXACT_ENGINE_MARKER),
+            "comp {} fixture came from {:?}, not the exact engine — \
+             the generic builder must never build Traditional England",
+            f.competition_id, f.source,
+        );
+    }
 }
 
 #[test]

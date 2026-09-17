@@ -5,7 +5,7 @@
 //!
 //! ## FUN_00933579 shape
 //!
-//! ```
+//! ```text
 //! 00933579  push    ebp
 //! 0093357a  mov     ebp, esp
 //! 0093357c  sub     esp, 0x20
@@ -54,7 +54,7 @@
 //! (asm 005d7ecb, 005d7f6c, 005d800d) followed by one byte-sized
 //! `push` for the character:
 //!
-//! ```
+//! ```text
 //! 005d7ec5  push   0x2b            ; '+' (ch)  — block I
 //! 005d7ecb  push   0x9a3ac4        ; fmt
 //! 005d7ed0  push   edx             ; dst

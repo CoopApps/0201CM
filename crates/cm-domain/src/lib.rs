@@ -19636,6 +19636,81 @@ impl RuntimeSaveGame {
             }
         }
 
+        // ---- English promotion playoffs (C9 / Phase E).
+        //
+        // Divisions 1/2/3 promote a fourth club through a playoff
+        // between the `n_playoff` positions that sit immediately below
+        // the auto-promotion places. Until this landed,
+        // `run_english_year_end` passed `playoff_winner_marker: false`
+        // on every row, so `compute_annual_rollover`'s propagation step
+        // short-circuited (`let Some(w) = winner else { continue }`)
+        // and that fourth place was never filled in a real game.
+        //
+        // Positions come from the same `EnglishLeagueEndShape` the C12
+        // stamper uses, so the bracket cannot drift from the statuses.
+        // Ties are played by the ported match engine on the shared
+        // session RNG.
+        //
+        // NOT YET EXE-DECODED: the exe plays two-legged semi-finals and
+        // a final on dated matchdays in May; this resolves each tie as a
+        // single match at the higher-placed club. The bracket pairing
+        // (1v4, 2v3 by playoff seed) is the standard English shape. When
+        // the playoff fixtures are decoded they should become real dated
+        // fixtures played by the tick — see ledger Phase E.
+        let mut playoff_winners: std::collections::BTreeMap<u32, u32> =
+            Default::default();
+        for tbl in &tables {
+            let n_playoff = tbl.shape.n_playoff();
+            if n_playoff == 0 { continue; }
+            let first = tbl.shape.n_auto_promote();
+            let bracket: Vec<u32> = tbl.rows.iter()
+                .skip(first).take(n_playoff)
+                .map(|r| r.club_id)
+                .collect();
+            if bracket.len() != n_playoff { continue; }
+            // Seeded pairing: best v worst, 2nd v 3rd; higher seed hosts.
+            let mut tie = |home: u32, away: u32,
+                           rng: &mut crate::game_rng::GameRng| -> u32 {
+                let (Some(h), Some(a)) = (
+                    self.snapshot_team_for_engine(home),
+                    self.snapshot_team_for_engine(away),
+                ) else {
+                    // No squad snapshot — the higher seed goes through.
+                    return home;
+                };
+                let seed = ((rng.rand_mod(i32::MAX) as u64) << 32)
+                    ^ (home as u64) << 16 ^ away as u64;
+                let r = crate::match_engine_exe::simulate_one_fixture(
+                    &h, &a, seed, Some(2.8));
+                if r.home_score >= r.away_score { home } else { away }
+            };
+            let w1 = tie(bracket[0], bracket[3], rng);
+            let w2 = tie(bracket[1], bracket[2], rng);
+            // Final hosted by the better-placed of the two winners.
+            let (fh, fa) = if bracket.iter().position(|c| *c == w1)
+                <= bracket.iter().position(|c| *c == w2) { (w1, w2) } else { (w2, w1) };
+            let winner = tie(fh, fa, rng);
+            playoff_winners.insert(tbl.comp_id, winner);
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days, date: self.date.clone(),
+                kind: "competition".to_string(),
+                message: format!(
+                    "Play-off final - club #{winner} win the comp {} \
+                     play-offs and are promoted",
+                    tbl.comp_id,
+                ),
+                phase: 2,
+            });
+        }
+        // Stamp the winners onto the tables the rollover will read.
+        let mut tables = tables;
+        for tbl in tables.iter_mut() {
+            let Some(w) = playoff_winners.get(&tbl.comp_id) else { continue };
+            for row in tbl.rows.iter_mut() {
+                if row.club_id == *w { row.playoff_winner_marker = true; }
+            }
+        }
+
         // ---- Person slots per club, from the boot contract pool.
         //
         // `PersonSlot` carries exactly the two contract bytes the

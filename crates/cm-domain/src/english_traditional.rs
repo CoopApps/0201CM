@@ -776,33 +776,55 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_base_year_returns_error_not_silent_success() {
-        // C11.1 point 14: only 2001/02 is proven exact. Anything
-        // else the caller sneaks in past the dispatch decision
-        // must be refused at the engine boundary.
+    fn base_year_before_the_database_is_refused() {
+        // The engine is year-parameterised and MUST build later
+        // seasons — gating on the capture-verified year list broke the
+        // Jan-1 season roll, so a save never got a second season (see
+        // ledger Phase D). What is still a caller bug is a season
+        // before the shipped database begins.
         let entries = dummy_entries(20, 7);
         let comp = tiny_comp(7, "Prem");
         let mut rng = GameRng::new(0);
         let err = generate_english_traditional_league(
-            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2002, 0, &mut rng, 0)
-            .expect_err("must reject 2002");
+            &ENGLISH_PREMIER_RUNTIME, &comp, &entries, 2000, 0, &mut rng, 0)
+            .expect_err("must reject a pre-database year");
         assert!(matches!(err, ExactEnglishGenerationError::UnsupportedBaseYear { .. }));
     }
 
     #[test]
-    fn dispatch_decision_covers_traditional_v4_generic_and_year_gate() {
-        // Traditional + English + 2001 -> exact.
-        for &id in &[7, 8, 9, 10, 93] {
-            assert_eq!(
-                english_dispatch_decision(GameMode::Traditional, id, 2001),
-                EnglishFixtureDispatch::ExactEnglish,
-                "Traditional/2001 comp {id} must be ExactEnglish"
-            );
+    fn later_seasons_still_generate_a_full_schedule() {
+        // The regression guard for the "one season only" defect.
+        let entries = dummy_entries(20, 7);
+        let comp = tiny_comp(7, "Prem");
+        let mut rng = GameRng::new(0);
+        for year in [2002u16, 2005, 2010] {
+            let out = generate_english_traditional_league(
+                &ENGLISH_PREMIER_RUNTIME, &comp, &entries, year, 0, &mut rng, 0)
+                .unwrap_or_else(|e| panic!("season {year} must build: {e:?}"));
+            assert_eq!(out.len(), 380, "season {year} must be a full 20-club season");
         }
-        // Traditional + English + non-2001 -> Skipped.
+    }
+
+    #[test]
+    fn dispatch_decision_covers_traditional_v4_generic_and_year_gate() {
+        // Traditional + English + any season from 2001 on -> exact.
+        // This used to require Skipped for 2002+, which is what made the
+        // Jan-1 season roll produce nothing from the second season
+        // onward (ledger Phase D). Dispatch must not be gated on which
+        // years happen to have a GDI capture.
+        for &year in &[2001u16, 2002, 2010] {
+            for &id in &[7, 8, 9, 10, 93] {
+                assert_eq!(
+                    english_dispatch_decision(GameMode::Traditional, id, year),
+                    EnglishFixtureDispatch::ExactEnglish,
+                    "Traditional/{year} comp {id} must be ExactEnglish"
+                );
+            }
+        }
+        // Before the shipped database -> Skipped.
         for &id in &[7, 8, 9, 10, 93] {
             assert!(matches!(
-                english_dispatch_decision(GameMode::Traditional, id, 2002),
+                english_dispatch_decision(GameMode::Traditional, id, 2000),
                 EnglishFixtureDispatch::Skipped { .. }
             ));
         }

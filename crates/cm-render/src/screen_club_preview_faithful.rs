@@ -13,7 +13,7 @@
 //!   of the window at `(660, 4)-(785, 24)` — the affordance that
 //!   installs the manager and jumps to News. From the live capture
 //!   (`fixtures/club_preview_screen/structure.txt`):
-//!     ```
+//!     ```text
 //!     PANEL (660,4)-(785,24) c=0x7fff p=0x7000 s=0x30    <- white fill + bevel
 //!     rect  (660,4)-(785,24) c=0x7fff s=4                <- solid white
 //!     WRAP  (660,4)-(785,24) f=1 c=0x7000 'Take Control' <- dark red text

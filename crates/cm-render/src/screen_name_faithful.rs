@@ -10,7 +10,7 @@
 //! structural ops from cm0102_GDI.exe, captured 2026-09-05).
 //!
 //! Op recipe per field row:
-//! ```
+//! ```text
 //!  83 PANEL  (150,217)-(740,277) c=0x0010 p=0     s=0x22   <- row container
 //!  84 darken (150,217)-(740,277)
 //!  93 PANEL  (152,219)-(374,275) c=0     p=0x739c s=0x1    <- label cell (no fill)
