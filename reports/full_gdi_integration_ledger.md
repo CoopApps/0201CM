@@ -137,10 +137,10 @@ superseded hypotheses live in the individual reports.
 | Player init (FUN_0051f5d0) | `PlayerInitState` | WIRED at new-game |
 | Contract pool | `contract_init::initialise_all` | WIRED at new-game |
 | Squad numbers | `World.squad_numbers` | WIRED at new-game |
-| Finance ledger seed | `ClubFinanceLedger::seed_from_world` | WIRED at new-game |
+| Finance ledger seed | `ClubFinanceLedger::seed_from_world` | **NOT WIRED — production never calls it** (only tests + the diff CLI). At runtime `save.finance_ledger` is empty, so `run_english_year_end` reads cash = 0 for every club. See §12 "TWO FINANCE STORES". |
 | Person news mailboxes | allocated on `World` | WIRED |
 | FIFA rankings | `fifa_rankings.rs` | WIRED at boot + hook_year_rollover cache clear |
-| Player regen (`FUN_008fc4f0`) | `player_regen.rs` | WIRED at new-game only — no annual regen |
+| Player regen — squad fill (`FUN_0078E970` driver / `FUN_0078F200` selector / `FUN_0078F4F0` scorer) | `player_regen::regen_fill_club_squad`, called from `new_game_from_rust_db` after fixture gen on the shared session RNG | **WIRED-PARTIAL** — the selector + scorer are byte-exact and now actually used (replaced the removed CA-ranked `assign_free_agents_to_empty_clubs` duplicate). The **scheduling is an approximation**: the port does a one-off boot sweep (clubs with scheduled fixtures, <8 real players → fill to 14). The exe does NOT do a boot sweep — `FUN_0078E970()` is called with no args once per day from the daily tick driver `FUN_005B6F10` (right after `FUN_0078DD80()`, before `FUN_0089DE30`); its "param_1" is one global regen context. `FUN_0078DD80` (323 lines) is the departure scheduler: scans date-gated staff, schedules departures 1–65 days ahead (`rand(0x41)+1+today` / `rand(0x23)`), and qsorts the 12-byte departure list (`FUN_009343C3` with comparator `FUN_00796590`). The fill target club (`ctx+0x1c`) and count (`ctx+0x20 − 2`) are set by a still-unidentified writer (`FUN_00790600` is the candidate). Follow-up to make scheduling exact: decode `FUN_0078DD80` + that writer and move the fill into the daily tick. RNG note: the boot sweep consumes pool RNG the exe would not consume at boot; the C11.2 fixture golden is unaffected (regen runs after fixture gen) and the Jan-1 state is already non-reproducible until the daily pool consumers (form rolls etc.) are ported. **Other known fidelity gaps (pre-existing in the port, now documented):** (1) the exe driver's opening loop drains a per-club *departure list* (`param_1+0x10`, 12-byte entries, `FUN_00793e10` release + compaction) — not an age-based retirement, and not modelled; (2) fill count comes from the caller as `param_1+0x20 − 2` — the port's 8/14 thin/target thresholds are inherited and NOT exe-verified (caller decode pending); (3) after each pick the exe links the staff record into club attach slots (`club+0xd3`, or one of 5 at `club+0x19f`, setting `staff+0x3d` = 0xf/0xd) and, when the pick has no type10 record, seeds a `+0x69` record with `rand(0x5dc)+1, rand(0x5dc)+1, rand(500)+1` — the port writes `staff+0x39` only and skips those rolls, so the session RNG stream diverges from the exe's after such a pick (fixture golden unaffected since regen runs after fixture gen). Picks propagate to `save.player_ratings` (persisted); `SaveWorldOverlay.staff_overrides` has no loader yet so is not written. |
 
 ## 10. Ported but NOT wired at runtime (integration gaps)
 
@@ -148,7 +148,7 @@ superseded hypotheses live in the individual reports.
 | --- | --- | --- | --- |
 | **Friendlies / pre-season tour** | `friendly.rs` (primitive only) | Arranging AI (~35 exe helpers) + calendar slot not written | **Big** (multi-day port) |
 | **Transfer window ticks** | `transfer.rs` (~4kloc) | Only 3 refs from lib.rs — load-time helpers only. No transfer-window tick, no bid/negotiate/accept AI in the daily loop. | **Big** |
-| **Scouting reports** | `scouting.rs` | ScoutBook seeded but no per-tick scout dispatch | Medium |
+| **Scouting reports** | `scouting.rs` | **PORTED-APPROXIMATE — deliberately NOT wired.** `ScoutBook::weekly_tick` exists but its own doc says it is not a faithful port: it uses invented 25/50/75/100 coverage thresholds (the exe scout cluster has no such literals) and an integrative weeks-watched model the exe doesn't have (the exe is snapshot-based). Wiring it would reintroduce a silent approximation. Blocked on decoding staff+0x113 semantics + `FUN_00489790` (see `reports/scout_knowledge_formula_decode.md`). Also note: fog is a human-display filter only — AI transfers see full CA/PA regardless. | Decode first (Medium), then wire |
 | **Player regen at year-end** | `player_regen.rs` | Boot-time only; no annual youth intake | Medium |
 | **Aging / retirement** | Task #48 says `in_progress`; no code | Not archaeologised → needs decode first | Large (archaeology + port + wire) |
 | **TV / prize money** | Task #49 `in_progress`; no code | Not archaeologised → needs decode first | Large |
@@ -171,6 +171,33 @@ superseded hypotheses live in the individual reports.
 | Real Data/*.fnt fonts | `Fonts` | WIRED |
 | Cursor + dirty-rect blit | `cm-render` | WIRED |
 | Fixtures scroll wheel (this session) | `main.rs` MouseWheel arm + `render_fixture_rows_scrolled` | WIRED |
+
+## 12a. TWO FINANCE STORES — open consolidation defect (found 2026-09-17)
+
+The directive's "no two finance sources of truth" rule is currently
+violated. The port carries **two** runtime finance stores that both
+model the exe's 0x167-byte per-club finance record:
+
+| Store | Module | Fields | Seeded at boot | Mutated by |
+| --- | --- | --- | --- | --- |
+| `RuntimeSaveGame.finance: FinanceBook` (`clubs: Vec<ClubFinance>`) | `finance.rs` | `balance: i64`, `weekly_wage_bill`, `transfer_budget`, `months_in_the_red`, `board_confidence` (+0x166), `in_administration` (+0x165), `month_wages/gate/tv_prize` (+0x110 block), stadium-share latch (+0x6d), takeover latch (+0x82) | YES — `FinanceBook::seed_from_clubs` in `new_runtime_save_from_rust_db` | Every Wednesday (`pay_weekly_wages`), month-end (`end_of_month`), per match (`record_match_income`), monthly board cascade (`tick_month_board`), `board_debt_payment` / `takeover_check` / `stadium_share_transfers` |
+| `RuntimeSaveGame.finance_ledger: ClubFinanceLedger` (`per_club: BTreeMap<u32, ClubFinanceState>`) | `c15_1_world_apply.rs` (C15.1A/F) | `cash: i64`, `season_misc_expense`, `lifetime_misc_expense`, `season_subsidy_income`, `lifetime_subsidy_income` (+0x8C/+0x12C/+0xB4/+0x154) | **NO** (`seed_from_world` never called in production) | Year-end only (`apply_write` from C14 stadium-expansion outputs) |
+
+Consequences today: the tick debits `finance.balance`; `run_english_year_end`
+reads `finance_ledger.cash` — which is never seeded and never sees a wage
+payment — so stadium-expansion affordability at season end uses cash = 0.
+C15.1F chose "promote the ledger" believing no canonical runtime finance
+object existed; `finance.rs::ClubFinance` already was one (it even carries
++0x165/+0x166/+0x110 offsets).
+
+**Plan (separate commit):** `FinanceBook` becomes the single owner. Add the
+4 accumulators to `ClubFinance`; expose `FinanceBook::year_end_state(club)
+-> ClubFinanceState` (cash = balance) and `apply_year_end_write(&PendingFinanceWrite)`
+(writes balance + accumulators); delete `RuntimeSaveGame.finance_ledger`
+and its 9 constructor inits; repoint `run_english_year_end`,
+`apply_report_to_world`, `YearEndSnapshot::from_apply`, the diff CLI, and
+the C15.1F/G tests. `ClubFinanceState` survives as a value-type snapshot.
+The C15.1A arithmetic is untouched — only the storage owner changes.
 
 ## 12. Known deviations (semantic parity, not byte-exact)
 

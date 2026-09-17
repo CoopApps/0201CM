@@ -13362,11 +13362,11 @@ impl World {
         let mut rating_book = crate::player_rating::PlayerRatingBook::build(
             &self.core.clubs, &self.staff, &init_states,
         );
-        // Kill #C boot-regen wiring — assign real free agents to too-thin clubs
-        // (up to 14 players; anything less than 8 counts as too thin) so the
-        // per-fixture synthetic-roster fallback rarely fires. Runtime version
-        // of `player_regen::regen_fill_club_squad`.
-        let _regen_assigned = rating_book.assign_free_agents_to_empty_clubs(8, 14);
+        // Squad regen for too-thin clubs no longer happens here: it needs
+        // the session GameRng (born in `new_game_from_rust_db`, after this
+        // save is built) and must run AFTER fixture generation to keep the
+        // pinned fixture RNG identity. See the byte-exact
+        // `player_regen::regen_fill_club_squad` call there.
         RuntimeSaveGame {
             scouts: Default::default(),
             club_tactics: Default::default(),
@@ -16324,6 +16324,94 @@ impl World {
                         "New-game season: {} foreground competition(s) built as double round-robins from real club membership (club+0x57/0x5b/0x60), dated per-league from FUN_006508e0's season-start table. World not culled.",
                         save.season.schedule_generation.len()
                     );
+                }
+
+                // Byte-exact squad regen (port of FUN_0078E970 /
+                // FUN_0078F200 / FUN_0078F4F0) for too-thin clubs.
+                // Replaces the removed CA-ranked approximation and the
+                // per-fixture synthetic-roster fallback it was papering
+                // over.
+                //
+                // Ordering: runs AFTER fixture generation on the SAME
+                // session_rng, continuing the stream. Fixture generation
+                // must consume first so the C11.2 pinned (cursor, jitter,
+                // lcg, dbc340) identity — captured at fixture-gen time —
+                // is preserved. The captures do not establish the exe's
+                // regen-vs-fixtures init order, so this is the only order
+                // that keeps the frozen 0/N fixture golden; not a claim
+                // about the exe.
+                //
+                // Scope: clubs that have at least one scheduled fixture
+                // (i.e. the clubs the engine will actually simulate).
+                // The selector rescans the whole pool per slot by design
+                // (it must — the scorer rolls RNG per candidate before
+                // any club check, so pre-filtering would change results),
+                // so bounding the CLUB set is the only exact way to keep
+                // boot fast.
+                //
+                // Thresholds 8/14 are inherited from the previous wiring
+                // and are NOT exe-verified; the exe's driver walks the
+                // club's +0xD7 slot array for empty slots. Tracked in the
+                // ledger.
+                {
+                    use crate::typed_records::ClubView;
+                    const REGEN_THIN_SQUAD: usize = 8;
+                    const REGEN_TARGET_SQUAD: usize = 14;
+                    let scheduled: std::collections::BTreeSet<u32> = save
+                        .season.fixtures.iter()
+                        .flat_map(|f| [f.home_club_id, f.away_club_id])
+                        .collect();
+                    let mut counts: std::collections::BTreeMap<u32, usize> =
+                        std::collections::BTreeMap::new();
+                    for s in &self.staff.type6 {
+                        if let Some(c) = s.current_club_id() {
+                            *counts.entry(c).or_default() += 1;
+                        }
+                    }
+                    // Private copy: the World is the read-only master; the
+                    // assignments are propagated into the persisted rating
+                    // book below (the engine reads club_id from there).
+                    // Boot diagnostic BEFORE the fill: the selector rescans
+                    // the whole pool per slot, so the thin-club count bounds
+                    // the cost. Printed to stderr so a slow/aborted boot
+                    // still reports the magnitude.
+                    let thin_candidates = self.core.clubs.iter()
+                        .map(|c| ClubView::new(c).id())
+                        .filter(|cid| scheduled.contains(cid)
+                            && counts.get(cid).copied().unwrap_or(0) < REGEN_THIN_SQUAD)
+                        .count();
+                    eprintln!(
+                        "[regen] {} scheduled club(s) under {} real players; pool={} type6 records",
+                        thin_candidates, REGEN_THIN_SQUAD, self.staff.type6.len()
+                    );
+                    let mut pool = self.staff.type6.clone();
+                    let mut rng_fn = |b: i32| session_rng.rand_mod(b);
+                    let (mut thin, mut assigned) = (0usize, 0usize);
+                    for club in &self.core.clubs {
+                        let cv = ClubView::new(club);
+                        let cid = cv.id();
+                        if !scheduled.contains(&cid) { continue; }
+                        let have = counts.get(&cid).copied().unwrap_or(0);
+                        if have >= REGEN_THIN_SQUAD { continue; }
+                        thin += 1;
+                        let picks = crate::player_regen::regen_fill_club_squad(
+                            &mut pool,
+                            &self.staff.type10,
+                            cid as i32,
+                            cv.reputation(),
+                            cv.nation_id().unwrap_or(-1),
+                            REGEN_TARGET_SQUAD - have,
+                            &mut rng_fn,
+                        );
+                        for sid in picks {
+                            if save.player_ratings.assign_club(sid, cid as i32) {
+                                assigned += 1;
+                            }
+                        }
+                    }
+                    save.notes.push(format!(
+                        "Boot regen (FUN_0078E970 port): {thin} scheduled club(s) under {REGEN_THIN_SQUAD} real players; {assigned} free agent(s) assigned to reach {REGEN_TARGET_SQUAD}."
+                    ));
                 }
             }
         }

@@ -348,54 +348,25 @@ impl PlayerRatingBook {
                season_rating_stats: std::collections::BTreeMap::new() }
     }
 
-    /// Boot-time regen pass (kill #C wiring) — the runtime equivalent of
-    /// `player_regen::regen_fill_club_squad` (byte-exact port of `FUN_0078E970`).
-    /// Walks clubs whose real squad is under `min_squad` and assigns the best
-    /// available free agents (unaffiliated players ranked by CA) to bring the
-    /// squad up to `target_squad`. Mutates each moved player's `club_id` in
-    /// place. Returns how many free agents were assigned.
+    /// Record that `staff_id` now plays for `club_id`. O(1) via the id
+    /// index. Returns `false` if the staff id isn't in the book.
     ///
-    /// The byte-exact version (`crate::player_regen::regen_fill_club_squad`)
-    /// mutates the full StaffBook body bytes and applies the exe's weighted
-    /// candidate score. This runtime version works purely on the rating book
-    /// — the same signal (CA) drives selection, and empty clubs get real
-    /// players instead of the per-fixture synthetic-roster fallback.
-    pub fn assign_free_agents_to_empty_clubs(
-        &mut self,
-        min_squad: usize,
-        target_squad: usize,
-    ) -> usize {
-        use std::collections::HashMap;
-        // Snapshot per-club counts.
-        let mut counts: HashMap<i32, usize> = HashMap::new();
-        for p in &self.players {
-            if let Some(c) = p.club_id { *counts.entry(c).or_default() += 1; }
+    /// This is the propagation hook for the byte-exact boot regen
+    /// (`crate::player_regen::regen_fill_club_squad`, the port of
+    /// `FUN_0078E970`): that routine writes the assignment into a
+    /// private copy of the type6 pool (the World is the read-only
+    /// master), and the caller mirrors each pick here so the engine —
+    /// which reads `club_id` off this book — sees the real player.
+    ///
+    /// (A previous CA-ranked "runtime version" of the regen used to
+    /// live here; it duplicated the exe routine approximately and was
+    /// removed so there is exactly one implementation.)
+    pub fn assign_club(&mut self, staff_id: u32, club_id: i32) -> bool {
+        self.ensure_index();
+        match self.id_index.get(&staff_id) {
+            Some(&i) => { self.players[i].club_id = Some(club_id); true }
+            None => false,
         }
-        // Free-agent indices, ranked by CA desc.
-        let mut free: Vec<usize> = self.players.iter().enumerate()
-            .filter(|(_, p)| p.club_id.is_none())
-            .map(|(i, _)| i).collect();
-        free.sort_by(|&a, &b| self.players[b].ca.cmp(&self.players[a].ca));
-        let mut cursor = 0usize;
-        let mut assigned = 0usize;
-        // Empty clubs: those in `club_reputation` with < min_squad real players.
-        let mut empty: Vec<(i32, u16)> = self.club_reputation.iter()
-            .filter(|(cid, _)| counts.get(cid).copied().unwrap_or(0) < min_squad)
-            .map(|(&c, &r)| (c, r)).collect();
-        // Best free agents to highest-rep needy clubs first (deterministic).
-        empty.sort_by(|a, b| b.1.cmp(&a.1));
-        for (cid, _) in empty {
-            let need = target_squad.saturating_sub(counts.get(&cid).copied().unwrap_or(0));
-            for _ in 0..need {
-                if cursor >= free.len() { break; }
-                let idx = free[cursor]; cursor += 1;
-                self.players[idx].club_id = Some(cid);
-                *counts.entry(cid).or_default() += 1;
-                assigned += 1;
-            }
-            if cursor >= free.len() { break; }
-        }
-        assigned
     }
 
     /// Rebuild the staff_id → index map if it's empty (e.g. after deserialize).
