@@ -17821,42 +17821,16 @@ impl World {
                 // branch: R0 = 7 Nov 2001 (final branch has separate date).
                 (354, "English Vans Trophy", &[9, 10], 11, 7, "eng_auto_cup.cpp 0x00554600"),
             ];
-            // Per-cup decoded round schedule (leg-A dates only; see
-            // reports/cup_round_schedules.md for the full table
-            // including leg-B, prize money and format codes).
-            // Index 0 = round 1 date used by domestic_cup::advance;
-            // round 0 (leg-A) is state.start_date, already set above.
-            let by = options.start_year; // 2001 baseline
-            let yp = by + 1;
-            let english_cup_rounds = |cid: i32| -> Vec<GameDate> {
-                match cid {
-                    351 => vec![ // FA Cup: rounds 1..=8 (0 is start_date)
-                        GameDate{year: by,  month: 10, day: 17},
-                        GameDate{year: by,  month: 11, day: 19},
-                        GameDate{year: by,  month: 12, day: 10},
-                        GameDate{year: yp,  month:  1, day:  7},
-                        GameDate{year: yp,  month:  1, day: 28},
-                        GameDate{year: yp,  month:  2, day: 18},
-                        GameDate{year: yp,  month:  3, day: 11},
-                        GameDate{year: yp,  month:  4, day:  9},
-                    ],
-                    352 => vec![ // League Cup: rounds 1..=6
-                        GameDate{year: by, month:  8, day: 23},
-                        GameDate{year: by, month:  9, day: 28},
-                        GameDate{year: by, month: 10, day: 29},
-                        GameDate{year: by, month: 11, day: 12},
-                        GameDate{year: by, month: 12, day:  3},
-                        GameDate{year: yp, month:  2, day: 18},
-                    ],
-                    _ => Vec::new(), // FA Trophy 94 + Vans 354 not decoded yet
-                }
-            };
+            // Per-round leg-A dates (rounds 1..N) are attached inside
+            // CupState::build via domestic_cup::decoded_round_dates —
+            // covers FA Cup 351, League Cup 352, FA Trophy 94, Vans 354
+            // and the continental cups from cup_round_schedules*.md.
             for &(comp_id, name, sources, m, d, va) in cups {
                 let mut pool = Vec::new();
                 for &src in sources {
                     pool.extend(arg_primera::clubs_in_division(&self.core.clubs, src));
                 }
-                if let Some(cup) = domestic_cup::CupState::build(
+                if let Some(mut cup) = domestic_cup::CupState::build(
                     pool,
                     comp_id,
                     name,
@@ -17865,7 +17839,6 @@ impl World {
                     honours::ARG_PRIMERA_CHAMPION_HONOUR,
                     va,
                 ) {
-                    let mut cup = cup.with_round_dates(english_cup_rounds(comp_id));
                     let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
                     save.season
                         .fixtures

@@ -18,6 +18,65 @@ use crate::{
 /// Runtime competition-id base for ported cups (`+ real_comp_id`).
 pub const CUP_RUNTIME_BASE: u32 = 0x7800;
 
+/// Decoded per-round **leg-A** dates for cups whose round-helper
+/// tables have been recovered from the exe. Index 0 = round 1
+/// (the round AFTER the first-round date passed to `build`),
+/// so `advance()` reads `[next_round - 1]`.
+///
+/// Source: `reports/cup_round_schedules.md` (FA Cup 351, League
+/// Cup 352, French Cup 335, German Cup 337, Dutch Cup 338,
+/// Italian Cup 339) and `reports/cup_round_schedules_batch2.md`
+/// (French League Cup 336, Belgian Cup 332, FA Trophy 94, Vans
+/// Trophy 354). Months are 1-indexed here (the reports note the
+/// exe stores them 0-indexed).
+///
+/// `year` is the season's base year (2001 for the shipped DB);
+/// dates after the New Year use `year + 1`. Cups not in this
+/// table return an empty vec and `advance()` falls back to
+/// `start_date + 14 days * round`.
+///
+/// Two-phase cups (Italy 339, Holland 338) list their FULL-branch
+/// rounds — the exe's short qualifying branch (3 rounds, Aug) is
+/// what `build`'s first-round date covers; the full table then
+/// follows. Vans 354 lists the 5-round main draw only (the final
+/// is a separate `param_2 == 1` instantiation in the exe).
+pub fn decoded_round_dates(real_comp_id: i32, year: u16) -> Vec<GameDate> {
+    let y = year;
+    let n = year + 1;
+    let d = |yr: u16, m: u8, dd: u8| GameDate { year: yr, month: m, day: dd };
+    match real_comp_id {
+        // English FA Cup — FUN_00558f60, 9 rounds single-leg.
+        351 => vec![d(y,10,17), d(y,11,19), d(y,12,10), d(n,1,7),
+                    d(n,1,28), d(n,2,18), d(n,3,11), d(n,4,9)],
+        // English League Cup — FUN_00556150, 7 rounds.
+        352 => vec![d(y,8,23), d(y,9,28), d(y,10,29), d(y,11,12),
+                    d(y,12,3), d(n,2,18)],
+        // English FA Trophy — comp 94, 5 rounds.
+        94  => vec![d(y,11,26), d(n,1,17), d(n,2,7), d(n,4,11)],
+        // English LDV Vans Trophy — comp 354, main draw 5 rounds.
+        354 => vec![d(y,12,11), d(n,1,15), d(n,2,5), d(n,2,19)],
+        // French Cup — FUN_005a4650, 9 rounds.
+        335 => vec![d(y,11,12), d(y,12,3), d(n,1,6), d(n,1,27),
+                    d(n,2,20), d(n,3,5), d(n,3,20), d(n,4,13)],
+        // French League Cup — comp 336, 7 rounds.
+        336 => vec![d(y,10,15), d(y,11,26), d(n,1,14), d(n,2,3),
+                    d(n,3,4), d(n,4,2)],
+        // German Cup (DFB-Pokal) — FUN_005c2b90, 6 rounds.
+        337 => vec![d(y,8,27), d(y,11,12), d(y,11,30), d(y,12,21),
+                    d(n,2,8)],
+        // Dutch Cup (KNVB Beker) — FUN_005dd170, full branch 6 rounds.
+        338 => vec![d(y,8,26), d(y,9,30), d(y,11,10), d(y,11,30),
+                    d(n,1,13), d(n,4,21)],
+        // Italian Cup (Coppa Italia) — FUN_006282d0, full branch 5 rounds.
+        339 => vec![d(y,8,30), d(y,10,25), d(y,11,29), d(n,1,10),
+                    d(n,2,7)],
+        // Belgian Cup (Beker van België) — comp 332, 8 rounds.
+        332 => vec![d(y,8,13), d(y,8,20), d(y,9,15), d(y,11,6),
+                    d(y,11,30), d(n,1,25), d(n,4,12)],
+        _ => Vec::new(),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CupState {
     pub year: u16,
@@ -31,10 +90,13 @@ pub struct CupState {
     pub start_date: GameDate,
     /// Optional per-round leg-A dates decoded from the exe's cup
     /// round-helper tables (see `reports/cup_round_schedules.md`).
-    /// Index 0 = round 1, index 1 = round 2, ... When set, the
-    /// `advance()` function uses `round_dates[next_round - 1]`
-    /// instead of the naive `start_date + round * 14` fallback.
-    /// `#[serde(default)]` keeps older saves loading unchanged.
+    ///
+    /// Index 0 = the round AFTER `start_date` (exe table "R1";
+    /// this engine's `round == 2`). `advance()` reads
+    /// `round_dates[next_round - 2]` — see the numbering note
+    /// there — and falls back to `start_date + round * 14` when
+    /// the index is out of range. `#[serde(default)]` keeps
+    /// older saves loading unchanged.
     #[serde(default)]
     pub round_dates: Vec<GameDate>,
     pub champion_honour: u32,
@@ -77,7 +139,9 @@ impl CupState {
             teams: pool,
             round: 0,
             start_date,
-            round_dates: Vec::new(),
+            // Every cup with a decoded round table gets it here so
+            // no construction site has to remember to attach it.
+            round_dates: decoded_round_dates(real_comp_id, year),
             champion_honour,
             complete: false,
             provenance: format!("{name} {year}: {count}-team single-elimination cup; ported from {source_va}."),
@@ -201,11 +265,16 @@ pub fn advance(state: &CupState, fixtures: &[HeadlessSeasonFixture], next_row: u
     }
     // Pair winners into the next round.
     let next_round = state.round + 1;
-    // Prefer the decoded per-round leg-A date when available
-    // (populated from cup_round_schedules.md via
-    // `with_round_dates`); otherwise fall back to a +14 days
-    // per round approximation.
-    let date = state.round_dates.get((next_round as usize) - 1)
+    // Prefer the decoded per-round leg-A date when available;
+    // otherwise fall back to +14 days per round.
+    //
+    // Numbering: this engine labels the first round `round = 1`
+    // (generate_first_round) whereas the exe tables label it R0.
+    // So engine round N is table R(N-1), and `round_dates[0]` is
+    // the round AFTER the start round → index = next_round - 2.
+    // next_round >= 2 here (round==0 already returned above).
+    let date = next_round.checked_sub(2)
+        .and_then(|i| state.round_dates.get(i as usize))
         .cloned()
         .unwrap_or_else(|| {
             let base = CmPackedDate::from_game_date(state.start_date.clone());
@@ -236,6 +305,85 @@ mod tests {
 
     fn pool(n: u32) -> Vec<ArgTeam> {
         (0..n).map(|i| ArgTeam { club_id: i, name: format!("C{i}"), reputation: (200 - i) as u16 }).collect()
+    }
+
+    /// Locks the decoded per-round table shape for every cup that
+    /// has one, so an edit to `decoded_round_dates` can't silently
+    /// drop or reorder a round. Counts + first/last dates come from
+    /// reports/cup_round_schedules.md and _batch2.md.
+    #[test]
+    fn decoded_round_tables_match_reports() {
+        // (comp, rounds after R0, first leg-A, last leg-A)
+        let expect: &[(i32, usize, (u16, u8, u8), (u16, u8, u8))] = &[
+            (351, 8, (2001, 10, 17), (2002, 4, 9)),   // FA Cup
+            (352, 6, (2001, 8, 23),  (2002, 2, 18)),  // League Cup
+            (94,  4, (2001, 11, 26), (2002, 4, 11)),  // FA Trophy
+            (354, 4, (2001, 12, 11), (2002, 2, 19)),  // Vans (main draw)
+            (335, 8, (2001, 11, 12), (2002, 4, 13)),  // French Cup
+            (336, 6, (2001, 10, 15), (2002, 4, 2)),   // French League Cup
+            (337, 5, (2001, 8, 27),  (2002, 2, 8)),   // DFB-Pokal
+            (338, 6, (2001, 8, 26),  (2002, 4, 21)),  // KNVB Beker (full)
+            (339, 5, (2001, 8, 30),  (2002, 2, 7)),   // Coppa Italia (full)
+            (332, 7, (2001, 8, 13),  (2002, 4, 12)),  // Beker van België
+        ];
+        for &(comp, n, (fy, fm, fd), (ly, lm, ld)) in expect {
+            let v = decoded_round_dates(comp, 2001);
+            assert_eq!(v.len(), n, "comp {comp} round count");
+            assert_eq!((v[0].year, v[0].month, v[0].day), (fy, fm, fd), "comp {comp} first");
+            let l = v.last().unwrap();
+            assert_eq!((l.year, l.month, l.day), (ly, lm, ld), "comp {comp} last");
+            // Strictly increasing across the season boundary.
+            for w in v.windows(2) {
+                let a = (w[0].year, w[0].month, w[0].day);
+                let b = (w[1].year, w[1].month, w[1].day);
+                assert!(a < b, "comp {comp}: {a:?} !< {b:?}");
+            }
+        }
+        // Un-decoded cups fall back to empty (→ +14-day path in advance()).
+        assert!(decoded_round_dates(999, 2001).is_empty());
+        // Year threading: base year shifts every date by the same delta.
+        let a = decoded_round_dates(351, 2001);
+        let b = decoded_round_dates(351, 2005);
+        assert!(a.iter().zip(&b).all(|(x, y)| y.year == x.year + 4 && y.month == x.month && y.day == x.day));
+    }
+
+    /// `build()` attaches the table automatically and `advance()`
+    /// schedules round 2 on the decoded leg-A date, not `start + 14`.
+    #[test]
+    fn advance_uses_decoded_round_date_over_plus_fourteen() {
+        // FA Cup: R0 = 9 Oct 2001; decoded R1 = 17 Oct 2001; the
+        // +14 fallback would have said 23 Oct. Distinguishable.
+        let mut st = CupState::build(pool(8), 351, "English FA Cup", 2001,
+            GameDate { year: 2001, month: 10, day: 9 }, 0x7d0, "test").unwrap();
+        assert_eq!(st.round_dates.len(), 8, "build attached the FA Cup table");
+        let mut fx = generate_first_round(&mut st, 0);
+        for f in fx.iter_mut() {
+            f.status = HeadlessFixtureStatus::Played;
+            let (h, a) = (f.home_club_id, f.away_club_id);
+            let (hs, as_) = if h < a { (2, 0) } else { (0, 2) };
+            f.home_score = Some(hs);
+            f.away_score = Some(as_);
+        }
+        let adv = advance(&st, &fx, fx.len() as u32);
+        assert_eq!(adv.new_round, Some(2));
+        assert!(!adv.new_fixtures.is_empty());
+        for f in &adv.new_fixtures {
+            assert_eq!((f.date.year, f.date.month, f.date.day), (2001, 10, 17),
+                "round 2 must land on decoded 17 Oct, not +14 = 23 Oct");
+        }
+        // A cup with no table keeps the +14 fallback.
+        let mut nt = CupState::build(pool(8), 999, "Nowhere Cup", 2001,
+            GameDate { year: 2001, month: 9, day: 1 }, 0x7d0, "test").unwrap();
+        assert!(nt.round_dates.is_empty());
+        let mut fx2 = generate_first_round(&mut nt, 0);
+        for f in fx2.iter_mut() {
+            f.status = HeadlessFixtureStatus::Played;
+            f.home_score = Some(1); f.away_score = Some(0);
+        }
+        let adv2 = advance(&nt, &fx2, fx2.len() as u32);
+        for f in &adv2.new_fixtures {
+            assert_eq!((f.date.month, f.date.day), (9, 15), "fallback = 1 Sep + 14");
+        }
     }
 
     #[test]
