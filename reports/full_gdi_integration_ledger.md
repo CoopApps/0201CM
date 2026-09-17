@@ -104,10 +104,10 @@ superseded hypotheses live in the individual reports.
 | Stadium gate / 0xFE reprieve | | Applied inside conference fallback | Called by C15 | WIRED |
 | C15 composition | | `c15_english_annual_rollover` | Called by `run_english_year_end` from `tick_days_bound` | WIRED (this session) |
 | C15.1A finance materialisation | | `c15_1_world_apply::apply_report_to_world` | Called by tick_days_bound | WIRED |
-| C15.1B contract clause writes | | same | Called by tick_days_bound | WIRED |
-| C15.1C squad position writes | | same | Called by tick_days_bound | WIRED |
-| C15.1D stadium refuse counter | | same | Called by tick_days_bound | WIRED |
-| C15.1E person news mailbox | | same | Called by tick_days_bound | WIRED |
+| C15.1B contract clause writes | | same | Called by tick_days_bound | **LIVE + EXACT (since §12d)** — was EXACT HELPER EXISTS BUT NOT LIVE: three stacked defects (init pass skipped, no person slots passed, `club_id == 0`) made it impossible to fire in a real game. |
+| C15.1C squad position writes | | same | Called by tick_days_bound | **LIVE + EXACT (since §12d)** — same three defects. |
+| C15.1D stadium refuse counter | | same | Called by tick_days_bound | LIVE + EXACT (does not depend on the contract pool) |
+| C15.1E person news mailbox | | same | Called by tick_days_bound | **LIVE + EXACT (since §12d)** — same three defects; `append_person_history_entry` resolves staff via the pool. |
 | C15.1F finance writes | | `FinanceBook::apply_year_end_write` (via `apply_report_to_world`) | Called by tick_days_bound; reads `FinanceBook::year_end_state` | WIRED (single store since §12a) |
 | C15.1G runtime differential | | `c15_1g_snapshot` + `c15_year_end_diff` bin + Frida harness | User-run tooling | PORTED-NOT-WIRED (needs runtime capture) |
 
@@ -135,8 +135,8 @@ superseded hypotheses live in the individual reports.
 | --- | --- | --- |
 | Rust-db loader | `World::read_rust_db_dir` | WIRED |
 | Player init (FUN_0051f5d0) | `PlayerInitState` | WIRED at new-game |
-| Contract pool | `contract_init::initialise_all` | WIRED at new-game |
-| Squad numbers | `World.squad_numbers` | WIRED at new-game |
+| Contract pool | `contract_init::initialise_all` | **LIVE + EXACT (since §12d)** — built by `run_start_game_init`, NOT by `read_rust_db_dir`. Was never running in the app at all. |
+| Squad numbers | `World.squad_numbers` | **LIVE + EXACT (since §12d)** — same skipped init pass; was empty for the whole session. |
 | Finance seed | `FinanceBook::seed_from_clubs` in `new_runtime_save_from_rust_db` | WIRED — every one of the 10,580 clubs gets `balance` from disk `+0x65` (i32→i64) or the `FUN_005803D0` START_CASH-by-reputation fallback. (`ClubFinanceLedger::seed_from_world` is now test-only; the persisted ledger field was removed — §12a.) |
 | Person news mailboxes | allocated on `World` | WIRED |
 | FIFA rankings | `fifa_rankings.rs` | WIRED at boot + hook_year_rollover cache clear |
@@ -263,6 +263,93 @@ This removes the repeating-sequence defect and gives the tick one
 stream. It does NOT by itself make that stream exe-exact — that needs
 every daily pool consumer (form rolls in `FUN_005B6F10`, regen
 scheduling, …) ported and drawing in the exe's order.
+
+## 12d. PHASE A — three stacked defects hid C15.1B/C/E from the live game (FIXED 2026-09-17)
+
+Phase A of the integration audit asked the question the ledger had not:
+**does the playable app reach the proven code?** For the contract-pool
+tranches the answer was no, at three independent levels. Each one alone
+was enough to make the feature invisible, and all three presented as
+"no writes", indistinguishable from "nothing to write".
+
+**Level 1 — the boot init pass never ran.** `World::run_start_game_init`
+(the exe's post-league-selection `FUN_008120D0`: player init → squad
+numbers → contract pool) had exactly one caller, `main.rs:1039`, guarded
+by `if let Some(w) = self.world.as_mut()`. The only place `self.world`
+is assigned is `start_new_game`, which runs *after* it. So on a first new
+game the guard fell through silently and the pass never ran at all:
+`world.contracts == None` and `world.squad_numbers` empty for the whole
+session. Fixed by `App::ensure_world_initialised`, which loads the DB
+*then* runs the pass; both call sites go through it.
+
+**Level 2 — the year-end passed no person slots.** `run_english_year_end`
+built its `AnnualRolloverInput` with `per_club_person_slots:
+Default::default()`. The C13 per-person walk iterates that map, so it had
+nothing to walk and produced zero effects regardless of the season.
+Now built from the contract pool: for each club in the tables, its
+contracted staff, carrying `+0x1F` relegation and `+0x1C` non-promotion,
+capped at the exe's 50 slots (`Club+0xD7`).
+
+**Level 3 — every contract had `club_id == 0`.** `contract_init::
+initialise_all` wrote a literal `0`, with an inline note deferring the
+real value to a disk→runtime loader trace. The identity gate
+(`*(record+4) == *club`, FUN_00843970 / FUN_004D3550 / FUN_004D3460)
+therefore failed for all 108,987 contracts, so even with levels 1 and 2
+fixed nothing would write. Fixed by taking the employer already in scope
+(the loop only emits a contract when the staff record has an employer,
+and already prices it off that club's reputation). Confirmed: contracts
+now carry 5,490 distinct clubs and all 20 comp-7 clubs resolve.
+
+**Ledger rows corrected:** C15.1B, C15.1C and C15.1E were all recorded
+as `WIRED`. True state before this fix was **EXACT HELPER EXISTS BUT NOT
+LIVE** — the helpers are byte-exact and tested, and could not fire in a
+real game.
+
+**No-silent-failure follow-ups:**
+
+* `WorldApplyReport.contract_pool_missing` distinguishes "no pool" from
+  "no writes due"; `run_english_year_end` emits a `year_end_error` event
+  and logs when it is set.
+* `World.contracts`' doc claimed `read_rust_db_dir` populated it. It does
+  not, and `tests/contract_pool_smoke.rs` asserted the false claim — that
+  test had been failing. Doc corrected, test fixed to run the init pass.
+* New `tests/production_year_end_path.rs` proves the sequence the app
+  runs (load → init → new game → detector → year-end) rather than calling
+  the C15 helpers directly.
+
+**Baseline correction:** the previously reported "1744 pass / 4 known
+failures" covered only the `--lib` target. `cargo test` stops at the
+first failing binary, so the integration-test targets were never
+reached. Full-suite figures now use `--no-fail-fast`.
+
+**Still open from Phase A** (tracked, not silently accepted):
+
+* `feeder_candidates`, `conference_marked_for_relegation`,
+  `fallback_candidates`, `third_div_relegatees` and
+  `comp_stadium_templates` are still passed empty from
+  `run_english_year_end` — Phases H, I and M will close them.
+* Save/load does not exist in the playable app (`GameInstance.saved_path`
+  is never set; the quit guard says "once a Save Game screen exists").
+  Phase R cannot run until it does. See §12e.
+* The 50-slot `Club+0xD7` cap is preserved. Whether that is a real model
+  limit or a memory-era artifact worth lifting is an open decision.
+
+## 12e. PHASE A.14 — save/load does not exist (OPEN)
+
+`App::GameInstance` carries `saved_path: Option<String>` and a `dirty`
+flag, and the close handler refuses to quit a dirty game with "*once a
+Save Game screen exists, this will prompt to save; for now it refuses
+and logs*". There is no serializer call anywhere in `cm-ui-app`: a game
+exists only in memory and is lost on exit.
+
+State: **NOT YET PORTED**. This blocks Phase R (round-trip of fixtures,
+scheduler, club comp/status, contracts, position codes, stadiums, refuse
+counter, finance, mailboxes, news, RNG state, dbc340) in its entirety.
+
+The pieces exist — `World`, `RuntimeSaveGame`, `ContractPool` and
+`PersonNewsMailboxPool` all derive `Serialize`/`Deserialize`, and
+`session_rng_state` was made serde-persistent in §12c — so this is a
+wiring job, not an archaeology job.
 
 ## 12. Known deviations (semantic parity, not byte-exact)
 

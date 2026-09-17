@@ -332,7 +332,7 @@ fn compute_deltas(inp: &StadiumExpansionInput) -> Deltas {
 /// because the affordability check needs it and callers may want
 /// to preview a planned expansion.
 ///
-/// ```
+/// ```text
 /// cost = ((seated_delta / 1000 + 1) * 6000 + seated_delta) * 125
 ///      + stand_to_seat * 75
 ///      + standing_delta * 50

@@ -476,6 +476,19 @@ pub struct WorldApplyReport {
     /// Post-rollover status per moved club, taken from the raw
     /// bytes AFTER `materialise_club_moves` writes them.
     pub post_rollover_club_status: std::collections::BTreeMap<u32, u8>,
+    /// TRUE when `world.contracts` was `None` at apply time, i.e. the
+    /// boot pass `World::run_start_game_init` never ran on this World.
+    /// The C15.1B, C15.1C and C15.1E passes all key on the contract
+    /// pool and produce nothing without it — which is indistinguishable
+    /// from "nothing to write" if you only look at the vectors above.
+    /// Callers MUST surface this rather than treat empty as success;
+    /// `RuntimeSaveGame::run_english_year_end` logs it loudly.
+    ///
+    /// This flag exists because the live app silently ran in exactly
+    /// that state: the app's init call was guarded on a World it had
+    /// not loaded yet, so the pool was never built and three landed
+    /// tranches quietly no-opped for a whole session.
+    pub contract_pool_missing: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -987,9 +1000,14 @@ pub fn apply_report_to_world_parts(
     // FUN_004D3550), and gives C15.1E the C15.1B-updated
     // contract state to read `staff_id` from — same as the
     // exe's `FUN_008D0D90(param_4 = contract_row)` call.
-    if let Some(contracts) = world.contracts.as_mut() {
-        apply_contract_writes_from_report(contracts, report, &mut out);
-        apply_squad_position_writes_from_report(contracts, report, &mut out);
+    match world.contracts.as_mut() {
+        Some(contracts) => {
+            apply_contract_writes_from_report(contracts, report, &mut out);
+            apply_squad_position_writes_from_report(contracts, report, &mut out);
+        }
+        // Not a fallback — there is nothing to write to. Recorded so the
+        // caller can tell "no pool" apart from "no writes due".
+        None => out.contract_pool_missing = true,
     }
     apply_person_history_from_report(world, report, date.year, &mut out);
 

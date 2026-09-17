@@ -450,15 +450,28 @@ pub fn initialise_all(world: &World) -> ContractPool {
         records.push(ContractRecord {
             staff_id:  person.id as i32,
             // C15.1C archaeology proved `+0x04` is `club_id`, not
-            // `person_id`. The disk→runtime loader trace has NOT
-            // established the correct per-contract club id at
-            // boot; setting to 0 means the identity gate
-            // `record.club_id == effects.club_id` will always
-            // fail in production until the loader trace lands
-            // (deferred item — see
-            // `reports/c15_1c_squad_archaeology.md` §11). Tests
-            // set this explicitly.
-            club_id: 0,
+            // `person_id` — the OWNING CLUB, checked by the identity
+            // gate `*(record+4) == *club` in FUN_00843970 /
+            // FUN_004D3550 / FUN_004D3460.
+            //
+            // This was `0` until 2026-09-17, with a note deferring it
+            // to the disk→runtime loader trace. That left the gate
+            // failing for every person in production, so the C15.1B
+            // clause writes, C15.1C squad-position writes and C15.1E
+            // person-news appends could never fire in a real game —
+            // while the integration ledger recorded all three as
+            // wired. The audit found it because the year-end produced
+            // zero writes on a real England boot.
+            //
+            // The owning club is not actually unknown here: this loop
+            // only emits a contract when the staff record HAS an
+            // employer, and it already prices the contract off that
+            // club's reputation. A boot contract belongs to the club
+            // that employs the person. The still-open loader question
+            // is the exe's exact per-record ordering/secondary index
+            // (`reports/c15_1c_squad_archaeology.md` §11), not who the
+            // employer is.
+            club_id: club_id as i32,
             wage,
             value,
             non_promotion: clauses.non_promotion,

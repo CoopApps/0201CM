@@ -11,7 +11,14 @@ fn muggleton_gets_a_contract() {
         eprintln!("skipping — rust-db not at {root:?}");
         return;
     }
-    let world = World::read_rust_db_dir(root).expect("load rust-db");
+    let mut world = World::read_rust_db_dir(root).expect("load rust-db");
+    // The pool is NOT built by the DB load — the exe builds it in the
+    // post-league-selection init pass (FUN_008120D0 →
+    // CONTRACT_MANAGER::initialise_all), which is
+    // `World::run_start_game_init`. This test used to assert straight
+    // off `read_rust_db_dir` and had been failing ever since.
+    world.run_start_game_init(Some(
+        &std::path::PathBuf::from("D:/cm0102-rs/rust-db/config/rng_table.bin")));
     let pool = world.contracts.as_ref().expect("contracts populated");
     println!("pool: {} contracts, {} index slots",
              pool.records.len(), pool.by_staff_id.len());

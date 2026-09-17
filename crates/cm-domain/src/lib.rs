@@ -585,11 +585,20 @@ pub struct World {
     pub staff: StaffBook,
     pub staff_summary: StaffSummary,
     /// Boot-time-generated contract pool (wage, value, release
-    /// clauses, expiry). Populated by `contract_init::initialise_all`
-    /// as part of `read_rust_db_dir`. Ports the exe's
-    /// `CONTRACT_MANAGER::initialise_all` (FUN_004cd930) post-load
-    /// pass. `None` on a freshly deserialised World that hasn't run
-    /// the init pass yet.
+    /// clauses, expiry). Ports the exe's
+    /// `CONTRACT_MANAGER::initialise_all` (FUN_004cd930).
+    ///
+    /// Populated by [`World::run_start_game_init`] — the
+    /// post-league-selection "Initialising game data" pass
+    /// (`FUN_008120D0`) — and NOT by `read_rust_db_dir`, despite what
+    /// this doc used to claim. `None` until that pass runs.
+    ///
+    /// Consumers early-return on `None` (C15.1B clause writes, C15.1C
+    /// squad-position writes, C15.1E person-news appends), so a World
+    /// that skipped the init pass looks identical to one with nothing
+    /// to write. `WorldApplyReport::contract_pool_missing` exists to
+    /// tell those apart; do not add code that treats `None` as a
+    /// working default.
     #[serde(default)]
     pub contracts: Option<contract_init::ContractPool>,
     /// Boot-assigned squad numbers, keyed by `DomainStaffType10.id`.
@@ -19476,7 +19485,7 @@ impl RuntimeSaveGame {
     /// window (May 20+), (2) every English pyramid league fixture
     /// is `Played`, (3) we haven't already applied year-end for
     /// this season.
-    fn should_fire_english_year_end(&self, date: &GameDate) -> bool {
+    pub fn should_fire_english_year_end(&self, date: &GameDate) -> bool {
         // Cheap early-outs first.
         if date.month < 5 { return false; }
         if self.last_english_year_end_applied == Some(date.year) {
@@ -19596,6 +19605,45 @@ impl RuntimeSaveGame {
             }
         }
 
+        // ---- Person slots per club, from the boot contract pool.
+        //
+        // `PersonSlot` carries exactly the two contract bytes the
+        // pool already holds — `+0x1F` relegation and `+0x1C`
+        // non-promotion — keyed by the same staff_id the C15.1B/C/E
+        // passes use for `contract_for_staff`. This used to be passed
+        // empty, which meant the C13 per-person walk had nothing to
+        // iterate, so the contract-clause, squad-position and
+        // person-news tranches produced zero writes no matter what
+        // happened on the pitch.
+        //
+        // The exe reads the 50-slot array at `Club+0xD7`; we derive
+        // the same membership from the pool (contracts whose
+        // `club_id` is this club), capped at the same 50 slots.
+        let mut per_club_person_slots: std::collections::BTreeMap<
+            u32, [Option<crate::c13_promotion_apply::PersonSlot>; 50]
+        > = Default::default();
+        if let Some(pool) = world.contracts.as_ref() {
+            let wanted: std::collections::BTreeSet<u32> =
+                club_state.keys().copied().collect();
+            let mut fill: std::collections::BTreeMap<u32, usize> =
+                Default::default();
+            for rec in &pool.records {
+                if rec.club_id < 0 { continue; }
+                let cid = rec.club_id as u32;
+                if !wanted.contains(&cid) { continue; }
+                let n = fill.entry(cid).or_insert(0);
+                if *n >= 50 { continue; }
+                let slots = per_club_person_slots
+                    .entry(cid).or_insert_with(|| [None; 50]);
+                slots[*n] = Some(crate::c13_promotion_apply::PersonSlot {
+                    person_id: rec.staff_id.max(0) as u32,
+                    staff_1f: rec.relegation,
+                    staff_1c: rec.non_promotion,
+                });
+                *n += 1;
+            }
+        }
+
         // ---- Assemble input. Defaults for pieces the live
         // runtime doesn't yet track — the proven modules
         // silent-skip on empty inputs for those.
@@ -19616,7 +19664,7 @@ impl RuntimeSaveGame {
             conference_marked_for_relegation: &[],
             fallback_candidates: &[],
             third_div_relegatees: &[],
-            per_club_person_slots: Default::default(),
+            per_club_person_slots,
             reserve_of: Default::default(),
             comp_stadium_templates: Default::default(),
             club_state,
@@ -19638,6 +19686,24 @@ impl RuntimeSaveGame {
         let applied = crate::c15_1_world_apply::apply_report_to_world(
             world, self, &report,
         );
+        // A missing contract pool silently zeroes the C15.1B/C/E
+        // passes, so it is reported as its own event rather than
+        // being invisible in the counts below.
+        if applied.contract_pool_missing {
+            self.pending_events.push(RuntimeEvent {
+                day: self.elapsed_days, date: self.date.clone(),
+                kind: "year_end_error".to_string(),
+                message: "contract pool not initialised \
+                    (World::run_start_game_init never ran) — contract \
+                    clause, squad position and person-news writes were \
+                    all skipped".to_string(),
+                phase: 2,
+            });
+            eprintln!(
+                "[year-end] WARNING: contract pool missing; \
+                 C15.1B/C/E wrote nothing"
+            );
+        }
         // Diagnostic breadcrumb for the app.
         self.pending_events.push(RuntimeEvent {
             day: self.elapsed_days, date: self.date.clone(),

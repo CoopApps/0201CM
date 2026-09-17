@@ -329,6 +329,11 @@ struct App {
     /// The LOCKED master database — loaded once at startup, read-only, shared
     /// by every new game. Never modified or written back.
     world: Option<cm_domain::World>,
+    /// True once `World::run_start_game_init` has run on `world` in this
+    /// process. That pass (player init → squad numbers → contract pool) is
+    /// keyed only on the database, not on the league selection, so one run
+    /// per loaded database is equivalent to the exe's per-new-game run.
+    world_init_done: bool,
     /// The current in-memory working game (temporary until saved). `None` on
     /// the menu screens before a game is started.
     game: Option<GameInstance>,
@@ -996,6 +1001,10 @@ impl App {
         let mut goto_club_fixtures: Option<cm_domain::ManagerClubChoice> = None;
         // Deferred: a News control without a ported target was clicked.
         let mut news_note = false;
+        // Deferred: run the exe's post-league-selection init pass
+        // (`FUN_008120D0` → `World::run_start_game_init`) once the
+        // `&mut self.screen` borrow below is released.
+        let mut need_world_init = false;
         match &mut self.screen {
             Screen::Setup => {
                 if let Some(idx) = screens::setup_hit(x, y) {
@@ -1033,11 +1042,13 @@ impl App {
                                     // Fire every post-selection init
                                     // subsystem here so the pipeline is
                                     // ready before Start Season paints.
-                                    if let Some(w) = self.world.as_mut() {
-                                        let rng_path = std::path::PathBuf::from(
-                                            "D:/cm0102-rs/rust-db/config/rng_table.bin");
-                                        w.run_start_game_init(Some(&rng_path));
-                                    }
+                                    // Deferred past this `&mut self.screen`
+                                    // borrow. This used to be `if let
+                                    // Some(w) = self.world`, which on a
+                                    // first new game silently skipped the
+                                    // whole pass, because the DB is not
+                                    // loaded until start_new_game runs.
+                                    need_world_init = true;
                                     let leagues = state.clone();
                                     let season = StartSeasonState::from_leagues(&leagues);
                                     if state.selected_count() == 1 {
@@ -1568,6 +1579,11 @@ impl App {
         if let Some(club_id) = open_fixtures {
             self.open_club_fixtures(club_id);
         }
+        // Must precede start_new_game: the exe initialises game data
+        // after league selection and before the season starts.
+        if need_world_init {
+            self.ensure_world_initialised();
+        }
         if let Some((leagues, season)) = start_game {
             self.start_new_game(&leagues, &season);
         }
@@ -1939,12 +1955,22 @@ impl App {
     /// game data" (FUN_008120d0). Nothing is written to disk: the instance is
     /// temporary until the user explicitly saves it. The master `rust-db` is
     /// never modified. Advances to the Enter Name screen.
-    fn start_new_game(
-        &mut self,
-        leagues: &game_state::SelectLeaguesState,
-        season: &game_state::StartSeasonState,
-    ) {
-        // Ensure the locked master database is loaded (once).
+    /// Load the locked master database if needed, then run the exe's
+    /// post-league-selection init pass (`FUN_008120D0` →
+    /// `World::run_start_game_init`: player init `FUN_0051F5D0` → squad
+    /// numbers `FUN_00842F40` → contract pool
+    /// `CONTRACT_MANAGER::initialise_all`). Returns false if the database
+    /// cannot be opened.
+    ///
+    /// Both callers must go through here. The init pass used to be guarded
+    /// on `self.world` already being `Some`, but the only place the world is
+    /// loaded is `start_new_game`, which runs AFTER it — so on a first new
+    /// game the guard fell through and the pass never ran. That left
+    /// `world.contracts == None` for the whole session, and every consumer
+    /// of the contract pool (the C15.1B clause writes, C15.1C squad-position
+    /// writes and C15.1E person-news appends all early-return on a missing
+    /// pool) silently did nothing.
+    fn ensure_world_initialised(&mut self) -> bool {
         if self.world.is_none() {
             let dir = std::env::var("CM_RUST_DB")
                 .unwrap_or_else(|_| "D:/cm0102-rs/rust-db".to_string());
@@ -1952,10 +1978,33 @@ impl App {
                 Ok(w) => self.world = Some(w),
                 Err(e) => {
                     eprintln!("[start] cannot open master database: {e}");
-                    return;
+                    return false;
                 }
             }
         }
+        if !self.world_init_done {
+            if let Some(w) = self.world.as_mut() {
+                let rng_path = std::path::PathBuf::from(
+                    "D:/cm0102-rs/rust-db/config/rng_table.bin");
+                w.run_start_game_init(Some(&rng_path));
+                self.world_init_done = true;
+                eprintln!(
+                    "[start] game data initialised: {} contract record(s), {} squad number(s)",
+                    w.contracts.as_ref().map(|c| c.records.len()).unwrap_or(0),
+                    w.squad_numbers.len(),
+                );
+            }
+        }
+        true
+    }
+
+    fn start_new_game(
+        &mut self,
+        leagues: &game_state::SelectLeaguesState,
+        season: &game_state::StartSeasonState,
+    ) {
+        // Ensure the locked master database is loaded AND initialised.
+        if !self.ensure_world_initialised() { return; }
         let world = self.world.as_ref().unwrap();
         let options = new_game_options(leagues, season);
         let db_dir = std::env::var("CM_RUST_DB")
@@ -2128,6 +2177,7 @@ impl Default for App {
             pressed: Pressed::None,
             screen: Screen::Setup,
             world: None,
+            world_init_done: false,
             game: None,
             menu_open: None,
             status: None,

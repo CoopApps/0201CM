@@ -340,9 +340,25 @@ mod tests {
             initial_game_rng_state: None,
         };
         let save = world.new_game_from_rust_db(rust_db, &opts);
+
+        // Comp 7 must be built by the byte-exact English engine, NOT by
+        // the generic simple-league generator. This assertion used to
+        // require the opposite; the generic block for 7/8/9/10/93 was
+        // removed in 2aa4aed because running both produced a duplicate
+        // season (Cambridge showed 94 fixtures, and played Colchester on
+        // consecutive days). Keep this as the anti-regression guard.
         assert!(
-            save.simple_leagues.iter().any(|s| s.real_comp_id == PREM_COMP_ID),
-            "Premiership (comp 7) must be wired as a SimpleLeagueState",
+            !save.simple_leagues.iter().any(|s| s.real_comp_id == PREM_COMP_ID),
+            "comp 7 must NOT be wired as a SimpleLeagueState — the \
+             Traditional English pyramid is built by english_traditional; \
+             a generic league here means the duplicate-fixture bug is back",
+        );
+        let prem_fixtures = save.season.fixtures.iter()
+            .filter(|f| f.competition_id as i32 == PREM_COMP_ID)
+            .count();
+        assert_eq!(
+            prem_fixtures, 380,
+            "comp 7 must hold exactly one 20-team double round robin",
         );
         assert!(
             save.domestic_cups.iter().any(|c| c.real_comp_id == FA_CUP_COMP_ID),
