@@ -48,10 +48,100 @@ Current state of the gate (`reports/screen_captures/DIFF_REPORT.md`):
 **exact-match 16 · divergent 1 · no-port-annotation 27** across 44
 tracked screens.
 
-**Caveat, important:** this gate compares *widget slot geometry*, not
-rendered pixels. A PASS means the screen's widget rectangles match the
-exe's; it does NOT prove fonts, baselines, bevel shading, clipping or
-interaction match. Pixel-level comparison is a separate, missing layer.
+**Caveat:** this gate compares *widget slot geometry*, not rendered
+pixels. A PASS means the widget rectangles match; it does NOT prove
+fonts, baselines, bevel shading, clipping or interaction match.
+
+**But the pixel oracle already exists** — see §1b. What is missing is a
+*gate* that uses it, not the reference data.
+
+## 1b. Reference capture inventory — three tiers
+
+### Tier 1 — primitive draw stream + PIXEL ORACLE (true pixel comparison possible today)
+
+Under `fixtures/<name>_screen/`: a `structure.txt` (every
+`panel/line/rect/darken/glyph/wrapped_text` call with exact
+`x0,y0,x1,y1`, style and 16-bit colour), an `exe_paint_fb.jsonl.gz`
+stream, **and `paint.pixels.bin` — a raw 800×600 RGB555 framebuffer
+(960,000 bytes) straight from the original executable.**
+
+| Screen | Structure dump | State captured |
+| --- | --- | --- |
+| Setup / main menu | 60 lines (373 ops in frame) | default |
+| Season select | 39 lines | default, one tile highlighted |
+| Name entry | 58 lines | default |
+| Leagues select | 164 lines | default list |
+| Nationality select | 169 lines | default list |
+| Nationality **filter** | 170 lines + `ground_truth.png` | filter applied |
+| Club select | 242 lines (4.8 MB stream) | default, unscrolled |
+| Club preview | 439 lines — largest | preview panel open |
+| Club squad | 284 lines | default squad list |
+| News | 65,701 events / 60 frames | *transition into* News |
+| Sidebar + manager drop-down | distilled widget spec | **menu open, hover on two items, then closed** |
+
+Plus **3,429 primitive draw bursts** in `reports/screen_captures/draws/`
+(same schema: `{fn:"rect", seq, args:[x0,y0,x1,y1,style,colour]}`),
+indexed by window title in `library.json`, which names 37 — including
+screens the `fixtures/` set never reached: **Tactics, Team Selection,
+player profiles, Contract, Loan bid, Save Game / Enter File Name, File
+Exists, Please Confirm, Create Staff Note, Evening Fixtures, Evening
+Results**.
+
+This is the single most important finding of the front-end audit: for
+these screens we can do exactly what the directive demands — compare
+rendered pixels against the original — **without capturing anything
+new**.
+
+### Tier 2 — widget geometry only, with a diff partner already built
+
+`reports/screen_captures/*.json` (exact L/T/R/B per area/object plus
+colP/colS/font/flags) each paired with a `.render.json` = our port's
+output in the same schema. Covers: dashboard, club_overview,
+club_squad(+live 291 KB), club_staff, club_history, competition_league,
+player_overview, player_profile(live), player_search, manager_profile,
+manager_stats, fifa_rankings, game_settings, tactics, transfers,
+select_league(+live), wc_euro_qual, serie_c_cup_results. Plus 160 live
+"burst" captures in `screen_captures/live/` that also carry a
+`.frame.png` and a raw `.frame.bin`.
+
+Colours here are raw record fields, not resolved pixels — so Tier 2
+proves geometry, not appearance.
+
+### Tier 3 — present but unusable
+
+Most `screen_batch*_*.json` are stubs under ~500 bytes; `club_squad.json`
+is 180 B; `probe.json` 88 B. Do not count these as references.
+
+### Image-only (no coordinates — verification, not specification)
+
+Setup-wizard interaction states (`reports/fixture_disasm/runtime/*.png`:
+before/after Select All, after clicking a nation, after Next), HSR
+history screens, assorted DirectDraw/desktop grabs.
+
+### Capture tooling — new states CAN be taken
+
+* `tools/gdi_capture/capture.js` — Frida hooks on the 8 primitives
+  (line `0x5cd3e0`, rect `0x5cd730`, darken `0x5cdd60`, restore
+  `0x5cda90`, glyph `0x5ceaa0`, panel `0x5cf570`, wrapped_text
+  `0x5d03a0`, present `0x5cccd0`).
+* `tools/gdi_capture/capture_screen.py` — **posts a click into the game
+  and captures before/after framebuffers around it.** This is the tool
+  for capturing per-STATE references (row selected, menu open, scrolled)
+  that Frontend Rule 7 requires.
+* `tools/gdi_capture/snap.py` — one-shot 800×600 RGB555 backbuffer dump.
+* `tools/capture_all_screens.py` — Unicorn-emulates a screen's draw
+  callback; `--list` shows which of ~40 screens still lack a callback
+  address.
+
+Known tooling limits (from its own README): font glyphs still emit
+`*_pending_font`, palette globals are not sampled, and the DirectDraw
+build needs a separate `IDirectDrawSurface::Lock` hook.
+
+**Caveat on new captures:** three attempts to run Frida against the exe
+for the year-end capture crashed it
+(`memory/frida-instrumentation-crash-evidence.md`). The existing Tier-1
+fixtures were captured successfully, so the primitive hooks are viable;
+heavier instrumentation is not.
 
 ## 2. Screen inventory — reachability and data source
 
@@ -210,6 +300,24 @@ A further ~20 route to `AutoRoute` and paint an empty substrate.
 Per the directive's fixing order, and consistent with what this audit
 found:
 
+0. **Build the pixel gate.** The oracle already exists —
+   `paint.pixels.bin`, a raw 800×600 RGB555 frame from the original exe,
+   for 11 screens (§1b Tier 1). This is the highest-value front-end
+   task: it turns "looks close" into a pass/fail number, and needs no
+   new capture.
+
+   **All three pieces are already in the repo:**
+   * the reference — eight verified `fixtures/*/paint.pixels.bin`, each
+     exactly 960,000 bytes (800 × 600 × 2);
+   * our side — the renderer paints into `PackedSurface::rgb555(800,
+     600)`, and `render_new.rs:2270` already dumps `packed.buf` as
+     u16-LE, i.e. byte-identical in format to the oracle;
+   * **a working precedent** — `render_new.rs:2277` already loads
+     `fixtures/news_after.pixels.bin` ("the real exe framebuffer, 800×600
+     RGB555, u16 LE") and compares against it.
+
+   So this is generalising an existing single-screen comparison into a
+   per-screen gate, not building something new.
 1. **Scrollbar** — recover ONE canonical GDI scrollbar (arrow geometry,
    track, thumb min size, size/position formulas, page regions, drag
    offset, clamping, row mapping). It is the most approximation-prone
