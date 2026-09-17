@@ -179,6 +179,53 @@ From the user's description of the original, plus what the capture shows:
 
 ---
 
+## 4b. Competitive fixture + debut list (captured 2026-09-17)
+
+Second capture: **Cambridge United v Stoke (Home), Second Division**,
+the opening league fixture. `fixtures/next_match_screen/next_match_debut.json`
++ `structure_debut.txt` + `next_match_debut_reference.png`. This resolves
+most of the §5 unknowns.
+
+### The News block lists debuts AND injuries together
+
+The `<Club> News` block is the **availability list**: it shows every
+player unavailable (injury, `X out (reason)`) *and* every player set to
+debut (`X set for debut`). Same style as the injury lines — yellow
+`0x7FE0`, value column x **355**..758, 21 px pitch from y 367:
+
+```text
+755 WRAP (355,367)-(758,386) c=0x7fe0 'Tony Scully set for debut'
+760 WRAP (355,388)-(758,407) c=0x7fe0 'Phil Warner set for debut'
+765 WRAP (355,409)-(758,428) c=0x7fe0 'Stevland Angus set for debut'
+770 WRAP (355,430)-(758,449) c=0x7fe0 'Armand One set for debut'
+775 WRAP (355,451)-(758,470) c=0x7fe0 'Alex Revell set for debut'
+780 WRAP (355,472)-(758,492) c=0x7fe0 'Warren Goodhind set for debut'
+```
+
+Line format: **`<Full Name> set for debut`** (first + last name, not the
+squad-list "Surname, I" form). When the block overflows the panel the
+shared scrollbar appears (see §2 chrome; this capture has it).
+
+### Competitive vs friendly differences
+
+| Field | Friendly (Bristol) | Competitive (Cambridge, Div 2) |
+| --- | --- | --- |
+| Match Rules line 1 | `No player restrictions` | `Max 3 non-EU players in the match squad` |
+| Match Rules line 2 | `9 subs named, maximum 9 used` | `5 subs named, maximum 3 used` |
+| Weather | `Dry, 21°C` | `Unknown` (far-future fixture) |
+| Extra button | — | **`Progress`** at (530,125)-(654,145) |
+| Venue | away side's ground | home side's ground (`The Abbey Stadium, Cambridge`) |
+
+So the button row has FIVE slots on a competitive fixture:
+`<< Date` (110-234), `Date >>` (236-360), `Progress` (530-654),
+`Past Meetings` (656-780). The friendly capture had no `Progress`.
+
+### `<< Date` disabled confirmed again
+
+Cambridge v Stoke is the season opener, so `<< Date` is disabled (engraved
+two-pass, `0x6F7A`+`0x294A`) — same rule as the friendly. `Date >>` is
+enabled (single `0x739C`).
+
 ## 5. UNKNOWN / UNCAPTURED
 
 Per the project rule, these are recorded as unknown rather than guessed:
