@@ -97,32 +97,39 @@ impl World {
             (None, true)     => name.clone(),
         };
 
-        // Bio: Born D.M.YY (Age NN). Nationality. Use the type6 DOB
-        // accessors (same source as age_at) so the date and age agree.
-        let dob = crate::typed_records::CmDate {
-            day: person.dob_day(), year: person.dob_year(), is_leap: 0,
-        };
-        let (month, day) = dob.to_month_day();
-        let age = person.age_at(2001, crate::day_of_year(2001, 8, 10));
+        // Bio: Born D.M.YY (Age NN). Nationality.
+        // ~21% of players ship with a sentinel DOB (year 1900) because the
+        // exe generates it at game init. Until that init pass is wired, use
+        // a deterministic age fallback (the SAME hash the Squad screen uses,
+        // so the two screens agree) rather than showing "Born unknown".
         let nationality = pv.nation_id()
             .and_then(|nid| self.core.nations.iter()
                 .map(NationView::new)
                 .find(|nv| nv.id() as i32 == nid))
             .map(|nv| nv.nationality_name())
             .unwrap_or_default();
-        let yy = dob.year % 100;
-        let age_str = age.map(|a| format!(" (Age {a})")).unwrap_or_default();
         let nat_str = if nationality.is_empty() {
             String::new()
         } else {
             format!(" {nationality}.")
         };
-        let born_line = if dob.year > 1900 {
-            format!("Born {day}.{month}.{yy:02}{age_str}.{nat_str}")
+        let age: u8 = person.age_at(2001, crate::day_of_year(2001, 8, 10))
+            .unwrap_or_else(|| {
+                let mut h = (staff_id as u64).wrapping_mul(0xBF58476D_1CE4E5B9);
+                h ^= h >> 27; h = h.wrapping_mul(0x94D049BB_133111EB); h ^= h >> 31;
+                17 + (h % 19) as u8
+            });
+        let born_year = if person.dob_year() > 1900 {
+            person.dob_year()
         } else {
-            // No DOB set (regen sentinel).
-            format!("Born unknown.{nat_str}")
+            2001u16.saturating_sub(age as u16)
         };
+        let dob = crate::typed_records::CmDate {
+            day: person.dob_day().max(1), year: born_year, is_leap: 0,
+        };
+        let (month, day) = dob.to_month_day();
+        let yy = born_year % 100;
+        let born_line = format!("Born {day}.{month}.{yy:02} (Age {age}).{nat_str}");
 
         // Attributes — real DB values at game-authoritative offsets.
         let attrs = pv.player_data_id().map(|l| l as u32).unwrap_or(staff_id);
