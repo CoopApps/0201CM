@@ -81,9 +81,12 @@ impl World {
         let person = self.staff.type6.iter().find(|p| p.id == staff_id)?;
         let pv = PlayerView::from_split(person.id, &person.body);
 
-        // Name + squad number + club → title line.
+        // Name + squad number + club → title line. `squad_numbers` is
+        // keyed by the type10 (player-data) id, NOT the person id, so
+        // resolve the link first (the Squad screen keys it the same way).
         let name = self.person_display_name(person);
-        let number = self.squad_numbers.get(&staff_id).copied()
+        let attr_link = pv.player_data_id().map(|l| l as u32).unwrap_or(staff_id);
+        let number = self.squad_numbers.get(&attr_link).copied()
             .filter(|n| *n > 0);
         let club_name = pv.current_club_id()
             .and_then(|cid| self.core.clubs.iter()

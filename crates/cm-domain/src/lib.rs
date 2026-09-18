@@ -14153,6 +14153,11 @@ impl World {
     /// Zero-value slots stay 0 and paint as an empty cell — the exe
     /// only fills them via the interactive "Submit Squad Numbers"
     /// panel (FUN_0047ea60 lines 854-875), not a boot pass.
+    #[doc(hidden)]
+    pub fn _squad_number_pos_group_probe(a: &DomainStaffType10) -> u8 {
+        squad_number_pos_group(a)
+    }
+
     pub fn assign_squad_numbers(&mut self) {
         use std::collections::BTreeMap;
         // person id -> club id (only staff-with-employer get a number).
@@ -14168,50 +14173,55 @@ impl World {
             })
             .collect();
 
-        // -- Pass 1: FUN_00842f40 clamp-copy of the preferred number
-        //    from type10.flags_byte_04 into the pool. Records the
-        //    club so pass 2 can group by roster.
-        //
-        //    Per-club (staff_id → assigned number) map for fast
-        //    conflict detection.
-        let mut roster_by_club: BTreeMap<u32, Vec<(u32, u8)>> = BTreeMap::new();
+        // -- Pass 1: honour explicit preferred numbers. `flags_byte_04`
+        //    is the record's explicit shirt number (0 = none — true for
+        //    ~most players, incl. most GKs). Clamp [0,50]; if another
+        //    player at the club already claimed it, drop to 0 so pass 2
+        //    reassigns (the exe never double-books a shirt).
+        //    roster entry = (type10_id, number, pos_group, current_ability).
+        let mut roster_by_club: BTreeMap<u32, Vec<(u32, u8, u8, i16)>> = BTreeMap::new();
         for attr in &self.staff.type10 {
             let Some(person_id) = type10_owner.get(&attr.id).copied() else { continue; };
             let Some(club_id) = person_club.get(&person_id).copied() else { continue; };
             let raw = attr.flags_byte_04 as i8;
             let mut n: u8 = if raw < 0 { 0 } else if raw <= 50 { raw as u8 } else { 50 };
-            // Duplicate-guard: if another player at the same club
-            // already claimed `n`, treat this player as unassigned
-            // so pass 2 gives them the next free number. Matches the
-            // exe — no two players share a shirt.
             if n > 0 {
                 let taken = roster_by_club.get(&club_id)
-                    .map(|v| v.iter().any(|&(_, m)| m == n))
+                    .map(|v| v.iter().any(|&(_, m, _, _)| m == n))
                     .unwrap_or(false);
                 if taken { n = 0; }
             }
-            roster_by_club.entry(club_id).or_default().push((attr.id, n));
+            roster_by_club.entry(club_id).or_default()
+                .push((attr.id, n, squad_number_pos_group(attr), attr.current_ability));
         }
 
-        // -- Pass 2: FUN_0047ea60 auto-fill for zeros. Per club, scan
-        //    1..50 and grant the lowest free number to each unnumbered
-        //    player in insertion order (which is type10 pool order,
-        //    matching the exe's own iteration). Guarantees every
-        //    staff-with-employer leaves boot with a squad number.
+        // -- Pass 2: auto-fill unnumbered players POSITION-GROUPED (the
+        //    exe's rule — decompile comment on run_start_game_init: "group
+        //    on position + rank within group by CA"). Order the zeros by
+        //    position group (GK first, then DEF, MID, ATT) then CA desc,
+        //    and grant each the lowest free number. This makes shirt 1 go
+        //    to the club's best goalkeeper whenever it is free — the
+        //    "1 is always a goalkeeper" behaviour — instead of to whoever
+        //    happened to come first in the type10 pool.
         for (_, roster) in roster_by_club.iter_mut() {
             let mut taken: [bool; 51] = [false; 51];
-            for &(_, n) in roster.iter() {
+            for &(_, n, _, _) in roster.iter() {
                 if n > 0 && (n as usize) < taken.len() { taken[n as usize] = true; }
             }
-            for entry in roster.iter_mut() {
-                if entry.1 == 0 {
-                    if let Some(n) = (1u8..=50).find(|&k| !taken[k as usize]) {
-                        entry.1 = n;
-                        taken[n as usize] = true;
-                    }
+            let mut order: Vec<usize> =
+                (0..roster.len()).filter(|&i| roster[i].1 == 0).collect();
+            order.sort_by(|&i, &j| {
+                roster[i].2.cmp(&roster[j].2)                 // GK group first
+                    .then(roster[j].3.cmp(&roster[i].3))      // CA descending
+                    .then(roster[i].0.cmp(&roster[j].0))      // stable by id
+            });
+            for i in order {
+                if let Some(n) = (1u8..=50).find(|&k| !taken[k as usize]) {
+                    roster[i].1 = n;
+                    taken[n as usize] = true;
                 }
             }
-            for &(type10_id, n) in roster.iter() {
+            for &(type10_id, n, _, _) in roster.iter() {
                 self.squad_numbers.insert(type10_id, n);
             }
         }
@@ -26134,5 +26144,92 @@ mod tests {
         );
         write_entry(&mut bytes, 3, 6, "club.dat");
         bytes
+    }
+}
+
+/// Position group for squad-number ordering: 0 = goalkeeper, 1 = defender,
+/// 2 = midfielder, 3 = attacker, 4 = unknown. GK wins when the goalkeeping
+/// aptitude is a genuine keeper rating and at least the player's best
+/// outfield aptitude, so shirt 1 lands on the club's top GK. Used only to
+/// ORDER auto-assignment (matching the exe's position grouping); it does
+/// not paint a position label, so the "never infer a display code" rule is
+/// not in play here.
+fn squad_number_pos_group(a: &DomainStaffType10) -> u8 {
+    let gk = a.apt_goalkeeper;
+    let def = a.apt_sweeper.max(a.apt_defender).max(a.apt_wing_back);
+    let mid = a.apt_def_midfielder.max(a.apt_midfielder).max(a.apt_att_midfielder);
+    let att = a.apt_attacker;
+    // A keeper is whoever's goalkeeping aptitude dominates their outfield
+    // aptitudes (any level, not only >=15) — this catches lower-rated and
+    // reserve keepers so shirt 1 still lands on them.
+    if gk > 0 && gk >= def && gk >= mid && gk >= att {
+        return 0;
+    }
+    let best = def.max(mid).max(att);
+    if best <= 0 {
+        // No aptitude at all — a regen stub (its position, like its DOB,
+        // is generated at init, which we do not yet run).
+        return 4;
+    }
+    if def == best { 1 } else if mid == best { 2 } else { 3 }
+}
+
+#[cfg(test)]
+mod squad_number_tests {
+    use std::path::PathBuf;
+    fn rust_db_dir() -> Option<PathBuf> {
+        let dir = std::env::var("CM_RUST_DB").map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../rust-db"));
+        if dir.join("metadata.json").exists() { Some(dir) } else { None }
+    }
+
+    /// After boot assignment: no club double-books a shirt, and shirt 1
+    /// belongs to a goalkeeper wherever the club has one (the exe's
+    /// "1 is always a goalkeeper" rule). Checks a sample of clubs.
+    #[test]
+    fn no_duplicate_numbers_and_one_is_a_goalkeeper() {
+        use std::collections::{BTreeMap, BTreeSet};
+        let Some(dir) = rust_db_dir() else {
+            eprintln!("rust-db absent; skipping squad-number check");
+            return;
+        };
+        let mut world = crate::World::read_rust_db_dir(&dir).expect("read rust-db");
+        world.assign_squad_numbers();
+
+        // type10 id -> (club, is_goalkeeper) for the players we can place.
+        let type10_owner: BTreeMap<u32, u32> = world.staff.type6.iter()
+            .filter_map(|p| {
+                let pv = crate::typed_records::PlayerView::from_split(p.id, &p.body);
+                Some((pv.player_data_id().map(|l| l as u32).unwrap_or(p.id), p.current_club_id()?))
+            })
+            .collect();
+        let mut per_club_numbers: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
+        let mut one_is_gk_club: BTreeMap<u32, bool> = BTreeMap::new();
+        let mut club_has_gk: BTreeSet<u32> = BTreeSet::new();
+        for a in &world.staff.type10 {
+            let Some(&club) = type10_owner.get(&a.id) else { continue; };
+            let Some(&n) = world.squad_numbers.get(&a.id) else { continue; };
+            if n == 0 { continue; }
+            per_club_numbers.entry(club).or_default().push(n);
+            let is_gk = crate::World::_squad_number_pos_group_probe(a) == 0;
+            if is_gk { club_has_gk.insert(club); }
+            if n == 1 { one_is_gk_club.insert(club, is_gk); }
+        }
+        // No duplicates anywhere.
+        for (club, nums) in &per_club_numbers {
+            let mut seen = BTreeSet::new();
+            for &n in nums {
+                assert!(seen.insert(n), "club {club} double-books shirt {n}");
+            }
+        }
+        // Where the club has a GK AND shirt 1 was auto-assigned, it is a GK
+        // for the large majority (explicit non-GK #1s are a tiny minority).
+        let mut checked = 0; let mut gk1 = 0;
+        for (club, &is_gk) in &one_is_gk_club {
+            if club_has_gk.contains(club) { checked += 1; if is_gk { gk1 += 1; } }
+        }
+        assert!(checked > 0);
+        let ratio = gk1 as f64 / checked as f64;
+        assert!(ratio > 0.85, "#1 is a GK in only {gk1}/{checked} GK-clubs ({ratio:.2})");
     }
 }
