@@ -1899,59 +1899,59 @@ mod tests {
 }
 
 // ---------------------------------------------------------------------------
-// Next Match — shares this module's club chrome (sidebar, kit-coloured
-// title bar, the 5 top tabs, the 5 bottom tabs, Back/Next) and paints the
-// Next Match body from screen_next_match_faithful on top.
-//
-// This deliberately reuses the same private chrome constants render_squad
-// uses (TOP_TABS, TAB_Y0/Y1, TAB_FILL, IG_TITLE_*, BOT_TABS_FIXED,
-// NAV_*, TAKE_CONTROL_RECT) so the frame is pixel-identical to the squad
-// screen without touching render_squad. The chrome is not yet factored
-// into a standalone draw_club_chrome() — that dedup is a follow-up; the
-// point here is that both screens draw the SAME frame from the SAME
-// constants.
+// Shared club chrome — the frame every club screen draws around its body:
+// photo, sidebar, kit-coloured title bar, the 5 top tabs, the 5 bottom
+// tabs, Back/Next. Extracted so Next Match and General Info (and future
+// panels) draw the SAME frame from the SAME constants. render_squad is
+// not yet converted to call this (that dedup is a separate, verified
+// step) but uses the identical constants.
 // ---------------------------------------------------------------------------
 
-/// Render the Next Match screen (chrome + body).
-pub fn render_next_match(
-    surface: &mut PackedSurface,
-    fonts: &mut Fonts,
-    st: &crate::screen_next_match_faithful::NextMatchState<'_>,
-    pressed: PressedButton,
-) {
+/// Parameters for the shared club chrome.
+pub struct ClubChrome<'a> {
+    pub club_name: &'a str,
+    pub kit_bg_rgb565: u16,
+    pub kit_fg_rgb565: u16,
+    pub has_manager: bool,
+    pub photo_seed: u64,
+    /// Which top tab (0..=4) is active.
+    pub active_top_tab: u8,
+    pub division_name: &'a str,
+    pub pressed: PressedButton,
+}
+
+/// Draw the shared chrome. The caller paints its body BETWEEN the top
+/// tabs and the bottom tabs (content region roughly y 125..500).
+pub fn draw_club_chrome(surface: &mut PackedSurface, fonts: &mut Fonts, c: &ClubChrome<'_>) {
     let palette = PanelPalette::default();
     let title_font = fonts.pixel_slot(F_TITLE).clone();
     let small_font = fonts.pixel_slot(F_SMALL).clone();
     let body_font = fonts.pixel_slot(F_BODY).clone();
 
-    // Photo background + left sidebar.
-    blit_photo(surface, st.photo_seed);
-    draw_sidebar(surface, fonts, st.has_manager);
+    blit_photo(surface, c.photo_seed);
+    draw_sidebar(surface, fonts, c.has_manager);
 
-    // Kit-coloured title bar with the club name.
-    let bar_fill = if st.kit_bg_rgb565 != 0 { st.kit_bg_rgb565 } else { IG_TITLE_FILL };
-    let bar_ink  = if st.kit_fg_rgb565 != 0 { st.kit_fg_rgb565 } else { IG_TITLE_INK };
+    // Kit-coloured title bar + club name.
+    let bar_fill = if c.kit_bg_rgb565 != 0 { c.kit_bg_rgb565 } else { IG_TITLE_FILL };
+    let bar_ink  = if c.kit_fg_rgb565 != 0 { c.kit_fg_rgb565 } else { IG_TITLE_INK };
     draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, bar_fill, bar_ink, palette);
-    let mut title_bytes = c_string(st.club_name.as_bytes());
-    draw_wrapped_text(surface, 100, 10, 790, 70, &title_font, &title_bytes,
-        bar_ink, TS_CENTRE, -1);
-    title_bytes.clear();
+    draw_wrapped_text(surface, 100, 10, 790, 70, &title_font,
+        &c_string(c.club_name.as_bytes()), bar_ink, TS_CENTRE, -1);
 
     // Take Control / Print button.
     let (tx0, ty0, tx1, ty1) = TAKE_CONTROL_RECT;
-    let tc_flags = if pressed == PressedButton::TakeControl {
+    let tc_flags = if c.pressed == PressedButton::TakeControl {
         P_SOLID_FILL | P_BEVEL_INVERT
     } else { P_SOLID_FILL | P_BEVEL };
     draw_panel(surface, tx0, ty0, tx1, ty1, tc_flags, IG_TITLE_INK, IG_TITLE_FILL, palette);
     surface.draw_rectangle(tx0, ty0, tx1, ty1, 4, IG_TITLE_INK);
-    let tr_label: &[u8] = if st.has_manager { b"Print" } else { b"Take Control" };
+    let tr_label: &[u8] = if c.has_manager { b"Print" } else { b"Take Control" };
     draw_wrapped_text(surface, tx0, ty0, tx1, ty1, &small_font, &c_string(tr_label),
         IG_TITLE_FILL, TS_CENTRE, -1);
 
-    // Top tab bar — Next Match (idx 2) is the active tab.
-    const ACTIVE: u8 = 2;
+    // Top tab bar.
     for (i, (x0, x1, label)) in TOP_TABS.iter().copied().enumerate() {
-        let selected = i as u8 == ACTIVE;
+        let selected = i as u8 == c.active_top_tab;
         let style = if selected {
             P_SOLID_FILL | P_BEVEL | P_OUTER_HIGHLIGHT
         } else {
@@ -1966,15 +1966,18 @@ pub fn render_next_match(
         draw_wrapped_text(surface, x0, TAB_Y0, x1, TAB_Y1, &small_font,
             &c_string(label.as_bytes()), ink, TS_CENTRE, -1);
     }
+}
 
-    // Screen-specific body.
-    crate::screen_next_match_faithful::render_next_match_body(surface, fonts, st);
+/// Draw the shared bottom tab bar + Back/Next. Called AFTER the body so
+/// it sits on top of the content panel's edge, matching the exe.
+pub fn draw_club_chrome_footer(surface: &mut PackedSurface, fonts: &mut Fonts, c: &ClubChrome<'_>) {
+    let palette = PanelPalette::default();
+    let small_font = fonts.pixel_slot(F_SMALL).clone();
+    let body_font = fonts.pixel_slot(F_BODY).clone();
 
-    // Bottom tab bar (slot 3 = live division name).
     for (i, tab) in BOT_TABS_FIXED.iter().enumerate() {
-        let label = if i == 3 { st.division_name } else { tab.label };
-        let style = P_SOLID_FILL | P_BEVEL;
-        draw_panel(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1, style, TAB_FILL,
+        let label = if i == 3 { c.division_name } else { tab.label };
+        draw_panel(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1, P_SOLID_FILL | P_BEVEL, TAB_FILL,
             if tab.enabled { CYAN_BRIGHT } else { GREY_BAR }, palette);
         let ink = if tab.enabled { CYAN_BRIGHT } else { GREY_BAR };
         draw_wrapped_text(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1, &small_font,
@@ -1984,16 +1987,50 @@ pub fn render_next_match(
             draw_hollow_triangle(surface, tab.x1 - 10, cy, 5, TRIANGLE_ORANGE);
         }
     }
-
-    // Back / Next.
     for (rect, label, btn) in [
         (NAV_BACK, "Back", PressedButton::Back),
         (NAV_NEXT, "Next", PressedButton::Next),
     ] {
-        let style = if pressed == btn { P_SOLID_FILL | P_BEVEL_INVERT }
+        let style = if c.pressed == btn { P_SOLID_FILL | P_BEVEL_INVERT }
                     else { P_SOLID_FILL | P_BEVEL };
         draw_panel(surface, rect.0, NAV_Y0, rect.1, NAV_Y1, style, GREY_BAR, INK_CYAN, palette);
         draw_wrapped_text(surface, rect.0, NAV_Y0, rect.1, NAV_Y1, &body_font,
             &c_string(label.as_bytes()), INK_CYAN, TS_CENTRE, -1);
     }
+}
+
+/// Render the Next Match screen (chrome + body).
+pub fn render_next_match(
+    surface: &mut PackedSurface,
+    fonts: &mut Fonts,
+    st: &crate::screen_next_match_faithful::NextMatchState<'_>,
+    pressed: PressedButton,
+) {
+    let chrome = ClubChrome {
+        club_name: st.club_name, kit_bg_rgb565: st.kit_bg_rgb565,
+        kit_fg_rgb565: st.kit_fg_rgb565, has_manager: st.has_manager,
+        photo_seed: st.photo_seed, active_top_tab: 2,
+        division_name: st.division_name, pressed,
+    };
+    draw_club_chrome(surface, fonts, &chrome);
+    crate::screen_next_match_faithful::render_next_match_body(surface, fonts, st);
+    draw_club_chrome_footer(surface, fonts, &chrome);
+}
+
+/// Render the General Info screen (chrome + body).
+pub fn render_general_info(
+    surface: &mut PackedSurface,
+    fonts: &mut Fonts,
+    st: &crate::screen_general_info_faithful::GeneralInfoState<'_>,
+    pressed: PressedButton,
+) {
+    let chrome = ClubChrome {
+        club_name: st.club_name, kit_bg_rgb565: st.kit_bg_rgb565,
+        kit_fg_rgb565: st.kit_fg_rgb565, has_manager: st.has_manager,
+        photo_seed: st.photo_seed, active_top_tab: 4,
+        division_name: st.division_name, pressed,
+    };
+    draw_club_chrome(surface, fonts, &chrome);
+    crate::screen_general_info_faithful::render_general_info_body(surface, fonts, st);
+    draw_club_chrome_footer(surface, fonts, &chrome);
 }

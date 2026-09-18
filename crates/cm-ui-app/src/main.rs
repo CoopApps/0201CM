@@ -162,6 +162,14 @@ enum Screen {
         fixture_index: usize,
         news_scroll: usize,
     },
+    /// General Info — top tab #4 (the not-managed default "General Info"
+    /// page). `staff_scroll` scrolls the Non-Playing Staff list;
+    /// `view_menu_open` toggles the View dropdown (General Info / Stats).
+    GeneralInfo {
+        choice: cm_domain::ManagerClubChoice,
+        staff_scroll: usize,
+        view_menu_open: bool,
+    },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
     News {
@@ -612,6 +620,51 @@ impl App {
                 }
             }
         }
+        // General Info — top tab #4, not-managed default page. Chrome +
+        // body from screen_general_info_faithful, built from
+        // World::general_info_for.
+        if let Screen::GeneralInfo { choice, staff_scroll, view_menu_open } = &self.screen {
+            use cm_render::screen_club_squad_faithful::PressedButton;
+            let pressed = match self.pressed {
+                Pressed::ClubPreview(ClubPreviewButton::TakeControl) => PressedButton::TakeControl,
+                Pressed::ClubPreview(ClubPreviewButton::Back)        => PressedButton::Back,
+                Pressed::ClubPreview(ClubPreviewButton::Next)        => PressedButton::Next,
+                Pressed::ClubPreview(ClubPreviewButton::TopTab(i))   => PressedButton::TopTab(i),
+                _ => PressedButton::None,
+            };
+            if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                if let Some(view) = world.general_info_for(&game.save, choice.club_id) {
+                    let (kit_bg, kit_fg) = render_new::club_kit_colours(world, choice.club_id);
+                    let division = render_new::club_division_short(world, choice.club_id);
+                    let staff: Vec<(&str, &str)> = view.non_playing_staff.iter()
+                        .map(|s| (s.name.as_str(), s.role.as_str())).collect();
+                    let st = cm_render::screen_general_info_faithful::GeneralInfoState {
+                        nation: &view.nation,
+                        status: &view.status,
+                        finances: &view.finances,
+                        stadium: &view.stadium,
+                        facilities: &view.facilities,
+                        training_ground: &view.training_ground,
+                        staff: &staff,
+                        staff_scroll: *staff_scroll,
+                        view_menu_open: *view_menu_open,
+                        club_name: &choice.club_name,
+                        photo_seed: self.setup_photo_seed,
+                        has_manager: self.game.is_some(),
+                        division_name: &division,
+                        kit_bg_rgb565: kit_bg,
+                        kit_fg_rgb565: kit_fg,
+                    };
+                    let mut packed = cm_render::packed::PackedSurface::rgb555(
+                        Surface::W as i32, Surface::H as i32);
+                    cm_render::screen_club_squad_faithful::render_general_info(
+                        &mut packed, &mut self.fonts, &st, pressed);
+                    render_new::blit_packed_to_surface(&packed, &mut self.frame);
+                    self.overlay_menu_bar();
+                    return;
+                }
+            }
+        }
         // Club preview — the Squad tab of the picked club with Take
         // Control button. See screen_club_squad_faithful.
         {
@@ -705,6 +758,12 @@ impl App {
                 self.frame.fill(0, 0, 0);
                 self.status = Some(
                     "Next Match: no active game/world".into());
+                self.overlay_menu_bar();
+            }
+            Screen::GeneralInfo { .. } => {
+                self.frame.fill(0, 0, 0);
+                self.status = Some(
+                    "General Info: no active game/world".into());
                 self.overlay_menu_bar();
             }
             Screen::AutoRoute { cmd } => {
@@ -952,6 +1011,22 @@ impl App {
                     Pressed::ClubPreview(ClubPreviewButton::Back)
                 } else if y >= 555 && y <= 590 && x >= 619 && x <= 790 {
                     Pressed::ClubPreview(ClubPreviewButton::Next)
+                } else if y >= 80 && y <= 115 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::TopTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                } else {
+                    Pressed::None
+                }
+            }
+            Screen::GeneralInfo { .. } => {
+                if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    Pressed::ClubPreview(ClubPreviewButton::TakeControl)
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    Pressed::ClubPreview(ClubPreviewButton::Back)
+                } else if y >= 125 && y <= 145 && x >= 110 && x <= 235 {
+                    Pressed::ClubPreview(ClubPreviewButton::View)
                 } else if y >= 80 && y <= 115 {
                     let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
                     tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
@@ -1590,6 +1665,27 @@ impl App {
                     *news_scroll = 0;
                 }
             }
+            Screen::GeneralInfo { choice, view_menu_open, .. } => {
+                // View dropdown items take precedence when it's open.
+                if *view_menu_open {
+                    // "General Info" (150-168) is the current page; "Stats"
+                    // (170-188) is the second page (not built yet). Either
+                    // way the click closes the menu.
+                    if y >= 170 && y <= 188 && x >= 112 && x <= 233 {
+                        self.status = Some("Stats page — not yet built".to_string());
+                    }
+                    *view_menu_open = false;
+                } else if let Some(tab) = club_top_tab_hit(x, y) {
+                    goto_top_tab = Some((tab, choice.clone()));
+                } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    install_club = Some(choice.clone());
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    goto_reopen_select_team = true;
+                } else if y >= 125 && y <= 145 && x >= 110 && x <= 235 {
+                    // View button — open the page dropdown.
+                    *view_menu_open = true;
+                }
+            }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
                 // The arms are mutually exclusive — an `if / else if`
                 // chain instead of early `return`s so deferred flags
@@ -1788,8 +1884,11 @@ impl App {
                     };
                 }
                 4 => {
-                    self.status = Some(
-                        "General Info screen — not yet built".to_string());
+                    self.screen = Screen::GeneralInfo {
+                        choice,
+                        staff_scroll: 0,
+                        view_menu_open: false,
+                    };
                 }
                 _ => {}
             }
@@ -2179,6 +2278,15 @@ impl App {
             Screen::SelectClub { clubs, scroll, .. } => {
                 Some((Scrollbar::CLUB_SELECT, clubs.len(), 34, *scroll))
             }
+            Screen::GeneralInfo { choice, staff_scroll, .. } => {
+                let total = self.world.as_ref().and_then(|w|
+                    self.game.as_ref().and_then(|g|
+                        w.general_info_for(&g.save, choice.club_id)))
+                    .map(|v| v.non_playing_staff.len()).unwrap_or(0);
+                // Staff scrollbar spans (345,492), 6 rows visible.
+                Some((cm_render::scrollbar::Scrollbar::new(345, 492), total,
+                    cm_render::screen_general_info_faithful::STAFF_VISIBLE, *staff_scroll))
+            }
             _ => None,
         }
     }
@@ -2189,6 +2297,7 @@ impl App {
             Screen::ClubFixturesTab { scroll, .. }
             | Screen::ClubPreview { scroll, .. }
             | Screen::SelectClub { scroll, .. } => *scroll = value,
+            Screen::GeneralInfo { staff_scroll, .. } => *staff_scroll = value,
             _ => {}
         }
     }
@@ -2250,6 +2359,7 @@ impl App {
             Screen::ClubTransfers { choice, .. } => (7, choice.club_id),
             Screen::ClubFixturesTab { choice, .. } => (8, choice.club_id),
             Screen::NextMatch { choice, fixture_index, .. } => (9, choice.club_id ^ (*fixture_index as u32)),
+            Screen::GeneralInfo { choice, .. } => (20, choice.club_id),
             Screen::News { .. } => (10, 0),
             Screen::Dashboard { .. } => (11, 0),
             Screen::LeagueTable { view, .. } => (12, view.competition_id),
@@ -2780,6 +2890,7 @@ impl ApplicationHandler for App {
                                 | Screen::ClubFixtures { .. }
                                 | Screen::ClubFixturesTab { .. }
                                 | Screen::NextMatch { .. }
+                                | Screen::GeneralInfo { .. }
                                 | Screen::AutoRoute { .. }
                                 | Screen::SelectNationality { .. }
                                 | Screen::SelectClub { .. }
