@@ -44,8 +44,10 @@ pub struct GeneralInfoState<'a> {
     pub kit_fg_rgb565: u16,
 }
 
-/// Staff rows visible at once in the (337..500) panel.
-pub const STAFF_VISIBLE: usize = 6;
+/// Staff rows visible at once in the (337..500) panel. Rows are at
+/// y=388 + n*21; five (388..472) fit above the 500 border — a sixth at
+/// y=493 would overrun it. Capture confirms 5 (Terry Smith..Mark Mason).
+pub const STAFF_VISIBLE: usize = 5;
 
 /// Draw the General Info body over the shared club chrome.
 pub fn render_general_info_body(
@@ -112,12 +114,14 @@ pub fn render_general_info_body(
     // View dropdown (drawn last so it overlays). Green menu with two
     // pages: General Info (checked) + Stats.
     if st.view_menu_open {
-        draw_panel(surface, 110, 148, 235, 190, P_SOLID_FILL, MENU_BG, 0, palette);
+        // Container is a raised bevel (capture style 0x130 =
+        // P_SOLID_FILL | P_BEVEL); the two rows are flat fill inside it.
+        draw_panel(surface, 110, 148, 235, 190, P_SOLID_FILL | P_BEVEL, MENU_BG, 0, palette);
         draw_panel(surface, 112, 150, 233, 168, P_SOLID_FILL, MENU_BG, 0, palette);
         draw_panel(surface, 112, 170, 233, 188, P_SOLID_FILL, MENU_HOVER, 0, palette);
-        // Leading spaces leave room for the check tick on the active page.
+        // Capture: plain 6-space indent, black font 1, no tick glyph.
         draw_wrapped_text(surface, 112, 150, 233, 168, &small_font,
-            &c_string(b"  \x07 General Info"), 0x0000, W_LEFT, -1);
+            &c_string(b"      General Info"), 0x0000, W_LEFT, -1);
         draw_wrapped_text(surface, 112, 170, 233, 188, &small_font,
             &c_string(b"      Stats"), 0x0000, W_LEFT, -1);
     }
