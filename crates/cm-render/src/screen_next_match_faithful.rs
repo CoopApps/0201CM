@@ -91,6 +91,11 @@ pub fn render_next_match_body(
     let palette = PanelPalette::default();
     let body_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_BODY).clone();
     let small_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_SMALL).clone();
+    // Value/news font — slot 2 (arial_narrow_11). Per the capture, the
+    // LABELS (Date/Venue/…) use font_idx 3 (body) but the VALUES and the
+    // news rows use font_idx 2, a size smaller. Using body for both made
+    // the values read too large.
+    let value_font = fonts.pixel_slot(2).clone();
 
     // ---- Background structure, matching the squad page EXACTLY: two
     // SEPARATE see-through darkened blocks over the photo (NOT a solid
@@ -136,7 +141,7 @@ pub fn render_next_match_body(
             &c_string(text.as_bytes()), INK_GREY, W_LEFT, -1);
     };
     let value = |surface: &mut PackedSurface, y: i32, text: &str| {
-        draw_wrapped_text(surface, 354, y, 756, y + 19, &body_font,
+        draw_wrapped_text(surface, 354, y, 756, y + 19, &value_font,
             &c_string(text.as_bytes()), INK_YELLOW, W_LEFT, -1);
     };
 
@@ -163,7 +168,7 @@ pub fn render_next_match_body(
     const NEWS_VISIBLE: usize = 6;
     for (i, line) in state.news.iter().skip(state.news_scroll).take(NEWS_VISIBLE).enumerate() {
         let y = NEWS_Y0 + (i as i32) * NEWS_STRIDE;
-        draw_wrapped_text(surface, 355, y, 758, y + 19, &body_font,
+        draw_wrapped_text(surface, 355, y, 758, y + 19, &value_font,
             &c_string(line.as_bytes()), INK_YELLOW, W_LEFT, -1);
     }
 
