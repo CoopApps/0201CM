@@ -421,6 +421,9 @@ struct App {
     /// exe picks a new one on each screen open; we do the same by
     /// bumping this whenever we return to Setup.
     setup_photo_seed: u64,
+    /// Ordered player-ids of the last-rendered club Squad list (display
+    /// order), so a squad-row click can be mapped to a player profile.
+    squad_hit_ids: Vec<u32>,
     /// Bottom-of-screen "Loading database" progress bar. `Some` while
     /// the overlay is active; the transition to `pending` fires when
     /// `progress` reaches 1.0. Matches the exe's grey bar that shows
@@ -723,6 +726,7 @@ impl App {
                 },
                 _ => PressedButton::None,
             };
+            let mut hit_ids: Vec<u32> = Vec::new();
             if render_new::try_render_club_preview_faithful(
                 &self.screen, self.world.as_ref(),
                 self.game.as_ref().map(|g| &g.save),
@@ -730,7 +734,9 @@ impl App {
                 self.setup_photo_seed, has_manager,
                 self.cursor.0, self.cursor.1,
                 pressed,
+                &mut hit_ids,
             ) {
+                self.squad_hit_ids = hit_ids;
                 self.overlay_menu_bar();
                 return;
             }
@@ -1565,6 +1571,13 @@ impl App {
                     install_club = Some(choice.clone());
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
                     goto_reopen_select_team = true;
+                } else if let Some(off) =
+                    cm_render::screen_club_squad_faithful::squad_row_hit(*view, x, y)
+                {
+                    // Squad row clicked → open that player's profile.
+                    if let Some(pid) = self.squad_hit_ids.get(*scroll + off).copied() {
+                        open_profile = Some(pid);
+                    }
                 } else if let Some(pack) = view.column_pack() {
                     eprintln!("[sort] click x={x} y={y} — checking header strip");
                     if let Some(col) = header_hit(&pack, x, y) {
@@ -2728,6 +2741,7 @@ impl Default for App {
             nav_back: Vec::new(),
             nav_fwd: Vec::new(),
             nav_suppress: false,
+            squad_hit_ids: Vec::new(),
             game: None,
             menu_open: None,
             status: None,

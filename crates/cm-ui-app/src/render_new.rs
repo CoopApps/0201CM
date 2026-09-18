@@ -548,6 +548,7 @@ pub fn try_render_club_preview_faithful(
     cursor_x: i32,
     cursor_y: i32,
     pressed: cm_render::screen_club_squad_faithful::PressedButton,
+    hit_ids: &mut Vec<u32>,
 ) -> bool {
     // ClubPreview (Squad), ClubTransfers, and ClubFixtures all share
     // this chrome. Extract the club choice + scroll + jump-menu state
@@ -1168,6 +1169,7 @@ pub fn try_render_club_preview_faithful(
     // body+0x35 = club id link).
     let start_day = cm_domain::day_of_year(2001, 8, 10);
     struct Row {
+        player_id: u32,
         name: String,
         position: String,
         age: Option<u8>,
@@ -1311,6 +1313,7 @@ pub fn try_render_club_preview_faithful(
             Some(17 + (h2 % 19) as u8)
         });
         rows.push(Row {
+            player_id: person.id,
             name,
             position: pos,
             age,
@@ -1408,6 +1411,7 @@ pub fn try_render_club_preview_faithful(
     // Owned per-row bag — everything the renderer might read from
     // this row lives here so the &str views below stay valid.
     struct DispRow {
+        player_id: u32,
         name: String, position: String,
         age: Option<u8>, marker: char, squad_number: u8,
         nationality: String, int_caps: u16, int_goals: u16,
@@ -1417,6 +1421,7 @@ pub fn try_render_club_preview_faithful(
     }
     let display: Vec<DispRow> = rows.into_iter()
         .map(|r| DispRow {
+            player_id: r.player_id,
             name: r.name, position: r.position, age: r.age,
             marker: r.marker, squad_number: r.squad_number,
             nationality: r.nationality, int_caps: r.int_caps,
@@ -1426,6 +1431,9 @@ pub fn try_render_club_preview_faithful(
             cols: r.cols,
         })
         .collect();
+    // Publish the ordered player-ids (display order == render order) so
+    // the click handler can map a squad-row click to a player.
+    *hit_ids = display.iter().map(|d| d.player_id).collect();
     let col_refs: Vec<Vec<&str>> = display.iter()
         .map(|d| d.cols.iter().map(|s| s.as_str()).collect())
         .collect();

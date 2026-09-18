@@ -631,6 +631,25 @@ pub const VISIBLE_ENTRIES: usize = VISIBLE_ROWS * 2;
 // Renderer
 // -----------------------------------------------------------------------
 
+/// Map a click in the player list to the visible-entry offset (before
+/// scroll is added). Traditional view is a 2-players-per-row grid (left
+/// entry x < 435, right entry x >= 435, entry = row*2 + col); every
+/// other view is one player per row. Returns `None` outside the list.
+pub fn squad_row_hit(view: SquadView, x: i32, y: i32) -> Option<usize> {
+    if x < LIST_X0 || x > LIST_X1 || y < ROW_FIRST_Y { return None; }
+    let row = (y - ROW_FIRST_Y) / ROW_STRIDE;
+    if row < 0 || row as usize >= VISIBLE_ROWS { return None; }
+    let y0 = ROW_FIRST_Y + row * ROW_STRIDE;
+    if y > y0 + ROW_HEIGHT { return None; }
+    Some(match view {
+        SquadView::Traditional => {
+            let col = if x < NUM_R.0 { 0 } else { 1 };
+            (row as usize) * 2 + col
+        }
+        _ => row as usize,
+    })
+}
+
 pub fn render_squad(
     surface: &mut PackedSurface,
     fonts: &mut Fonts,
