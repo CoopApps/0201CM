@@ -62,3 +62,40 @@ Labels = font_idx 3 (body/arial_14); values = font_idx 2
 ## UNKNOWN / UNCAPTURED
 - The manager-owned version (more fields) — deferred second pass.
 - The View dropdown's menu contents.
+
+## Update 2026-09-18 — View dropdown + full staff list + job mapping
+
+**View dropdown** (opened via the View button): green dropdown,
+container PANEL (110,148)-(235,190) c=0x0200, two items each 20px:
+- `General Info` (112,150)-(233,168) — checked (leading tick + spaces)
+- `Stats` (112,170)-(233,188)
+These are the tab's TWO pages. Same green dropdown style as the squad
+View menu.
+
+**Full Non-Playing Staff list** (user scrolled the original):
+```
+Terry Smith     Chairman
+Gordon Hill     Manager
+Tony MacDonald  Coach
+Adam Powell     Scout
+Mark Mason      Scout
+Gary Stevens    Physio
+Dean Spink      Player/Assistant Manager
+```
+7 rows → the staff panel scrolls; scrollbar (759,345)-(778,492).
+
+**club_job byte → role** (derived: known-role staff cross-referenced
+against rust-db `PlayerView::club_job()`):
+- 1 → Chairman
+- 5 → Manager
+- 10 → Physio
+- Coach / Scout / (Player/)Assistant Manager bytes: NOT yet resolved —
+  Chester's coach + scouts are absent from our rust-db (a DB-fidelity
+  gap the user confirmed), so their bytes can't be read from this club.
+  Needs samples from a club whose non-playing staff ARE in rust-db, or a
+  decode of the job-classification function.
+
+**Known DB gap:** rust-db surfaces only 3 non-playing staff for Chester
+(Chairman, Manager, Physio) vs the original's 7. The coach, scouts and
+player/assistant-manager are missing from our staff→club data. The
+screen can be built now; the staff-completeness fix is separate.
