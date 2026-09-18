@@ -10,7 +10,7 @@ use crate::font::Fonts;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{draw_panel, PanelPalette, P_DARKEN, P_SOLID_FILL, P_BEVEL, P_OUTER_HIGHLIGHT};
 use crate::packed_text::{draw_wrapped_text, W_LEFT};
-use crate::screen_pre_boot_chrome::{c_string, blit_photo, TS_CENTRE, F_SMALL, F_BODY, F_TITLE};
+use crate::screen_pre_boot_chrome::{c_string, blit_photo, draw_sidebar, TS_CENTRE, F_SMALL, F_BODY, F_TITLE};
 
 const INK_GREY:   u16 = 0x739c;
 const INK_YELLOW: u16 = 0x7fe0;
@@ -20,6 +20,8 @@ const INK_WHITE:  u16 = 0x7fff;
 const NAVY:       u16 = 0x0090;
 const TAB_BLUE:   u16 = 0x100c;
 const GREY_BAR:   u16 = 0x4210;
+/// Purple Av-R cell box (capture col 8200 = 0x2008).
+const AVR_BOX:    u16 = 0x2008;
 
 /// The five player subtabs.
 pub const PROFILE_SUBTABS: [&str; 5] =
@@ -53,6 +55,9 @@ pub struct PlayerProfileState<'a> {
     pub active_subtab: usize,
     /// Darkened-photo background seed (matches the other club screens).
     pub photo_seed: u64,
+    /// Whether a manager is installed (drives the sidebar's Add-Manager
+    /// enabled/faded state).
+    pub has_manager: bool,
 }
 
 /// The 31 attribute labels, grid order (mirrors
@@ -81,6 +86,8 @@ pub fn render_player_profile(
     // ---- Darkened-photo background (the P_DARKEN panels below show it
     //      through, exactly like the Squad / General Info screens). ----
     blit_photo(surface, st.photo_seed);
+    // ---- Left menu sidebar (Version / nav / File menu) — always on. ----
+    draw_sidebar(surface, fonts, st.has_manager);
 
     // ---- Title bar (navy banner + name + Action button) ----
     draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, NAVY, 0, palette);
@@ -173,6 +180,9 @@ pub fn render_player_profile(
         let ink = if r % 2 == 0 { INK_YELLOW } else { INK_ORANGE };
         draw_wrapped_text(surface, 112, y, 263, y + 16, &cell,
             &c_string(format!("  {label}").as_bytes()), INK_GREY, W_LEFT, -1);
+        // Av R column has a purple bevelled box per row (capture
+        // (730,y)-(780,y+16) style 0x30 col 0x2008), text on top.
+        draw_panel(surface, 730, y, 780, y + 16, P_SOLID_FILL | P_BEVEL, AVR_BOX, 0, palette);
         for (i, cellv) in cells.iter().enumerate() {
             let cink = if i == 8 { INK_TEAL } else { ink };
             draw_wrapped_text(surface, CAREER_COL_X[i], y, CAREER_COL_X[i] + 48, y + 16,

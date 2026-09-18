@@ -796,6 +796,7 @@ impl App {
                             career: &career,
                             active_subtab: *active_subtab,
                             photo_seed: self.setup_photo_seed,
+                            has_manager: self.game.is_some(),
                         };
                         let mut packed = cm_render::packed::PackedSurface::rgb555(
                             Surface::W as i32, Surface::H as i32);
