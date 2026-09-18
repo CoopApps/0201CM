@@ -100,7 +100,9 @@ pub fn render_player_profile(
 
     // ---- Title bar (navy banner + name + Action button) ----
     draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, NAVY, 0, palette);
-    draw_wrapped_text(surface, 295, 25, 594, 55, &title_font,
+    // Left-aligned name; box runs to the bar edge so long names/clubs are
+    // not clipped (the exe draws past its narrow layout box too).
+    draw_wrapped_text(surface, 295, 25, 785, 55, &title_font,
         &c_string(st.title.as_bytes()), INK_WHITE, W_LEFT, -1);
     draw_panel(surface, 660, 4, 785, 24, P_SOLID_FILL | P_BEVEL, INK_WHITE, 0, palette);
     draw_wrapped_text(surface, 660, 4, 785, 24, &small,
@@ -133,7 +135,8 @@ pub fn render_player_profile(
 
     // ---- Bio band ----
     draw_panel(surface, 110, 125, 780, 155, P_DARKEN, 0, 0, palette);
-    draw_wrapped_text(surface, 313, 127, 577, 153, &body,
+    // Widened right edge so nationality ("English.") is not clipped.
+    draw_wrapped_text(surface, 313, 127, 700, 153, &body,
         &c_string(st.born_line.as_bytes()), INK_YELLOW, W_LEFT, -1);
 
     // ---- Attribute grid ----

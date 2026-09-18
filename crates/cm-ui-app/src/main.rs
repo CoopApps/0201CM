@@ -424,6 +424,9 @@ struct App {
     /// Ordered player-ids of the last-rendered club Squad list (display
     /// order), so a squad-row click can be mapped to a player profile.
     squad_hit_ids: Vec<u32>,
+    /// The screen a Player Profile was opened from, so Back restores it
+    /// (Squad tab, Dashboard, wherever). `None` when not in a profile.
+    profile_return: Option<Box<Screen>>,
     /// Bottom-of-screen "Loading database" progress bar. `Some` while
     /// the overlay is active; the transition to `pending` fires when
     /// `progress` reaches 1.0. Matches the exe's grey bar that shows
@@ -2031,12 +2034,13 @@ impl App {
             self.take_control_of_club(&choice);
         }
         if profile_back {
-            // Player Profile Back → rebuild the active club dashboard.
-            if let Some(game) = self.game.as_ref() {
-                if let Some(world) = self.world.as_ref() {
-                    if let Some(view) = world.dashboard_for(&game.save, game.save.active_human) {
-                        self.screen = Screen::Dashboard { view, squad_scroll: 0 };
-                    }
+            // Player Profile Back → restore the screen we came from
+            // (Squad tab, Dashboard, …). Fall back to the club dashboard.
+            if let Some(prev) = self.profile_return.take() {
+                self.screen = *prev;
+            } else if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                if let Some(view) = world.dashboard_for(&game.save, game.save.active_human) {
+                    self.screen = Screen::Dashboard { view, squad_scroll: 0 };
                 }
             }
         }
@@ -2106,6 +2110,10 @@ impl App {
             match world.player_profile_view_for(&game.save, player_id) {
                 Some(view) => {
                     eprintln!("[profile] {} ({})", view.title, player_id);
+                    // Remember where we came from so Back restores it.
+                    if !matches!(self.screen, Screen::PlayerProfile { .. }) {
+                        self.profile_return = Some(Box::new(self.screen.clone()));
+                    }
                     self.screen = Screen::PlayerProfile { staff_id: player_id, active_subtab: 0 };
                 }
                 None => {
@@ -2744,6 +2752,7 @@ impl Default for App {
             nav_fwd: Vec::new(),
             nav_suppress: false,
             squad_hit_ids: Vec::new(),
+            profile_return: None,
             game: None,
             menu_open: None,
             status: None,
