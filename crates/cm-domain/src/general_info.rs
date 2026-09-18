@@ -36,9 +36,16 @@ fn role_for_job(job: u8) -> &'static str {
         1 => "Chairman",
         5 => "Manager",
         10 => "Physio",
+        13 => "Player/Assistant Manager",
         _ => "Staff",
     }
 }
+
+/// `club_job` byte for an ordinary squad player (everyone the General
+/// Info staff list must EXCLUDE). Verified against Chester: every squad
+/// player is job 11; the non-playing roles (Chairman 1, Manager 5,
+/// Physio 10, Player/Assistant Manager 13) are the other bytes.
+const JOB_ORDINARY_PLAYER: u8 = 11;
 
 impl World {
     pub fn general_info_for(
@@ -96,8 +103,12 @@ impl World {
         for p in &self.staff.type6 {
             let pv = PlayerView::from_split(p.id, &p.body);
             if pv.current_club_id() != Some(club_id as i32) { continue; }
-            if pv.is_player() { continue; }
             let job = pv.club_job();
+            // Exclude ordinary squad players (job 11) — but KEEP players
+            // who also hold a staff role (e.g. job 13 Player/Assistant
+            // Manager, Dean Spink at Chester), which `is_player()` would
+            // wrongly filter out.
+            if job == JOB_ORDINARY_PLAYER { continue; }
             let first = self.references.first_names
                 .get(p.first_name_id() as usize).map(|n| n.text.as_str()).unwrap_or("");
             let second = self.references.second_names
