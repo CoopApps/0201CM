@@ -1897,3 +1897,103 @@ mod tests {
         }));
     }
 }
+
+// ---------------------------------------------------------------------------
+// Next Match — shares this module's club chrome (sidebar, kit-coloured
+// title bar, the 5 top tabs, the 5 bottom tabs, Back/Next) and paints the
+// Next Match body from screen_next_match_faithful on top.
+//
+// This deliberately reuses the same private chrome constants render_squad
+// uses (TOP_TABS, TAB_Y0/Y1, TAB_FILL, IG_TITLE_*, BOT_TABS_FIXED,
+// NAV_*, TAKE_CONTROL_RECT) so the frame is pixel-identical to the squad
+// screen without touching render_squad. The chrome is not yet factored
+// into a standalone draw_club_chrome() — that dedup is a follow-up; the
+// point here is that both screens draw the SAME frame from the SAME
+// constants.
+// ---------------------------------------------------------------------------
+
+/// Render the Next Match screen (chrome + body).
+pub fn render_next_match(
+    surface: &mut PackedSurface,
+    fonts: &mut Fonts,
+    st: &crate::screen_next_match_faithful::NextMatchState<'_>,
+    pressed: PressedButton,
+) {
+    let palette = PanelPalette::default();
+    let title_font = fonts.pixel_slot(F_TITLE).clone();
+    let small_font = fonts.pixel_slot(F_SMALL).clone();
+    let body_font = fonts.pixel_slot(F_BODY).clone();
+
+    // Photo background + left sidebar.
+    blit_photo(surface, st.photo_seed);
+    draw_sidebar(surface, fonts, st.has_manager);
+
+    // Kit-coloured title bar with the club name.
+    let bar_fill = if st.kit_bg_rgb565 != 0 { st.kit_bg_rgb565 } else { IG_TITLE_FILL };
+    let bar_ink  = if st.kit_fg_rgb565 != 0 { st.kit_fg_rgb565 } else { IG_TITLE_INK };
+    draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, bar_fill, bar_ink, palette);
+    let mut title_bytes = c_string(st.club_name.as_bytes());
+    draw_wrapped_text(surface, 100, 10, 790, 70, &title_font, &title_bytes,
+        bar_ink, TS_CENTRE, -1);
+    title_bytes.clear();
+
+    // Take Control / Print button.
+    let (tx0, ty0, tx1, ty1) = TAKE_CONTROL_RECT;
+    let tc_flags = if pressed == PressedButton::TakeControl {
+        P_SOLID_FILL | P_BEVEL_INVERT
+    } else { P_SOLID_FILL | P_BEVEL };
+    draw_panel(surface, tx0, ty0, tx1, ty1, tc_flags, IG_TITLE_INK, IG_TITLE_FILL, palette);
+    surface.draw_rectangle(tx0, ty0, tx1, ty1, 4, IG_TITLE_INK);
+    let tr_label: &[u8] = if st.has_manager { b"Print" } else { b"Take Control" };
+    draw_wrapped_text(surface, tx0, ty0, tx1, ty1, &small_font, &c_string(tr_label),
+        IG_TITLE_FILL, TS_CENTRE, -1);
+
+    // Top tab bar — Next Match (idx 2) is the active tab.
+    const ACTIVE: u8 = 2;
+    for (i, (x0, x1, label)) in TOP_TABS.iter().copied().enumerate() {
+        let selected = i as u8 == ACTIVE;
+        let style = if selected {
+            P_SOLID_FILL | P_BEVEL | P_OUTER_HIGHLIGHT
+        } else {
+            P_SOLID_FILL | P_BEVEL
+        };
+        let pattern = if selected { INK_YELLOW } else { INK_CYAN };
+        draw_panel(surface, x0, TAB_Y0, x1, TAB_Y1, style, TAB_FILL, pattern, palette);
+        if selected {
+            surface.draw_rectangle(x0 - 1, TAB_Y0 - 1, x1 + 1, TAB_Y1 + 1, 2, INK_YELLOW);
+        }
+        let ink = if selected { INK_YELLOW } else { INK_CYAN };
+        draw_wrapped_text(surface, x0, TAB_Y0, x1, TAB_Y1, &small_font,
+            &c_string(label.as_bytes()), ink, TS_CENTRE, -1);
+    }
+
+    // Screen-specific body.
+    crate::screen_next_match_faithful::render_next_match_body(surface, fonts, st);
+
+    // Bottom tab bar (slot 3 = live division name).
+    for (i, tab) in BOT_TABS_FIXED.iter().enumerate() {
+        let label = if i == 3 { st.division_name } else { tab.label };
+        let style = P_SOLID_FILL | P_BEVEL;
+        draw_panel(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1, style, TAB_FILL,
+            if tab.enabled { CYAN_BRIGHT } else { GREY_BAR }, palette);
+        let ink = if tab.enabled { CYAN_BRIGHT } else { GREY_BAR };
+        draw_wrapped_text(surface, tab.x0, BTB_Y0, tab.x1, BTB_Y1, &small_font,
+            &c_string(label.as_bytes()), ink, TS_CENTRE, -1);
+        if tab.enabled {
+            let cy = (BTB_Y0 + BTB_Y1) / 2;
+            draw_hollow_triangle(surface, tab.x1 - 10, cy, 5, TRIANGLE_ORANGE);
+        }
+    }
+
+    // Back / Next.
+    for (rect, label, btn) in [
+        (NAV_BACK, "Back", PressedButton::Back),
+        (NAV_NEXT, "Next", PressedButton::Next),
+    ] {
+        let style = if pressed == btn { P_SOLID_FILL | P_BEVEL_INVERT }
+                    else { P_SOLID_FILL | P_BEVEL };
+        draw_panel(surface, rect.0, NAV_Y0, rect.1, NAV_Y1, style, GREY_BAR, INK_CYAN, palette);
+        draw_wrapped_text(surface, rect.0, NAV_Y0, rect.1, NAV_Y1, &body_font,
+            &c_string(label.as_bytes()), INK_CYAN, TS_CENTRE, -1);
+    }
+}

@@ -50,6 +50,9 @@ pub struct NextMatchState<'a> {
     pub photo_seed: u64,
     pub has_manager: bool,
     pub division_name: &'a str,
+    /// Home-kit background / foreground for the title bar (0 = fallback).
+    pub kit_bg_rgb565: u16,
+    pub kit_fg_rgb565: u16,
 }
 
 /// One label/value control button in the nav row, drawn enabled or

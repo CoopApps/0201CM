@@ -150,6 +150,14 @@ enum Screen {
         scroll: usize,
         jump_menu_open: bool,
     },
+    /// Next Match — top tab #2. `fixture_index` selects which fixture is
+    /// shown (`Date >>` / `<< Date` step it); `usize::MAX` = the next
+    /// unplayed fixture, the default landing state.
+    NextMatch {
+        choice: cm_domain::ManagerClubChoice,
+        fixture_index: usize,
+        news_scroll: usize,
+    },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
     News {
@@ -540,6 +548,55 @@ impl App {
                 return;
             }
         }
+        // Next Match — top tab #2. Shares the club chrome; body from
+        // screen_next_match_faithful. Built from live state via
+        // World::next_match_for.
+        if let Screen::NextMatch { choice, fixture_index, news_scroll } = &self.screen {
+            use cm_render::screen_club_squad_faithful::PressedButton;
+            let pressed = match self.pressed {
+                Pressed::ClubPreview(ClubPreviewButton::TakeControl) => PressedButton::TakeControl,
+                Pressed::ClubPreview(ClubPreviewButton::Back)        => PressedButton::Back,
+                Pressed::ClubPreview(ClubPreviewButton::Next)        => PressedButton::Next,
+                Pressed::ClubPreview(ClubPreviewButton::TopTab(i))   => PressedButton::TopTab(i),
+                _ => PressedButton::None,
+            };
+            if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                if let Some(view) = world.next_match_for(&game.save, choice.club_id, *fixture_index) {
+                    // Kit colours + division short name, as the squad
+                    // screen resolves them.
+                    let (kit_bg, kit_fg) = render_new::club_kit_colours(world, choice.club_id);
+                    let division = render_new::club_division_short(world, choice.club_id);
+                    let news: Vec<&str> = view.news.iter().map(|n| n.text.as_str()).collect();
+                    let st = cm_render::screen_next_match_faithful::NextMatchState {
+                        title: &view.title,
+                        competition: &view.competition,
+                        date_line: &view.date_line,
+                        venue: &view.venue,
+                        match_rules: [&view.match_rules[0], &view.match_rules[1]],
+                        last_meeting: &view.last_meeting,
+                        weather: &view.weather,
+                        news: &news,
+                        is_friendly: view.is_friendly,
+                        has_earlier: view.has_earlier,
+                        has_later: view.has_later,
+                        news_scroll: *news_scroll,
+                        club_name: &choice.club_name,
+                        photo_seed: self.setup_photo_seed,
+                        has_manager: self.game.is_some(),
+                        division_name: &division,
+                        kit_bg_rgb565: kit_bg,
+                        kit_fg_rgb565: kit_fg,
+                    };
+                    let mut packed = cm_render::packed::PackedSurface::rgb555(
+                        Surface::W as i32, Surface::H as i32);
+                    cm_render::screen_club_squad_faithful::render_next_match(
+                        &mut packed, &mut self.fonts, &st, pressed);
+                    render_new::blit_packed_to_surface(&packed, &mut self.frame);
+                    self.overlay_menu_bar();
+                    return;
+                }
+            }
+        }
         // Club preview — the Squad tab of the picked club with Take
         // Control button. See screen_club_squad_faithful.
         {
@@ -626,6 +683,14 @@ impl App {
                 screens::draw_widget_pool_debug(
                     &mut self.frame, &mut self.fonts, widgets, label,
                 );
+            }
+            Screen::NextMatch { .. } => {
+                // Rendered in the dedicated block above when world+game
+                // are present; reaching here means one was missing.
+                self.frame.fill(0, 0, 0);
+                self.status = Some(
+                    "Next Match: no active game/world".into());
+                self.overlay_menu_bar();
             }
             Screen::AutoRoute { cmd } => {
                 // The new pipeline is expected to have handled this via
@@ -862,6 +927,24 @@ impl App {
                         .unwrap_or(Pressed::None)
                 }
                 else { Pressed::None }
+            }
+            // Next Match — chrome hit-testing only (top tabs, Take
+            // Control, Back/Next, and the two Date nav buttons).
+            Screen::NextMatch { .. } => {
+                if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    Pressed::ClubPreview(ClubPreviewButton::TakeControl)
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    Pressed::ClubPreview(ClubPreviewButton::Back)
+                } else if y >= 555 && y <= 590 && x >= 619 && x <= 790 {
+                    Pressed::ClubPreview(ClubPreviewButton::Next)
+                } else if y >= 80 && y <= 115 {
+                    let tab_col = [(100,237), (239,375), (377,513), (515,651), (653,790)];
+                    tab_col.iter().enumerate().find(|(_, (l,r))| x >= *l && x <= *r)
+                        .map(|(i, _)| Pressed::ClubPreview(ClubPreviewButton::TopTab(i as u8)))
+                        .unwrap_or(Pressed::None)
+                } else {
+                    Pressed::None
+                }
             }
             // Transfers uses the same press-tracking as ClubPreview —
             // View button, top tabs, jump triangle, Back/Next.
@@ -1460,6 +1543,38 @@ impl App {
                 // Season nav buttons are inert until has_prev/next_season
                 // wires up — matches the exe's disabled state at boot.
             }
+            Screen::NextMatch { choice, fixture_index, news_scroll } => {
+                // Top tabs (route via the shared handler), Take Control,
+                // Back, and the Date >> / << Date stepping.
+                if let Some(tab) = club_top_tab_hit(x, y) {
+                    goto_top_tab = Some((tab, choice.clone()));
+                } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    install_club = Some(choice.clone());
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    goto_reopen_select_team = true;
+                } else if y >= 125 && y <= 145 && x >= 236 && x <= 360 {
+                    // Date >> — next fixture. `usize::MAX` means "next
+                    // unplayed", so resolve it to a concrete index first.
+                    let cur = if *fixture_index == usize::MAX {
+                        self.game.as_ref().and_then(|g|
+                            self.world.as_ref().and_then(|w|
+                                w.next_match_for(&g.save, choice.club_id, usize::MAX)))
+                            .map(|v| v.fixture_index).unwrap_or(0)
+                    } else { *fixture_index };
+                    *fixture_index = cur.saturating_add(1);
+                    *news_scroll = 0;
+                } else if y >= 125 && y <= 145 && x >= 110 && x <= 234 {
+                    // << Date — previous fixture.
+                    let cur = if *fixture_index == usize::MAX {
+                        self.game.as_ref().and_then(|g|
+                            self.world.as_ref().and_then(|w|
+                                w.next_match_for(&g.save, choice.club_id, usize::MAX)))
+                            .map(|v| v.fixture_index).unwrap_or(0)
+                    } else { *fixture_index };
+                    *fixture_index = cur.saturating_sub(1);
+                    *news_scroll = 0;
+                }
+            }
             Screen::SelectNationality { scroll, selected, filter, filter_open } => {
                 // The arms are mutually exclusive — an `if / else if`
                 // chain instead of early `return`s so deferred flags
@@ -1651,10 +1766,11 @@ impl App {
                 1 => goto_club_transfers = Some(choice),
                 3 => goto_club_fixtures = Some(choice),
                 2 => {
-                    // Next Match: decoded (reports/next_match_screen_decode.md)
-                    // but the renderer is not built yet.
-                    self.status = Some(
-                        "Next Match screen — not yet built".to_string());
+                    self.screen = Screen::NextMatch {
+                        choice,
+                        fixture_index: usize::MAX, // next unplayed
+                        news_scroll: 0,
+                    };
                 }
                 4 => {
                     self.status = Some(
@@ -2562,6 +2678,7 @@ impl ApplicationHandler for App {
                                 | Screen::PlayerProfile { .. }
                                 | Screen::ClubFixtures { .. }
                                 | Screen::ClubFixturesTab { .. }
+                                | Screen::NextMatch { .. }
                                 | Screen::AutoRoute { .. }
                                 | Screen::SelectNationality { .. }
                                 | Screen::SelectClub { .. }

@@ -494,6 +494,47 @@ pub fn try_render_leagues_faithful(
 /// from Select Team. Includes the in-game title bar, top / bottom tab
 /// bars, sub-toolbar, player list drawn from real DB data, and the
 /// Take Control button.
+/// A club's division short name ("Prem" / "Div 2" / "Conference"),
+/// falling back to the long name, then to an empty string. Shared by the
+/// squad screen and Next Match for the fourth bottom-tab label.
+pub fn club_division_short(world: &cm_domain::World, club_id: u32) -> String {
+    let division_id = world.core.clubs.iter()
+        .map(cm_domain::typed_records::ClubView::new)
+        .find(|cv| cv.id() == club_id)
+        .and_then(|cv| cv.division_id());
+    match division_id {
+        Some(did) => world.references.club_competitions.iter()
+            .find(|c| c.id == did as u32)
+            .map(|c| if c.short_name.trim().is_empty() { c.long_name.clone() }
+                     else { c.short_name.clone() })
+            .unwrap_or_default(),
+        None => String::new(),
+    }
+}
+
+/// A club's home-kit `(bg, fg)` colours packed to RGB565 for the title
+/// bar. `(0, 0)` when any lookup step is missing (renderer then uses the
+/// in-game purple/blue default). Shared by the squad screen and Next Match.
+pub fn club_kit_colours(world: &cm_domain::World, club_id: u32) -> (u16, u16) {
+    let Some(rec) = world.core.clubs.iter()
+        .find(|c| cm_domain::typed_records::ClubView::new(c).id() == club_id)
+    else { return (0, 0) };
+    let cv = cm_domain::typed_records::ClubView::new(rec);
+    let resolve = |opt_id: Option<i32>| -> u16 {
+        let id = match opt_id { Some(v) if v > 0 => v as u32, _ => return 0 };
+        match world.core.colours.iter()
+            .find(|c| cm_domain::typed_records::ColourView::new(c).id() == id)
+        {
+            Some(c) => {
+                let (r, g, b) = cm_domain::typed_records::ColourView::new(c).rgb();
+                cm_render::pack565(r, g, b)
+            }
+            None => 0,
+        }
+    };
+    (resolve(cv.kit1_bg_color_id()), resolve(cv.kit1_fg_color_id()))
+}
+
 pub fn try_render_club_preview_faithful(
     screen: &Screen,
     world: Option<&cm_domain::World>,
