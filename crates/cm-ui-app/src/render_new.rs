@@ -364,8 +364,10 @@ pub fn try_render_rich_state(
         Screen::LeagueTable { view, scroll } => {
             screen_rich_state::build_league_table_from_view(&mut pool, view, *scroll).is_some()
         }
-        Screen::PlayerProfile { view } => {
-            screen_rich_state::build_player_profile_from_view(&mut pool, view).is_some()
+        Screen::PlayerProfile { .. } => {
+            // Painted directly by the faithful renderer (see main.rs
+            // render dispatch); no widget-pool build here.
+            false
         }
         Screen::ClubFixtures { view, scroll } => {
             screen_rich_state::build_club_fixtures_from_view(&mut pool, view, *scroll).is_some()

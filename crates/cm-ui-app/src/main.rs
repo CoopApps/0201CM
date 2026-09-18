@@ -197,10 +197,14 @@ enum Screen {
         view: cm_domain::LeagueTableView,
         scroll: usize,
     },
-    /// Player Profile — reached from a Dashboard squad row. Built by
-    /// `World::player_profile_for` from the type-6 person + type-10 attributes.
+    /// Player Profile — reached from a squad row. Built live by
+    /// `World::player_profile_view_for` (the faithful GDI screen). Shows
+    /// our game's own DB/init attribute values (unmasked); the original's
+    /// scouting mask is a start-of-game toggle to layer on later.
+    /// `active_subtab` selects Profile/Injuries/Contract/Transfer/History.
     PlayerProfile {
-        view: cm_domain::PlayerProfile,
+        staff_id: u32,
+        active_subtab: usize,
     },
     /// Club Fixtures — reached from the Dashboard's next-fixture panel. Built
     /// by `World::club_fixtures_for` from `save.season.fixtures`.
@@ -771,8 +775,28 @@ impl App {
                 screens::league_table(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
                 self.overlay_menu_bar();
             }
-            Screen::PlayerProfile { view } => {
-                screens::player_profile(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view);
+            Screen::PlayerProfile { staff_id, active_subtab } => {
+                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                    if let Some(view) = world.player_profile_view_for(&game.save, *staff_id) {
+                        let career: Vec<(&str, [&str; 9])> = view.career.iter()
+                            .map(|r| (r.label.as_str(), std::array::from_fn(|i| r.cells[i].as_str())))
+                            .collect();
+                        let st = cm_render::screen_player_profile_faithful::PlayerProfileState {
+                            title: &view.title,
+                            born_line: &view.born_line,
+                            attributes: &view.attributes,
+                            status: &view.status,
+                            position: &view.position,
+                            career: &career,
+                            active_subtab: *active_subtab,
+                        };
+                        let mut packed = cm_render::packed::PackedSurface::rgb555(
+                            Surface::W as i32, Surface::H as i32);
+                        cm_render::screen_player_profile_faithful::render_player_profile(
+                            &mut packed, &mut self.fonts, &st);
+                        render_new::blit_packed_to_surface(&packed, &mut self.frame);
+                    }
+                }
                 self.overlay_menu_bar();
             }
             Screen::ClubFixtures { view, scroll } => {
@@ -1241,6 +1265,8 @@ impl App {
         // one-way. Tabs 2 (Next Match) and 4 (General Info) have no screen
         // yet and surface a status line rather than being dead clicks.
         let mut goto_top_tab: Option<(u8, cm_domain::ManagerClubChoice)> = None;
+        // Deferred: Back on the Player Profile → return to the dashboard.
+        let mut profile_back = false;
         // Deferred: a News control without a ported target was clicked.
         let mut news_note = false;
         // Deferred: run the exe's post-league-selection init pass
@@ -1840,8 +1866,25 @@ impl App {
             Screen::LeagueTable { .. } => {
                 // Read-only table; club rows are not entity links yet.
             }
-            Screen::PlayerProfile { .. } => {
-                // Read-only; navigation is via the menu bar (handled above).
+            Screen::PlayerProfile { active_subtab, .. } => {
+                use cm_render::screen_player_profile_faithful::PROFILE_SUBTABS;
+                const SUBTAB_X: [i32; 5] = [100, 239, 377, 515, 653];
+                if y >= 80 && y <= 115 {
+                    // Player subtabs — only Profile (0) is built.
+                    for (i, x0) in SUBTAB_X.iter().enumerate() {
+                        if x >= *x0 && x <= *x0 + 137 {
+                            if i == 0 {
+                                *active_subtab = 0;
+                            } else {
+                                self.status = Some(format!(
+                                    "{} page — not yet built", PROFILE_SUBTABS[i]));
+                            }
+                        }
+                    }
+                } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
+                    // Back → return to the club dashboard.
+                    profile_back = true;
+                }
             }
             Screen::ClubFixtures { .. } => {
                 // Read-only list; navigation is via the menu bar (handled above).
@@ -1972,6 +2015,16 @@ impl App {
         if let Some(choice) = install_club {
             self.take_control_of_club(&choice);
         }
+        if profile_back {
+            // Player Profile Back → rebuild the active club dashboard.
+            if let Some(game) = self.game.as_ref() {
+                if let Some(world) = self.world.as_ref() {
+                    if let Some(view) = world.dashboard_for(&game.save, game.save.active_human) {
+                        self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+                    }
+                }
+            }
+        }
     }
 
     /// Install the active game's manager at the picked club (port of the exe's
@@ -2035,10 +2088,10 @@ impl App {
     /// Open `player_id`'s profile (type-6 person + type-10 attributes).
     fn open_player_profile(&mut self, player_id: u32) {
         if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
-            match world.player_profile_for(&game.save, player_id) {
+            match world.player_profile_view_for(&game.save, player_id) {
                 Some(view) => {
-                    eprintln!("[profile] {} ({})", view.name, player_id);
-                    self.screen = Screen::PlayerProfile { view };
+                    eprintln!("[profile] {} ({})", view.title, player_id);
+                    self.screen = Screen::PlayerProfile { staff_id: player_id, active_subtab: 0 };
                 }
                 None => {
                     self.status = Some("No attribute record for this player".into());
