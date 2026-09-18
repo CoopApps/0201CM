@@ -34,8 +34,17 @@ const ATTR_ROW_Y: [i32; 12] =
     [160, 179, 197, 216, 234, 252, 271, 289, 307, 326, 344, 362];
 /// Career-stats row tops (6 rows).
 const CAREER_ROW_Y: [i32; 6] = [403, 421, 439, 457, 475, 493];
-/// Career column x (Apps..Av R) + the two nav arrows.
-const CAREER_COL_X: [i32; 9] = [317, 369, 420, 472, 523, 575, 627, 678, 730];
+/// Career stat columns (x0,x1) for Apps..Av R — each a boxed cell
+/// (capture-verified bounds).
+const CAREER_COLS: [(i32, i32); 9] = [
+    (317, 367), (369, 418), (420, 470), (472, 521), (523, 573),
+    (575, 625), (627, 676), (678, 728), (730, 780),
+];
+/// The two nav-arrow header boxes.
+const NAV_LT: (i32, i32) = (265, 289);
+const NAV_GT: (i32, i32) = (291, 315);
+/// Header nav-arrow box colour (capture col 16 = 0x0010, dark blue).
+const HDR_BLUE: u16 = 0x0010;
 const CAREER_HDR: [&str; 9] =
     ["Apps", "Con", "Asts", "MoM", "Pass ", "Tck", "Drb", "Sh Tar", "Av R"];
 
@@ -166,27 +175,36 @@ pub fn render_player_profile(
 
     // ---- Career-stats table ----
     draw_panel(surface, 110, 384, 780, 510, P_DARKEN, 0, 0, palette);
-    // Header row.
-    draw_wrapped_text(surface, 265, 384, 291, 401, &small, &c_string(b"<<"), INK_GREY, W_LEFT, -1);
-    draw_wrapped_text(surface, 291, 384, 317, 401, &small, &c_string(b">>"), INK_GREY, W_LEFT, -1);
-    for (i, h) in CAREER_HDR.iter().enumerate() {
-        draw_wrapped_text(surface, CAREER_COL_X[i], 384, CAREER_COL_X[i] + 50, 401,
-            &small, &c_string(h.as_bytes()), INK_GREY, W_LEFT, -1);
+    // Header row — every cell is a bevelled box with a centred grey
+    // label: << / >> on BLUE boxes (col 16), the nine stat headers on
+    // GREY boxes (col 0x4210). (Capture verified.)
+    let nav = [(NAV_LT, "<<"), (NAV_GT, ">>")];
+    for ((cx0, cx1), lbl) in nav {
+        draw_panel(surface, cx0, 384, cx1, 401, P_SOLID_FILL | P_BEVEL, HDR_BLUE, 0, palette);
+        draw_wrapped_text(surface, cx0, 384, cx1, 401, &small,
+            &c_string(lbl.as_bytes()), INK_GREY, TS_CENTRE, -1);
     }
-    // Rows.
+    for (i, h) in CAREER_HDR.iter().enumerate() {
+        let (cx0, cx1) = CAREER_COLS[i];
+        draw_panel(surface, cx0, 384, cx1, 401, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        draw_wrapped_text(surface, cx0, 384, cx1, 401, &small,
+            &c_string(h.as_bytes()), INK_GREY, TS_CENTRE, -1);
+    }
+    // Rows — centred values; Av R column carries a purple bevelled box.
     for (r, (label, cells)) in st.career.iter().enumerate().take(6) {
         let y = CAREER_ROW_Y[r];
         // Alternating band colour (even rows yellow, odd orange).
         let ink = if r % 2 == 0 { INK_YELLOW } else { INK_ORANGE };
         draw_wrapped_text(surface, 112, y, 263, y + 16, &cell,
             &c_string(format!("  {label}").as_bytes()), INK_GREY, W_LEFT, -1);
-        // Av R column has a purple bevelled box per row (capture
-        // (730,y)-(780,y+16) style 0x30 col 0x2008), text on top.
-        draw_panel(surface, 730, y, 780, y + 16, P_SOLID_FILL | P_BEVEL, AVR_BOX, 0, palette);
         for (i, cellv) in cells.iter().enumerate() {
+            let (cx0, cx1) = CAREER_COLS[i];
+            if i == 8 {
+                draw_panel(surface, cx0, y, cx1, y + 16, P_SOLID_FILL | P_BEVEL, AVR_BOX, 0, palette);
+            }
             let cink = if i == 8 { INK_TEAL } else { ink };
-            draw_wrapped_text(surface, CAREER_COL_X[i], y, CAREER_COL_X[i] + 48, y + 16,
-                &small, &c_string(cellv.as_bytes()), cink, W_LEFT, -1);
+            draw_wrapped_text(surface, cx0, y, cx1, y + 16,
+                &small, &c_string(cellv.as_bytes()), cink, TS_CENTRE, -1);
         }
     }
 
