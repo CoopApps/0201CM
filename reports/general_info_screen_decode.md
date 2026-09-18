@@ -99,3 +99,39 @@ against rust-db `PlayerView::club_job()`):
 (Chairman, Manager, Physio) vs the original's 7. The coach, scouts and
 player/assistant-manager are missing from our staff→club data. The
 screen can be built now; the staff-completeness fix is separate.
+
+## Update 2 — authoritative club_job → role mapping (from FUN_00524850)
+
+Rather than reverse the mapping screen-by-screen, it is the exe's own
+role-name switch `FUN_00524850(job, …)` (DirectDraw decompile
+`00524850.c`), cases 0..0xd. Transcribed verbatim:
+
+| job | role | job | role |
+| --- | --- | --- | --- |
+| 0 | Unemployed | 7 | Reserve Team Manager |
+| 1 | Chairman | 8 | Coach |
+| 2 | Managing Director | 9 | Scout |
+| 3 | General Manager | 10 | Physio |
+| 4 | Director of Football | 11 | Player |
+| 5 | Manager | 12 | Player/Manager |
+| 6 | Assistant Manager | 13 | Player/Assistant Manager |
+
+Confirmed against rust-db Burnley (id 1604): job 1 Barry Kilby
+(Chairman), job 5 Stan Ternent (Manager), job 6 Sam Ellis (Assistant
+Manager — his real 2001 role), job 8 ×4 (coaches: Docherty/Jepson/
+Pashley/Robson), job 9 ×2 (scouts: Roberts/Catlow), job 10 ×2 (physios).
+
+The General Info list excludes ordinary players (job 11); every other
+job renders its real role. (Whether Managing Director / General Manager
+appear in THIS list or elsewhere is unconfirmed — Chester had none; a
+Burnley capture would settle it. They currently show, since they are
+non-playing staff.)
+
+## Open: "L. Catlow" name
+
+rust-db `first_names[12731]` is literally `"L."`, so the port shows
+"L. Catlow" while the original shows "Liz Catlow". The abbreviation is
+in our name POOL, not our formatting code. Either our first_names import
+corrupted entry 12731 (should be "Liz"), or staff first names come from
+a different source in the original. Needs a name-pool import check
+against the original's first_names table — separate from this screen.

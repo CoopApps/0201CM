@@ -31,11 +31,25 @@ pub struct GeneralInfoView {
 /// Other bytes are not yet resolved (the sample club's coach/scouts are
 /// missing from rust-db), so they render as "Staff" rather than a
 /// guessed role — honest until the mapping is decoded.
+/// `club_job` byte → role name. AUTHORITATIVE — transcribed from the
+/// exe's own role-name switch `FUN_00524850` (cases 0..0xd), confirmed
+/// against Burnley's staff in rust-db (job 6 = Sam Ellis / Assistant
+/// Manager, job 8 = coaches, job 9 = scouts).
 fn role_for_job(job: u8) -> &'static str {
     match job {
+        0 => "Unemployed",
         1 => "Chairman",
+        2 => "Managing Director",
+        3 => "General Manager",
+        4 => "Director of Football",
         5 => "Manager",
+        6 => "Assistant Manager",
+        7 => "Reserve Team Manager",
+        8 => "Coach",
+        9 => "Scout",
         10 => "Physio",
+        11 => "Player",
+        12 => "Player/Manager",
         13 => "Player/Assistant Manager",
         _ => "Staff",
     }
