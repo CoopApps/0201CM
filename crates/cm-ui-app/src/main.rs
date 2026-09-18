@@ -36,6 +36,10 @@ use winit::window::{Window, WindowId};
 
 /// Which screen the app is currently showing. State that belongs to a specific screen
 /// hangs off its enum variant so it's obvious what's persisted across transitions.
+///
+/// `Clone` so the Back/history stack can snapshot visited screens (see
+/// `App::nav_back` and `reports/screen_navigation_decode.md`).
+#[derive(Clone)]
 enum Screen {
     Setup,
     SelectLeagues(SelectLeaguesState),
@@ -374,6 +378,17 @@ struct App {
     /// where the button went down, so the thumb does not jump under the
     /// cursor. `None` when not dragging.
     sb_drag: Option<i32>,
+    /// Screen-history back stack (the exe's scrman per-page list — see
+    /// `reports/screen_navigation_decode.md`). Visited in-game screens
+    /// are pushed here on navigation (de-duplicated); Back pops. NOT
+    /// cleared on Continue/phase advance — only on new game / load /
+    /// exit, matching the original.
+    nav_back: Vec<Screen>,
+    /// Forward stack — screens popped by Back, so ▶ can redo them.
+    nav_fwd: Vec<Screen>,
+    /// Set by a Back/Forward action so the post-event history record
+    /// does not treat that transition as a fresh forward navigation.
+    nav_suppress: bool,
     /// The current in-memory working game (temporary until saved). `None` on
     /// the menu screens before a game is started.
     game: Option<GameInstance>,
@@ -2219,6 +2234,89 @@ impl App {
         }
     }
 
+    /// A lightweight identity for a screen: discriminant tag plus a key
+    /// arg (club id, fixture index, menu cmd). Two screens with the same
+    /// identity are "the same page" for history de-dup — the exe
+    /// re-points to an existing node rather than stacking a duplicate.
+    fn screen_ident(s: &Screen) -> (u8, u32) {
+        match s {
+            Screen::Setup => (0, 0),
+            Screen::SelectLeagues(_) => (1, 0),
+            Screen::StartSeason { .. } => (2, 0),
+            Screen::EnterName => (3, 0),
+            Screen::SelectNationality { .. } => (4, 0),
+            Screen::SelectClub { .. } => (5, 0),
+            Screen::ClubPreview { choice, .. } => (6, choice.club_id),
+            Screen::ClubTransfers { choice, .. } => (7, choice.club_id),
+            Screen::ClubFixturesTab { choice, .. } => (8, choice.club_id),
+            Screen::NextMatch { choice, fixture_index, .. } => (9, choice.club_id ^ (*fixture_index as u32)),
+            Screen::News { .. } => (10, 0),
+            Screen::Dashboard { .. } => (11, 0),
+            Screen::LeagueTable { view, .. } => (12, view.competition_id),
+            Screen::PlayerProfile { .. } => (13, 0),
+            Screen::ClubFixtures { .. } => (14, 0),
+            Screen::SelectedLeagues { .. } => (15, 0),
+            Screen::FifaRankings { .. } => (16, 0),
+            Screen::LatestScores { .. } => (17, 0),
+            Screen::WidgetPoolDebug { .. } => (18, 0),
+            Screen::AutoRoute { cmd } => (19, *cmd as u32),
+        }
+    }
+
+    /// Whether Back / ◀ can move (there is a previous screen).
+    fn can_go_back(&self) -> bool { !self.nav_back.is_empty() }
+
+    /// Record a completed forward navigation: `before` was the screen we
+    /// were on when the event began; `self.screen` is where we landed.
+    /// De-dups (A→A is a no-op; A→B→A collapses to the existing A) and
+    /// clears the forward stack, matching the scrman push semantics.
+    fn record_nav(&mut self, before: Screen) {
+        if Self::screen_ident(&before) == Self::screen_ident(&self.screen) {
+            return; // no real move
+        }
+        let now_id = Self::screen_ident(&self.screen);
+        // A→B→A: if we've navigated back to a screen already on the
+        // stack, pop to it instead of pushing a duplicate.
+        if let Some(pos) = self.nav_back.iter().position(|s| Self::screen_ident(s) == now_id) {
+            self.nav_back.truncate(pos);
+        }
+        // Don't stack consecutive duplicates of `before`.
+        if self.nav_back.last().map(Self::screen_ident) != Some(Self::screen_ident(&before)) {
+            self.nav_back.push(before);
+        }
+        self.nav_fwd.clear();
+    }
+
+    /// Back / ◀ — pop to the previous screen, remembering the current
+    /// one on the forward stack.
+    fn nav_go_back(&mut self) {
+        if let Some(prev) = self.nav_back.pop() {
+            let cur = self.screen.clone();
+            self.nav_fwd.push(cur);
+            self.screen = prev;
+            self.nav_suppress = true;
+            if let Some(w) = self.window.as_ref() { w.request_redraw(); }
+        }
+    }
+
+    /// Forward / ▶ — redo a screen Back popped.
+    fn nav_go_forward(&mut self) {
+        if let Some(next) = self.nav_fwd.pop() {
+            let cur = self.screen.clone();
+            self.nav_back.push(cur);
+            self.screen = next;
+            self.nav_suppress = true;
+            if let Some(w) = self.window.as_ref() { w.request_redraw(); }
+        }
+    }
+
+    /// Clear all history — on new game / load / exit, as the exe's
+    /// teardown does (never on Continue/phase advance).
+    fn nav_clear(&mut self) {
+        self.nav_back.clear();
+        self.nav_fwd.clear();
+    }
+
     fn ensure_world_initialised(&mut self) -> bool {
         if self.world.is_none() {
             let dir = std::env::var("CM_RUST_DB")
@@ -2428,6 +2526,9 @@ impl Default for App {
             world: None,
             world_init_done: false,
             sb_drag: None,
+            nav_back: Vec::new(),
+            nav_fwd: Vec::new(),
+            nav_suppress: false,
             game: None,
             menu_open: None,
             status: None,

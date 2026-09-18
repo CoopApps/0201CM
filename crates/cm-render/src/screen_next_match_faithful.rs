@@ -55,20 +55,21 @@ pub struct NextMatchState<'a> {
     pub kit_fg_rgb565: u16,
 }
 
-/// One label/value control button in the nav row, drawn enabled or
-/// disabled per the decode's two-pass rule.
+/// One nav-row control button. From the capture these are GRAY
+/// bevelled panels (`c=0x4210 s=P_SOLID_FILL|P_BEVEL`), same style as the
+/// bottom Back/Next bar — not bare text. Enabled text is flat cyan; a
+/// disabled control uses the engraved two-pass shadow/dark-main rule.
 fn nav_button(
     surface: &mut PackedSurface, font: &crate::packed_glyph::PixelFont,
-    x0: i32, x1: i32, label: &str, enabled: bool,
+    palette: PanelPalette, x0: i32, x1: i32, label: &str, enabled: bool,
 ) {
     let y0 = 125;
     let y1 = 145;
-    // The exe draws no fill panel for these — just text on the chrome.
+    draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     if enabled {
         draw_wrapped_text(surface, x0, y0, x1, y1, font,
             &c_string(label.as_bytes()), INK_GREY, TS_CENTRE, -1);
     } else {
-        // Shadow then dark main — the engraved disabled look.
         draw_wrapped_text(surface, x0 + 1, y0 + 1, x1 + 1, y1 + 1, font,
             &c_string(label.as_bytes()), DIS_SHADOW, TS_CENTRE, -1);
         draw_wrapped_text(surface, x0, y0, x1, y1, font,
@@ -91,21 +92,39 @@ pub fn render_next_match_body(
     let body_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_BODY).clone();
     let small_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_SMALL).clone();
 
-    // Nav row buttons.
-    nav_button(surface, &body_font, 110, 234, "<< Date", state.has_earlier);
-    nav_button(surface, &body_font, 236, 360, "Date >>", state.has_later);
+    // ---- Background structure, verbatim from the capture. Two SEPARATE
+    // darkened blocks over the photo (NOT the whole screen): the title
+    // band and the main content panel. The 5px gap between them (185 →
+    // 190) is what visually separates the opponent-name block from the
+    // detail block.
+    //   darken (110,150)-(780,185)   title band
+    //   PANEL  (110,190)-(780,500) s=2 + darken   main content panel
+    draw_panel(surface, 110, 150, 780, 185, P_DARKEN, 0, 0, palette);
+    draw_panel(surface, 110, 190, 780, 500, P_SOLID_FILL | P_BEVEL, 0, 0, palette);
+    draw_panel(surface, 110, 190, 780, 500, P_DARKEN, 0, 0, palette);
+
+    // Nav row buttons — gray bevelled panels.
+    nav_button(surface, &body_font, palette, 110, 234, "<< Date", state.has_earlier);
+    nav_button(surface, &body_font, palette, 236, 360, "Date >>", state.has_later);
     if !state.is_friendly {
-        nav_button(surface, &body_font, 530, 654, "Progress", true);
+        nav_button(surface, &body_font, palette, 530, 654, "Progress", true);
     }
-    nav_button(surface, &body_font, 656, 780, "Past Meetings", true);
+    nav_button(surface, &body_font, palette, 656, 780, "Past Meetings", true);
 
     // Title band — opponent (Home/Away), yellow, centred.
     draw_wrapped_text(surface, 110, 150, 780, 185, &body_font,
         &c_string(state.title.as_bytes()), INK_YELLOW, TS_CENTRE, -1);
 
-    // Competition label — orange, left.
+    // Competition label — orange, left — with the orange underline bar
+    // beneath it (capture: PANEL (115,220)-(252,239) c=0x7e00). The bar
+    // width tracks the label text so it underlines exactly, as the exe
+    // sizes it to the competition name.
     draw_wrapped_text(surface, 115, 198, 400, 218, &body_font,
         &c_string(state.competition.as_bytes()), INK_ORANGE, W_LEFT, -1);
+    let comp_w = crate::packed_text::measure_line(&body_font,
+        &c_string(state.competition.as_bytes()));
+    draw_panel(surface, 115, 220, 115 + comp_w.max(1), 224,
+        P_SOLID_FILL, INK_ORANGE, 0, palette);
 
     // Detail block. Labels carry two leading spaces INSIDE the string
     // (from the capture), so we pass them literally.
