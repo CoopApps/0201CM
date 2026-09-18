@@ -92,24 +92,25 @@ pub fn render_next_match_body(
     let body_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_BODY).clone();
     let small_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_SMALL).clone();
 
-    // ---- Background structure, verbatim from the capture. Two SEPARATE
-    // darkened blocks over the photo (NOT the whole screen): the title
-    // band and the main content panel. The 5px gap between them (185 →
-    // 190) is what visually separates the opponent-name block from the
-    // detail block.
+    // ---- Background structure, matching the squad page EXACTLY: two
+    // SEPARATE see-through darkened blocks over the photo (NOT a solid
+    // fill, and NOT the whole screen). The squad renderer uses
+    // P_DARKEN alone (no P_SOLID_FILL, no bevel) — a solid fill is what
+    // made this render opaque black. Same rects as the squad body
+    // (HDR 150-185, LIST 110/780/190/500).
     //   darken (110,150)-(780,185)   title band
-    //   PANEL  (110,190)-(780,500) s=2 + darken   main content panel
+    //   darken (110,190)-(780,500)   main content panel
     draw_panel(surface, 110, 150, 780, 185, P_DARKEN, 0, 0, palette);
-    draw_panel(surface, 110, 190, 780, 500, P_SOLID_FILL | P_BEVEL, 0, 0, palette);
     draw_panel(surface, 110, 190, 780, 500, P_DARKEN, 0, 0, palette);
 
-    // Nav row buttons — gray bevelled panels.
-    nav_button(surface, &body_font, palette, 110, 234, "<< Date", state.has_earlier);
-    nav_button(surface, &body_font, palette, 236, 360, "Date >>", state.has_later);
+    // Nav row buttons — gray bevelled panels, SMALL font (same size as
+    // the squad page's buttons/tabs).
+    nav_button(surface, &small_font, palette, 110, 234, "<< Date", state.has_earlier);
+    nav_button(surface, &small_font, palette, 236, 360, "Date >>", state.has_later);
     if !state.is_friendly {
-        nav_button(surface, &body_font, palette, 530, 654, "Progress", true);
+        nav_button(surface, &small_font, palette, 530, 654, "Progress", true);
     }
-    nav_button(surface, &body_font, palette, 656, 780, "Past Meetings", true);
+    nav_button(surface, &small_font, palette, 656, 780, "Past Meetings", true);
 
     // Title band — opponent (Home/Away), yellow, centred.
     draw_wrapped_text(surface, 110, 150, 780, 185, &body_font,
@@ -123,17 +124,19 @@ pub fn render_next_match_body(
         &c_string(state.competition.as_bytes()), INK_ORANGE, W_LEFT, -1);
     let comp_w = crate::packed_text::measure_line(&body_font,
         &c_string(state.competition.as_bytes()));
-    draw_panel(surface, 115, 220, 115 + comp_w.max(1), 224,
+    // Thin underline (2px) — was 4px and read too thick.
+    draw_panel(surface, 115, 220, 115 + comp_w.max(1), 221,
         P_SOLID_FILL, INK_ORANGE, 0, palette);
 
     // Detail block. Labels carry two leading spaces INSIDE the string
-    // (from the capture), so we pass them literally.
+    // (from the capture), so we pass them literally. Body font (arial_14)
+    // — the detail text reads larger than the squad's tiny cells.
     let label = |surface: &mut PackedSurface, y: i32, text: &str| {
-        draw_wrapped_text(surface, 112, y, 352, y + 19, &small_font,
+        draw_wrapped_text(surface, 112, y, 352, y + 19, &body_font,
             &c_string(text.as_bytes()), INK_GREY, W_LEFT, -1);
     };
     let value = |surface: &mut PackedSurface, y: i32, text: &str| {
-        draw_wrapped_text(surface, 354, y, 756, y + 19, &small_font,
+        draw_wrapped_text(surface, 354, y, 756, y + 19, &body_font,
             &c_string(text.as_bytes()), INK_YELLOW, W_LEFT, -1);
     };
 
@@ -160,7 +163,7 @@ pub fn render_next_match_body(
     const NEWS_VISIBLE: usize = 6;
     for (i, line) in state.news.iter().skip(state.news_scroll).take(NEWS_VISIBLE).enumerate() {
         let y = NEWS_Y0 + (i as i32) * NEWS_STRIDE;
-        draw_wrapped_text(surface, 355, y, 758, y + 19, &small_font,
+        draw_wrapped_text(surface, 355, y, 758, y + 19, &body_font,
             &c_string(line.as_bytes()), INK_YELLOW, W_LEFT, -1);
     }
 
