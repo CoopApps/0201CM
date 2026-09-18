@@ -18521,8 +18521,25 @@ impl World {
         }
     }
 
-    /// A person's display name from the name pools (first + second name ids).
+    /// A person's display name, honouring the common-name override.
+    ///
+    /// When `common_name_id` is set (non-zero) and the pooled string is
+    /// non-empty, the exe shows it verbatim as the full known-as name
+    /// (staff "Liz Catlow", players "Ronaldo") instead of composing
+    /// `first second`. Canonical case: the Burnley scout record has
+    /// first_name_id 12731 = "L." but common_name_id 1584 = "Liz Catlow",
+    /// which is what the original renders. Returns "" only when no name
+    /// source resolves.
     pub fn person_display_name(&self, person: &DomainStaffType6) -> String {
+        let common_id = person.common_name_id();
+        if common_id != 0 {
+            if let Some(cn) = self.references.common_names.get(common_id as usize) {
+                let t = cn.text.trim();
+                if !t.is_empty() {
+                    return t.to_string();
+                }
+            }
+        }
         let first = self
             .references
             .first_names

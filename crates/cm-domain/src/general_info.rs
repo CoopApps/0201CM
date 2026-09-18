@@ -123,16 +123,12 @@ impl World {
             // Manager, Dean Spink at Chester), which `is_player()` would
             // wrongly filter out.
             if job == JOB_ORDINARY_PLAYER { continue; }
-            let first = self.references.first_names
-                .get(p.first_name_id() as usize).map(|n| n.text.as_str()).unwrap_or("");
-            let second = self.references.second_names
-                .get(p.second_name_id() as usize).map(|n| n.text.as_str()).unwrap_or("");
-            let name = match (first.is_empty(), second.is_empty()) {
-                (true, true) => continue,
-                (true, false) => second.to_string(),
-                (false, true) => first.to_string(),
-                (false, false) => format!("{first} {second}"),
-            };
+            // Canonical resolver — honours the common-name override (e.g.
+            // Burnley scout Liz Catlow, whose first_name_id 12731 is "L."
+            // but common_name_id 1584 is "Liz Catlow", what the original
+            // renders).
+            let name = self.person_display_name(p);
+            if name.is_empty() { continue; }
             staff.push((job, StaffRow { name, role: role_for_job(job).to_string() }));
         }
         // Order: Chairman (1), Manager (5), then others by job byte.
@@ -143,5 +139,37 @@ impl World {
             club_id, nation, status, finances, stadium, facilities,
             training_ground, non_playing_staff,
         })
+    }
+}
+
+#[cfg(test)]
+mod common_name_tests {
+    use std::path::PathBuf;
+
+    fn rust_db_dir() -> Option<PathBuf> {
+        let dir = std::env::var("CM_RUST_DB")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../rust-db")
+            });
+        if dir.join("metadata.json").exists() { Some(dir) } else { None }
+    }
+
+    /// The Burnley scout's disk record carries first_name_id 12731 ("L.")
+    /// and second_name_id 19094 ("Catlow"), but common_name_id 1584
+    /// ("Liz Catlow"). The original renders the common name, so our
+    /// resolver must too — never "L. Catlow".
+    #[test]
+    fn liz_catlow_uses_common_name() {
+        let Some(dir) = rust_db_dir() else {
+            eprintln!("rust-db not present locally; skipping Liz Catlow check");
+            return;
+        };
+        let world = crate::World::read_rust_db_dir(&dir).expect("read rust-db");
+        let person = world.staff.type6.iter()
+            .find(|p| p.id == 52277)
+            .expect("Catlow staff record 52277");
+        let name = world.person_display_name(person);
+        assert_eq!(name, "Liz Catlow", "common-name override must win over first+second");
     }
 }

@@ -127,11 +127,26 @@ appear in THIS list or elsewhere is unconfirmed — Chester had none; a
 Burnley capture would settle it. They currently show, since they are
 non-playing staff.)
 
-## Open: "L. Catlow" name
+## RESOLVED: "L. Catlow" → "Liz Catlow" (common-name override)
 
-rust-db `first_names[12731]` is literally `"L."`, so the port shows
-"L. Catlow" while the original shows "Liz Catlow". The abbreviation is
-in our name POOL, not our formatting code. Either our first_names import
-corrupted entry 12731 (should be "Liz"), or staff first names come from
-a different source in the original. Needs a name-pool import check
-against the original's first_names table — separate from this screen.
+The pool was not corrupt and the importer was not at fault. The Burnley
+scout's disk record (staff id 52277, club 1604, job 9) carries THREE
+name ids:
+
+- `first_name_id  = 12731` → `first_names[12731]  = "L."`
+- `second_name_id = 19094` → `second_names[19094] = "Catlow"`
+- `common_name_id = 1584`  → `common_names[1584]  = "Liz Catlow"`
+
+When `common_name_id` is set (non-zero) the exe renders the common name
+verbatim as the full known-as name — the same mechanism that shows
+players as "Ronaldo" instead of "Ronaldo Nazário". Our resolver was
+composing `first second` and ignoring the override, so it produced
+"L. Catlow".
+
+Fix: `World::person_display_name` (crates/cm-domain/src/lib.rs) now
+returns the common name when set and non-empty, falling back to
+`first second` otherwise. `next_match::person_full_name` and
+`general_info_for` both route through it, so every player-visible name
+honours the override. Regression test:
+`general_info::common_name_tests::liz_catlow_uses_common_name` asserts
+staff 52277 resolves to exactly "Liz Catlow".

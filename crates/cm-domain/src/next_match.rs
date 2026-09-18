@@ -98,18 +98,9 @@ fn abs_day(g: &GameDate) -> i64 {
 impl World {
     fn person_full_name(&self, staff_id: u32) -> Option<String> {
         let person = self.staff.type6.iter().find(|p| p.id == staff_id)?;
-        let first = self.references.first_names
-            .get(person.first_name_id() as usize)
-            .map(|n| n.text.as_str()).unwrap_or("");
-        let second = self.references.second_names
-            .get(person.second_name_id() as usize)
-            .map(|n| n.text.as_str()).unwrap_or("");
-        Some(match (first.is_empty(), second.is_empty()) {
-            (true, true) => return None,
-            (true, false) => second.to_string(),
-            (false, true) => first.to_string(),
-            (false, false) => format!("{first} {second}"),
-        })
+        // Canonical resolver — honours the common-name override.
+        let name = self.person_display_name(person);
+        if name.is_empty() { None } else { Some(name) }
     }
 
     /// Build the Next Match view for `club_id` showing the fixture at
