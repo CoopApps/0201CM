@@ -10,7 +10,7 @@ use crate::font::Fonts;
 use crate::packed::PackedSurface;
 use crate::packed_panel::{draw_panel, PanelPalette, P_DARKEN, P_SOLID_FILL, P_BEVEL, P_OUTER_HIGHLIGHT};
 use crate::packed_text::{draw_wrapped_text, W_LEFT};
-use crate::screen_pre_boot_chrome::{c_string, TS_CENTRE, F_SMALL, F_BODY, F_TITLE};
+use crate::screen_pre_boot_chrome::{c_string, blit_photo, TS_CENTRE, F_SMALL, F_BODY, F_TITLE};
 
 const INK_GREY:   u16 = 0x739c;
 const INK_YELLOW: u16 = 0x7fe0;
@@ -51,6 +51,8 @@ pub struct PlayerProfileState<'a> {
     pub career: &'a [(&'a str, [&'a str; 9])],
     /// Active subtab index (0 = Profile).
     pub active_subtab: usize,
+    /// Darkened-photo background seed (matches the other club screens).
+    pub photo_seed: u64,
 }
 
 /// The 31 attribute labels, grid order (mirrors
@@ -76,9 +78,13 @@ pub fn render_player_profile(
     let title_font = fonts.pixel_slot(F_TITLE).clone();
     let cell  = fonts.pixel_slot(2).clone();
 
+    // ---- Darkened-photo background (the P_DARKEN panels below show it
+    //      through, exactly like the Squad / General Info screens). ----
+    blit_photo(surface, st.photo_seed);
+
     // ---- Title bar (navy banner + name + Action button) ----
     draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, NAVY, 0, palette);
-    draw_wrapped_text(surface, 295, 18, 594, 55, &title_font,
+    draw_wrapped_text(surface, 295, 25, 594, 55, &title_font,
         &c_string(st.title.as_bytes()), INK_WHITE, W_LEFT, -1);
     draw_panel(surface, 660, 4, 785, 24, P_SOLID_FILL | P_BEVEL, INK_WHITE, 0, palette);
     draw_wrapped_text(surface, 660, 4, 785, 24, &small,
@@ -95,8 +101,17 @@ pub fn render_player_profile(
             P_SOLID_FILL | P_BEVEL
         };
         draw_panel(surface, x0, 80, x1, 115, style, TAB_BLUE, 0, palette);
+        // Active tab carries a 1px yellow outline 1px outside the tab
+        // (capture rect (99,79)-(238,116) col 0x7fe0).
+        if active {
+            let (ax0, ay0, ax1, ay1) = (x0 - 1, 79, x1 + 1, 116);
+            surface.draw_line(ax0, ay0, ax1, ay0, 2, INK_YELLOW);
+            surface.draw_line(ax0, ay1, ax1, ay1, 2, INK_YELLOW);
+            surface.draw_line(ax0, ay0, ax0, ay1, 2, INK_YELLOW);
+            surface.draw_line(ax1, ay0, ax1, ay1, 2, INK_YELLOW);
+        }
         let ink = if active { INK_YELLOW } else { INK_GREY };
-        draw_wrapped_text(surface, x0, 80, x1, 100, &small,
+        draw_wrapped_text(surface, x0, 80, x1, 115, &small,
             &c_string(label.as_bytes()), ink, TS_CENTRE, -1);
     }
 
@@ -167,8 +182,8 @@ pub fn render_player_profile(
 
     // ---- Position band ----
     draw_panel(surface, 110, 515, 780, 545, P_DARKEN, 0, 0, palette);
-    draw_wrapped_text(surface, 110, 515, 780, 540, &body,
-        &c_string(st.position.as_bytes()), INK_TEAL, W_LEFT, -1);
+    draw_wrapped_text(surface, 110, 515, 780, 545, &body,
+        &c_string(st.position.as_bytes()), INK_TEAL, TS_CENTRE, -1);
 
     // ---- Back / Next ----
     draw_panel(surface, 100, 555, 617, 590, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
