@@ -39,6 +39,10 @@ use winit::window::{Window, WindowId};
 ///
 /// `Clone` so the Back/history stack can snapshot visited screens (see
 /// `App::nav_back` and `reports/screen_navigation_decode.md`).
+/// The two pages of the General Info tab (the View dropdown items).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GeneralInfoPage { Info, Stats }
+
 #[derive(Clone)]
 enum Screen {
     Setup,
@@ -164,11 +168,13 @@ enum Screen {
     },
     /// General Info — top tab #4 (the not-managed default "General Info"
     /// page). `staff_scroll` scrolls the Non-Playing Staff list;
-    /// `view_menu_open` toggles the View dropdown (General Info / Stats).
+    /// `view_menu_open` toggles the View dropdown (General Info / Stats);
+    /// `page` selects which of the two View pages is showing.
     GeneralInfo {
         choice: cm_domain::ManagerClubChoice,
         staff_scroll: usize,
         view_menu_open: bool,
+        page: GeneralInfoPage,
     },
     /// The News page — the game's actual home screen (the exe's news.c). This
     /// is what the manager lands on each morning.
@@ -623,7 +629,7 @@ impl App {
         // General Info — top tab #4, not-managed default page. Chrome +
         // body from screen_general_info_faithful, built from
         // World::general_info_for.
-        if let Screen::GeneralInfo { choice, staff_scroll, view_menu_open } = &self.screen {
+        if let Screen::GeneralInfo { choice, staff_scroll, view_menu_open, page } = &self.screen {
             use cm_render::screen_club_squad_faithful::PressedButton;
             let pressed = match self.pressed {
                 Pressed::ClubPreview(ClubPreviewButton::TakeControl) => PressedButton::TakeControl,
@@ -632,6 +638,32 @@ impl App {
                 Pressed::ClubPreview(ClubPreviewButton::TopTab(i))   => PressedButton::TopTab(i),
                 _ => PressedButton::None,
             };
+            // Stats page (View → Stats).
+            if matches!(page, GeneralInfoPage::Stats) {
+                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                    if let Some(view) = world.general_info_stats_for(&game.save, choice.club_id) {
+                        let (kit_bg, kit_fg) = render_new::club_kit_colours(world, choice.club_id);
+                        let division = render_new::club_division_short(world, choice.club_id);
+                        let st = cm_render::screen_general_info_faithful::GeneralInfoStatsState {
+                            values: view.value_rows(),
+                            view_menu_open: *view_menu_open,
+                            club_name: &choice.club_name,
+                            photo_seed: self.setup_photo_seed,
+                            has_manager: self.game.is_some(),
+                            division_name: &division,
+                            kit_bg_rgb565: kit_bg,
+                            kit_fg_rgb565: kit_fg,
+                        };
+                        let mut packed = cm_render::packed::PackedSurface::rgb555(
+                            Surface::W as i32, Surface::H as i32);
+                        cm_render::screen_club_squad_faithful::render_general_info_stats(
+                            &mut packed, &mut self.fonts, &st, pressed);
+                        render_new::blit_packed_to_surface(&packed, &mut self.frame);
+                        self.overlay_menu_bar();
+                        return;
+                    }
+                }
+            }
             if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                 if let Some(view) = world.general_info_for(&game.save, choice.club_id) {
                     let (kit_bg, kit_fg) = render_new::club_kit_colours(world, choice.club_id);
@@ -1665,14 +1697,17 @@ impl App {
                     *news_scroll = 0;
                 }
             }
-            Screen::GeneralInfo { choice, view_menu_open, .. } => {
+            Screen::GeneralInfo { choice, view_menu_open, page, .. } => {
                 // View dropdown items take precedence when it's open.
                 if *view_menu_open {
-                    // "General Info" (150-168) is the current page; "Stats"
-                    // (170-188) is the second page (not built yet). Either
-                    // way the click closes the menu.
-                    if y >= 170 && y <= 188 && x >= 112 && x <= 233 {
-                        self.status = Some("Stats page — not yet built".to_string());
+                    // "General Info" (150-168) and "Stats" (170-188) switch
+                    // the tab's page; either click closes the menu.
+                    if x >= 112 && x <= 233 {
+                        if y >= 150 && y <= 168 {
+                            *page = GeneralInfoPage::Info;
+                        } else if y >= 170 && y <= 188 {
+                            *page = GeneralInfoPage::Stats;
+                        }
                     }
                     *view_menu_open = false;
                 } else if let Some(tab) = club_top_tab_hit(x, y) {
@@ -1888,6 +1923,7 @@ impl App {
                         choice,
                         staff_scroll: 0,
                         view_menu_open: false,
+                        page: GeneralInfoPage::Info,
                     };
                 }
                 _ => {}

@@ -111,18 +111,112 @@ pub fn render_general_info_body(
             .draw(surface, st.staff.len(), STAFF_VISIBLE, st.staff_scroll, GREY_BAR, palette);
     }
 
-    // View dropdown (drawn last so it overlays). Green menu with two
-    // pages: General Info (checked) + Stats.
+    // View dropdown (drawn last so it overlays).
     if st.view_menu_open {
-        // Container is a raised bevel (capture style 0x130 =
-        // P_SOLID_FILL | P_BEVEL); the two rows are flat fill inside it.
-        draw_panel(surface, 110, 148, 235, 190, P_SOLID_FILL | P_BEVEL, MENU_BG, 0, palette);
-        draw_panel(surface, 112, 150, 233, 168, P_SOLID_FILL, MENU_BG, 0, palette);
-        draw_panel(surface, 112, 170, 233, 188, P_SOLID_FILL, MENU_HOVER, 0, palette);
-        // Capture: plain 6-space indent, black font 1, no tick glyph.
-        draw_wrapped_text(surface, 112, 150, 233, 168, &small_font,
-            &c_string(b"      General Info"), 0x0000, W_LEFT, -1);
-        draw_wrapped_text(surface, 112, 170, 233, 188, &small_font,
-            &c_string(b"      Stats"), 0x0000, W_LEFT, -1);
+        draw_view_dropdown(surface, &small_font, StatsPage::Info, palette);
+    }
+}
+
+/// Which General Info page the tab is showing (the two View items).
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum StatsPage { Info, Stats }
+
+/// The green View dropdown shared by both General Info pages. Bevelled
+/// container (capture style 0x130 = P_SOLID_FILL | P_BEVEL, col 512),
+/// two flat rows; the `active` page's row carries the hover colour.
+fn draw_view_dropdown(
+    surface: &mut PackedSurface,
+    small_font: &crate::packed_glyph::PixelFont,
+    active: StatsPage,
+    palette: PanelPalette,
+) {
+    draw_panel(surface, 110, 148, 235, 190, P_SOLID_FILL | P_BEVEL, MENU_BG, 0, palette);
+    let info_bg  = if active == StatsPage::Info  { MENU_HOVER } else { MENU_BG };
+    let stats_bg = if active == StatsPage::Stats { MENU_HOVER } else { MENU_BG };
+    draw_panel(surface, 112, 150, 233, 168, P_SOLID_FILL, info_bg, 0, palette);
+    draw_panel(surface, 112, 170, 233, 188, P_SOLID_FILL, stats_bg, 0, palette);
+    // Capture: plain 6-space indent, black font 1, no tick glyph.
+    draw_wrapped_text(surface, 112, 150, 233, 168, small_font,
+        &c_string(b"      General Info"), 0x0000, W_LEFT, -1);
+    draw_wrapped_text(surface, 112, 170, 233, 188, small_font,
+        &c_string(b"      Stats"), 0x0000, W_LEFT, -1);
+}
+
+/// The 16 fixed Stats-page row labels, top→bottom (two leading spaces,
+/// matching the capture).
+pub const STATS_LABELS: [&str; 16] = [
+    "  Number Of Players",
+    "  Number Of Players Injured",
+    "  Average Age - First Team",
+    "  Average Age - Squad",
+    "  Total Wage Bill - First Team (p/w)",
+    "  Total Wage Bill - Squad (p/w)",
+    "  Average Wage (p/w)",
+    "  Highest Wage (p/w)",
+    "  Lowest Wage (p/w)",
+    "  Oldest Player",
+    "  Youngest Player",
+    "  Highest Valued Player",
+    "  Number Of Current International Players",
+    "  Number Of Current Under 21 Players",
+    "  Number Of Foreign Players",
+    "  Number Of Non-EU Players",
+];
+
+/// Row top-y for each Stats row (capture: stride ~17.4, alternating
+/// 17/18 from the layout engine).
+const STATS_ROW_Y: [i32; 16] = [
+    198, 216, 233, 251, 268, 285, 303, 320,
+    337, 355, 372, 389, 407, 424, 441, 459,
+];
+
+/// The Stats page (View → Stats). Same frame as General Info but a single
+/// content panel (110,190)-(780,500) with 16 label/value rows. `values`
+/// are the 16 yellow value strings in row order (from
+/// `GeneralInfoStatsView::value_rows`).
+pub struct GeneralInfoStatsState<'a> {
+    pub values: [&'a str; 16],
+    pub view_menu_open: bool,
+    pub club_name: &'a str,
+    pub photo_seed: u64,
+    pub has_manager: bool,
+    pub division_name: &'a str,
+    pub kit_bg_rgb565: u16,
+    pub kit_fg_rgb565: u16,
+}
+
+/// Draw the Stats body over the shared club chrome.
+pub fn render_general_info_stats_body(
+    surface: &mut PackedSurface,
+    fonts: &mut Fonts,
+    st: &GeneralInfoStatsState<'_>,
+) {
+    let palette = PanelPalette::default();
+    let small_font = fonts.pixel_slot(crate::screen_pre_boot_chrome::F_SMALL).clone();
+    // Both label and value columns use font slot 2 on this page (capture).
+    let cell_font = fonts.pixel_slot(2).clone();
+
+    // View button — grey bevel + "View".
+    draw_panel(surface, 110, 125, 235, 145, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    draw_wrapped_text(surface, 110, 125, 235, 145, &small_font,
+        &c_string(b"View"), INK_GREY, TS_CENTRE, -1);
+
+    // Title band — "Stats", darkened, yellow centred.
+    draw_panel(surface, 110, 150, 780, 185, P_DARKEN, 0, 0, palette);
+    draw_wrapped_text(surface, 110, 150, 780, 185, &cell_font,
+        &c_string(b"Stats"), INK_YELLOW, TS_CENTRE, -1);
+
+    // Single darkened content panel (see-through, no fill).
+    draw_panel(surface, 110, 190, 780, 500, P_DARKEN, 0, 0, palette);
+    for (i, label) in STATS_LABELS.iter().enumerate() {
+        let y = STATS_ROW_Y[i];
+        draw_wrapped_text(surface, 112, y, 444, y + 16, &cell_font,
+            &c_string(label.as_bytes()), INK_GREY, W_LEFT, -1);
+        draw_wrapped_text(surface, 446, y, 778, y + 16, &cell_font,
+            &c_string(st.values[i].as_bytes()), INK_YELLOW, W_LEFT, -1);
+    }
+
+    if st.view_menu_open {
+        draw_view_dropdown(surface, &small_font, StatsPage::Stats, palette);
     }
 }

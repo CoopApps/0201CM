@@ -2034,3 +2034,21 @@ pub fn render_general_info(
     crate::screen_general_info_faithful::render_general_info_body(surface, fonts, st);
     draw_club_chrome_footer(surface, fonts, &chrome);
 }
+
+/// Render the General Info → Stats page (chrome + stats body).
+pub fn render_general_info_stats(
+    surface: &mut PackedSurface,
+    fonts: &mut Fonts,
+    st: &crate::screen_general_info_faithful::GeneralInfoStatsState<'_>,
+    pressed: PressedButton,
+) {
+    let chrome = ClubChrome {
+        club_name: st.club_name, kit_bg_rgb565: st.kit_bg_rgb565,
+        kit_fg_rgb565: st.kit_fg_rgb565, has_manager: st.has_manager,
+        photo_seed: st.photo_seed, active_top_tab: 4,
+        division_name: st.division_name, pressed,
+    };
+    draw_club_chrome(surface, fonts, &chrome);
+    crate::screen_general_info_faithful::render_general_info_stats_body(surface, fonts, st);
+    draw_club_chrome_footer(surface, fonts, &chrome);
+}

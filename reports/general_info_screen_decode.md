@@ -150,3 +150,69 @@ returns the common name when set and non-empty, falling back to
 honours the override. Regression test:
 `general_info::common_name_tests::liz_catlow_uses_common_name` asserts
 staff 52277 resolves to exactly "Liz Catlow".
+
+## Stats page (View → Stats) — captured 2026-09-18 (GDI, Brighton)
+
+Capture: `fixtures/general_info_screen/stats.json` (1051 calls). Club =
+Brighton & Hove Albion (id 1507), Second Division, not managed. View
+dropdown was left open, which re-confirms the bevelled container
+(style 0x130 = P_SOLID_FILL|P_BEVEL, col 512) and the two flat rows
+(112,150)-(233,168) col 512 / (112,170)-(233,188) col 576 hover.
+
+### Frame (identical to General Info page)
+- View button (110,125)-(235,145) grey 0x4210.
+- Title band (110,190? no) — title band (110,150)-(780,185) P_DARKEN,
+  text " Stats" font 3 yellow 0x7fe0, centred.
+- ONE darkened content panel (110,190)-(780,500) P_DARKEN (no staff
+  panel — that is General-Info-only).
+
+### Rows — 16 fixed label/value pairs
+Label col: panel+text at x=112, font 2, grey 0x739c (29596), 2 leading
+spaces. Value col: x=446, font 2, yellow 0x7fe0 (32736). Each row is two
+style-1 cells (112..444) + (446..778), height 16. Row tops (stride ~17.4,
+alternating 17/18): 198,216,233,251,268,285,303,320,337,355,372,389,
+407,424,441,459.
+
+Labels (top→bottom) with Brighton values:
+1.  Number Of Players — 26
+2.  Number Of Players Injured — 0
+3.  Average Age - First Team — -
+4.  Average Age - Squad — 24.46
+5.  Total Wage Bill - First Team (p/w) — £0
+6.  Total Wage Bill - Squad (p/w) — £18.5K
+7.  Average Wage (p/w) — £700
+8.  Highest Wage (p/w) — £2K - Dirk Lehmann
+9.  Lowest Wage (p/w) — £150 - Darren Trigg
+10. Oldest Player — 36 - Paul Rogers
+11. Youngest Player — 16 - Chris McPhee
+12. Highest Valued Player — £350,000 - Bobby Zamora
+13. Number Of Current International Players — 0
+14. Number Of Current Under 21 Players — 0
+15. Number Of Foreign Players — 2
+16. Number Of Non-EU Players — 0
+
+### CRITICAL: values are RUNTIME, not raw DB
+The raw type6 fields do NOT reproduce these: shipped wage sum for the 26
+players is £6,475 (capture: £18.5K), max raw value is Geoff Pitcher
+£200K (capture: Zamora £350K), and youths carry dob_year=1900 sentinels
+(capture: McPhee age 16). The exe computes wages/values/ages at boot
+(valuation + contract pool + regen). The Stats page therefore aggregates
+the SAME runtime feed the Squad screen uses:
+- wage/value: `world.contracts.contract_for_staff(id)` → wage/value,
+  falling back to `PlayerView::wage()/value()`.
+- age: `DomainStaffType6::age_at(2001, day_of_year(2001,8,10))`.
+This keeps Stats consistent with the Squad screen by construction.
+
+### Formatting
+Two money formats: wages use K/M abbreviation (£150, £700, £2K, £18.5K);
+the Highest-Valued value uses full comma grouping (£350,000). "£X - Name"
+for the four attributed rows. £ is CP1252 0xA3.
+
+### Rows needing definition decode (not fabricated)
+- First-Team avg age / wage bill: "-" / "£0" in the not-managed view
+  (no selected XI). Wire to the selected first team once managed.
+- Current International / Under-21 counts: current call-ups, not
+  ever-capped. 0 for this Div-2 club; definition to confirm before
+  trusting non-zero clubs.
+- Non-EU: needs the per-nation EU/work-permit flag (no `is_eu` field in
+  nations.json). 0 here (Lehmann = German = EU).
