@@ -291,15 +291,26 @@ fn preferred_foot_str(left: i32, right: i32) -> String {
 /// table (0x009a3b98.. and 0x009a3ae8..). Empty when no aptitude reaches
 /// 15 (a regen stub whose position the exe generates at init).
 fn position_full_name(a: &crate::DomainStaffType10) -> String {
+    // Use the exe-exact eligibility bitmask (sliding threshold 15→10),
+    // NOT a fixed >=15 test — this returns 0 (no position) for a player
+    // with no aptitudes, so regen stubs stay blank instead of defaulting
+    // to a phantom "Sweeper". Bit map (position_eligibility_bits):
+    //   0x001 GK  0x004 SW  0x002 D  0x008 DM  0x010 M  0x020 AM  0x040 F
+    //   0x080 Left  0x200 Centre  0x800 Right
     const T: i8 = 15;
+    let bits = a.position_eligibility_bits();
+    if bits == 0 {
+        return String::new();
+    }
     let mut positions: Vec<&str> = Vec::new();
-    if a.apt_goalkeeper     >= T { positions.push("Goalkeeper"); }
-    if a.apt_sweeper        >= T { positions.push("Sweeper"); }
-    if a.apt_defender       >= T { positions.push("Defender"); }
-    if a.apt_def_midfielder >= T { positions.push("Defensive Midfielder"); }
-    if a.apt_midfielder     >= T { positions.push("Midfielder"); }
-    if a.apt_att_midfielder >= T { positions.push("Attacking Midfielder"); }
-    if a.apt_attacker >= T {
+    let mut has_sweeper = false;
+    if bits & 0x001 != 0 { positions.push("Goalkeeper"); }
+    if bits & 0x004 != 0 { positions.push("Sweeper"); has_sweeper = true; }
+    if bits & 0x002 != 0 { positions.push("Defender"); }
+    if bits & 0x008 != 0 { positions.push("Defensive Midfielder"); }
+    if bits & 0x010 != 0 { positions.push("Midfielder"); }
+    if bits & 0x020 != 0 { positions.push("Attacking Midfielder"); }
+    if bits & 0x040 != 0 {
         // FUN_005289a0 lines 851-855: a "Striker" is a PURE central
         // attacker — attacker>=15 with attacking-mid, both flanks and
         // free-role all below 15; any of those makes it a "Forward".
@@ -312,10 +323,15 @@ fn position_full_name(a: &crate::DomainStaffType10) -> String {
     if positions.is_empty() {
         return String::new();
     }
+    // A sweeper always plays Centre — force it regardless of side bits.
+    if has_sweeper && positions == ["Sweeper"] {
+        return "Sweeper (Centre)".to_string();
+    }
     let mut sides: Vec<&str> = Vec::new();
-    if a.apt_left_side >= T { sides.push("Left"); }
-    if a.apt_central   >= T { sides.push("Centre"); }
-    if a.apt_right_side >= T { sides.push("Right"); }
+    if bits & 0x080 != 0 { sides.push("Left"); }
+    if bits & 0x200 != 0 || has_sweeper { sides.push("Centre"); }
+    if bits & 0x800 != 0 { sides.push("Right"); }
+    sides.dedup();
     let pos = positions.join("/");
     if sides.is_empty() {
         pos

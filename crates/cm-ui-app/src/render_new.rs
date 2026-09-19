@@ -682,14 +682,11 @@ pub fn try_render_club_preview_faithful(
             }
         }
         if qualifying_cats.is_empty() {
-            // Genuine rubbish — fall back to argmax as a category name
-            // with no sides.
-            let mut argmax = "F";
-            let mut best_v = i8::MIN;
-            for &(n, v) in &cats {
-                if v > best_v { argmax = n; best_v = v; }
-            }
-            return argmax.into();
+            // No aptitude reached even threshold 10 — a regen stub whose
+            // position the exe generates at init (we do not yet). Show
+            // nothing rather than defaulting to "SW" (the old argmax tie
+            // at 0 painted every zero-aptitude player as a sweeper).
+            return String::new();
         }
         let t = qualifying_t;
         let r_eligible = a.apt_right_side >= t;
