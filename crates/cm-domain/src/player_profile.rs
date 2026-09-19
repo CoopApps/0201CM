@@ -197,10 +197,18 @@ impl World {
         // match-fitness sim reduces it.
         let injured = save.injuries.rehab_progress(staff_id).is_some();
         let banned = !save.injuries.is_available(staff_id) && !injured;
+        // Condition — the exe computes it as (sharpness × fitness)/10000
+        // (FUN_00615c70), a match-fitness subsystem we have not ported;
+        // that gives ~70-80% at a fresh season, never 100%. Until it is
+        // ported, mirror the Squad screen's own condition value so the two
+        // screens agree and stay in range (same hash of the player id).
+        let mut h = staff_id.wrapping_mul(0x9E3779B9);
+        h ^= h >> 13; h = h.wrapping_mul(0xC2B2AE35); h ^= h >> 16;
+        let condition_pct = 70 + (h % 11);
         let injuries = [
             if injured { "Injured".to_string() } else { "None".to_string() },
             "-".to_string(),                       // Type — detail TBD.
-            "100%".to_string(),                    // Condition — init seed 156.
+            format!("{condition_pct}%"),
             if save.injuries.is_training_available(staff_id) {
                 "Full".to_string()
             } else {

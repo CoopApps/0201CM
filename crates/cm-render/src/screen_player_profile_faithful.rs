@@ -119,7 +119,7 @@ pub fn render_player_profile(
     draw_wrapped_text(surface, 660, 4, 785, 24, &small,
         &c_string(b"Action"), 0x0000, TS_CENTRE, -1);
 
-    // ---- Subtabs ----
+    // ---- Subtabs (all panels + labels first) ----
     for (i, label) in PROFILE_SUBTABS.iter().enumerate() {
         let x0 = SUBTAB_X[i];
         let x1 = x0 + 137;
@@ -130,18 +130,20 @@ pub fn render_player_profile(
             P_SOLID_FILL | P_BEVEL
         };
         draw_panel(surface, x0, 80, x1, 115, style, TAB_BLUE, 0, palette);
-        // Active tab carries a 1px yellow outline 1px outside the tab
-        // (capture rect (99,79)-(238,116) col 0x7fe0).
-        if active {
-            let (ax0, ay0, ax1, ay1) = (x0 - 1, 79, x1 + 1, 116);
-            surface.draw_line(ax0, ay0, ax1, ay0, 2, INK_YELLOW);
-            surface.draw_line(ax0, ay1, ax1, ay1, 2, INK_YELLOW);
-            surface.draw_line(ax0, ay0, ax0, ay1, 2, INK_YELLOW);
-            surface.draw_line(ax1, ay0, ax1, ay1, 2, INK_YELLOW);
-        }
         let ink = if active { INK_YELLOW } else { INK_GREY };
         draw_wrapped_text(surface, x0, 80, x1, 115, &small,
             &c_string(label.as_bytes()), ink, TS_CENTRE, -1);
+    }
+    // Active-tab yellow outline drawn AFTER every tab panel, so the next
+    // tab's panel cannot paint over its right edge (capture rect
+    // (99,79)-(238,116) col 0x7fe0).
+    {
+        let x0 = SUBTAB_X[st.active_subtab.min(4)];
+        let (ax0, ay0, ax1, ay1) = (x0 - 1, 79, x0 + 138, 116);
+        surface.draw_line(ax0, ay0, ax1, ay0, 2, INK_YELLOW);
+        surface.draw_line(ax0, ay1, ax1, ay1, 2, INK_YELLOW);
+        surface.draw_line(ax0, ay0, ax0, ay1, 2, INK_YELLOW);
+        surface.draw_line(ax1, ay0, ax1, ay1, 2, INK_YELLOW);
     }
 
     // ---- Bio band ----
@@ -150,8 +152,30 @@ pub fn render_player_profile(
     draw_wrapped_text(surface, 313, 127, 700, 153, &body,
         &c_string(st.born_line.as_bytes()), INK_YELLOW, W_LEFT, -1);
 
-    // ---- Attribute grid ----
-    draw_panel(surface, 110, 160, 780, 379, P_DARKEN, 0, 0, palette);
+    // ---- Middle content: per-cell darkened grid (the 2px gaps between
+    //      cells show the photo brighter, giving the table's grid lines).
+    //      One darkened cell per label and value box, exactly like the
+    //      capture (no solid fill — the photo shows through). ----
+    let darken_cell = |s: &mut PackedSurface, x0: i32, x1: i32, y: i32| {
+        draw_panel(s, x0, y, x1, y + 17, P_DARKEN, 0, 0, palette);
+    };
+    if st.active_subtab == 1 {
+        // Injuries: 2 columns, label (110..258) + value (260..780).
+        for &y in ATTR_ROW_Y.iter() {
+            darken_cell(surface, 110, 258, y);
+            darken_cell(surface, 260, 780, y);
+        }
+    } else {
+        // Profile: 6 cells per row — label+value for each of 3 columns.
+        for &y in ATTR_ROW_Y.iter() {
+            darken_cell(surface, 110, 243, y);
+            darken_cell(surface, 245, 332, y);
+            darken_cell(surface, 334, 466, y);
+            darken_cell(surface, 468, 556, y);
+            darken_cell(surface, 558, 690, y);
+            darken_cell(surface, 692, 780, y);
+        }
+    }
     // Column geometry: (label_x, value_x).
     let cols = [(110i32, 245i32), (334, 468), (558, 692)];
     // Col 1 = attrs 0..12, col 2 = 12..24, col 3 = 24..31 then status.
