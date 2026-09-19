@@ -4,6 +4,7 @@ pub mod tick_profile;
 pub mod next_match;
 pub mod general_info;
 pub mod player_profile;
+pub mod player_generation;
 pub mod african_nations;
 pub mod c13_promotion_apply;
 pub mod c14_stadium_expansion;
@@ -14047,75 +14048,82 @@ impl World {
             .unwrap_or_else(|| (0..1024).collect());
         let mut rng = cm_rng::MatchRng::new_seeded(table, 0x0051_f5d0);
         let states = self.initialise_players(&start, Some(&mut rng));
-        // Stamp generated ratings back into the type10 records where
-        // the shipped values are zero. Leaves populated records
-        // untouched so DB truth wins.
+        // Donor pool for the nearest-neighbour attribute copy: every
+        // record that ships a valid CA and non-empty attributes (the real
+        // players). Built once from copied data so the mutable loop below
+        // is free to write.
+        let donors: Vec<crate::player_generation::Donor> = self.staff.type10.iter()
+            .filter_map(|a| {
+                if !(1..=200).contains(&a.current_ability) { return None; }
+                let fa = a.full_attributes(); // [u8;54]: 0..12 apt, 12..54 attrs
+                let attributes: [i8; 42] = std::array::from_fn(|i| fa[12 + i] as i8);
+                if attributes.iter().all(|&x| x == 0) { return None; }
+                let positions: [i8; 12] = std::array::from_fn(|i| fa[i] as i8);
+                Some(crate::player_generation::Donor { ca: a.current_ability, positions, attributes })
+            })
+            .collect();
+
+        // Stamp generated ratings back into the type10 records where the
+        // shipped values are zero. Positions and attributes for data-less
+        // players are generated via the real FUN_0051f5d0 algorithm
+        // (crate::player_generation); populated records are left as-is.
         for (attr, st) in self.staff.type10.iter_mut().zip(states.iter()) {
             if attr.current_ability   == 0 { attr.current_ability   = st.current_ability; }
             if attr.potential_ability == 0 { attr.potential_ability = st.potential_ability; }
             if attr.home_reputation    == 0 { attr.home_reputation    = st.reputation[0] as i16; }
             if attr.current_reputation == 0 { attr.current_reputation = st.reputation[1] as i16; }
             if attr.world_reputation   == 0 { attr.world_reputation   = st.reputation[2] as i16; }
-            // Attribute vec (42 slots in DFM order) — PER-SLOT layered
-            // override. Any single attribute that ships as zero gets
-            // replaced by the generated value. Previous logic only
-            // stamped when ALL 42 were zero, which left Muggleton's
-            // Bra=0 alone (his Agg is 8, Cor is 5 — real DB data —
-            // but Bra genuinely ships as zero, and the exe fills that
-            // in). Now every zero slot fills independently.
-            //
-            // PlayerInitState::seed regenerates the 42-vec only when
-            // the shipped record is entirely zero; for partial records
-            // it echoes the shipped bytes. Use a fresh, always-full
-            // generation from generate_attributes_core so we have a
-            // real value to fall back to for each 0 slot.
-            let fill = PlayerInitState::generate_attributes_core(
-                if attr.current_ability > 0 { attr.current_ability } else { st.current_ability },
-                &mut rng,
-            );
-            if fill.len() >= 42 {
-                if attr.acceleration      == 0 { attr.acceleration      = fill[0]  as i8; }
-                if attr.aggression        == 0 { attr.aggression        = fill[1]  as i8; }
-                if attr.agility           == 0 { attr.agility           = fill[2]  as i8; }
-                if attr.anticipation      == 0 { attr.anticipation      = fill[3]  as i8; }
-                if attr.balance           == 0 { attr.balance           = fill[4]  as i8; }
-                if attr.bravery           == 0 { attr.bravery           = fill[5]  as i8; }
-                if attr.consistency       == 0 { attr.consistency       = fill[6]  as i8; }
-                if attr.corners           == 0 { attr.corners           = fill[7]  as i8; }
-                if attr.crossing          == 0 { attr.crossing          = fill[8]  as i8; }
-                if attr.free_kicks        == 0 { attr.free_kicks        = fill[9]  as i8; }
-                if attr.handling          == 0 { attr.handling          = fill[10] as i8; }
-                if attr.heading           == 0 { attr.heading           = fill[11] as i8; }
-                if attr.important_matches == 0 { attr.important_matches = fill[12] as i8; }
-                if attr.injury_proneness  == 0 { attr.injury_proneness  = fill[13] as i8; }
-                if attr.jumping           == 0 { attr.jumping           = fill[14] as i8; }
-                if attr.leadership        == 0 { attr.leadership        = fill[15] as i8; }
-                if attr.left_foot         == 0 { attr.left_foot         = fill[16] as i8; }
-                if attr.long_shots        == 0 { attr.long_shots        = fill[17] as i8; }
-                if attr.dirtiness         == 0 { attr.dirtiness         = fill[18] as i8; }
-                if attr.dribbling         == 0 { attr.dribbling         = fill[19] as i8; }
-                if attr.finishing         == 0 { attr.finishing         = fill[20] as i8; }
-                if attr.flair             == 0 { attr.flair             = fill[21] as i8; }
-                if attr.decisions         == 0 { attr.decisions         = fill[22] as i8; }
-                if attr.movement          == 0 { attr.movement          = fill[23] as i8; }
-                if attr.natural_fitness   == 0 { attr.natural_fitness   = fill[24] as i8; }
-                if attr.one_on_ones       == 0 { attr.one_on_ones       = fill[25] as i8; }
-                if attr.marking           == 0 { attr.marking           = fill[26] as i8; }
-                if attr.pace              == 0 { attr.pace              = fill[27] as i8; }
-                if attr.passing           == 0 { attr.passing           = fill[28] as i8; }
-                if attr.penalties         == 0 { attr.penalties         = fill[29] as i8; }
-                if attr.positioning       == 0 { attr.positioning       = fill[30] as i8; }
-                if attr.reflexes          == 0 { attr.reflexes          = fill[31] as i8; }
-                if attr.right_foot        == 0 { attr.right_foot        = fill[32] as i8; }
-                if attr.stamina           == 0 { attr.stamina           = fill[33] as i8; }
-                if attr.strength          == 0 { attr.strength          = fill[34] as i8; }
-                if attr.tackling          == 0 { attr.tackling          = fill[35] as i8; }
-                if attr.teamwork          == 0 { attr.teamwork          = fill[36] as i8; }
-                if attr.throw_ins         == 0 { attr.throw_ins         = fill[37] as i8; }
-                if attr.versatility       == 0 { attr.versatility       = fill[38] as i8; }
-                if attr.vision            == 0 { attr.vision            = fill[39] as i8; }
-                if attr.work_rate         == 0 { attr.work_rate         = fill[40] as i8; }
-                if attr.technique         == 0 { attr.technique         = fill[41] as i8; }
+            let ca = if attr.current_ability > 0 { attr.current_ability } else { st.current_ability };
+
+            // Positions: generate only when the record has NO valid
+            // aptitude at all (a data-less regen stub).
+            let apt = [
+                attr.apt_goalkeeper, attr.apt_sweeper, attr.apt_defender, attr.apt_def_midfielder,
+                attr.apt_midfielder, attr.apt_att_midfielder, attr.apt_attacker, attr.apt_wing_back,
+                attr.apt_right_side, attr.apt_left_side, attr.apt_central, attr.apt_free_role,
+            ];
+            let apt_all_invalid = !apt.iter().any(|&v| (1..=20).contains(&v));
+            // Attributes we already hold (offset order via full_attributes).
+            let fa0 = attr.full_attributes();
+            let mut our_attrs: [i8; 42] = std::array::from_fn(|i| fa0[12 + i] as i8);
+
+            let mut positions = apt;
+            if apt_all_invalid {
+                let gp = crate::player_generation::generate_positions(&mut rng);
+                positions = gp.aptitudes;
+                // Feet are attributes at record +0x30 (idx 21) / +0x3b (idx 32).
+                if gp.left_foot  != 0 { our_attrs[21] = gp.left_foot; }
+                if gp.right_foot != 0 { our_attrs[32] = gp.right_foot; }
+            }
+
+            // Attributes: generate whenever any slot is invalid, keeping
+            // the valid ones (matches the exe's per-slot fill).
+            if our_attrs.iter().any(|&v| !(1..=20).contains(&v)) {
+                let age = st.age.map(|a| a as i32).unwrap_or(20);
+                let gen = crate::player_generation::generate_attributes(
+                    ca, &positions, &our_attrs, age, &donors, &mut rng);
+                attr.acceleration = gen[0];  attr.aggression = gen[1];  attr.agility = gen[2];
+                attr.anticipation = gen[3];  attr.balance = gen[4];     attr.bravery = gen[5];
+                attr.consistency = gen[6];   attr.corners = gen[7];     attr.crossing = gen[8];
+                attr.free_kicks = gen[9];    attr.handling = gen[10];   attr.heading = gen[11];
+                attr.important_matches = gen[12]; attr.injury_proneness = gen[13]; attr.jumping = gen[14];
+                attr.leadership = gen[15];   attr.left_foot = gen[16];  attr.long_shots = gen[17];
+                attr.dirtiness = gen[18];    attr.dribbling = gen[19];  attr.finishing = gen[20];
+                attr.flair = gen[21];        attr.decisions = gen[22];  attr.movement = gen[23];
+                attr.natural_fitness = gen[24]; attr.one_on_ones = gen[25]; attr.marking = gen[26];
+                attr.pace = gen[27];         attr.passing = gen[28];    attr.penalties = gen[29];
+                attr.positioning = gen[30];  attr.reflexes = gen[31];   attr.right_foot = gen[32];
+                attr.stamina = gen[33];      attr.strength = gen[34];   attr.tackling = gen[35];
+                attr.teamwork = gen[36];     attr.throw_ins = gen[37];  attr.versatility = gen[38];
+                attr.vision = gen[39];       attr.work_rate = gen[40];  attr.technique = gen[41];
+            }
+            if apt_all_invalid {
+                attr.apt_goalkeeper = positions[0];      attr.apt_sweeper = positions[1];
+                attr.apt_defender = positions[2];        attr.apt_def_midfielder = positions[3];
+                attr.apt_midfielder = positions[4];      attr.apt_att_midfielder = positions[5];
+                attr.apt_attacker = positions[6];        attr.apt_wing_back = positions[7];
+                attr.apt_right_side = positions[8];      attr.apt_left_side = positions[9];
+                attr.apt_central = positions[10];        attr.apt_free_role = positions[11];
             }
         }
         // 2. Squad-number assignment. Every shipped record has a
