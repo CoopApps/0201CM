@@ -191,15 +191,24 @@ pub fn render_player_profile(
         draw_wrapped_text(surface, vx, y, vx + 86, y + 17, &cell,
             &c_string(value.as_bytes()), val_ink, W_LEFT, -1);
     };
+    // Detail-page row: grey label at x=112, WIDE yellow value at x=260
+    // running to the panel edge (values like "Part Time Contract" or
+    // "This player is an important first team player" must not clip).
+    let draw_detail = |s: &mut PackedSurface, y: i32, label: &str, value: &str| {
+        draw_wrapped_text(s, 112, y, 258, y + 17, &cell,
+            &c_string(format!("  {label}").as_bytes()), INK_GREY, W_LEFT, -1);
+        draw_wrapped_text(s, 260, y, 778, y + 17, &cell,
+            &c_string(format!("  {value}").as_bytes()), INK_YELLOW, W_LEFT, -1);
+    };
     if st.active_subtab == 1 {
         // ---- Injuries & Bans: 2-column detail block, 5 rows. ----
         for (row, (label, value)) in INJURY_LABELS.iter().zip(st.injuries.iter()).enumerate() {
-            draw_pair(surface, 110, 260, ATTR_ROW_Y[row], label, value, INK_YELLOW);
+            draw_detail(surface, ATTR_ROW_Y[row], label, value);
         }
     } else if st.active_subtab == 2 {
         // ---- Contract: 2-column detail block, 7 rows. ----
         for (row, (label, value)) in CONTRACT_LABELS.iter().zip(st.contract.iter()).enumerate() {
-            draw_pair(surface, 110, 260, ATTR_ROW_Y[row], label, value, INK_YELLOW);
+            draw_detail(surface, ATTR_ROW_Y[row], label, value);
         }
     } else {
         // ---- Profile: 3-column attribute grid. ----
