@@ -209,9 +209,11 @@ fn preferred_foot_str(left: i32, right: i32) -> String {
 /// multi-position formatter `FUN_005289a0`: every position whose aptitude
 /// is >= 15 is listed (in GK,SW,D,DM,M,AM,Striker order, joined by "/"),
 /// then the qualifying sides (Left, Centre, Right — the exe's left→right
-/// order, per FUN_005a1890) in parentheses. Names come from the exe
-/// string table (0x009a3b98.. and 0x009a3ae8..). Empty when no aptitude
-/// reaches 15 (a regen stub whose position the exe generates at init).
+/// order, per FUN_005a1890) in parentheses. The attacker slot prints
+/// "Striker" only for a pure central attacker and "Forward" otherwise
+/// (the FUN_005289a0 stat test below). Names come from the exe string
+/// table (0x009a3b98.. and 0x009a3ae8..). Empty when no aptitude reaches
+/// 15 (a regen stub whose position the exe generates at init).
 fn position_full_name(a: &crate::DomainStaffType10) -> String {
     const T: i8 = 15;
     let mut positions: Vec<&str> = Vec::new();
@@ -221,7 +223,16 @@ fn position_full_name(a: &crate::DomainStaffType10) -> String {
     if a.apt_def_midfielder >= T { positions.push("Defensive Midfielder"); }
     if a.apt_midfielder     >= T { positions.push("Midfielder"); }
     if a.apt_att_midfielder >= T { positions.push("Attacking Midfielder"); }
-    if a.apt_attacker       >= T { positions.push("Striker"); }
+    if a.apt_attacker >= T {
+        // FUN_005289a0 lines 851-855: a "Striker" is a PURE central
+        // attacker — attacker>=15 with attacking-mid, both flanks and
+        // free-role all below 15; any of those makes it a "Forward".
+        let striker = a.apt_att_midfielder < T
+            && a.apt_right_side < T
+            && a.apt_left_side < T
+            && a.apt_free_role < T;
+        positions.push(if striker { "Striker" } else { "Forward" });
+    }
     if positions.is_empty() {
         return String::new();
     }
