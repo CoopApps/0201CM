@@ -14154,8 +14154,10 @@ impl World {
     /// only fills them via the interactive "Submit Squad Numbers"
     /// panel (FUN_0047ea60 lines 854-875), not a boot pass.
     #[doc(hidden)]
-    pub fn _squad_number_pos_group_probe(a: &DomainStaffType10) -> u8 {
-        squad_number_pos_group(a)
+    pub fn _squad_number_is_goalkeeper(a: &DomainStaffType10) -> bool {
+        // The exe's shirt-1 preference (FUN_00843590) fires for
+        // apt_goalkeeper >= 15.
+        a.apt_goalkeeper >= 15
     }
 
     pub fn assign_squad_numbers(&mut self) {
@@ -14177,9 +14179,10 @@ impl World {
         //    is the record's explicit shirt number (0 = none — true for
         //    ~most players, incl. most GKs). Clamp [0,50]; if another
         //    player at the club already claimed it, drop to 0 so pass 2
-        //    reassigns (the exe never double-books a shirt).
-        //    roster entry = (type10_id, number, pos_group, current_ability).
-        let mut roster_by_club: BTreeMap<u32, Vec<(u32, u8, u8, i16)>> = BTreeMap::new();
+        //    reassigns (the exe never double-books a shirt). `pref` is the
+        //    position-preferred shirt list from FUN_00843590.
+        //    roster entry = (type10_id, number, pref-list).
+        let mut roster_by_club: BTreeMap<u32, Vec<(u32, u8, &'static [u8])>> = BTreeMap::new();
         for attr in &self.staff.type10 {
             let Some(person_id) = type10_owner.get(&attr.id).copied() else { continue; };
             let Some(club_id) = person_club.get(&person_id).copied() else { continue; };
@@ -14187,41 +14190,46 @@ impl World {
             let mut n: u8 = if raw < 0 { 0 } else if raw <= 50 { raw as u8 } else { 50 };
             if n > 0 {
                 let taken = roster_by_club.get(&club_id)
-                    .map(|v| v.iter().any(|&(_, m, _, _)| m == n))
+                    .map(|v| v.iter().any(|&(_, m, _)| m == n))
                     .unwrap_or(false);
                 if taken { n = 0; }
             }
             roster_by_club.entry(club_id).or_default()
-                .push((attr.id, n, squad_number_pos_group(attr), attr.current_ability));
+                .push((attr.id, n, squad_number_pref_list(attr)));
         }
 
-        // -- Pass 2: auto-fill unnumbered players POSITION-GROUPED (the
-        //    exe's rule — decompile comment on run_start_game_init: "group
-        //    on position + rank within group by CA"). Order the zeros by
-        //    position group (GK first, then DEF, MID, ATT) then CA desc,
-        //    and grant each the lowest free number. This makes shirt 1 go
-        //    to the club's best goalkeeper whenever it is free — the
-        //    "1 is always a goalkeeper" behaviour — instead of to whoever
-        //    happened to come first in the type10 pool.
+        // -- Pass 2: auto-fill unnumbered players EXACTLY as the exe does
+        //    (FUN_00843590), in roster order. For each player with no
+        //    number: try their position-preferred shirts in order (GK→1,
+        //    RB→2, LB→3, CB→4/5/6, MID→6/7/8, ATT→8/9/10/11), taking the
+        //    first free one; else the lowest free 12..50; else the highest
+        //    free 11..1. This is why shirt 1 is (almost) always a keeper.
         for (_, roster) in roster_by_club.iter_mut() {
             let mut taken: [bool; 51] = [false; 51];
-            for &(_, n, _, _) in roster.iter() {
+            for &(_, n, _) in roster.iter() {
                 if n > 0 && (n as usize) < taken.len() { taken[n as usize] = true; }
             }
-            let mut order: Vec<usize> =
-                (0..roster.len()).filter(|&i| roster[i].1 == 0).collect();
-            order.sort_by(|&i, &j| {
-                roster[i].2.cmp(&roster[j].2)                 // GK group first
-                    .then(roster[j].3.cmp(&roster[i].3))      // CA descending
-                    .then(roster[i].0.cmp(&roster[j].0))      // stable by id
-            });
-            for i in order {
-                if let Some(n) = (1u8..=50).find(|&k| !taken[k as usize]) {
-                    roster[i].1 = n;
-                    taken[n as usize] = true;
+            for i in 0..roster.len() {
+                if roster[i].1 != 0 { continue; }
+                let mut assigned: u8 = 0;
+                // 1. position-preferred list.
+                for &shirt in roster[i].2 {
+                    if !taken[shirt as usize] { assigned = shirt; break; }
+                }
+                // 2. lowest free 12..=50.
+                if assigned == 0 {
+                    if let Some(k) = (12u8..=50).find(|&k| !taken[k as usize]) { assigned = k; }
+                }
+                // 3. highest free 11..=1.
+                if assigned == 0 {
+                    if let Some(k) = (1u8..=11).rev().find(|&k| !taken[k as usize]) { assigned = k; }
+                }
+                if assigned > 0 {
+                    roster[i].1 = assigned;
+                    taken[assigned as usize] = true;
                 }
             }
-            for &(type10_id, n, _, _) in roster.iter() {
+            for &(type10_id, n, _) in roster.iter() {
                 self.squad_numbers.insert(type10_id, n);
             }
         }
@@ -26147,31 +26155,30 @@ mod tests {
     }
 }
 
-/// Position group for squad-number ordering: 0 = goalkeeper, 1 = defender,
-/// 2 = midfielder, 3 = attacker, 4 = unknown. GK wins when the goalkeeping
-/// aptitude is a genuine keeper rating and at least the player's best
-/// outfield aptitude, so shirt 1 lands on the club's top GK. Used only to
-/// ORDER auto-assignment (matching the exe's position grouping); it does
-/// not paint a position label, so the "never infer a display code" rule is
-/// not in play here.
-fn squad_number_pos_group(a: &DomainStaffType10) -> u8 {
-    let gk = a.apt_goalkeeper;
-    let def = a.apt_sweeper.max(a.apt_defender).max(a.apt_wing_back);
-    let mid = a.apt_def_midfielder.max(a.apt_midfielder).max(a.apt_att_midfielder);
-    let att = a.apt_attacker;
-    // A keeper is whoever's goalkeeping aptitude dominates their outfield
-    // aptitudes (any level, not only >=15) — this catches lower-rated and
-    // reserve keepers so shirt 1 still lands on them.
-    if gk > 0 && gk >= def && gk >= mid && gk >= att {
-        return 0;
+/// The position-preferred shirt-number list for a player, ported EXACTLY
+/// from the exe's `FUN_00843590` (aptitude threshold 15, offsets +0x0f GK
+/// .. +0x18 left-side). Shirts are 1-indexed. The auto-assign tries these
+/// in order, taking the first free one, before the 12..50 / 11..1
+/// fallbacks. Empty when the player has no aptitude of 15+.
+fn squad_number_pref_list(a: &DomainStaffType10) -> &'static [u8] {
+    const T: i8 = 15;
+    if a.apt_goalkeeper >= T {
+        &[1]
+    } else if a.apt_defender >= T || a.apt_sweeper >= T {
+        if a.apt_right_side >= T {
+            &[2]
+        } else if a.apt_left_side >= T {
+            &[3]
+        } else {
+            &[4, 5, 6]
+        }
+    } else if a.apt_midfielder >= T || a.apt_def_midfielder >= T || a.apt_att_midfielder >= T {
+        &[6, 7, 8]
+    } else if a.apt_attacker >= T {
+        &[8, 9, 10, 11]
+    } else {
+        &[]
     }
-    let best = def.max(mid).max(att);
-    if best <= 0 {
-        // No aptitude at all — a regen stub (its position, like its DOB,
-        // is generated at init, which we do not yet run).
-        return 4;
-    }
-    if def == best { 1 } else if mid == best { 2 } else { 3 }
 }
 
 #[cfg(test)]
@@ -26211,7 +26218,7 @@ mod squad_number_tests {
             let Some(&n) = world.squad_numbers.get(&a.id) else { continue; };
             if n == 0 { continue; }
             per_club_numbers.entry(club).or_default().push(n);
-            let is_gk = crate::World::_squad_number_pos_group_probe(a) == 0;
+            let is_gk = crate::World::_squad_number_is_goalkeeper(a);
             if is_gk { club_has_gk.insert(club); }
             if n == 1 { one_is_gk_club.insert(club, is_gk); }
         }
