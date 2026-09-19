@@ -47,6 +47,8 @@ const NAV_GT: (i32, i32) = (291, 315);
 const HDR_BLUE: u16 = 0x0010;
 const CAREER_HDR: [&str; 9] =
     ["Apps", "Con", "Asts", "MoM", "Pass ", "Tck", "Drb", "Sh Tar", "Av R"];
+/// Injuries & Bans detail labels (col at x=110), top→bottom.
+const INJURY_LABELS: [&str; 5] = ["Injury", "Type", "Condition", "Training", "Bans"];
 
 /// Everything the Profile page paints (borrowed from `PlayerProfileView`).
 pub struct PlayerProfileState<'a> {
@@ -60,8 +62,15 @@ pub struct PlayerProfileState<'a> {
     pub position: &'a str,
     /// Six career rows: (label, 9 cells).
     pub career: &'a [(&'a str, [&'a str; 9])],
-    /// Active subtab index (0 = Profile).
+    /// Active subtab index (0 = Profile, 1 = Injuries & Bans).
     pub active_subtab: usize,
+    /// Injuries & Bans values: Injury, Type, Condition, Training, Bans.
+    pub injuries: &'a [String; 5],
+    /// True for a goalkeeper (career col-2 header = "Con" not "Gls").
+    pub is_goalkeeper: bool,
+    /// Title-bar fill = the player's club kit colour (navy for Bury,
+    /// red for Dag & Red, …); 0 falls back to navy.
+    pub kit_bg: u16,
     /// Darkened-photo background seed (matches the other club screens).
     pub photo_seed: u64,
     /// Whether a manager is installed (drives the sidebar's Add-Manager
@@ -98,8 +107,9 @@ pub fn render_player_profile(
     // ---- Left menu sidebar (Version / nav / File menu) — always on. ----
     draw_sidebar(surface, fonts, st.has_manager);
 
-    // ---- Title bar (navy banner + name + Action button) ----
-    draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, NAVY, 0, palette);
+    // ---- Title bar (kit-coloured banner + name + Action button) ----
+    let bar = if st.kit_bg != 0 { st.kit_bg } else { NAVY };
+    draw_panel(surface, 100, 10, 790, 70, P_SOLID_FILL | P_BEVEL, bar, 0, palette);
     // Name centred across the banner (excluding the left nav button and
     // the Action button's column) so long names/clubs stay centred and
     // unclipped.
@@ -152,29 +162,38 @@ pub fn render_player_profile(
         draw_wrapped_text(surface, vx, y, vx + 86, y + 17, &cell,
             &c_string(value.as_bytes()), val_ink, W_LEFT, -1);
     };
-    // Col 1 + col 2 (12 rows each, numeric).
-    for row in 0..12 {
-        let y = ATTR_ROW_Y[row];
-        for (col, &(lx, vx)) in cols.iter().enumerate().take(2) {
-            let idx = col * 12 + row;
-            if idx < st.attributes.len() && idx < ATTR_LABELS.len() {
-                draw_pair(surface, lx, vx, y, ATTR_LABELS[idx],
+    if st.active_subtab == 1 {
+        // ---- Injuries & Bans: a 2-column detail block, 5 rows
+        //      (label col x=110, value col x=260). ----
+        for (row, (label, value)) in INJURY_LABELS.iter().zip(st.injuries.iter()).enumerate() {
+            draw_pair(surface, 110, 260, ATTR_ROW_Y[row], label, value, INK_YELLOW);
+        }
+    } else {
+        // ---- Profile: 3-column attribute grid. ----
+        // Col 1 + col 2 (12 rows each, numeric).
+        for row in 0..12 {
+            let y = ATTR_ROW_Y[row];
+            for (col, &(lx, vx)) in cols.iter().enumerate().take(2) {
+                let idx = col * 12 + row;
+                if idx < st.attributes.len() && idx < ATTR_LABELS.len() {
+                    draw_pair(surface, lx, vx, y, ATTR_LABELS[idx],
+                        &st.attributes[idx], INK_YELLOW);
+                }
+            }
+        }
+        // Col 3: rows 0..7 attrs (24..31), rows 7..11 status.
+        let (lx3, vx3) = cols[2];
+        for row in 0..7 {
+            let idx = 24 + row;
+            if idx < st.attributes.len() {
+                draw_pair(surface, lx3, vx3, ATTR_ROW_Y[row], ATTR_LABELS[idx],
                     &st.attributes[idx], INK_YELLOW);
             }
         }
-    }
-    // Col 3: rows 0..7 attrs (24..31), rows 7..11 status.
-    let (lx3, vx3) = cols[2];
-    for row in 0..7 {
-        let idx = 24 + row;
-        if idx < st.attributes.len() {
-            draw_pair(surface, lx3, vx3, ATTR_ROW_Y[row], ATTR_LABELS[idx],
-                &st.attributes[idx], INK_YELLOW);
+        for (k, slabel) in STATUS_LABELS.iter().enumerate() {
+            draw_pair(surface, lx3, vx3, ATTR_ROW_Y[7 + k], slabel,
+                &st.status[k], INK_ORANGE);
         }
-    }
-    for (k, slabel) in STATUS_LABELS.iter().enumerate() {
-        draw_pair(surface, lx3, vx3, ATTR_ROW_Y[7 + k], slabel,
-            &st.status[k], INK_ORANGE);
     }
 
     // ---- Career-stats table ----
@@ -190,9 +209,11 @@ pub fn render_player_profile(
     }
     for (i, h) in CAREER_HDR.iter().enumerate() {
         let (cx0, cx1) = CAREER_COLS[i];
+        // Col 2 is "Con" (goals conceded) for keepers, "Gls" for outfield.
+        let label = if i == 1 && !st.is_goalkeeper { "Gls" } else { *h };
         draw_panel(surface, cx0, 384, cx1, 401, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
         draw_wrapped_text(surface, cx0, 384, cx1, 401, &small,
-            &c_string(h.as_bytes()), INK_GREY, TS_CENTRE, -1);
+            &c_string(label.as_bytes()), INK_GREY, TS_CENTRE, -1);
     }
     // Rows — centred values; Av R column carries a purple bevelled box.
     for (r, (label, cells)) in st.career.iter().enumerate().take(6) {

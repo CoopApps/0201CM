@@ -37,6 +37,13 @@ pub struct PlayerProfileView {
     pub position: String,
     /// Six competition rows (Non Competitive..Senior Club).
     pub career: Vec<CareerRow>,
+    /// Injuries & Bans subtab: Injury, Type, Condition, Training, Bans.
+    pub injuries: [String; 5],
+    /// True for a goalkeeper — the career col-2 header is "Con" (goals
+    /// conceded) for keepers and "Gls" (goals) for outfielders.
+    pub is_goalkeeper: bool,
+    /// The player's current club id — the title bar uses its kit colour.
+    pub club_id: Option<u32>,
 }
 
 /// Grid attribute labels in display order (col1 top→bottom, then col2,
@@ -172,6 +179,7 @@ impl World {
 
         // Position — full name from the dominant aptitude.
         let position = a10.map(position_full_name).unwrap_or_default();
+        let is_goalkeeper = a10.map(|a| a.apt_goalkeeper >= 15).unwrap_or(false);
 
         // Career stats — empty at season start (all "-").
         let career: Vec<CareerRow> = PROFILE_CAREER_LABELS.iter()
@@ -183,9 +191,28 @@ impl World {
             })
             .collect();
 
-        let _ = save; // reserved for runtime form/morale/condition wiring.
+        // Injuries & Bans subtab. Injury / Type / Bans come from the
+        // runtime injury book; Training from its rehab-training gate;
+        // Condition is the init match-fitness seed (156 = 100%) until the
+        // match-fitness sim reduces it.
+        let injured = save.injuries.rehab_progress(staff_id).is_some();
+        let banned = !save.injuries.is_available(staff_id) && !injured;
+        let injuries = [
+            if injured { "Injured".to_string() } else { "None".to_string() },
+            "-".to_string(),                       // Type — detail TBD.
+            "100%".to_string(),                    // Condition — init seed 156.
+            if save.injuries.is_training_available(staff_id) {
+                "Full".to_string()
+            } else {
+                "Restricted".to_string()
+            },
+            if banned { "Suspended".to_string() } else { "None".to_string() },
+        ];
+
         Some(PlayerProfileView {
             staff_id, title, born_line, attributes, status, position, career,
+            injuries, is_goalkeeper,
+            club_id: pv.current_club_id().map(|c| c as u32),
         })
     }
 }

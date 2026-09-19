@@ -790,6 +790,9 @@ impl App {
                         let career: Vec<(&str, [&str; 9])> = view.career.iter()
                             .map(|r| (r.label.as_str(), std::array::from_fn(|i| r.cells[i].as_str())))
                             .collect();
+                        let kit_bg = view.club_id
+                            .map(|c| render_new::club_kit_colours(world, c).0)
+                            .unwrap_or(0);
                         let st = cm_render::screen_player_profile_faithful::PlayerProfileState {
                             title: &view.title,
                             born_line: &view.born_line,
@@ -798,6 +801,9 @@ impl App {
                             position: &view.position,
                             career: &career,
                             active_subtab: *active_subtab,
+                            injuries: &view.injuries,
+                            is_goalkeeper: view.is_goalkeeper,
+                            kit_bg,
                             photo_seed: self.setup_photo_seed,
                             has_manager: self.game.is_some(),
                         };
@@ -1888,11 +1894,12 @@ impl App {
                 use cm_render::screen_player_profile_faithful::PROFILE_SUBTABS;
                 const SUBTAB_X: [i32; 5] = [100, 239, 377, 515, 653];
                 if y >= 80 && y <= 115 {
-                    // Player subtabs — only Profile (0) is built.
+                    // Player subtabs — Profile (0) and Injuries & Bans (1)
+                    // are built; the rest surface a status note.
                     for (i, x0) in SUBTAB_X.iter().enumerate() {
                         if x >= *x0 && x <= *x0 + 137 {
-                            if i == 0 {
-                                *active_subtab = 0;
+                            if i == 0 || i == 1 {
+                                *active_subtab = i;
                             } else {
                                 self.status = Some(format!(
                                     "{} page — not yet built", PROFILE_SUBTABS[i]));
