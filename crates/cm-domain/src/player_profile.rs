@@ -203,23 +203,36 @@ fn preferred_foot_str(left: i32, right: i32) -> String {
     }
 }
 
-/// Full position name from the dominant positional aptitude. GK wins
-/// outright; otherwise the highest of the outfield aptitudes. This is a
-/// documented base mapping (side/combination nuance — "Central Defender"
-/// etc. — is a later refinement).
+/// The full position string the exe paints on the profile, e.g.
+/// "Goalkeeper", "Striker (Centre)", "Defender/Striker (Centre)",
+/// "Attacking Midfielder (Left, Right)". Ported from the exe's
+/// multi-position formatter `FUN_005289a0`: every position whose aptitude
+/// is >= 15 is listed (in GK,SW,D,DM,M,AM,Striker order, joined by "/"),
+/// then the qualifying sides (Left, Centre, Right — the exe's left→right
+/// order, per FUN_005a1890) in parentheses. Names come from the exe
+/// string table (0x009a3b98.. and 0x009a3ae8..). Empty when no aptitude
+/// reaches 15 (a regen stub whose position the exe generates at init).
 fn position_full_name(a: &crate::DomainStaffType10) -> String {
-    let candidates = [
-        (a.apt_goalkeeper,    "Goalkeeper"),
-        (a.apt_sweeper,       "Sweeper"),
-        (a.apt_defender,      "Defender"),
-        (a.apt_def_midfielder,"Defensive Midfielder"),
-        (a.apt_midfielder,    "Midfielder"),
-        (a.apt_att_midfielder,"Attacking Midfielder"),
-        (a.apt_attacker,      "Forward"),
-    ];
-    candidates.iter()
-        .filter(|(v, _)| *v > 0)
-        .max_by_key(|(v, _)| *v)
-        .map(|(_, name)| name.to_string())
-        .unwrap_or_default()
+    const T: i8 = 15;
+    let mut positions: Vec<&str> = Vec::new();
+    if a.apt_goalkeeper     >= T { positions.push("Goalkeeper"); }
+    if a.apt_sweeper        >= T { positions.push("Sweeper"); }
+    if a.apt_defender       >= T { positions.push("Defender"); }
+    if a.apt_def_midfielder >= T { positions.push("Defensive Midfielder"); }
+    if a.apt_midfielder     >= T { positions.push("Midfielder"); }
+    if a.apt_att_midfielder >= T { positions.push("Attacking Midfielder"); }
+    if a.apt_attacker       >= T { positions.push("Striker"); }
+    if positions.is_empty() {
+        return String::new();
+    }
+    let mut sides: Vec<&str> = Vec::new();
+    if a.apt_left_side >= T { sides.push("Left"); }
+    if a.apt_central   >= T { sides.push("Centre"); }
+    if a.apt_right_side >= T { sides.push("Right"); }
+    let pos = positions.join("/");
+    if sides.is_empty() {
+        pos
+    } else {
+        format!("{pos} ({})", sides.join(", "))
+    }
 }
