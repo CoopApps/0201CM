@@ -49,6 +49,9 @@ const CAREER_HDR: [&str; 9] =
     ["Apps", "Con", "Asts", "MoM", "Pass ", "Tck", "Drb", "Sh Tar", "Av R"];
 /// Injuries & Bans detail labels (col at x=110), top→bottom.
 const INJURY_LABELS: [&str; 5] = ["Injury", "Type", "Condition", "Training", "Bans"];
+/// Contract detail labels (col at x=110), top→bottom.
+const CONTRACT_LABELS: [&str; 7] =
+    ["Type", "Wages", "Expires", "Squad Status", "Bonuses", "Clauses", "Notes"];
 
 /// Everything the Profile page paints (borrowed from `PlayerProfileView`).
 pub struct PlayerProfileState<'a> {
@@ -66,6 +69,9 @@ pub struct PlayerProfileState<'a> {
     pub active_subtab: usize,
     /// Injuries & Bans values: Injury, Type, Condition, Training, Bans.
     pub injuries: &'a [String; 5],
+    /// Contract values: Type, Wages, Expires, Squad Status, Bonuses,
+    /// Clauses, Notes.
+    pub contract: &'a [String; 7],
     /// True for a goalkeeper (career col-2 header = "Con" not "Gls").
     pub is_goalkeeper: bool,
     /// Title-bar fill = the player's club kit colour (navy for Bury,
@@ -162,8 +168,8 @@ pub fn render_player_profile(
     let cell_bottom = |row: usize| -> i32 {
         if row + 1 < ATTR_ROW_Y.len() { ATTR_ROW_Y[row + 1] - 2 } else { ATTR_ROW_Y[row] + 17 }
     };
-    let spans: &[(i32, i32)] = if st.active_subtab == 1 {
-        // Injuries: 2 columns, label (110..258) + value (260..780).
+    let spans: &[(i32, i32)] = if st.active_subtab == 1 || st.active_subtab == 2 {
+        // Injuries / Contract: 2 columns, label (110..258) + value (260..780).
         &[(110, 258), (260, 780)]
     } else {
         // Profile: 6 cells per row — label+value for each of 3 columns.
@@ -186,9 +192,13 @@ pub fn render_player_profile(
             &c_string(value.as_bytes()), val_ink, W_LEFT, -1);
     };
     if st.active_subtab == 1 {
-        // ---- Injuries & Bans: a 2-column detail block, 5 rows
-        //      (label col x=110, value col x=260). ----
+        // ---- Injuries & Bans: 2-column detail block, 5 rows. ----
         for (row, (label, value)) in INJURY_LABELS.iter().zip(st.injuries.iter()).enumerate() {
+            draw_pair(surface, 110, 260, ATTR_ROW_Y[row], label, value, INK_YELLOW);
+        }
+    } else if st.active_subtab == 2 {
+        // ---- Contract: 2-column detail block, 7 rows. ----
+        for (row, (label, value)) in CONTRACT_LABELS.iter().zip(st.contract.iter()).enumerate() {
             draw_pair(surface, 110, 260, ATTR_ROW_Y[row], label, value, INK_YELLOW);
         }
     } else {

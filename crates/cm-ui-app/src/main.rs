@@ -802,6 +802,7 @@ impl App {
                             career: &career,
                             active_subtab: *active_subtab,
                             injuries: &view.injuries,
+                            contract: &view.contract,
                             is_goalkeeper: view.is_goalkeeper,
                             kit_bg,
                             photo_seed: self.setup_photo_seed,
@@ -1898,7 +1899,7 @@ impl App {
                     // are built; the rest surface a status note.
                     for (i, x0) in SUBTAB_X.iter().enumerate() {
                         if x >= *x0 && x <= *x0 + 137 {
-                            if i == 0 || i == 1 {
+                            if i <= 2 {
                                 *active_subtab = i;
                             } else {
                                 self.status = Some(format!(

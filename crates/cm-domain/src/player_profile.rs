@@ -44,6 +44,9 @@ pub struct PlayerProfileView {
     pub is_goalkeeper: bool,
     /// The player's current club id — the title bar uses its kit colour.
     pub club_id: Option<u32>,
+    /// Contract subtab: Type, Wages, Expires, Squad Status, Bonuses,
+    /// Clauses, Notes.
+    pub contract: [String; 7],
 }
 
 /// Grid attribute labels in display order (col1 top→bottom, then col2,
@@ -217,10 +220,48 @@ impl World {
             if banned { "Suspended".to_string() } else { "None".to_string() },
         ];
 
+        // Contract subtab — Wages / Expires / Clauses from the contract
+        // pool (real); Type / Squad Status / Bonuses / Notes are the
+        // labelled defaults until their exact sources are wired.
+        let ct = self.contracts.as_ref().and_then(|p| p.contract_for_staff(staff_id));
+        let wages = match ct.map(|r| r.wage).unwrap_or_else(|| pv.wage()) {
+            w if w > 0 => format!("\u{a3}{} per week", w),
+            _ => "-".to_string(),
+        };
+        let expires = ct.map(|r| {
+            let dob = crate::typed_records::CmDate {
+                day: r.expiry_dayofyear, year: r.expiry_year, is_leap: 0,
+            };
+            let (m, d) = dob.to_month_day();
+            format!("{d}.{m}.{:02}", r.expiry_year % 100)
+        }).unwrap_or_else(|| "-".to_string());
+        let clauses = match ct {
+            Some(r) if r.non_promotion == 0 && r.minimum_fee == 0
+                && r.non_playing == 0 && r.relegation == 0 && r.manager_job == 0 => "None",
+            Some(_) => "Yes",
+            None => "None",
+        }.to_string();
+        // Squad Status — the exe picks a descriptor from the player's
+        // squad-status byte (0x00a6e370.. "…squad rotation system" /
+        // "…important first team player" / "…indispensable to the club").
+        // The byte source is not wired yet; default to the common
+        // first-team descriptor.
+        let squad_status = "This player is an important first team player".to_string();
+        let contract = [
+            "Full Time Contract".to_string(),  // Type — pending club-status source.
+            wages,
+            expires,
+            squad_status,
+            "None".to_string(),                // Bonuses — pending source.
+            clauses,
+            "-".to_string(),                   // Notes — pending source.
+        ];
+
         Some(PlayerProfileView {
             staff_id, title, born_line, attributes, status, position, career,
             injuries, is_goalkeeper,
             club_id: pv.current_club_id().map(|c| c as u32),
+            contract,
         })
     }
 }
