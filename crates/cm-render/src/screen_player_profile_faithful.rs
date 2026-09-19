@@ -155,25 +155,24 @@ pub fn render_player_profile(
     // ---- Middle content: per-cell darkened grid (the 2px gaps between
     //      cells show the photo brighter, giving the table's grid lines).
     //      One darkened cell per label and value box, exactly like the
-    //      capture (no solid fill — the photo shows through). ----
-    let darken_cell = |s: &mut PackedSurface, x0: i32, x1: i32, y: i32| {
-        draw_panel(s, x0, y, x1, y + 17, P_DARKEN, 0, 0, palette);
+    //      capture (no solid fill — the photo shows through). Each cell's
+    //      bottom is the next row's top minus 2, so EVERY row has a 2px
+    //      divider gap (the row stride alternates 18/19, so a fixed cell
+    //      height would only divide every other row). ----
+    let cell_bottom = |row: usize| -> i32 {
+        if row + 1 < ATTR_ROW_Y.len() { ATTR_ROW_Y[row + 1] - 2 } else { ATTR_ROW_Y[row] + 17 }
     };
-    if st.active_subtab == 1 {
+    let spans: &[(i32, i32)] = if st.active_subtab == 1 {
         // Injuries: 2 columns, label (110..258) + value (260..780).
-        for &y in ATTR_ROW_Y.iter() {
-            darken_cell(surface, 110, 258, y);
-            darken_cell(surface, 260, 780, y);
-        }
+        &[(110, 258), (260, 780)]
     } else {
         // Profile: 6 cells per row — label+value for each of 3 columns.
-        for &y in ATTR_ROW_Y.iter() {
-            darken_cell(surface, 110, 243, y);
-            darken_cell(surface, 245, 332, y);
-            darken_cell(surface, 334, 466, y);
-            darken_cell(surface, 468, 556, y);
-            darken_cell(surface, 558, 690, y);
-            darken_cell(surface, 692, 780, y);
+        &[(110, 243), (245, 332), (334, 466), (468, 556), (558, 690), (692, 780)]
+    };
+    for (row, &y) in ATTR_ROW_Y.iter().enumerate() {
+        let y1 = cell_bottom(row);
+        for &(x0, x1) in spans {
+            draw_panel(surface, x0, y, x1, y1, P_DARKEN, 0, 0, palette);
         }
     }
     // Column geometry: (label_x, value_x).
