@@ -546,6 +546,48 @@ impl World {
         "English".to_string()
     }
 
+    /// Exact achievement text for a season award, using the decoded
+    /// per-nation award-pool table (`FUN_00562580` for England) → the
+    /// `staff_competitions` name. English is the demonstrated/simulated
+    /// nation and is byte-exact; other nations fall back to the generic
+    /// `award_line` until their subsystem tables are ported. Decode:
+    /// `reports/awards_engine_decode.md`.
+    fn resolve_award_text(
+        &self,
+        category: crate::awards_engine::AwardCategory,
+        comp_name: &str,
+        season: &str,
+    ) -> String {
+        use crate::awards_engine::AwardCategory::*;
+        let award_name = |id: u32| -> Option<String> {
+            self.references.staff_competitions.iter()
+                .find(|c| c.id == id)
+                .map(|c| c.long_name.clone())
+                .filter(|s| !s.is_empty())
+        };
+        if comp_name.starts_with("English") {
+            match category {
+                // Overall PFA awards (award ids 5 / 6 — comp = all-English).
+                PlayerOfTheSeason => if let Some(n) = award_name(5) { return n; },
+                YoungPlayerOfTheSeason => if let Some(n) = award_name(6) { return n; },
+                // Division "Select" (Team of the Season): 7/8/9/10/169.
+                TeamOfTheSeason => {
+                    let id = if comp_name.contains("Premier") { 7 }
+                        else if comp_name.contains("First") { 8 }
+                        else if comp_name.contains("Second") { 9 }
+                        else if comp_name.contains("Third") { 10 }
+                        else if comp_name.contains("Conference") { 169 }
+                        else { 7 };
+                    if let Some(n) = award_name(id) {
+                        return format!("Named in {season} {n}");
+                    }
+                }
+                _ => {}
+            }
+        }
+        crate::player_achievements::award_line(category, comp_name, season)
+    }
+
     /// A person's current club as `(club_id, name)`, or `(0, "")` for a
     /// free agent.
     fn person_current_club(&self, person_id: u32) -> (u32, String) {
@@ -576,10 +618,10 @@ impl World {
         for a in awards {
             let season_span = format!("{}/{:02}", a.year, (a.year + 1) % 100);
             let (club_id, club_name) = self.person_current_club(a.winner_staff_id);
+            let text = self.resolve_award_text(a.category, &a.competition_name, &season_span);
             save.player_achievements.record(
                 a.winner_staff_id, a.day, a.date, club_id, club_name,
-                crate::player_achievements::award_line(a.category, &a.competition_name, &season_span),
-                AchievementKind::Award,
+                text, AchievementKind::Award,
             );
         }
         // 2. Club championships recorded since the last pass → credit every
