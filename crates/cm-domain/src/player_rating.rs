@@ -447,6 +447,30 @@ impl PlayerRatingBook {
             .and_then(|(sum, count)| season_avg_rating(*count, *sum as i16))
     }
 
+    /// This player's current-season (apps, goals) for the Playing Career
+    /// table. Apps = appearances counted into the rating accumulator;
+    /// goals = real simulated season goals. `(0, 0)` if not rated.
+    pub fn season_apps_goals(&self, staff_id: u32) -> (u32, u32) {
+        let apps = self.season_rating_stats.get(&staff_id).map(|(_, c)| *c as u32).unwrap_or(0);
+        let goals = self.id_index.get(&staff_id)
+            .map(|&i| self.players[i].season_goals as u32).unwrap_or(0);
+        (apps, goals)
+    }
+
+    /// Snapshot of every player who appeared this season, for accruing a
+    /// completed-season Playing Career row: `(staff_id, club_id, apps, goals)`.
+    pub fn season_appearances(&self) -> Vec<(u32, i32, u32, u32)> {
+        self.season_rating_stats.iter()
+            .filter(|(_, (_, count))| *count > 0)
+            .map(|(&sid, (_, count))| {
+                let (club, goals) = self.id_index.get(&sid)
+                    .map(|&i| (self.players[i].club_id.unwrap_or(-1), self.players[i].season_goals as u32))
+                    .unwrap_or((-1, 0));
+                (sid, club, *count as u32, goals)
+            })
+            .collect()
+    }
+
     /// Top-scorer specifically weights the wobble higher — a striker with
     /// a lower CA can outscore a higher-CA midfielder.
     pub fn top_scorer_score(&self, p: &RatedPlayer) -> f32 {

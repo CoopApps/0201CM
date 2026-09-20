@@ -22,6 +22,10 @@ const TAB_BLUE:   u16 = 0x100c;
 const GREY_BAR:   u16 = 0x4210;
 /// Purple Av-R cell box (capture col 8200 = 0x2008).
 const AVR_BOX:    u16 = 0x2008;
+/// Bright cyan used for the History Loan marker and Total row (col 1023).
+const INK_HIST_CYAN: u16 = 0x03ff;
+/// Selected-season header blue in the History bottom table (col 543).
+const HIST_SEL_BLUE: u16 = 0x021f;
 
 /// The five player subtabs.
 pub const PROFILE_SUBTABS: [&str; 5] =
@@ -57,6 +61,60 @@ const CONTRACT_LABELS: [&str; 7] =
 const TRANSFER_LABELS: [&str; 7] =
     ["Availability", "Value", "Fluent Languages", "Offers", "Interested", "Future", ""];
 
+/// Which History top-table view is active (View dropdown). Values match
+/// the exe's View-menu order.
+pub const HV_ACHIEVEMENTS: usize = 0;
+pub const HV_PLAYING_CAREER: usize = 1;
+pub const HV_INJURIES: usize = 2;
+pub const HV_BANS: usize = 3;
+
+/// Which pop-up menu is open over the Player Profile screen.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ProfileMenu {
+    None,
+    /// Name-bar triangle → club squad list.
+    Picker,
+    /// View dropdown (Achievements / Playing Career / Injuries / Bans).
+    View,
+    /// Filter dropdown (All Records / Competitions / Awards).
+    Filter,
+    /// Action button menu.
+    Action,
+    /// Action → Compare Players submenu.
+    Compare,
+}
+
+/// One row of the History → Achievements list.
+pub struct AchievementRow<'a> {
+    pub date: &'a str,
+    pub club: &'a str,
+    pub text: &'a str,
+}
+
+/// One row of the History → Injuries list.
+pub struct InjuryRow<'a> {
+    pub date: &'a str,
+    pub injury: &'a str,
+    pub kind: &'a str,     // "Match" / "Training"
+    pub period: &'a str,   // "3 weeks" / "10 days"
+}
+
+/// One row of the History → Bans list.
+pub struct BanRow<'a> {
+    pub date: &'a str,
+    pub ban: &'a str,      // "3 match English ban"
+    pub reason: &'a str,   // "Red card" / "5 yellow cards"
+}
+
+/// One season row for the History subtab's "Playing Career" table.
+pub struct HistoryRow<'a> {
+    pub season: &'a str,
+    pub club: &'a str,
+    pub is_loan: bool,
+    pub apps: &'a str,
+    pub goals: &'a str,
+}
+
 /// Everything the Profile page paints (borrowed from `PlayerProfileView`).
 pub struct PlayerProfileState<'a> {
     pub title: &'a str,
@@ -89,6 +147,87 @@ pub struct PlayerProfileState<'a> {
     /// Whether a manager is installed (drives the sidebar's Add-Manager
     /// enabled/faded state).
     pub has_manager: bool,
+    // ---- History subtab (active_subtab == 4) ----
+    /// Season rows for the "Playing Career" table (newest first).
+    pub history_rows: &'a [HistoryRow<'a>],
+    /// Total apps / goals (teal Total row).
+    pub history_total: (&'a str, &'a str),
+    /// Bottom-table header, e.g. "  2001/2 Arsenal" (selected season).
+    pub history_selected_label: &'a str,
+    /// Index of the selected season (drives the bottom table).
+    pub history_selected_idx: usize,
+    /// First list index shown in the top table's scroll window.
+    pub history_scroll: usize,
+    /// Top-table stat page (0 = Apps/Gls…, 1 = Con/Pens…). The two tables
+    /// page INDEPENDENTLY via their own `<<`/`>>` buttons.
+    pub history_page: usize,
+    /// Bottom-table (selected-season breakdown) stat page.
+    pub history_bot_page: usize,
+    /// Active top-table view (HV_* — Achievements/Playing Career/…).
+    pub history_view: usize,
+    /// Achievements Filter mode (0 All Records, 1 Competitions, 2 Awards).
+    pub history_filter: usize,
+    /// Which pop-up menu is currently open (drawn last, over everything).
+    pub open_menu: ProfileMenu,
+    /// Player-picker rows ("Surname, Initial"), club squad, alphabetical.
+    pub picker_items: &'a [String],
+    /// Achievements-view rows (Date · Club · text), newest first. Empty
+    /// until honours accrue during play.
+    pub achievements: &'a [AchievementRow<'a>],
+    /// Injuries-view rows (Date · Injury · Type · Period Out), newest first.
+    pub injuries_list: &'a [InjuryRow<'a>],
+    /// Bans-view rows (Date · Ban · Reason), newest first.
+    pub bans_list: &'a [BanRow<'a>],
+}
+
+/// Green pop-up menu fills (exe cols 512 / 576) and text.
+const MENU_GREEN_A: u16 = 0x0200;
+const MENU_GREEN_B: u16 = 0x0240;
+const MENU_INK: u16 = 0x0000;
+/// The name-bar triangle button that opens the squad picker.
+const PICKER_BTN: (i32, i32, i32, i32) = (103, 15, 120, 35);
+
+/// Top "Playing Career" table — 10 visible row slots (verified capture
+/// y's; stride ~19.4). The list is `history_rows` + a Total row.
+const HIST_ROW_Y: [i32; 10] =
+    [185, 205, 225, 244, 264, 283, 303, 322, 342, 361];
+/// Top-table cell columns (x0,x1): Season, Club, Loan, `<<`, `>>`, then
+/// Apps, Gls, Asts, MoM, Pass, Tck, Drb, Sh Tar, Av R.
+const HIST_SEASON_COL: (i32, i32) = (110, 178);
+const HIST_CLUB_COL:   (i32, i32) = (180, 317);
+const HIST_LOAN_COL:   (i32, i32) = (319, 377);
+const HIST_STAT_COLS: [(i32, i32); 9] = [
+    (426, 461), (463, 498), (500, 535), (537, 572), (574, 609),
+    (611, 646), (648, 683), (685, 720), (722, 758),
+];
+/// Scrollbar geometry (x=761-780).
+const HIST_SB_X0: i32 = 761;
+const HIST_SB_X1: i32 = 780;
+const HIST_SB_UP:   (i32, i32) = (185, 204);
+const HIST_SB_TRK:  (i32, i32) = (205, 359);
+const HIST_SB_DOWN: (i32, i32) = (360, 379);
+/// The `<<` / `>>` stat-page nav boxes in the top-table header row.
+const HIST_HDR_LT: (i32, i32) = (379, 401);
+const HIST_HDR_GT: (i32, i32) = (403, 424);
+/// Selected-season season-box fill (grey; the text then turns navy). The
+/// non-selected fill is `HDR_BLUE` with grey text — the two invert.
+const SEASON_SEL_BG: u16 = 0x739c;
+
+/// The nine stat-column headers for the History tables, decoded from the
+/// exe's per-(page,position) column-code arrays at `.data` 0xa706bc..e0
+/// (see `reports/player_history_builder_decode.md`). `<<`/`>>` page
+/// between the two. Codes → labels: 1 Apps, 2 Gls, 3 Con, 4 Pens, 5 Asts,
+/// 6 Tgls, 7 Tcon, 8 Won, 9 Lost, a Yel, b Red, c MoM, d Pass, e Tck,
+/// f Drb, 10 Sh Tar, 11 Av R.
+pub fn history_headers(is_goalkeeper: bool, page: usize) -> [&'static str; 9] {
+    match (is_goalkeeper, page % 2) {
+        // Outfield page 0 (default) / page 1.
+        (false, 0) => ["Apps", "Gls", "Asts", "MoM", "Pass", "Tck", "Drb", "Sh Tar", "Av R"],
+        (false, _) => ["Con", "Pens", "Yel", "Red", "Won", "Lost", "Tgls", "Tcon", "Av R"],
+        // Goalkeeper page 0 (Con in the Gls slot) / page 1.
+        (true, 0)  => ["Apps", "Con", "Asts", "MoM", "Pass", "Tck", "Drb", "Sh Tar", "Av R"],
+        (true, _)  => ["Gls", "Pens", "Yel", "Red", "Won", "Lost", "Tgls", "Tcon", "Av R"],
+    }
 }
 
 /// The 31 attribute labels, grid order (mirrors
@@ -131,6 +270,18 @@ pub fn render_player_profile(
     draw_panel(surface, 660, 4, 785, 24, P_SOLID_FILL | P_BEVEL, INK_WHITE, 0, palette);
     draw_wrapped_text(surface, 660, 4, 785, 24, &small,
         &c_string(b"Action"), 0x0000, TS_CENTRE, -1);
+    // Name-bar triangle button (opens the club squad player-picker).
+    {
+        let (bx0, by0, bx1, by1) = PICKER_BTN;
+        draw_panel(surface, bx0, by0, bx1, by1, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        // Right-pointing triangle glyph.
+        let cx = (bx0 + bx1) / 2 - 2;
+        let cy = (by0 + by1) / 2;
+        for i in 0..5i32 {
+            let h = 4 - i;
+            surface.draw_line(cx + i, cy - h, cx + i, cy + h, 2, INK_GREY);
+        }
+    }
 
     // ---- Subtabs (all panels + labels first) ----
     for (i, label) in PROFILE_SUBTABS.iter().enumerate() {
@@ -159,6 +310,9 @@ pub fn render_player_profile(
         surface.draw_line(ax1, ay0, ax1, ay1, 2, INK_YELLOW);
     }
 
+    if st.active_subtab == 4 {
+        render_history(surface, &small, &body, &title_font, &cell, st, palette);
+    } else {
     // ---- Bio band ----
     draw_panel(surface, 110, 125, 780, 155, P_DARKEN, 0, 0, palette);
     // Widened right edge so nationality ("English.") is not clipped.
@@ -249,8 +403,11 @@ pub fn render_player_profile(
                 &st.status[k], INK_ORANGE);
         }
     }
+    } // end subtabs 0..3 middle content
 
-    // ---- Career-stats table ----
+    // ---- Career-stats table (shared: profile career, or — for the
+    //      History subtab — the selected season's per-competition
+    //      breakdown). Rows come from `st.career`. ----
     draw_panel(surface, 110, 384, 780, 510, P_DARKEN, 0, 0, palette);
     // Header row — every cell is a bevelled box with a centred grey
     // label: << / >> on BLUE boxes (col 16), the nine stat headers on
@@ -261,10 +418,19 @@ pub fn render_player_profile(
         draw_wrapped_text(surface, cx0, 384, cx1, 401, &small,
             &c_string(lbl.as_bytes()), INK_GREY, TS_CENTRE, -1);
     }
-    for (i, h) in CAREER_HDR.iter().enumerate() {
+    // History subtab: the nine headers follow the bottom table's OWN stat
+    // page (it pages independently of the top table). Other subtabs use
+    // the fixed profile-career headers.
+    let hist_hdr = history_headers(st.is_goalkeeper, st.history_bot_page);
+    for i in 0..9 {
         let (cx0, cx1) = CAREER_COLS[i];
-        // Col 2 is "Con" (goals conceded) for keepers, "Gls" for outfield.
-        let label = if i == 1 && !st.is_goalkeeper { "Gls" } else { *h };
+        let label: &str = if st.active_subtab == 4 {
+            hist_hdr[i]
+        } else if i == 1 && !st.is_goalkeeper {
+            "Gls"
+        } else {
+            CAREER_HDR[i]
+        };
         draw_panel(surface, cx0, 384, cx1, 401, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
         draw_wrapped_text(surface, cx0, 384, cx1, 401, &small,
             &c_string(label.as_bytes()), INK_GREY, TS_CENTRE, -1);
@@ -286,6 +452,13 @@ pub fn render_player_profile(
                 &small, &c_string(cellv.as_bytes()), cink, TS_CENTRE, -1);
         }
     }
+    // History subtab: the bottom table's header carries the selected
+    // season label ("  2001/2 Arsenal", blue) at the left of the header
+    // row, where the profile career table leaves it blank.
+    if st.active_subtab == 4 {
+        draw_wrapped_text(surface, 112, 384, 263, 401, &cell,
+            &c_string(st.history_selected_label.as_bytes()), HIST_SEL_BLUE, W_LEFT, -1);
+    }
 
     // ---- Position band ----
     draw_panel(surface, 110, 515, 780, 545, P_DARKEN, 0, 0, palette);
@@ -299,4 +472,368 @@ pub fn render_player_profile(
     draw_panel(surface, 619, 555, 790, 590, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
     draw_wrapped_text(surface, 619, 555, 790, 590, &body,
         &c_string(b"Next"), INK_GREY, TS_CENTRE, -1);
+
+    // ---- Pop-up menus (drawn LAST so they overlay everything) ----
+    if st.active_subtab == 4 && st.open_menu != ProfileMenu::None {
+        draw_profile_menu(surface, &small, st, palette);
+    }
+}
+
+/// Draw a green pop-up menu at (x0,y0) with the given items and an
+/// optional checked index. Rows are ~21px, zebra 512/576, 5-space indent.
+#[allow(clippy::too_many_arguments)]
+fn draw_menu_box(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    x0: i32, y0: i32, x1: i32,
+    items: &[&str],
+    checked: Option<usize>,
+    palette: PanelPalette,
+) {
+    let pitch = 21;
+    let y1 = y0 + 2 + pitch * items.len() as i32;
+    draw_panel(surface, x0, y0, x1, y1, P_SOLID_FILL | P_BEVEL, MENU_GREEN_A, 0, palette);
+    for (i, item) in items.iter().enumerate() {
+        let iy = y0 + 2 + pitch * i as i32;
+        let fill = if i % 2 == 0 { MENU_GREEN_A } else { MENU_GREEN_B };
+        draw_panel(surface, x0 + 2, iy, x1 - 2, iy + 19, P_SOLID_FILL, fill, 0, palette);
+        // Check mark on the active item (in the 5-space indent gap): a
+        // small two-stroke tick drawn in the menu ink.
+        if checked == Some(i) {
+            let (tx, ty) = (x0 + 10, iy + 10);
+            surface.draw_line(tx, ty, tx + 3, ty + 3, 2, MENU_INK);
+            surface.draw_line(tx + 3, ty + 3, tx + 9, ty - 4, 2, MENU_INK);
+            surface.draw_line(tx, ty + 1, tx + 3, ty + 4, 2, MENU_INK);
+            surface.draw_line(tx + 3, ty + 4, tx + 9, ty - 3, 2, MENU_INK);
+        }
+        draw_wrapped_text(surface, x0 + 26, iy, x1 - 2, iy + 19, font,
+            &c_string(item.as_bytes()), MENU_INK, W_LEFT, -1);
+    }
+}
+
+/// Render whichever pop-up menu is open over the History subtab.
+fn draw_profile_menu(
+    surface: &mut PackedSurface,
+    font: &crate::packed_glyph::PixelFont,
+    st: &PlayerProfileState<'_>,
+    palette: PanelPalette,
+) {
+    match st.open_menu {
+        ProfileMenu::Picker => {
+            // Club squad list, anchored at the triangle button, auto-sized.
+            let items: Vec<&str> = st.picker_items.iter().map(|s| s.as_str()).collect();
+            draw_menu_box(surface, font, 123, 0, 248, &items, None, palette);
+        }
+        ProfileMenu::View => {
+            // Order matches the exe: Achievements / Playing Career /
+            // Injuries / Bans. Check the active view.
+            let items = ["Achievements", "Playing Career", "Injuries", "Bans"];
+            let checked = match st.history_view {
+                HV_ACHIEVEMENTS => 0, HV_INJURIES => 2, HV_BANS => 3, _ => 1,
+            };
+            draw_menu_box(surface, font, 110, 148, 235, &items, Some(checked), palette);
+        }
+        ProfileMenu::Filter => {
+            let items = ["All Records", "Competitions", "Awards"];
+            draw_menu_box(surface, font, 236, 148, 361, &items, Some(st.history_filter.min(2)), palette);
+        }
+        ProfileMenu::Action => {
+            // Non-manager player Action menu (separator handled by a blank).
+            let items = ["Add To Shortlist", "Set Nickname", "", "Create Manager Note", "Compare Players"];
+            draw_menu_box(surface, font, 635, 27, 785, &items, None, palette);
+        }
+        ProfileMenu::Compare => {
+            // Action menu + its Compare submenu (opening to the left).
+            let items = ["Add To Shortlist", "Set Nickname", "", "Create Manager Note", "Compare Players"];
+            draw_menu_box(surface, font, 635, 27, 785, &items, None, palette);
+            let sub = ["Set as 1st player in comparison", "Set as 2nd player in comparison", "Compare two chosen players"];
+            draw_menu_box(surface, font, 427, 111, 634, &sub, None, palette);
+        }
+        ProfileMenu::None => {}
+    }
+}
+
+/// A small filled arrow triangle centred on `cx`, 5px tall, pointing up
+/// (`up`) or down, top at `top`.
+fn draw_tri(surface: &mut PackedSurface, cx: i32, top: i32, up: bool, colour: u16) {
+    for i in 0..5i32 {
+        let w = if up { i } else { 4 - i };
+        surface.draw_line(cx - w, top + i, cx + w, top + i, 2, colour);
+    }
+}
+
+/// History subtab: View dropdown, "Playing Career" top table (scrollable
+/// season list + Total), and the scrollbar. The bottom per-competition
+/// breakdown reuses the shared career table (driven by `st.career`).
+#[allow(clippy::too_many_arguments)]
+fn render_history(
+    surface: &mut PackedSurface,
+    small: &crate::packed_glyph::PixelFont,
+    body: &crate::packed_glyph::PixelFont,
+    _title_font: &crate::packed_glyph::PixelFont,
+    cell: &crate::packed_glyph::PixelFont,
+    st: &PlayerProfileState<'_>,
+    palette: PanelPalette,
+) {
+    // ---- View dropdown (bevelled grey box + label + down arrow) ----
+    draw_panel(surface, 110, 125, 234, 145, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    draw_wrapped_text(surface, 122, 125, 210, 145, cell,
+        &c_string(b"View"), INK_GREY, W_LEFT, -1);
+    draw_tri(surface, 222, 132, false, INK_GREY);
+    // Filter dropdown — only in the Achievements view.
+    if st.history_view == HV_ACHIEVEMENTS {
+        draw_panel(surface, 236, 125, 360, 145, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        draw_wrapped_text(surface, 248, 125, 336, 145, cell,
+            &c_string(b"Filter"), INK_GREY, W_LEFT, -1);
+        draw_tri(surface, 348, 132, false, INK_GREY);
+    }
+
+    // ---- Title (per view) ----
+    let title = match st.history_view {
+        HV_ACHIEVEMENTS => "Achievements",
+        HV_INJURIES => "Injuries",
+        HV_BANS => "Bans",
+        _ => "Playing Career",
+    };
+    draw_wrapped_text(surface, 110, 150, 780, 170, body,
+        &c_string(title.as_bytes()), INK_YELLOW, TS_CENTRE, -1);
+
+    // ---- Top table background ----
+    draw_panel(surface, 110, 185, 780, 379, P_DARKEN, 0, 0, palette);
+
+    // Records views. Achievements draws its accrued rows (Date | Club |
+    // text); Injuries/Bans draw their header boxes + (empty until the data
+    // is modelled) list. All get a scrollbar.
+    if st.history_view != HV_PLAYING_CAREER {
+        // Injuries/Bans header row (list-row 0); Achievements has none.
+        let first_data_slot = match st.history_view {
+            HV_INJURIES => {
+                for (bx0, bx1, lbl) in [(460, 608, "Type"), (610, 758, "Period Out")] {
+                    draw_panel(surface, bx0, 185, bx1, 203, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+                    draw_wrapped_text(surface, bx0, 185, bx1, 203, small,
+                        &c_string(lbl.as_bytes()), INK_GREY, TS_CENTRE, -1);
+                }
+                1
+            }
+            HV_BANS => {
+                draw_panel(surface, 610, 185, 758, 203, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+                draw_wrapped_text(surface, 610, 185, 758, 203, small,
+                    &c_string(b"Reason"), INK_GREY, TS_CENTRE, -1);
+                1
+            }
+            _ => 0, // Achievements: rows fill from the top slot
+        };
+        // Data rows fill from `first_data_slot` (0 for Achievements, 1 for
+        // Injuries/Bans which reserve slot 0 for the header). Yellow row text.
+        let visible = HIST_ROW_Y.len() - first_data_slot as usize;
+        let rows_len = match st.history_view {
+            HV_ACHIEVEMENTS => st.achievements.len(),
+            HV_INJURIES => st.injuries_list.len(),
+            HV_BANS => st.bans_list.len(),
+            _ => 0,
+        };
+        let sc = st.history_scroll.min(rows_len.saturating_sub(visible));
+        for slot in first_data_slot as usize..HIST_ROW_Y.len() {
+            let y = HIST_ROW_Y[slot];
+            let li = sc + (slot - first_data_slot as usize);
+            if li >= rows_len { break; }
+            let y1 = y + 18;
+            // Common: date box + a darken strip across the row.
+            draw_panel(surface, HIST_SEASON_COL.0, y, HIST_SEASON_COL.1, y1,
+                P_SOLID_FILL | P_BEVEL, HDR_BLUE, 0, palette);
+            draw_panel(surface, HIST_CLUB_COL.0, y, 758, y1, P_DARKEN, 0, 0, palette);
+            let date = match st.history_view {
+                HV_ACHIEVEMENTS => st.achievements[li].date,
+                HV_INJURIES => st.injuries_list[li].date,
+                _ => st.bans_list[li].date,
+            };
+            draw_wrapped_text(surface, HIST_SEASON_COL.0 + 13, y, HIST_SEASON_COL.1, y1, small,
+                &c_string(date.as_bytes()), INK_GREY, W_LEFT, -1);
+            match st.history_view {
+                HV_ACHIEVEMENTS => {
+                    let row = &st.achievements[li];
+                    draw_wrapped_text(surface, HIST_CLUB_COL.0 + 2, y, 332, y1, cell,
+                        &c_string(format!("  {}", row.club).as_bytes()), INK_GREY, W_LEFT, -1);
+                    draw_wrapped_text(surface, 335, y, 758, y1, cell,
+                        &c_string(format!("  {}", row.text).as_bytes()), INK_YELLOW, W_LEFT, -1);
+                }
+                HV_INJURIES => {
+                    let row = &st.injuries_list[li];
+                    draw_wrapped_text(surface, HIST_CLUB_COL.0 + 5, y, 458, y1, cell,
+                        &c_string(format!("  {}", row.injury).as_bytes()), INK_YELLOW, W_LEFT, -1);
+                    draw_wrapped_text(surface, 460, y, 608, y1, small,
+                        &c_string(row.kind.as_bytes()), INK_ORANGE, TS_CENTRE, -1);
+                    draw_wrapped_text(surface, 610, y, 758, y1, small,
+                        &c_string(row.period.as_bytes()), INK_ORANGE, TS_CENTRE, -1);
+                }
+                _ => {
+                    let row = &st.bans_list[li];
+                    draw_wrapped_text(surface, HIST_CLUB_COL.0 + 5, y, 608, y1, cell,
+                        &c_string(format!("  {}", row.ban).as_bytes()), INK_YELLOW, W_LEFT, -1);
+                    draw_wrapped_text(surface, 610, y, 758, y1, small,
+                        &c_string(row.reason.as_bytes()), INK_ORANGE, W_LEFT, -1);
+                }
+            }
+        }
+        // Scrollbar: thumb only when the list overflows.
+        draw_panel(surface, HIST_SB_X0, HIST_SB_UP.0, HIST_SB_X1, HIST_SB_UP.1,
+            P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        draw_tri(surface, (HIST_SB_X0 + HIST_SB_X1) / 2, HIST_SB_UP.0 + 7, true, INK_GREY);
+        draw_panel(surface, HIST_SB_X0, HIST_SB_TRK.0, HIST_SB_X1, HIST_SB_TRK.1, P_DARKEN, 0, 0, palette);
+        if rows_len > visible {
+            let trk_h = HIST_SB_TRK.1 - HIST_SB_TRK.0;
+            let thumb_h = ((trk_h as usize * visible / rows_len) as i32).max(14);
+            let max_scroll = rows_len - visible;
+            let thumb_top = HIST_SB_TRK.0 + ((trk_h - thumb_h) as usize * sc / max_scroll) as i32;
+            draw_panel(surface, HIST_SB_X0, thumb_top, HIST_SB_X1, thumb_top + thumb_h,
+                P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        }
+        draw_panel(surface, HIST_SB_X0, HIST_SB_DOWN.0, HIST_SB_X1, HIST_SB_DOWN.1,
+            P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+        draw_tri(surface, (HIST_SB_X0 + HIST_SB_X1) / 2, HIST_SB_DOWN.0 + 7, false, INK_GREY);
+        return;
+    }
+
+    // The scrollable list is: [column header] + season rows + [Total].
+    // The header is list index 0 and scrolls with the content.
+    let headers = history_headers(st.is_goalkeeper, st.history_page);
+    let n = st.history_rows.len();
+    let list_len = n + 2; // header + seasons + total
+    let visible = HIST_ROW_Y.len();
+    let max_scroll = list_len.saturating_sub(visible);
+    let scroll = st.history_scroll.min(max_scroll);
+
+    for (slot, &y) in HIST_ROW_Y.iter().enumerate() {
+        let y1 = y + 18;
+        let li = scroll + slot;
+        if li >= list_len { break; }
+        let is_header = li == 0;
+        let is_total = li == list_len - 1;
+        let season_idx = li.wrapping_sub(1); // valid when 1..=n
+
+        if is_header {
+            // Header row: blank season/club/loan, `<<`/`>>` blue boxes,
+            // nine grey stat-header boxes with the page's labels.
+            draw_panel(surface, HIST_SEASON_COL.0, y, HIST_SEASON_COL.1, y1, P_DARKEN, 0, 0, palette);
+            draw_panel(surface, HIST_CLUB_COL.0, y, HIST_CLUB_COL.1, y1, P_DARKEN, 0, 0, palette);
+            draw_panel(surface, HIST_LOAN_COL.0, y, HIST_LOAN_COL.1, y1, P_DARKEN, 0, 0, palette);
+            for (&(bx0, bx1), lbl) in [HIST_HDR_LT, HIST_HDR_GT].iter().zip(["<<", ">>"]) {
+                draw_panel(surface, bx0, y, bx1, y1, P_SOLID_FILL | P_BEVEL, HDR_BLUE, 0, palette);
+                draw_wrapped_text(surface, bx0, y, bx1, y1, small,
+                    &c_string(lbl.as_bytes()), INK_GREY, TS_CENTRE, -1);
+            }
+            for (i, &(cx0, cx1)) in HIST_STAT_COLS.iter().enumerate() {
+                draw_panel(surface, cx0, y, cx1, y1, P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+                draw_wrapped_text(surface, cx0, y, cx1, y1, small,
+                    &c_string(headers[i].as_bytes()), INK_GREY, TS_CENTRE, -1);
+            }
+            continue;
+        }
+
+        // ---- Cell boxes for a data / total row ----
+        if !is_total {
+            let sel = season_idx == st.history_selected_idx;
+            let bg = if sel { SEASON_SEL_BG } else { HDR_BLUE };
+            draw_panel(surface, HIST_SEASON_COL.0, y, HIST_SEASON_COL.1, y1,
+                P_SOLID_FILL | P_BEVEL, bg, 0, palette);
+        }
+        draw_panel(surface, HIST_CLUB_COL.0, y, HIST_CLUB_COL.1, y1, P_DARKEN, 0, 0, palette);
+        draw_panel(surface, HIST_LOAN_COL.0, y, HIST_LOAN_COL.1, y1, P_DARKEN, 0, 0, palette);
+        draw_panel(surface, HIST_HDR_LT.0, y, HIST_HDR_LT.1, y1, P_DARKEN, 0, 0, palette);
+        draw_panel(surface, HIST_HDR_GT.0, y, HIST_HDR_GT.1, y1, P_DARKEN, 0, 0, palette);
+        for (i, &(cx0, cx1)) in HIST_STAT_COLS.iter().enumerate() {
+            if i == 8 {
+                draw_panel(surface, cx0, y, cx1, y1, P_SOLID_FILL | P_BEVEL, AVR_BOX, 0, palette);
+            } else {
+                draw_panel(surface, cx0, y, cx1, y1, P_DARKEN, 0, 0, palette);
+            }
+        }
+
+        // Per-column stat kind: ratio columns (Pass/Tck/Drb/Sh Tar) show
+        // "-" when empty, the rating column "----", counters "0".
+        let empty_for = |label: &str| -> &'static str {
+            match label {
+                "Pass" | "Tck" | "Drb" | "Sh Tar" => "-",
+                "Av R" => "----",
+                _ => "0",
+            }
+        };
+        // Whether this header column is backed by stored history (only
+        // Apps and Gls-for-outfield / Con-for-keeper are recorded).
+        let stored = |label: &str| -> bool {
+            label == "Apps"
+                || (label == "Gls" && !st.is_goalkeeper)
+                || (label == "Con" && st.is_goalkeeper)
+        };
+
+        if is_total {
+            draw_wrapped_text(surface, HIST_CLUB_COL.0 + 2, y, HIST_CLUB_COL.1, y1, cell,
+                &c_string(b"  Total"), INK_HIST_CYAN, W_LEFT, -1);
+            let (ta, tg) = st.history_total;
+            for (i, &(cx0, cx1)) in HIST_STAT_COLS.iter().enumerate() {
+                let v = match headers[i] {
+                    "Apps" => ta,
+                    l if stored(l) => tg,
+                    l => empty_for(l),
+                };
+                draw_wrapped_text(surface, cx0, y, cx1, y1, small,
+                    &c_string(v.as_bytes()), INK_HIST_CYAN, TS_CENTRE, -1);
+            }
+        } else if season_idx < n {
+            let row = &st.history_rows[season_idx];
+            let sel = season_idx == st.history_selected_idx;
+            // Selected inverts: grey box + navy text; else blue box + grey.
+            let sink = if sel { HDR_BLUE } else { INK_GREY };
+            draw_wrapped_text(surface, HIST_SEASON_COL.0 + 15, y, HIST_SEASON_COL.1, y1, small,
+                &c_string(row.season.as_bytes()), sink, W_LEFT, -1);
+            draw_wrapped_text(surface, HIST_CLUB_COL.0 + 2, y, HIST_CLUB_COL.1, y1, cell,
+                &c_string(format!("  {}", row.club).as_bytes()), INK_GREY, W_LEFT, -1);
+            if row.is_loan {
+                draw_wrapped_text(surface, HIST_LOAN_COL.0 + 16, y, HIST_LOAN_COL.1, y1, cell,
+                    &c_string(b"Loan"), INK_HIST_CYAN, W_LEFT, -1);
+            }
+            // The newest row (index 0) is the live current season: its
+            // counters read 0, ratios "-", rating "----" at game start.
+            // Past seasons only carry Apps + Gls/Con; everything else is
+            // blank (not stored), never fabricated.
+            let is_current = season_idx == 0;
+            for (i, &(cx0, cx1)) in HIST_STAT_COLS.iter().enumerate() {
+                let label = headers[i];
+                // Apps + Gls/Con carry stored/live values (the domain formats
+                // the current row's "0"/"N" and past rows' "-"/"N"). The
+                // other columns only fill on the live current row (counters
+                // "0", ratio cols "-", rating "----"); past rows leave them
+                // blank (not stored historically).
+                let v: &str = if label == "Apps" {
+                    row.apps
+                } else if stored(label) {
+                    row.goals
+                } else if is_current {
+                    empty_for(label)
+                } else {
+                    ""
+                };
+                if !v.is_empty() {
+                    draw_wrapped_text(surface, cx0, y, cx1, y1, small,
+                        &c_string(v.as_bytes()), INK_YELLOW, TS_CENTRE, -1);
+                }
+            }
+        }
+    }
+
+    // ---- Scrollbar (x=761-780) ----
+    draw_panel(surface, HIST_SB_X0, HIST_SB_UP.0, HIST_SB_X1, HIST_SB_UP.1,
+        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    draw_tri(surface, (HIST_SB_X0 + HIST_SB_X1) / 2, HIST_SB_UP.0 + 7, true, INK_GREY);
+    draw_panel(surface, HIST_SB_X0, HIST_SB_TRK.0, HIST_SB_X1, HIST_SB_TRK.1, P_DARKEN, 0, 0, palette);
+    if list_len > visible {
+        let trk_h = HIST_SB_TRK.1 - HIST_SB_TRK.0;
+        let thumb_h = ((trk_h as usize * visible / list_len) as i32).max(14);
+        let thumb_top = HIST_SB_TRK.0 + ((trk_h - thumb_h) as usize * scroll / max_scroll) as i32;
+        draw_panel(surface, HIST_SB_X0, thumb_top, HIST_SB_X1, thumb_top + thumb_h,
+            P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    }
+    draw_panel(surface, HIST_SB_X0, HIST_SB_DOWN.0, HIST_SB_X1, HIST_SB_DOWN.1,
+        P_SOLID_FILL | P_BEVEL, GREY_BAR, 0, palette);
+    draw_tri(surface, (HIST_SB_X0 + HIST_SB_X1) / 2, HIST_SB_DOWN.0 + 7, false, INK_GREY);
 }

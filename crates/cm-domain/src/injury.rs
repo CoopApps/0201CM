@@ -61,6 +61,32 @@ pub struct HistoricInjury {
     /// In-game day the injury was registered (from
     /// [`RuntimeSaveGame::elapsed_days`]). 0 when the caller doesn't stamp.
     pub game_day: u32,
+    /// Authentic injury name from the exe table (e.g. "twisted knee").
+    #[serde(default)]
+    pub name: String,
+    /// True when sustained in a match (Type = "Match"); false = "Training".
+    #[serde(default)]
+    pub from_match: bool,
+    /// Display date "D.M.YY" when it happened.
+    #[serde(default)]
+    pub date: String,
+}
+
+/// A served/completed ban retained for the History → Bans view.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HistoricBan {
+    pub player_id: u32,
+    pub game_day: u32,
+    /// Display date "D.M.YY".
+    pub date: String,
+    /// Number of matches banned.
+    pub matches: u8,
+    /// Reason text ("Red card" / "5 yellow cards").
+    pub reason: String,
+    /// Competition the card was shown in — the scope word ("English" /
+    /// "European") is resolved from this at display (World-aware).
+    #[serde(default)]
+    pub competition_id: u32,
 }
 
 /// A live injury record.
@@ -99,6 +125,9 @@ pub struct InjuryBook {
     /// [`HistoricInjury`].
     #[serde(default)]
     pub history: Vec<HistoricInjury>,
+    /// Append-only ban history (History → Bans view).
+    #[serde(default)]
+    pub ban_history: Vec<HistoricBan>,
 }
 
 impl InjuryBook {
@@ -116,6 +145,22 @@ impl InjuryBook {
     /// career history is ordered on the timeline.
     pub fn add_injury_stamped(&mut self, player_id: u32, severity: InjurySeverity, game_day: u32) {
         let days = severity.recovery_days();
+        self.add_named_injury(player_id, String::new(), days, severity, false, game_day, String::new());
+    }
+
+    /// Register an authentic named injury with an explicit recovery-day
+    /// count (from the exe injury table) and Match/Training origin.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_named_injury(
+        &mut self,
+        player_id: u32,
+        name: String,
+        days: u16,
+        severity: InjurySeverity,
+        from_match: bool,
+        game_day: u32,
+        date: String,
+    ) {
         if let Some(existing) = self.injuries.iter_mut().find(|i| i.player_id == player_id) {
             if days > existing.days_remaining {
                 existing.severity = severity;
@@ -124,11 +169,24 @@ impl InjuryBook {
         } else {
             self.injuries.push(Injury { player_id, severity, days_remaining: days });
         }
-        self.history.push(HistoricInjury { player_id, severity, days_out: days, game_day });
+        self.history.push(HistoricInjury {
+            player_id, severity, days_out: days, game_day, name, from_match, date,
+        });
     }
 
     /// Record a yellow card. Every 5 yellows in a season = 1-match ban.
+    /// `game_day`/`date`/`scope` stamp the ban-history row when one triggers.
     pub fn record_yellow(&mut self, player_id: u32) {
+        self.book_yellow(player_id, 0, String::new(), 0);
+    }
+
+    /// Record a red card = 3-match ban.
+    pub fn record_red(&mut self, player_id: u32) {
+        self.book_red(player_id, 0, String::new(), 0);
+    }
+
+    /// Yellow card with ban-history context (Date · competition).
+    pub fn book_yellow(&mut self, player_id: u32, game_day: u32, date: String, competition_id: u32) {
         let row = self.discipline.iter_mut().find(|r| r.player_id == player_id);
         let tally = match row {
             Some(r) => { r.yellow_cards_this_season += 1; r.yellow_cards_this_season },
@@ -141,11 +199,15 @@ impl InjuryBook {
         };
         if tally % 5 == 0 {
             self.add_suspension(player_id, 1);
+            self.ban_history.push(HistoricBan {
+                player_id, game_day, date, matches: 1,
+                reason: format!("{tally} yellow cards"), competition_id,
+            });
         }
     }
 
-    /// Record a red card = 3-match ban.
-    pub fn record_red(&mut self, player_id: u32) {
+    /// Red card with ban-history context (Date · competition).
+    pub fn book_red(&mut self, player_id: u32, game_day: u32, date: String, competition_id: u32) {
         if let Some(r) = self.discipline.iter_mut().find(|r| r.player_id == player_id) {
             r.red_cards_this_season += 1;
         } else {
@@ -154,6 +216,10 @@ impl InjuryBook {
             });
         }
         self.add_suspension(player_id, 3);
+        self.ban_history.push(HistoricBan {
+            player_id, game_day, date, matches: 3,
+            reason: "Red card".to_string(), competition_id,
+        });
     }
 
     fn add_suspension(&mut self, player_id: u32, matches: u8) {

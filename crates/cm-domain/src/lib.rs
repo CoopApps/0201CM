@@ -4,6 +4,7 @@ pub mod tick_profile;
 pub mod next_match;
 pub mod general_info;
 pub mod player_profile;
+pub mod player_achievements;
 pub mod player_generation;
 pub mod african_nations;
 pub mod c13_promotion_apply;
@@ -108,6 +109,10 @@ pub mod news;
 pub mod transfer;
 pub mod training;
 pub mod injury;
+pub mod injury_table;
+pub mod sim_rng;
+pub mod injury_gen;
+pub mod card_model;
 pub mod weather;
 pub mod group_stage;
 pub mod domestic_cup;
@@ -2274,6 +2279,9 @@ struct FixtureOutcome {
     /// Injury events emitted by the match engine, (player_id, days).
     /// Consumed by `InjuryBook::add_injury` in the fixture-commit block.
     injury_events: Vec<(u32, u16)>,
+    /// Yellow / red card player ids this match (fed to the discipline book).
+    yellow_card_ids: Vec<u32>,
+    red_card_ids: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2507,6 +2515,29 @@ pub struct RuntimeSaveGame {
     /// subsystem (`argentina_awards.cpp`). Each crowned champion adds a row.
     #[serde(default)]
     pub honours: Vec<honours::Honour>,
+    /// Per-person accrued achievements (History → Achievements view).
+    #[serde(default)]
+    pub player_achievements: crate::player_achievements::PlayerAchievementBook,
+    /// Season awards logged by the World-free tick, drained by
+    /// `World::accrue_player_achievements` which resolves the winner's club.
+    #[serde(default)]
+    pub season_award_log: Vec<crate::player_achievements::LoggedAward>,
+    /// How many `honours` rows have been credited to squads so far (cursor
+    /// into the append-only `honours` list).
+    #[serde(default)]
+    pub honours_credited: usize,
+    /// Cursor into the append-only `transfers.resolved_bids` for the
+    /// "Bought by <club> for <fee>" achievement feed.
+    #[serde(default)]
+    pub transfers_credited: usize,
+    /// Completed seasons accrued during play (Playing Career rows), keyed
+    /// per person; merged with shipped `staff_history` at display.
+    #[serde(default)]
+    pub player_seasons: Vec<crate::player_profile::AccruedSeason>,
+    /// The game's global table RNG (byte-exact port), used by the ported
+    /// injury generator. Seeded at kickoff.
+    #[serde(default)]
+    pub sim_rng: crate::sim_rng::SimRng,
     /// Argentine transfer-registration window rule (port of
     /// `argentina_rules.cpp`): caps clubs to two signings per window.
     #[serde(default)]
@@ -13634,6 +13665,12 @@ impl World {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: vec![
                 "Initial Rust-native runtime save scaffold; game startup reads rust-db, not .dat files.".to_string(),
@@ -20519,6 +20556,8 @@ impl RuntimeSaveGame {
             away_out_of_position: away.out_of_position_ids.clone(),
             per_player_ratings: ratings_from_token,
             injury_events: used.injury_events.clone(),
+            yellow_card_ids: used.yellow_card_ids.clone(),
+            red_card_ids: used.red_card_ids.clone(),
         })
     }
 
@@ -20853,17 +20892,47 @@ impl RuntimeSaveGame {
                     // rolled from injury_proneness (see roll_injuries in
                     // match_engine_exe.rs). Fixes the "no injury generator"
                     // gap surfaced by simulate_season observations.
-                    for (pid, days) in outcome.injury_events.iter() {
-                        let severity = if *days <= 5 {
+                    let inj_date = format!("{}.{}.{:02}",
+                        self.date.day, self.date.month, self.date.year % 100);
+                    for (pid, _days) in outcome.injury_events.iter() {
+                        // Byte-exact injury generation (FUN_00616820 picker +
+                        // FUN_00616930 day formula) on the real table RNG.
+                        // Age + Injury Proneness come from the rating book;
+                        // physio rating (FUN_0052df60, x87) is not modelled →
+                        // 0 (the exe's "no physio" path). The body region is
+                        // rolled rand(12) (a foul-event region source is not
+                        // wired). Recurrence bias is off (recent_id = -1).
+                        let (age, prone) = self.player_ratings.players.iter()
+                            .find(|p| p.staff_id == *pid)
+                            .map(|p| (p.age_est as i32, p.injury_proneness as i32))
+                            .unwrap_or((24, 5));
+                        let region = self.sim_rng.rand(12) as u8;
+                        let Some(id) = crate::injury_gen::pick_injury(region, -1, -1, &mut self.sim_rng) else { continue };
+                        let out2 = crate::injury_gen::compute_injury(id, 0, age, prone, 0, &mut self.sim_rng);
+                        let d = out2.total_days.max(0) as u16;
+                        let severity = if d <= 5 {
                             crate::injury::InjurySeverity::Knock
-                        } else if *days <= 20 {
+                        } else if d <= 20 {
                             crate::injury::InjurySeverity::Minor
-                        } else if *days <= 60 {
+                        } else if d <= 60 {
                             crate::injury::InjurySeverity::Moderate
                         } else {
                             crate::injury::InjurySeverity::Major
                         };
-                        self.injuries.add_injury_stamped(*pid, severity, self.elapsed_days);
+                        let name = crate::injury_table::INJURY_TYPES[id as usize].name.to_string();
+                        self.injuries.add_named_injury(
+                            *pid, name, d, severity,
+                            true /* match injury */, self.elapsed_days, inj_date.clone());
+                    }
+                    // Cards → discipline tally + suspension + ban history.
+                    // (Scope word left blank here — the World-free tick can't
+                    // resolve the competition's nation adjective; the ban
+                    // reads "N match ban".)
+                    for pid in outcome.yellow_card_ids.iter() {
+                        self.injuries.book_yellow(*pid, self.elapsed_days, inj_date.clone(), fixture_comp_id);
+                    }
+                    for pid in outcome.red_card_ids.iter() {
+                        self.injuries.book_red(*pid, self.elapsed_days, inj_date.clone(), fixture_comp_id);
                     }
                     // Post-match gate + TV/prize income (kill #8d).
                     self.finance.record_match_income(home_id, away_id, false, rng);
@@ -21497,6 +21566,18 @@ impl RuntimeSaveGame {
                     year, comp_id, &name, &ratings,
                 );
                 for a in awards {
+                    // Log the award for the World-aware achievement accrual
+                    // (`World::accrue_player_achievements`), which resolves
+                    // the winner's club — not available in this World-free
+                    // tick. Stamp the sim date for ordering/display.
+                    self.season_award_log.push(crate::player_achievements::LoggedAward {
+                        day: self.elapsed_days,
+                        date: format!("{}.{}.{:02}", date.day, date.month, date.year % 100),
+                        year: a.year,
+                        winner_staff_id: a.winner_staff_id,
+                        competition_name: a.competition_name.clone(),
+                        category: a.category,
+                    });
                     self.pending_events.push(RuntimeEvent {
                         day: self.elapsed_days,
                         date: date.clone(),
@@ -21509,6 +21590,18 @@ impl RuntimeSaveGame {
                         phase: 2,
                     });
                 }
+            }
+            // Accrue the just-completed season as a permanent Playing Career
+            // row for every player who appeared (World-free: staff/club/apps/
+            // goals all come from the rating book). The completed season's
+            // start year is the year we just left (date already advanced past
+            // the Jan-1 boundary, so it's the new year minus one).
+            let completed_year = self.date.year.saturating_sub(1);
+            for (sid, club_id, apps, goals) in self.player_ratings.season_appearances() {
+                self.player_seasons.push(crate::player_profile::AccruedSeason {
+                    person_id: sid, year: completed_year, club_id,
+                    apps: apps.min(255), goals: goals.min(255),
+                });
             }
             // Season closed: the awards above consumed this season's real goal
             // tallies — now reset them for the new season (kill #B).
@@ -25102,6 +25195,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
                     finance: Default::default(),
@@ -25338,6 +25437,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
             finance: Default::default(),
@@ -25580,6 +25685,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
                     finance: Default::default(),
@@ -25689,6 +25800,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
                     finance: Default::default(),
@@ -25793,6 +25910,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
                     finance: Default::default(),
@@ -25885,6 +26008,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
                     finance: Default::default(),
@@ -25979,6 +26108,12 @@ mod tests {
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
+            player_achievements: crate::player_achievements::PlayerAchievementBook::new(),
+            season_award_log: Vec::new(),
+            honours_credited: 0,
+            transfers_credited: 0,
+            player_seasons: Vec::new(),
+            sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
                     finance: Default::default(),

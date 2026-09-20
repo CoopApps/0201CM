@@ -1632,6 +1632,12 @@ pub struct ExeMatchResult {
     /// no code was generating injuries).
     #[serde(default)]
     pub injury_events: Vec<(u32, u16)>,
+    /// Yellow-card player ids this match (fed to `InjuryBook::book_yellow`).
+    #[serde(default)]
+    pub yellow_card_ids: Vec<u32>,
+    /// Red-card player ids this match (fed to `InjuryBook::book_red`).
+    #[serde(default)]
+    pub red_card_ids: Vec<u32>,
 }
 
 /// Simulate one fixture. This condenses the exe's match_day_play inner
@@ -1670,6 +1676,7 @@ pub fn simulate_one_fixture(
         }
     }
 
+    let (card_yellows, card_reds) = cards_from_events(&ctx.event_queue);
     ExeMatchResult {
         home_score: ctx.score_home,
         away_score: ctx.score_away,
@@ -1696,6 +1703,8 @@ pub fn simulate_one_fixture(
         // Roll injury events from injury_proneness — same generator both
         // engines use.
         injury_events: roll_injuries(home, away, &mut rng),
+        yellow_card_ids: card_yellows,
+        red_card_ids: card_reds,
     }
 }
 
@@ -2029,6 +2038,25 @@ pub fn roll_injuries(home: &EngineTeamSnapshot, away: &EngineTeamSnapshot,
         }
     }
     out
+}
+
+/// Cards actually produced by the ported foul model this match, read from
+/// the pre-match/foul event stream (`run_pre_match_pass` — the exe's
+/// `FUN_0069D950 §7` aggro gate: `aggro > 5 && rng(30) < aggro`, marked with
+/// `flags & 0x40` for a yellow). Returns `(yellow_ids, red_ids)`. No invented
+/// rates — the yellows are exactly the engine's booked fouls.
+///
+/// Straight reds are produced in-match by the exe's `red_card_worthy` foul
+/// path (mask 0x2F7A0B on live foul bits), which the current condensed model
+/// does not run, so `red_ids` is empty until that path is ported.
+pub fn cards_from_events(events: &[PreMatchEvent]) -> (Vec<u32>, Vec<u32>) {
+    let mut yellows = Vec::new();
+    for e in events {
+        if e.event_type == EVT_SERIOUS_FOUL && (e.flags & 0x40) != 0 {
+            yellows.push(e.player_id);
+        }
+    }
+    (yellows, Vec::new())
 }
 
 /// Shot tier bucket — VERIFIED port of `FUN_006f0320:79-115` and
@@ -4806,6 +4834,7 @@ pub fn simulate_one_fixture_token_model(
                                      &ctx.home_scorer_ids,
                                      &ctx.away_scorer_ids);
 
+    let (card_yellows, card_reds) = cards_from_events(&ctx.event_queue);
     ExeMatchResult {
         home_score: ctx.score_home,
         away_score: ctx.score_away,
@@ -4836,6 +4865,8 @@ pub fn simulate_one_fixture_token_model(
             }
             v
         },
+        yellow_card_ids: card_yellows,
+        red_card_ids: card_reds,
     }
 }
 

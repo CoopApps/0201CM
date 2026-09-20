@@ -205,6 +205,22 @@ enum Screen {
     PlayerProfile {
         staff_id: u32,
         active_subtab: usize,
+        /// First visible row in the History subtab's scrollable season
+        /// list (ignored by the other subtabs).
+        history_scroll: usize,
+        /// Top-table stat page (0 = Apps/Gls…, 1 = Con/Pens…). The top and
+        /// bottom tables page independently via their own `<<`/`>>`.
+        history_page: usize,
+        /// Bottom-table (selected-season breakdown) stat page.
+        history_bot_page: usize,
+        /// Active top-table view (0 Achievements, 1 Playing Career,
+        /// 2 Injuries, 3 Bans — the exe's View-menu order).
+        history_view: usize,
+        /// Achievements Filter mode (0 All, 1 Competitions, 2 Awards).
+        history_filter: usize,
+        /// Open pop-up menu: 0 none, 1 picker, 2 View, 3 Filter, 4 Action,
+        /// 5 Compare submenu.
+        open_menu: u8,
     },
     /// Club Fixtures — reached from the Dashboard's next-fixture panel. Built
     /// by `World::club_fixtures_for` from `save.season.fixtures`.
@@ -784,12 +800,69 @@ impl App {
                 screens::league_table(&mut self.frame, &mut self.fonts, self.bg.as_ref(), view, *scroll);
                 self.overlay_menu_bar();
             }
-            Screen::PlayerProfile { staff_id, active_subtab } => {
+            Screen::PlayerProfile { staff_id, active_subtab, history_scroll, history_page, history_bot_page, history_view, history_filter, open_menu } => {
                 if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
                     if let Some(view) = world.player_profile_view_for(&game.save, *staff_id) {
-                        let career: Vec<(&str, [&str; 9])> = view.career.iter()
-                            .map(|r| (r.label.as_str(), std::array::from_fn(|i| r.cells[i].as_str())))
-                            .collect();
+                        // History subtab: the bottom table becomes the
+                        // selected season's per-competition breakdown, and
+                        // the top table needs the season list.
+                        let hview = if *active_subtab == 4 {
+                            world.player_history_view_for(&game.save, *staff_id)
+                        } else { None };
+                        let career: Vec<(&str, [&str; 9])> = if *active_subtab == 4 {
+                            cm_domain::player_profile::HISTORY_BREAKDOWN_LABELS.iter()
+                                .map(|l| (*l, ["-", "-", "-", "-", "-", "-", "-", "-", "----"]))
+                                .collect()
+                        } else {
+                            view.career.iter()
+                                .map(|r| (r.label.as_str(), std::array::from_fn(|i| r.cells[i].as_str())))
+                                .collect()
+                        };
+                        let hist_rows: Vec<cm_render::screen_player_profile_faithful::HistoryRow> =
+                            hview.as_ref().map(|h| h.seasons.iter()
+                                .map(|s| cm_render::screen_player_profile_faithful::HistoryRow {
+                                    season: &s.season, club: &s.club, is_loan: s.is_loan,
+                                    apps: &s.apps, goals: &s.goals,
+                                }).collect()).unwrap_or_default();
+                        let (hist_ta, hist_tg) = hview.as_ref()
+                            .map(|h| (h.total_apps.as_str(), h.total_goals.as_str()))
+                            .unwrap_or(("", ""));
+                        let hist_sel = hview.as_ref().map(|h| h.selected_label.as_str()).unwrap_or("");
+                        // Achievements rows (History → Achievements view),
+                        // filtered by the Filter dropdown.
+                        let ach = game.save.player_achievements
+                            .for_person(*staff_id, *history_filter);
+                        let ach_rows: Vec<cm_render::screen_player_profile_faithful::AchievementRow> =
+                            ach.iter().map(|a| cm_render::screen_player_profile_faithful::AchievementRow {
+                                date: &a.date, club: &a.club_name, text: &a.text,
+                            }).collect();
+                        // Injuries + Bans rows (History → Injuries / Bans views).
+                        let inj = world.player_injury_rows(&game.save, *staff_id);
+                        let inj_rows: Vec<cm_render::screen_player_profile_faithful::InjuryRow> =
+                            inj.iter().map(|(d, n, k, p)| cm_render::screen_player_profile_faithful::InjuryRow {
+                                date: d, injury: n, kind: k, period: p,
+                            }).collect();
+                        let bans = world.player_ban_rows(&game.save, *staff_id);
+                        let ban_rows: Vec<cm_render::screen_player_profile_faithful::BanRow> =
+                            bans.iter().map(|(d, b, r)| cm_render::screen_player_profile_faithful::BanRow {
+                                date: d, ban: b, reason: r,
+                            }).collect();
+                        // Player-picker: the current club's squad (built only
+                        // when the picker menu is open, to avoid the scan on
+                        // every frame).
+                        let picker_items: Vec<String> = if *active_subtab == 4 && *open_menu == 1 {
+                            view.club_id.map(|c| world.club_squad_picker(c)
+                                .into_iter().map(|(_, label)| label).collect())
+                                .unwrap_or_default()
+                        } else { Vec::new() };
+                        let menu = match *open_menu {
+                            1 => cm_render::screen_player_profile_faithful::ProfileMenu::Picker,
+                            2 => cm_render::screen_player_profile_faithful::ProfileMenu::View,
+                            3 => cm_render::screen_player_profile_faithful::ProfileMenu::Filter,
+                            4 => cm_render::screen_player_profile_faithful::ProfileMenu::Action,
+                            5 => cm_render::screen_player_profile_faithful::ProfileMenu::Compare,
+                            _ => cm_render::screen_player_profile_faithful::ProfileMenu::None,
+                        };
                         let kit_bg = view.club_id
                             .map(|c| render_new::club_kit_colours(world, c).0)
                             .unwrap_or(0);
@@ -808,6 +881,20 @@ impl App {
                             kit_bg,
                             photo_seed: self.setup_photo_seed,
                             has_manager: self.game.is_some(),
+                            history_rows: &hist_rows,
+                            history_total: (hist_ta, hist_tg),
+                            history_selected_label: hist_sel,
+                            history_selected_idx: 0,
+                            history_scroll: *history_scroll,
+                            history_page: *history_page,
+                            history_bot_page: *history_bot_page,
+                            history_view: *history_view,
+                            history_filter: *history_filter,
+                            open_menu: menu,
+                            picker_items: &picker_items,
+                            achievements: &ach_rows,
+                            injuries_list: &inj_rows,
+                            bans_list: &ban_rows,
                         };
                         let mut packed = cm_render::packed::PackedSurface::rgb555(
                             Surface::W as i32, Surface::H as i32);
@@ -1892,21 +1979,120 @@ impl App {
             Screen::LeagueTable { .. } => {
                 // Read-only table; club rows are not entity links yet.
             }
-            Screen::PlayerProfile { active_subtab, .. } => {
-                use cm_render::screen_player_profile_faithful::PROFILE_SUBTABS;
+            Screen::PlayerProfile { staff_id, active_subtab, history_scroll, history_page, history_bot_page, history_view, history_filter, open_menu } => {
                 const SUBTAB_X: [i32; 5] = [100, 239, 377, 515, 653];
-                if y >= 80 && y <= 115 {
-                    // Player subtabs — Profile (0) and Injuries & Bans (1)
-                    // are built; the rest surface a status note.
-                    for (i, x0) in SUBTAB_X.iter().enumerate() {
-                        if x >= *x0 && x <= *x0 + 137 {
-                            if i <= 3 {
-                                *active_subtab = i;
-                            } else {
-                                self.status = Some(format!(
-                                    "{} page — not yet built", PROFILE_SUBTABS[i]));
+                // Row hit-test for a green pop-up (2px inset, 21px pitch).
+                let menu_row = |my0: i32, n: usize| -> Option<usize> {
+                    if y < my0 + 2 { return None; }
+                    let i = ((y - my0 - 2) / 21) as usize;
+                    if i < n { Some(i) } else { None }
+                };
+                if *open_menu != 0 {
+                    // ---- A pop-up menu is open: handle its clicks. ----
+                    let was = *open_menu;
+                    match was {
+                        1 => { // Player-picker → switch player
+                            if x >= 123 && x <= 248 {
+                                if let Some(i) = menu_row(0, 64) {
+                                    if let (Some(w), Some(g)) = (self.world.as_ref(), self.game.as_ref()) {
+                                        let pick = w.player_profile_view_for(&g.save, *staff_id)
+                                            .and_then(|v| v.club_id)
+                                            .and_then(|c| w.club_squad_picker(c).get(i).map(|(id, _)| *id));
+                                        if let Some(id) = pick {
+                                            *staff_id = id;
+                                            *history_scroll = 0;
+                                        }
+                                    }
+                                }
                             }
                         }
+                        2 => { // View menu → switch top-table view
+                            if x >= 110 && x <= 235 {
+                                if let Some(i) = menu_row(148, 4) {
+                                    *history_view = i; // 0 Ach,1 PC,2 Inj,3 Bans
+                                    *history_scroll = 0;
+                                    *history_page = 0;
+                                }
+                            }
+                        }
+                        3 => { // Filter menu (Achievements)
+                            if x >= 236 && x <= 361 {
+                                if let Some(i) = menu_row(148, 3) { *history_filter = i; }
+                            }
+                        }
+                        4 => { // Action menu
+                            if x >= 635 && x <= 785 {
+                                if let Some(i) = menu_row(27, 5) {
+                                    if i == 4 { *open_menu = 5; } // Compare → submenu
+                                    else if i != 2 {
+                                        self.status = Some("Action: not yet wired".into());
+                                    }
+                                }
+                            }
+                        }
+                        5 => { // Compare submenu (+ Action box still shown)
+                            if x >= 427 && x <= 634 && menu_row(111, 3).is_some() {
+                                self.status = Some("Compare Players: not yet wired".into());
+                            }
+                        }
+                        _ => {}
+                    }
+                    // Any click closes the menu, except the Action→Compare
+                    // transition (was 4, now 5) which keeps the submenu open.
+                    if !(was == 4 && *open_menu == 5) {
+                        *open_menu = 0;
+                    }
+                } else if y >= 80 && y <= 115 {
+                    // Player subtabs — all five are built.
+                    for (i, x0) in SUBTAB_X.iter().enumerate() {
+                        if x >= *x0 && x <= *x0 + 137 {
+                            *active_subtab = i;
+                            *history_scroll = 0;
+                            *history_page = 0;
+                            *history_bot_page = 0;
+                            *history_view = 1; // default = Playing Career
+                        }
+                    }
+                } else if x >= 103 && x <= 120 && y >= 15 && y <= 35 {
+                    // Name-bar triangle → open the squad player-picker.
+                    *open_menu = 1;
+                } else if x >= 660 && x <= 785 && y >= 4 && y <= 24 {
+                    *open_menu = 4; // Action button
+                } else if *active_subtab == 4 && y >= 125 && y <= 145 && x >= 110 && x <= 234 {
+                    *open_menu = 2; // View dropdown
+                } else if *active_subtab == 4 && *history_view == 0
+                    && y >= 125 && y <= 145 && x >= 236 && x <= 360
+                {
+                    *open_menu = 3; // Filter dropdown (Achievements only)
+                } else if *active_subtab == 4 && *history_view == 1 && *history_scroll == 0
+                    && y >= 185 && y <= 203 && x >= 379 && x <= 424
+                {
+                    // Top-table `<<`/`>>` (Playing Career header row at scroll 0).
+                    *history_page ^= 1;
+                } else if *active_subtab == 4 && y >= 384 && y <= 401 && x >= 265 && x <= 315 {
+                    // Bottom-table `<<`/`>>`.
+                    *history_bot_page ^= 1;
+                } else if *active_subtab == 4 && x >= 761 && x <= 780 {
+                    // History scrollbar — works for every top-table view.
+                    if y >= 185 && y <= 204 {
+                        *history_scroll = history_scroll.saturating_sub(1);
+                    } else if y >= 360 && y <= 379 {
+                        let max = match *history_view {
+                            0 => self.game.as_ref()
+                                .map(|g| g.save.player_achievements
+                                    .for_person(*staff_id, *history_filter).len()
+                                    .saturating_sub(10)).unwrap_or(0),
+                            2 => self.world.as_ref().zip(self.game.as_ref())
+                                .map(|(w, g)| w.player_injury_rows(&g.save, *staff_id).len()
+                                    .saturating_sub(9)).unwrap_or(0),
+                            3 => self.world.as_ref().zip(self.game.as_ref())
+                                .map(|(w, g)| w.player_ban_rows(&g.save, *staff_id).len()
+                                    .saturating_sub(9)).unwrap_or(0),
+                            _ => self.world.as_ref().zip(self.game.as_ref())
+                                .and_then(|(w, g)| w.player_history_view_for(&g.save, *staff_id))
+                                .map(|h| (h.seasons.len() + 2).saturating_sub(10)).unwrap_or(0),
+                        };
+                        *history_scroll = (*history_scroll + 1).min(max);
                     }
                 } else if y >= 555 && y <= 590 && x >= 100 && x <= 617 {
                     // Back → return to the club dashboard.
@@ -2123,7 +2309,7 @@ impl App {
                     if !matches!(self.screen, Screen::PlayerProfile { .. }) {
                         self.profile_return = Some(Box::new(self.screen.clone()));
                     }
-                    self.screen = Screen::PlayerProfile { staff_id: player_id, active_subtab: 0 };
+                    self.screen = Screen::PlayerProfile { staff_id: player_id, active_subtab: 0, history_scroll: 0, history_page: 0, history_bot_page: 0, history_view: 1, history_filter: 0, open_menu: 0 };
                 }
                 None => {
                     self.status = Some("No attribute record for this player".into());
@@ -2282,6 +2468,13 @@ impl App {
                 game.save.tick_days_bound(world, 1);
             } else {
                 game.save.tick_days(1);
+            }
+            // Convert this tick's logged season awards + new club honours
+            // into per-person achievements (History → Achievements view).
+            // Idempotent: drains the award log and cursors the honours list,
+            // so awards logged by other advance paths are picked up here.
+            if let Some(world) = self.world.as_ref() {
+                world.accrue_player_achievements(&mut game.save);
             }
             game.dirty = true;
             eprintln!(
