@@ -1804,8 +1804,19 @@ impl World {
             nation_name,
             wage: pv.wage(),
             value: pv.value(),
-            international_caps: pv.international_caps(),
-            international_goals: pv.international_goals(),
+            // Shipped starting caps + caps accrued in play (national_match.rs).
+            // Substitute appearances are not yet distinguished, so this is the
+            // correctly-accrued XI-cap total (see international_caps_decode.md).
+            international_caps: {
+                let acc = save.intl_caps.iter().find(|r| r.person_id == player_id)
+                    .map(|r| r.caps).unwrap_or(0);
+                (pv.international_caps() as u16 + acc).min(255) as u8
+            },
+            international_goals: {
+                let acc = save.intl_caps.iter().find(|r| r.person_id == player_id)
+                    .map(|r| r.goals).unwrap_or(0);
+                (pv.international_goals() as u16 + acc).min(255) as u8
+            },
             positions,
             attributes,
         })
