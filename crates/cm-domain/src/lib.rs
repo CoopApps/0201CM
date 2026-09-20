@@ -105,6 +105,7 @@ pub mod formation;
 pub mod mini_league;
 pub mod mini_cup;
 pub mod national_teams;
+pub mod national_match;
 pub mod news;
 pub mod transfer;
 pub mod training;
@@ -2530,6 +2531,9 @@ pub struct RuntimeSaveGame {
     /// "Bought by <club> for <fee>" achievement feed.
     #[serde(default)]
     pub transfers_credited: usize,
+    /// Accrued international caps/goals per person (History intl-cap feed).
+    #[serde(default)]
+    pub intl_caps: Vec<crate::national_match::IntlCapRow>,
     /// Completed seasons accrued during play (Playing Career rows), keyed
     /// per person; merged with shipped `staff_history` at display.
     #[serde(default)]
@@ -13669,6 +13673,7 @@ impl World {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -19569,6 +19574,12 @@ impl RuntimeSaveGame {
         days: u32,
     ) {
         for _ in 0..days {
+            // National-team continental fixtures play through the REAL match
+            // engine (real squads → appearances) and credit caps/debuts,
+            // World-aware, BEFORE the World-free club commit (which then
+            // skips them as already-Played). See `national_match.rs`.
+            let today = self.date.clone();
+            self.play_due_national_fixtures(world, &today);
             for _ in 0..3 { self.tick_cm_phase(); }
             // C11.3: drain pending regens after each day — the
             // Jan-1 hook queues one per English pyramid comp; the
@@ -25199,6 +25210,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -25441,6 +25453,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -25689,6 +25702,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -25804,6 +25818,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -25914,6 +25929,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -26012,6 +26028,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
@@ -26112,6 +26129,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,

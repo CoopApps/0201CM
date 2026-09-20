@@ -491,6 +491,7 @@ mod tests {
             season_award_log: Vec::new(),
             honours_credited: 0,
             transfers_credited: 0,
+            intl_caps: Vec::new(),
             player_seasons: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
