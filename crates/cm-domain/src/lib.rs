@@ -18230,6 +18230,140 @@ impl World {
         // can be promoted to foreground mid-game as a pure flag flip.
         save.nation_tiers = self.build_nation_tiers(options);
 
+        // Detailed-nation squad guarantee (root-cause fix for the snapshot
+        // coverage census, reports/match_engine_observational_gap.md Part F).
+        //
+        // The boot regen block above runs BEFORE domestic cups are built
+        // (domestic_cup::CupState::build is later in this fn), so a club that
+        // appears ONLY in a cup — e.g. an English non-league side in the FA
+        // Trophy — was never in that block's `scheduled` set and stayed thin.
+        // Measured effect: exactly 2 of 156 selected-nation scheduled clubs
+        // shipped under a real XI, so on the player-visible engine path they
+        // fielded a borrowed free agent (a knowingly-substituted observable).
+        //
+        // Fix at the source, not at snapshot time: assign real, unemployed,
+        // NATION-MATCHED rated free agents PERSISTENTLY into the rating book
+        // for every strictly-detailed (nation_tiers.detailed_matches==true)
+        // scheduled club still under a full squad — so its match XI is drawn
+        // entirely from its own members instead of the ephemeral free-agent
+        // borrow that snapshot_team_for_engine falls back to.
+        //
+        // The exe's own selector (`player_regen::regen_fill_club_squad` =
+        // FUN_0078E970) rejects every candidate against the real nation gate
+        // in this build (0 assigned), so it cannot yet drive this fill — that
+        // scorer-port defect is filed separately. We assign directly here:
+        // internal selection differs from the exe (permitted by the fidelity
+        // contract) but the observable outcome — a real club fielding its own
+        // nation's real players, at a strength matched to the club's
+        // reputation so a weak club stays weak — is faithful, whereas fielding
+        // non-club players is a knowingly-wrong observable.
+        //
+        // Runs after all fixtures and after the session-RNG snapshot, mutating
+        // only player_ratings (not part of the fixture/tick RNG), so the
+        // golden is untouched. Scoped to strict-detailed scheduled clubs — a
+        // dozen lower/non-league English sides here, not the whole world.
+        {
+            use crate::typed_records::{ClubView, PlayerView};
+            const DETAILED_MIN_XI: usize = 11;
+            const DETAILED_TARGET_SQUAD: usize = 14;
+            let detailed_nations: std::collections::BTreeSet<i32> = save
+                .nation_tiers
+                .iter()
+                .filter(|t| t.detailed_matches)
+                .map(|t| t.nation_id as i32)
+                .collect();
+            let scheduled: std::collections::BTreeSet<u32> = save
+                .season
+                .fixtures
+                .iter()
+                .flat_map(|f| [f.home_club_id, f.away_club_id])
+                .collect();
+            let mut rated_counts: std::collections::BTreeMap<i32, usize> =
+                std::collections::BTreeMap::new();
+            for p in &save.player_ratings.players {
+                if let Some(c) = p.club_id {
+                    *rated_counts.entry(c).or_insert(0) += 1;
+                }
+            }
+            // Nation of every rated free agent (from the staff record).
+            let nation_of: std::collections::HashMap<u32, i32> = self
+                .staff
+                .type6
+                .iter()
+                .map(|s| (s.id, PlayerView::from_split(s.id, &s.body).nation_id().unwrap_or(-1)))
+                .collect();
+            // Rated free agents grouped by nation, each list sorted by CA asc
+            // (weakest first — a lower-league club draws lower-CA players).
+            let mut fa_by_nation: std::collections::HashMap<i32, Vec<(u32, i16)>> =
+                std::collections::HashMap::new();
+            for p in &save.player_ratings.players {
+                if p.club_id.is_none() {
+                    let nid = nation_of.get(&p.staff_id).copied().unwrap_or(-1);
+                    fa_by_nation.entry(nid).or_default().push((p.staff_id, p.ca));
+                }
+            }
+            for v in fa_by_nation.values_mut() {
+                v.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
+            }
+            let (mut filled_clubs, mut assigned, mut still_thin) = (0usize, 0usize, 0usize);
+            let mut residual: Vec<(u32, usize)> = Vec::new();
+            for club in &self.core.clubs {
+                let cv = ClubView::new(club);
+                let cid = cv.id();
+                if !scheduled.contains(&cid) {
+                    continue;
+                }
+                let nid = cv.nation_id().unwrap_or(-1);
+                if !detailed_nations.contains(&nid) {
+                    continue;
+                }
+                let have = rated_counts.get(&(cid as i32)).copied().unwrap_or(0);
+                if have >= DETAILED_MIN_XI {
+                    continue;
+                }
+                filled_clubs += 1;
+                // Reputation → CA-scale baseline (same mapping the synthetic
+                // path uses), so we prefer free agents near the club's level.
+                let base_ca = (cv.reputation() as i32 / 40).clamp(15, 130) as i16;
+                let need = DETAILED_TARGET_SQUAD - have;
+                let mut now = have;
+                if let Some(list) = fa_by_nation.get_mut(&nid) {
+                    // Pick the `need` free agents whose CA is closest to the
+                    // club's baseline (weak club → weak players), draining them
+                    // from the shared per-nation pool so no two clubs get the
+                    // same player.
+                    list.sort_by_key(|&(_, ca)| (ca - base_ca).abs());
+                    let take: Vec<u32> = list.iter().take(need).map(|&(sid, _)| sid).collect();
+                    list.retain(|&(sid, _)| !take.contains(&sid));
+                    // Restore CA-asc order for the next club.
+                    list.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
+                    for sid in take {
+                        if save.player_ratings.assign_club(sid, cid as i32) {
+                            assigned += 1;
+                            now += 1;
+                        }
+                    }
+                }
+                if now < DETAILED_MIN_XI {
+                    still_thin += 1;
+                    residual.push((cid, now));
+                }
+            }
+            // Invariant: after this pass NO strictly-detailed scheduled club
+            // should field fewer than a real XI of its own members. Any genuine
+            // residual (its nation's free-agent pool exhausted) is enumerated
+            // explicitly, never silently papered over with a cross-nation borrow.
+            save.notes.push(format!(
+                "Detailed-nation squad guarantee: {filled_clubs} club(s) topped up ({assigned} nation-matched free agent(s) assigned toward a full squad); {still_thin} still under a real XI after their nation pool was exhausted{}.",
+                if residual.is_empty() { String::new() }
+                else { format!(" (clubs {residual:?})") }
+            ));
+            debug_assert_eq!(
+                still_thin, 0,
+                "a strictly-detailed scheduled club is still under a real XI after the squad-guarantee pass: {residual:?}"
+            );
+        }
+
         // Seed every club with a default 4-4-2 tactic so the match-engine
         // snapshotter reads a real per-club Tactic instead of the FLAT_442_ROLES
         // fallback. Ports the exe's boot behaviour where each club has an
