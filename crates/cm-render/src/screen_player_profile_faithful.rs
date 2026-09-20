@@ -52,6 +52,10 @@ const INJURY_LABELS: [&str; 5] = ["Injury", "Type", "Condition", "Training", "Ba
 /// Contract detail labels (col at x=110), top→bottom.
 const CONTRACT_LABELS: [&str; 7] =
     ["Type", "Wages", "Expires", "Squad Status", "Bonuses", "Clauses", "Notes"];
+/// Transfer detail labels (col at x=110); the last is blank — the Future
+/// text wraps onto a second, label-less row.
+const TRANSFER_LABELS: [&str; 7] =
+    ["Availability", "Value", "Fluent Languages", "Offers", "Interested", "Future", ""];
 
 /// Everything the Profile page paints (borrowed from `PlayerProfileView`).
 pub struct PlayerProfileState<'a> {
@@ -72,6 +76,9 @@ pub struct PlayerProfileState<'a> {
     /// Contract values: Type, Wages, Expires, Squad Status, Bonuses,
     /// Clauses, Notes.
     pub contract: &'a [String; 7],
+    /// Transfer values: Availability, Value, Fluent Languages, Offers,
+    /// Interested, Future(1), Future(2).
+    pub transfer: &'a [String; 7],
     /// True for a goalkeeper (career col-2 header = "Con" not "Gls").
     pub is_goalkeeper: bool,
     /// Title-bar fill = the player's club kit colour (navy for Bury,
@@ -168,8 +175,8 @@ pub fn render_player_profile(
     let cell_bottom = |row: usize| -> i32 {
         if row + 1 < ATTR_ROW_Y.len() { ATTR_ROW_Y[row + 1] - 2 } else { ATTR_ROW_Y[row] + 17 }
     };
-    let spans: &[(i32, i32)] = if st.active_subtab == 1 || st.active_subtab == 2 {
-        // Injuries / Contract: 2 columns, label (110..258) + value (260..780).
+    let spans: &[(i32, i32)] = if (1..=3).contains(&st.active_subtab) {
+        // Injuries / Contract / Transfer: 2 columns, label + value.
         &[(110, 258), (260, 780)]
     } else {
         // Profile: 6 cells per row — label+value for each of 3 columns.
@@ -208,6 +215,11 @@ pub fn render_player_profile(
     } else if st.active_subtab == 2 {
         // ---- Contract: 2-column detail block, 7 rows. ----
         for (row, (label, value)) in CONTRACT_LABELS.iter().zip(st.contract.iter()).enumerate() {
+            draw_detail(surface, ATTR_ROW_Y[row], label, value);
+        }
+    } else if st.active_subtab == 3 {
+        // ---- Transfer: 2-column detail block, 7 rows. ----
+        for (row, (label, value)) in TRANSFER_LABELS.iter().zip(st.transfer.iter()).enumerate() {
             draw_detail(surface, ATTR_ROW_Y[row], label, value);
         }
     } else {

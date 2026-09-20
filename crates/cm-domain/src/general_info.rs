@@ -207,7 +207,7 @@ fn fmt_wage(n: i64) -> String {
 }
 
 /// Full comma-grouped money (capture: Highest Valued = £350,000).
-fn fmt_value_full(n: i64) -> String {
+pub(crate) fn fmt_value_full(n: i64) -> String {
     let s = n.abs().to_string();
     let mut out = String::new();
     let bytes = s.as_bytes();

@@ -12,6 +12,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{RuntimeSaveGame, World};
+use crate::general_info::fmt_value_full;
 
 /// One career-stats row (competition label + the 9 stat cells).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,6 +48,9 @@ pub struct PlayerProfileView {
     /// Contract subtab: Type, Wages, Expires, Squad Status, Bonuses,
     /// Clauses, Notes.
     pub contract: [String; 7],
+    /// Transfer subtab: Availability, Value, Fluent Languages, Offers,
+    /// Interested, Future(line 1), Future(line 2).
+    pub transfer: [String; 7],
 }
 
 /// Grid attribute labels in display order (col1 top→bottom, then col2,
@@ -257,11 +261,27 @@ impl World {
             "-".to_string(),                   // Notes — pending source.
         ];
 
+        // Transfer subtab. Value from the contract pool (real); Offers /
+        // Interested are None at a fresh start; Availability / Fluent
+        // Languages / Future use labelled defaults pending their real
+        // sources (transfer-status byte, per-nation language, mood text).
+        let value_i = ct.map(|r| r.value).unwrap_or_else(|| pv.value()) as i64;
+        let language = if nationality.is_empty() { "-".to_string() } else { nationality.clone() };
+        let transfer = [
+            "Unknown".to_string(),                 // Availability
+            if value_i > 0 { fmt_value_full(value_i) } else { "-".to_string() },
+            language,                              // Fluent Languages (nation proxy)
+            "None".to_string(),                    // Offers
+            "None".to_string(),                    // Interested
+            "Happy to stay at the club".to_string(), // Future (mood — default)
+            String::new(),                         // Future line 2
+        ];
+
         Some(PlayerProfileView {
             staff_id, title, born_line, attributes, status, position, career,
             injuries, is_goalkeeper,
             club_id: pv.current_club_id().map(|c| c as u32),
-            contract,
+            contract, transfer,
         })
     }
 }
