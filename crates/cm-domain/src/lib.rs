@@ -21002,6 +21002,29 @@ impl RuntimeSaveGame {
 
         let news_before = self.pending_events.len();
         let mut result_summary = Vec::new();
+        // Per-batch indices (directive #13): built ONCE per batch to replace the
+        // per-fixture full-table scans in the morale commit. Owned copies (do
+        // not borrow `self`, so the loop can still mutate it); club membership
+        // and CA are stable across a batch (the commit updates goals/ratings/
+        // morale, never club_id/ca), so these stay valid for the whole loop.
+        // Built in `player_ratings` / `contracts` iteration order, so the
+        // stable CA sort below yields the identical XI the old scan did.
+        let club_players_idx: std::collections::HashMap<i32, Vec<(u32, i16)>> = {
+            let mut m: std::collections::HashMap<i32, Vec<(u32, i16)>> = std::collections::HashMap::new();
+            for p in &self.player_ratings.players {
+                if let Some(c) = p.club_id {
+                    m.entry(c).or_default().push((p.staff_id, p.ca));
+                }
+            }
+            m
+        };
+        let club_contracts_idx: std::collections::HashMap<u32, Vec<u32>> = {
+            let mut m: std::collections::HashMap<u32, Vec<u32>> = std::collections::HashMap::new();
+            for c in &self.transfers.contracts {
+                m.entry(c.club_id).or_default().push(c.player_id);
+            }
+            m
+        };
         for fixture_row in &due_fixture_rows {
             let _lookup = crate::tick_profile::span("fixture_row_lookup");
             let Some(fixture_index) = self
@@ -21148,27 +21171,26 @@ impl RuntimeSaveGame {
                     // per-player played-flag from the match record — a
                     // refinement for when we surface the real XI.
                     let _morale = crate::tick_profile::span("commit_morale_playedids");
+                    // Uses the per-batch club_players_idx (directive #13): O(squad)
+                    // per club instead of an O(P) full scan. Stable CA sort keeps
+                    // the identical XI the earlier scan produced.
                     let played_ids = |cid: u32| -> Vec<u32> {
-                        let mut ids: Vec<(u32, i16)> = self.player_ratings.players.iter()
-                            .filter(|p| p.club_id == Some(cid as i32))
-                            .map(|p| (p.staff_id, p.ca)).collect();
-                        // Sort by CA desc on the CA we captured above — no nested
-                        // full-table `.find` per comparison (was O(P^2) per club).
-                        // `sort_by_key` is stable, so equal-CA ties keep their
-                        // player_ratings iteration order exactly as the previous
-                        // `.find`-based sort did — identical XI, no result change.
+                        let mut ids: Vec<(u32, i16)> =
+                            club_players_idx.get(&(cid as i32)).cloned().unwrap_or_default();
                         ids.sort_by_key(|&(_, ca)| std::cmp::Reverse(ca));
                         ids.into_iter().take(11).map(|(id, _)| id).collect()
                     };
                     let home_won = outcome.home_score.cmp(&outcome.away_score);
                     let home_played: Vec<u32> = played_ids(home_id);
                     let away_played: Vec<u32> = played_ids(away_id);
-                    let home_bench: Vec<u32> = self.transfers.contracts.iter()
-                        .filter(|c| c.club_id == home_id && !home_played.contains(&c.player_id))
-                        .map(|c| c.player_id).collect();
-                    let away_bench: Vec<u32> = self.transfers.contracts.iter()
-                        .filter(|c| c.club_id == away_id && !away_played.contains(&c.player_id))
-                        .map(|c| c.player_id).collect();
+                    // Bench = club's contracted players not in the played XI, in
+                    // contracts order (via the per-batch club_contracts_idx).
+                    let home_bench: Vec<u32> = club_contracts_idx.get(&home_id)
+                        .map(|v| v.iter().copied().filter(|pid| !home_played.contains(pid)).collect())
+                        .unwrap_or_default();
+                    let away_bench: Vec<u32> = club_contracts_idx.get(&away_id)
+                        .map(|v| v.iter().copied().filter(|pid| !away_played.contains(pid)).collect())
+                        .unwrap_or_default();
                     self.transfers.apply_match_morale_full(home_id, match home_won {
                         std::cmp::Ordering::Greater => Some(true),
                         std::cmp::Ordering::Less => Some(false),
