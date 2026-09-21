@@ -2513,6 +2513,12 @@ pub struct RuntimeSaveGame {
     /// (both `Fired` and `Skipped`). Diagnostic; safe to prune.
     #[serde(default)]
     pub season_roll_events: Vec<SeasonRollAppliedEvent>,
+    /// Finished league tables, archived at each season roll before the fresh
+    /// season's standings replace them. Fixes the old flat-`standings` model
+    /// where a roll appended colliding `(club_id, comp_id)` rows and lost the
+    /// prior table. One entry per (competition, finished season year).
+    #[serde(default)]
+    pub season_history: Vec<ArchivedLeagueTable>,
     /// The current Argentine Primera split-season (Apertura + Clausura), if
     /// drawn for this game. Port of `arg_prm.cpp` (see [`crate::arg_primera`]):
     /// built at new-game time, its two champions and promedios relegation
@@ -12545,10 +12551,11 @@ pub struct HeadlessSeasonStanding {
     ///
     /// A row is now identified by `(club_id, competition_id)`.
     ///
-    /// STILL OPEN: there is no season dimension, so from the second
-    /// season the Jan-1 regen's appended rows collide with the current
-    /// season's. That needs a `season_year` on the fixture as well —
-    /// see the integration ledger's Phase D notes.
+    /// A row is identified by `(club_id, competition_id)` within the CURRENT
+    /// season. The season dimension is handled by archiving the whole table to
+    /// `RuntimeSaveGame::season_history` at each roll and replacing the live
+    /// rows, rather than a per-row `season_year` — see
+    /// `apply_pending_season_roll_regens`.
     #[serde(default)]
     pub competition_id: u32,
     pub club_name: String,
@@ -12560,6 +12567,17 @@ pub struct HeadlessSeasonStanding {
     pub goals_against: u32,
     pub goal_difference: i32,
     pub points: u32,
+}
+
+/// A finished season's final league table for one competition, archived at the
+/// season roll so history survives and the live `standings` never carries two
+/// seasons' rows for the same `(club_id, competition_id)`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArchivedLeagueTable {
+    pub competition_id: u32,
+    /// The season that finished, by its starting year (e.g. 2001 = 2001-02).
+    pub season_year: u16,
+    pub rows: Vec<HeadlessSeasonStanding>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -13702,6 +13720,7 @@ impl World {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -19751,21 +19770,28 @@ impl RuntimeSaveGame {
             let today = self.date.clone();
             self.play_due_national_fixtures(world, &today);
             for _ in 0..3 { self.tick_cm_phase(); }
-            // C11.3: drain pending regens after each day — the
-            // Jan-1 hook queues one per English pyramid comp; the
-            // drain runs the byte-exact english_traditional
-            // engine to materialise the next season's fixtures.
-            if !self.pending_season_roll_regens.is_empty() {
-                self.with_session_rng(|save, rng, dbc340| {
-                    save.apply_pending_season_roll_regens(world, rng, dbc340)
-                });
-            }
             // C15: end-of-season detector. Fires
             // compute_annual_rollover → apply_report_to_world at
-            // most once per calendar season.
+            // most once per calendar season, writing promotions/
+            // relegations to the clubs' division membership (Club+0x57).
             let date_now = self.date.clone();
             if self.should_fire_english_year_end(&date_now) {
                 self.with_session_rng(|save, rng, _| save.run_english_year_end(world, rng));
+            }
+            // C11.3: drain pending season-roll regens — the Jan-1 hook queues
+            // one per English pyramid comp, but we drain ONLY AFTER this
+            // season's year-end has applied its promotions/relegations (gate:
+            // last_english_year_end_applied == this year). The regen reads
+            // club→division membership at DRAIN time, so draining post-promotion
+            // makes next season's fixtures use the NEW divisions (fixing the
+            // old Jan-1 drain that used pre-promotion divisions), and the drain
+            // archives+resets standings (fixing the two-season row collision).
+            if !self.pending_season_roll_regens.is_empty()
+                && self.last_english_year_end_applied == Some(self.date.year)
+            {
+                self.with_session_rng(|save, rng, dbc340| {
+                    save.apply_pending_season_roll_regens(world, rng, dbc340)
+                });
             }
         }
     }
@@ -22070,10 +22096,28 @@ impl RuntimeSaveGame {
             // schedule buffer.
             self.season.fixtures.extend(fixtures);
             self.season.schedule_generation.extend(proofs);
-            // Standings are per-comp per-year; the caller can decide
-            // to swap or merge. For now, extend — a per-comp season
-            // uniqueness key on `HeadlessSeasonStanding` would be a
-            // cleaner model but is a separate refactor.
+            // Archive the FINISHED season's table for this comp, then REPLACE
+            // its live rows with the new season's fresh rows — so the live
+            // `standings` never carries two seasons' `(club_id, comp_id)` rows
+            // (the old collision, where `apply_fixture_to_standings`'s first-
+            // match write landed on last season's row). This drain now runs
+            // AFTER the year-end (post-promotion), so the rows being archived
+            // are genuinely the completed season.
+            let finished: Vec<HeadlessSeasonStanding> = self
+                .season
+                .standings
+                .iter()
+                .filter(|s| s.competition_id == comp_id)
+                .cloned()
+                .collect();
+            if !finished.is_empty() {
+                self.season_history.push(ArchivedLeagueTable {
+                    competition_id: comp_id,
+                    season_year: new_year.saturating_sub(1),
+                    rows: finished,
+                });
+            }
+            self.season.standings.retain(|s| s.competition_id != comp_id);
             self.season.standings.extend(standings);
             applied += 1;
         }
@@ -25473,6 +25517,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25716,6 +25761,7 @@ mod tests {
             season_roll_comp_years: Default::default(),
             pending_season_roll_regens: Default::default(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -25965,6 +26011,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -26081,6 +26128,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -26192,6 +26240,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -26291,6 +26340,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
@@ -26392,6 +26442,7 @@ mod tests {
             season_roll_comp_years: std::collections::BTreeMap::new(),
             pending_season_roll_regens: std::collections::BTreeMap::new(),
             season_roll_events: Vec::new(),
+            season_history: Vec::new(),
             argentine_primera: None,
             argentine_second: None,
             honours: Vec::new(),
