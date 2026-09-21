@@ -83,23 +83,27 @@ fn main() {
     let human_clubs: BTreeSet<u32> = save.humans.iter().filter_map(|h| h.club).collect();
     let club_nid = |club: u32| -> i32 { save.finance.club_nation.get(&club).copied().unwrap_or(0) };
 
-    // BEFORE/AFTER detailed counts over club-routed fixtures.
-    let mut old_detailed = 0usize;
-    let mut new_detailed = 0usize;
+    use cm_domain::MatchDetailMode;
+    let _ = &human_clubs; // (human detection now lives inside match_detail_mode)
 
     let mut total = 0usize;
     let mut national_fx = 0usize;
     let mut cup_fx = 0usize;
     let mut routed = 0usize;
-    let mut detailed_fx = 0usize;
-    let mut background_fx = 0usize;
-    // Reasons a fixture is detailed:
-    let mut english = 0usize; // at least one side is the England nation
-    let mut selected_foreign = 0usize; // detailed via a Foreground nation != England (none here)
-    let mut unsel_foreign_default = 0usize; // detailed ONLY because a side's nid==0 (bad default)
-    let mut unsel_foreign_tier = 0usize; // detailed via unwrap_or(true): nid not in tiers
-    // How the misclassification enters:
-    let mut comp_hits: BTreeMap<u32, usize> = BTreeMap::new(); // misclassified detailed comps
+    // AFTER (real 3-way router):
+    let mut not_sim = 0usize;
+    let mut instant = 0usize;
+    let mut detailed = 0usize;
+    let mut invalid = 0usize; // both clubs unresolved AND not a national comp
+    let mut invalid_sample: Vec<(u32, u32, u32)> = Vec::new();
+    // Detailed breakdown by reason:
+    let mut d_human = 0usize;
+    let mut d_selected = 0usize;
+    let mut d_cross = 0usize; // continental promo (cross-nation w/ a selected club)
+    // BEFORE (old buggy predicate):
+    let mut old_detailed = 0usize;
+    // NotSimulated by competition (the fixtures we now skip):
+    let mut notsim_by_comp: BTreeMap<u32, usize> = BTreeMap::new();
 
     for f in &save.season.fixtures {
         total += 1;
@@ -111,89 +115,79 @@ fn main() {
         if cup_comps.contains(&f.competition_id) {
             cup_fx += 1;
         }
+        // BEFORE: old predicate (nid==0 -> detailed, unwrap_or(true)).
         let hn = club_nid(f.home_club_id);
         let an = club_nid(f.away_club_id);
-        let dh = detailed_old(hn);
-        let da = detailed_old(an);
-        let want = dh || da;
-        // New faithful predicate for before/after.
-        let want_new = human_clubs.contains(&f.home_club_id)
-            || human_clubs.contains(&f.away_club_id)
-            || selected_new(f.home_club_id)
-            || selected_new(f.away_club_id);
-        if want {
+        if detailed_old(hn) || detailed_old(an) {
             old_detailed += 1;
         }
-        if want_new {
-            new_detailed += 1;
+        // Unresolved-identity detection (both clubs missing a nation).
+        let h_res = save.finance.club_nation.contains_key(&f.home_club_id);
+        let a_res = save.finance.club_nation.contains_key(&f.away_club_id);
+        if !h_res && !a_res {
+            invalid += 1;
+            if invalid_sample.len() < 10 {
+                invalid_sample.push((f.competition_id, f.home_club_id, f.away_club_id));
+            }
         }
-        if !want {
-            background_fx += 1;
-            continue;
-        }
-        detailed_fx += 1;
-        // Why detailed? Categorize by the strongest reason.
-        let is_english = |nid: i32| england_id == Some(nid) && nid != 0;
-        if is_english(hn) || is_english(an) {
-            english += 1;
-        } else {
-            // Detailed but neither side is England. Determine if via nid==0
-            // default, via unwrap_or(true) (nid not in tiers), or a genuine
-            // second Foreground nation.
-            let foreground_nonenglish = |nid: i32| {
-                nid != 0
-                    && england_id != Some(nid)
-                    && save
-                        .nation_tiers
-                        .iter()
-                        .find(|t| t.nation_id as i32 == nid)
-                        .map(|t| t.detailed_matches)
-                        .unwrap_or(false)
-            };
-            if foreground_nonenglish(hn) || foreground_nonenglish(an) {
-                selected_foreign += 1;
-            } else if hn == 0 || an == 0 {
-                unsel_foreign_default += 1;
-                *comp_hits.entry(f.competition_id).or_insert(0) += 1;
-            } else {
-                // nid != 0, not England, not foreground, yet detailed(nid)==true
-                // => nation missing from nation_tiers -> unwrap_or(true).
-                unsel_foreign_tier += 1;
-                *comp_hits.entry(f.competition_id).or_insert(0) += 1;
+        // AFTER: the REAL production router.
+        match save.match_detail_mode(f.home_club_id, f.away_club_id) {
+            MatchDetailMode::NotSimulated => {
+                not_sim += 1;
+                *notsim_by_comp.entry(f.competition_id).or_insert(0) += 1;
+            }
+            MatchDetailMode::Instant => instant += 1,
+            MatchDetailMode::Detailed => {
+                detailed += 1;
+                // Attribute the reason (for the breakdown).
+                if human_clubs.contains(&f.home_club_id) || human_clubs.contains(&f.away_club_id) {
+                    d_human += 1;
+                } else if selected_new(f.home_club_id) || selected_new(f.away_club_id) {
+                    d_selected += 1;
+                } else {
+                    d_cross += 1; // detailed w/o human or selected => cross-nation promo
+                }
             }
         }
     }
 
-    println!("=== detailed/background routing census (England new-game 2001) ===");
-    println!("england nation id (Foreground/detailed): {england_id:?}");
-    println!("total scheduled fixtures        : {total}");
-    println!("  national-team (national_match): {national_fx}");
-    println!("  club-routed (reach resolve)   : {routed}");
-    println!("    of which domestic-cup       : {cup_fx}");
-    println!("  -> DETAILED (token model)     : {detailed_fx}");
-    println!("  -> BACKGROUND (condensed)     : {background_fx}");
+    println!("=== match routing census (England new-game 2001) — 3-way ===");
+    println!("england nation id (Foreground/selected): {england_id:?}");
+    println!("total scheduled fixtures            : {total}");
+    println!("  national-team (national_match)    : {national_fx}");
+    println!("  club-routed (reach the router)    : {routed}");
+    println!("    of which domestic-cup           : {cup_fx}");
     println!();
-    println!("detailed breakdown by reason:");
-    println!("  English (selected)            : {english}");
-    println!("  selected foreign (Foreground) : {selected_foreign}");
-    println!("  MISCLASSIFIED nid==0 default  : {unsel_foreign_default}");
-    println!("  MISCLASSIFIED not-in-tiers    : {unsel_foreign_tier}");
+    println!("AFTER (real match_detail_mode):");
+    println!("  NotSimulated (skipped, no engine) : {not_sim}");
+    println!("  Instant   (simulated, token model): {instant}");
+    println!("  Detailed  (simulated, token model): {detailed}");
+    println!("  Invalid/unresolved (both nation-less): {invalid}");
     println!();
-    println!("=== BEFORE/AFTER (club-routed fixtures sent to DETAILED token model) ===");
-    println!("  OLD predicate detailed : {old_detailed}");
-    println!("  NEW predicate detailed : {new_detailed}");
-    println!("  moved to background    : {}", old_detailed.saturating_sub(new_detailed));
+    println!("Detailed breakdown by reason:");
+    println!("  human-managed club                : {d_human}");
+    println!("  selected nation (Foreground)      : {d_selected}");
+    println!("  continental promo (cross-nation)  : {d_cross}");
     println!();
-    println!("top comps misclassified-detailed (comp_id -> #fixtures):");
-    let mut v: Vec<(u32, usize)> = comp_hits.into_iter().collect();
+    println!("BEFORE (old nid==0->detailed predicate) DETAILED: {old_detailed}");
+    println!("AFTER  detailed (token)                        : {detailed}");
+    println!("AFTER  instant  (token)                        : {instant}");
+    println!("moved OUT of the engine entirely (NotSimulated): {not_sim}");
+    println!();
+    if !invalid_sample.is_empty() {
+        println!("invalid/unresolved sample (comp, home, away): {invalid_sample:?}");
+        println!();
+    }
+    println!("top NotSimulated competitions (comp_id -> #fixtures skipped):");
+    let mut v: Vec<(u32, usize)> = notsim_by_comp.into_iter().collect();
     v.sort_by(|a, b| b.1.cmp(&a.1));
-    for (comp, n) in v.into_iter().take(15) {
+    for (comp, n) in v.into_iter().take(12) {
         let nm = save
             .season
             .fixtures
             .iter()
-            .find(|f| f.competition_id == comp)
-            .map(|f| f.competition_name.clone())
+            .find(|ff| ff.competition_id == comp)
+            .map(|ff| ff.competition_name.clone())
             .unwrap_or_default();
         println!("  comp {comp:>6}: {n:>5}   {nm}");
     }

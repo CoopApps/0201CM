@@ -2654,14 +2654,23 @@ pub struct NationTierAssignment {
     pub detailed_matches: bool,
 }
 
-/// Detailed vs background match dispatch — the observable outcome of the exe's
-/// per-fixture Tier-2 predicate `FUN_0069c0d0`. `Detailed` runs the full
-/// per-token engine (watch-able, per-player stats); `Background` runs the
-/// condensed/instant route (real result + standings, no per-player detail).
+/// The exe's TWO match-routing decisions, kept distinct (Tier 1 `FUN_006527e0`
+/// + Tier 2 `FUN_0069c0d0`):
+/// * `NotSimulated` — a same-nation fixture in a `Neither` nation (state 0):
+///   the exe does not run it through the match engine at all (abstract player
+///   development only). Skipped by the fixture batch.
+/// * `Instant` — a simulated fixture that is not detailed. In the exe it runs
+///   the SAME engine as Detailed with the "quick" flag (less highlight
+///   harvesting); headless, that is observably identical to Detailed.
+/// * `Detailed` — human club involved or a selected (`Foreground`) nation.
+///
+/// Headless, `Instant` and `Detailed` both run the token engine (Instant is
+/// NOT a cheap score generator); only `NotSimulated` changes execution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MatchDetailMode {
+    NotSimulated,
+    Instant,
     Detailed,
-    Background,
 }
 
 /// The three league states, exactly mapping the exe's `nation_record + 0x11c`
@@ -12514,6 +12523,11 @@ pub struct HeadlessScheduleGenerationProof {
 pub enum HeadlessFixtureStatus {
     Pending,
     Played,
+    /// A fixture the exe does not run through the match engine — a same-nation
+    /// tie in a `Neither` nation (state 0). Marked once when first due so it is
+    /// never re-collected by the daily Pending scan, and never fabricated into
+    /// a result. See `RuntimeSaveGame::match_detail_mode`.
+    NotSimulated,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -20632,47 +20646,80 @@ impl RuntimeSaveGame {
         self.humans.iter().any(|h| h.club == Some(club_id))
     }
 
-    /// Whether a club's nation is a *selected* (Foreground) nation — the exe's
-    /// `nation+0x11c & 0x2` bit, mirrored onto `NationTierAssignment
-    /// ::detailed_matches`. An unresolved nation (`club_nation` has no entry)
-    /// is by definition NOT selected, so it returns false — this is the fix
-    /// for the old `nid==0 -> detailed` / `unwrap_or(true)` bad defaults that
-    /// routed every foreign/unknown club through the expensive token model.
-    fn club_nation_selected(&self, club_id: u32) -> bool {
-        match self.finance.club_nation.get(&club_id) {
-            Some(&nid) => self
-                .nation_tiers
-                .iter()
-                .find(|t| t.nation_id as i32 == nid)
-                .map(|t| t.detailed_matches)
-                .unwrap_or(false),
-            None => false,
-        }
+    /// A club's nation-simulation tier (the exe's `nation+0x11c` state), or
+    /// `None` when the club's nation is unresolved in `finance.club_nation`
+    /// (an exceptional case for production-valid data — see `match_detail_mode`).
+    /// `Foreground` = selected (`&0x2`), `Background` = instant (`&0x1`),
+    /// `Neither` = not fixture-simulated (state 0).
+    fn club_nation_tier(&self, club_id: u32) -> Option<LeagueTier> {
+        let nid = *self.finance.club_nation.get(&club_id)?;
+        self.nation_tiers
+            .iter()
+            .find(|t| t.nation_id as i32 == nid)
+            .map(|t| t.tier)
     }
 
-    /// Canonical detailed-vs-background match dispatch — the single production
-    /// decision point (do NOT scatter nation-id checks elsewhere). Faithful
-    /// port of the exe's per-fixture Tier-2 predicate `FUN_0069c0d0`
-    /// (0x0069c0d0): a tie is DETAILED iff a human-managed club is involved OR
-    /// either club's nation is a *selected* nation (`nation+0x11c & 0x2`);
-    /// otherwise it is a BACKGROUND (instant/condensed) fixture. National-team
-    /// / continental fixtures never reach this — `play_due_national_fixtures`
-    /// (national_match.rs) plays and marks them Played before the club batch,
-    /// so they keep their real-engine appearance/cap crediting untouched.
+    /// THE canonical match router — the single production decision point (do
+    /// NOT scatter nation checks elsewhere). Faithful port of the exe's TWO
+    /// independent decisions, kept distinct:
     ///
-    /// The exe's continental-confederation promotion and the high-reputation
-    /// exception are subsumed here for the selected nation (a selected club's
-    /// European tie already has a selected club → Detailed); the pure
-    /// foreign-vs-foreign continental promotion is a documented edge deferred
-    /// with the Neither-nation abstraction note (Part I).
-    fn match_detail_mode(&self, home_id: u32, away_id: u32) -> MatchDetailMode {
-        if self.is_human_club(home_id) || self.is_human_club(away_id) {
-            return MatchDetailMode::Detailed;
+    /// * **Tier 1 — simulated at all?** (`FUN_006527e0`): a competition is
+    ///   fixture-simulated iff it is supranational (null nation ptr) OR its
+    ///   nation has `+0x11c != 0`. A club fixture is supranational when the two
+    ///   clubs are in *different* nations (a continental club cup — European
+    ///   Cup / UEFA / Cup Winners, comps 326-329); those are always simulated,
+    ///   even foreign-vs-foreign. A same-nation fixture in a `Neither` nation
+    ///   (state 0) is NOT simulated (the exe develops those clubs abstractly via
+    ///   `FUN_00834fc0`, not through the match engine) → `NotSimulated`.
+    ///
+    /// * **Tier 2 — detailed vs instant?** (`FUN_0069c0d0`): among simulated
+    ///   fixtures, DETAILED iff a human-managed club is involved OR either
+    ///   club's nation is *selected* (`Foreground`, `+0x11c & 0x2`); else
+    ///   `Instant`. (The exe's continental-confederation + high-reputation
+    ///   promotions are subsumed: a selected club's continental tie already has
+    ///   a selected club → Detailed. Pure foreign-vs-foreign continental ties
+    ///   are `Instant`.)
+    ///
+    /// Both Detailed and Instant run the SAME engine in the exe (the "quick"
+    /// flag only governs highlight/positional harvesting, not physics); this
+    /// headless port renders no highlights, so Detailed and Instant are
+    /// observably identical here and both run the token model — Instant is NOT
+    /// a cheap random-score generator.
+    ///
+    /// National-TEAM fixtures never reach this: `play_due_national_fixtures`
+    /// (national_match.rs) plays and marks them Played before the club batch,
+    /// preserving their real-engine appearance/cap crediting. If an unresolved
+    /// (nation-less) club fixture reaches here it is treated as `NotSimulated`
+    /// (never silently promoted to Detailed) and surfaced by the caller.
+    /// `pub` so the routing census bin can exercise the real router.
+    pub fn match_detail_mode(&self, home_id: u32, away_id: u32) -> MatchDetailMode {
+        let human = self.is_human_club(home_id) || self.is_human_club(away_id);
+        let ht = self.club_nation_tier(home_id);
+        let at = self.club_nation_tier(away_id);
+        // Supranational proxy: two clubs from different (both resolved) nations
+        // => a continental club cup => always simulated.
+        let cross_nation = match (
+            self.finance.club_nation.get(&home_id),
+            self.finance.club_nation.get(&away_id),
+        ) {
+            (Some(h), Some(a)) => h != a,
+            _ => false,
+        };
+        let simulated = human
+            || cross_nation
+            || matches!(ht, Some(LeagueTier::Foreground) | Some(LeagueTier::Background))
+            || matches!(at, Some(LeagueTier::Foreground) | Some(LeagueTier::Background));
+        if !simulated {
+            return MatchDetailMode::NotSimulated;
         }
-        if self.club_nation_selected(home_id) || self.club_nation_selected(away_id) {
-            return MatchDetailMode::Detailed;
+        let detailed = human
+            || matches!(ht, Some(LeagueTier::Foreground))
+            || matches!(at, Some(LeagueTier::Foreground));
+        if detailed {
+            MatchDetailMode::Detailed
+        } else {
+            MatchDetailMode::Instant
         }
-        MatchDetailMode::Background
     }
 
     /// Score a fixture through the exe-port match engine
@@ -20716,17 +20763,14 @@ impl RuntimeSaveGame {
         // draws, blown-out GF/GA) and is out of scope for the FUN_006F99C0
         // shot-gate port — needs its own investigation into
         // `player_ratings`/club_id coverage.
-        // Detailed-vs-background dispatch — single canonical decision
-        // (`match_detail_mode`), a faithful port of the exe's Tier-2 predicate
-        // `FUN_0069c0d0` (see reports/match_engine_observational_gap.md Part I).
-        let want_detailed = self.match_detail_mode(home_id, away_id) == MatchDetailMode::Detailed;
-        // Always run the token model first for detailed fixtures so its
-        // per-player rating pool + MotM pick survive even when the score
-        // path falls back to the condensed engine. Prior wire lost these
-        // whenever the token model produced 0 shots for a small/broken
-        // squad, silently zeroing season_rating_stats — surfaced by the
-        // simulate_season wire-up observations.
-        let (used, ratings_from_token, motm_from_token) = if want_detailed {
+        // Detail dispatch is decided by `match_detail_mode` in the caller;
+        // `NotSimulated` fixtures are skipped there and never reach here. Both
+        // Detailed and Instant run the SAME token engine (the exe's "quick"
+        // flag only trims highlight harvesting, which this headless port does
+        // not render), so Instant is NOT a cheap score generator. The condensed
+        // per-minute engine is used ONLY as a 0-shot fallback for a squad too
+        // thin for the token model to produce any shots.
+        let (used, ratings_from_token, motm_from_token) = {
             let r = crate::match_engine_exe::simulate_one_fixture_token_model(
                 &home, &away, seed,
             );
@@ -20735,19 +20779,13 @@ impl RuntimeSaveGame {
             if r.home_shots as u16 + r.away_shots as u16 > 0 {
                 (r, ratings, motm)
             } else {
-                // Score falls back to condensed engine — but keep the
+                // Score falls back to the condensed engine — but keep the
                 // token model's finalized ratings + MotM so the season
                 // accumulator still fires.
                 let cond = crate::match_engine_exe::simulate_one_fixture(
                     &home, &away, seed, Some(2.8));
                 (cond, ratings, motm)
             }
-        } else {
-            let cond = crate::match_engine_exe::simulate_one_fixture(
-                &home, &away, seed, Some(2.8));
-            let ratings = cond.per_player_ratings.clone();
-            let motm    = cond.motm_player_id;
-            (cond, ratings, motm)
         };
         let _ = motm_from_token; // MotM currently not stored on FixtureOutcome — routes via ExeMatchResult
         Some(FixtureOutcome {
@@ -21036,9 +21074,22 @@ impl RuntimeSaveGame {
                 continue;
             };
             drop(_lookup);
+            // Tier-1 dispatch (FUN_006527e0): a NotSimulated fixture — a
+            // same-nation tie in a `Neither` nation — is not run through the
+            // match engine at all. Mark it once (so the daily Pending scan
+            // never re-collects it) and skip, without fabricating a result.
+            // Done before the &mut fixture borrow so the &self router call does
+            // not alias it.
+            let (home_id, away_id) = {
+                let f = &self.season.fixtures[fixture_index];
+                (f.home_club_id, f.away_club_id)
+            };
+            if self.match_detail_mode(home_id, away_id) == MatchDetailMode::NotSimulated {
+                self.season.fixtures[fixture_index].status =
+                    HeadlessFixtureStatus::NotSimulated;
+                continue;
+            }
             let fixture = &mut self.season.fixtures[fixture_index];
-            let home_id = fixture.home_club_id;
-            let away_id = fixture.away_club_id;
             let fixture_comp_id = fixture.competition_id;
             let home_name = fixture.home_club_name.clone();
             let away_name = fixture.away_club_name.clone();
