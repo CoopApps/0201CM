@@ -117,6 +117,7 @@ pub mod card_model;
 pub mod weather;
 pub mod group_stage;
 pub mod domestic_cup;
+pub mod club_history;
 pub mod gameplay_mutators;
 pub mod honours;
 pub mod simple_league;
