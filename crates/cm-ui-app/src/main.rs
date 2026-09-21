@@ -7,6 +7,7 @@
 
 mod game_state;
 mod render_new;
+mod save_load;
 mod screens;
 
 use std::num::NonZeroU32;
@@ -1379,11 +1380,14 @@ impl App {
         // (`FUN_008120D0` → `World::run_start_game_init`) once the
         // `&mut self.screen` borrow below is released.
         let mut need_world_init = false;
+        // Deferred: Setup "Restore Saved Game" was clicked (load a slot once the
+        // `&mut self.screen` borrow below is released).
+        let mut need_load_saved = false;
         match &mut self.screen {
             Screen::Setup => {
                 if let Some(idx) = screens::setup_hit(x, y) {
                     // Setup command 0 = Start New Game (mirrors the exe's cmp ax,1
-                    // dispatch at 0x804ef9). Every other setup button is a no-op for now.
+                    // dispatch at 0x804ef9). Button 2 = Restore Saved Game (load).
                     if idx == 0 {
                         // 34 picker slots from the traced LAB_0081a120..0x00821b50 setup
                         // handlers. LOW-confidence country names carry a "?" suffix so
@@ -1391,6 +1395,8 @@ impl App {
                         self.screen = Screen::SelectLeagues(
                             SelectLeaguesState::from_slots(real_34_slots()),
                         );
+                    } else if idx == 2 {
+                        need_load_saved = true;
                     }
                 }
             }
@@ -2128,6 +2134,9 @@ impl App {
         if need_world_init {
             self.ensure_world_initialised();
         }
+        if need_load_saved {
+            self.load_saved_game();
+        }
         if let Some((leagues, season)) = start_game {
             self.start_new_game(&leagues, &season);
         }
@@ -2428,6 +2437,7 @@ impl App {
                     self.status = Some("Resigned. You are now unemployed.".into());
                 }
             }
+            cmd::SAVE_GAME => self.save_current_game(),
             cmd::EXIT_GAME => {
                 self.status = Some("Exit: quit the window (unsaved progress is guarded)".into());
             }
@@ -2767,6 +2777,75 @@ impl App {
             }
         }
         true
+    }
+
+    /// Save Game (menu cmd 0x3fe). Persists the current `RuntimeSaveGame` PLUS
+    /// the mutated `World` into the save slot, so a later Load restores the
+    /// exact in-play state (including cross-season World mutations). Sets
+    /// `saved_path` and clears `dirty` on success.
+    fn save_current_game(&mut self) {
+        let dir = save_load::default_slot_dir();
+        let (Some(game), Some(world)) = (self.game.as_mut(), self.world.as_ref()) else {
+            self.status = Some("No game in progress to save.".into());
+            return;
+        };
+        match save_load::save_game(&dir, &game.save, world) {
+            Ok(()) => {
+                game.saved_path = Some(dir.display().to_string());
+                game.dirty = false;
+                eprintln!("[save] game written to {}", dir.display());
+                self.status = Some(format!("Game saved to {}", dir.display()));
+            }
+            Err(e) => {
+                eprintln!("[save] FAILED writing {}: {e}", dir.display());
+                self.status = Some(format!("Save failed: {e}"));
+            }
+        }
+    }
+
+    /// Restore Saved Game (Setup button 2). Loads the save slot's
+    /// `RuntimeSaveGame` + mutated `World`, installs them as the live game
+    /// (the saved World is already `run_start_game_init`-processed, so
+    /// `world_init_done` is set true and `rust-db` is NOT re-read), and opens
+    /// the active human's dashboard — the same landing the game uses in play.
+    fn load_saved_game(&mut self) {
+        let dir = save_load::default_slot_dir();
+        if !save_load::has_save(&dir) {
+            self.status = Some(format!("No saved game found in {}", dir.display()));
+            return;
+        }
+        match save_load::load_game(&dir) {
+            Ok((save, world)) => {
+                self.world = Some(world);
+                // The persisted World already carries run_start_game_init's
+                // output (contracts/squad numbers/player init) and every
+                // in-place mutation, so do not re-run init or re-read rust-db.
+                self.world_init_done = true;
+                let active = save.active_human;
+                self.game = Some(GameInstance {
+                    save,
+                    manager: game_state::ManagerName::default(),
+                    saved_path: Some(dir.display().to_string()),
+                    dirty: false,
+                });
+                // Land on the active human's dashboard (mirrors in-play home).
+                self.nav_back.clear();
+                self.nav_fwd.clear();
+                if let (Some(world), Some(game)) = (self.world.as_ref(), self.game.as_ref()) {
+                    if let Some(view) = world.dashboard_for(&game.save, active) {
+                        self.screen = Screen::Dashboard { view, squad_scroll: 0 };
+                    } else {
+                        self.open_news();
+                    }
+                }
+                eprintln!("[load] game restored from {}", dir.display());
+                self.status = Some(format!("Game loaded from {}", dir.display()));
+            }
+            Err(e) => {
+                eprintln!("[load] FAILED reading {}: {e}", dir.display());
+                self.status = Some(format!("Load failed: {e}"));
+            }
+        }
     }
 
     fn start_new_game(
