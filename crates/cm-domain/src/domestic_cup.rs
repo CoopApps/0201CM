@@ -235,6 +235,54 @@ pub struct CupState {
     pub champion_honour: u32,
     pub complete: bool,
     pub provenance: String,
+
+    // ---- Progressive-draw state (CupMode::ProgressiveDecoded only). ----
+    /// Which materialisation path this cup uses. Default keeps every existing
+    /// (legacy) cup unchanged after a load.
+    #[serde(default)]
+    pub mode: CupMode,
+    /// The decoded lifecycle spec (`None` for legacy cups).
+    #[serde(default)]
+    pub schedule: Option<CupSchedule>,
+    /// The entry pool in decoded assembly order; `pool_cursor` marks how many
+    /// have already entered. Progressive draws pull each round's `incoming`
+    /// slice from here.
+    #[serde(default)]
+    pub ordered_pool: Vec<ArgTeam>,
+    #[serde(default)]
+    pub pool_cursor: usize,
+    /// Highest round index already DRAWN (materialised). `None` = nothing drawn
+    /// yet (so at boot no cup fixtures exist).
+    #[serde(default)]
+    pub last_drawn_round: Option<u32>,
+    /// Winners carried out of the last RESOLVED round, awaiting the next draw.
+    #[serde(default)]
+    pub survivors: Vec<ArgTeam>,
+    /// Highest round index already RESOLVED (winners collected into
+    /// `survivors`). Guards the round-completion gate + duplicate collection.
+    #[serde(default)]
+    pub resolved_round: Option<u32>,
+    /// The ties of the currently-drawn (unresolved) round; each references its
+    /// fixture rows so results are read back from the season fixture list.
+    #[serde(default)]
+    pub current_ties: Vec<CupTie>,
+}
+
+/// One tie of a progressive cup round. References fixture rows so the engine
+/// reads results from the season fixture list (single source of truth).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CupTie {
+    pub round: u32,
+    pub home: ArgTeam,
+    /// `None` = a bye (home advances automatically).
+    pub away: Option<ArgTeam>,
+    pub leg1_row: Option<u32>,
+    /// Second leg (two-legged rounds only), venues swapped.
+    pub leg2_row: Option<u32>,
+    /// Replay fixture (drawn tie in a replay-eligible round).
+    pub replay_row: Option<u32>,
+    /// Resolved winner club id, once decided.
+    pub winner: Option<u32>,
 }
 
 /// Largest power of two that is `<= n` (the bracket size).
@@ -278,6 +326,61 @@ impl CupState {
             champion_honour,
             complete: false,
             provenance: format!("{name} {year}: {count}-team single-elimination cup; ported from {source_va}."),
+            // Legacy defaults; `build_progressive` sets the faithful path.
+            mode: CupMode::LegacyPreGenerated,
+            schedule: None,
+            ordered_pool: Vec::new(),
+            pool_cursor: 0,
+            last_drawn_round: None,
+            survivors: Vec::new(),
+            resolved_round: None,
+            current_ties: Vec::new(),
+        })
+    }
+
+    /// Build a decoded ENGLISH cup in progressive mode: no fixtures are
+    /// generated now — each round is drawn on its draw date by
+    /// [`progress`]. `ordered_pool` must already be in the exe's entry-
+    /// assembly order (round-0 entrants first … final entrants last); the
+    /// per-round `incoming` windows slice it. `None` if the comp has no
+    /// decoded schedule.
+    #[allow(clippy::too_many_arguments)]
+    pub fn build_progressive(
+        ordered_pool: Vec<ArgTeam>,
+        real_comp_id: i32,
+        name: &str,
+        year: u16,
+        euro_qual_count: u32,
+        champion_honour: u32,
+        source_va: &str,
+    ) -> Option<Self> {
+        let schedule = decoded_cup_schedule(real_comp_id, year, euro_qual_count)?;
+        let count = ordered_pool.len();
+        let start_date = schedule.rounds.first().map(|r| r.match_date.clone())
+            .unwrap_or(GameDate { year, month: 8, day: 1 });
+        Some(Self {
+            year,
+            real_comp_id,
+            runtime_comp_id: CUP_RUNTIME_BASE + real_comp_id as u32,
+            name: name.to_string(),
+            teams: ordered_pool.clone(),
+            round: 0,
+            start_date,
+            round_dates: Vec::new(),
+            champion_honour,
+            complete: false,
+            provenance: format!(
+                "{name} {year}: progressive decoded cup ({count} entrants, pool_size {}); ported from {source_va}.",
+                schedule.pool_size
+            ),
+            mode: CupMode::ProgressiveDecoded,
+            schedule: Some(schedule),
+            ordered_pool,
+            pool_cursor: 0,
+            last_drawn_round: None,
+            survivors: Vec::new(),
+            resolved_round: None,
+            current_ties: Vec::new(),
         })
     }
 
@@ -292,6 +395,231 @@ impl CupState {
     fn tag(&self, round: u32) -> String {
         format!("CUP{}-R{}", self.runtime_comp_id, round)
     }
+
+    /// Add `days` to a `GameDate` via the packed-date helper.
+    fn date_plus(base: &GameDate, days: i16) -> GameDate {
+        crate::CmPackedDate::from_game_date(base.clone()).add_days(days).to_game_date()
+    }
+
+    /// Resolve the winner of a progressive tie from the season fixture list.
+    /// Returns `Ok(Some(club_id))` when decided, `Ok(None)` when still waiting
+    /// (fixture unplayed), or `Err(())` when a replay is required but not yet
+    /// scheduled (caller schedules it).
+    fn tie_outcome(
+        tie: &CupTie,
+        spec: &CupRoundSpec,
+        fixtures: &[HeadlessSeasonFixture],
+        rep: &dyn Fn(u32) -> u16,
+    ) -> Result<Option<u32>, ()> {
+        let Some(away) = &tie.away else { return Ok(Some(tie.home.club_id)); }; // bye
+        let played = |row: Option<u32>| -> Option<(u8, u8)> {
+            let row = row?;
+            let f = fixtures.iter().find(|f| f.row == row)?;
+            if f.status != HeadlessFixtureStatus::Played { return None; }
+            Some((f.home_score?, f.away_score?))
+        };
+        let higher_rep = if rep(tie.home.club_id) >= rep(away.club_id) { tie.home.club_id } else { away.club_id };
+        if spec.two_leg {
+            // leg1: home vs away; leg2: away vs home (venues swapped).
+            let (Some((l1h, l1a)), Some((l2h, l2a))) = (played(tie.leg1_row), played(tie.leg2_row))
+                else { return Ok(None); };
+            let home_agg = l1h as u16 + l2a as u16;
+            let away_agg = l1a as u16 + l2h as u16;
+            return Ok(Some(match home_agg.cmp(&away_agg) {
+                std::cmp::Ordering::Greater => tie.home.club_id,
+                std::cmp::Ordering::Less => away.club_id,
+                // Level on aggregate → away goals, else higher reputation
+                // (penalties not modelled; documented stand-in).
+                std::cmp::Ordering::Equal => {
+                    let home_ag = l2a as u16; // home team's goals AWAY (leg2)
+                    let away_ag = l1a as u16; // away team's goals AWAY (leg1)
+                    match home_ag.cmp(&away_ag) {
+                        std::cmp::Ordering::Greater => tie.home.club_id,
+                        std::cmp::Ordering::Less => away.club_id,
+                        std::cmp::Ordering::Equal => higher_rep,
+                    }
+                }
+            }));
+        }
+        // Single-leg.
+        let Some((hs, as_)) = played(tie.leg1_row) else { return Ok(None); };
+        if hs != as_ {
+            return Ok(Some(if hs > as_ { tie.home.club_id } else { away.club_id }));
+        }
+        // Drawn.
+        if spec.replay {
+            match played(tie.replay_row) {
+                Some((rh, ra)) => {
+                    // Replay decides; a level replay falls to the rep stand-in
+                    // (extra-time/penalties not modelled).
+                    Ok(Some(if rh > ra { away.club_id } else if ra > rh { tie.home.club_id } else { higher_rep }))
+                    // NB: replay venue is reversed (away hosts), so rh=away's score.
+                }
+                None => {
+                    if tie.replay_row.is_some() { Ok(None) } else { Err(()) } // schedule replay
+                }
+            }
+        } else {
+            // No replay this round (SF/Final): decided on the day → rep stand-in.
+            Ok(Some(higher_rep))
+        }
+    }
+
+    fn team_by_id<'a>(&'a self, id: u32) -> Option<ArgTeam> {
+        self.ordered_pool.iter().chain(self.teams.iter())
+            .find(|t| t.club_id == id).cloned()
+    }
+
+    /// Draw one round: shuffle `participants`, pair into ties (byes for the
+    /// shortfall vs `2*capacity`), coin-flip home/away, and materialise this
+    /// round's fixtures (leg 2 for a two-legged round). Returns the fixtures
+    /// and the ties. Uses the shared `GameRng` (RNG chronology differential
+    /// vs the exe's shared stream is documented — structurally exact).
+    fn draw_round(
+        &self,
+        spec: &CupRoundSpec,
+        mut participants: Vec<ArgTeam>,
+        mut next_row: u32,
+        rng: &mut crate::game_rng::GameRng,
+    ) -> (Vec<HeadlessSeasonFixture>, Vec<CupTie>) {
+        // Fisher-Yates via the shared RNG.
+        for i in (1..participants.len()).rev() {
+            let j = rng.rand_mod((i + 1) as i32) as usize;
+            participants.swap(i, j);
+        }
+        let mut fixtures = Vec::new();
+        let mut ties = Vec::new();
+        let mut i = 0;
+        while i < participants.len() {
+            let a = participants[i].clone();
+            i += 1;
+            let b = if i < participants.len() { let t = participants[i].clone(); i += 1; Some(t) } else { None };
+            // Coin-flip home/away.
+            let (home, away) = match &b {
+                Some(bt) if rng.rand_mod(2) == 1 => (bt.clone(), Some(a.clone())),
+                Some(bt) => (a.clone(), Some(bt.clone())),
+                None => (a.clone(), None),
+            };
+            let mut tie = CupTie {
+                round: spec.round, home: home.clone(), away: away.clone(),
+                leg1_row: None, leg2_row: None, replay_row: None, winner: None,
+            };
+            if let Some(aw) = &away {
+                let f = fixture(self, next_row, spec.round, spec.match_date.clone(), &home, aw);
+                tie.leg1_row = Some(next_row); next_row += 1; fixtures.push(f);
+                if spec.two_leg {
+                    // Second leg, venues swapped, ~3 weeks later (exe +0x22=0x15).
+                    let leg2 = Self::date_plus(&spec.match_date, 21);
+                    let f2 = fixture(self, next_row, spec.round, leg2, aw, &home);
+                    tie.leg2_row = Some(next_row); next_row += 1; fixtures.push(f2);
+                }
+            } else {
+                tie.winner = Some(home.club_id); // bye
+            }
+            ties.push(tie);
+        }
+        (fixtures, ties)
+    }
+
+    /// Progressive-cup daily hook. On the round's draw date (once prerequisites
+    /// are met) it draws that round and materialises ONLY its fixtures; it also
+    /// resolves the current round (scheduling FA-Cup replays), advancing
+    /// winners, and crowns the champion at the final. Idempotent per day: a
+    /// round already drawn/resolved is not repeated.
+    pub fn progress(
+        &mut self,
+        date: &GameDate,
+        fixtures: &[HeadlessSeasonFixture],
+        mut next_row: u32,
+        rng: &mut crate::game_rng::GameRng,
+        rep: &dyn Fn(u32) -> u16,
+    ) -> CupProgress {
+        let mut out = CupProgress::default();
+        if self.mode != CupMode::ProgressiveDecoded || self.complete {
+            return out;
+        }
+        let rounds = match &self.schedule { Some(s) => s.rounds.clone(), None => return out };
+
+        // ---- STEP A: resolve the currently-drawn round. ----
+        if let Some(r) = self.last_drawn_round {
+            if self.resolved_round != Some(r) {
+                let spec = rounds[r as usize].clone();
+                let mut ties = std::mem::take(&mut self.current_ties);
+                let mut all_resolved = true;
+                for tie in ties.iter_mut() {
+                    if tie.winner.is_some() { continue; }
+                    match Self::tie_outcome(tie, &spec, fixtures, rep) {
+                        Ok(Some(win)) => tie.winner = Some(win),
+                        Ok(None) => all_resolved = false,
+                        Err(()) => {
+                            // Schedule the replay (reversed venue, +10 days).
+                            if let Some(aw) = tie.away.clone() {
+                                let replay_date = Self::date_plus(&spec.match_date, 10);
+                                let f = fixture(self, next_row, spec.round, replay_date, &aw, &tie.home);
+                                tie.replay_row = Some(next_row); next_row += 1;
+                                out.new_fixtures.push(f);
+                            }
+                            all_resolved = false;
+                        }
+                    }
+                }
+                self.current_ties = ties;
+                if all_resolved {
+                    let winners: Vec<ArgTeam> = self.current_ties.iter()
+                        .filter_map(|t| t.winner.and_then(|id| self.team_by_id(id)))
+                        .collect();
+                    self.resolved_round = Some(r);
+                    if spec.capacity == 1 {
+                        if let Some(champ) = winners.first() {
+                            out.honours.push(Honour::champion(
+                                self.year, self.champion_honour, self.name.clone(),
+                                champ.club_id, champ.name.clone(),
+                            ));
+                            out.news.push(("competition".into(),
+                                format!("{} - win the {} {}", champ.name, self.name, self.year)));
+                        }
+                        self.complete = true;
+                        out.completed = true;
+                        self.current_ties.clear();
+                        return out;
+                    }
+                    self.survivors = winners;
+                    self.current_ties.clear();
+                } else {
+                    return out; // wait (any replays are in out.new_fixtures)
+                }
+            }
+        }
+
+        // ---- STEP B: draw the next round if its draw date has arrived. ----
+        let next = self.last_drawn_round.map(|r| r + 1).unwrap_or(0);
+        if (next as usize) < rounds.len() {
+            let spec = rounds[next as usize].clone();
+            let prereq_ok = next == 0 || self.resolved_round == Some(next - 1);
+            if prereq_ok && *date >= spec.draw_date {
+                let mut participants = std::mem::take(&mut self.survivors);
+                let take = spec.incoming as usize;
+                let end = (self.pool_cursor + take).min(self.ordered_pool.len());
+                participants.extend(self.ordered_pool[self.pool_cursor..end].iter().cloned());
+                self.pool_cursor = end;
+                let (fx, ties) = self.draw_round(&spec, participants, next_row, rng);
+                out.new_fixtures.extend(fx);
+                self.current_ties = ties;
+                self.last_drawn_round = Some(next);
+                self.round = next;
+            }
+        }
+        out
+    }
+}
+
+/// Result of one [`CupState::progress`] tick.
+#[derive(Debug, Default)]
+pub struct CupProgress {
+    pub new_fixtures: Vec<HeadlessSeasonFixture>,
+    pub news: Vec<(String, String)>,
+    pub honours: Vec<Honour>,
+    pub completed: bool,
 }
 
 fn fixture(
