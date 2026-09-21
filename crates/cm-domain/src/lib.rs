@@ -18093,7 +18093,80 @@ impl World {
             // CupState::build via domestic_cup::decoded_round_dates —
             // covers FA Cup 351, League Cup 352, FA Trophy 94, Vans 354
             // and the continental cups from cup_round_schedules*.md.
+            // Build the entry-assembly-ordered pool for a decoded English cup
+            // (mirrors the per-cup builder's pool construction). Deterministic
+            // shuffle so replays reproduce; the exe's global-RNG shuffle order
+            // is a documented differential.
+            fn english_cup_pool(
+                clubs: &[DomainOpaqueRecord], comp_id: i32, year: u16,
+            ) -> (Vec<arg_primera::ArgTeam>, u32) {
+                let mut lcg: u64 = 0x9e37_79b9_7f4a_7c15 ^ (year as u64) ^ (comp_id as u64) << 8;
+                let mut shuffle = |v: &mut Vec<arg_primera::ArgTeam>| {
+                    for i in (1..v.len()).rev() {
+                        lcg = lcg.wrapping_mul(0x5851_f42d_4c95_7f2d).wrapping_add(0x1405_7b7e_f767_814f);
+                        let j = ((lcg >> 33) as usize) % (i + 1);
+                        v.swap(i, j);
+                    }
+                };
+                match comp_id {
+                    // FA Cup: feeder+Conf+Div3+Div2+Div1 shuffled, truncated so
+                    // that block + Premier = 152, then Premier appended at the
+                    // tail (→ Premier enters the round-3 window / 3rd Rd Proper).
+                    351 => {
+                        let premier = arg_primera::clubs_in_division(clubs, 7);
+                        let mut non_prem = Vec::new();
+                        for div in [358, 359, 360, 93, 10, 9, 8] {
+                            non_prem.extend(arg_primera::clubs_in_division(clubs, div));
+                        }
+                        shuffle(&mut non_prem);
+                        non_prem.truncate(152usize.saturating_sub(premier.len()));
+                        non_prem.extend(premier);
+                        (non_prem, 0)
+                    }
+                    // League Cup: Div3+Div2+Div1 shuffled + Premier tail (highest
+                    // seeds enter latest). pool 92. b2 = English European
+                    // qualifiers (Club+0x1db not yet wired → approximated 7,
+                    // clamped 12; documented).
+                    352 => {
+                        let premier = arg_primera::clubs_in_division(clubs, 7);
+                        let mut lower = Vec::new();
+                        for div in [10, 9, 8] {
+                            lower.extend(arg_primera::clubs_in_division(clubs, div));
+                        }
+                        shuffle(&mut lower);
+                        lower.truncate(92usize.saturating_sub(premier.len()));
+                        lower.extend(premier);
+                        (lower, 7)
+                    }
+                    // FA Trophy: Conference + feeders, strongest 32 (clean bracket).
+                    94 => {
+                        let mut pool = Vec::new();
+                        for div in [93, 358, 359, 360] {
+                            pool.extend(arg_primera::clubs_in_division(clubs, div));
+                        }
+                        pool.sort_by(|a, b| b.reputation.cmp(&a.reputation).then(a.club_id.cmp(&b.club_id)));
+                        pool.truncate(32);
+                        (pool, 0)
+                    }
+                    _ => (Vec::new(), 0),
+                }
+            }
+
             for &(comp_id, name, sources, m, d, va) in cups {
+                // Decoded English cups take the PROGRESSIVE route: build state +
+                // ordered pool now, but materialise NO fixtures — each round is
+                // drawn on its draw date by advance_domestic_cups.
+                if domestic_cup::decoded_cup_schedule(comp_id, options.start_year, 0).is_some() {
+                    let (ordered, b2) = english_cup_pool(&self.core.clubs, comp_id, options.start_year);
+                    if let Some(cup) = domestic_cup::CupState::build_progressive(
+                        ordered, comp_id, name, options.start_year, b2,
+                        honours::ARG_PRIMERA_CHAMPION_HONOUR, va,
+                    ) {
+                        save.domestic_cups.push(cup);
+                        continue;
+                    }
+                }
+                // Undecoded (e.g. Vans 354): legacy pre-generated bracket.
                 let mut pool = Vec::new();
                 for &src in sources {
                     pool.extend(arg_primera::clubs_in_division(&self.core.clubs, src));
@@ -21591,30 +21664,57 @@ impl RuntimeSaveGame {
     /// as its ties resolve.
     fn advance_domestic_cups(&mut self, date: &GameDate) {
         let mut cups = std::mem::take(&mut self.domestic_cups);
-        for cup in &mut cups {
-            if cup.complete {
-                continue;
+        // Snapshot club reputations for the progressive draw's tie-break
+        // (owned copy so the &mut self mutations below don't alias it).
+        let rep_map: std::collections::HashMap<u32, u16> = self
+            .player_ratings
+            .club_reputation
+            .iter()
+            .map(|(k, v)| (*k as u32, *v))
+            .collect();
+        let day = self.elapsed_days;
+        let date_cl = date.clone();
+        self.with_session_rng(|save, rng, _| {
+            let rep = |id: u32| rep_map.get(&id).copied().unwrap_or(0);
+            for cup in &mut cups {
+                if cup.complete {
+                    continue;
+                }
+                let next_row = save.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
+                match cup.mode {
+                    domestic_cup::CupMode::ProgressiveDecoded => {
+                        // Draw on the draw date, resolve replays/legs, advance.
+                        let prog = cup.progress(&date_cl, &save.season.fixtures, next_row, rng, &rep);
+                        save.season.fixtures.extend(prog.new_fixtures);
+                        for (kind, message) in prog.news {
+                            save.pending_events.push(RuntimeEvent {
+                                day, date: date_cl.clone(), kind, message, phase: 2,
+                            });
+                        }
+                        save.honours.extend(prog.honours);
+                        if prog.completed {
+                            cup.complete = true;
+                        }
+                    }
+                    domestic_cup::CupMode::LegacyPreGenerated => {
+                        let adv = domestic_cup::advance(cup, &save.season.fixtures, next_row);
+                        save.season.fixtures.extend(adv.new_fixtures);
+                        for (kind, message) in adv.news {
+                            save.pending_events.push(RuntimeEvent {
+                                day, date: date_cl.clone(), kind, message, phase: 2,
+                            });
+                        }
+                        save.honours.extend(adv.honours);
+                        if let Some(round) = adv.new_round {
+                            cup.round = round;
+                        }
+                        if adv.completed {
+                            cup.complete = true;
+                        }
+                    }
+                }
             }
-            let next_row = self.season.fixtures.iter().map(|f| f.row + 1).max().unwrap_or(0);
-            let adv = domestic_cup::advance(cup, &self.season.fixtures, next_row);
-            self.season.fixtures.extend(adv.new_fixtures);
-            for (kind, message) in adv.news {
-                self.pending_events.push(RuntimeEvent {
-                    day: self.elapsed_days,
-                    date: date.clone(),
-                    kind,
-                    message,
-                    phase: 2,
-                });
-            }
-            self.honours.extend(adv.honours);
-            if let Some(round) = adv.new_round {
-                cup.round = round;
-            }
-            if adv.completed {
-                cup.complete = true;
-            }
-        }
+        });
         self.domestic_cups = cups;
     }
 

@@ -187,16 +187,18 @@ pub fn decoded_cup_schedule(
             })
         }
         // ---- English FA Trophy (94) — FUN_0055abb0, 5 rounds single-leg. ----
-        // Non-league; no decoded qualifying staggering → all enter round 0.
-        // pool_size 0 = "all supplied clubs enter round 0" (engine fills it).
+        // Non-league (Conference + feeders). The decoded dates are exact; the
+        // qualifying staggering is NOT decoded, so this models a clean 32-team
+        // bracket with all entrants in round 0 (documented approximation of the
+        // entry structure — dates are faithful). Draw dates are exact.
         94 => Some(CupSchedule {
-            pool_size: 0,
+            pool_size: 32,
             rounds: vec![
-                r(0, d(y,11, 8), d(y,11,25), 0, 0, false, false, false),
-                r(1, d(y,11,26), d(n, 1,16), 0, 0, false, false, false),
-                r(2, d(n, 1,17), d(n, 2, 6), 0, 0, false, false, false),
-                r(3, d(n, 2, 7), d(n, 4,10), 0, 0, false, false, false),
-                r(4, d(n, 4,11), d(n, 5,15), 0, 1, false, false, true ),
+                r(0, d(y,11, 8), d(y,11,25), 32, 16, false, false, false),
+                r(1, d(y,11,26), d(n, 1,16),  0,  8, false, false, false),
+                r(2, d(n, 1,17), d(n, 2, 6),  0,  4, false, false, false),
+                r(3, d(n, 2, 7), d(n, 4,10),  0,  2, false, false, false),
+                r(4, d(n, 4,11), d(n, 5,15),  0,  1, false, false, true ),
             ],
         }),
         // ---- English Charity Shield (353) — single neutral match. Modelled by
