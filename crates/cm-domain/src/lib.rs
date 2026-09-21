@@ -2646,11 +2646,22 @@ pub struct NationTierAssignment {
     pub nation_id: u32,
     pub nation_name: String,
     pub tier: LeagueTier,
-    /// Bit 2 (0x4) of the +0x11c byte: whether this nation's competitions get
-    /// full detailed-match simulation. Orthogonal to the tier (the exe's
-    /// "Background Matches Off/Normal/High" option). Foreground nations always
-    /// run detailed; background nations depend on the global option.
+    /// The `nation+0x11c & 0x2` "selected" bit (decoded via `FUN_00683e30`
+    /// set/clear + `FUN_0069c0d0` test): whether this nation's competitions run
+    /// the DETAILED match engine. Set for Foreground (selected) nations. A
+    /// Background nation carries bit `0x1` instead (instant results); a Neither
+    /// nation has `+0x11c == 0` (not fixture-simulated at all in the exe).
     pub detailed_matches: bool,
+}
+
+/// Detailed vs background match dispatch — the observable outcome of the exe's
+/// per-fixture Tier-2 predicate `FUN_0069c0d0`. `Detailed` runs the full
+/// per-token engine (watch-able, per-player stats); `Background` runs the
+/// condensed/instant route (real result + standings, no per-player detail).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MatchDetailMode {
+    Detailed,
+    Background,
 }
 
 /// The three league states, exactly mapping the exe's `nation_record + 0x11c`
@@ -20616,6 +20627,54 @@ impl RuntimeSaveGame {
         });
     }
 
+    /// True if `club_id` is (co-)managed by a human this game.
+    fn is_human_club(&self, club_id: u32) -> bool {
+        self.humans.iter().any(|h| h.club == Some(club_id))
+    }
+
+    /// Whether a club's nation is a *selected* (Foreground) nation — the exe's
+    /// `nation+0x11c & 0x2` bit, mirrored onto `NationTierAssignment
+    /// ::detailed_matches`. An unresolved nation (`club_nation` has no entry)
+    /// is by definition NOT selected, so it returns false — this is the fix
+    /// for the old `nid==0 -> detailed` / `unwrap_or(true)` bad defaults that
+    /// routed every foreign/unknown club through the expensive token model.
+    fn club_nation_selected(&self, club_id: u32) -> bool {
+        match self.finance.club_nation.get(&club_id) {
+            Some(&nid) => self
+                .nation_tiers
+                .iter()
+                .find(|t| t.nation_id as i32 == nid)
+                .map(|t| t.detailed_matches)
+                .unwrap_or(false),
+            None => false,
+        }
+    }
+
+    /// Canonical detailed-vs-background match dispatch — the single production
+    /// decision point (do NOT scatter nation-id checks elsewhere). Faithful
+    /// port of the exe's per-fixture Tier-2 predicate `FUN_0069c0d0`
+    /// (0x0069c0d0): a tie is DETAILED iff a human-managed club is involved OR
+    /// either club's nation is a *selected* nation (`nation+0x11c & 0x2`);
+    /// otherwise it is a BACKGROUND (instant/condensed) fixture. National-team
+    /// / continental fixtures never reach this — `play_due_national_fixtures`
+    /// (national_match.rs) plays and marks them Played before the club batch,
+    /// so they keep their real-engine appearance/cap crediting untouched.
+    ///
+    /// The exe's continental-confederation promotion and the high-reputation
+    /// exception are subsumed here for the selected nation (a selected club's
+    /// European tie already has a selected club → Detailed); the pure
+    /// foreign-vs-foreign continental promotion is a documented edge deferred
+    /// with the Neither-nation abstraction note (Part I).
+    fn match_detail_mode(&self, home_id: u32, away_id: u32) -> MatchDetailMode {
+        if self.is_human_club(home_id) || self.is_human_club(away_id) {
+            return MatchDetailMode::Detailed;
+        }
+        if self.club_nation_selected(home_id) || self.club_nation_selected(away_id) {
+            return MatchDetailMode::Detailed;
+        }
+        MatchDetailMode::Background
+    }
+
     /// Score a fixture through the exe-port match engine
     /// (`match_engine_exe::simulate_one_fixture` = ported `FUN_0069D950`
     /// + `FUN_0069F2F0` + `FUN_006BC8D0`). Returns `None` if we don't
@@ -20657,22 +20716,10 @@ impl RuntimeSaveGame {
         // draws, blown-out GF/GA) and is out of scope for the FUN_006F99C0
         // shot-gate port — needs its own investigation into
         // `player_ratings`/club_id coverage.
-        // Background-league fidelity fork — the exe's per-fixture
-        // detail flag lives on the nation record at +0x11c bit 2 and is
-        // mirrored onto NationTierAssignment.detailed_matches. Fixtures
-        // between two non-detailed nations skip the expensive token
-        // model and go straight to the condensed engine (this is the
-        // "Background Matches: Off" path in the shipped exe).
-        let home_nation = self.finance.club_nation.get(&home_id).copied().unwrap_or(0);
-        let away_nation = self.finance.club_nation.get(&away_id).copied().unwrap_or(0);
-        let detailed = |nid: i32| -> bool {
-            if nid == 0 { return true; } // unknown nation: default detailed
-            self.nation_tiers.iter()
-                .find(|t| t.nation_id as i32 == nid)
-                .map(|t| t.detailed_matches)
-                .unwrap_or(true)
-        };
-        let want_detailed = detailed(home_nation) || detailed(away_nation);
+        // Detailed-vs-background dispatch — single canonical decision
+        // (`match_detail_mode`), a faithful port of the exe's Tier-2 predicate
+        // `FUN_0069c0d0` (see reports/match_engine_observational_gap.md Part I).
+        let want_detailed = self.match_detail_mode(home_id, away_id) == MatchDetailMode::Detailed;
         // Always run the token model first for detailed fixtures so its
         // per-player rating pool + MotM pick survive even when the score
         // path falls back to the condensed engine. Prior wire lost these
