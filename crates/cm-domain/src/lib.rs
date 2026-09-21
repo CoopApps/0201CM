@@ -21023,6 +21023,7 @@ impl RuntimeSaveGame {
             drop(_exe_port);
             let (home_score, away_score) = match resolved {
                 Some(outcome) => {
+                    let _commit = crate::tick_profile::span("commit_match_effects");
                     // Accumulate REAL season stats from the actual match events
                     // (kill #B): every scored/assisted goal lands on its player.
                     for id in outcome.home_scorers.iter().chain(outcome.away_scorers.iter()) {
@@ -21099,15 +21100,18 @@ impl RuntimeSaveGame {
                     // exe's shape (played/benched split) but not the exact
                     // per-player played-flag from the match record — a
                     // refinement for when we surface the real XI.
+                    let _morale = crate::tick_profile::span("commit_morale_playedids");
                     let played_ids = |cid: u32| -> Vec<u32> {
-                        let mut ids: Vec<u32> = self.player_ratings.players.iter()
+                        let mut ids: Vec<(u32, i16)> = self.player_ratings.players.iter()
                             .filter(|p| p.club_id == Some(cid as i32))
-                            .map(|p| p.staff_id).collect();
-                        ids.sort_by_key(|id| {
-                            std::cmp::Reverse(self.player_ratings.players.iter()
-                                .find(|p| p.staff_id == *id).map(|p| p.ca).unwrap_or(0))
-                        });
-                        ids.into_iter().take(11).collect()
+                            .map(|p| (p.staff_id, p.ca)).collect();
+                        // Sort by CA desc on the CA we captured above — no nested
+                        // full-table `.find` per comparison (was O(P^2) per club).
+                        // `sort_by_key` is stable, so equal-CA ties keep their
+                        // player_ratings iteration order exactly as the previous
+                        // `.find`-based sort did — identical XI, no result change.
+                        ids.sort_by_key(|&(_, ca)| std::cmp::Reverse(ca));
+                        ids.into_iter().take(11).map(|(id, _)| id).collect()
                     };
                     let home_won = outcome.home_score.cmp(&outcome.away_score);
                     let home_played: Vec<u32> = played_ids(home_id);
@@ -21142,6 +21146,7 @@ impl RuntimeSaveGame {
                 "{} {}-{} {}",
                 home_name, home_score, away_score, away_name
             ));
+            let _tail = crate::tick_profile::span("commit_standings_report");
             let state_mutation_outputs =
                 match_engine_state_mutation_outputs(&scenario, &event_queue_outputs);
             apply_match_engine_state_mutation_outputs_to_store(
