@@ -77,6 +77,139 @@ pub fn decoded_round_dates(real_comp_id: i32, year: u16) -> Vec<GameDate> {
     }
 }
 
+// ============================================================================
+// Progressive-draw schedule model (commit 1 — data only, no behaviour change).
+//
+// The English domestic cups are decoded from the exe (reports/
+// cup_draw_structure_decode.md): rounds are drawn on their own DRAW date,
+// only that round's fixtures are materialised, and clubs enter at staggered
+// rounds via contiguous entry-pool windows. This module expresses that as
+// DATA so no `if comp_id == ...` behaviour is baked into the engine.
+// ============================================================================
+
+/// How a cup materialises its fixtures.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CupMode {
+    /// Whole bracket seeded and generated at boot (the original engine).
+    /// Used by undecoded cups (most foreign) — APPROXIMATE / UNDECODED.
+    LegacyPreGenerated,
+    /// Faithful: each round is drawn on its decoded draw date, staggered
+    /// entry via pool windows, replays/two-legs per the decoded flags. Used
+    /// only by cups with decoded executable evidence (the English cups).
+    ProgressiveDecoded,
+}
+
+impl Default for CupMode {
+    fn default() -> Self { CupMode::LegacyPreGenerated }
+}
+
+/// One round of a decoded cup: the exe's 0x68-byte round record, as data.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CupRoundSpec {
+    pub round: u32,
+    /// When the draw is performed (the round's fixtures materialise now).
+    pub draw_date: GameDate,
+    /// When this round's ties are played (leg 1 for a two-legged round).
+    pub match_date: GameDate,
+    /// New clubs entering the pool at THIS round (exe round-record `+0x1c`).
+    pub incoming: u32,
+    /// Ties this round (exe `+0x1a`). Participants should be `2*capacity`
+    /// (survivors + incoming); any shortfall becomes byes.
+    pub capacity: u32,
+    /// Two physical legs, venues swapped (exe `+0x21 == 2`).
+    pub two_leg: bool,
+    /// Drawn ties are replayed (exe `+0x20 == 1`); else settled on the day.
+    pub replay: bool,
+    /// Final played at a neutral venue.
+    pub neutral_final: bool,
+}
+
+/// A decoded cup's full lifecycle spec.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CupSchedule {
+    /// Total entrants across all rounds (Σ incoming) — the exe pool size.
+    pub pool_size: usize,
+    pub rounds: Vec<CupRoundSpec>,
+}
+
+/// The decoded English-cup schedule for `real_comp_id`, or `None` for an
+/// undecoded (legacy) cup. `euro_qual_count` = number of English clubs holding
+/// a European qualification (`Club+0x1db != -1`), clamped 0..=12 by the caller;
+/// it parameterises the League Cup entry windows (exe `b2 = comp+0xb2`).
+///
+/// FA Cup uses the shipped `b3=0, b4=false` branch → a fixed 152-team pool with
+/// Premier clubs in the round-3 (3rd Round Proper) entry slice.
+/// Source: reports/cup_draw_structure_decode.md.
+pub fn decoded_cup_schedule(
+    real_comp_id: i32,
+    year: u16,
+    euro_qual_count: u32,
+) -> Option<CupSchedule> {
+    let y = year;
+    let n = year + 1;
+    let d = |yr: u16, m: u8, dd: u8| GameDate { year: yr, month: m, day: dd };
+    let r = |round: u32, draw: GameDate, play: GameDate, incoming: u32, capacity: u32,
+             two_leg: bool, replay: bool, neutral_final: bool| CupRoundSpec {
+        round, draw_date: draw, match_date: play, incoming, capacity, two_leg, replay, neutral_final,
+    };
+    match real_comp_id {
+        // ---- English FA Cup (351) — FUN_00558f60, b3=0 ⇒ 152-team pool. ----
+        // Single-leg throughout; replays rounds 0-6; neutral final.
+        351 => Some(CupSchedule {
+            pool_size: 152,
+            rounds: vec![
+                r(0, d(y,10, 9), d(y,10,16), 56, 28, false, true,  false),
+                r(1, d(y,10,17), d(y,11,18), 52, 40, false, true,  false),
+                r(2, d(y,11,19), d(y,12,11),  0, 20, false, true,  false),
+                r(3, d(y,12,10), d(n, 1, 6), 44, 32, false, true,  false), // Premier enter (3rd Rd Proper)
+                r(4, d(n, 1, 7), d(n, 1,27),  0, 16, false, true,  false),
+                r(5, d(n, 1,28), d(n, 2,17),  0,  8, false, true,  false),
+                r(6, d(n, 2,18), d(n, 3,10),  0,  4, false, true,  false),
+                r(7, d(n, 3,11), d(n, 4, 8),  0,  2, false, false, false), // SF (single-leg in CM)
+                r(8, d(n, 4, 9), d(n, 5,12),  0,  1, false, false, true ), // Final (neutral)
+            ],
+        }),
+        // ---- English League Cup (352) — FUN_00556150, b2=euro_qual_count. ----
+        // Single-leg except the two-legged SF (round 5); no replays.
+        352 => {
+            let b2 = euro_qual_count.min(12);
+            Some(CupSchedule {
+                pool_size: 92,
+                rounds: vec![
+                    r(0, d(y, 7,23), d(y, 8,22), 56 + 2*b2, 28 + b2, false, false, false),
+                    r(1, d(y, 8,23), d(y, 9,20), (12 - b2)*3, 32 - b2, false, false, false),
+                    r(2, d(y, 9,28), d(y,10,28), b2,          16,      false, false, false), // Euro-quals enter
+                    r(3, d(y,10,29), d(y,11,11), 0,            8,      false, false, false),
+                    r(4, d(y,11,12), d(y,12, 2), 0,            4,      false, false, false),
+                    r(5, d(y,12, 3), d(n, 1,27), 0,            2,      true,  false, false), // SF two-legged
+                    r(6, d(n, 2,18), d(n, 4, 1), 0,            1,      false, false, true ), // Final (neutral)
+                ],
+            })
+        }
+        // ---- English FA Trophy (94) — FUN_0055abb0, 5 rounds single-leg. ----
+        // Non-league; no decoded qualifying staggering → all enter round 0.
+        // pool_size 0 = "all supplied clubs enter round 0" (engine fills it).
+        94 => Some(CupSchedule {
+            pool_size: 0,
+            rounds: vec![
+                r(0, d(y,11, 8), d(y,11,25), 0, 0, false, false, false),
+                r(1, d(y,11,26), d(n, 1,16), 0, 0, false, false, false),
+                r(2, d(n, 1,17), d(n, 2, 6), 0, 0, false, false, false),
+                r(3, d(n, 2, 7), d(n, 4,10), 0, 0, false, false, false),
+                r(4, d(n, 4,11), d(n, 5,15), 0, 1, false, false, true ),
+            ],
+        }),
+        // ---- English Charity Shield (353) — single neutral match. Modelled by
+        // the super_cup engine (champion vs FA Cup winner), listed here for the
+        // decoded draw/match dates: draw 5 Jul / match 13 Aug. ----
+        353 => Some(CupSchedule {
+            pool_size: 2,
+            rounds: vec![ r(0, d(y, 7, 5), d(y, 8,13), 2, 1, false, false, true) ],
+        }),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CupState {
     pub year: u16,
