@@ -23,3 +23,12 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+
+# Build cm-domain (a single ~22k-line lib.rs) without debug info: its LLVM
+# codegen with full debug info OOMs on low-RAM hosts (see the OOM note). Scoped
+# to this one crate so every other crate — including the GUI's windows-sys,
+# whose GNU dlltool import-lib build is broken here — keeps the default profile
+# and reuses its cache instead of rebuilding. Runtime speed is unaffected (still
+# an unoptimized dev build); only cm-domain backtraces lose line numbers.
+[profile.dev.package.cm-domain]
+debug = 0
