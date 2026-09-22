@@ -147,17 +147,6 @@ impl crate::World {
                 .map(|c| if c.short_name.trim().is_empty() { c.long_name.clone() } else { c.short_name.clone() })
                 .unwrap_or_else(|| format!("Competition {cid}"))
         };
-        let is_league = |cid: u32| -> bool {
-            self.references
-                .club_competitions
-                .iter()
-                .chain(self.references.staff_competitions.iter())
-                .chain(self.references.nation_competitions.iter())
-                .find(|c| c.id == cid)
-                .map(|c| !c.three_letter_name.trim().is_empty())
-                .unwrap_or(false)
-        };
-
         // Honours: filter club_comp_history for this club across winner/runner-up/
         // third-place, group by (competition, placing), aggregate the years.
         // Placing text: winner -> "Champions" (league) / "Winners" (cup);
@@ -184,10 +173,14 @@ impl crate::World {
             .map(|((cid, p), mut years)| {
                 years.sort_unstable();
                 years.dedup();
+                // Achievement text is capture-exact and UNIFORM across leagues
+                // and cups: winner -> "Winners" (Serie A / Premier Division both
+                // show "Winners", not "Champions"), runner-up -> "Runners Up",
+                // third -> "Third Placed" (Pro Vercelli Serie C1/A capture).
                 let achievement = match p {
-                    0 => if is_league(cid) { "Champions" } else { "Winners" },
+                    0 => "Winners",
                     1 => "Runners Up",
-                    _ => "Third",
+                    _ => "Third Placed",
                 }
                 .to_string();
                 HonourRow {
@@ -197,8 +190,21 @@ impl crate::World {
                 }
             })
             .collect();
-        // Group ordering: by competition then placing (winner first).
-        honours.sort_by(|a, b| a.competition.cmp(&b.competition).then(a.achievement.cmp(&b.achievement)));
+        // Ordering: by competition, then PLACING RANK within a competition
+        // (Winners → Runners Up → Third Placed) — capture-confirmed (Pro
+        // Vercelli shows Serie A Winners above Serie A Runners Up), NOT alpha by
+        // achievement text. (Cross-competition order in the exe is by comp
+        // prestige/id, not name; approximated here by name — flagged follow-up.)
+        let placing_rank = |a: &str| match a {
+            "Winners" => 0u8,
+            "Runners Up" => 1,
+            _ => 2,
+        };
+        honours.sort_by(|a, b| {
+            a.competition
+                .cmp(&b.competition)
+                .then(placing_rank(&a.achievement).cmp(&placing_rank(&b.achievement)))
+        });
 
         // View-dropdown. Decoded from GDI captures (Chester fresh-2001 +
         // Liverpool/Salisbury 2037): the menu is the competitions the club is

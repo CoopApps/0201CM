@@ -65,4 +65,19 @@ fn main() {
         && !v.view_menu.iter().any(|s| s == "Third Division");
     println!("CAPTURE CHECK — View menu is participation-based (Conference, not the Third Division honour): {}",
         if vm_ok { "PASS" } else { "FAIL" });
+
+    // Pro Vercelli (capture 11, 2037 save): Serie A · Winners · 1908.. ;
+    // Serie C1/A · Third Placed · 2034. Locks the placing text: leagues use
+    // "Winners" (NOT "Champions") and third place is "Third Placed".
+    if let Some(pv) = world.core.clubs.iter().map(|c| ClubView::new(c))
+        .find(|v| v.primary_name().contains("Vercelli")).map(|v| v.id())
+    {
+        let pvh = world.club_history_view(pv);
+        println!("\nPro Vercelli HONOURS:");
+        for h in &pvh.honours { println!("  {} | {} | {}", h.competition, h.achievement, h.years); }
+        let serie_a_winners = pvh.honours.iter().any(|h| h.competition.contains("Serie A") && h.achievement == "Winners" && h.years.contains("1908"));
+        let no_champions = !pvh.honours.iter().any(|h| h.achievement == "Champions");
+        println!("CAPTURE CHECK — Serie A 'Winners' incl 1908 (leagues use Winners, not Champions): {}",
+            if serie_a_winners && no_champions { "PASS" } else { "FAIL" });
+    }
 }
