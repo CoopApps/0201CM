@@ -33,6 +33,18 @@ pub struct RecordRow {
     pub value: String,
 }
 
+/// A Positions-tab row: season at x=110, `<ordinal> in <division>` at x=190.
+/// One row per season the club has completed (+ the live current season),
+/// newest-first, across all divisions. Same source as `LeagueSeasonRow`: the
+/// save's archived per-season finishes + live standings (runtime, not a static
+/// World table). Structure capture-verified (Scunthorpe 2037).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PositionRow {
+    pub season: String,   // "2037/8"
+    pub position: String, // ordinal, e.g. "1st", "22nd"
+    pub division: String, // league LONG name, e.g. "Second Division"
+}
+
 /// A Landmarks-tab row: date at x=110, description at x=194. A per-club
 /// milestone event log (manager hired/sacked/resigned, relegation/promotion,
 /// …), newest-first. EMPTY at game start; rows accrue from game events during
@@ -82,6 +94,11 @@ pub struct ClubHistoryView {
     /// Landmarks tab — per-club milestone event log, newest-first. EMPTY at
     /// game start (capture-confirmed); accrues from game events during play.
     pub landmarks: Vec<LandmarkRow>,
+    /// Positions tab (default View "Highest League Position") — one row per
+    /// season, newest-first, across all divisions. At game start only the live
+    /// current season exists; past seasons accrue at season-end (same source as
+    /// `league_seasons`; populated at the runtime layer, not this World view).
+    pub positions: Vec<PositionRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -323,6 +340,9 @@ impl crate::World {
             // Empty at game start (capture 12); the runtime milestone log fills
             // this during play (capture 13 shows the D.M.YY/description shape).
             landmarks: Vec::new(),
+            // Populated at the runtime layer from archived season finishes +
+            // live standings (capture 14); empty in the static World view.
+            positions: Vec::new(),
         }
     }
 }
