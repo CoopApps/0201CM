@@ -200,13 +200,32 @@ impl crate::World {
         // Group ordering: by competition then placing (winner first).
         honours.sort_by(|a, b| a.competition.cmp(&b.competition).then(a.achievement.cmp(&b.achievement)));
 
-        // View-dropdown: "Honours" + the distinct competitions the club has
-        // history in (the captured menu is club-specific).
-        let mut view_menu = vec!["Honours".to_string()];
+        // View-dropdown. Decoded from GDI captures (Chester fresh-2001 +
+        // Liverpool/Salisbury 2037): the menu is the competitions the club is
+        // ENTERED IN (participation), NOT its honours — Chester's game-start
+        // menu is [Honours, Domestic Leagues, Conference, FA Trophy, Vans
+        // Trophy] and does NOT list its Third Division honour; by 2037 Liverpool
+        // has accreted every comp it entered over the run (First Division,
+        // Inter-Toto Cup, …) while defunct comps (Cup Winners Cup) drop off.
+        // So: two fixed aggregates + the club's live competition entries.
+        //
+        // Verifiable now (from the club record's comp slots +0x57/0x5b/0x60):
+        // the club's LEAGUE (Chester -> Conference, Liverpool -> Premier
+        // Division). The per-season CUP entries (FA Cup/League Cup/FA Trophy/
+        // Vans Trophy/Europe) live in the runtime cup-entry pools (domestic_cup
+        // boot) + accrete each played season — not in this static World — so
+        // they are appended by the caller when the save's cup state is present.
+        let mut view_menu = vec!["Honours".to_string(), "Domestic Leagues".to_string()];
         let mut seen = std::collections::BTreeSet::new();
-        for h in &honours {
-            if seen.insert(h.competition.clone()) {
-                view_menu.push(h.competition.clone());
+        if let Some(c) = club {
+            for cid in ClubView::new(c).competition_ids() {
+                if cid < 0 {
+                    continue;
+                }
+                let name = comp_name(cid as u32);
+                if seen.insert(name.clone()) {
+                    view_menu.push(name);
+                }
             }
         }
 

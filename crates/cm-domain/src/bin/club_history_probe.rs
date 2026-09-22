@@ -55,4 +55,14 @@ fn main() {
     let ts_apps = v.records_this_season.iter().find(|r| r.label == "Most League Apps for Club").map(|r| r.value.as_str()).unwrap_or("");
     println!("CAPTURE CHECK — this-season Most League Apps '-': {}",
         if ts_apps == "-" { "PASS" } else { "FAIL" });
+
+    // View menu: fixed aggregates + the club's league (participation, not
+    // honours). Chester -> [Honours, Domestic Leagues, Conference] (cups appended
+    // by the caller from runtime cup state).
+    let vm_ok = v.view_menu.first().map(|s| s == "Honours").unwrap_or(false)
+        && v.view_menu.iter().any(|s| s == "Domestic Leagues")
+        && v.view_menu.iter().any(|s| s == "Conference")
+        && !v.view_menu.iter().any(|s| s == "Third Division");
+    println!("CAPTURE CHECK — View menu is participation-based (Conference, not the Third Division honour): {}",
+        if vm_ok { "PASS" } else { "FAIL" });
 }
