@@ -34,11 +34,19 @@ pub struct RecordRow {
 }
 
 /// A Transfers-tab row (History → Transfers, distinct from the Club Transfers
-/// activity screen): the season's RECORD transfer for the current View mode
-/// (e.g. "Highest Transfer Fee Paid"). Format `<value> - <player> from/to
-/// <other club> - <date>`; a barren season shows `value = "-"` with the rest
-/// blank. EMPTY at game start; runtime-populated from transfer events.
-/// Structure capture-verified (Scunthorpe 2037).
+/// activity screen): the season's value for the current View mode. The tab has
+/// FOUR View modes, and they are the SAME four transfer categories as the
+/// Records tab (must be computed from ONE per-season transfer ledger so the two
+/// screens stay linked): Records shows the all-time aggregate (MAX of the two
+/// "Highest" records, SUM of the two "Total"s), Transfers shows the per-season
+/// value.
+///  - Highest Transfer Fee Paid:     `<fee> - <player> from <selling club> - <date>`
+///  - Highest Transfer Fee Received: `<fee> - <player> to <buying club> - <date>`
+///  - Total Transfer Spending:       per-season total `<£amount>` (no player/club/date)
+///  - Total Transfer Income:         per-season total `<£amount>`
+/// A barren season shows `value = "-"` with the rest blank. EMPTY at game start;
+/// runtime-populated from transfer events. Structure capture-verified
+/// (Scunthorpe 2037).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TransferRecordRow {
     pub season: String,     // "2037/8"
@@ -193,7 +201,11 @@ impl crate::World {
     /// verified Chester -> 361/124 Stuart Rimmer).
     /// FLAGGED (value left "-"): the game-accrued records (Top Goalscorer,
     /// streaks, transfer-fee records, etc.) — empty at a fresh save, they accrue
-    /// live from match/season events as the game is played.
+    /// live from match/season events as the game is played. NOTE: the four
+    /// transfer-fee categories here (Highest Fee Paid/Received, Total Spending/
+    /// Income) are LINKED to the Transfers tab's four View modes — both derive
+    /// from one per-season transfer ledger (Records = all-time aggregate;
+    /// Transfers = per-season), so wire them from the same source.
     pub fn club_history_view(&self, club_id: u32) -> ClubHistoryView {
         use crate::typed_records::ClubView;
         let club = self.core.clubs.iter().find(|c| ClubView::new(c).id() == club_id);
