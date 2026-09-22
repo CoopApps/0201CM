@@ -308,7 +308,106 @@ pub const RECORDS_THIS_SEASON_LABELS: [&str; 17] = [
     "Fans Player Of The Year",
 ];
 
+/// English ordinal for a table position: 1→"1st", 2→"2nd", 3→"3rd", 11→"11th",
+/// 21→"21st", 22→"22nd", 23→"23rd".
+pub fn ordinal_str(n: usize) -> String {
+    let suffix = match (n % 100, n % 10) {
+        (11..=13, _) => "th",
+        (_, 1) => "st",
+        (_, 2) => "nd",
+        (_, 3) => "rd",
+        _ => "th",
+    };
+    format!("{n}{suffix}")
+}
+
+/// Season label from a starting year: 2001 → "2001/2", 2029 → "2029/0".
+pub fn season_label(start_year: u16) -> String {
+    format!("{}/{}", start_year, (start_year + 1) % 10)
+}
+
+/// Build the Positions + league-scope season rows for one club from the save's
+/// archived league tables (newest-season first). Pure so it can be tested
+/// without constructing a whole `RuntimeSaveGame`. `comp_name` maps a
+/// competition id to its display (division) name.
+pub fn season_rows_for_club(
+    tables: &[crate::ArchivedLeagueTable],
+    club_id: u32,
+    comp_name: impl Fn(u32) -> String,
+) -> (Vec<PositionRow>, Vec<LeagueSeasonRow>) {
+    // (season_year, PositionRow, LeagueSeasonRow) then sort newest-first.
+    let mut acc: Vec<(u16, PositionRow, LeagueSeasonRow)> = Vec::new();
+    for tbl in tables {
+        // Standard football order to derive the club's final position:
+        // points, then goal difference, then goals for (all descending).
+        let mut rows: Vec<&crate::HeadlessSeasonStanding> = tbl.rows.iter().collect();
+        rows.sort_by(|a, b| {
+            b.points
+                .cmp(&a.points)
+                .then(b.goal_difference.cmp(&a.goal_difference))
+                .then(b.goals_for.cmp(&a.goals_for))
+        });
+        let Some(rank) = rows.iter().position(|r| r.club_id == club_id) else {
+            continue;
+        };
+        let r = rows[rank];
+        let season = season_label(tbl.season_year);
+        let league = comp_name(tbl.competition_id);
+        let pos = ordinal_str(rank + 1);
+        acc.push((
+            tbl.season_year,
+            PositionRow { season: season.clone(), position: pos.clone(), division: league.clone() },
+            LeagueSeasonRow {
+                season,
+                position: pos,
+                league,
+                played: r.played,
+                won: r.won,
+                drawn: r.drawn,
+                lost: r.lost,
+                goals_for: r.goals_for,
+                goals_against: r.goals_against,
+                points: r.points,
+            },
+        ));
+    }
+    acc.sort_by(|a, b| b.0.cmp(&a.0)); // newest season first
+    let positions = acc.iter().map(|(_, p, _)| p.clone()).collect();
+    let league_seasons = acc.into_iter().map(|(_, _, l)| l).collect();
+    (positions, league_seasons)
+}
+
 impl crate::World {
+    /// Full club History view merging static DB content (honours, view menu,
+    /// records apps/goals) with the save's accrued per-season data. Currently
+    /// populates `positions` and `league_seasons` from `save.season_history`;
+    /// the other runtime tabs (attendances/transfers/players/sequences/results/
+    /// landmarks) still require their own per-season ledgers and stay empty.
+    pub fn club_history_view_with_save(
+        &self,
+        save: &crate::RuntimeSaveGame,
+        club_id: u32,
+    ) -> ClubHistoryView {
+        let mut view = self.club_history_view(club_id);
+        // Positions/league-scope use the division LONG name (capture-confirmed:
+        // "2nd in Premier Division"), unlike Honours' short names.
+        let comp_long = |cid: u32| -> String {
+            self.references
+                .club_competitions
+                .iter()
+                .chain(self.references.staff_competitions.iter())
+                .chain(self.references.nation_competitions.iter())
+                .find(|c| c.id == cid)
+                .map(|c| if c.long_name.trim().is_empty() { c.short_name.clone() } else { c.long_name.clone() })
+                .unwrap_or_else(|| format!("Competition {cid}"))
+        };
+        let (positions, league_seasons) =
+            season_rows_for_club(&save.season_history, club_id, comp_long);
+        view.positions = positions;
+        view.league_seasons = league_seasons;
+        view
+    }
+
     /// Build the club History view-model for `club_id`.
     ///
     /// DONE (DB-driven, verifiable): honours (from `references.club_comp_history`),
