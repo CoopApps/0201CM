@@ -94,10 +94,14 @@ pub struct ClubHistoryView {
     /// Landmarks tab — per-club milestone event log, newest-first. EMPTY at
     /// game start (capture-confirmed); accrues from game events during play.
     pub landmarks: Vec<LandmarkRow>,
-    /// Positions tab (default View "Highest League Position") — one row per
-    /// season, newest-first, across all divisions. At game start only the live
-    /// current season exists; past seasons accrue at season-end (same source as
-    /// `league_seasons`; populated at the runtime layer, not this World view).
+    /// Positions tab — one row per season, newest-first, across all divisions.
+    /// The tab has TWO View modes: "Highest League Position" (default) and
+    /// "Lowest League Position" — each season's best/worst league position (and
+    /// the division held at that moment; captures show the division can differ
+    /// between the two views across a promotion/relegation boundary). At game
+    /// start only the live current season exists; past seasons accrue at
+    /// season-end (same source as `league_seasons`; runtime layer tracks the
+    /// per-season position extreme, not this static World view).
     pub positions: Vec<PositionRow>,
 }
 
