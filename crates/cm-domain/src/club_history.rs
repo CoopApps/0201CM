@@ -17,6 +17,28 @@ pub const HISTORY_TOP_TABS: [&str; 5] =
 /// Bottom view-tab row (y=520).
 pub const HISTORY_BOTTOM_TABS: [&str; 4] = ["Results", "Sequences", "Players", "Transfers"];
 
+/// The Players tab "View" dropdown, in capture order (Liverpool/Italian 2037).
+/// These are the per-season player leaders; they mirror the Records tab's
+/// PLAYER categories but add "Most Capped Player" and "Fans Player Of The Year"
+/// and omit the team/streak + transfer records. Row FORMAT is per-mode (see
+/// `PlayerRecordRow`): season-leader (`<player> - <count>`), value-first
+/// (`<count> - <player>`), match-event, or with an `extra` qualifier.
+pub const PLAYERS_VIEW_MODES: [&str; 13] = [
+    "Top Goalscorer",
+    "Top League Goalscorer",
+    "Most Goals in Match",
+    "Most Assists",
+    "Highest Average Rating",
+    "Most Man of Match",
+    "Worst Discipline",
+    "Most League Apps for Club",
+    "Most League Goals for Club",
+    "Youngest Player",
+    "Oldest Player",
+    "Most Capped Player",
+    "Fans Player Of The Year",
+];
+
 /// A club honour: `Third Division` · `Runners Up` · `1986, 1994`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HonourRow {
