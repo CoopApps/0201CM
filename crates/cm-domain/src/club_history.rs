@@ -33,6 +33,20 @@ pub struct RecordRow {
     pub value: String,
 }
 
+/// A Players-tab row: the season's top player for the current View mode,
+/// `<player> - <value>`. The tab's View dropdown has many modes = the PLAYER
+/// record categories of the Records tab (Top Goalscorer, Top League Goalscorer,
+/// Most Apps, Highest Average Rating, Most Man of Match, …), LINKED like
+/// Transfers↔Records (Records = all-time leader; Players = per-season). EMPTY at
+/// game start; runtime-populated from per-season per-player stats. Structure
+/// capture-verified (Liverpool 2037, View "Top Goalscorer").
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlayerRecordRow {
+    pub season: String, // "2037/8"
+    pub player: String, // "Neil Lake"
+    pub value: String,  // metric value, e.g. "24" (goals), a rating, a count
+}
+
 /// A Transfers-tab row (History → Transfers, distinct from the Club Transfers
 /// activity screen): the season's value for the current View mode. The tab has
 /// FOUR View modes, and they are the SAME four transfer categories as the
@@ -151,6 +165,10 @@ pub struct ClubHistoryView {
     /// Transfers tab (History) — per-season record transfer for the current View
     /// mode. EMPTY at game start; runtime-populated from transfer events.
     pub transfer_records: Vec<TransferRecordRow>,
+    /// Players tab — per-season top player for the current View mode (Top
+    /// Goalscorer, etc.). EMPTY at game start; runtime-populated from per-season
+    /// player stats.
+    pub player_records: Vec<PlayerRecordRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -405,6 +423,9 @@ impl crate::World {
             // Empty at game start (no transfers made); runtime records per-season
             // record transfers (capture 17).
             transfer_records: Vec::new(),
+            // Empty at game start (no matches played); runtime records per-season
+            // player leaders (capture 20).
+            player_records: Vec::new(),
         }
     }
 }
