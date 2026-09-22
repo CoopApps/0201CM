@@ -119,15 +119,21 @@ impl crate::World {
     /// the decode; staff_history has no club field) and the game-accrual records.
     pub fn club_history_view(&self, club_id: u32) -> ClubHistoryView {
         use crate::typed_records::ClubView;
-        let club_name = self
-            .core
-            .clubs
-            .iter()
-            .find(|c| ClubView::new(c).id() == club_id)
-            .map(|c| ClubView::new(c).primary_name())
+        let club = self.core.clubs.iter().find(|c| ClubView::new(c).id() == club_id);
+        // Full name (club+0x04) for the model; the History title uses the SHORT
+        // name (club+0x38 secondary_name, e.g. "Chester") as the exe does.
+        let club_name = club.map(|c| ClubView::new(c).primary_name()).unwrap_or_default();
+        let short_club = club
+            .map(|c| {
+                let v = ClubView::new(c);
+                let s = v.secondary_name();
+                if s.trim().is_empty() { v.primary_name() } else { s }
+            })
             .unwrap_or_default();
 
-        // competition_id -> long name (honours + view menu).
+        // competition_id -> SHORT display name (the exe shows the competition
+        // record's short_name, e.g. "Third Division" not "English Third
+        // Division"). Falls back to long_name if a comp has no short name.
         let comp_name = |cid: u32| -> String {
             self.references
                 .club_competitions
@@ -135,7 +141,7 @@ impl crate::World {
                 .chain(self.references.staff_competitions.iter())
                 .chain(self.references.nation_competitions.iter())
                 .find(|c| c.id == cid)
-                .map(|c| c.long_name.clone())
+                .map(|c| if c.short_name.trim().is_empty() { c.long_name.clone() } else { c.short_name.clone() })
                 .unwrap_or_else(|| format!("Competition {cid}"))
         };
         let is_league = |cid: u32| -> bool {
@@ -211,7 +217,7 @@ impl crate::World {
         ClubHistoryView {
             club_id,
             club_name: club_name.clone(),
-            title: format!("{club_name} History"),
+            title: format!("{short_club} History"),
             top_tabs: HISTORY_TOP_TABS.iter().map(|s| s.to_string()).collect(),
             bottom_tabs: HISTORY_BOTTOM_TABS.iter().map(|s| s.to_string()).collect(),
             honours,
