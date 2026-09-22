@@ -5,7 +5,8 @@
 //!
 //! Run: cargo run -q -p cm-domain --bin history_seasons_probe
 
-use cm_domain::club_history::season_rows_for_club;
+use cm_domain::club_history::{season_rows_for_club, season_top_scorers_for_club};
+use cm_domain::player_profile::AccruedSeason;
 use cm_domain::{ArchivedLeagueTable, HeadlessSeasonStanding};
 
 fn standing(club: u32, comp: u32, p: u32, w: u32, d: u32, l: u32, gf: u32, ga: u32, pts: u32) -> HeadlessSeasonStanding {
@@ -89,5 +90,26 @@ fn main() {
         let l = &leagues[1];
         l.played == 38 && l.won == 22 && l.drawn == 6 && l.lost == 10 && l.goals_for == 70 && l.goals_against == 45 && l.points == 72
     });
+
+    // --- Players "Top Goalscorer" from accrued player-seasons ---
+    let seasons = vec![
+        AccruedSeason { person_id: 10, year: 2021, club_id: club as i32, apps: 30, goals: 18 },
+        AccruedSeason { person_id: 11, year: 2021, club_id: club as i32, apps: 28, goals: 24 }, // top 2021
+        AccruedSeason { person_id: 12, year: 2021, club_id: 999, apps: 30, goals: 40 },          // other club, ignore
+        AccruedSeason { person_id: 11, year: 2022, club_id: club as i32, apps: 20, goals: 9 },
+        AccruedSeason { person_id: 13, year: 2022, club_id: club as i32, apps: 34, goals: 15 },  // top 2022
+        AccruedSeason { person_id: 14, year: 2023, club_id: club as i32, apps: 10, goals: 0 },   // no goals -> season omitted
+    ];
+    let pname = |pid: u32| format!("Player{pid}");
+    let scorers = season_top_scorers_for_club(&seasons, club, pname);
+    println!("\nTOP SCORERS ({}):", scorers.len());
+    for r in &scorers {
+        println!("  {} {} - {}", r.season, r.value, r.player);
+    }
+    check("2 scorer rows (0-goal season omitted)", scorers.len() == 2);
+    check("newest-first 2022/3 then 2021/2", scorers[0].season == "2022/3" && scorers[1].season == "2021/2");
+    check("2022/3 top = Player13 - 15", scorers[0].player == "Player13" && scorers[0].value == "15");
+    check("2021/2 top = Player11 - 24 (club-scoped)", scorers[1].player == "Player11" && scorers[1].value == "24");
+
     std::process::exit(if pass { 0 } else { 1 });
 }

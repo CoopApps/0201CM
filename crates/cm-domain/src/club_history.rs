@@ -377,6 +377,50 @@ pub fn season_rows_for_club(
     (positions, league_seasons)
 }
 
+/// Build the Players tab's default "Top Goalscorer" rows for one club from the
+/// save's accrued player-seasons: per season, the club's top scorer (most goals
+/// among players at the club that season). Pure/testable. `player_name` maps a
+/// person id to a display name. Newest-season first; a season with no goals is
+/// omitted (the tab shows only seasons with a scorer).
+pub fn season_top_scorers_for_club(
+    player_seasons: &[crate::player_profile::AccruedSeason],
+    club_id: u32,
+    player_name: impl Fn(u32) -> String,
+) -> Vec<PlayerRecordRow> {
+    use std::collections::BTreeMap;
+    // year -> (best_goals, person_id)
+    let mut best: BTreeMap<u16, (u32, u32)> = BTreeMap::new();
+    for s in player_seasons {
+        if s.club_id < 0 || s.club_id as u32 != club_id || s.goals == 0 {
+            continue;
+        }
+        let e = best.entry(s.year).or_insert((0, 0));
+        if s.goals > e.0 {
+            *e = (s.goals, s.person_id);
+        }
+    }
+    let mut rows: Vec<(u16, PlayerRecordRow)> = best
+        .into_iter()
+        .map(|(year, (goals, pid))| {
+            (
+                year,
+                PlayerRecordRow {
+                    season: season_label(year),
+                    player: player_name(pid),
+                    value: goals.to_string(),
+                    opponent: String::new(),
+                    venue: String::new(),
+                    competition: String::new(),
+                    date: String::new(),
+                    extra: String::new(),
+                },
+            )
+        })
+        .collect();
+    rows.sort_by(|a, b| b.0.cmp(&a.0)); // newest first
+    rows.into_iter().map(|(_, r)| r).collect()
+}
+
 impl crate::World {
     /// Full club History view merging static DB content (honours, view menu,
     /// records apps/goals) with the save's accrued per-season data. Currently
@@ -405,6 +449,18 @@ impl crate::World {
             season_rows_for_club(&save.season_history, club_id, comp_long);
         view.positions = positions;
         view.league_seasons = league_seasons;
+
+        // Players tab, default "Top Goalscorer" mode, from accrued player-seasons.
+        let player_name = |pid: u32| -> String {
+            self.staff
+                .type6
+                .iter()
+                .find(|p| p.id == pid)
+                .map(|p| self.person_display_name(p))
+                .unwrap_or_default()
+        };
+        view.player_records =
+            season_top_scorers_for_club(&save.player_seasons, club_id, player_name);
         view
     }
 
