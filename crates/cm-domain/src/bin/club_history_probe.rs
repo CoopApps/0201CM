@@ -39,8 +39,20 @@ fn main() {
     }
     println!("\nRecords (this season) labels: {}", v.records_this_season.len());
 
-    // Assertion vs capture.
+    // Assertion vs capture: honours row.
     let ru = v.honours.iter().any(|h| h.achievement == "Runners Up" && h.years.contains("1986") && h.years.contains("1994"));
     println!("\nCAPTURE CHECK — a Runners-Up honour with years 1986 & 1994: {}",
         if ru { "PASS" } else { "FAIL (check comp-id space / club id)" });
+
+    // Assertion vs capture: the two shipped club records.
+    let apps = v.records_all_time.iter().find(|r| r.label == "Most League Apps for Club").map(|r| r.value.as_str()).unwrap_or("");
+    let goals = v.records_all_time.iter().find(|r| r.label == "Most League Goals for Club").map(|r| r.value.as_str()).unwrap_or("");
+    println!("CAPTURE CHECK — Most League Apps '361 - Stuart Rimmer': {}",
+        if apps == "361 - Stuart Rimmer" { "PASS" } else { "FAIL" });
+    println!("CAPTURE CHECK — Most League Goals '124 - Stuart Rimmer': {}",
+        if goals == "124 - Stuart Rimmer" { "PASS" } else { "FAIL" });
+    // This-season period resets both to "-" (capture-confirmed).
+    let ts_apps = v.records_this_season.iter().find(|r| r.label == "Most League Apps for Club").map(|r| r.value.as_str()).unwrap_or("");
+    println!("CAPTURE CHECK — this-season Most League Apps '-': {}",
+        if ts_apps == "-" { "PASS" } else { "FAIL" });
 }

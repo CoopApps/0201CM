@@ -513,6 +513,8 @@ pub struct DomainHistory17 {
     // Named fields (populated by regen_histories via StaffHistoryView).
     #[serde(default)] pub person_id: u32,
     #[serde(default)] pub year: u16,
+    /// CLUB id for that season, not a competition (misnamed for JSON-key compat;
+    /// +0x0a resolves through the 581-byte club pool). See StaffHistoryView.
     #[serde(default)] pub competition_id: u32,
     #[serde(default)] pub subs: u8,
     #[serde(default)] pub apps: u8,
@@ -23199,7 +23201,7 @@ fn runtime_phase_frontiers(phase: u8) -> Vec<RuntimePhaseFrontier> {
             "verified tiny helper: resets match-state scratch offsets +0x475a..+0x4769, sets +0x475f to 0xffff, clears active pointers +0x4761/+0x4765, and restores bytes +0x475b..+0x475e to 0xff; semantics not implemented",
         ),
         phase_frontier(
-            "0x006a3240",
+            "0x00>a3240",
             "match period transition frontier",
             "verified frontier shape: reads period/tick shorts +0x8ed4/+0x8ed0, handles thresholds 0x1ef/0x3de/0x483/0x528, writes fixture score/status bytes +0x43..+0x48 from +0xf5bd/+0xf5f3, emits period transition events 0x20f1/0x20f2/0x20f3, mutates +0x8eb2/+0x8eb3/+0x8eb6/+0x8eb7, and resets player slots through 0x006db210; period semantics not implemented",
         ),

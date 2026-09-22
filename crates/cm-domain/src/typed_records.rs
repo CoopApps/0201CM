@@ -1579,7 +1579,13 @@ impl<'a> StaffHistoryView<'a> {
     pub fn person_id(&self) -> u32 { le_u32(self.raw, 0x04) }
     /// Season start year (e.g. 1984 = 0x07C0).
     pub fn year(&self) -> u16 { le_u16(self.raw, 0x08) }
-    /// `club_comp.dat` id (competition).
+    /// CLUB id for that season (NOT a competition, despite the name). Decoded
+    /// from the exe boot pass FUN_007a8090 + link pass FUN_0051b110: +0x0a is
+    /// resolved through the 581-byte club pool (stride 0x245), and the club
+    /// Records screen sums apps/goals per (person, this club) to pick the "Most
+    /// League Apps/Goals for Club" holder. Kept named `competition_id` only for
+    /// rust-db JSON-key compatibility; player_profile + club_history use it as
+    /// the club. VERIFIED: Chester -> 361/124 Stuart Rimmer.
     pub fn competition_id(&self) -> u32 { le_u32(self.raw, 0x0a) }
     /// Byte at `+0xe`. Substitute-appearances is the strong guess (byte-wide
     /// counter beside apps and goals); UNVERIFIED.

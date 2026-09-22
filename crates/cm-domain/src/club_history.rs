@@ -113,10 +113,13 @@ impl crate::World {
     /// Build the club History view-model for `club_id`.
     ///
     /// DONE (DB-driven, verifiable): honours (from `references.club_comp_history`),
-    /// the View-dropdown competitions, the record category lists.
-    /// FLAGGED (value left "-" — attribution/aggregation not yet decoded):
-    /// "Most League Apps/Goals for Club" (needs the per-club career link — see
-    /// the decode; staff_history has no club field) and the game-accrual records.
+    /// the View-dropdown competitions, the record category lists, and the two
+    /// shipped club records "Most League Apps/Goals for Club" (decoded: the club
+    /// key is staff_history +0x0a, holder = max summed apps/goals per person;
+    /// verified Chester -> 361/124 Stuart Rimmer).
+    /// FLAGGED (value left "-"): the game-accrued records (Top Goalscorer,
+    /// streaks, transfer-fee records, etc.) — empty at a fresh save, they accrue
+    /// live from match/season events as the game is played.
     pub fn club_history_view(&self, club_id: u32) -> ClubHistoryView {
         use crate::typed_records::ClubView;
         let club = self.core.clubs.iter().find(|c| ClubView::new(c).id() == club_id);
@@ -207,10 +210,62 @@ impl crate::World {
             }
         }
 
-        let rec = |labels: &[&str]| -> Vec<RecordRow> {
+        // Shipped all-time club records: "Most League Apps/Goals for Club".
+        // Decoded (task aa66fc0520829a5..): staff_history +0x0a is the CLUB
+        // (resolved via the 581-byte club pool — NOT a competition; my field
+        // label `competition_id` is a misnomer, and player_profile already
+        // treats it as the club). The holder is max(sum(apps)) / max(sum(goals))
+        // per (person, club). VERIFIED: Chester -> 361 / 124 Stuart Rimmer.
+        use std::collections::HashMap;
+        let mut apps_sum: HashMap<u32, u64> = HashMap::new();
+        let mut goals_sum: HashMap<u32, u64> = HashMap::new();
+        for h in &self.references.staff_history {
+            if h.competition_id == club_id {
+                *apps_sum.entry(h.person_id).or_default() += h.apps as u64;
+                *goals_sum.entry(h.person_id).or_default() += h.goals as u64;
+            }
+        }
+        let holder = |m: &HashMap<u32, u64>| -> Option<String> {
+            m.iter()
+                .max_by_key(|(_, v)| **v)
+                .filter(|(_, v)| **v > 0)
+                .map(|(pid, v)| {
+                    let name = self
+                        .staff
+                        .type6
+                        .iter()
+                        .find(|p| p.id == *pid)
+                        .map(|p| self.person_display_name(p))
+                        .unwrap_or_default();
+                    if name.trim().is_empty() {
+                        format!("{v}")
+                    } else {
+                        format!("{v} - {name}")
+                    }
+                })
+        };
+        let most_apps = holder(&apps_sum);
+        let most_goals = holder(&goals_sum);
+
+        // Fill a per-period category list. All game-accrued records are "-"
+        // (empty at a fresh save; they accrue live). The two shipped club
+        // records populate in the ALL-TIME period only; the THIS-SEASON period
+        // resets them to "-" (the new season hasn't accrued) — capture-confirmed.
+        let rec = |labels: &[&str], all_time: bool| -> Vec<RecordRow> {
             labels
                 .iter()
-                .map(|l| RecordRow { label: (*l).to_string(), value: "-".to_string() })
+                .map(|l| {
+                    let value = match (all_time, *l) {
+                        (true, "Most League Apps for Club") => {
+                            most_apps.clone().unwrap_or_else(|| "-".to_string())
+                        }
+                        (true, "Most League Goals for Club") => {
+                            most_goals.clone().unwrap_or_else(|| "-".to_string())
+                        }
+                        _ => "-".to_string(),
+                    };
+                    RecordRow { label: (*l).to_string(), value }
+                })
                 .collect()
         };
 
@@ -222,8 +277,8 @@ impl crate::World {
             bottom_tabs: HISTORY_BOTTOM_TABS.iter().map(|s| s.to_string()).collect(),
             honours,
             view_menu,
-            records_all_time: rec(&RECORDS_ALL_TIME_LABELS),
-            records_this_season: rec(&RECORDS_THIS_SEASON_LABELS),
+            records_all_time: rec(&RECORDS_ALL_TIME_LABELS, true),
+            records_this_season: rec(&RECORDS_THIS_SEASON_LABELS, false),
             league_seasons: Vec::new(),
         }
     }
