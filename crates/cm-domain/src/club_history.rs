@@ -131,6 +131,31 @@ pub struct AttendanceRow {
     pub date: String,        // "14.11.37" ("" for Average)
 }
 
+/// The Results tab "View" dropdown, in capture order (2037). Per-season record
+/// MATCH for the selected kind.
+pub const RESULTS_VIEW_MODES: [&str; 5] = [
+    "Biggest Win",
+    "Biggest League Win",
+    "Biggest Defeat",
+    "Highest Scoring Game",
+    "Highest Scoring League Game",
+];
+
+/// A Results-tab row: the season's record match for the current View mode,
+/// `<score> v <opponent> (H|A) <competition+round> <date>` (e.g. `9-0 v
+/// Liverpool (A) Premier Division 3.4.32`). EMPTY at game start;
+/// runtime-populated from per-season match results. Structure capture-verified
+/// (2037).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResultRow {
+    pub season: String,      // "2037/8"
+    pub score: String,       // "4-0"
+    pub opponent: String,    // "Liverpool"
+    pub venue: String,       // "H"/"A"
+    pub competition: String, // "Premier Division" / "FA Cup 5th Rnd"
+    pub date: String,        // "23.9.37"
+}
+
 /// The Sequences tab "View" dropdown, in capture order (Scunthorpe/Liverpool
 /// 2037). Per-season best streak for the selected kind.
 pub const SEQUENCES_VIEW_MODES: [&str; 4] = [
@@ -237,6 +262,10 @@ pub struct ClubHistoryView {
     /// (Most Games Won/Lost in Row, Most Games Without Losing/Winning). EMPTY at
     /// game start; runtime-populated from per-season match results.
     pub sequences: Vec<SequenceRow>,
+    /// Results tab — per-season record match for the current View mode (Biggest
+    /// Win/League Win/Defeat, Highest Scoring [League] Game). EMPTY at game
+    /// start; runtime-populated from per-season match results.
+    pub results: Vec<ResultRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -497,6 +526,9 @@ impl crate::World {
             // Empty at game start (no matches played); runtime records per-season
             // streaks (capture 34).
             sequences: Vec::new(),
+            // Empty at game start (no matches played); runtime records per-season
+            // record matches (capture 35).
+            results: Vec::new(),
         }
     }
 }
