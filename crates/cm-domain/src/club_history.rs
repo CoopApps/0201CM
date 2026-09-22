@@ -51,8 +51,9 @@ pub struct RecordRow {
 /// fields (capture-verified): Top Goalscorer / Top League Goalscorer render
 /// `<player> - <value>` (player first, full name); Most Assists renders `<value>
 /// - <player>` (value first, full name); Most Goals in Match renders `<value> -
-/// <abbrev> v …` (value first, abbreviated). The renderer picks the format from
-/// the active View mode; the stored fields do not change.
+/// <abbrev> v …` (value first, abbreviated); Highest Average Rating renders
+/// `<rating> - <player> (<N> apps)` (the apps count in `extra`). The renderer
+/// picks the format from the active View mode; the stored fields do not change.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlayerRecordRow {
     pub season: String,      // "2037/8"
@@ -62,6 +63,9 @@ pub struct PlayerRecordRow {
     pub venue: String,       // "H"/"A" for match modes, else ""
     pub competition: String, // "First Division"/"League Cup 2nd Rnd" (match modes), else ""
     pub date: String,        // "8.11.14" (match modes), else ""
+    /// Trailing qualifier for modes that need one, e.g. "(34 apps)" in Highest
+    /// Average Rating (`<rating> - <player> (<N> apps)`); else "".
+    pub extra: String,
 }
 
 /// A Transfers-tab row (History → Transfers, distinct from the Club Transfers
