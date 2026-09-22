@@ -33,6 +33,18 @@ pub struct RecordRow {
     pub value: String,
 }
 
+/// A Landmarks-tab row: date at x=110, description at x=194. A per-club
+/// milestone event log (manager hired/sacked/resigned, relegation/promotion,
+/// …), newest-first. EMPTY at game start; rows accrue from game events during
+/// play (runtime, like News). Structure capture-verified (Liverpool 2037).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LandmarkRow {
+    /// `D.M.YY` (e.g. `8.5.32`).
+    pub date: String,
+    /// e.g. `Hired Max Bell`, `Relegation from English Premier Division`.
+    pub description: String,
+}
+
 /// A per-season league record row (Competitions view, league scope).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LeagueSeasonRow {
@@ -67,6 +79,9 @@ pub struct ClubHistoryView {
     pub records_this_season: Vec<RecordRow>,
     /// Competitions tab, league scope — one row per season.
     pub league_seasons: Vec<LeagueSeasonRow>,
+    /// Landmarks tab — per-club milestone event log, newest-first. EMPTY at
+    /// game start (capture-confirmed); accrues from game events during play.
+    pub landmarks: Vec<LandmarkRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -305,6 +320,9 @@ impl crate::World {
             records_all_time: rec(&RECORDS_ALL_TIME_LABELS, true),
             records_this_season: rec(&RECORDS_THIS_SEASON_LABELS, false),
             league_seasons: Vec::new(),
+            // Empty at game start (capture 12); the runtime milestone log fills
+            // this during play (capture 13 shows the D.M.YY/description shape).
+            landmarks: Vec::new(),
         }
     }
 }
