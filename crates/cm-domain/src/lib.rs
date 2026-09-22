@@ -118,6 +118,7 @@ pub mod weather;
 pub mod group_stage;
 pub mod domestic_cup;
 pub mod club_history;
+pub mod club_season_records;
 pub mod gameplay_mutators;
 pub mod honours;
 pub mod simple_league;
