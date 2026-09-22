@@ -44,7 +44,9 @@ pub struct RecordRow {
 ///  - Highest Transfer Fee Received: `<fee> - <player> to <buying club> - <date>`
 ///  - Total Transfer Spending:       per-season total `<£amount>` (no player/club/date)
 ///  - Total Transfer Income:         per-season total `<£amount>`
-/// A barren season shows `value = "-"` with the rest blank. EMPTY at game start;
+/// Empty-season sentinel is view-mode-dependent (capture-confirmed): the two
+/// "Highest" modes show `value = "-"`, the two "Total" modes show `value = "£0"`.
+/// EMPTY at game start;
 /// runtime-populated from transfer events. Structure capture-verified
 /// (Scunthorpe 2037).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
