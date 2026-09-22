@@ -46,6 +46,13 @@ pub struct RecordRow {
 ///  - match-event modes (Most Goals in Match, …): `<value> - <abbrev> v
 ///    <opponent> (H|A) <competition+round> <date>`, player name ABBREVIATED to
 ///    `Initial.Surname`, all match fields set.
+///
+/// The DISPLAY ORDER and name style are per-mode formatting rules over the same
+/// fields (capture-verified): Top Goalscorer / Top League Goalscorer render
+/// `<player> - <value>` (player first, full name); Most Assists renders `<value>
+/// - <player>` (value first, full name); Most Goals in Match renders `<value> -
+/// <abbrev> v …` (value first, abbreviated). The renderer picks the format from
+/// the active View mode; the stored fields do not change.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlayerRecordRow {
     pub season: String,      // "2037/8"
