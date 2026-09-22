@@ -2559,6 +2559,12 @@ pub struct RuntimeSaveGame {
     /// per person; merged with shipped `staff_history` at display.
     #[serde(default)]
     pub player_seasons: Vec<crate::player_profile::AccruedSeason>,
+    /// Per-club, per-season match records behind the club History Results +
+    /// Sequences tabs (biggest win/defeat/highest scoring + streaks). Updated at
+    /// fixture resolution for recorded competitive matches; see
+    /// [`crate::club_season_records`].
+    #[serde(default)]
+    pub club_season_records: Vec<crate::club_season_records::ClubSeasonRecords>,
     /// The game's global table RNG (byte-exact port), used by the ported
     /// injury generator. Seeded at kickoff.
     #[serde(default)]
@@ -13734,6 +13740,7 @@ impl World {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: vec![
@@ -25631,6 +25638,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
@@ -25875,6 +25883,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
@@ -26125,6 +26134,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
@@ -26242,6 +26252,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
@@ -26354,6 +26365,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
@@ -26454,6 +26466,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
@@ -26556,6 +26569,7 @@ mod tests {
             transfers_credited: 0,
             intl_caps: Vec::new(),
             player_seasons: Vec::new(),
+            club_season_records: Vec::new(),
             sim_rng: crate::sim_rng::SimRng::default(),
             argentine_transfer_rules: None,
             notes: Vec::new(),
