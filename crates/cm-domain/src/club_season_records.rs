@@ -7,6 +7,11 @@
 //! be fed in chronological order (the tick resolves fixtures by date), which is
 //! what makes the streak tracking correct.
 //!
+//! Like the exe's record body, records store IDS + the raw date (not display
+//! strings): `opponent_id`, `competition_id`, a small round descriptor, home
+//! flag, `GameDate`. Display strings are formatted lazily at view time via
+//! closures (`result_row`/`result_rows`), so the ledger stays compact.
+//!
 //! Rules decoded byte-exact from the exe record engine `FUN_00445220` (driver
 //! `FUN_0069b930`), compares `FUN_007ccaa0`/`FUN_007ccb70`/`FUN_007ccc50`, and
 //! the league test `FUN_004b6b30` — NOT reconstructed from the display. Biggest
@@ -28,47 +33,55 @@
 use serde::{Deserialize, Serialize};
 
 use crate::club_history::{season_label, ResultRow, SequenceRow};
+use crate::GameDate;
 
-/// One resolved match from a club's perspective, fed to the accumulator.
+/// `D.M.YY` — day and month unpadded, year the 2-digit zero-padded remainder
+/// (capture-confirmed: `2.12.09`, `23.9.37`, `6.4.30`).
+pub fn fmt_date(d: GameDate) -> String {
+    format!("{}.{}.{:02}", d.day, d.month, d.year % 100)
+}
+
+/// One resolved match from a club's perspective, fed to the accumulator. The
+/// caller supplies ids + the round descriptor (empty for leagues) + is_league.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MatchInput {
     pub our_goals: u32,
     pub their_goals: u32,
-    pub opponent: String,
-    /// "H" or "A".
-    pub venue: String,
-    /// Display competition incl. round, e.g. "Premier Division",
-    /// "FA Cup 5th Rnd".
-    pub competition: String,
+    pub opponent_id: u32,
+    /// True when this club played at home.
+    pub home: bool,
+    pub competition_id: u32,
+    /// Round descriptor appended after the competition name, e.g. "3rd Rnd",
+    /// "Playoff Semi Final Leg 2"; empty for a plain league fixture.
+    pub round: String,
+    /// Division-type competition (not a cup / play-off) — decoded `FUN_004b6b30`.
     pub is_league: bool,
-    /// Display date, e.g. "23.9.37".
-    pub date: String,
+    pub date: GameDate,
 }
 
-/// A record match kept for the Results tab.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MatchRef {
+/// A record match kept for the Results tab (ids + raw date; formatted lazily).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MatchRecord {
     pub our_goals: u32,
     pub their_goals: u32,
-    pub opponent: String,
-    pub venue: String,
-    pub competition: String,
-    pub date: String,
+    pub opponent_id: u32,
+    pub home: bool,
+    pub competition_id: u32,
+    pub round: String,
+    pub date: GameDate,
 }
 
-impl MatchRef {
+impl MatchRecord {
     fn from_input(m: &MatchInput) -> Self {
         Self {
             our_goals: m.our_goals,
             their_goals: m.their_goals,
-            opponent: m.opponent.clone(),
-            venue: m.venue.clone(),
-            competition: m.competition.clone(),
-            date: m.date.clone(),
+            opponent_id: m.opponent_id,
+            home: m.home,
+            competition_id: m.competition_id,
+            round: m.round.clone(),
+            date: m.date,
         }
-    }
-    fn score(&self) -> String {
-        format!("{}-{}", self.our_goals, self.their_goals)
     }
     fn win_margin(&self) -> i64 {
         self.our_goals as i64 - self.their_goals as i64
@@ -77,42 +90,42 @@ impl MatchRef {
         self.our_goals + self.their_goals
     }
 
-    /// Should `self` (a new win) replace `stored` as the Biggest Win?
-    /// Decoded `FUN_007ccaa0`: larger goal MARGIN wins; on equal margin, more
-    /// goals SCORED wins; otherwise keep the earlier-achieved record.
-    fn beats_win(&self, stored: &MatchRef) -> bool {
+    /// New win replaces `stored` as Biggest Win? Decoded `FUN_007ccaa0`: larger
+    /// MARGIN; equal margin → more goals SCORED; full tie → keep earlier.
+    fn beats_win(&self, stored: &MatchRecord) -> bool {
         let (nm, sm) = (self.win_margin(), stored.win_margin());
         if nm != sm { nm > sm } else { self.our_goals > stored.our_goals }
     }
-
-    /// Should `self` (a new loss) replace `stored` as the Biggest Defeat?
-    /// Decoded `FUN_007ccb70`: larger losing margin (their-our); on equal margin,
-    /// more goals CONCEDED; otherwise keep the earlier record.
-    fn beats_defeat(&self, stored: &MatchRef) -> bool {
+    /// New loss replaces `stored` as Biggest Defeat? Decoded `FUN_007ccb70`:
+    /// larger losing margin; equal → more goals CONCEDED; else keep earlier.
+    fn beats_defeat(&self, stored: &MatchRecord) -> bool {
         let nm = self.their_goals as i64 - self.our_goals as i64;
         let sm = stored.their_goals as i64 - stored.our_goals as i64;
         if nm != sm { nm > sm } else { self.their_goals > stored.their_goals }
     }
-
-    /// Should `self` replace `stored` as the Highest Scoring game? Decoded
-    /// `FUN_007ccc50`: by TOTAL goals, strictly greater; ties keep the earlier.
-    /// Reproduces the exe's guard exactly: it only compares when
-    /// `stored.their_goals + self.our_goals != 0` (a genuine oddity of the
-    /// original), otherwise keeps `stored`.
-    fn beats_scoring(&self, stored: &MatchRef) -> bool {
+    /// New replaces `stored` as Highest Scoring? Decoded `FUN_007ccc50`: TOTAL
+    /// goals, strictly greater; ties keep earlier; exe guard: only compares when
+    /// `stored.their_goals + self.our_goals != 0`.
+    fn beats_scoring(&self, stored: &MatchRecord) -> bool {
         if stored.their_goals + self.our_goals == 0 {
             return false;
         }
         self.total() > stored.total()
     }
-    fn to_result_row(&self, season: &str) -> ResultRow {
+
+    fn to_result_row(
+        &self,
+        season: &str,
+        club_name: &impl Fn(u32) -> String,
+        comp_disp: &impl Fn(u32, &str) -> String,
+    ) -> ResultRow {
         ResultRow {
             season: season.to_string(),
-            score: self.score(),
-            opponent: self.opponent.clone(),
-            venue: self.venue.clone(),
-            competition: self.competition.clone(),
-            date: self.date.clone(),
+            score: format!("{}-{}", self.our_goals, self.their_goals),
+            opponent: club_name(self.opponent_id),
+            venue: if self.home { "H".to_string() } else { "A".to_string() },
+            competition: comp_disp(self.competition_id, &self.round),
+            date: fmt_date(self.date),
         }
     }
 }
@@ -121,33 +134,38 @@ impl MatchRef {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 struct Streak {
     cur_len: u32,
-    cur_start: String,
+    cur_start: Option<GameDate>,
     best_len: u32,
-    best_start: String,
-    best_end: String,
+    best_start: Option<GameDate>,
+    best_end: Option<GameDate>,
 }
 
 impl Streak {
     /// Extend the current run with a match on `date`; promote to best if longer.
-    fn extend(&mut self, date: &str) {
+    /// Start is stamped when the counter first reaches 1 (decoded); end is the
+    /// match that achieved the best length.
+    fn extend(&mut self, date: GameDate) {
         if self.cur_len == 0 {
-            self.cur_start = date.to_string();
+            self.cur_start = Some(date);
         }
         self.cur_len += 1;
         if self.cur_len > self.best_len {
             self.best_len = self.cur_len;
-            self.best_start = self.cur_start.clone();
-            self.best_end = date.to_string();
+            self.best_start = self.cur_start;
+            self.best_end = Some(date);
         }
     }
     fn reset(&mut self) {
         self.cur_len = 0;
-        self.cur_start.clear();
+        self.cur_start = None;
     }
     fn to_sequence_row(&self, season: &str) -> SequenceRow {
         // length-1 streak shows just the length (no range) — capture-confirmed.
         let (start, end) = if self.best_len >= 2 {
-            (self.best_start.clone(), self.best_end.clone())
+            (
+                self.best_start.map(fmt_date).unwrap_or_default(),
+                self.best_end.map(fmt_date).unwrap_or_default(),
+            )
         } else {
             (String::new(), String::new())
         };
@@ -165,13 +183,11 @@ impl Streak {
 pub struct ClubSeasonRecords {
     pub season_year: u16,
     pub club_id: u32,
-    // Results (Option: None until the club plays a qualifying match).
-    biggest_win: Option<MatchRef>,
-    biggest_league_win: Option<MatchRef>,
-    biggest_defeat: Option<MatchRef>,
-    highest_scoring: Option<MatchRef>,
-    highest_scoring_league: Option<MatchRef>,
-    // Sequences.
+    biggest_win: Option<MatchRecord>,
+    biggest_league_win: Option<MatchRecord>,
+    biggest_defeat: Option<MatchRecord>,
+    highest_scoring: Option<MatchRecord>,
+    highest_scoring_league: Option<MatchRecord>,
     won: Streak,
     lost: Streak,
     unbeaten: Streak,
@@ -185,11 +201,10 @@ impl ClubSeasonRecords {
 
     /// Fold one resolved match (called in chronological order).
     pub fn update_with_match(&mut self, m: &MatchInput) {
-        let r = MatchRef::from_input(m);
+        let r = MatchRecord::from_input(m);
         let win = r.our_goals > r.their_goals;
         let loss = r.our_goals < r.their_goals;
 
-        // Biggest win (all comps) + Biggest League Win (division-type only).
         if win {
             if self.biggest_win.as_ref().map_or(true, |b| r.beats_win(b)) {
                 self.biggest_win = Some(r.clone());
@@ -200,11 +215,9 @@ impl ClubSeasonRecords {
                 self.biggest_league_win = Some(r.clone());
             }
         }
-        // Biggest defeat (all comps).
         if loss && self.biggest_defeat.as_ref().map_or(true, |b| r.beats_defeat(b)) {
             self.biggest_defeat = Some(r.clone());
         }
-        // Highest scoring (all comps) + league variant.
         if self.highest_scoring.as_ref().map_or(true, |b| r.beats_scoring(b)) {
             self.highest_scoring = Some(r.clone());
         }
@@ -214,15 +227,20 @@ impl ClubSeasonRecords {
             self.highest_scoring_league = Some(r.clone());
         }
 
-        // Streaks.
-        if win { self.won.extend(&m.date); } else { self.won.reset(); }
-        if loss { self.lost.extend(&m.date); } else { self.lost.reset(); }
-        if !loss { self.unbeaten.extend(&m.date); } else { self.unbeaten.reset(); }
-        if !win { self.winless.extend(&m.date); } else { self.winless.reset(); }
+        // Streaks (decoded transitions).
+        if win { self.won.extend(r.date); } else { self.won.reset(); }
+        if loss { self.lost.extend(r.date); } else { self.lost.reset(); }
+        if !loss { self.unbeaten.extend(r.date); } else { self.unbeaten.reset(); }
+        if !win { self.winless.extend(r.date); } else { self.winless.reset(); }
     }
 
-    /// Result row for one `RESULTS_VIEW_MODES` mode, if a qualifying match exists.
-    pub fn result_row(&self, mode: &str) -> Option<ResultRow> {
+    /// Result row for one `RESULTS_VIEW_MODES` mode (formatted via closures).
+    pub fn result_row(
+        &self,
+        mode: &str,
+        club_name: &impl Fn(u32) -> String,
+        comp_disp: &impl Fn(u32, &str) -> String,
+    ) -> Option<ResultRow> {
         let s = season_label(self.season_year);
         let m = match mode {
             "Biggest Win" => &self.biggest_win,
@@ -232,7 +250,7 @@ impl ClubSeasonRecords {
             "Highest Scoring League Game" => &self.highest_scoring_league,
             _ => return None,
         };
-        m.as_ref().map(|r| r.to_result_row(&s))
+        m.as_ref().map(|r| r.to_result_row(&s, club_name, comp_disp))
     }
 
     /// Sequence row for one `SEQUENCES_VIEW_MODES` mode.
@@ -250,11 +268,17 @@ impl ClubSeasonRecords {
 }
 
 /// Results rows for a club across seasons (newest-first) for a given View mode.
-pub fn result_rows(records: &[ClubSeasonRecords], club_id: u32, mode: &str) -> Vec<ResultRow> {
+pub fn result_rows(
+    records: &[ClubSeasonRecords],
+    club_id: u32,
+    mode: &str,
+    club_name: &impl Fn(u32) -> String,
+    comp_disp: &impl Fn(u32, &str) -> String,
+) -> Vec<ResultRow> {
     let mut rows: Vec<(u16, ResultRow)> = records
         .iter()
         .filter(|r| r.club_id == club_id)
-        .filter_map(|r| r.result_row(mode).map(|row| (r.season_year, row)))
+        .filter_map(|r| r.result_row(mode, club_name, comp_disp).map(|row| (r.season_year, row)))
         .collect();
     rows.sort_by(|a, b| b.0.cmp(&a.0));
     rows.into_iter().map(|(_, r)| r).collect()

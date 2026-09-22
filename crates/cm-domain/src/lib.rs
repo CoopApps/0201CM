@@ -2735,7 +2735,7 @@ pub struct RuntimeSource {
     pub path: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct GameDate {
     pub year: u16,
     pub month: u8,

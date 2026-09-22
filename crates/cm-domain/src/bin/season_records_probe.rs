@@ -6,17 +6,28 @@
 //! Run: cargo run -q -p cm-domain --bin season_records_probe
 
 use cm_domain::club_season_records::{ClubSeasonRecords, MatchInput};
+use cm_domain::GameDate;
 
-fn m(our: u32, their: u32, opp: &str, venue: &str, comp: &str, league: bool, date: &str) -> MatchInput {
+fn m(our: u32, their: u32, opp: u32, home: bool, comp: u32, round: &str, league: bool, d: u8, mo: u8, y: u16) -> MatchInput {
     MatchInput {
         our_goals: our,
         their_goals: their,
-        opponent: opp.to_string(),
-        venue: venue.to_string(),
-        competition: comp.to_string(),
+        opponent_id: opp,
+        home,
+        competition_id: comp,
+        round: round.to_string(),
         is_league: league,
-        date: date.to_string(),
+        date: GameDate { year: y, month: mo, day: d },
     }
+}
+
+// Test formatters: opponent id -> name, (comp,round) -> display.
+fn cname(id: u32) -> String {
+    match id { 1 => "Gillingham", 2 => "Hull", 3 => "Leeds", 4 => "Arsenal", 5 => "Everton", 6 => "Chelsea", 7 => "Spurs", _ => "?" }.to_string()
+}
+fn cdisp(comp: u32, round: &str) -> String {
+    let base = match comp { 100 => "Premier Division", 200 => "FA Cup", 300 => "League Cup", _ => "Comp" };
+    if round.is_empty() { base.to_string() } else { format!("{base} {round}") }
 }
 
 fn main() {
@@ -26,33 +37,35 @@ fn main() {
     };
 
     let mut rec = ClubSeasonRecords::new(42, 2037);
-    // Chronological fixtures.
-    rec.update_with_match(&m(4, 0, "Gillingham", "H", "Premier Division", true, "10.8.37"));   // W margin4
-    rec.update_with_match(&m(5, 1, "Hull", "A", "FA Cup 3rd Rnd", false, "17.8.37"));           // W margin4, cup, 6 goals
-    rec.update_with_match(&m(6, 2, "Leeds", "H", "Premier Division", true, "24.8.37"));         // W margin4, league, 8 goals
-    rec.update_with_match(&m(0, 3, "Arsenal", "A", "Premier Division", true, "31.8.37"));       // L margin3
-    rec.update_with_match(&m(1, 1, "Everton", "H", "Premier Division", true, "7.9.37"));        // D
-    rec.update_with_match(&m(2, 5, "Chelsea", "A", "Premier Division", true, "14.9.37"));       // L margin3, 3 conceded>... 7 goals
-    rec.update_with_match(&m(3, 3, "Spurs", "H", "League Cup 2nd Rnd", false, "21.9.37"));      // D, 6 goals
+    // Chronological fixtures. (opp id, home, comp id, round, is_league, d.m.y)
+    rec.update_with_match(&m(4, 0, 1, true, 100, "", true, 10, 8, 2037));           // W margin4 Gillingham
+    rec.update_with_match(&m(5, 1, 2, false, 200, "3rd Rnd", false, 17, 8, 2037));  // W margin4, cup, 6 goals Hull
+    rec.update_with_match(&m(6, 2, 3, true, 100, "", true, 24, 8, 2037));           // W margin4, league, 8 goals Leeds
+    rec.update_with_match(&m(0, 3, 4, false, 100, "", true, 31, 8, 2037));          // L margin3 Arsenal
+    rec.update_with_match(&m(1, 1, 5, true, 100, "", true, 7, 9, 2037));            // D Everton
+    rec.update_with_match(&m(2, 5, 6, false, 100, "", true, 14, 9, 2037));          // L margin3, 7 goals Chelsea
+    rec.update_with_match(&m(3, 3, 7, true, 300, "2nd Rnd", false, 21, 9, 2037));   // D, 6 goals Spurs
 
     // Biggest Win: three wins all margin 4 -> tiebreak MORE GOALS SCORED -> 6-2 Leeds
-    let bw = rec.result_row("Biggest Win").unwrap();
-    check("Biggest Win = 6-2 v Leeds (equal margin, most goals scored)",
-        bw.score == "6-2" && bw.opponent == "Leeds");
+    let bw = rec.result_row("Biggest Win", &cname, &cdisp).unwrap();
+    check("Biggest Win = 6-2 v Leeds (H) Premier Division 24.8.37 (equal margin, most goals)",
+        bw.score == "6-2" && bw.opponent == "Leeds" && bw.venue == "H" && bw.competition == "Premier Division" && bw.date == "24.8.37");
     // Biggest LEAGUE Win: cup 5-1 excluded; league wins 4-0 & 6-2, margin4 -> more goals -> 6-2 Leeds
-    let blw = rec.result_row("Biggest League Win").unwrap();
+    let blw = rec.result_row("Biggest League Win", &cname, &cdisp).unwrap();
     check("Biggest League Win = 6-2 v Leeds (cup 5-1 excluded, most goals)",
         blw.score == "6-2" && blw.opponent == "Leeds");
     // Biggest Defeat: 0-3 (margin3) then 2-5 (margin3, more conceded) -> replace -> 2-5 v Chelsea
-    let bd = rec.result_row("Biggest Defeat").unwrap();
-    check("Biggest Defeat = 2-5 v Chelsea (equal margin, more conceded)",
-        bd.score == "2-5" && bd.opponent == "Chelsea");
+    let bd = rec.result_row("Biggest Defeat", &cname, &cdisp).unwrap();
+    check("Biggest Defeat = 2-5 v Chelsea (A) (equal margin, more conceded)",
+        bd.score == "2-5" && bd.opponent == "Chelsea" && bd.venue == "A");
     // Highest Scoring (all comps): 8 goals (6-2 Leeds) vs 7 (2-5) -> 6-2 Leeds
-    let hs = rec.result_row("Highest Scoring Game").unwrap();
+    let hs = rec.result_row("Highest Scoring Game", &cname, &cdisp).unwrap();
     check("Highest Scoring = 6-2 v Leeds (8 total)", hs.score == "6-2" && hs.opponent == "Leeds");
     // Highest Scoring LEAGUE: 6-2 Leeds (8) is league -> same
-    let hsl = rec.result_row("Highest Scoring League Game").unwrap();
+    let hsl = rec.result_row("Highest Scoring League Game", &cname, &cdisp).unwrap();
     check("Highest Scoring League = 6-2 v Leeds", hsl.score == "6-2" && hsl.opponent == "Leeds");
+    // Cup round descriptor formatting (Hull 5-1 is the biggest cup... but it's not a record here; check date fmt + round via a direct row):
+    check("date format D.M.YY 2-digit year", bw.date == "24.8.37");
 
     // Sequences.
     // Wins in a row: matches 1,2,3 = 3, then loss. best = 3.
