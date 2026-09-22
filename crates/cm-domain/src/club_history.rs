@@ -33,18 +33,28 @@ pub struct RecordRow {
     pub value: String,
 }
 
-/// A Players-tab row: the season's top player for the current View mode,
-/// `<player> - <value>`. The tab's View dropdown has many modes = the PLAYER
-/// record categories of the Records tab (Top Goalscorer, Top League Goalscorer,
-/// Most Apps, Highest Average Rating, Most Man of Match, …), LINKED like
-/// Transfers↔Records (Records = all-time leader; Players = per-season). EMPTY at
-/// game start; runtime-populated from per-season per-player stats. Structure
-/// capture-verified (Liverpool 2037, View "Top Goalscorer").
+/// A Players-tab row: the season's top player for the current View mode. The
+/// View dropdown carries the PLAYER record categories of the Records tab (Top
+/// Goalscorer, Top League Goalscorer, Most Goals in Match, Most Assists, Highest
+/// Average Rating, Most Man of Match, …), LINKED like Transfers↔Records (Records
+/// = all-time leader; Players = per-season). EMPTY at game start;
+/// runtime-populated from per-season per-player stats.
+///
+/// TWO row shapes, capture-verified (Liverpool 2037):
+///  - season-leader modes (Top Goalscorer, Top League Goalscorer): `<player> -
+///    <value>` with FULL player name and empty match fields;
+///  - match-event modes (Most Goals in Match, …): `<value> - <abbrev> v
+///    <opponent> (H|A) <competition+round> <date>`, player name ABBREVIATED to
+///    `Initial.Surname`, all match fields set.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlayerRecordRow {
-    pub season: String, // "2037/8"
-    pub player: String, // "Neil Lake"
-    pub value: String,  // metric value, e.g. "24" (goals), a rating, a count
+    pub season: String,      // "2037/8"
+    pub player: String,      // "Neil Lake" (season modes) / "R.Atkinson" (match modes)
+    pub value: String,       // "24" (season count) / "4" (goals in the match)
+    pub opponent: String,    // match modes only, else ""
+    pub venue: String,       // "H"/"A" for match modes, else ""
+    pub competition: String, // "First Division"/"League Cup 2nd Rnd" (match modes), else ""
+    pub date: String,        // "8.11.14" (match modes), else ""
 }
 
 /// A Transfers-tab row (History → Transfers, distinct from the Club Transfers
