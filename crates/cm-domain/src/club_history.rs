@@ -33,6 +33,21 @@ pub struct RecordRow {
     pub value: String,
 }
 
+/// A Transfers-tab row (History → Transfers, distinct from the Club Transfers
+/// activity screen): the season's RECORD transfer for the current View mode
+/// (e.g. "Highest Transfer Fee Paid"). Format `<value> - <player> from/to
+/// <other club> - <date>`; a barren season shows `value = "-"` with the rest
+/// blank. EMPTY at game start; runtime-populated from transfer events.
+/// Structure capture-verified (Scunthorpe 2037).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransferRecordRow {
+    pub season: String,     // "2037/8"
+    pub value: String,      // "£275,000" or "-"
+    pub player: String,     // "Daniel Perry" ("" when "-")
+    pub other_club: String, // selling club (paid) / buying club (received)
+    pub date: String,       // "30.6.37" ("" when "-")
+}
+
 /// An Attendances-tab row: season at x=110, detail at x=190. The tab has four
 /// View modes (Highest Attendance / Highest Gate Receipts / Lowest Attendance /
 /// Average Attendance). For the match-based modes the row names the season's
@@ -123,6 +138,9 @@ pub struct ClubHistoryView {
     /// Highest Gate Receipts, Average Attendance). EMPTY at game start; the
     /// runtime tracks per-season attendance/receipts + the extreme fixture.
     pub attendances: Vec<AttendanceRow>,
+    /// Transfers tab (History) — per-season record transfer for the current View
+    /// mode. EMPTY at game start; runtime-populated from transfer events.
+    pub transfer_records: Vec<TransferRecordRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -370,6 +388,9 @@ impl crate::World {
             // Empty at game start (no matches played); runtime tracks per-season
             // attendance/receipts extremes (capture 16).
             attendances: Vec::new(),
+            // Empty at game start (no transfers made); runtime records per-season
+            // record transfers (capture 17).
+            transfer_records: Vec::new(),
         }
     }
 }
