@@ -131,6 +131,27 @@ pub struct AttendanceRow {
     pub date: String,        // "14.11.37" ("" for Average)
 }
 
+/// The Sequences tab "View" dropdown, in capture order (Scunthorpe/Liverpool
+/// 2037). Per-season best streak for the selected kind.
+pub const SEQUENCES_VIEW_MODES: [&str; 4] = [
+    "Most Games Won in Row",
+    "Most Games Lost in Row",
+    "Most Games Without Losing",
+    "Most Games Without Winning",
+];
+
+/// A Sequences-tab row: the season's best streak for the current View mode,
+/// `<length> - <start date> to <end date>` (a length-1 streak shows just
+/// `<length>`, no range). EMPTY at game start; runtime-populated from per-season
+/// match results. Structure capture-verified (2037).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SequenceRow {
+    pub season: String,     // "2037/8"
+    pub length: String,     // "6"
+    pub start_date: String, // "1.10.37" ("" for a single-game streak)
+    pub end_date: String,   // "28.10.37" ("" for a single-game streak)
+}
+
 /// A Positions-tab row: season at x=110, `<ordinal> in <division>` at x=190.
 /// One row per season the club has completed (+ the live current season),
 /// newest-first, across all divisions. Same source as `LeagueSeasonRow`: the
@@ -212,6 +233,10 @@ pub struct ClubHistoryView {
     /// Goalscorer, etc.). EMPTY at game start; runtime-populated from per-season
     /// player stats.
     pub player_records: Vec<PlayerRecordRow>,
+    /// Sequences tab — per-season best streak for the current View mode
+    /// (Most Games Won/Lost in Row, Most Games Without Losing/Winning). EMPTY at
+    /// game start; runtime-populated from per-season match results.
+    pub sequences: Vec<SequenceRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -469,6 +494,9 @@ impl crate::World {
             // Empty at game start (no matches played); runtime records per-season
             // player leaders (capture 20).
             player_records: Vec::new(),
+            // Empty at game start (no matches played); runtime records per-season
+            // streaks (capture 34).
+            sequences: Vec::new(),
         }
     }
 }
