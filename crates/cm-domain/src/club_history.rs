@@ -33,6 +33,22 @@ pub struct RecordRow {
     pub value: String,
 }
 
+/// An Attendances-tab row: season at x=110, detail at x=190. The tab has four
+/// View modes (Highest Attendance / Highest Gate Receipts / Lowest Attendance /
+/// Average Attendance). For the match-based modes the row names the season's
+/// extreme fixture: `<value> v <opponent> <competition+round> <date>`. For
+/// Average, only `season` + `value` (mean) are set. EMPTY at game start;
+/// runtime-populated from per-match attendance/receipts. Structure
+/// capture-verified (Scunthorpe 2037).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttendanceRow {
+    pub season: String,      // "2037/8"
+    pub value: String,       // attendance "7275", receipts, or average
+    pub opponent: String,    // "Rushden" ("" for Average)
+    pub competition: String, // "Second Division", "FA Cup 3rd Rnd" ("" for Average)
+    pub date: String,        // "14.11.37" ("" for Average)
+}
+
 /// A Positions-tab row: season at x=110, `<ordinal> in <division>` at x=190.
 /// One row per season the club has completed (+ the live current season),
 /// newest-first, across all divisions. Same source as `LeagueSeasonRow`: the
@@ -103,6 +119,10 @@ pub struct ClubHistoryView {
     /// season-end (same source as `league_seasons`; runtime layer tracks the
     /// per-season position extreme, not this static World view).
     pub positions: Vec<PositionRow>,
+    /// Attendances tab — per-season, four View modes (Highest/Lowest Attendance,
+    /// Highest Gate Receipts, Average Attendance). EMPTY at game start; the
+    /// runtime tracks per-season attendance/receipts + the extreme fixture.
+    pub attendances: Vec<AttendanceRow>,
 }
 
 /// The record category labels, per period (captured exactly; see the decode).
@@ -347,6 +367,9 @@ impl crate::World {
             // Populated at the runtime layer from archived season finishes +
             // live standings (capture 14); empty in the static World view.
             positions: Vec::new(),
+            // Empty at game start (no matches played); runtime tracks per-season
+            // attendance/receipts extremes (capture 16).
+            attendances: Vec::new(),
         }
     }
 }
