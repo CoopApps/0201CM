@@ -6843,6 +6843,8 @@ fn default_transfer_contract_runtime_store() -> TransferContractRuntimeStore {
     }
 }
 
+// GDI-REG: 004da500 PORTED_BEHAVIOURAL
+// GDI-REG: 004cdef0 PORTED_PARTIAL
 pub fn plan_transfer_contract_formula_mutations(
     backend: &RuntimeBackendSystems,
     scenario: &TransferContractFormulaScenario,
@@ -19396,6 +19398,8 @@ impl World {
     /// Shared builder for a group+knockout continental cup on the ACN engine:
     /// draw 16 from `pool`, seed 4 groups, generate the group stage. `seed_salt`
     /// keeps each cup's RNG stream distinct. Used by the Asian cups.
+    // GDI-REG: 005750c0 PORTED_BEHAVIOURAL
+    // GDI-REG: 00564530 PORTED_BEHAVIOURAL
     fn build_cup_edition(
         &self,
         db_dir: &Path,

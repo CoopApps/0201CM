@@ -232,6 +232,7 @@ pub fn fifa_club_world_pool(
 /// `club[+0x1db] == INTER_TOTO_CUP`). Sourced through
 /// [`crate::arg_primera::clubs_in_any_competition`] which walks each club's
 /// three competition slots. Reuses the shared domestic_cup engine at call-site.
+// GDI-REG: 0061c690 PORTED_BEHAVIOURAL
 pub fn intertoto_cup_pool(clubs: &[DomainOpaqueRecord]) -> Vec<crate::arg_primera::ArgTeam> {
     crate::arg_primera::clubs_in_any_competition(clubs, INTERTOTO_CUP_COMP_ID as i32)
 }
@@ -241,6 +242,8 @@ pub fn intertoto_cup_pool(clubs: &[DomainOpaqueRecord]) -> Vec<crate::arg_primer
 /// UEFA Super Cup preset (`eur_super_cup.cpp` `0x00563da0`, vtable
 /// `0x00957f78`): Champions League winner (326) vs UEFA Cup winner (328).
 /// Feeds directly into the shared [`super_cup::advance`].
+// GDI-REG: 005641a0 PORTED_BEHAVIOURAL
+// GDI-REG: 00563da0 PORTED_BEHAVIOURAL
 pub fn uefa_super_cup_state(year: u16) -> SuperCupState {
     SuperCupState {
         year,

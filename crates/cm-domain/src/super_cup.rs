@@ -55,6 +55,7 @@ pub struct SuperCupAdvance {
 
 /// Create the tie once both champions are known; announce the winner once it is
 /// played. Pure — the caller applies the results and flips the state flags.
+// GDI-REG: 00564060 PORTED_BEHAVIOURAL
 pub fn advance(
     state: &SuperCupState,
     fixtures: &[HeadlessSeasonFixture],

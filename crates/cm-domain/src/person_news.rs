@@ -107,6 +107,8 @@ impl PersonNewsItem {
 /// person's mailbox is an append-only `Vec` of
 /// [`PersonNewsItem`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 0076fbd0 REPLACED_BY_RUST
+// GDI-REG: 0076f720 REPLACED_BY_RUST
 pub struct PersonNewsMailboxPool {
     /// Per-person mailbox contents, in insertion order.
     #[serde(default)]

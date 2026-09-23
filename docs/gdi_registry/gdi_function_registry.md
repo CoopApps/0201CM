@@ -694,80 +694,80 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x004143d0 | award_manager.cpp | FUN_004143d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004143d0 | award_manager.cpp | AWARD_MANAGER load (awards.dat, build award objects) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004143d0 |
 | 0x00414590 | award_manager.cpp | FUN_00414590 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004146b0 | award_manager.cpp | FUN_004146b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004146d0 | award_manager.cpp | FUN_004146d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004146f0 | award_manager.cpp | FUN_004146f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00414710 | award_manager.cpp | FUN_00414710 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004146b0 | award_manager.cpp | award-manager list insert thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004146b0 |
+| 0x004146d0 | award_manager.cpp | award-manager list remove thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004146d0 |
+| 0x004146f0 | award_manager.cpp | award-manager list insert thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004146f0 |
+| 0x00414710 | award_manager.cpp | award-manager list remove thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00414710 |
 | 0x00414730 | award_manager.cpp | FUN_00414730 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004147e0 | award_manager.cpp | FUN_004147e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00414810 | award_manager.cpp | FUN_00414810 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00414be0 | award_manager.cpp | FUN_00414be0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00414cd0 | award_manager.cpp | FUN_00414cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00414d90 | award_manager.cpp | FUN_00414d90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00414eb0 | award_manager.cpp | FUN_00414eb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00417f90 | award_shortlist.cpp | FUN_00417f90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004180e0 | award_shortlist.cpp | FUN_004180e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004180f0 | award_shortlist.cpp | FUN_004180f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00418280 | award_shortlist.cpp | FUN_00418280 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00418400 | award_shortlist.cpp | FUN_00418400 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00418580 | award_shortlist.cpp | FUN_00418580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004187b0 | award_shortlist.cpp | FUN_004187b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004147e0 | award_manager.cpp | award virtual dispatch thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004147e0 |
+| 0x00414810 | award_manager.cpp | award vote processing from news event | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00414810 |
+| 0x00414be0 | award_manager.cpp | award-manager vector append (growth) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00414be0 |
+| 0x00414cd0 | award_manager.cpp | award history setter (by year index) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00414cd0 |
+| 0x00414d90 | award_manager.cpp | award history getter (by year index) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00414d90 |
+| 0x00414eb0 | award_manager.cpp | award result lookup by id across lists | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00414eb0 |
+| 0x00417f90 | award_shortlist.cpp | award shortlist ctor (alloc entry array, copy header) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00417f90 |
+| 0x004180e0 | award_shortlist.cpp | award shortlist dtor (free array) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004180e0 |
+| 0x004180f0 | award_shortlist.cpp | award shortlist deserialize from save | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004180f0 |
+| 0x00418280 | award_shortlist.cpp | award shortlist serialize to save | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00418280 |
+| 0x00418400 | award_shortlist.cpp | award shortlist append entry (player+rating+vote init) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00418400 |
+| 0x00418580 | award_shortlist.cpp | award shortlist finalize + news announcement | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00418580 |
+| 0x004187b0 | award_shortlist.cpp | award shortlist vote simulation (RNG over staff) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004187b0 |
 | 0x00418b40 | award_shortlist.cpp | FUN_00418b40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00418e80 | award_shortlist.cpp | FUN_00418e80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00418fa0 | award_shortlist.cpp | FUN_00418fa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00419150 | award_shortlist.cpp | FUN_00419150 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004191d0 | award_shortlist.cpp | FUN_004191d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061c210 | international_awards.cpp | FUN_0061c210 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0074eb90 | month_award.cpp | FUN_0074eb90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0074ed90 | month_award.cpp | FUN_0074ed90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0074ee00 | month_award.cpp | FUN_0074ee00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0074ef20 | month_award.cpp | FUN_0074ef20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0074ef70 | month_award.cpp | FUN_0074ef70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0074f730 | month_award.cpp | FUN_0074f730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750000 | nation_awards.cpp | FUN_00750000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750360 | nation_awards.cpp | FUN_00750360 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750580 | nation_awards.cpp | FUN_00750580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750760 | nation_awards.cpp | FUN_00750760 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750930 | nation_awards.cpp | FUN_00750930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750d00 | nation_awards.cpp | FUN_00750d00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00750fc0 | nation_awards.cpp | FUN_00750fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00751530 | nation_awards.cpp | FUN_00751530 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00751730 | nation_awards.cpp | FUN_00751730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007518b0 | nation_awards.cpp | FUN_007518b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00751ec0 | nation_awards.cpp | FUN_00751ec0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00751fc0 | nation_awards.cpp | FUN_00751fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00786920 | old_international_awards.cpp | FUN_00786920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089bd60 | team_award.cpp | FUN_0089bd60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c140 | team_award.cpp | FUN_0089c140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c490 | team_award.cpp | FUN_0089c490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00418e80 | award_shortlist.cpp | award vote-tally array reset (memset -1) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00418e80 |
+| 0x00418fa0 | award_shortlist.cpp | award-shortlist container ctor/init (3 lists) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00418fa0 |
+| 0x00419150 | award_shortlist.cpp | award-shortlist container dtor (free 3 lists) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00419150 |
+| 0x004191d0 | award_shortlist.cpp | award-shortlist container load from awol.dat | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004191d0 |
+| 0x0061c210 | international_awards.cpp | international awards registration (6 award defs) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061c210 |
+| 0x0074eb90 | month_award.cpp | MONTH_AWARD load_from_disk | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074eb90 |
+| 0x0074ed90 | month_award.cpp | month-award result record (winner lookup) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074ed90 |
+| 0x0074ee00 | month_award.cpp | month-award winner apply + announce | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074ee00 |
+| 0x0074ef20 | month_award.cpp | month-award slot roll/reset | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074ef20 |
+| 0x0074ef70 | month_award.cpp | month-award news announcement | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074ef70 |
+| 0x0074f730 | month_award.cpp | month-award ctor/init | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074f730 |
+| 0x00750000 | nation_awards.cpp | nation player-of-season award compute (year-ratings top-N) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750000 |
+| 0x00750360 | nation_awards.cpp | nation award compute via year-ratings (3-way) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750360 |
+| 0x00750580 | nation_awards.cpp | nation award compute (competition-scoped, vtable getter) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750580 |
+| 0x00750760 | nation_awards.cpp | nation award compute (award-shortlist top-3) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750760 |
+| 0x00750930 | nation_awards.cpp | nation player award selection with attribute filters | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750930 |
+| 0x00750d00 | nation_awards.cpp | nation player award selection (form-weighted) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750d00 |
+| 0x00750fc0 | nation_awards.cpp | nation award selection over rated player pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00750fc0 |
+| 0x00751530 | nation_awards.cpp | nation team-of-year builder (fill XI via rating) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00751530 |
+| 0x00751730 | nation_awards.cpp | nation team-of-year builder (club/international variant) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00751730 |
+| 0x007518b0 | nation_awards.cpp | nation squad-appearance award aggregation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007518b0 |
+| 0x00751ec0 | nation_awards.cpp | nation-awards load/deserialize (per-nation list) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00751ec0 |
+| 0x00751fc0 | nation_awards.cpp | nation-awards save/serialize (per-nation list) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00751fc0 |
+| 0x00786920 | old_international_awards.cpp | legacy international awards registration (5 award defs) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00786920 |
+| 0x0089bd60 | team_award.cpp | team-of-year TEAM_AWARD load_from_disk | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089bd60 |
+| 0x0089c140 | team_award.cpp | team-of-year candidate insert (position-fit slots) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c140 |
+| 0x0089c490 | team_award.cpp | team-of-year slot array reset | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c490 |
 | 0x0089c4c0 | team_award.cpp | FUN_0089c4c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c600 | team_award.cpp | FUN_0089c600 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c650 | team_award.cpp | FUN_0089c650 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c6b0 | team_award.cpp | FUN_0089c6b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c7a0 | team_award.cpp | FUN_0089c7a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089c840 | team_award.cpp | FUN_0089c840 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089ce30 | team_award.cpp | FUN_0089ce30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089d220 | team_award.cpp | FUN_0089d220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089d240 | team_award.cpp | FUN_0089d240 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0089c600 | team_award.cpp | team award date-string news helper (3x) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c600 |
+| 0x0089c650 | team_award.cpp | team award announcement date helper | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c650 |
+| 0x0089c6b0 | team_award.cpp | team-of-year finalize (apply to players + record) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c6b0 |
+| 0x0089c7a0 | team_award.cpp | team-of-year commit to history if complete | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c7a0 |
+| 0x0089c840 | team_award.cpp | team-of-year news announcement | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089c840 |
+| 0x0089ce30 | team_award.cpp | team-of-year formation slot mask setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089ce30 |
+| 0x0089d220 | team_award.cpp | team-of-year array dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089d220 |
+| 0x0089d240 | team_award.cpp | team-of-year staff record populate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089d240 |
 | 0x0091ed10 | world_cup_awards.cpp | FUN_0091ed10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x0091ef10 | world_cup_awards.cpp | FUN_0091ef10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x0091eff0 | world_cup_awards.cpp | FUN_0091eff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x0091f010 | world_cup_awards.cpp | FUN_0091f010 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
-| 0x0091f080 | year_award.cpp | FUN_0091f080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091f380 | year_award.cpp | FUN_0091f380 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091f560 | year_award.cpp | FUN_0091f560 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091f580 | year_award.cpp | FUN_0091f580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009203f0 | year_award.cpp | FUN_009203f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00920420 | year_ratings.cpp | FUN_00920420 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00920570 | year_ratings.cpp | FUN_00920570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00920660 | year_ratings.cpp | FUN_00920660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00920720 | year_ratings.cpp | FUN_00920720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091f080 | year_award.cpp | YEAR_AWARD load_from_disk | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091f080 |
+| 0x0091f380 | year_award.cpp | year-award apply result to players/clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091f380 |
+| 0x0091f560 | year_award.cpp | year-award dtor thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091f560 |
+| 0x0091f580 | year_award.cpp | year-award news announcement | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091f580 |
+| 0x009203f0 | year_award.cpp | year-award ctor/init | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009203f0 |
+| 0x00920420 | year_ratings.cpp | year-ratings load/deserialize array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00920420 |
+| 0x00920570 | year_ratings.cpp | year-ratings save/serialize array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00920570 |
+| 0x00920660 | year_ratings.cpp | year-ratings squad iterate + accumulate (callback) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00920660 |
+| 0x00920720 | year_ratings.cpp | per-player year rating accumulation (goals/apps/rating) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00920720 |
 | 0x00920b30 | year_ratings.cpp | FUN_00920b30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00920b70 | year_ratings.cpp | FUN_00920b70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00920de0 | year_ratings.cpp | FUN_00920de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00921590 | year_ratings.cpp | FUN_00921590 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00920b70 | year_ratings.cpp | year-ratings top-N player selector (filters) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00920b70 |
+| 0x00920de0 | year_ratings.cpp | year-ratings top-N selector (nation/comp scoped) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00920de0 |
+| 0x00921590 | year_ratings.cpp | year-ratings sort comparator (avg rating) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00921590 |
 
 ## cash
 
@@ -917,34 +917,34 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d1c20 | goldcup.cpp | FUN_005d1c20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x005e4250 | host_country.cpp | host lookup by (sub year) | PORTED_PARTIAL | HostCountry::lookup | INDIRECT | PARTIAL |  |
 | 0x005e4e40 | host_country.cpp | HostCountry.tmp writer | PORTED_BEHAVIOURAL | HostCountry::save_tmp | YES | STRUCTURALLY_VERIFIED |  |
-| 0x00667e00 | league.cpp | FUN_00667e00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006680e0 | league.cpp | FUN_006680e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00668240 | league.cpp | FUN_00668240 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006682e0 | league.cpp | FUN_006682e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006687c0 | league.cpp | FUN_006687c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006691b0 | league.cpp | FUN_006691b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00669500 | league.cpp | FUN_00669500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00669910 | league.cpp | FUN_00669910 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00669a90 | league.cpp | FUN_00669a90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066a770 | league.cpp | FUN_0066a770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066b000 | league.cpp | FUN_0066b000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066b230 | league.cpp | FUN_0066b230 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066b940 | league.cpp | FUN_0066b940 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066bc10 | league.cpp | FUN_0066bc10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066bc70 | league.cpp | FUN_0066bc70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066c700 | league.cpp | FUN_0066c700 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066c9e0 | league.cpp | FUN_0066c9e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066cc40 | league.cpp | FUN_0066cc40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066cde0 | league.cpp | FUN_0066cde0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066ed20 | league.cpp | FUN_0066ed20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066f630 | league.cpp | FUN_0066f630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066f720 | league.cpp | FUN_0066f720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066faa0 | league.cpp | FUN_0066faa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066fbd0 | league.cpp | FUN_0066fbd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066fcd0 | league.cpp | FUN_0066fcd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066fd20 | league.cpp | FUN_0066fd20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0066fdc0 | league.cpp | FUN_0066fdc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00670240 | league.cpp | FUN_00670240 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00667e00 | league.cpp | league table build: head-to-head aggregate, sort, assign positions | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00667e00 |
+| 0x006680e0 | league.cpp | prize-money distribution by finishing position | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006680e0 |
+| 0x00668240 | league.cpp | geometric prize-pot accumulator helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00668240 |
+| 0x006682e0 | league.cpp | apply cash amount to all/one participant club | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006682e0 |
+| 0x006687c0 | league.cpp | league-table sort comparator (pts/GD/goals/tiebreaks) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006687c0 |
+| 0x006691b0 | league.cpp | per-participant end-of-stage transfer-request plus news processing | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006691b0 |
+| 0x00669500 | league.cpp | build league news item for small competition (<=8 clubs) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00669500 |
+| 0x00669910 | league.cpp | end-of-competition winner/champion resolution | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00669910 |
+| 0x00669a90 | league.cpp | competition date-tick advance dispatcher (start/end callbacks, playoffs) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00669a90 |
+| 0x0066a770 | league.cpp | title/relegation mathematically-decided check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066a770 |
+| 0x0066b000 | league.cpp | register club match result into competition/sub-competition | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066b000 |
+| 0x0066b230 | league.cpp | apply match result into standings rows (W/D/L, goals for/against) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066b230 |
+| 0x0066b940 | league.cpp | generate match-result news item | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066b940 |
+| 0x0066bc10 | league.cpp | select table stat for display (points/goals) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066bc10 |
+| 0x0066bc70 | league.cpp | record head-to-head result into mini-table cell | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066bc70 |
+| 0x0066c700 | league.cpp | initialize participant row (head-to-head plus form arrays) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066c700 |
+| 0x0066c9e0 | league.cpp | deep-copy participant array (malloc plus memcpy incl sub-arrays) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066c9e0 |
+| 0x0066cc40 | league.cpp | free participant arrays (sub-arrays then table) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066cc40 |
+| 0x0066cde0 | league.cpp | serialize competition state to CM3_TEMP tmp/bak file | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x0066cde0 |
+| 0x0066ed20 | league.cpp | competition-complete gate then trigger end processing | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066ed20 |
+| 0x0066f630 | league.cpp | estimate club form/strength for a fixture | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066f630 |
+| 0x0066f720 | league.cpp | title/relegation magic-number math (points to clinch or avoid) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066f720 |
+| 0x0066faa0 | league.cpp | rank clubs by strength and assign seedings | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066faa0 |
+| 0x0066fbd0 | league.cpp | clamp condition/cap value across participant clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066fbd0 |
+| 0x0066fcd0 | league.cpp | per-participant manager notification (gated by DAT flag) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066fcd0 |
+| 0x0066fd20 | league.cpp | promotion/relegation zone colour flag for a club | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066fd20 |
+| 0x0066fdc0 | league.cpp | find participant row by club id (linear search) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0066fdc0 |
+| 0x00670240 | league.cpp | find two clubs by name string within competition | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00670240 |
 | 0x00670350 | league_stage.cpp | FUN_00670350 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00670720 | league_stage.cpp | FUN_00670720 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00670740 | league_stage.cpp | FUN_00670740 | NON_USEFUL |  | NO | UNVERIFIED |  |
@@ -994,54 +994,54 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x005f8970 | index.cpp | FUN_005f8970 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005fae70 | index.cpp | FUN_005fae70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005fde10 | index.cpp | FUN_005fde10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00600ee0 | index.cpp | FUN_00600ee0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00601930 | index.cpp | FUN_00601930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00613de0 | index.cpp | FUN_00613de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00614000 | index.cpp | FUN_00614000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005f8970 | index.cpp | French/German/Dutch league name to global-pointer registrar | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005f8970 |
+| 0x005fae70 | index.cpp | award name to global-pointer registrar (footballer-of-year set) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005fae70 |
+| 0x005fde10 | index.cpp | club/all-star name to global-pointer registrar | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005fde10 |
+| 0x00600ee0 | index.cpp | injury category lookup by game-type | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00600ee0 |
+| 0x00601930 | index.cpp | injury-engine large fn (no decompile available) | UNKNOWN |  | NO | UNVERIFIED | decompile 0x00601930 missing |
+| 0x00613de0 | index.cpp | injury engine ctor: CD check + load injury_history.tmp + seed | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00613de0 |
+| 0x00614000 | index.cpp | injury engine destructor (frees pools) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00614000 |
 | 0x00614080 | index.cpp | FUN_00614080 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x006141e0 | index.cpp | FUN_006141e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006149b0 | index.cpp | FUN_006149b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x006141e0 | index.cpp | load injury.dat into runtime injury pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006141e0 |
+| 0x006149b0 | index.cpp | save injury.dat from runtime injury pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006149b0 |
 | 0x006153f0 | index.cpp | FUN_006153f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x006154e0 | index.cpp | FUN_006154e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00615640 | index.cpp | FUN_00615640 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00615680 | index.cpp | FUN_00615680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00615760 | index.cpp | FUN_00615760 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x006154e0 | index.cpp | add/merge injury-history list entry | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006154e0 |
+| 0x00615640 | index.cpp | injury-history list lookup by id | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00615640 |
+| 0x00615680 | index.cpp | reset player injury slot + purge history entry | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00615680 |
+| 0x00615760 | index.cpp | daily squad match-fitness/injury processing loop | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00615760 |
 | 0x006159d0 | index.cpp | FUN_006159d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00615ab0 | index.cpp | FUN_00615ab0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00615ae0 | index.cpp | FUN_00615ae0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00615bf0 | index.cpp | FUN_00615bf0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00615d40 | index.cpp | FUN_00615d40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00615d60 | index.cpp | FUN_00615d60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00615d60 | index.cpp | per-player daily condition/fatigue + injury recovery update | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00615d60;memory:match-engine-gap-audit |
 | 0x00616510 | index.cpp | FUN_00616510 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00616650 | index.cpp | FUN_00616650 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00617380 | index.cpp | FUN_00617380 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00616650 | index.cpp | boot-seed injuries for all players (recurring/starting) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00616650 |
+| 0x00617380 | index.cpp | build injury news item (fills news fields) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00617380 |
 | 0x00617be0 | index.cpp | FUN_00617be0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00617de0 | index.cpp | FUN_00617de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00617de0 | index.cpp | clear/end a player active injury record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00617de0 |
 | 0x00617f00 | index.cpp | FUN_00617f00 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x006182e0 | index.cpp | FUN_006182e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00618300 | index.cpp | FUN_00618300 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006183c0 | index.cpp | FUN_006183c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00618510 | index.cpp | FUN_00618510 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00619dc0 | index.cpp | FUN_00619dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061a1d0 | index.cpp | FUN_0061a1d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061a330 | index.cpp | FUN_0061a330 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061a5c0 | index.cpp | FUN_0061a5c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x006182e0 | index.cpp | injury body-part table getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006182e0 |
+| 0x00618300 | index.cpp | compute injury duration (date diff) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00618300 |
+| 0x006183c0 | index.cpp | player availability/status check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006183c0 |
+| 0x00618510 | index.cpp | format injury description for player | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00618510 |
+| 0x00619dc0 | index.cpp | injury to position/category mapping by game-type | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00619dc0 |
+| 0x0061a1d0 | index.cpp | compute injury return-date text | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061a1d0 |
+| 0x0061a330 | index.cpp | injury body-part name string lookup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061a330 |
+| 0x0061a5c0 | index.cpp | apply match-incident injury/knock outcome to player | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061a5c0 |
 | 0x0061ac30 | index.cpp | FUN_0061ac30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0061ac60 | index.cpp | FUN_0061ac60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061b4a0 | index.cpp | FUN_0061b4a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0061ac60 | index.cpp | build injury/return news article (template selector) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061ac60 |
+| 0x0061b4a0 | index.cpp | build injured-in-match news item | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061b4a0 |
 | 0x0061b670 | index.cpp | FUN_0061b670 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0078ac30 | physio.cpp | FUN_0078ac30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078ade0 | physio.cpp | FUN_0078ade0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078b310 | physio.cpp | FUN_0078b310 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078ac30 | physio.cpp | physio recovery-time estimate calc | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078ac30 |
+| 0x0078ade0 | physio.cpp | Request Physio Report screen builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078ade0 |
+| 0x0078b310 | physio.cpp | physio screen command dispatcher | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078b310 |
 | 0x0078b4c0 | physio.cpp | FUN_0078b4c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0078b540 | physio.cpp | FUN_0078b540 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078b6e0 | physio.cpp | FUN_0078b6e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078be10 | physio.cpp | FUN_0078be10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078d430 | physio.cpp | FUN_0078d430 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078d490 | physio.cpp | FUN_0078d490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078b540 | physio.cpp | event-type name to flag-bitmask parser | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078b540 |
+| 0x0078b6e0 | physio.cpp | injury-type name to code mapping (config) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078b6e0 |
+| 0x0078be10 | physio.cpp | parse physio/injury config record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078be10 |
+| 0x0078d430 | physio.cpp | quoted-token string scanner | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078d430 |
+| 0x0078d490 | physio.cpp | staff/club lookup by name | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078d490 |
 
 ## config
 
@@ -1069,101 +1069,101 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004cd930 | contract_manager.cpp | CONTRACT_MANAGER::initialise_all | PORTED_BEHAVIOURAL | initialise_all | YES | STRUCTURALLY_VERIFIED | memory:contract-clauses-generated-at-boot.md |
 | 0x004cdd80 | contract_manager.cpp | FUN_004cdd80 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x004cddd0 | contract_manager.cpp | FUN_004cddd0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004cdef0 | contract_manager.cpp | FUN_004cdef0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d0390 | contract_manager.cpp | FUN_004d0390 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d05f0 | contract_manager.cpp | FUN_004d05f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004cdef0 | contract_manager.cpp | staff/contract weekly renewal frontier | PORTED_PARTIAL | plan_transfer_contract_formula_mutations | YES | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x004d0390 | contract_manager.cpp | contract decision-list append (growable 0x15-byte array) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d0390 |
+| 0x004d05f0 | contract_manager.cpp | contract decision-list remove/compact | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d05f0 |
 | 0x004d06d0 | contract_manager.cpp | FUN_004d06d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x004d0730 | contract_manager.cpp | FUN_004d0730 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d1d90 | contract_manager.cpp | FUN_004d1d90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d1d90 | contract_manager.cpp | contract-active predicate (state 1-4 with club set) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d1d90 |
 | 0x004d1dc0 | contract_manager.cpp | FUN_004d1dc0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d1f50 | contract_manager.cpp | FUN_004d1f50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d1f50 | contract_manager.cpp | contract-type classifier (transfer/loan status set) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d1f50 |
 | 0x004d1f90 | contract_manager.cpp | FUN_004d1f90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d2150 | contract_manager.cpp | FUN_004d2150 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d24e0 | contract_manager.cpp | FUN_004d24e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d2520 | contract_manager.cpp | FUN_004d2520 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d2150 | contract_manager.cpp | contract offer register/deregister across clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d2150 |
+| 0x004d24e0 | contract_manager.cpp | offer-approach wrapper (contract type 1/3) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d24e0 |
+| 0x004d2520 | contract_manager.cpp | offer-approach wrapper (contract type 2/4) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d2520 |
 | 0x004d2560 | contract_manager.cpp | FUN_004d2560 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d2700 | contract_manager.cpp | FUN_004d2700 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d27d0 | contract_manager.cpp | FUN_004d27d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d2700 | contract_manager.cpp | staff morale getter (+0x61 +0x45) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d2700 |
+| 0x004d27d0 | contract_manager.cpp | staff morale-diff comparison label formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d27d0 |
 | 0x004d2c40 | contract_manager.cpp | FUN_004d2c40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d2d60 | contract_manager.cpp | FUN_004d2d60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d2d60 | contract_manager.cpp | player-interest list check + reputation gate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d2d60 |
 | 0x004d2e60 | contract_manager.cpp | FUN_004d2e60 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x004d2ea0 | contract_manager.cpp | FUN_004d2ea0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x004d2f60 | contract_manager.cpp | FUN_004d2f60 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x004d3020 | contract_manager.cpp | FUN_004d3020 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d30d0 | contract_manager.cpp | FUN_004d30d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d3660 | contract_manager.cpp | FUN_004d3660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d3b00 | contract_manager.cpp | FUN_004d3b00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d3df0 | contract_manager.cpp | FUN_004d3df0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d4910 | contract_manager.cpp | FUN_004d4910 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d30d0 | contract_manager.cpp | contract event status update + news trigger | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d30d0 |
+| 0x004d3660 | contract_manager.cpp | contract morale/decision date update (random) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d3660 |
+| 0x004d3b00 | contract_manager.cpp | contract decision push w/ probability + array growth | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d3b00 |
+| 0x004d3df0 | contract_manager.cpp | expire stale contract decisions | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d3df0 |
+| 0x004d4910 | contract_manager.cpp | contract decision financial/wage evaluation (x87) | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x004d4910 |
 | 0x004d58d0 | contract_manager.cpp | FUN_004d58d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d5990 | contract_manager.cpp | FUN_004d5990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d5b50 | contract_manager.cpp | FUN_004d5b50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d6610 | contract_manager.cpp | FUN_004d6610 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004d6c10 | contract_manager.cpp | FUN_004d6c10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d5990 | contract_manager.cpp | remove club-list node by id | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d5990 |
+| 0x004d5b50 | contract_manager.cpp | contract record write-back into 0x50-byte pool (offer accept) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d5b50 |
+| 0x004d6610 | contract_manager.cpp | contract transfer completion register into new club | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d6610 |
+| 0x004d6c10 | contract_manager.cpp | contract cancel / free-transfer teardown | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d6c10 |
 | 0x004d6f80 | contract_manager.cpp | FUN_004d6f80 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004d7000 | contract_manager.cpp | FUN_004d7000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004d7000 | contract_manager.cpp | clear side-state contract index (+4) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004d7000 |
 | 0x004d7090 | contract_manager.cpp | exact staff wage formula | NOT_YET_PORTED | compute_wage | NO | UNVERIFIED | memory:contract-clauses-generated-at-boot.md |
-| 0x004da500 | contract_manager.cpp | FUN_004da500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004da500 | contract_manager.cpp | player valuation cap wrapper (base/deep/midpoint by class) | PORTED_BEHAVIOURAL | plan_transfer_contract_formula_mutations | YES | BEHAVIOURALLY_EXACT | rust:crates/cm-domain/src/lib.rs |
 | 0x004da710 | contract_manager.cpp | FUN_004da710 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x004da820 | contract_manager.cpp | FUN_004da820 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x004da890 | contract_manager.cpp | FUN_004da890 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004daa60 | contract_manager.cpp | FUN_004daa60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004db1e0 | contract_manager.cpp | FUN_004db1e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004dc6d0 | contract_manager.cpp | FUN_004dc6d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004dc7b0 | contract_manager.cpp | FUN_004dc7b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004dcbf0 | contract_manager.cpp | FUN_004dcbf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004dd0d0 | contract_manager.cpp | FUN_004dd0d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004dd3a0 | contract_manager.cpp | FUN_004dd3a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004dd960 | contract_manager.cpp | FUN_004dd960 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004de7f0 | contract_manager.cpp | FUN_004de7f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004deb70 | contract_manager.cpp | FUN_004deb70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004df5a0 | contract_manager.cpp | FUN_004df5a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004df720 | contract_manager.cpp | FUN_004df720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004df980 | contract_manager.cpp | FUN_004df980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e00c0 | contract_manager.cpp | FUN_004e00c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e02d0 | contract_manager.cpp | FUN_004e02d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e06d0 | contract_manager.cpp | FUN_004e06d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e0b40 | contract_manager.cpp | FUN_004e0b40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e0f20 | contract_manager.cpp | FUN_004e0f20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e1000 | contract_manager.cpp | FUN_004e1000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e11f0 | contract_manager.cpp | FUN_004e11f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e1420 | contract_manager.cpp | FUN_004e1420 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e1700 | contract_manager.cpp | FUN_004e1700 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e24e0 | contract_manager.cpp | FUN_004e24e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004e2a50 | contract_manager.cpp | FUN_004e2a50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008476b0 | staff_contracts.cpp | FUN_008476b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004da890 | contract_manager.cpp | should-offer-new-contract predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004da890 |
+| 0x004daa60 | contract_manager.cpp | contract wage re-estimate loop (0x0084f7e0) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004daa60 |
+| 0x004db1e0 | contract_manager.cpp | contract offer/negotiation main evaluator | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x004db1e0 |
+| 0x004dc6d0 | contract_manager.cpp | contract news item build (type 0xbc4) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004dc6d0 |
+| 0x004dc7b0 | contract_manager.cpp | contract news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004dc7b0 |
+| 0x004dcbf0 | contract_manager.cpp | contract news formatter (approach variants) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004dcbf0 |
+| 0x004dd0d0 | contract_manager.cpp | contract news formatter (join/leave club) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004dd0d0 |
+| 0x004dd3a0 | contract_manager.cpp | contract decision date/eligibility logic | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x004dd3a0 |
+| 0x004dd960 | contract_manager.cpp | contract news formatter (large) | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x004dd960 |
+| 0x004de7f0 | contract_manager.cpp | auto contract-renewal decision (deep-value gate) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004de7f0 |
+| 0x004deb70 | contract_manager.cpp | contract news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004deb70 |
+| 0x004df5a0 | contract_manager.cpp | contract news build (type 0xbc0) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004df5a0 |
+| 0x004df720 | contract_manager.cpp | contract news formatter (happy/unhappy) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004df720 |
+| 0x004df980 | contract_manager.cpp | contract news build (type 0xbc1) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004df980 |
+| 0x004e00c0 | contract_manager.cpp | contract news build (type 0xbc2) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e00c0 |
+| 0x004e02d0 | contract_manager.cpp | contract news formatter (squad-status promise) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e02d0 |
+| 0x004e06d0 | contract_manager.cpp | contract news build/dispatch (type 0xbb9) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e06d0 |
+| 0x004e0b40 | contract_manager.cpp | contract news formatter (staff) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e0b40 |
+| 0x004e0f20 | contract_manager.cpp | contract news build (type 0xbbc) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e0f20 |
+| 0x004e1000 | contract_manager.cpp | contract news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e1000 |
+| 0x004e11f0 | contract_manager.cpp | contract news build (type 0xfb8) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e11f0 |
+| 0x004e1420 | contract_manager.cpp | contract news formatter (two-club transfer) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e1420 |
+| 0x004e1700 | contract_manager.cpp | CONTRACT_MANAGER::load_from_disk (contract.dat) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e1700 |
+| 0x004e24e0 | contract_manager.cpp | CONTRACT_MANAGER::save_to_disk (contract.dat) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e24e0 |
+| 0x004e2a50 | contract_manager.cpp | contract decision qsort comparator | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004e2a50 |
+| 0x008476b0 | staff_contracts.cpp | staff contract-offer record initializer | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008476b0 |
 | 0x00847870 | staff_contracts.cpp | FUN_00847870 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00847a10 | staff_contracts.cpp | FUN_00847a10 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00847a80 | staff_contracts.cpp | per-person release-clause roll | PORTED_PARTIAL | roll_clauses | YES | BEHAVIOURALLY_EXACT | memory:contract-clauses-generated-at-boot.md |
-| 0x008488f0 | staff_contracts.cpp | FUN_008488f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00848920 | staff_contracts.cpp | FUN_00848920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00848930 | staff_contracts.cpp | FUN_00848930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00848940 | staff_contracts.cpp | FUN_00848940 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008488f0 | staff_contracts.cpp | contract flag/index setter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008488f0 |
+| 0x00848920 | staff_contracts.cpp | contract array element setter (+0x10+i*4) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00848920 |
+| 0x00848930 | staff_contracts.cpp | contract byte clear setter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00848930 |
+| 0x00848940 | staff_contracts.cpp | contract array element reset to -1 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00848940 |
 | 0x00848950 | staff_contracts.cpp | FUN_00848950 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00848a90 | staff_contracts.cpp | FUN_00848a90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00848b40 | staff_contracts.cpp | FUN_00848b40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00848a90 | staff_contracts.cpp | release-clause type label formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00848a90 |
+| 0x00848b40 | staff_contracts.cpp | contract-expired predicate ((s&0x3f)==3) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00848b40 |
 | 0x00848b50 | staff_contracts.cpp | FUN_00848b50 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00848b70 | staff_contracts.cpp | FUN_00848b70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00848b80 | staff_contracts.cpp | FUN_00848b80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0084b830 | staff_contracts.cpp | FUN_0084b830 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0084f5d0 | staff_contracts.cpp | FUN_0084f5d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0084f7e0 | staff_contracts.cpp | FUN_0084f7e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0084fe90 | staff_contracts.cpp | FUN_0084fe90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0084ff10 | staff_contracts.cpp | FUN_0084ff10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008501f0 | staff_contracts.cpp | FUN_008501f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00848b80 | staff_contracts.cpp | contract status expiry/rolling/free label formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00848b80 |
+| 0x0084b830 | staff_contracts.cpp | staff release/wage value calc with min clamp 55 | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0084b830 |
+| 0x0084f5d0 | staff_contracts.cpp | staff approach-interest evaluator (returns 1/2/3) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0084f5d0 |
+| 0x0084f7e0 | staff_contracts.cpp | staff wage/value estimate (x87 date-scaled) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0084f7e0 |
+| 0x0084fe90 | staff_contracts.cpp | reset staff contract side-state fields | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0084fe90 |
+| 0x0084ff10 | staff_contracts.cpp | staff wants-to-leave / unhappiness evaluator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0084ff10 |
+| 0x008501f0 | staff_contracts.cpp | staff contract flags clear/reprocess | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008501f0 |
 | 0x00850490 | staff_contracts.cpp | FUN_00850490 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008504d0 | staff_contracts.cpp | FUN_008504d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00850510 | staff_contracts.cpp | FUN_00850510 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00850680 | staff_contracts.cpp | FUN_00850680 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008506a0 | staff_contracts.cpp | FUN_008506a0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008506b0 | staff_contracts.cpp | FUN_008506b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00850950 | staff_contracts.cpp | FUN_00850950 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008509b0 | staff_contracts.cpp | FUN_008509b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00850a50 | staff_contracts.cpp | FUN_00850a50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00850a80 | staff_contracts.cpp | FUN_00850a80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008506b0 | staff_contracts.cpp | staff contract status-flag set + reaction dispatch | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008506b0 |
+| 0x00850950 | staff_contracts.cpp | bonus-type label formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00850950 |
+| 0x008509b0 | staff_contracts.cpp | release-clause type label formatter (non-thiscall dup) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008509b0 |
+| 0x00850a50 | staff_contracts.cpp | clause applicability predicate (staff/player role) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00850a50 |
+| 0x00850a80 | staff_contracts.cpp | clause-eligibility predicate (vtable-based) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00850a80 |
 | 0x00850b00 | staff_contracts.cpp | FUN_00850b00 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00850b20 | staff_contracts.cpp | FUN_00850b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00850c00 | staff_contracts.cpp | FUN_00850c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00850b20 | staff_contracts.cpp | clause value scale by game-mode (0x0043ff30) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00850b20 |
+| 0x00850c00 | staff_contracts.cpp | clause value scale by game-mode (0x0043ffd0) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00850c00 |
 | 0x00850ce0 | staff_contracts.cpp | FUN_00850ce0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00850ea0 | staff_contracts.cpp | FUN_00850ea0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008511c0 | staff_contracts.cpp | FUN_008511c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
@@ -1274,50 +1274,50 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x004194e0 | awol.cpp | FUN_004194e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x004194e0 | awol.cpp | awol table save/serialize | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x004194e0 |
 | 0x00419ac0 | awol.cpp | FUN_00419ac0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00419b50 | awol.cpp | FUN_00419b50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00419bd0 | awol.cpp | FUN_00419bd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00419b50 | awol.cpp | player-is-AWOL flag query | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00419b50 |
+| 0x00419bd0 | awol.cpp | AWOL list membership query | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00419bd0 |
 | 0x0041a200 | awol.cpp | FUN_0041a200 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0041a270 | awol.cpp | FUN_0041a270 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0041a320 | awol.cpp | FUN_0041a320 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041a3a0 | awol.cpp | FUN_0041a3a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041a630 | awol.cpp | FUN_0041a630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041a7c0 | awol.cpp | FUN_0041a7c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041aec0 | awol.cpp | FUN_0041aec0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041b190 | awol.cpp | FUN_0041b190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041b440 | awol.cpp | FUN_0041b440 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041b930 | awol.cpp | FUN_0041b930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041bb90 | awol.cpp | FUN_0041bb90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0058f930 | fine.cpp | FUN_0058f930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0058fe90 | fine.cpp | FUN_0058fe90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0041a3a0 | awol.cpp | set player AWOL with morale/relationship hit | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041a3a0 |
+| 0x0041a630 | awol.cpp | AWOL news event builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041a630 |
+| 0x0041a7c0 | awol.cpp | AWOL news text formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041a7c0 |
+| 0x0041aec0 | awol.cpp | AWOL discipline tick/trigger | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041aec0 |
+| 0x0041b190 | awol.cpp | AWOL news event builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041b190 |
+| 0x0041b440 | awol.cpp | AWOL/coach-report news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041b440 |
+| 0x0041b930 | awol.cpp | AWOL transfer-request event with fine | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041b930 |
+| 0x0041bb90 | awol.cpp | AWOL news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0041bb90 |
+| 0x0058f930 | fine.cpp | fine table save/serialize | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0058f930 |
+| 0x0058fe90 | fine.cpp | fine byte-field setter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0058fe90 |
 | 0x0058fec0 | fine.cpp | FUN_0058fec0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0058fee0 | fine.cpp | FUN_0058fee0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00590f10 | fine.cpp | FUN_00590f10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00591900 | fine.cpp | FUN_00591900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00591a10 | fine.cpp | FUN_00591a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00591c40 | fine.cpp | FUN_00591c40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00592430 | fine.cpp | FUN_00592430 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0058fee0 | fine.cpp | apply disciplinary fine effects | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0058fee0 |
+| 0x00590f10 | fine.cpp | disciplinary action validity gate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00590f10 |
+| 0x00591900 | fine.cpp | discipline reason string formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00591900 |
+| 0x00591a10 | fine.cpp | fine news event builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00591a10 |
+| 0x00591c40 | fine.cpp | fine/warning news text formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00591c40 |
+| 0x00592430 | fine.cpp | board-concern news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00592430 |
 | 0x00592480 | fine.cpp | FUN_00592480 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005925f0 | fine.cpp | FUN_005925f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00592940 | fine.cpp | FUN_00592940 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005925f0 | fine.cpp | discipline news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005925f0 |
+| 0x00592940 | fine.cpp | Discipline Player dialog builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00592940 |
 | 0x006cf040 | match_man.cpp | card applier verdict (red never live) | PORTED_EXACT | card_verdict;disc_map | INDIRECT | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x006cf230 | match_man.cpp | foul severity accumulation (algo exact; live red blocked) | PORTED_EXACT | foul_severity | INDIRECT | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
-| 0x007cf880 | ruling_body.cpp | FUN_007cf880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007cf980 | ruling_body.cpp | FUN_007cf980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007cf9c0 | ruling_body.cpp | FUN_007cf9c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007cfca0 | ruling_body.cpp | FUN_007cfca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d0110 | ruling_body.cpp | FUN_007d0110 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d0400 | ruling_body.cpp | FUN_007d0400 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d0630 | ruling_body.cpp | FUN_007d0630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d06b0 | ruling_body.cpp | FUN_007d06b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d06d0 | ruling_body.cpp | FUN_007d06d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d09f0 | ruling_body.cpp | FUN_007d09f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d0e80 | ruling_body.cpp | FUN_007d0e80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d0f30 | ruling_body.cpp | FUN_007d0f30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d1170 | ruling_body.cpp | FUN_007d1170 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d12a0 | ruling_body.cpp | FUN_007d12a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007d12f0 | ruling_body.cpp | FUN_007d12f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007cf880 | ruling_body.cpp | RulingBody ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007cf880 |
+| 0x007cf980 | ruling_body.cpp | RulingBody dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007cf980 |
+| 0x007cf9c0 | ruling_body.cpp | ruling-body suspension table load | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007cf9c0 |
+| 0x007cfca0 | ruling_body.cpp | ruling-body suspension table save | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007cfca0 |
+| 0x007d0110 | ruling_body.cpp | apply suspension across club players | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d0110 |
+| 0x007d0400 | ruling_body.cpp | find-or-create ban record entry | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d0400 |
+| 0x007d0630 | ruling_body.cpp | merge/transfer ban record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d0630 |
+| 0x007d06b0 | ruling_body.cpp | clear ban record slot | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d06b0 |
+| 0x007d06d0 | ruling_body.cpp | player match-suspension eligibility check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d06d0 |
+| 0x007d09f0 | ruling_body.cpp | suspension description text formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d09f0 |
+| 0x007d0e80 | ruling_body.cpp | ban record vtable dispatch wrapper | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d0e80 |
+| 0x007d0f30 | ruling_body.cpp | ban length from offence type calc | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d0f30 |
+| 0x007d1170 | ruling_body.cpp | compact/rebuild ban record array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d1170 |
+| 0x007d12a0 | ruling_body.cpp | reset ban flags per nation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d12a0 |
+| 0x007d12f0 | ruling_body.cpp | remove ban records by key | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007d12f0 |
 
 ## editor
 
@@ -1437,27 +1437,27 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x005803d0 | finance.cpp | initial club-finance seed | PORTED_EXACT | ClubFinance::seed_from;START_CASH | YES | STATE_EXACT | memory:finance-mechanisms-decoded.md |
-| 0x00581f70 | finance.cpp | FUN_00581f70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00582500 | finance.cpp | FUN_00582500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00582530 | finance.cpp | FUN_00582530 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00581f70 | finance.cpp | club transfer/wage budget cap calc | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00581f70 |
+| 0x00582500 | finance.cpp | finance available-budget setter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00582500 |
+| 0x00582530 | finance.cpp | club wage-bill and budget aggregate compute | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00582530 |
 | 0x00582870 | finance.cpp | finance-status classifier | PORTED_EXACT | ClubFinance::status;FinanceStatus::to_signed_byte | YES | STATE_EXACT | rust:finance.rs |
-| 0x00582980 | finance.cpp | FUN_00582980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005839c0 | finance.cpp | FUN_005839c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00582980 | finance.cpp | ledger bucket accumulate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00582980 |
+| 0x005839c0 | finance.cpp | ledger bucket 64-bit credit | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005839c0 |
 | 0x00583a10 | finance.cpp | FUN_00583a10 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00583a50 | finance.cpp | FUN_00583a50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00583aa0 | finance.cpp | FUN_00583aa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00583ae0 | finance.cpp | FUN_00583ae0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00583a50 | finance.cpp | ledger bucket 64-bit debit | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00583a50 |
+| 0x00583aa0 | finance.cpp | ledger bucket debit | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00583aa0 |
+| 0x00583ae0 | finance.cpp | ledger bucket debit | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00583ae0 |
 | 0x00583b20 | finance.cpp | FUN_00583b20 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00583b60 | finance.cpp | FUN_00583b60 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00583be0 | finance.cpp | FUN_00583be0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00584760 | finance.cpp | FUN_00584760 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00583be0 | finance.cpp | player wage/income ledger processing | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00583be0 |
+| 0x00584760 | finance.cpp | FinanceBook 0x167 array dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00584760 |
 | 0x00584790 | finance.cpp | post-match gate receipts + TV/prize | PORTED_PARTIAL | FinanceBook::record_match_income | YES | PARTIAL | rust:finance.rs |
 | 0x005853c0 | finance.cpp | FUN_005853c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005855e0 | finance.cpp | FUN_005855e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00585750 | finance.cpp | FUN_00585750 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00585900 | finance.cpp | FUN_00585900 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00586cf0 | finance.cpp | end-of-month rollover | PORTED_BEHAVIOURAL | FinanceBook::end_of_month | YES | BEHAVIOURALLY_EXACT | rust:finance.rs |
-| 0x00586e70 | finance.cpp | FUN_00586e70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00586e70 | finance.cpp | all-clubs finance recompute driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00586e70 |
 | 0x00586ec0 | finance.cpp | weekly finance tick (stadium-share GBP20M + wage cascade) | PORTED_BEHAVIOURAL | FinanceBook::stadium_share_transfers;FinanceBook::pay_weekly_wages | YES | STATE_EXACT | memory:finance-mechanisms-decoded.md |
 | 0x00587c40 | finance.cpp | board debt payment (news case 4) | PORTED_EXACT | FinanceBook::board_debt_payment | YES | STATE_EXACT | memory:finance-mechanisms-decoded.md |
 | 0x00587f50 | finance.cpp | chairman cash injection | PORTED_EXACT | chairman_cash_inject_cap | YES | STATE_EXACT | rust:finance.rs |
@@ -1465,21 +1465,21 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00588840 | finance.cpp | silent-takeover trigger + chairman reroll | PORTED_PARTIAL | chairman_takeover_fires;reroll_chairman_stats | YES | STATE_EXACT | memory:finance-mechanisms-decoded.md |
 | 0x00588c70 | finance.cpp | monthly board dispatch | PORTED_BEHAVIOURAL | FinanceBook::tick_month_board | YES | STATE_EXACT | rust:finance.rs |
 | 0x00589200 | finance.cpp | FUN_00589200 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005892e0 | finance.cpp | FUN_005892e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005892e0 | finance.cpp | transfer-budget news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005892e0 |
 | 0x00589800 | finance.cpp | FUN_00589800 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005898c0 | finance.cpp | FUN_005898c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005898c0 | finance.cpp | health-and-safety stadium-closure news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005898c0 |
 | 0x005899e0 | finance.cpp | FUN_005899e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00589a90 | finance.cpp | FUN_00589a90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00589a90 | finance.cpp | training-ground/expansion news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00589a90 |
 | 0x00589b60 | finance.cpp | FUN_00589b60 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00589bf0 | finance.cpp | FUN_00589bf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00589bf0 | finance.cpp | financial-crisis/receivers news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00589bf0 |
 | 0x00589d10 | finance.cpp | FUN_00589d10 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00589db0 | finance.cpp | FUN_00589db0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00589db0 | finance.cpp | finance news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00589db0 |
 | 0x00589eb0 | finance.cpp | FUN_00589eb0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00589f50 | finance.cpp | FUN_00589f50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0058a130 | finance.cpp | FUN_0058a130 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00589f50 | finance.cpp | stadium-works news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00589f50 |
+| 0x0058a130 | finance.cpp | club-relocation news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0058a130 |
 | 0x0058a1f0 | finance.cpp | FUN_0058a1f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0058a280 | finance.cpp | FUN_0058a280 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0058a3c0 | finance.cpp | FUN_0058a3c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0058a280 | finance.cpp | receivers-appeased news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0058a280 |
+| 0x0058a3c0 | finance.cpp | stadium-expansion news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0058a3c0 |
 | 0x00618410 | index.cpp | club-status byte lookup | PORTED_EXACT | club_status_byte | TEST_ONLY | STATE_EXACT | rust:finance.rs |
 | 0x0067fdf0 | manager_manager.cpp | chairman manager-sack decision | PORTED_EXACT | chairman_will_sack | YES | STATE_EXACT | rust:finance.rs |
 | 0x0084b870 | staff_contracts.cpp | staff-contract wage floor/cap | PORTED_EXACT | STAFF_BASE_FLOOR;age_wage_cap;star_floor | TEST_ONLY | STATE_EXACT | rust:finance.rs |
@@ -1496,35 +1496,35 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0055f040 | eng_second.cpp | eng_second_ctor | PORTED_BEHAVIOURAL | generate_english_traditional_league | YES | STATE_EXACT | memory:eng-second-ctor-identity-confirmed.md |
 | 0x0055f340 | eng_second.cpp | eng_second_schedule_getter | PORTED_EXACT | build_eng_second_schedule | YES | BYTE_EXACT | memory:fixtures-runtime-capture-findings.md |
 | 0x00560d40 | eng_third.cpp | eng_third_schedule | PORTED_EXACT | ENGLISH_THIRD_RUNTIME | YES | STATE_EXACT | memory:c11-2-fixture-subsystem-frozen.md |
-| 0x00594370 | fix_man.cpp | FUN_00594370 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00594370 | fix_man.cpp | FixtureManager ctor plus CD-check plus day-slot array alloc | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00594370 |
 | 0x00594750 | fix_man.cpp | FUN_00594750 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005952f0 | fix_man.cpp | FUN_005952f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005952f0 | fix_man.cpp | create/update fixture news record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005952f0 |
 | 0x005958b0 | fix_man.cpp | FUN_005958b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00595a40 | fix_man.cpp | FUN_00595a40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00595b90 | fix_man.cpp | FUN_00595b90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00596190 | fix_man.cpp | FUN_00596190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00595b90 | fix_man.cpp | build/fill a fixture record (date/teams/venue) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00595b90 |
+| 0x00596190 | fix_man.cpp | iterate and arrange fixtures for eligible clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00596190 |
 | 0x00596410 | fix_man.cpp | FUN_00596410 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005966e0 | fix_man.cpp | FUN_005966e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00596a30 | fix_man.cpp | FUN_00596a30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00596e20 | fix_man.cpp | FUN_00596e20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00597560 | fix_man.cpp | FUN_00597560 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00597e00 | fix_man.cpp | FUN_00597e00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00598220 | fix_man.cpp | FUN_00598220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00598a00 | fix_man.cpp | FUN_00598a00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00598d50 | fix_man.cpp | FUN_00598d50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005966e0 | fix_man.cpp | load fixtures from CM3_TEMP fixtures_N.tmp | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x005966e0 |
+| 0x00596a30 | fix_man.cpp | load fixtures tmp with club-pointer rebind | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x00596a30 |
+| 0x00596e20 | fix_man.cpp | find-or-create fixture-manager for date and match record | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00596e20 |
+| 0x00597560 | fix_man.cpp | arrange a fixture (date/venue selection) plus news | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00597560 |
+| 0x00597e00 | fix_man.cpp | fixture date-conflict resolution | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00597e00 |
+| 0x00598220 | fix_man.cpp | process fixture result and emit news | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00598220 |
+| 0x00598a00 | fix_man.cpp | iterate a club fixtures list | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00598a00 |
+| 0x00598d50 | fix_man.cpp | is-club-busy-on-date query (3 fixture slots) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00598d50 |
 | 0x00598ef0 | fix_man.cpp | FUN_00598ef0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00599050 | fix_man.cpp | FUN_00599050 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00599050 | fix_man.cpp | schedule a match for a club (availability gated) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00599050 |
 | 0x005994c0 | fix_man.cpp | FUN_005994c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005994e0 | fix_man.cpp | FUN_005994e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00599510 | fix_man.cpp | FUN_00599510 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005996c0 | fix_man.cpp | FUN_005996c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00599510 | fix_man.cpp | load club_dates.tmp into DAT_00acdc5c | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x00599510 |
+| 0x005996c0 | fix_man.cpp | save club_dates.tmp | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x005996c0 |
 | 0x00599800 | fix_man.cpp | FUN_00599800 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00599970 | fix_man.cpp | FUN_00599970 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00599a10 | fix_man.cpp | FUN_00599a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00599b20 | fix_man.cpp | FUN_00599b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00599a10 | fix_man.cpp | load check_fixture_legs.tmp | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x00599a10 |
+| 0x00599b20 | fix_man.cpp | save check_fixture_legs.tmp | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x00599b20 |
 | 0x00599c30 | fix_man.cpp | FUN_00599c30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00599cb0 | fix_man.cpp | FUN_00599cb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00599d20 | fix_man.cpp | FUN_00599d20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00599cb0 | fix_man.cpp | init/clear 0x10-slot day array plus prune | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00599cb0 |
+| 0x00599d20 | fix_man.cpp | free 0x10-slot day array | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00599d20 |
 | 0x00667aa0 | league.cpp | league final-table sort | PORTED_BEHAVIOURAL | season_rows_for_club | INDIRECT | PARTIAL | reports/club_history_screen_decode.md |
 | 0x006684e0 | league.cpp | league table comparator | PORTED_PARTIAL | season_rows_for_club | INDIRECT | PARTIAL | reports/club_history_screen_decode.md |
 | 0x00669780 | league.cpp | matrix_seed_base | PORTED_EXACT | matrix_seed_base | YES | BYTE_EXACT | rust:eng_second_fixtures.rs |
@@ -2758,57 +2758,57 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x005ac250 | friendly.cpp | FUN_005ac250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ac570 | friendly.cpp | FUN_005ac570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ac590 | friendly.cpp | FUN_005ac590 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ac5a0 | friendly.cpp | FUN_005ac5a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005aca70 | friendly.cpp | FUN_005aca70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005ac250 | friendly.cpp | FriendliesManager ctor (vtable/CD-check/pool alloc) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ac250 |
+| 0x005ac570 | friendly.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ac570 |
+| 0x005ac590 | friendly.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ac590 |
+| 0x005ac5a0 | friendly.cpp | destructor (release sub-objects and free pools) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ac5a0 |
+| 0x005aca70 | friendly.cpp | build friendly opponent candidate pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005aca70 |
 | 0x005acc60 | friendly.cpp | FUN_005acc60 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005acc80 | friendly.cpp | FUN_005acc80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005acdb0 | friendly.cpp | FUN_005acdb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ad010 | friendly.cpp | FUN_005ad010 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ad310 | friendly.cpp | FUN_005ad310 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005adeb0 | friendly.cpp | FUN_005adeb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ae310 | friendly.cpp | FUN_005ae310 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ae650 | friendly.cpp | FUN_005ae650 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ae870 | friendly.cpp | FUN_005ae870 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ae950 | friendly.cpp | FUN_005ae950 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005aea40 | friendly.cpp | FUN_005aea40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005aee30 | friendly.cpp | FUN_005aee30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005aef80 | friendly.cpp | FUN_005aef80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005af310 | friendly.cpp | FUN_005af310 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005af5a0 | friendly.cpp | FUN_005af5a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005af5e0 | friendly.cpp | FUN_005af5e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005afaf0 | friendly.cpp | FUN_005afaf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b0210 | friendly.cpp | FUN_005b0210 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b0620 | friendly.cpp | FUN_005b0620 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005acc80 | friendly.cpp | friendly-date acceptable predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005acc80 |
+| 0x005acdb0 | friendly.cpp | lookup and process a scheduled friendly by date | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005acdb0 |
+| 0x005ad010 | friendly.cpp | arrange/record a friendly and its result/news | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ad010 |
+| 0x005ad310 | friendly.cpp | friendly opponent scoring / arrange AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ad310 |
+| 0x005adeb0 | friendly.cpp | friendly arrangement helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005adeb0 |
+| 0x005ae310 | friendly.cpp | friendly offer accept/reject negotiation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ae310 |
+| 0x005ae650 | friendly.cpp | scheduling window intersection for two clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ae650 |
+| 0x005ae870 | friendly.cpp | is-club-committed-on-date predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ae870 |
+| 0x005ae950 | friendly.cpp | pick opponent by stadium-capacity band plus reputation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ae950 |
+| 0x005aea40 | friendly.cpp | arrange a tour (multiple friendlies) AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005aea40 |
+| 0x005aee30 | friendly.cpp | append friendly to dynamic array (grow by 100) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005aee30 |
+| 0x005aef80 | friendly.cpp | clamp strength then insert friendly by rating | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005aef80 |
+| 0x005af310 | friendly.cpp | binary-search/insert friendly into sorted array | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005af310 |
+| 0x005af5a0 | friendly.cpp | stadium-capacity to tier band (1..5) getter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005af5a0 |
+| 0x005af5e0 | friendly.cpp | lazy-init friendly list node (operator_new) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005af5e0 |
+| 0x005afaf0 | friendly.cpp | arrange friendly and emit news | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005afaf0 |
+| 0x005b0210 | friendly.cpp | friendly result news | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b0210 |
+| 0x005b0620 | friendly.cpp | friendly appeal/attendance computation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b0620 |
 | 0x005b07b0 | friendly.cpp | FUN_005b07b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005b0840 | friendly.cpp | FUN_005b0840 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005b0a10 | friendly.cpp | FUN_005b0a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b10b0 | friendly.cpp | FUN_005b10b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b1490 | friendly.cpp | FUN_005b1490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b1770 | friendly.cpp | FUN_005b1770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005b0a10 | friendly.cpp | friendly dedup check (already-scheduled pair) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b0a10 |
+| 0x005b10b0 | friendly.cpp | allocate and populate a friendly offer slot | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b10b0 |
+| 0x005b1490 | friendly.cpp | construct friendly negotiation object | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b1490 |
+| 0x005b1770 | friendly.cpp | match-type code to category classifier | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b1770 |
 | 0x005b1840 | friendly.cpp | friendly match offer/processing | NOT_YET_PORTED | crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-render/src/screen_club_fixtures_faithful.rs | INDIRECT | STRUCTURALLY_VERIFIED | decompile 0x005b1840 |
-| 0x005b2500 | friendly.cpp | FUN_005b2500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005b2500 | friendly.cpp | friendly news item | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b2500 |
 | 0x005b2870 | friendly.cpp | FUN_005b2870 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005b2a50 | friendly.cpp | FUN_005b2a50 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005b2c90 | friendly.cpp | FUN_005b2c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b3860 | friendly.cpp | FUN_005b3860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005b2c90 | friendly.cpp | load friendlies from CM3_TEMP tmp file | REPLACED_BY_RUST |  | NO | PARTIAL | decompile 0x005b2c90 |
+| 0x005b3860 | friendly.cpp | array-init helper (ctor) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b3860 |
 | 0x005b4260 | friendly.cpp | FUN_005b4260 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005b42c0 | friendly.cpp | FUN_005b42c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005b44c0 | friendly.cpp | FUN_005b44c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005b4610 | friendly.cpp | FUN_005b4610 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b4720 | friendly.cpp | FUN_005b4720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b5be0 | friendly.cpp | FUN_005b5be0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b5c10 | friendly.cpp | FUN_005b5c10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b5d30 | friendly.cpp | FUN_005b5d30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6000 | friendly.cpp | FUN_005b6000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6020 | friendly.cpp | FUN_005b6020 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6500 | friendly.cpp | FUN_005b6500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6610 | friendly.cpp | FUN_005b6610 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6740 | friendly.cpp | FUN_005b6740 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6820 | friendly.cpp | FUN_005b6820 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005b6920 | friendly.cpp | FUN_005b6920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005b4610 | friendly.cpp | build cached national-team list and sort | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b4610 |
+| 0x005b4720 | friendly.cpp | master friendly-arrange AI engine | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b4720 |
+| 0x005b5be0 | friendly.cpp | 6-field friendly struct setter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b5be0 |
+| 0x005b5c10 | friendly.cpp | schedule international friendlies by nation calendar flags | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b5c10 |
+| 0x005b5d30 | friendly.cpp | arrange friendlies for the current date (tick) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b5d30 |
+| 0x005b6000 | friendly.cpp | thin date-set wrapper | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6000 |
+| 0x005b6020 | friendly.cpp | arrange a friendly fixture with reputation logic | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6020 |
+| 0x005b6500 | friendly.cpp | init friendly-config table (alloc plus globals) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6500 |
+| 0x005b6610 | friendly.cpp | friendly opponent eligibility (reputation/rival check) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6610 |
+| 0x005b6740 | friendly.cpp | rotate/reschedule friendly dates across season plus sort | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6740 |
+| 0x005b6820 | friendly.cpp | date-compare qsort comparator | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6820 |
+| 0x005b6920 | friendly.cpp | continue trampoline (FUN_008fc5d0 plus FUN_005b6f10) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005b6920 |
 | 0x005b6a70 | friendly.cpp | FUN_005b6a70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0074e140 | mini_league.cpp | FUN_0074e140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x0074e420 | mini_league.cpp | FUN_0074e420 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
@@ -2891,113 +2891,113 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x00563da0 | eur_super_cup.cpp | FUN_00563da0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00563f70 | eur_super_cup.cpp | FUN_00563f70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00563f90 | eur_super_cup.cpp | FUN_00563f90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00564060 | eur_super_cup.cpp | FUN_00564060 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005641a0 | eur_super_cup.cpp | FUN_005641a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00564530 | euro_champ.cpp | FUN_00564530 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00564750 | euro_champ.cpp | FUN_00564750 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00564770 | euro_champ.cpp | FUN_00564770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005651d0 | euro_champ.cpp | FUN_005651d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005652d0 | euro_champ.cpp | FUN_005652d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005653d0 | euro_champ.cpp | FUN_005653d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005655b0 | euro_champ.cpp | FUN_005655b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005657e0 | euro_champ.cpp | FUN_005657e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00565a20 | euro_champ.cpp | FUN_00565a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00565dc0 | euro_champ.cpp | FUN_00565dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00565e70 | euro_champ.cpp | FUN_00565e70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00565fc0 | euro_champ.cpp | FUN_00565fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005663b0 | euro_champ.cpp | FUN_005663b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00566a20 | euro_champ.cpp | FUN_00566a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00566ab0 | euro_champ_qual.cpp | FUN_00566ab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00566d20 | euro_champ_qual.cpp | FUN_00566d20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00566d40 | euro_champ_qual.cpp | FUN_00566d40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00567680 | euro_champ_qual.cpp | FUN_00567680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00567760 | euro_champ_qual.cpp | FUN_00567760 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00568490 | euro_champ_qual.cpp | FUN_00568490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005685a0 | euro_champ_qual.cpp | FUN_005685a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005689c0 | euro_champ_qual.cpp | FUN_005689c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00568c00 | euro_champ_qual.cpp | FUN_00568c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005692b0 | euro_champ_qual.cpp | FUN_005692b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005695d0 | euro_champ_qual.cpp | FUN_005695d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005696c0 | euro_champ_qual.cpp | FUN_005696c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00569a10 | euro_champ_qual.cpp | FUN_00569a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00569cc0 | euro_champ_qual.cpp | FUN_00569cc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00569cf0 | euro_champ_qual.cpp | FUN_00569cf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0056a830 | euro_champ_qual.cpp | FUN_0056a830 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0056a880 | euro_champ_qual.cpp | FUN_0056a880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0056cba0 | euro_champ_qual.cpp | FUN_0056cba0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0056cf30 | euro_champ_qual.cpp | FUN_0056cf30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0056cf70 | euro_champ_qual.cpp | FUN_0056cf70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0056d0b0 | euro_champ_qual.cpp | FUN_0056d0b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005750c0 | fifa_confed.cpp | FUN_005750c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00575230 | fifa_confed.cpp | FUN_00575230 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00575250 | fifa_confed.cpp | FUN_00575250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00575a60 | fifa_confed.cpp | FUN_00575a60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00575b60 | fifa_confed.cpp | FUN_00575b60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00575da0 | fifa_confed.cpp | FUN_00575da0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00575eb0 | fifa_confed.cpp | FUN_00575eb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00576080 | fifa_confed.cpp | FUN_00576080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00576260 | fifa_confed.cpp | FUN_00576260 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00576460 | fifa_confed.cpp | FUN_00576460 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00576a60 | fifa_confed.cpp | FUN_00576a60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00576c50 | fifa_confed.cpp | FUN_00576c50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00576cd0 | fifa_confed.cpp | FUN_00576cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061c690 | intertoto_cup.cpp | FUN_0061c690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061c890 | intertoto_cup.cpp | FUN_0061c890 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061c8b0 | intertoto_cup.cpp | FUN_0061c8b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0061c980 | intertoto_cup.cpp | FUN_0061c980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00787860 | olympics.cpp | FUN_00787860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00787a20 | olympics.cpp | FUN_00787a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00787a40 | olympics.cpp | FUN_00787a40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00788470 | olympics.cpp | FUN_00788470 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00788560 | olympics.cpp | FUN_00788560 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00788900 | olympics.cpp | FUN_00788900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00788af0 | olympics.cpp | FUN_00788af0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00788d10 | olympics.cpp | FUN_00788d10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007894f0 | olympics.cpp | FUN_007894f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00789a00 | olympics.cpp | FUN_00789a00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00789a80 | olympics.cpp | FUN_00789a80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c5ad0 | rb_europe.cpp | FUN_007c5ad0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c5b20 | rb_europe.cpp | FUN_007c5b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c78b0 | rb_international.cpp | FUN_007c78b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c7900 | rb_international.cpp | FUN_007c7900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00907700 | wc_europe_league.cpp | FUN_00907700 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00907990 | wc_europe_league.cpp | FUN_00907990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009079b0 | wc_europe_league.cpp | FUN_009079b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009082c0 | wc_europe_league.cpp | FUN_009082c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009083b0 | wc_europe_league.cpp | FUN_009083b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009085c0 | wc_europe_league.cpp | FUN_009085c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009086d0 | wc_europe_league.cpp | FUN_009086d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00908bc0 | wc_europe_league.cpp | FUN_00908bc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00908e00 | wc_europe_league.cpp | FUN_00908e00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00909320 | wc_europe_league.cpp | FUN_00909320 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00909630 | wc_europe_league.cpp | FUN_00909630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00909730 | wc_europe_league.cpp | FUN_00909730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009099f0 | wc_europe_league.cpp | FUN_009099f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00909ca0 | wc_europe_league.cpp | FUN_00909ca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00909cd0 | wc_europe_league.cpp | FUN_00909cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0090ac00 | wc_europe_league.cpp | FUN_0090ac00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0090ac50 | wc_europe_league.cpp | FUN_0090ac50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0090d050 | wc_europe_league.cpp | FUN_0090d050 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0090d3e0 | wc_europe_league.cpp | FUN_0090d3e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091b4c0 | world_cup.cpp | FUN_0091b4c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091b720 | world_cup.cpp | FUN_0091b720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091b740 | world_cup.cpp | FUN_0091b740 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091c660 | world_cup.cpp | FUN_0091c660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091c770 | world_cup.cpp | FUN_0091c770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091c880 | world_cup.cpp | FUN_0091c880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091cab0 | world_cup.cpp | FUN_0091cab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091cce0 | world_cup.cpp | FUN_0091cce0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091cfb0 | world_cup.cpp | FUN_0091cfb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091dcb0 | world_cup.cpp | FUN_0091dcb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091dd60 | world_cup.cpp | FUN_0091dd60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091deb0 | world_cup.cpp | FUN_0091deb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091e250 | world_cup.cpp | FUN_0091e250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091e2e0 | world_cup.cpp | FUN_0091e2e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091ebd0 | world_cup.cpp | FUN_0091ebd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0091eca0 | world_cup.cpp | FUN_0091eca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00563da0 | eur_super_cup.cpp | UEFA Super Cup ctor/setup (comp 329) | PORTED_BEHAVIOURAL | uefa_super_cup_state | YES | BEHAVIOURALLY_EXACT | rust:crates/cm-domain/src/euro_super_cup.rs |
+| 0x00563f70 | eur_super_cup.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00563f70 |
+| 0x00563f90 | eur_super_cup.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00563f90 |
+| 0x00564060 | eur_super_cup.cpp | single-tie schedule descriptor builder | PORTED_BEHAVIOURAL | advance | YES | BEHAVIOURALLY_EXACT | rust:crates/cm-domain/src/super_cup.rs |
+| 0x005641a0 | eur_super_cup.cpp | participant/date setup helper (feeder comps) | PORTED_BEHAVIOURAL | uefa_super_cup_state | YES | PARTIAL | rust:crates/cm-domain/src/intl_comps.rs |
+| 0x00564530 | euro_champ.cpp | European Championship ctor/setup (comp 406, quadrennial) | PORTED_BEHAVIOURAL | build_cup_edition | YES | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x00564750 | euro_champ.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00564750 |
+| 0x00564770 | euro_champ.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00564770 |
+| 0x005651d0 | euro_champ.cpp | group registration | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005651d0 |
+| 0x005652d0 | euro_champ.cpp | competition config init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005652d0 |
+| 0x005653d0 | euro_champ.cpp | tick-callback thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005653d0 |
+| 0x005655b0 | euro_champ.cpp | group-stage builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005655b0 |
+| 0x005657e0 | euro_champ.cpp | knockout builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005657e0 |
+| 0x00565a20 | euro_champ.cpp | host/qualifier seeding setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00565a20 |
+| 0x00565dc0 | euro_champ.cpp | add-team helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00565dc0 |
+| 0x00565e70 | euro_champ.cpp | draw driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00565e70 |
+| 0x00565fc0 | euro_champ.cpp | pot/seeding randomizer | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00565fc0 |
+| 0x005663b0 | euro_champ.cpp | seeded pot draw + host placement | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005663b0 |
+| 0x00566a20 | euro_champ.cpp | team-strength rating helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00566a20 |
+| 0x00566ab0 | euro_champ_qual.cpp | Euro qualifying competition ctor/setup (quadrennial-1 year-snap, 8-9 groups) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00566ab0 |
+| 0x00566d20 | euro_champ_qual.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00566d20 |
+| 0x00566d40 | euro_champ_qual.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00566d40 |
+| 0x00567680 | euro_champ_qual.cpp | group-count helper by format | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00567680 |
+| 0x00567760 | euro_champ_qual.cpp | qualifying draw/group seeding allocation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00567760 |
+| 0x00568490 | euro_champ_qual.cpp | group-stage table builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00568490 |
+| 0x005685a0 | euro_champ_qual.cpp | competition config init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005685a0 |
+| 0x005689c0 | euro_champ_qual.cpp | group round/table builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005689c0 |
+| 0x00568c00 | euro_champ_qual.cpp | draw execution + playoff bracket | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00568c00 |
+| 0x005692b0 | euro_champ_qual.cpp | qualifying pool setup (host/rep counts) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005692b0 |
+| 0x005695d0 | euro_champ_qual.cpp | playoff round builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005695d0 |
+| 0x005696c0 | euro_champ_qual.cpp | fixture scheduling | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005696c0 |
+| 0x00569a10 | euro_champ_qual.cpp | tick/date advance handler | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00569a10 |
+| 0x00569cc0 | euro_champ_qual.cpp | qualification-complete tick predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00569cc0 |
+| 0x00569cf0 | euro_champ_qual.cpp | qualification finalization (mark qualified/withdraw) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00569cf0 |
+| 0x0056a830 | euro_champ_qual.cpp | team-strength rating helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0056a830 |
+| 0x0056a880 | euro_champ_qual.cpp | hardcoded Euro-qualifying fixture generator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0056a880 |
+| 0x0056cba0 | euro_champ_qual.cpp | single-fixture inserter helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0056cba0 |
+| 0x0056cf30 | euro_champ_qual.cpp | sub-object ctor (vtable set) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0056cf30 |
+| 0x0056cf70 | euro_champ_qual.cpp | array init fill 0xff | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0056cf70 |
+| 0x0056d0b0 | euro_champ_qual.cpp | small object ctor (vtable set) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0056d0b0 |
+| 0x005750c0 | fifa_confed.cpp | FIFA Confederations Cup ctor/setup (comp 403, biennial) | PORTED_BEHAVIOURAL | build_cup_edition | YES | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x00575230 | fifa_confed.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00575230 |
+| 0x00575250 | fifa_confed.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00575250 |
+| 0x00575a60 | fifa_confed.cpp | group setup/registration | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00575a60 |
+| 0x00575b60 | fifa_confed.cpp | competition config init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00575b60 |
+| 0x00575da0 | fifa_confed.cpp | end-of-edition cleanup + biennial advance | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00575da0 |
+| 0x00575eb0 | fifa_confed.cpp | group-stage builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00575eb0 |
+| 0x00576080 | fifa_confed.cpp | final/3rd-place builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00576080 |
+| 0x00576260 | fifa_confed.cpp | tick/date handler + draw trigger | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00576260 |
+| 0x00576460 | fifa_confed.cpp | host + confederation-rep draw | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00576460 |
+| 0x00576a60 | fifa_confed.cpp | confederation representative selector | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00576a60 |
+| 0x00576c50 | fifa_confed.cpp | sub-object ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00576c50 |
+| 0x00576cd0 | fifa_confed.cpp | array-free cleanup loop | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00576cd0 |
+| 0x0061c690 | intertoto_cup.cpp | Intertoto Cup ctor/setup (comp 330) | PORTED_BEHAVIOURAL | intertoto_cup_pool | YES | PARTIAL | rust:crates/cm-domain/src/intl_comps.rs |
+| 0x0061c890 | intertoto_cup.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061c890 |
+| 0x0061c8b0 | intertoto_cup.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0061c8b0 |
+| 0x0061c980 | intertoto_cup.cpp | Intertoto 5-round schedule descriptor builder | PORTED_PARTIAL | generate_first_round | YES | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x00787860 | olympics.cpp | Olympic football ctor/setup (quadrennial) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00787860 |
+| 0x00787a20 | olympics.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00787a20 |
+| 0x00787a40 | olympics.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00787a40 |
+| 0x00788470 | olympics.cpp | group registration | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00788470 |
+| 0x00788560 | olympics.cpp | competition config init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00788560 |
+| 0x00788900 | olympics.cpp | group-stage builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00788900 |
+| 0x00788af0 | olympics.cpp | knockout/medal builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00788af0 |
+| 0x00788d10 | olympics.cpp | qualification draw + confederation seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00788d10 |
+| 0x007894f0 | olympics.cpp | tick/date handler + draw trigger | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007894f0 |
+| 0x00789a00 | olympics.cpp | physical-memory query util | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00789a00 |
+| 0x00789a80 | olympics.cpp | CPU-speed detection util | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00789a80 |
+| 0x007c5ad0 | rb_europe.cpp | UEFA ruling-body object ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007c5ad0 |
+| 0x007c5b20 | rb_europe.cpp | UEFA ruling-body discipline processing | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007c5b20 |
+| 0x007c78b0 | rb_international.cpp | FIFA ruling-body object ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007c78b0 |
+| 0x007c7900 | rb_international.cpp | FIFA ruling-body weekly discipline processing | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007c7900 |
+| 0x00907700 | wc_europe_league.cpp | WC Euro-qualifying competition ctor/setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00907700 |
+| 0x00907990 | wc_europe_league.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00907990 |
+| 0x009079b0 | wc_europe_league.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009079b0 |
+| 0x009082c0 | wc_europe_league.cpp | group-count helper by format | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009082c0 |
+| 0x009083b0 | wc_europe_league.cpp | qualifying draw/group allocation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009083b0 |
+| 0x009085c0 | wc_europe_league.cpp | group-stage table builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009085c0 |
+| 0x009086d0 | wc_europe_league.cpp | competition config init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009086d0 |
+| 0x00908bc0 | wc_europe_league.cpp | group round/table builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00908bc0 |
+| 0x00908e00 | wc_europe_league.cpp | draw execution + playoff seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00908e00 |
+| 0x00909320 | wc_europe_league.cpp | qualifying pool setup (host reps) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00909320 |
+| 0x00909630 | wc_europe_league.cpp | playoff round builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00909630 |
+| 0x00909730 | wc_europe_league.cpp | fixture scheduling | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00909730 |
+| 0x009099f0 | wc_europe_league.cpp | tick/date advance handler | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009099f0 |
+| 0x00909ca0 | wc_europe_league.cpp | qualification-complete tick predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00909ca0 |
+| 0x00909cd0 | wc_europe_league.cpp | qualification finalization (mark qualified/withdraw) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00909cd0 |
+| 0x0090ac00 | wc_europe_league.cpp | team-strength rating helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0090ac00 |
+| 0x0090ac50 | wc_europe_league.cpp | hardcoded WC Euro-qualifying fixture generator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0090ac50 |
+| 0x0090d050 | wc_europe_league.cpp | single-fixture inserter helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0090d050 |
+| 0x0090d3e0 | wc_europe_league.cpp | playoff pairing helper (team-in-group lookup) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0090d3e0 |
+| 0x0091b4c0 | world_cup.cpp | World Cup finals ctor/setup (quadrennial, 32 teams) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091b4c0 |
+| 0x0091b720 | world_cup.cpp | scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091b720 |
+| 0x0091b740 | world_cup.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091b740 |
+| 0x0091c660 | world_cup.cpp | group registration | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091c660 |
+| 0x0091c770 | world_cup.cpp | competition config init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091c770 |
+| 0x0091c880 | world_cup.cpp | tick-callback thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091c880 |
+| 0x0091cab0 | world_cup.cpp | group-stage builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091cab0 |
+| 0x0091cce0 | world_cup.cpp | knockout/final-stage builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091cce0 |
+| 0x0091cfb0 | world_cup.cpp | host + seed draw setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091cfb0 |
+| 0x0091dcb0 | world_cup.cpp | add-team helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091dcb0 |
+| 0x0091dd60 | world_cup.cpp | group draw driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091dd60 |
+| 0x0091deb0 | world_cup.cpp | pot/seeding draw | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091deb0 |
+| 0x0091e250 | world_cup.cpp | tick/date handler | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091e250 |
+| 0x0091e2e0 | world_cup.cpp | finals draw + confederation seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091e2e0 |
+| 0x0091ebd0 | world_cup.cpp | team-strength rating helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091ebd0 |
+| 0x0091eca0 | world_cup.cpp | award/report sub-object ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0091eca0 |
 
 ## io
 
@@ -3042,103 +3042,103 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x00672e40 | manager_manager.cpp | FUN_00672e40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00673330 | manager_manager.cpp | FUN_00673330 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006733d0 | manager_manager.cpp | FUN_006733d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00673b70 | manager_manager.cpp | FUN_00673b70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00674380 | manager_manager.cpp | FUN_00674380 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00672e40 | manager_manager.cpp | CD-presence check (find cm0102.exe on CD drives / Insert CD prompt) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00672e40 |
+| 0x00673330 | manager_manager.cpp | manager-confidence pool destructor (frees 5 sub-arrays) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00673330 |
+| 0x006733d0 | manager_manager.cpp | save man_conf.dat (board-confidence save section writer) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006733d0 |
+| 0x00673b70 | manager_manager.cpp | load man_conf.dat (board-confidence save section reader) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00673b70 |
+| 0x00674380 | manager_manager.cpp | rebuild manager->club job links across person pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00674380 |
 | 0x00675980 | manager_manager.cpp | FUN_00675980 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00675ae0 | manager_manager.cpp | FUN_00675ae0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00675dc0 | manager_manager.cpp | FUN_00675dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00675e20 | manager_manager.cpp | FUN_00675e20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00675e80 | manager_manager.cpp | FUN_00675e80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00675fd0 | manager_manager.cpp | FUN_00675fd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00678aa0 | manager_manager.cpp | FUN_00678aa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00679690 | manager_manager.cpp | FUN_00679690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00679ed0 | manager_manager.cpp | FUN_00679ed0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00675ae0 | manager_manager.cpp | unlink person from club role (job-status cases 1/2/5/6/8/9) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00675ae0 |
+| 0x00675dc0 | manager_manager.cpp | classify board job-security field (+6) into 0..5 band | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00675dc0 |
+| 0x00675e20 | manager_manager.cpp | classify board confidence field (+0x12) into 0..5 band | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00675e20 |
+| 0x00675e80 | manager_manager.cpp | derive board expectation type+value from league position vs targets | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00675e80 |
+| 0x00675fd0 | manager_manager.cpp | build board-confidence description text (banded 'The board are...') | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00675fd0 |
+| 0x00678aa0 | manager_manager.cpp | evaluate manager job target / build candidate reaction | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00678aa0 |
+| 0x00679690 | manager_manager.cpp | build club expectations text from expectation bitfield | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00679690 |
+| 0x00679ed0 | manager_manager.cpp | initialise/randomise board confidence on manager appointment | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00679ed0 |
 | 0x0067a430 | manager_manager.cpp | FUN_0067a430 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0067a490 | manager_manager.cpp | FUN_0067a490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0067b7c0 | manager_manager.cpp | FUN_0067b7c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0067bb90 | manager_manager.cpp | FUN_0067bb90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0067bd60 | manager_manager.cpp | FUN_0067bd60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0067c490 | manager_manager.cpp | FUN_0067c490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0067c680 | manager_manager.cpp | FUN_0067c680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0067cb40 | manager_manager.cpp | FUN_0067cb40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006805a0 | manager_manager.cpp | FUN_006805a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0067a490 | manager_manager.cpp | manager reaction to match result (confidence adjust) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067a490 |
+| 0x0067b7c0 | manager_manager.cpp | compute board/manager satisfaction flag bitfields | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067b7c0 |
+| 0x0067bb90 | manager_manager.cpp | adjust board confidence fields after transfer decision | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067bb90 |
+| 0x0067bd60 | manager_manager.cpp | manager reaction decision returning action codes | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067bd60 |
+| 0x0067c490 | manager_manager.cpp | manager reaction to board/transfer (returns reaction code) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067c490 |
+| 0x0067c680 | manager_manager.cpp | apply board-confidence deltas from FUN_0067c490 reaction | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067c680 |
+| 0x0067cb40 | manager_manager.cpp | apply board-confidence deltas from satisfaction flags | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0067cb40 |
+| 0x006805a0 | manager_manager.cpp | manager AI over squad (expectations + squad scan) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006805a0 |
 | 0x006817b0 | manager_manager.cpp | FUN_006817b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00681920 | manager_manager.cpp | FUN_00681920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00681a50 | manager_manager.cpp | FUN_00681a50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00681b80 | manager_manager.cpp | FUN_00681b80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00681c70 | manager_manager.cpp | FUN_00681c70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00682420 | manager_manager.cpp | FUN_00682420 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00683dc0 | manager_manager.cpp | FUN_00683dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00684a30 | manager_manager.cpp | FUN_00684a30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00684a80 | manager_manager.cpp | FUN_00684a80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00681920 | manager_manager.cpp | news formatter: club-name board memo variants | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681920 |
+| 0x00681a50 | manager_manager.cpp | news event emit type 0x1390 (board/manager) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681a50 |
+| 0x00681b80 | manager_manager.cpp | news formatter: memo from board of directors | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681b80 |
+| 0x00681c70 | manager_manager.cpp | manager job-poaching decision AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681c70 |
+| 0x00682420 | manager_manager.cpp | score manager interest/rating in a club job | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00682420 |
+| 0x00683dc0 | manager_manager.cpp | predicate: club eligible as AI manager target | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00683dc0 |
+| 0x00684a30 | manager_manager.cpp | set four board-relationship fields to one value | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00684a30 |
+| 0x00684a80 | manager_manager.cpp | manager would-accept/want-job decision AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00684a80 |
 | 0x00684ed0 | manager_manager.cpp | FUN_00684ed0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00684fc0 | manager_manager.cpp | FUN_00684fc0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00685160 | manager_manager.cpp | FUN_00685160 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00685160 | manager_manager.cpp | news formatter: manager appointment/approach | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00685160 |
 | 0x006857b0 | manager_manager.cpp | FUN_006857b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00685900 | manager_manager.cpp | FUN_00685900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00685c00 | manager_manager.cpp | FUN_00685c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00685d40 | manager_manager.cpp | FUN_00685d40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006860e0 | manager_manager.cpp | FUN_006860e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00686400 | manager_manager.cpp | FUN_00686400 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00686d70 | manager_manager.cpp | FUN_00686d70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00686fd0 | manager_manager.cpp | FUN_00686fd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006882d0 | manager_manager.cpp | FUN_006882d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006889e0 | manager_manager.cpp | FUN_006889e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00689710 | manager_manager.cpp | FUN_00689710 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006897c0 | manager_manager.cpp | FUN_006897c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00689c90 | manager_manager.cpp | FUN_00689c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00689d50 | manager_manager.cpp | FUN_00689d50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00685900 | manager_manager.cpp | news formatter: manager transfer between clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00685900 |
+| 0x00685c00 | manager_manager.cpp | news event emit type 0x1778 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00685c00 |
+| 0x00685d40 | manager_manager.cpp | news formatter: board reaction to staff release | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00685d40 |
+| 0x006860e0 | manager_manager.cpp | news event emit type 0x1777 (board confidence reaction) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006860e0 |
+| 0x00686400 | manager_manager.cpp | news formatter: manager job offer (multi-buffer) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00686400 |
+| 0x00686d70 | manager_manager.cpp | news event emit type 6000 (manager approach) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00686d70 |
+| 0x00686fd0 | manager_manager.cpp | news formatter: manager approach/offer (large) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00686fd0 |
+| 0x006882d0 | manager_manager.cpp | news formatter: job offer to manager | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006882d0 |
+| 0x006889e0 | manager_manager.cpp | recompute board confidence (weekly tick core) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006889e0 |
+| 0x00689710 | manager_manager.cpp | news event emit type 0x177e | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00689710 |
+| 0x006897c0 | manager_manager.cpp | news formatter: FA announce expectations (case switch) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006897c0 |
+| 0x00689c90 | manager_manager.cpp | news event emit type 0x1771 (date-gated) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00689c90 |
+| 0x00689d50 | manager_manager.cpp | news formatter: board announce season expectations | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00689d50 |
 | 0x00689eb0 | manager_manager.cpp | FUN_00689eb0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00689fb0 | manager_manager.cpp | FUN_00689fb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00689fb0 | manager_manager.cpp | news formatter: manager job-offer candidate list | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00689fb0 |
 | 0x0068a1f0 | manager_manager.cpp | FUN_0068a1f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0068a390 | manager_manager.cpp | FUN_0068a390 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068a880 | manager_manager.cpp | FUN_0068a880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068acd0 | manager_manager.cpp | FUN_0068acd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068adb0 | manager_manager.cpp | FUN_0068adb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068af80 | manager_manager.cpp | FUN_0068af80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068b0a0 | manager_manager.cpp | FUN_0068b0a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068b210 | manager_manager.cpp | FUN_0068b210 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068b580 | manager_manager.cpp | FUN_0068b580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068bc30 | manager_manager.cpp | FUN_0068bc30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068d9e0 | manager_manager.cpp | FUN_0068d9e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068e5c0 | manager_manager.cpp | FUN_0068e5c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068e6e0 | manager_manager.cpp | FUN_0068e6e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068f090 | manager_manager.cpp | FUN_0068f090 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068f0d0 | manager_manager.cpp | FUN_0068f0d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068fa40 | manager_manager.cpp | FUN_0068fa40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068fb80 | manager_manager.cpp | FUN_0068fb80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068fd00 | manager_manager.cpp | FUN_0068fd00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0068fde0 | manager_manager.cpp | FUN_0068fde0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00690020 | manager_manager.cpp | FUN_00690020 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00690150 | manager_manager.cpp | FUN_00690150 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00690540 | manager_manager.cpp | FUN_00690540 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006908e0 | manager_manager.cpp | FUN_006908e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00690a70 | manager_manager.cpp | FUN_00690a70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0068a390 | manager_manager.cpp | news formatter: manager job approach | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068a390 |
+| 0x0068a880 | manager_manager.cpp | manager reaction to competition state (confidence + news) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068a880 |
+| 0x0068acd0 | manager_manager.cpp | news event emit type 0x1781 (date-gated) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068acd0 |
+| 0x0068adb0 | manager_manager.cpp | news formatter: manager appointment (nationality variants) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068adb0 |
+| 0x0068af80 | manager_manager.cpp | news event emit type 0x1782 (date-gated) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068af80 |
+| 0x0068b0a0 | manager_manager.cpp | news formatter: supporter protest | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068b0a0 |
+| 0x0068b210 | manager_manager.cpp | news event emit type 0x138c (with FUN_00690150 params) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068b210 |
+| 0x0068b580 | manager_manager.cpp | news formatter: manager board interaction | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068b580 |
+| 0x0068bc30 | manager_manager.cpp | build board-string news text (large switch) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068bc30 |
+| 0x0068d9e0 | manager_manager.cpp | news formatter: board-request options (expand stadium etc) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068d9e0 |
+| 0x0068e5c0 | manager_manager.cpp | news event emit type 0x1786 (finance-gated) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068e5c0 |
+| 0x0068e6e0 | manager_manager.cpp | news formatter: board reaction to chairman requests | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068e6e0 |
+| 0x0068f090 | manager_manager.cpp | news formatter: complain about referee / request postponement | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068f090 |
+| 0x0068f0d0 | manager_manager.cpp | weekly board confidence tick (RNG + news) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068f0d0 |
+| 0x0068fa40 | manager_manager.cpp | news event emit type 0x29 (date-gated) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068fa40 |
+| 0x0068fb80 | manager_manager.cpp | news formatter: match rescheduled after appeal | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068fb80 |
+| 0x0068fd00 | manager_manager.cpp | news event emit type 0x1789 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068fd00 |
+| 0x0068fde0 | manager_manager.cpp | news formatter: FA reaction to complaint/request | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0068fde0 |
+| 0x00690020 | manager_manager.cpp | news formatter: FA react to ref complaint | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00690020 |
+| 0x00690150 | manager_manager.cpp | compute manager reaction params + confidence delta | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00690150 |
+| 0x00690540 | manager_manager.cpp | build board reasoning text (staff-name driven) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00690540 |
+| 0x006908e0 | manager_manager.cpp | predicate: does person manage a club within pools | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006908e0 |
+| 0x00690a70 | manager_manager.cpp | build manager news event / state (FUN_00672320) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00690a70 |
 | 0x00691160 | manager_manager.cpp | FUN_00691160 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x006912d0 | manager_manager.cpp | FUN_006912d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00691400 | manager_manager.cpp | FUN_00691400 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x006912d0 | manager_manager.cpp | news event emit type 0x178a | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006912d0 |
+| 0x00691400 | manager_manager.cpp | news formatter: FA ban appeal outcome | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00691400 |
 | 0x006916e0 | manager_manager.cpp | FUN_006916e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x006917d0 | manager_manager.cpp | FUN_006917d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00691970 | manager_manager.cpp | FUN_00691970 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00691af0 | manager_manager.cpp | FUN_00691af0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00691cc0 | manager_manager.cpp | FUN_00691cc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00692880 | manager_manager.cpp | FUN_00692880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00692ba0 | manager_manager.cpp | FUN_00692ba0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00692de0 | manager_manager.cpp | FUN_00692de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006933f0 | manager_manager.cpp | FUN_006933f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00693510 | manager_manager.cpp | FUN_00693510 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006959d0 | manager_manager.cpp | FUN_006959d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00691970 | manager_manager.cpp | news event emit type 0x178d | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00691970 |
+| 0x00691af0 | manager_manager.cpp | news formatter: loan/transfer approach | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00691af0 |
+| 0x00691cc0 | manager_manager.cpp | manager news event build (type 0x5a0b) + state flag | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00691cc0 |
+| 0x00692880 | manager_manager.cpp | manager confidence recompute vs rivals (clamp 1..10000) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00692880 |
+| 0x00692ba0 | manager_manager.cpp | news event emit type 0x178f (contract/confidence calc) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00692ba0 |
+| 0x00692de0 | manager_manager.cpp | news formatter: manager multi-outcome offer | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00692de0 |
+| 0x006933f0 | manager_manager.cpp | predicate: manager availability gate (type 2 vs rep 0x14) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006933f0 |
+| 0x00693510 | manager_manager.cpp | manager-confidence screen event handler | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00693510 |
+| 0x006959d0 | manager_manager.cpp | copy-assignment of manager-offer struct | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006959d0 |
 
 ## manager-model
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x005e51b0 | human_manager.cpp | FUN_005e51b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005e5240 | human_manager.cpp | FUN_005e5240 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005e5250 | human_manager.cpp | FUN_005e5250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e51b0 | human_manager.cpp | human-manager pool constructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e51b0 |
+| 0x005e5240 | human_manager.cpp | human-slot sub-object constructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e5240 |
+| 0x005e5250 | human_manager.cpp | human-manager pool destructor (frees runtime ptrs + dyn records) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e5250 |
 | 0x005e5820 | human_manager.cpp | FUN_005e5820 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e5940 | human_manager.cpp | FUN_005e5940 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e5b30 | human_manager.cpp | FUN_005e5b30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
@@ -3146,48 +3146,48 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005e5d70 | human_manager.cpp | FUN_005e5d70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e5e90 | human_manager.cpp | FUN_005e5e90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e5fb0 | human_manager.cpp | FUN_005e5fb0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005e6680 | human_manager.cpp | FUN_005e6680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e6680 | human_manager.cpp | find/insert name in search/training/tactic name-history | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e6680 |
 | 0x005e6b10 | human_manager.cpp | FUN_005e6b10 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e6c20 | human_manager.cpp | FUN_005e6c20 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e70d0 | human_manager.cpp | FUN_005e70d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e7350 | human_manager.cpp | FUN_005e7350 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005e7470 | human_manager.cpp | FUN_005e7470 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e7470 | human_manager.cpp | getter: pointer to slot packed block (+0x9a09) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e7470 |
 | 0x005e7570 | human_manager.cpp | FUN_005e7570 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005e7670 | human_manager.cpp | FUN_005e7670 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e7670 | human_manager.cpp | getter: pointer to slot runtime_ptr_b (+0x9a5d) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e7670 |
 | 0x005e7770 | human_manager.cpp | FUN_005e7770 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e7870 | human_manager.cpp | FUN_005e7870 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005e7a80 | human_manager.cpp | FUN_005e7a80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005e7c80 | human_manager.cpp | FUN_005e7c80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e7a80 | human_manager.cpp | getter: pointer to slot array_B (+0x9a9c) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e7a80 |
+| 0x005e7c80 | human_manager.cpp | set current managed club id (+0x9ace) with counter maintenance | PORTED_PARTIAL | HumanSlot::set_current_managed_club_id | YES | PARTIAL | rust:crates/cm-domain/src/human_manager.rs |
 | 0x005e7f60 | human_manager.cpp | FUN_005e7f60 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e8240 | human_manager.cpp | FUN_005e8240 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e8410 | human_manager.cpp | FUN_005e8410 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005e8590 | human_manager.cpp | FUN_005e8590 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005e86a0 | human_manager.cpp | FUN_005e86a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e86a0 | human_manager.cpp | set comp_mode[idx] (+0x9b23) with comp_cache populate side-effect | PORTED_PARTIAL | HumanSlot::set_comp_mode | YES | PARTIAL | rust:crates/cm-domain/src/human_manager.rs |
 | 0x005e8890 | human_manager.cpp | FUN_005e8890 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005e9a70 | human_manager.cpp | FUN_005e9a70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005e9a70 | human_manager.cpp | remove a 0x1e-byte dyn-record by id across all slots | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005e9a70 |
 | 0x005ea120 | human_manager.cpp | FUN_005ea120 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005ea280 | human_manager.cpp | FUN_005ea280 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005ea860 | human_manager.cpp | FUN_005ea860 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005ea8b0 | human_manager.cpp | FUN_005ea8b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005eabd0 | human_manager.cpp | FUN_005eabd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005ead90 | human_manager.cpp | FUN_005ead90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005eaf30 | human_manager.cpp | FUN_005eaf30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005eb0b0 | human_manager.cpp | FUN_005eb0b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005f5440 | human_manager.cpp | FUN_005f5440 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005eabd0 | human_manager.cpp | set ref_id_list[idx] = value on active sub-record | PORTED_BEHAVIOURAL | HumanSlot::set_ref_id_at | YES | BEHAVIOURALLY_EXACT | rust:crates/cm-domain/src/human_manager.rs |
+| 0x005ead90 | human_manager.cpp | remove player id from ref_id_list by value (set to -1) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005ead90 |
+| 0x005eaf30 | human_manager.cpp | clear ref_id_list[idx] = -1 on active sub-record | PORTED_BEHAVIOURAL | HumanSlot::set_ref_id_at | YES | BEHAVIOURALLY_EXACT | rust:crates/cm-domain/src/human_manager.rs |
+| 0x005eb0b0 | human_manager.cpp | swap two ref_id_list entries | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005eb0b0 |
+| 0x005f5440 | human_manager.cpp | generated global-pointer setter dispatch table | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005f5440 |
 
 ## match
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x00699bc0 | match_day.cpp | FUN_00699bc0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0069aff0 | match_day.cpp | FUN_0069aff0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069b3d0 | match_day.cpp | FUN_0069b3d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069b710 | match_day.cpp | FUN_0069b710 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069bfa0 | match_day.cpp | FUN_0069bfa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069c3a0 | match_day.cpp | FUN_0069c3a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069ced0 | match_day.cpp | FUN_0069ced0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069d3d0 | match_day.cpp | FUN_0069d3d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0069d720 | match_day.cpp | FUN_0069d720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0069aff0 | match_day.cpp | match-day kickoff/postponement state machine | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069aff0 |
+| 0x0069b3d0 | match_day.cpp | check club participates in match fixture | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069b3d0 |
+| 0x0069b710 | match_day.cpp | run match to result + alloc result struct | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069b710 |
+| 0x0069bfa0 | match_day.cpp | competition-code to small-int mapping | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069bfa0 |
+| 0x0069c3a0 | match_day.cpp | background-group match completion driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069c3a0 |
+| 0x0069ced0 | match_day.cpp | post-match event effects to world state | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069ced0 |
+| 0x0069d3d0 | match_day.cpp | in-match substitution/injury-replacement AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069d3d0 |
+| 0x0069d720 | match_day.cpp | determine team win/loss from score | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0069d720 |
 | 0x006c1520 | match_man.cpp | FUN_006c1520 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 | 0x006c1590 | match_man.cpp | FUN_006c1590 | OUT_OF_SCOPE |  | NO | PARTIAL |  |
 | 0x006c1660 | match_man.cpp | FUN_006c1660 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
@@ -3216,18 +3216,18 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00712670 | match_stats.cpp | FUN_00712670 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 | 0x00712a50 | match_stats.cpp | FUN_00712a50 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 | 0x00712a80 | match_stats.cpp | FUN_00712a80 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
-| 0x00911cd0 | weather.cpp | FUN_00911cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00912100 | weather.cpp | FUN_00912100 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009121e0 | weather.cpp | FUN_009121e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x009124d0 | weather.cpp | FUN_009124d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00912780 | weather.cpp | FUN_00912780 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00912860 | weather.cpp | FUN_00912860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00912af0 | weather.cpp | FUN_00912af0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00913020 | weather.cpp | FUN_00913020 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00911cd0 | weather.cpp | weather subsystem init: load weather.cfg + seed | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00911cd0 |
+| 0x00912100 | weather.cpp | parse weather region record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00912100 |
+| 0x009121e0 | weather.cpp | parse weather season thresholds record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009121e0 |
+| 0x009124d0 | weather.cpp | compute match weather (wind/precip/pitch) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x009124d0 |
+| 0x00912780 | weather.cpp | weather magnitude RNG helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00912780 |
+| 0x00912860 | weather.cpp | build weather description string | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00912860 |
+| 0x00912af0 | weather.cpp | weather-driven match postponement/abandon decision | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00912af0 |
+| 0x00913020 | weather.cpp | pitch-condition name string | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00913020 |
 | 0x00913180 | weather.cpp | FUN_00913180 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00913290 | weather.cpp | FUN_00913290 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00913290 | weather.cpp | build match-postponed news item | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00913290 |
 | 0x00913510 | weather.cpp | FUN_00913510 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00913620 | weather.cpp | FUN_00913620 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00913620 | weather.cpp | build match-postponed news item (variant) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00913620 |
 
 ## match-engine
 
@@ -3543,8 +3543,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x006508e0 | key_nation.cpp | per-nation season-table builder | PORTED_BEHAVIOURAL | season_start | YES | STRUCTURALLY_VERIFIED | memory/league-dates-and-comp-wiring.md |
 | 0x006527e0 | key_nation.cpp | tier-1 same-nation routing | PORTED_BEHAVIOURAL | MatchDetailMode::NotSimulated | YES | BEHAVIOURALLY_EXACT | memory:league-tier-model.md |
-| 0x00652820 | key_nation.cpp | FUN_00652820 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00652930 | key_nation.cpp | FUN_00652930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00652820 | key_nation.cpp | per-nation season-boundary resolver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00652820 |
+| 0x00652930 | key_nation.cpp | key-nation array teardown | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00652930 |
 | 0x00652990 | key_nation.cpp | FUN_00652990 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x006529e0 | key_nation.cpp | FUN_006529e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00652a00 | key_nation.cpp | nation -> season-boundary index resolver | NOT_YET_PORTED | crates/cm-domain/src/club_history.rs;crates/cm-domain/src/league_calendar.rs | BLOCKED | HYPOTHESIS | reports/club_history_screen_decode.md |
@@ -3553,16 +3553,16 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00652ca0 | key_nation.cpp | FUN_00652ca0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00652cd0 | key_nation.cpp | season-year -> "YYYY/YY" label | PORTED_PARTIAL | season_label | INDIRECT | PARTIAL | reports/club_history_screen_decode.md |
 | 0x00653070 | key_nation.cpp | FUN_00653070 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x006530b0 | key_nation.cpp | FUN_006530b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00653180 | key_nation.cpp | FUN_00653180 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x006530b0 | key_nation.cpp | nation classification group A predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006530b0 |
+| 0x00653180 | key_nation.cpp | nation classification group B predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00653180 |
 | 0x00653760 | key_nation.cpp | FUN_00653760 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00653920 | key_nation.cpp | FUN_00653920 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x006539f0 | key_nation.cpp | FUN_006539f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00653a00 | key_nation.cpp | FUN_00653a00 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00653ad0 | key_nation.cpp | FUN_00653ad0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00653b00 | key_nation.cpp | FUN_00653b00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00653ca0 | key_nation.cpp | FUN_00653ca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00653cf0 | key_nation.cpp | FUN_00653cf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00653b00 | key_nation.cpp | keyboard-layout language detection init | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00653b00 |
+| 0x00653ca0 | key_nation.cpp | language table free/teardown | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00653ca0 |
+| 0x00653cf0 | key_nation.cpp | language record element dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00653cf0 |
 | 0x00683e30 | manager_manager.cpp | nation-tier selected-bit set/clear + job-take | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | memory:league-tier-model.md |
 | 0x0069c0d0 | match_day.cpp | tier-2 detailed-match routing | PORTED_BEHAVIOURAL | MatchDetailMode | YES | BEHAVIOURALLY_EXACT | memory:league-tier-model.md |
 | 0x00806640 | setup.cpp | league picker tier bitfield | PORTED_BEHAVIOURAL | LeagueTier;build_nation_tiers | YES | BEHAVIOURALLY_EXACT | memory:league-tier-model.md |
@@ -3579,64 +3579,64 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x00752120 | national_teams.cpp | FUN_00752120 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00752350 | national_teams.cpp | FUN_00752350 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00752480 | national_teams.cpp | FUN_00752480 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00752120 | national_teams.cpp | national-teams CD-check + pool load init | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00752120 |
+| 0x00752350 | national_teams.cpp | national-teams struct destructor (free members) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00752350 |
+| 0x00752480 | national_teams.cpp | national-teams selection-pool builder/init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00752480 |
 | 0x00753ca0 | national_teams.cpp | FUN_00753ca0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00753d30 | national_teams.cpp | FUN_00753d30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00753d60 | national_teams.cpp | FUN_00753d60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755070 | national_teams.cpp | FUN_00755070 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007551a0 | national_teams.cpp | FUN_007551a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755420 | national_teams.cpp | FUN_00755420 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00753d30 | national_teams.cpp | squad-slot selected-flag setter (=1) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00753d30 |
+| 0x00753d60 | national_teams.cpp | national squad auto-selection engine | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00753d60 |
+| 0x00755070 | national_teams.cpp | news-string field getter (bounds-checked) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755070 |
+| 0x007551a0 | national_teams.cpp | per-nation selection record helper | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x007551a0 |
+| 0x00755420 | national_teams.cpp | squad-slot flag setter (=0) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755420 |
 | 0x00755450 | national_teams.cpp | FUN_00755450 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x007554c0 | national_teams.cpp | FUN_007554c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00755580 | national_teams.cpp | FUN_00755580 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007555f0 | national_teams.cpp | FUN_007555f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007556c0 | national_teams.cpp | FUN_007556c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755740 | national_teams.cpp | FUN_00755740 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755c50 | national_teams.cpp | FUN_00755c50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755c80 | national_teams.cpp | FUN_00755c80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755cb0 | national_teams.cpp | FUN_00755cb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755cf0 | national_teams.cpp | FUN_00755cf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00755ff0 | national_teams.cpp | FUN_00755ff0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00756de0 | national_teams.cpp | FUN_00756de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00756fb0 | national_teams.cpp | FUN_00756fb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00757410 | national_teams.cpp | FUN_00757410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00757680 | national_teams.cpp | FUN_00757680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00757950 | national_teams.cpp | FUN_00757950 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00757b80 | national_teams.cpp | FUN_00757b80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00757e30 | national_teams.cpp | FUN_00757e30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00758030 | national_teams.cpp | FUN_00758030 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00758300 | national_teams.cpp | FUN_00758300 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00758960 | national_teams.cpp | FUN_00758960 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075cb70 | national_teams.cpp | FUN_0075cb70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075cbd0 | national_teams.cpp | FUN_0075cbd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075cc40 | national_teams.cpp | FUN_0075cc40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075ccb0 | national_teams.cpp | FUN_0075ccb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007555f0 | national_teams.cpp | call-up eligibility predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007555f0 |
+| 0x007556c0 | national_teams.cpp | squad-type eligibility predicate (senior/u21/u23) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007556c0 |
+| 0x00755740 | national_teams.cpp | national squad add/remove with validation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755740 |
+| 0x00755c50 | national_teams.cpp | squad-slot selected-flag getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755c50 |
+| 0x00755c80 | national_teams.cpp | squad-slot record-address getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755c80 |
+| 0x00755cb0 | national_teams.cpp | squad-slot status getter (injured/flag) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755cb0 |
+| 0x00755cf0 | national_teams.cpp | call-up news item builder (grouped by nation) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755cf0 |
+| 0x00755ff0 | national_teams.cpp | international news multi-line formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00755ff0 |
+| 0x00756de0 | national_teams.cpp | fixture/draw notification news item builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00756de0 |
+| 0x00756fb0 | national_teams.cpp | requested-to-select-squad news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00756fb0 |
+| 0x00757410 | national_teams.cpp | international news-item generator (type 0x20) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00757410 |
+| 0x00757680 | national_teams.cpp | international news formatter (type 0x20) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00757680 |
+| 0x00757950 | national_teams.cpp | international news-item generator (type 0x21) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00757950 |
+| 0x00757b80 | national_teams.cpp | international news formatter (type 0x21) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00757b80 |
+| 0x00757e30 | national_teams.cpp | international news-item generator (type 0x22) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00757e30 |
+| 0x00758030 | national_teams.cpp | international news formatter (type 0x22) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00758030 |
+| 0x00758300 | national_teams.cpp | squad-list news-item generator | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00758300 |
+| 0x00758960 | national_teams.cpp | international match-report formatter (Captain/MOTM) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00758960 |
+| 0x0075cb70 | national_teams.cpp | national squad-list field reset (1-key) | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0075cb70 |
+| 0x0075cbd0 | national_teams.cpp | national squad-list field reset (2-key) | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0075cbd0 |
+| 0x0075cc40 | national_teams.cpp | national squad slot remove + notify | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075cc40 |
+| 0x0075ccb0 | national_teams.cpp | clear national squad slots by competition/nation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075ccb0 |
 | 0x0075ce20 | national_teams.cpp | FUN_0075ce20 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075ce60 | national_teams.cpp | FUN_0075ce60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075d060 | national_teams.cpp | FUN_0075d060 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075ce60 | national_teams.cpp | assign/swap player in national squad slot | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075ce60 |
+| 0x0075d060 | national_teams.cpp | clear all national squad slots for nation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075d060 |
 | 0x0075d100 | national_teams.cpp | FUN_0075d100 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075d160 | national_teams.cpp | FUN_0075d160 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075d160 | national_teams.cpp | squad-slot flag getter (injury/type branch) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075d160 |
 | 0x0075d1c0 | national_teams.cpp | FUN_0075d1c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075d250 | national_teams.cpp | FUN_0075d250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075d250 | national_teams.cpp | senior/Under-21/Under-23 team-name label builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075d250 |
 | 0x0075d3d0 | national_teams.cpp | FUN_0075d3d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075d410 | national_teams.cpp | FUN_0075d410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075d410 | national_teams.cpp | international selection/retirement decision | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075d410 |
 | 0x0075d7e0 | national_teams.cpp | FUN_0075d7e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075d910 | national_teams.cpp | FUN_0075d910 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075dbd0 | national_teams.cpp | FUN_0075dbd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075de90 | national_teams.cpp | FUN_0075de90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075df30 | national_teams.cpp | FUN_0075df30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075dfc0 | national_teams.cpp | FUN_0075dfc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075dff0 | national_teams.cpp | FUN_0075dff0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075e660 | national_teams.cpp | FUN_0075e660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075ec00 | national_teams.cpp | FUN_0075ec00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075d910 | national_teams.cpp | international retirement processing | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075d910 |
+| 0x0075dbd0 | national_teams.cpp | national squad-selection notify sub-step | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0075dbd0 |
+| 0x0075de90 | national_teams.cpp | add player to national squad slot array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075de90 |
+| 0x0075df30 | national_teams.cpp | remove player from national squad slot array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075df30 |
+| 0x0075dfc0 | national_teams.cpp | thin national eligibility predicate wrapper | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075dfc0 |
+| 0x0075dff0 | national_teams.cpp | national_teams.dat loader | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075dff0 |
+| 0x0075e660 | national_teams.cpp | national_teams.dat saver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075e660 |
+| 0x0075ec00 | national_teams.cpp | appearance-count fatigue/eligibility check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075ec00 |
 | 0x0075f1d0 | national_teams.cpp | FUN_0075f1d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075f200 | national_teams.cpp | FUN_0075f200 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075f200 | national_teams.cpp | national availability grid builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075f200 |
 | 0x0075f420 | national_teams.cpp | FUN_0075f420 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0075f5f0 | national_teams.cpp | FUN_0075f5f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075f620 | national_teams.cpp | FUN_0075f620 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0075f8e0 | national_teams.cpp | FUN_0075f8e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0075f5f0 | national_teams.cpp | selection-pair container push helper | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075f5f0 |
+| 0x0075f620 | national_teams.cpp | squad-selection news item builder (CA-sorted) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075f620 |
+| 0x0075f8e0 | national_teams.cpp | nation-selection input screen builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0075f8e0 |
 
 ## netcode
 
@@ -3667,30 +3667,30 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x0067ce90 | manager_manager.cpp | news_weekly_predicate_cascade | NOT_YET_PORTED | crates/cm-domain/src/news.rs | BLOCKED | HYPOTHESIS | memory:news-generation-logic.md |
 | 0x00733610 | media.cpp | news_formatter_code_to_template | NOT_YET_PORTED | news::format | BLOCKED | HYPOTHESIS | memory:news-generation-logic.md |
-| 0x00763c30 | news.cpp | FUN_00763c30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00763c30 | news.cpp | news multi-line assembly / placeholder formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00763c30 |
 | 0x0076ab10 | news.cpp | news-item action classifier | PORTED_BEHAVIOURAL | classify_news_action | INDIRECT | STRUCTURALLY_VERIFIED | memory:news-generation-logic.md |
-| 0x0076c0a0 | news.cpp | FUN_0076c0a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0076c0a0 | news.cpp | per-news-item screen processing/display | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0076c0a0 |
 | 0x0076ce50 | news.cpp | person_news_severity_overwrite | NOT_YET_PORTED | PersonNewsItem::severity | NO | PARTIAL | rust:person_news.rs |
 | 0x0076d730 | news.cpp | person_news_set_param_slot | PORTED_PARTIAL | PersonNewsItem::params | INDIRECT | STRUCTURALLY_VERIFIED | rust:person_news.rs |
 | 0x0076d860 | news.cpp | FUN_0076d860 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0076d9c0 | news.cpp | FUN_0076d9c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076dac0 | news.cpp | FUN_0076dac0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076dca0 | news.cpp | FUN_0076dca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0076d9c0 | news.cpp | news-item string field getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076d9c0 |
+| 0x0076dac0 | news.cpp | CD-check + news index-pool init | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076dac0 |
+| 0x0076dca0 | news.cpp | news-pool destructor (free buffers) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076dca0 |
 | 0x0076dce0 | news.cpp | person_news_persist_and_id | PORTED_BEHAVIOURAL | PersonNewsMailboxPool::next_news_id | INDIRECT | BEHAVIOURALLY_EXACT | rust:person_news.rs |
 | 0x0076dfb0 | news.cpp | FUN_0076dfb0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0076e030 | news.cpp | FUN_0076e030 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0076e030 | news.cpp | news-item field setter dispatch (6-way) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076e030 |
 | 0x0076e270 | news.cpp | FUN_0076e270 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0076e4c0 | news.cpp | FUN_0076e4c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0076e4c0 | news.cpp | deliver news item to human-manager mailboxes | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076e4c0 |
 | 0x0076e5e0 | news.cpp | FUN_0076e5e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0076e720 | news.cpp | FUN_0076e720 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0076e800 | news.cpp | FUN_0076e800 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0076e900 | news.cpp | FUN_0076e900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076f0e0 | news.cpp | FUN_0076f0e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0076e900 | news.cpp | collect/count unread news for person by category | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076e900 |
+| 0x0076f0e0 | news.cpp | mark news item read + propagate to co-managers | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076f0e0 |
 | 0x0076f450 | news.cpp | FUN_0076f450 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0076f580 | news.cpp | FUN_0076f580 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0076f5d0 | news.cpp | FUN_0076f5d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076f720 | news.cpp | FUN_0076f720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076fbd0 | news.cpp | FUN_0076fbd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0076f5d0 | news.cpp | reset/clear person news mailbox ring | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0076f5d0 |
+| 0x0076f720 | news.cpp | news.dat loader | REPLACED_BY_RUST | PersonNewsMailboxPool | YES | PARTIAL | rust:crates/cm-domain/src/person_news.rs |
+| 0x0076fbd0 | news.cpp | news.dat saver | REPLACED_BY_RUST | PersonNewsMailboxPool | YES | PARTIAL | rust:crates/cm-domain/src/person_news.rs |
 | 0x008d0d90 | transfer_manager.cpp | person_news_item_build | PORTED_PARTIAL | PersonNewsItem;PersonNewsMailboxPool::push | INDIRECT | STRUCTURALLY_VERIFIED | memory:news-generation-logic.md |
 | 0x009346f7 | zipdir.cpp | person_news_pool_realloc | REPLACED_BY_RUST | PersonNewsMailboxPool::by_person | INDIRECT | STRUCTURALLY_VERIFIED | rust:person_news.rs |
 
@@ -3698,33 +3698,33 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x0077cc00 | notes.cpp | FUN_0077cc00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077cf20 | notes.cpp | FUN_0077cf20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0077cc00 | notes.cpp | Load notes.dat | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077cc00 |
+| 0x0077cf20 | notes.cpp | Save notes.dat | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077cf20 |
 | 0x0077d380 | notes.cpp | FUN_0077d380 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0077d3f0 | notes.cpp | FUN_0077d3f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077d570 | notes.cpp | FUN_0077d570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077d680 | notes.cpp | FUN_0077d680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077d6f0 | notes.cpp | FUN_0077d6f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077d730 | notes.cpp | FUN_0077d730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077d7d0 | notes.cpp | FUN_0077d7d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0077d3f0 | notes.cpp | Add manager note entry | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077d3f0 |
+| 0x0077d570 | notes.cpp | Add note entry with explicit date | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077d570 |
+| 0x0077d680 | notes.cpp | Remove note by id from list | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077d680 |
+| 0x0077d6f0 | notes.cpp | Upsert note (remove then add) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077d6f0 |
+| 0x0077d730 | notes.cpp | Upsert note variant (remove then add) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077d730 |
+| 0x0077d7d0 | notes.cpp | Format note into display string | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077d7d0 |
 | 0x0077da30 | notes.cpp | FUN_0077da30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0077da80 | notes.cpp | FUN_0077da80 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0077dab0 | notes.cpp | FUN_0077dab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077dbb0 | notes.cpp | FUN_0077dbb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077de40 | notes.cpp | FUN_0077de40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077df70 | notes.cpp | FUN_0077df70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077e120 | notes.cpp | FUN_0077e120 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077e360 | notes.cpp | FUN_0077e360 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0077ecb0 | notes.cpp | FUN_0077ecb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0077dab0 | notes.cpp | Reminder-interval label lookup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077dab0 |
+| 0x0077dbb0 | notes.cpp | Note-category label lookup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077dbb0 |
+| 0x0077de40 | notes.cpp | Populate note-edit screen state | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077de40 |
+| 0x0077df70 | notes.cpp | Generate secretary note message | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077df70 |
+| 0x0077e120 | notes.cpp | Note-category applicability predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077e120 |
+| 0x0077e360 | notes.cpp | Build Create/Edit Staff Note screen | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077e360 |
+| 0x0077ecb0 | notes.cpp | Notes screen click dispatcher | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0077ecb0 |
 
 ## officials
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x006d0170 | match_official.cpp | FUN_006d0170 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006d0570 | match_official.cpp | FUN_006d0570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006d6040 | match_official.cpp | FUN_006d6040 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x006d6370 | match_official.cpp | FUN_006d6370 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x006d0170 | match_official.cpp | referee positional/advantage decision (in-match) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006d0170 |
+| 0x006d0570 | match_official.cpp | referee card decision (book/send-off) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006d0570 |
+| 0x006d6040 | match_official.cpp | end-of-match referee booking finalization | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006d6040 |
+| 0x006d6370 | match_official.cpp | reset match-official decision state | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006d6370 |
 | 0x00783ba0 | officials_manager.cpp | FUN_00783ba0 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00783ed0 | officials_manager.cpp | FUN_00783ed0 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00784290 | officials_manager.cpp | FUN_00784290 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED |  |
@@ -3760,100 +3760,100 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x0050e9d0 | database.cpp | FUN_0050e9d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00510420 | database.cpp | FUN_00510420 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00510ea0 | database.cpp | FUN_00510ea0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0050e9d0 | database.cpp | DB person-link relationship index build at load | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0050e9d0 |
+| 0x00510420 | database.cpp | person relationship link array builder | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00510420 |
+| 0x00510ea0 | database.cpp | club-manager link validation scan | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00510ea0 |
 | 0x00511b40 | database.cpp | FUN_00511b40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00511b80 | database.cpp | FUN_00511b80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00511bc0 | database.cpp | FUN_00511bc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00511ce0 | database.cpp | FUN_00511ce0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0051c970 | database.cpp | FUN_0051c970 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0051cbf0 | database.cpp | FUN_0051cbf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0051d160 | database.cpp | FUN_0051d160 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0051d280 | database.cpp | FUN_0051d280 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0051d510 | database.cpp | FUN_0051d510 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0051f480 | database.cpp | FUN_0051f480 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00511b80 | database.cpp | free name-pool buffer | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00511b80 |
+| 0x00511bc0 | database.cpp | grow person-link pool 0x1a records | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00511bc0 |
+| 0x00511ce0 | database.cpp | free multiple DB buffers teardown | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00511ce0 |
+| 0x0051c970 | database.cpp | assign favourite/disliked personnel names | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0051c970 |
+| 0x0051cbf0 | database.cpp | setup temp record for relationship gen | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0051cbf0 |
+| 0x0051d160 | database.cpp | person record copy-assign | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0051d160 |
+| 0x0051d280 | database.cpp | generate player friendships/rivalries by attr similarity | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0051d280 |
+| 0x0051d510 | database.cpp | bulk relationship/preference generation | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0051d510 |
+| 0x0051f480 | database.cpp | getter data-version/language global | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0051f480 |
 | 0x0051f490 | database.cpp | FUN_0051f490 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00522710 | database.cpp | FUN_00522710 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00522a10 | database.cpp | FUN_00522a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00522fe0 | database.cpp | FUN_00522fe0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005232a0 | database.cpp | FUN_005232a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00523630 | database.cpp | FUN_00523630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005236e0 | database.cpp | FUN_005236e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005237b0 | database.cpp | FUN_005237b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00523c30 | database.cpp | FUN_00523c30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00523d00 | database.cpp | FUN_00523d00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00522710 | database.cpp | per-player attribute-bar computation | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00522710 |
+| 0x00522a10 | database.cpp | per-player attribute computation | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00522a10 |
+| 0x00522fe0 | database.cpp | per-staff attribute computation | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00522fe0 |
+| 0x005232a0 | database.cpp | build per-person pref index table 0x24 records | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x005232a0 |
+| 0x00523630 | database.cpp | compact person-link pool keeping selected clubs | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00523630 |
+| 0x005236e0 | database.cpp | weighted-random favourite personnel pick | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005236e0 |
+| 0x005237b0 | database.cpp | weighted-random favourite personnel pick | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x005237b0 |
+| 0x00523c30 | database.cpp | weighted-random disliked personnel pick | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00523c30 |
+| 0x00523d00 | database.cpp | weighted-random disliked personnel pick | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00523d00 |
 | 0x00524100 | database.cpp | FUN_00524100 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00524400 | database.cpp | FUN_00524400 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005244d0 | database.cpp | FUN_005244d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00524790 | database.cpp | FUN_00524790 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00524790 | database.cpp | staff job-code to role label | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00524790 |
 | 0x00525160 | database.cpp | FUN_00525160 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00525170 | database.cpp | FUN_00525170 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00525310 | database.cpp | FUN_00525310 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005254f0 | database.cpp | FUN_005254f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00525860 | database.cpp | FUN_00525860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00525ce0 | database.cpp | FUN_00525ce0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005260e0 | database.cpp | FUN_005260e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005254f0 | database.cpp | relationship link accessor by type | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005254f0 |
+| 0x00525860 | database.cpp | add person relationship link | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00525860 |
+| 0x00525ce0 | database.cpp | add person relationship link variant | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00525ce0 |
+| 0x005260e0 | database.cpp | iterate squad relationships | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x005260e0 |
 | 0x00526420 | database.cpp | FUN_00526420 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00526500 | database.cpp | FUN_00526500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00526500 | database.cpp | count person relationships | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00526500 |
 | 0x005266d0 | database.cpp | FUN_005266d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00526780 | database.cpp | FUN_00526780 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005268b0 | database.cpp | FUN_005268b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00526780 | database.cpp | copy 5 favourite links out | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00526780 |
+| 0x005268b0 | database.cpp | copy 7 disliked links out | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005268b0 |
 | 0x005269e0 | database.cpp | FUN_005269e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00526a30 | database.cpp | FUN_00526a30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00526a30 | database.cpp | language-code to language name label | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00526a30 |
 | 0x00527290 | database.cpp | FUN_00527290 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00527320 | database.cpp | FUN_00527320 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00527450 | database.cpp | FUN_00527450 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00527490 | database.cpp | FUN_00527490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00527320 | database.cpp | predicate on person contract flag | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00527320 |
+| 0x00527450 | database.cpp | competition-membership predicate set 1 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00527450 |
+| 0x00527490 | database.cpp | competition-membership predicate set 2 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00527490 |
 | 0x005274d0 | database.cpp | FUN_005274d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00527690 | database.cpp | FUN_00527690 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00527c90 | database.cpp | FUN_00527c90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00527e30 | database.cpp | FUN_00527e30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00527e30 | database.cpp | person name string formatter | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00527e30 |
 | 0x005284e0 | database.cpp | FUN_005284e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00528600 | database.cpp | FUN_00528600 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00529bd0 | database.cpp | FUN_00529bd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00529c80 | database.cpp | FUN_00529c80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00529dc0 | database.cpp | FUN_00529dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00528600 | database.cpp | person name string formatter variant | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00528600 |
+| 0x00529bd0 | database.cpp | name sort comparator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00529bd0 |
+| 0x00529c80 | database.cpp | person comparator by DOB | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00529c80 |
+| 0x00529dc0 | database.cpp | localized name comparator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00529dc0 |
 | 0x00529e90 | database.cpp | FUN_00529e90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052a070 | database.cpp | FUN_0052a070 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052a2d0 | database.cpp | FUN_0052a2d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052a070 | database.cpp | competition to language/region code map | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052a070 |
+| 0x0052a2d0 | database.cpp | sort comparator by fields +4/+8 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052a2d0 |
 | 0x0052a410 | database.cpp | FUN_0052a410 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052a4d0 | database.cpp | FUN_0052a4d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052b9b0 | database.cpp | FUN_0052b9b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052b9b0 | database.cpp | set has-contract flag and squad experience analysis | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0052b9b0 |
 | 0x0052bae0 | database.cpp | FUN_0052bae0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052bc50 | database.cpp | FUN_0052bc50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052bc50 | database.cpp | relationship add/query with type switch | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0052bc50 |
 | 0x0052c290 | database.cpp | FUN_0052c290 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052cd30 | database.cpp | FUN_0052cd30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052cdd0 | database.cpp | FUN_0052cdd0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052cf90 | database.cpp | FUN_0052cf90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052d660 | database.cpp | FUN_0052d660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052cf90 | database.cpp | player interaction dispatch | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052cf90 |
+| 0x0052d660 | database.cpp | coaching-attribute name label 1..12 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052d660 |
 | 0x0052da80 | database.cpp | FUN_0052da80 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052db20 | database.cpp | FUN_0052db20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052db20 | database.cpp | coaching-category rating value getter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052db20 |
 | 0x0052de40 | database.cpp | FUN_0052de40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052ded0 | database.cpp | FUN_0052ded0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052e070 | database.cpp | FUN_0052e070 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052e150 | database.cpp | FUN_0052e150 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052e1c0 | database.cpp | FUN_0052e1c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052e220 | database.cpp | FUN_0052e220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052e410 | database.cpp | FUN_0052e410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052e4c0 | database.cpp | FUN_0052e4c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052e7c0 | database.cpp | FUN_0052e7c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052ea80 | database.cpp | FUN_0052ea80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052eb10 | database.cpp | FUN_0052eb10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052ef40 | database.cpp | FUN_0052ef40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052e220 | database.cpp | competition-membership predicate set 3 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052e220 |
+| 0x0052e410 | database.cpp | free-agent predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052e410 |
+| 0x0052e4c0 | database.cpp | prune squad relationship links to limit | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052e4c0 |
+| 0x0052e7c0 | database.cpp | gather related staff persons into array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052e7c0 |
+| 0x0052ea80 | database.cpp | free 8 buffers dtor-like | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052ea80 |
+| 0x0052eb10 | database.cpp | load eng.lng collation table | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052eb10 |
+| 0x0052ef40 | database.cpp | locale collation-key accessor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052ef40 |
 | 0x0052f010 | database.cpp | FUN_0052f010 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052f0f0 | database.cpp | FUN_0052f0f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052f1f0 | database.cpp | FUN_0052f1f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052f2c0 | database.cpp | FUN_0052f2c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052f1f0 | database.cpp | locale collation-key accessor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052f1f0 |
+| 0x0052f2c0 | database.cpp | locale collation-key accessor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052f2c0 |
 | 0x0052f3d0 | database.cpp | FUN_0052f3d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052f4e0 | database.cpp | FUN_0052f4e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052f4e0 | database.cpp | locale collation-key accessor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052f4e0 |
 | 0x0052f5b0 | database.cpp | FUN_0052f5b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0052f910 | database.cpp | FUN_0052f910 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052f9e0 | database.cpp | FUN_0052f9e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0052fd90 | database.cpp | FUN_0052fd90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00530180 | database.cpp | FUN_00530180 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00530690 | database.cpp | FUN_00530690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00530cb0 | database.cpp | FUN_00530cb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0052f910 | database.cpp | build and sort position-priority index | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052f910 |
+| 0x0052f9e0 | database.cpp | compute reputation/value from contract and cache | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0052f9e0 |
+| 0x0052fd90 | database.cpp | build player position abbreviation string | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0052fd90 |
+| 0x00530180 | database.cpp | player descriptor label | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00530180 |
+| 0x00530690 | database.cpp | compute position aptitude bitfield | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00530690 |
+| 0x00530cb0 | database.cpp | compute position aptitude score | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00530cb0 |
 | 0x00531350 | database.cpp | FUN_00531350 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005313b0 | database.cpp | FUN_005313b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00531420 | database.cpp | FUN_00531420 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
@@ -3872,33 +3872,33 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00531a50 | database.cpp | FUN_00531a50 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00531b30 | database.cpp | FUN_00531b30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00531b70 | database.cpp | FUN_00531b70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00531c70 | database.cpp | FUN_00531c70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00531c70 | database.cpp | gather up to 3 links from +0x65 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00531c70 |
 | 0x00531cd0 | database.cpp | FUN_00531cd0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00531d30 | database.cpp | FUN_00531d30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00531d30 | database.cpp | count squad players matching category | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00531d30 |
 | 0x00531d80 | database.cpp | FUN_00531d80 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00531ed0 | database.cpp | FUN_00531ed0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00531ed0 | database.cpp | build positional role descriptive label | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00531ed0 |
 | 0x00532390 | database.cpp | FUN_00532390 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005323b0 | database.cpp | FUN_005323b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005323f0 | database.cpp | FUN_005323f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00532980 | database.cpp | FUN_00532980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00532ce0 | database.cpp | FUN_00532ce0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00532de0 | database.cpp | FUN_00532de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00532ea0 | database.cpp | FUN_00532ea0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00532fa0 | database.cpp | FUN_00532fa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533050 | database.cpp | FUN_00533050 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005330b0 | database.cpp | FUN_005330b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533190 | database.cpp | FUN_00533190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533270 | database.cpp | FUN_00533270 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533350 | database.cpp | FUN_00533350 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533430 | database.cpp | FUN_00533430 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533520 | database.cpp | FUN_00533520 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533610 | database.cpp | FUN_00533610 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005323b0 | database.cpp | predicate on person club-type +0x53 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005323b0 |
+| 0x005323f0 | database.cpp | player mentoring/interaction eligibility | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x005323f0 |
+| 0x00532980 | database.cpp | find best mentor/partner in squad | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00532980 |
+| 0x00532ce0 | database.cpp | squad-need predicate fitness gated | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00532ce0 |
+| 0x00532de0 | database.cpp | squad-need predicate attackers | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00532de0 |
+| 0x00532ea0 | database.cpp | squad-need predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00532ea0 |
+| 0x00532fa0 | database.cpp | squad-need predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00532fa0 |
+| 0x00533050 | database.cpp | squad-has natural-fitness player predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533050 |
+| 0x005330b0 | database.cpp | squad-count predicate attr 0x15 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005330b0 |
+| 0x00533190 | database.cpp | squad-count predicate attr 0x11 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533190 |
+| 0x00533270 | database.cpp | squad-count predicate attr 0x11/0x36 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533270 |
+| 0x00533350 | database.cpp | squad-count predicate attr 0x15/0x36 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533350 |
+| 0x00533430 | database.cpp | squad-count predicate attacking attrs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533430 |
+| 0x00533520 | database.cpp | squad-count predicate attacking attrs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533520 |
+| 0x00533610 | database.cpp | rank squad players quality metric | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00533610 |
 | 0x00533870 | database.cpp | FUN_00533870 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005338d0 | database.cpp | FUN_005338d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00533940 | database.cpp | FUN_00533940 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005339b0 | database.cpp | FUN_005339b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005338d0 | database.cpp | add manager-staff relationship link | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005338d0 |
+| 0x00533940 | database.cpp | remove relationship link | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533940 |
+| 0x005339b0 | database.cpp | get related person record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005339b0 |
 | 0x00533a30 | database.cpp | FUN_00533a30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00533a80 | database.cpp | FUN_00533a80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00533a80 | database.cpp | competition-membership predicate set 4 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533a80 |
 
 ## player-stats
 
@@ -4030,16 +4030,16 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0053a200 | db_files.cpp | official_record_serializer | REPLACED_BY_RUST | OfficialView | YES | PARTIAL | rust:typed_records.rs |
 | 0x005d8c20 | hall_of_fame.cpp | FUN_005d8c20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005d8c90 | hall_of_fame.cpp | FUN_005d8c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d8d50 | hall_of_fame.cpp | FUN_005d8d50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d8fe0 | hall_of_fame.cpp | FUN_005d8fe0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d9370 | hall_of_fame.cpp | FUN_005d9370 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d94a0 | hall_of_fame.cpp | FUN_005d94a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d9750 | hall_of_fame.cpp | FUN_005d9750 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d9e30 | hall_of_fame.cpp | FUN_005d9e30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005da020 | hall_of_fame.cpp | FUN_005da020 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005d8d50 | hall_of_fame.cpp | Nation to HoF index dispatch + insert | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005d8d50 |
+| 0x005d8fe0 | hall_of_fame.cpp | Hall-of-fame record insert/dedup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005d8fe0 |
+| 0x005d9370 | hall_of_fame.cpp | HoF candidate compare and insert | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005d9370 |
+| 0x005d94a0 | hall_of_fame.cpp | Load hall_of_fame.bin | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005d94a0 |
+| 0x005d9750 | hall_of_fame.cpp | Load and rebuild hall_of_fame.bin | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005d9750 |
+| 0x005d9e30 | hall_of_fame.cpp | Export Hall of Fame to text file | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005d9e30 |
+| 0x005da020 | hall_of_fame.cpp | qsort comparator for HoF entries | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005da020 |
 | 0x005da080 | hall_of_fame.cpp | FUN_005da080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005da1c0 | hall_of_fame.cpp | FUN_005da1c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005daa70 | hall_of_fame.cpp | FUN_005daa70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005da1c0 | hall_of_fame.cpp | HoF category label lookup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005da1c0 |
+| 0x005daa70 | hall_of_fame.cpp | Init HoF nation index array | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005daa70 |
 | 0x007a8090 | player_stats.cpp | records apps/goals boot seed | PORTED_BEHAVIOURAL | World::club_history_view;World::player_history_view_for | YES | BEHAVIOURALLY_EXACT | memory/club-history-screen.md;rust:player_profile.rs |
 | 0x007cc7c0 | record_utils.cpp | fixture->record stamp builder | PORTED_BEHAVIOURAL | MatchRecord::from_input | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
 | 0x007cc990 | record_utils.cpp | record name-id store | REPLACED_BY_RUST | MatchRecord | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
@@ -4070,52 +4070,52 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x0078d720 | player_regen.cpp | FUN_0078d720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078da90 | player_regen.cpp | FUN_0078da90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078d720 | player_regen.cpp | regen-manager ctor + retire/regen driver init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078d720 |
+| 0x0078da90 | player_regen.cpp | regen-manager destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078da90 |
 | 0x0078db30 | player_regen.cpp | FUN_0078db30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0078dc90 | player_regen.cpp | FUN_0078dc90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078dc90 | player_regen.cpp | retire sweep driver over staff pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078dc90 |
 | 0x0078e970 | player_regen.cpp | regen fill-club-squad | PORTED_BEHAVIOURAL | regen_fill_club_squad | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/player_regen.rs |
-| 0x0078f1c0 | player_regen.cpp | FUN_0078f1c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078f1d0 | player_regen.cpp | FUN_0078f1d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078f1c0 | player_regen.cpp | getter (+0x20 non-zero) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078f1c0 |
+| 0x0078f1d0 | player_regen.cpp | regen list-head getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078f1d0 |
 | 0x0078f200 | player_regen.cpp | regen free-agent selector | PORTED_BEHAVIOURAL | select_free_agent | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/player_regen.rs |
-| 0x0078f2b0 | player_regen.cpp | FUN_0078f2b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078f2b0 | player_regen.cpp | assign regen player to club squad slot | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078f2b0 |
 | 0x0078f4f0 | player_regen.cpp | regen suitability score | PORTED_BEHAVIOURAL | regen_suitability_score | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/player_regen.rs |
-| 0x0078f6b0 | player_regen.cpp | FUN_0078f6b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0078fd10 | player_regen.cpp | FUN_0078fd10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0078f6b0 | player_regen.cpp | retirement decision + birthdate generation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078f6b0 |
+| 0x0078fd10 | player_regen.cpp | retirement decision (sweep variant) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0078fd10 |
 | 0x00790200 | player_regen.cpp | FUN_00790200 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00790220 | player_regen.cpp | FUN_00790220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00790220 | player_regen.cpp | regen list search by id | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00790220 |
 | 0x00790270 | player_regen.cpp | FUN_00790270 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007903a0 | player_regen.cpp | FUN_007903a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007904f0 | player_regen.cpp | FUN_007904f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007903a0 | player_regen.cpp | player-release/free-transfer decision | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007903a0 |
+| 0x007904f0 | player_regen.cpp | dynamic-array push (stride 0x10) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007904f0 |
 | 0x00790600 | player_regen.cpp | FUN_00790600 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x007906a0 | player_regen.cpp | FUN_007906a0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007907c0 | player_regen.cpp | FUN_007907c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00790860 | player_regen.cpp | FUN_00790860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007907c0 | player_regen.cpp | dynamic-array erase | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007907c0 |
+| 0x00790860 | player_regen.cpp | dynamic-array push (stride 0x1a) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00790860 |
 | 0x007909e0 | player_regen.cpp | FUN_007909e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00790ad0 | player_regen.cpp | FUN_00790ad0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00790b20 | player_regen.cpp | FUN_00790b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00790ad0 | player_regen.cpp | regen entry copy-assign | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00790ad0 |
+| 0x00790b20 | player_regen.cpp | collect regen/retire result lists from pool | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00790b20 |
 | 0x00790ec0 | player_regen.cpp | FUN_00790ec0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00790ef0 | player_regen.cpp | FUN_00790ef0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00791200 | player_regen.cpp | FUN_00791200 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00791630 | player_regen.cpp | FUN_00791630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007919a0 | player_regen.cpp | FUN_007919a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00790ef0 | player_regen.cpp | youth-promotion news generation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00790ef0 |
+| 0x00791200 | player_regen.cpp | youth-promotion news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00791200 |
+| 0x00791630 | player_regen.cpp | retirement/international news generation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00791630 |
+| 0x007919a0 | player_regen.cpp | retirement news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007919a0 |
 | 0x00792690 | player_regen.cpp | FUN_00792690 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00792810 | player_regen.cpp | FUN_00792810 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00792810 | player_regen.cpp | staff-appointment news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00792810 |
 | 0x00793030 | player_regen.cpp | FUN_00793030 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00793200 | player_regen.cpp | FUN_00793200 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00793690 | player_regen.cpp | FUN_00793690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00793e10 | player_regen.cpp | FUN_00793e10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00795310 | player_regen.cpp | FUN_00795310 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00795430 | player_regen.cpp | FUN_00795430 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00795570 | player_regen.cpp | FUN_00795570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007958e0 | player_regen.cpp | FUN_007958e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00795b10 | player_regen.cpp | FUN_00795b10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796020 | player_regen.cpp | FUN_00796020 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796590 | player_regen.cpp | FUN_00796590 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007965f0 | player_regen.cpp | FUN_007965f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007966a0 | player_regen.cpp | FUN_007966a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007966e0 | player_regen.cpp | FUN_007966e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796840 | player_regen.cpp | FUN_00796840 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00793200 | player_regen.cpp | unlink retiring person from all rosters | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00793200 |
+| 0x00793690 | player_regen.cpp | regen player attribute generation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00793690 |
+| 0x00793e10 | player_regen.cpp | retire-to-regen full conversion | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00793e10 |
+| 0x00795310 | player_regen.cpp | regen-manager job-vacancy init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00795310 |
+| 0x00795430 | player_regen.cpp | best destination-club selector for regen | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00795430 |
+| 0x00795570 | player_regen.cpp | destination-club scoring for regen | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00795570 |
+| 0x007958e0 | player_regen.cpp | best fallback player-from-league selector | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007958e0 |
+| 0x00795b10 | player_regen.cpp | retire.dat writer | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00795b10 |
+| 0x00796020 | player_regen.cpp | retire.dat loader | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796020 |
+| 0x00796590 | player_regen.cpp | qsort comparator (rating) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796590 |
+| 0x007965f0 | player_regen.cpp | qsort comparator (date) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007965f0 |
+| 0x007966a0 | player_regen.cpp | regen list contains-id search | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007966a0 |
+| 0x007966e0 | player_regen.cpp | constructor (field init) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007966e0 |
+| 0x00796840 | player_regen.cpp | destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796840 |
 
 ## render
 
@@ -4372,112 +4372,112 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x00489790 | club_screens.cpp | scouting decode (pending) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:scouting-and-transfers-status.md |
 | 0x00599d60 | fog_of_war.cpp | attribute-fog display filter | PORTED_PARTIAL | AttributeReveal;PlayerKnowledge::reveal | YES | PARTIAL | rust:scouting.rs |
-| 0x0059a150 | fog_of_war.cpp | FUN_0059a150 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059a150 | fog_of_war.cpp | Deserialize fog.dat player-knowledge cache (16 manager slots) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a150 |
 | 0x0059a360 | fog_of_war.cpp | FUN_0059a360 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059a380 | fog_of_war.cpp | FUN_0059a380 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059a3f0 | fog_of_war.cpp | FUN_0059a3f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059a380 | fog_of_war.cpp | Clear a player's fog-knowledge byte across all manager slots | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a380 |
+| 0x0059a3f0 | fog_of_war.cpp | Allocate and init one manager's fog slot | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a3f0 |
 | 0x0059a460 | fog_of_war.cpp | FUN_0059a460 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0059a480 | fog_of_war.cpp | FUN_0059a480 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059a580 | fog_of_war.cpp | FUN_0059a580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059a690 | fog_of_war.cpp | FUN_0059a690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059a7f0 | fog_of_war.cpp | FUN_0059a7f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059a8e0 | fog_of_war.cpp | FUN_0059a8e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059a580 | fog_of_war.cpp | Initialise per-player fog knowledge array at game start | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a580 |
+| 0x0059a690 | fog_of_war.cpp | Deserialize one fog knowledge record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a690 |
+| 0x0059a7f0 | fog_of_war.cpp | Serialize one fog knowledge record | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a7f0 |
+| 0x0059a8e0 | fog_of_war.cpp | Weekly fog decay/update tick over all players | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059a8e0 |
 | 0x0059a970 | fog_of_war.cpp | FUN_0059a970 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059aa60 | fog_of_war.cpp | FUN_0059aa60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059ad60 | fog_of_war.cpp | FUN_0059ad60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059b050 | fog_of_war.cpp | FUN_0059b050 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059b1b0 | fog_of_war.cpp | FUN_0059b1b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059b1d0 | fog_of_war.cpp | FUN_0059b1d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059b3a0 | fog_of_war.cpp | FUN_0059b3a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059bf70 | fog_of_war.cpp | FUN_0059bf70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059aa60 | fog_of_war.cpp | Compute initial fog knowledge level 0-3 (manager vs player) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059aa60 |
+| 0x0059ad60 | fog_of_war.cpp | Compute ongoing fog knowledge level 0-3 (variant) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059ad60 |
+| 0x0059b050 | fog_of_war.cpp | Progress a player's fog knowledge level (0->1->2->3) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059b050 |
+| 0x0059b1b0 | fog_of_war.cpp | Font object free thunk | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059b1b0 |
+| 0x0059b1d0 | fog_of_war.cpp | Load t2k/ttf font asset (medium/large/small/symbol) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059b1d0 |
+| 0x0059b3a0 | fog_of_war.cpp | Render a text string glyph-by-glyph (RGB565/555 blit) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059b3a0 |
+| 0x0059bf70 | fog_of_war.cpp | Free font object internal buffers | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059bf70 |
 | 0x0059c030 | fog_of_war.cpp | FUN_0059c030 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c1d0 | fog_of_war.cpp | FUN_0059c1d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c570 | fog_of_war.cpp | FUN_0059c570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c630 | fog_of_war.cpp | FUN_0059c630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c640 | fog_of_war.cpp | FUN_0059c640 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c6b0 | fog_of_war.cpp | FUN_0059c6b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c6e0 | fog_of_war.cpp | FUN_0059c6e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c750 | fog_of_war.cpp | FUN_0059c750 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059c840 | fog_of_war.cpp | FUN_0059c840 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059c1d0 | fog_of_war.cpp | Glyph cache lookup/load with LRU (up to 0x100 glyphs) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c1d0 |
+| 0x0059c570 | fog_of_war.cpp | Select font mode by typeface name | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c570 |
+| 0x0059c630 | fog_of_war.cpp | Getter: loaded-font count | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c630 |
+| 0x0059c640 | fog_of_war.cpp | Get font display name by index (via TTF name-table parse) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c640 |
+| 0x0059c6b0 | fog_of_war.cpp | Getter: font pointer by index | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c6b0 |
+| 0x0059c6e0 | fog_of_war.cpp | Compare whether current font matches name | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c6e0 |
+| 0x0059c750 | fog_of_war.cpp | Enumerate .ttf files in SI_DATA font directory | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c750 |
+| 0x0059c840 | fog_of_war.cpp | Parse TTF 'name' table to extract font name | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059c840 |
 | 0x0059cad0 | fog_of_war.cpp | FUN_0059cad0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007974b0 | player_search.cpp | scout-task result consumer | PORTED_PARTIAL | ScoutBook::assignments | YES | PARTIAL | memory:scouting-and-transfers-status.md |
 | 0x00799190 | player_search.cpp | scout-task builder | PORTED_PARTIAL | ScoutBook::assign | YES | STRUCTURALLY_VERIFIED | memory:scouting-and-transfers-status.md |
-| 0x007de900 | scout_manager.cpp | FUN_007de900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007dec40 | scout_manager.cpp | FUN_007dec40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007de900 | scout_manager.cpp | ScoutManager ctor: CD-check + alloc 0xa0 ScoutTask array + init scouts | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007de900 |
+| 0x007dec40 | scout_manager.cpp | ScoutManager dtor: free ScoutTask array | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007dec40 |
 | 0x007dec90 | scout_manager.cpp | FUN_007dec90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007ded80 | scout_manager.cpp | FUN_007ded80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007dee70 | scout_manager.cpp | FUN_007dee70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007defd0 | scout_manager.cpp | FUN_007defd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007df0c0 | scout_manager.cpp | FUN_007df0c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007ded80 | scout_manager.cpp | Accessor: get scout slot-table entry for a nation | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007ded80 |
+| 0x007dee70 | scout_manager.cpp | Accessor: compute ScoutTask record address by (slot,nation) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007dee70 |
+| 0x007defd0 | scout_manager.cpp | Getter: scout enable byte at +0x5c | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007defd0 |
+| 0x007df0c0 | scout_manager.cpp | Setter: scout enable byte at +0x5c | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007df0c0 |
 | 0x007df1b0 | scout_manager.cpp | scout weekly tick | PORTED_PARTIAL | ScoutBook::weekly_tick | YES | PARTIAL | memory:scouting-and-transfers-status.md |
-| 0x007df410 | scout_manager.cpp | FUN_007df410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007df410 | scout_manager.cpp | Reassign scouts across slots when watched player leaves | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007df410 |
 | 0x007df630 | scout_manager.cpp | FUN_007df630 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x007df790 | scout_manager.cpp | FUN_007df790 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007df920 | scout_manager.cpp | FUN_007df920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007dfbc0 | scout_manager.cpp | FUN_007dfbc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007dfd50 | scout_manager.cpp | FUN_007dfd50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e01c0 | scout_manager.cpp | FUN_007e01c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e07b0 | scout_manager.cpp | FUN_007e07b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e08f0 | scout_manager.cpp | FUN_007e08f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007df920 | scout_manager.cpp | Set scout watch target (primary/secondary slot swap) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007df920 |
+| 0x007dfbc0 | scout_manager.cpp | Scout coverage query then trigger player search | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007dfbc0 |
+| 0x007dfd50 | scout_manager.cpp | Deserialize scout_manager.dat from save stream | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007dfd50 |
+| 0x007e01c0 | scout_manager.cpp | Serialize scout_manager.dat to save stream | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e01c0 |
+| 0x007e07b0 | scout_manager.cpp | Scout-found-target check then recommend player | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e07b0 |
+| 0x007e08f0 | scout_manager.cpp | Weekly scout tick: evaluate watched players and emit reports | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e08f0 |
 | 0x007e0da0 | scout_manager.cpp | FUN_007e0da0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x007e0f10 | scout_manager.cpp | FUN_007e0f10 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007e1080 | scout_manager.cpp | FUN_007e1080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007e1080 | scout_manager.cpp | Remove entry from scout results list (compaction) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1080 |
 | 0x007e1190 | scout_manager.cpp | FUN_007e1190 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007e1276 | scout_manager.cpp | FUN_007e1276 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e1330 | scout_manager.cpp | FUN_007e1330 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e1430 | scout_manager.cpp | FUN_007e1430 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e16c0 | scout_manager.cpp | FUN_007e16c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e1830 | scout_manager.cpp | FUN_007e1830 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007e1276 | scout_manager.cpp | Scout evaluation predicate (returns coverage/interest code) | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x007e1276 |
+| 0x007e1330 | scout_manager.cpp | Scout worth-recommending gate (value/reputation/position) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1330 |
+| 0x007e1430 | scout_manager.cpp | Add entry to scout results list (grow + append) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1430 |
+| 0x007e16c0 | scout_manager.cpp | Increment scout-report interest counter for an entry | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e16c0 |
+| 0x007e1830 | scout_manager.cpp | Scan scout results for a player and flush cache | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1830 |
 | 0x007e18c0 | scout_manager.cpp | FUN_007e18c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007e1a30 | scout_manager.cpp | FUN_007e1a30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e1c00 | scout_manager.cpp | FUN_007e1c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e1eb0 | scout_manager.cpp | FUN_007e1eb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e42f0 | scout_manager.cpp | FUN_007e42f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e4410 | scout_manager.cpp | FUN_007e4410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e4440 | scout_manager.cpp | FUN_007e4440 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e44b0 | scout_manager.cpp | FUN_007e44b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007e1a30 | scout_manager.cpp | Compile and sort scout reports then group into news | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1a30 |
+| 0x007e1c00 | scout_manager.cpp | Build scout-recommendation news item | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1c00 |
+| 0x007e1eb0 | scout_manager.cpp | Process scout-impression-during-match news content | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e1eb0 |
+| 0x007e42f0 | scout_manager.cpp | Format scout-slot label (Short List/Player Search/Staff Search/Scout n) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e42f0 |
+| 0x007e4410 | scout_manager.cpp | qsort comparator for scout targets (key1 then key0) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e4410 |
+| 0x007e4440 | scout_manager.cpp | qsort comparator for scout reports (club/player/rank) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e4440 |
+| 0x007e44b0 | scout_manager.cpp | Reset search flags across a nation's 10 scout slots | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e44b0 |
 | 0x007e4750 | scout_manager.cpp | FUN_007e4750 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x007e47f0 | scout_manager.cpp | FUN_007e47f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007e4920 | scout_manager.cpp | FUN_007e4920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00822e30 | shortlist_manager.cpp | FUN_00822e30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00823140 | shortlist_manager.cpp | FUN_00823140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00823560 | shortlist_manager.cpp | FUN_00823560 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007e4920 | scout_manager.cpp | Thunk forwarding to FUN_007628e0 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007e4920 |
+| 0x00822e30 | shortlist_manager.cpp | ShortlistManager ctor: alloc per-club shortlist pool and init entries | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00822e30 |
+| 0x00823140 | shortlist_manager.cpp | ShortlistManager dtor: free per-club pools and arrays | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00823140 |
+| 0x00823560 | shortlist_manager.cpp | Build all club shortlists (Assessing Club Squads / Creating Shortlists) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00823560 |
 | 0x00823a80 | shortlist_manager.cpp | FUN_00823a80 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00823d20 | shortlist_manager.cpp | FUN_00823d20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008246b0 | shortlist_manager.cpp | FUN_008246b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008246c0 | shortlist_manager.cpp | FUN_008246c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00824a30 | shortlist_manager.cpp | FUN_00824a30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00823d20 | shortlist_manager.cpp | Deserialize ShortlistManager from save stream | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00823d20 |
+| 0x008246b0 | shortlist_manager.cpp | Callback wrapper forwarding to FUN_00533cf0 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008246b0 |
+| 0x008246c0 | shortlist_manager.cpp | Verify/skip-load shortlist section from save stream | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008246c0 |
+| 0x00824a30 | shortlist_manager.cpp | Distribute club budget/wage across shortlist squad slots | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00824a30 |
 | 0x00825050 | shortlist_manager.cpp | FUN_00825050 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00825290 | shortlist_manager.cpp | FUN_00825290 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008253e0 | shortlist_manager.cpp | FUN_008253e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00825e90 | shortlist_manager.cpp | FUN_00825e90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00825290 | shortlist_manager.cpp | Set shortlist player asking-value/rating field (clamped) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00825290 |
+| 0x008253e0 | shortlist_manager.cpp | Set positional-aptitude template flags for shortlist entry | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008253e0 |
+| 0x00825e90 | shortlist_manager.cpp | Process one club squad: squad-status assignment + transfer listing + valuation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00825e90 |
 | 0x0082b3b0 | shortlist_manager.cpp | FUN_0082b3b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0082b410 | shortlist_manager.cpp | FUN_0082b410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0082b410 | shortlist_manager.cpp | Erase all shortlist entries matching a player id | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082b410 |
 | 0x0082b4b0 | shortlist_manager.cpp | FUN_0082b4b0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0082b650 | shortlist_manager.cpp | FUN_0082b650 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082b720 | shortlist_manager.cpp | FUN_0082b720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082ba70 | shortlist_manager.cpp | FUN_0082ba70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0082b650 | shortlist_manager.cpp | Transfer-list player then trigger shortlist scan | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082b650 |
+| 0x0082b720 | shortlist_manager.cpp | Add player to shortlist with interest-counter bookkeeping | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082b720 |
+| 0x0082ba70 | shortlist_manager.cpp | AI compose transfer bid for a shortlisted player | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082ba70 |
 | 0x0082be30 | shortlist_manager.cpp | FUN_0082be30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0082bf30 | shortlist_manager.cpp | FUN_0082bf30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082c140 | shortlist_manager.cpp | FUN_0082c140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082cb30 | shortlist_manager.cpp | FUN_0082cb30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082d140 | shortlist_manager.cpp | FUN_0082d140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082d5b0 | shortlist_manager.cpp | FUN_0082d5b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082d5e0 | shortlist_manager.cpp | FUN_0082d5e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0082d600 | shortlist_manager.cpp | FUN_0082d600 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0082bf30 | shortlist_manager.cpp | Iterate all clubs to offer a player out / find buyers | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082bf30 |
+| 0x0082c140 | shortlist_manager.cpp | AI evaluate and make bid for a player (main path) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082c140 |
+| 0x0082cb30 | shortlist_manager.cpp | AI evaluate and make loan/free bid variant | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082cb30 |
+| 0x0082d140 | shortlist_manager.cpp | Remove player from shortlist / set transfer-negotiation status (multi-mode) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082d140 |
+| 0x0082d5b0 | shortlist_manager.cpp | Clear player shortlist flag bit (+0x4e &~1) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082d5b0 |
+| 0x0082d5e0 | shortlist_manager.cpp | Set player shortlist flag bit (+0x4e |2) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082d5e0 |
+| 0x0082d600 | shortlist_manager.cpp | Clear player shortlist flag bit (+0x4e &~2) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082d600 |
 | 0x0082d630 | shortlist_manager.cpp | FUN_0082d630 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0082d870 | shortlist_manager.cpp | FUN_0082d870 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0082d990 | shortlist_manager.cpp | FUN_0082d990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0082d990 | shortlist_manager.cpp | Purge shortlist interests referencing a club across a squad | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0082d990 |
 | 0x00832ed0 | shortlist_manager.cpp | FUN_00832ed0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00832f50 | shortlist_manager.cpp | FUN_00832f50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00832f50 | shortlist_manager.cpp | Squad-status classifier (returns tier code 1-5) by CA/reputation ratio | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00832f50 |
 | 0x008330f0 | shortlist_manager.cpp | FUN_008330f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00833d80 | shortlist_manager.cpp | FUN_00833d80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00833d80 | shortlist_manager.cpp | Remove player shortlist/interest entries on transfer | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00833d80 |
 | 0x00834050 | shortlist_manager.cpp | FUN_00834050 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008340a0 | shortlist_manager.cpp | FUN_008340a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008340a0 | shortlist_manager.cpp | Offer accept/reject decision (returns 0/1/2 code) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008340a0 |
 | 0x00834320 | shortlist_manager.cpp | FUN_00834320 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00834390 | shortlist_manager.cpp | FUN_00834390 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00834390 | shortlist_manager.cpp | Position-mask wrapper forwarding to shortlist matcher | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00834390 |
 | 0x008343d0 | shortlist_manager.cpp | FUN_008343d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008344d0 | shortlist_manager.cpp | FUN_008344d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008344d0 | shortlist_manager.cpp | Format squad-status description string (indispensable..on-trial) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008344d0 |
 | 0x00834670 | shortlist_manager.cpp | FUN_00834670 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00834720 | shortlist_manager.cpp | FUN_00834720 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00834890 | shortlist_manager.cpp | FUN_00834890 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
@@ -4694,70 +4694,70 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x007968c0 | player_search.cpp | FUN_007968c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796990 | player_search.cpp | FUN_00796990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796a30 | player_search.cpp | FUN_00796a30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796ad0 | player_search.cpp | FUN_00796ad0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796b20 | player_search.cpp | FUN_00796b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796bf0 | player_search.cpp | FUN_00796bf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796ca0 | player_search.cpp | FUN_00796ca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00796d10 | player_search.cpp | FUN_00796d10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007971d0 | player_search.cpp | FUN_007971d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00797320 | player_search.cpp | FUN_00797320 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007968c0 | player_search.cpp | PlayerSearch set staff-index field | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007968c0 |
+| 0x00796990 | player_search.cpp | PlayerSearch set search-type field | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796990 |
+| 0x00796a30 | player_search.cpp | PlayerSearch set mode field | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796a30 |
+| 0x00796ad0 | player_search.cpp | PlayerSearch copy staff name into field | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796ad0 |
+| 0x00796b20 | player_search.cpp | PlayerSearch copy label string into field | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796b20 |
+| 0x00796bf0 | player_search.cpp | PlayerSearch set next-opposition club field | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796bf0 |
+| 0x00796ca0 | player_search.cpp | PlayerSearch resolve stored opposition ptr | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796ca0 |
+| 0x00796d10 | player_search.cpp | PlayerSearch configure target label and params | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00796d10 |
+| 0x007971d0 | player_search.cpp | PlayerSearch reset filter state | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007971d0 |
+| 0x00797320 | player_search.cpp | PlayerSearch read out 6 search params | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00797320 |
 | 0x007978d0 | player_search.cpp | FUN_007978d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00797950 | player_search.cpp | FUN_00797950 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00797950 | player_search.cpp | PlayerSearch result-set membership check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00797950 |
 | 0x00797a70 | player_search.cpp | FUN_00797a70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00797bc0 | player_search.cpp | FUN_00797bc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00797dc0 | player_search.cpp | FUN_00797dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007983a0 | player_search.cpp | FUN_007983a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00797bc0 | player_search.cpp | PlayerSearch add player to results | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00797bc0 |
+| 0x00797dc0 | player_search.cpp | PlayerSearch build related-players list | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00797dc0 |
+| 0x007983a0 | player_search.cpp | PlayerSearch core execution | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007983a0 |
 | 0x00799500 | player_search.cpp | FUN_00799500 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007995b0 | player_search.cpp | FUN_007995b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007997f0 | player_search.cpp | FUN_007997f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00799870 | player_search.cpp | FUN_00799870 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00799b30 | player_search.cpp | FUN_00799b30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079a6b0 | player_search.cpp | FUN_0079a6b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079b9b0 | player_search.cpp | FUN_0079b9b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007995b0 | player_search.cpp | PlayerSearch remove entry from results | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007995b0 |
+| 0x007997f0 | player_search.cpp | PlayerSearch clear results and free list | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007997f0 |
+| 0x00799870 | player_search.cpp | PlayerSearch prune stale results | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00799870 |
+| 0x00799b30 | player_search.cpp | PlayerSearch deserialize from save | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00799b30 |
+| 0x0079a6b0 | player_search.cpp | PlayerSearch serialize to save | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0079a6b0 |
+| 0x0079b9b0 | player_search.cpp | PlayerSearch load saved query file | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0079b9b0 |
 | 0x0079c0a0 | player_search.cpp | FUN_0079c0a0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0079c170 | player_search.cpp | FUN_0079c170 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079df30 | player_search.cpp | FUN_0079df30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079e5f0 | player_search.cpp | FUN_0079e5f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079f7e0 | player_search.cpp | FUN_0079f7e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079f9e0 | player_search.cpp | FUN_0079f9e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0079fb90 | player_search.cpp | FUN_0079fb90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a0540 | player_search.cpp | FUN_007a0540 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a1910 | player_search.cpp | FUN_007a1910 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a4dd0 | player_search.cpp | FUN_007a4dd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5220 | player_search.cpp | FUN_007a5220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5650 | player_search.cpp | FUN_007a5650 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5a40 | player_search.cpp | FUN_007a5a40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5b70 | player_search.cpp | FUN_007a5b70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5bb0 | player_search.cpp | FUN_007a5bb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5c00 | player_search.cpp | FUN_007a5c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5c50 | player_search.cpp | FUN_007a5c50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5ca0 | player_search.cpp | FUN_007a5ca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a5d10 | player_search.cpp | FUN_007a5d10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a60b0 | player_search.cpp | FUN_007a60b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a6220 | player_search.cpp | FUN_007a6220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a6980 | player_search.cpp | FUN_007a6980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a69b0 | player_search.cpp | FUN_007a69b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a7f10 | player_search.cpp | FUN_007a7f10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a7f90 | player_search.cpp | FUN_007a7f90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007a8010 | player_search.cpp | FUN_007a8010 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0079c170 | player_search.cpp | PlayerSearch compute player suitability scores | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0079c170 |
+| 0x0079df30 | player_search.cpp | PlayerSearch evaluate player vs criteria | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0079df30 |
+| 0x0079e5f0 | player_search.cpp | PlayerSearch player scoring/formatting | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0079e5f0 |
+| 0x0079f7e0 | player_search.cpp | PlayerSearch player-matches-target predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0079f7e0 |
+| 0x0079f9e0 | player_search.cpp | PlayerSearch copy/clone object | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0079f9e0 |
+| 0x0079fb90 | player_search.cpp | Scout search-started news message | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0079fb90 |
+| 0x007a0540 | player_search.cpp | Scout search-completed news messages | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a0540 |
+| 0x007a1910 | player_search.cpp | Friendly scout report text builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a1910 |
+| 0x007a4dd0 | player_search.cpp | Player value/price estimate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a4dd0 |
+| 0x007a5220 | player_search.cpp | Load/validate saved search file | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5220 |
+| 0x007a5650 | player_search.cpp | Populate team recent-results grid | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5650 |
+| 0x007a5a40 | player_search.cpp | Find-or-insert results-grid slot | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5a40 |
+| 0x007a5b70 | player_search.cpp | Get nth results-ring entry pointer | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5b70 |
+| 0x007a5bb0 | player_search.cpp | Sum results-ring field +0x16 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5bb0 |
+| 0x007a5c00 | player_search.cpp | Sum results-ring field +0x17 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5c00 |
+| 0x007a5c50 | player_search.cpp | Sum results-ring field +0x18 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5c50 |
+| 0x007a5ca0 | player_search.cpp | Average results-ring field +0x1b | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5ca0 |
+| 0x007a5d10 | player_search.cpp | Player attribute-comparison flag builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a5d10 |
+| 0x007a60b0 | player_search.cpp | Attribute/reputation compare predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a60b0 |
+| 0x007a6220 | player_search.cpp | Player descriptive-text builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a6220 |
+| 0x007a6980 | player_search.cpp | qsort comparator (id pair) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a6980 |
+| 0x007a69b0 | player_search.cpp | Scout player-report prose builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a69b0 |
+| 0x007a7f10 | player_search.cpp | Collect players by list-flag 0x400 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a7f10 |
+| 0x007a7f90 | player_search.cpp | Collect players by list-flag 0x100 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a7f90 |
+| 0x007a8010 | player_search.cpp | Collect players by list-flag 0x200 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007a8010 |
 | 0x007ec9e0 | search_eng.cpp | FUN_007ec9e0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007ecab0 | search_eng.cpp | FUN_007ecab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007ecac0 | search_eng.cpp | FUN_007ecac0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007ecdf0 | search_eng.cpp | FUN_007ecdf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007ed9f0 | search_eng.cpp | FUN_007ed9f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007eda90 | search_eng.cpp | FUN_007eda90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007edb10 | search_eng.cpp | FUN_007edb10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007edb60 | search_eng.cpp | FUN_007edb60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007edcd0 | search_eng.cpp | FUN_007edcd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007edd40 | search_eng.cpp | FUN_007edd40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007edf30 | search_eng.cpp | FUN_007edf30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007ecab0 | search_eng.cpp | Search-engine result array destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007ecab0 |
+| 0x007ecac0 | search_eng.cpp | Staff text search collect | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007ecac0 |
+| 0x007ecdf0 | search_eng.cpp | Player search with keyword filters | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007ecdf0 |
+| 0x007ed9f0 | search_eng.cpp | Name-match helper (person subfields A) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007ed9f0 |
+| 0x007eda90 | search_eng.cpp | Name-match helper (subfields B) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007eda90 |
+| 0x007edb10 | search_eng.cpp | Name-match helper (2 fields) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007edb10 |
+| 0x007edb60 | search_eng.cpp | Name-variant match helper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007edb60 |
+| 0x007edcd0 | search_eng.cpp | Name-match helper (3 fields) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007edcd0 |
+| 0x007edd40 | search_eng.cpp | Core substring/word matcher | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007edd40 |
+| 0x007edf30 | search_eng.cpp | Init default search-filter struct | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007edf30 |
 | 0x007eead0 | search_filters.cpp | FUN_007eead0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x007eecb0 | search_filters.cpp | FUN_007eecb0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x007eef30 | search_filters.cpp | FUN_007eef30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007efc70 | search_filters.cpp | FUN_007efc70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007eef30 | search_filters.cpp | Multi-criteria staff filter predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007eef30 |
+| 0x007efc70 | search_filters.cpp | Get filter attribute min/max | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007efc70 |
 
 ## season-roll
 
@@ -4770,35 +4770,35 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x008077e0 | setup.cpp | FUN_008077e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0080ba60 | setup.cpp | FUN_0080ba60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008077e0 | setup.cpp | Network Play menu screen builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008077e0 |
+| 0x0080ba60 | setup.cpp | setup screen command dispatch router | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0080ba60 |
 | 0x0080fac0 | setup.cpp | hall_of_fame_screen | UI_GDI_DOMAIN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | NO | STRUCTURALLY_VERIFIED | cited-unported-handler |
-| 0x0080fb10 | setup.cpp | FUN_0080fb10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00819a40 | setup.cpp | FUN_00819a40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00821f80 | setup.cpp | FUN_00821f80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00822080 | setup.cpp | FUN_00822080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0080fb10 | setup.cpp | Hall of Fame screen builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0080fb10 |
+| 0x00819a40 | setup.cpp | new-game teardown: mass-free of subsystem pools | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00819a40 |
+| 0x00821f80 | setup.cpp | restore human-manager mailboxes after load | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00821f80 |
+| 0x00822080 | setup.cpp | network game create/join session setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00822080 |
 | 0x00822400 | setup.cpp | FUN_00822400 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008224b0 | setup.cpp | count_network_waiting_players | NOT_YET_PORTED | crates/cm-render/src/dispatcher.rs | NO | PARTIAL | cited-TODO |
 | 0x008226f0 | setup.cpp | FUN_008226f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00822960 | setup.cpp | FUN_00822960 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00822b10 | setup.cpp | FUN_00822b10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00822cd0 | setup.cpp | FUN_00822cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00822b10 | setup.cpp | load fifa_transfer_rules.zip config | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00822b10 |
+| 0x00822cd0 | setup.cpp | DB integrity fixup: ensure enough teams per nation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00822cd0 |
 
 ## squad
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x00842ce0 | squad_manager.cpp | FUN_00842ce0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00842ce0 | squad_manager.cpp | squad_manager.dat config value load | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00842ce0 |
 | 0x00842de0 | squad_manager.cpp | FUN_00842de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00842ee0 | squad_manager.cpp | FUN_00842ee0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00843ad0 | squad_manager.cpp | FUN_00843ad0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00843c00 | squad_manager.cpp | FUN_00843c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00842ee0 | squad_manager.cpp | weekly squad-registration driver over clubs | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00842ee0 |
+| 0x00843ad0 | squad_manager.cpp | squad-registration per-comp driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00843ad0 |
+| 0x00843c00 | squad_manager.cpp | squad-registration eligibility marking | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00843c00 |
 | 0x00843fe0 | squad_manager.cpp | FUN_00843fe0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00844060 | squad_manager.cpp | FUN_00844060 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00844140 | squad_manager.cpp | FUN_00844140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008442b0 | squad_manager.cpp | FUN_008442b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00844790 | squad_manager.cpp | FUN_00844790 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00844910 | squad_manager.cpp | FUN_00844910 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00844060 | squad_manager.cpp | registration submission message builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00844060 |
+| 0x00844140 | squad_manager.cpp | registration news item creation | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00844140 |
+| 0x008442b0 | squad_manager.cpp | registration event news formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008442b0 |
+| 0x00844790 | squad_manager.cpp | CD copy-protection check | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00844790 |
+| 0x00844910 | squad_manager.cpp | destructor (frees two pointers) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00844910 |
 
 ## stadium
 
@@ -4861,109 +4861,109 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x0059cc40 | formation.cpp | FUN_0059cc40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0059d190 | formation.cpp | FUN_0059d190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059d220 | formation.cpp | FUN_0059d220 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059d190 | formation.cpp | position-available-in-formation query | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059d190 |
+| 0x0059d220 | formation.cpp | slot-index-by-role-mask lookup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059d220 |
 | 0x0059d4c0 | formation.cpp | FUN_0059d4c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0059d580 | formation.cpp | FUN_0059d580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059d770 | formation.cpp | FUN_0059d770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059d580 | formation.cpp | formation slot depth-ordering assignment | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059d580 |
+| 0x0059d770 | formation.cpp | slot role/priority comparison | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059d770 |
 | 0x0059d870 | formation.cpp | per-slot player-instruction setter | PORTED_PARTIAL | TacticSlot | YES | PARTIAL | memory:tactics-port-status.md |
-| 0x0059df80 | formation.cpp | FUN_0059df80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059e0f0 | formation.cpp | FUN_0059e0f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059e430 | formation.cpp | FUN_0059e430 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059e720 | formation.cpp | FUN_0059e720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059e8c0 | formation.cpp | FUN_0059e8c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059ed70 | formation.cpp | FUN_0059ed70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059ee80 | formation.cpp | FUN_0059ee80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0059f1f0 | formation.cpp | FUN_0059f1f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059df80 | formation.cpp | position-value getter from 0x164 array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059df80 |
+| 0x0059e0f0 | formation.cpp | set 11-slot position column | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059e0f0 |
+| 0x0059e430 | formation.cpp | set all positions | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059e430 |
+| 0x0059e720 | formation.cpp | find slot by position value | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059e720 |
+| 0x0059e8c0 | formation.cpp | swap two slots position values | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059e8c0 |
+| 0x0059ed70 | formation.cpp | formation-dirty validation driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059ed70 |
+| 0x0059ee80 | formation.cpp | slot-deviates-from-default check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059ee80 |
+| 0x0059f1f0 | formation.cpp | duplicate-position-value check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059f1f0 |
 | 0x0059f580 | formation.cpp | FUN_0059f580 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0059fad0 | formation.cpp | FUN_0059fad0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x0059fbf0 | formation.cpp | FUN_0059fbf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0059fbf0 | formation.cpp | slot player-record pointer getter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0059fbf0 |
 | 0x0059fc20 | formation.cpp | FUN_0059fc20 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0059fc70 | formation.cpp | FUN_0059fc70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0059fcb0 | formation.cpp | FUN_0059fcb0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0059fd70 | formation.cpp | FUN_0059fd70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x005a0020 | formation.cpp | FUN_005a0020 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005a0020 | formation.cpp | .tct/.pct formation file loader | PORTED_BEHAVIOURAL | parse_tactic | YES | BEHAVIOURALLY_EXACT | rust:crates/cm-domain/src/tactic_file.rs |
 | 0x005a1470 | formation.cpp | global team-settings setters | PORTED_PARTIAL | TeamSettings | YES | PARTIAL | memory:tactics-port-status.md |
-| 0x005a1b20 | formation.cpp | FUN_005a1b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005a1dc0 | formation.cpp | FUN_005a1dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005a2170 | formation.cpp | FUN_005a2170 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005a30d0 | formation.cpp | FUN_005a30d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005a1b20 | formation.cpp | position-mask to short label | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005a1b20 |
+| 0x005a1dc0 | formation.cpp | position-mask to long label | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005a1dc0 |
+| 0x005a2170 | formation.cpp | default position-coordinate generator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005a2170 |
+| 0x005a30d0 | formation.cpp | formation-validity check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005a30d0 |
 | 0x006c34c0 | match_man.cpp | team tempo+mentality bitmask | PORTED_BEHAVIOURAL | team_settings | YES | BEHAVIOURALLY_EXACT | rust:tactic_file.rs |
 | 0x006c5c40 | match_man.cpp | team score (sum ratings / opp_rep x8) | PORTED_BEHAVIOURAL | team_score | YES | BEHAVIOURALLY_EXACT | memory:tactics-port-status.md |
 | 0x006c8930 | match_man.cpp | position rating (player-in-role) | PORTED_PARTIAL | position_rating;ATTR_CURVE | YES | PARTIAL | memory:tactics-port-status.md |
 | 0x0087ea70 | tactics.cpp | tactics-AI XI selection (faithful picker) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:tactics-port-status.md |
-| 0x00880e90 | tactics.cpp | FUN_00880e90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00880f40 | tactics.cpp | FUN_00880f40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00880e90 | tactics.cpp | tactic-manager destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00880e90 |
+| 0x00880f40 | tactics.cpp | tactic-vs-opponent performance stats | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00880f40 |
 | 0x00881310 | tactics.cpp | AI/per-club formation resolver | NOT_YET_PORTED | FLAT_442_ROLES | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x00881480 | tactics.cpp | FUN_00881480 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00881740 | tactics.cpp | FUN_00881740 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00881b40 | tactics.cpp | FUN_00881b40 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00881c90 | tactics.cpp | FUN_00881c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00881c90 | tactics.cpp | register/unregister opponent tactic cache | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00881c90 |
 | 0x00881f00 | tactics.cpp | FUN_00881f00 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00881f70 | tactics.cpp | FUN_00881f70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00882090 | tactics.cpp | FUN_00882090 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00882090 | tactics.cpp | move tactic slot body between positions | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00882090 |
 | 0x00882240 | tactics.cpp | FUN_00882240 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00882350 | tactics.cpp | FUN_00882350 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00882410 | tactics.cpp | FUN_00882410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00882410 | tactics.cpp | copy slot value to +0x52 field | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00882410 |
 | 0x00882530 | tactics.cpp | FUN_00882530 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00882860 | tactics.cpp | FUN_00882860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00882860 | tactics.cpp | set/clear individual-instruction field | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00882860 |
 | 0x00882a70 | tactics.cpp | FUN_00882a70 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00882b90 | tactics.cpp | FUN_00882b90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00882cf0 | tactics.cpp | FUN_00882cf0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00882e00 | tactics.cpp | FUN_00882e00 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00883180 | tactics.cpp | FUN_00883180 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00883270 | tactics.cpp | FUN_00883270 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00884280 | tactics.cpp | FUN_00884280 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00883180 | tactics.cpp | copy whole 0x91-byte tactic slot body | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00883180 |
+| 0x00883270 | tactics.cpp | tactics.dat loader (versioned) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00883270 |
+| 0x00884280 | tactics.cpp | tactics.dat writer | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00884280 |
 | 0x00884700 | tactics_screens.cpp | TacticScreenView widget builder | NOT_YET_PORTED | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/tactic_dispatcher.rs | BLOCKED | PARTIAL | memory:tactics-port-status.md |
-| 0x0088a720 | tactics_screens.cpp | FUN_0088a720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a730 | tactics_screens.cpp | FUN_0088a730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a740 | tactics_screens.cpp | FUN_0088a740 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a770 | tactics_screens.cpp | FUN_0088a770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a790 | tactics_screens.cpp | FUN_0088a790 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a7d0 | tactics_screens.cpp | FUN_0088a7d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a7f0 | tactics_screens.cpp | FUN_0088a7f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0088a810 | tactics_screens.cpp | FUN_0088a810 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0088a720 | tactics_screens.cpp | tactic screen scratch-lock getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a720 |
+| 0x0088a730 | tactics_screens.cpp | tactic screen field getter +0x2731 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a730 |
+| 0x0088a740 | tactics_screens.cpp | tactic screen side-select getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a740 |
+| 0x0088a770 | tactics_screens.cpp | thunk to FUN_0059cdf0 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a770 |
+| 0x0088a790 | tactics_screens.cpp | thunk to FUN_0059d190 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a790 |
+| 0x0088a7d0 | tactics_screens.cpp | thunk to FUN_0059d220 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a7d0 |
+| 0x0088a7f0 | tactics_screens.cpp | thunk to FUN_0059d770 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a7f0 |
+| 0x0088a810 | tactics_screens.cpp | thunk to FUN_0059f1f0 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0088a810 |
 | 0x0088a850 | tactics_screens.cpp | tactics-screen event dispatcher | PORTED_PARTIAL | TacticCmd;dispatch | INDIRECT | PARTIAL | memory:tactics-port-status.md |
 | 0x0088dde0 | tactics_screens.cpp | FUN_0088dde0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00890b30 | tactics_screens.cpp | FUN_00890b30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00890b30 | tactics_screens.cpp | tactic-screen record deep copy | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00890b30 |
 | 0x008939c0 | tactics_screens.cpp | tactic-record initialiser | NOT_YET_PORTED | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/tactic_dispatcher.rs | BLOCKED | PARTIAL | memory:tactics-port-status.md |
-| 0x008948b0 | tactics_screens.cpp | FUN_008948b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008948b0 | tactics_screens.cpp | tactics screen title string builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008948b0 |
 | 0x00895450 | tactics_screens.cpp | FUN_00895450 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008955a0 | tactics_screens.cpp | FUN_008955a0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008958f0 | tactics_screens.cpp | FUN_008958f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x00895a50 | tactics_screens.cpp | FUN_00895a50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00895b50 | tactics_screens.cpp | FUN_00895b50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00895a50 | tactics_screens.cpp | tactic slot position-value getter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00895a50 |
+| 0x00895b50 | tactics_screens.cpp | reserve-tactic slot position-value getter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00895b50 |
 | 0x00895c10 | tactics_screens.cpp | tct/pct tactic loader | PORTED_EXACT | load_tactic;parse_tactic | YES | BYTE_EXACT | memory:agevak-cross-check.md |
-| 0x00896260 | tactics_screens.cpp | FUN_00896260 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008963b0 | tactics_screens.cpp | FUN_008963b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008964d0 | tactics_screens.cpp | FUN_008964d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008965e0 | tactics_screens.cpp | FUN_008965e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008966b0 | tactics_screens.cpp | FUN_008966b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00896790 | tactics_screens.cpp | FUN_00896790 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00896840 | tactics_screens.cpp | FUN_00896840 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00896b90 | tactics_screens.cpp | FUN_00896b90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00896e70 | tactics_screens.cpp | FUN_00896e70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008970e0 | tactics_screens.cpp | FUN_008970e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008971f0 | tactics_screens.cpp | FUN_008971f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008972f0 | tactics_screens.cpp | FUN_008972f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008973f0 | tactics_screens.cpp | FUN_008973f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00897610 | tactics_screens.cpp | FUN_00897610 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00897790 | tactics_screens.cpp | FUN_00897790 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008978a0 | tactics_screens.cpp | FUN_008978a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008979a0 | tactics_screens.cpp | FUN_008979a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00897ac0 | tactics_screens.cpp | FUN_00897ac0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00897cb0 | tactics_screens.cpp | FUN_00897cb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008980b0 | tactics_screens.cpp | FUN_008980b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00898190 | tactics_screens.cpp | FUN_00898190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00898340 | tactics_screens.cpp | FUN_00898340 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00898470 | tactics_screens.cpp | FUN_00898470 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00898740 | tactics_screens.cpp | FUN_00898740 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00898a10 | tactics_screens.cpp | FUN_00898a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00898c40 | tactics_screens.cpp | FUN_00898c40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00899dc0 | tactics_screens.cpp | FUN_00899dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089a1f0 | tactics_screens.cpp | FUN_0089a1f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089a2b0 | tactics_screens.cpp | FUN_0089a2b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089a7d0 | tactics_screens.cpp | FUN_0089a7d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00896260 | tactics_screens.cpp | set team-flags word slider | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00896260 |
+| 0x008963b0 | tactics_screens.cpp | swap slot positions | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008963b0 |
+| 0x008964d0 | tactics_screens.cpp | set slot position | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008964d0 |
+| 0x008965e0 | tactics_screens.cpp | slot position-validity check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008965e0 |
+| 0x008966b0 | tactics_screens.cpp | set individual player instruction | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008966b0 |
+| 0x00896790 | tactics_screens.cpp | set slot instruction | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00896790 |
+| 0x00896840 | tactics_screens.cpp | slot position/eligibility label builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00896840 |
+| 0x00896b90 | tactics_screens.cpp | slot player-name string builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00896b90 |
+| 0x00896e70 | tactics_screens.cpp | slot combined position+player label | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00896e70 |
+| 0x008970e0 | tactics_screens.cpp | slot empty/flag check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008970e0 |
+| 0x008971f0 | tactics_screens.cpp | slot byte getter +0x24 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008971f0 |
+| 0x008972f0 | tactics_screens.cpp | slot byte getter +0x23 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008972f0 |
+| 0x008973f0 | tactics_screens.cpp | slot injury/sub status string builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008973f0 |
+| 0x00897610 | tactics_screens.cpp | slot player rating getter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00897610 |
+| 0x00897790 | tactics_screens.cpp | slot byte getter +0x1b | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00897790 |
+| 0x008978a0 | tactics_screens.cpp | slot byte getter +0xc | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008978a0 |
+| 0x008979a0 | tactics_screens.cpp | slot-is-captain check | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008979a0 |
+| 0x00897ac0 | tactics_screens.cpp | slot player-record resolver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00897ac0 |
+| 0x00897cb0 | tactics_screens.cpp | find slot by position code | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00897cb0 |
+| 0x008980b0 | tactics_screens.cpp | sub-slot lookup wrapper | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008980b0 |
+| 0x00898190 | tactics_screens.cpp | resolve slot actual player via link | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00898190 |
+| 0x00898340 | tactics_screens.cpp | find slot linked to player | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00898340 |
+| 0x00898470 | tactics_screens.cpp | tactic player-list widget populate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00898470 |
+| 0x00898740 | tactics_screens.cpp | swap two players on tactic | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00898740 |
+| 0x00898a10 | tactics_screens.cpp | move player to slot on tactic | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00898a10 |
+| 0x00898c40 | tactics_screens.cpp | tactic pitch rendering | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00898c40 |
+| 0x00899dc0 | tactics_screens.cpp | position-mask to pitch pixel coords | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00899dc0 |
+| 0x0089a1f0 | tactics_screens.cpp | rotate pitch coordinates (trig) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089a1f0 |
+| 0x0089a2b0 | tactics_screens.cpp | single-bit mask to slot index map | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089a2b0 |
+| 0x0089a7d0 | tactics_screens.cpp | parse dotted IP into sockaddr | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089a7d0 |
 | 0x0089a840 | tactics_screens.cpp | FUN_0089a840 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 
 ## tick
@@ -5003,39 +5003,39 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x0089d7d0 | training_manager.cpp | FUN_0089d7d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089db50 | training_manager.cpp | FUN_0089db50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0089d7d0 | training_manager.cpp | training.dat load/deserialize | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089d7d0 |
+| 0x0089db50 | training_manager.cpp | training.dat save/serialize | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089db50 |
 | 0x0089de50 | training_manager.cpp | training weekly tick | PORTED_EXACT | PlayerDevelopmentBook::weekly_tick | YES | STRUCTURALLY_VERIFIED | memory:heuristic-kill-campaign.md |
-| 0x0089e930 | training_manager.cpp | FUN_0089e930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089e950 | training_manager.cpp | FUN_0089e950 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089eab0 | training_manager.cpp | FUN_0089eab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089eb70 | training_manager.cpp | FUN_0089eb70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089ef80 | training_manager.cpp | FUN_0089ef80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0089e930 | training_manager.cpp | rebuild all schedule labels driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089e930 |
+| 0x0089e950 | training_manager.cpp | assign training category to player | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089e950 |
+| 0x0089eab0 | training_manager.cpp | set player schedule and recompute coaches | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089eab0 |
+| 0x0089eb70 | training_manager.cpp | bulk auto-assign training to squads | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089eb70 |
+| 0x0089ef80 | training_manager.cpp | rebuild player coach assignments | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089ef80 |
 | 0x0089f350 | training_manager.cpp | apply category accumulator to type10 attrs | PORTED_EXACT | PlayerDevelopmentBook | YES | STRUCTURALLY_VERIFIED | memory:heuristic-kill-campaign.md |
-| 0x0089fb80 | training_manager.cpp | FUN_0089fb80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089fd10 | training_manager.cpp | FUN_0089fd10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089fdb0 | training_manager.cpp | FUN_0089fdb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0089ff30 | training_manager.cpp | FUN_0089ff30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a00a0 | training_manager.cpp | FUN_008a00a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a0160 | training_manager.cpp | FUN_008a0160 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a03c0 | training_manager.cpp | FUN_008a03c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a04b0 | training_manager.cpp | FUN_008a04b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0089fb80 | training_manager.cpp | build club training-schedule list query | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089fb80 |
+| 0x0089fd10 | training_manager.cpp | copy-out player schedule getter | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089fd10 |
+| 0x0089fdb0 | training_manager.cpp | apply/undo training preview deltas | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089fdb0 |
+| 0x0089ff30 | training_manager.cpp | training attribute-gain delta calc | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0089ff30 |
+| 0x008a00a0 | training_manager.cpp | schedule array index helper | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a00a0 |
+| 0x008a0160 | training_manager.cpp | effective training schedule query | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a0160 |
+| 0x008a03c0 | training_manager.cpp | boot init training schedule array | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a03c0 |
+| 0x008a04b0 | training_manager.cpp | precompute all schedule effectiveness driver | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a04b0 |
 | 0x008a0940 | training_manager.cpp | coach-quality averaging | PORTED_BEHAVIOURAL | PlayerDevelopmentBook::build | YES | BEHAVIOURALLY_EXACT | memory:heuristic-kill-campaign.md |
-| 0x008a0a40 | training_manager.cpp | FUN_008a0a40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008a0a40 | training_manager.cpp | new position/side familiarity training | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a0a40 |
 | 0x008a0bc0 | training_manager.cpp | new position/side familiarity rating | NOT_YET_PORTED |  | NO | UNVERIFIED | memory:heuristic-kill-campaign.md |
-| 0x008a0ee0 | training_manager.cpp | FUN_008a0ee0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a1120 | training_manager.cpp | FUN_008a1120 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008a0ee0 | training_manager.cpp | training position-rating from attributes | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a0ee0 |
+| 0x008a1120 | training_manager.cpp | add player to new-position training list | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a1120 |
 | 0x008a1290 | training_manager.cpp | FUN_008a1290 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008a1440 | training_manager.cpp | FUN_008a1440 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008a1520 | training_manager.cpp | FUN_008a1520 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008a1580 | training_manager.cpp | FUN_008a1580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008a1580 | training_manager.cpp | init training-schedule record | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a1580 |
 | 0x008a15c0 | training_manager.cpp | training-intensity dial magnitudes | PORTED_EXACT | DIAL_NONE;DIAL_LIGHT;DIAL_MEDIUM;DIAL_INTENSIVE | YES | BYTE_EXACT | memory:heuristic-kill-campaign.md |
 | 0x008a16c0 | training_manager.cpp | FUN_008a16c0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008a16d0 | training_manager.cpp | FUN_008a16d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008a1770 | training_manager.cpp | FUN_008a1770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a1860 | training_manager.cpp | FUN_008a1860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a1990 | training_manager.cpp | FUN_008a1990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008a1b40 | training_manager.cpp | FUN_008a1b40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008a1770 | training_manager.cpp | count players on a schedule query | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a1770 |
+| 0x008a1860 | training_manager.cpp | training schedule label builder | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a1860 |
+| 0x008a1990 | training_manager.cpp | import training schedule from file | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a1990 |
+| 0x008a1b40 | training_manager.cpp | export training schedule to file | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a1b40 |
 
 ## training_schedule
 
@@ -5050,37 +5050,37 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x008d2750 | transfer_offer.cpp | FUN_008d2750 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d2af0 | transfer_offer.cpp | FUN_008d2af0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d47d0 | transfer_offer.cpp | FUN_008d47d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008d2750 | transfer_offer.cpp | transfer offer-list load (stream deserialize + enqueue) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d2750 |
+| 0x008d2af0 | transfer_offer.cpp | transfer offer-list save (stream serialize) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d2af0 |
+| 0x008d47d0 | transfer_offer.cpp | transfer offer object initializer | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d47d0 |
 | 0x008d4a30 | transfer_offer.cpp | FUN_008d4a30 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008d4eb0 | transfer_offer.cpp | FUN_008d4eb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d4ed0 | transfer_offer.cpp | FUN_008d4ed0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d4f30 | transfer_offer.cpp | FUN_008d4f30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5160 | transfer_offer.cpp | FUN_008d5160 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d52b0 | transfer_offer.cpp | FUN_008d52b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008d4eb0 | transfer_offer.cpp | offer total getter (+0x35 + +0x3a) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d4eb0 |
+| 0x008d4ed0 | transfer_offer.cpp | offer status lookup by id in list | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d4ed0 |
+| 0x008d4f30 | transfer_offer.cpp | transfer offer terms equality compare | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d4f30 |
+| 0x008d5160 | transfer_offer.cpp | remove player from offer list + adjust value | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5160 |
+| 0x008d52b0 | transfer_offer.cpp | offer node lookup by id | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d52b0 |
 | 0x008d52f0 | transfer_offer.cpp | FUN_008d52f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008d5460 | transfer_offer.cpp | FUN_008d5460 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5500 | transfer_offer.cpp | FUN_008d5500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5520 | transfer_offer.cpp | FUN_008d5520 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d57c0 | transfer_offer.cpp | FUN_008d57c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5a20 | transfer_offer.cpp | FUN_008d5a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5b90 | transfer_offer.cpp | FUN_008d5b90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5c00 | transfer_offer.cpp | FUN_008d5c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5e10 | transfer_offer.cpp | FUN_008d5e10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d5e90 | transfer_offer.cpp | FUN_008d5e90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d6040 | transfer_offer.cpp | FUN_008d6040 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008d6170 | transfer_offer.cpp | FUN_008d6170 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008d5460 | transfer_offer.cpp | offer/negotiation object initializer | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5460 |
+| 0x008d5500 | transfer_offer.cpp | offer object destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5500 |
+| 0x008d5520 | transfer_offer.cpp | transfer squad-depth eligibility check (position count) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5520 |
+| 0x008d57c0 | transfer_offer.cpp | transfer squad-depth check variant | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d57c0 |
+| 0x008d5a20 | transfer_offer.cpp | transfer eligibility/reason resolver (loan/contract/nation) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5a20 |
+| 0x008d5b90 | transfer_offer.cpp | contract expiry month/year for offer display | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5b90 |
+| 0x008d5c00 | transfer_offer.cpp | offer date-window membership test | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5c00 |
+| 0x008d5e10 | transfer_offer.cpp | offer window scan (any active window) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d5e10 |
+| 0x008d5e90 | transfer_offer.cpp | offer next-window date resolver | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008d5e90 |
+| 0x008d6040 | transfer_offer.cpp | transfer offer news item build | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d6040 |
+| 0x008d6170 | transfer_offer.cpp | transfer deadline message formatter | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008d6170 |
 | 0x008fc820 | virtual_staff.cpp | FUN_008fc820 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008fca20 | virtual_staff.cpp | FUN_008fca20 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x008fcbe0 | virtual_staff.cpp | FUN_008fcbe0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
-| 0x008fcd90 | virtual_staff.cpp | FUN_008fcd90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008fce20 | virtual_staff.cpp | FUN_008fce20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008fd010 | virtual_staff.cpp | FUN_008fd010 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008fd550 | virtual_staff.cpp | FUN_008fd550 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008fd5d0 | virtual_staff.cpp | FUN_008fd5d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008fdc90 | virtual_staff.cpp | FUN_008fdc90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x008fded0 | virtual_staff.cpp | FUN_008fded0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x008fcd90 | virtual_staff.cpp | squad deregister overflow players on completion | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fcd90 |
+| 0x008fce20 | virtual_staff.cpp | squad position-count + deregister ineligible | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fce20 |
+| 0x008fd010 | virtual_staff.cpp | virtual-player squad-fill generator | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fd010 |
+| 0x008fd550 | virtual_staff.cpp | player position-group classifier from attributes | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fd550 |
+| 0x008fd5d0 | virtual_staff.cpp | virtual player record creation (attrs/wage/dates) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fd5d0 |
+| 0x008fdc90 | virtual_staff.cpp | virtual-staff registration date-range calc | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fdc90 |
+| 0x008fded0 | virtual_staff.cpp | register virtual players into squad slots | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008fded0 |
 
 ## transfer-ai
 
@@ -5276,9 +5276,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x005d6810 | greece_rules.cpp | FUN_005d6810 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005d6810 | greece_rules.cpp | Greek season-structure rule table ctor | PORTED_EXACT | greece (euro_full_set!) | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/euro_nations.rs |
 | 0x005d6960 | greece_rules.cpp | FUN_005d6960 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005d6af0 | greece_rules.cpp | FUN_005d6af0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005d6af0 | greece_rules.cpp | comparison/graph draw helper | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x005d6af0 |
 
 ## transfers
 

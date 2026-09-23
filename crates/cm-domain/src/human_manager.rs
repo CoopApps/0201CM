@@ -266,6 +266,7 @@ impl HumanSlot {
     // ── Typed general-field accessors ────────────────────────────────────
 
     pub fn current_managed_club_id(&self) -> u32 { read_u32(&self.raw, SLOT_CURRENT_MANAGED_CLUB_ID) }
+    // GDI-REG: 005e7c80 PORTED_PARTIAL
     pub fn set_current_managed_club_id(&mut self, v: u32) { write_u32(&mut self.raw, SLOT_CURRENT_MANAGED_CLUB_ID, v); }
     pub fn current_team_or_entity_id(&self) -> u32 { read_u32(&self.raw, SLOT_CURRENT_TEAM_OR_ENTITY_ID) }
     pub fn set_current_team_or_entity_id(&mut self, v: u32) { write_u32(&mut self.raw, SLOT_CURRENT_TEAM_OR_ENTITY_ID, v); }
@@ -282,6 +283,7 @@ impl HumanSlot {
         if idx >= SLOT_COMP_MODE_LEN { return None; }
         Some(self.raw[SLOT_COMP_MODE + idx])
     }
+    // GDI-REG: 005e86a0 PORTED_PARTIAL
     pub fn set_comp_mode(&mut self, idx: usize, v: u8) {
         if idx < SLOT_COMP_MODE_LEN { self.raw[SLOT_COMP_MODE + idx] = v; }
     }
@@ -301,6 +303,8 @@ impl HumanSlot {
         let off = SUB_REF_ID_LIST + i * 4;
         Some(read_i32(sub, off))
     }
+    // GDI-REG: 005eaf30 PORTED_BEHAVIOURAL
+    // GDI-REG: 005eabd0 PORTED_BEHAVIOURAL
     pub fn set_ref_id_at(&mut self, i: usize, v: i32) {
         if i >= SUB_REF_ID_LIST_LEN { return; }
         let sel = self.ref_list_selector() as usize;
