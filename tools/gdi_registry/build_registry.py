@@ -12,7 +12,7 @@ gdi_function_coverage.md, gdi_globals.md.
 
 Run: python tools/gdi_registry/build_registry.py
 """
-import csv, json, os, re, sys
+import bisect, csv, json, os, re, sys
 from collections import defaultdict, Counter
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -72,7 +72,21 @@ def main():
             pass
     atlas_raw = load_json(ATLAS_JSON) or {}
     atlas = {}
-    cpp_re = re.compile(r'code[\\/](.+?\.cpp)', re.I)
+    _BS = chr(92)  # backslash; atlas paths use \code\...\<file>.cpp (single or doubled)
+    def _cpp_basename(s):
+        # Robust: no fragile backslash regex. Take the <name>.cpp token after the
+        # last path separator. Returns lowercase basename or "".
+        low = s.lower()
+        i = low.rfind(".cpp")
+        if i < 0:
+            return ""
+        start = 0
+        for k in range(i - 1, -1, -1):
+            if s[k] in (_BS, "/"):
+                start = k + 1
+                break
+        return s[start:i + 4].lower()
+    anchors = []  # (int_va, cpp) where the function's own strings name a .cpp
     for k, v in atlas_raw.items():
         try:
             va = norm(k)
@@ -80,12 +94,24 @@ def main():
             continue
         cpp = ""
         for s in v.get("string_hits", []):
-            sl = s.lower()
-            if "cm3" in sl and "code" in sl and ".cpp" in sl:
-                m = cpp_re.search(s)
-                if m:
-                    cpp = m.group(1).replace("\\", "/").lower(); break
+            if ".cpp" in s.lower():
+                cpp = _cpp_basename(s)
+                if cpp:
+                    break
         atlas[va] = {"subsystem": v.get("subsystem", ""), "cpp": cpp}
+        if cpp:
+            anchors.append((int(va, 16), cpp))
+    # .text is strictly alphabetical by .cpp: attribute every function to the
+    # nearest preceding anchor so uncited functions still carry a source file.
+    anchors.sort()
+    _avas = [a for a, _ in anchors]
+    def attr_cpp(va_str):
+        try:
+            iva = int(va_str, 16)
+        except Exception:
+            return ""
+        j = bisect.bisect_right(_avas, iva) - 1
+        return anchors[j][1] if j >= 0 else ""
 
     # --- live citations from crates/ ---
     cites = defaultdict(list)       # va -> [(file, line, text)]
@@ -145,7 +171,8 @@ def main():
         m["evidence"] = joinf(rs, "evidence")
         m["notes"] = notes
         curated[va] = m
-    groups = {r["source_file"].strip().lower(): r for r in load_csv("frontier_groups.csv") if r.get("source_file")}
+    def _base(p): return p.strip().lower().replace("\\", "/").split("/")[-1]
+    groups = {_base(r["source_file"]): r for r in load_csv("frontier_groups.csv") if r.get("source_file")}
     superseded = {norm(r["dd_va"]): r for r in load_csv("superseded.csv") if r.get("dd_va")}
     frontier = set()
     fp = os.path.join(DATA, "frontier_addresses.txt")
@@ -161,6 +188,8 @@ def main():
     NEG = ("not implemented","not ported","not yet","frontier","unported","todo",
            "deferred","approximate","stub","see fun_","see the exe","blocked",
            "gap:","missing")
+    def cpp_of(va):
+        return atlas.get(va, {}).get("cpp") or attr_cpp(va)
     def derive_status(va):
         if va in curated and curated[va].get("status"):
             return curated[va]["status"].strip(), "curated"
@@ -178,10 +207,14 @@ def main():
             # Explicit provenance markers = a real port; otherwise still auto,
             # flagged UNVERIFIED below (confidence), pending curation.
             return "PORTED_BEHAVIOURAL", "cite-default"
+        # Uncited/uncurated: apply the frontier audit's per-.cpp file-level default.
+        # A function that was individually in the audited frontier set keeps the
+        # group's confidence ("frontier-group"); a function swept in only by
+        # file-level extension is flagged UNVERIFIED ("cpp-group").
+        cpp = cpp_of(va)
+        if cpp in groups and groups[cpp].get("status"):
+            return groups[cpp]["status"].strip(), ("frontier-group" if va in frontier else "cpp-group")
         if va in frontier:
-            cpp = atlas.get(va, {}).get("cpp", "")
-            if cpp in groups and groups[cpp].get("status"):
-                return groups[cpp]["status"].strip(), "frontier-group"
             return "UNKNOWN", "frontier-unclassified"
         if va in span_useful:
             return "UNKNOWN", "span-useful-unclassified"
@@ -210,21 +243,32 @@ def main():
         # is not cited is downgraded to NOT_YET_PORTED.
         if status in PORTED and how != "curated" and not (rustfiles or va in cites):
             status, how = "NOT_YET_PORTED", how + "+no-rust-downgrade"
+        # Per-.cpp group metadata (only when the status came from a group default).
+        gg = groups.get(cpp_of(va), {}) if how in ("frontier-group", "cpp-group") else {}
         # Auto (non-curated) classifications are UNVERIFIED until a human curates.
-        conf = cu.get("confidence") or ("UNVERIFIED" if how != "curated" else "STRUCTURALLY_VERIFIED")
+        # A file-level group extension (cpp-group) is UNVERIFIED for THIS function;
+        # an individually-audited frontier-group row keeps the group's confidence.
+        if cu.get("confidence"):
+            conf = cu["confidence"]
+        elif how == "frontier-group":
+            conf = gg.get("confidence") or "STRUCTURALLY_VERIFIED"
+        elif how == "cpp-group":
+            conf = "UNVERIFIED"
+        else:
+            conf = "UNVERIFIED" if how != "curated" else "STRUCTURALLY_VERIFIED"
         reach = cu.get("reachable") or ("YES" if status in PORTED and cites.get(va) else
                 ("NO" if status in {"NON_USEFUL","OUT_OF_SCOPE","UI_GDI_DOMAIN","DEAD_OR_UNREACHABLE","FOREIGN_BREADTH","NOT_YET_PORTED","BLOCKED_DEPENDENCY"} else "INDIRECT"))
-        rel = cu.get("relevance") or ("IMPLEMENTATION_ONLY" if status == "NON_USEFUL" else
+        rel = cu.get("relevance") or gg.get("relevance") or ("IMPLEMENTATION_ONLY" if status == "NON_USEFUL" else
               ("UI_RENDERING" if status == "UI_GDI_DOMAIN" else
                ("" if status == "UNKNOWN" else "SIMULATION_RELEVANT")))
         sup = superseded.get(va, {})
         rows.append({
             "dd_va": va,
             "gdi_va": cu.get("gdi_va", ""),
-            "source_file": cu.get("source_file") or a.get("cpp", ""),
+            "source_file": cu.get("source_file") or a.get("cpp") or attr_cpp(va),
             "symbol": f.get("name", ""),
             "semantic_name": cu.get("semantic_name", ""),
-            "subsystem": cu.get("subsystem") or a.get("subsystem", ""),
+            "subsystem": cu.get("subsystem") or gg.get("subsystem") or a.get("subsystem", ""),
             "status": status,
             "rust_file": rustfiles,
             "rust_symbol": rustsyms,
@@ -232,7 +276,9 @@ def main():
             "relevance": rel,
             "confidence": conf,
             "evidence": cu.get("evidence", ""),
-            "notes": cu.get("notes", "") + ("" if not sup else ""),
+            "notes": (cu.get("notes") or ((gg.get("notes", "") + (
+                " | file-level group default (not per-function verified)"
+                if how == "cpp-group" else "")) if gg else "")),
             "superseded_prev": sup.get("prev", ""),
             "superseded_why": sup.get("why", ""),
             "_how": how,
@@ -259,6 +305,16 @@ def main():
     ported = sum(by_status[s] for s in PORTED)
     ported_curated = sum(1 for r in rows if r["status"] in PORTED and r["_how"] == "curated")
     ported_auto = ported - ported_curated
+    # Classification provenance — how each row's status was decided (honesty).
+    def _prov(h):
+        if h == "curated": return "curated (hand-verified)"
+        if h == "gdi-reg-tag": return "curated (hand-verified)"
+        if h == "frontier-group": return "frontier-audit (per-fn audited)"
+        if h == "cpp-group": return "file-level default (UNVERIFIED)"
+        if h.startswith("cite"): return "auto-cited (UNVERIFIED)"
+        if "unclassified" in h or h == "no-signal": return "UNKNOWN (uningested/awaiting)"
+        return "auto (UNVERIFIED)"
+    prov = Counter(_prov(r["_how"]) for r in rows)
     with open(os.path.join(OUT, "gdi_function_coverage.md"), "w", encoding="utf-8") as f:
         f.write("# GDI function coverage (generated)\n\n")
         f.write(f"Registered functions: **{len(rows)}**  ·  cited in Rust: "
@@ -278,7 +334,13 @@ def main():
                 f"Of **{ported}** PORTED_* rows, only **{ported_curated}** are curated/verified; "
                 f"**{ported_auto}** are auto-cited and PENDING CURATION. Do not headline the auto "
                 "number as real coverage (see the coverage-vs-fidelity antipattern).\n\n")
-        f.write("## By status\n\n| status | count |\n|---|---|\n")
+        f.write("## Classification provenance\n\nHow each row's status was decided — a "
+                "file-level default is a defensible per-`.cpp` guess (the audit's group "
+                "default extended across the file), NOT a per-function verification.\n\n"
+                "| provenance | count |\n|---|---|\n")
+        for p in sorted(prov, key=lambda x: -prov[x]):
+            f.write(f"| {p} | {prov[p]} |\n")
+        f.write("\n## By status\n\n| status | count |\n|---|---|\n")
         for s in sorted(by_status, key=lambda x: -by_status[x]):
             f.write(f"| {s} | {by_status[s]} |\n")
         f.write(f"\nported (EXACT+BEHAVIOURAL+PARTIAL): **{ported}** · "
