@@ -21,57 +21,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00402dc0 | african_nations.cpp | FUN_00402dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004031e0 | area.cpp | FUN_004031e0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00403cc0 | area.cpp | FUN_00403cc0 | PORTED_BEHAVIOURAL | crates/cm-widget/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00404290 | arg_prm.cpp | FUN_00404290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004044f0 | arg_prm.cpp | FUN_004044f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00405580 | arg_prm.cpp | FUN_00405580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00405990 | arg_prm.cpp | FUN_00405990 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00405f30 | arg_prm.cpp | FUN_00405f30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00406910 | arg_prm.cpp | FUN_00406910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00406c30 | arg_second.cpp | FUN_00406c30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00406e80 | arg_second.cpp | FUN_00406e80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00407d10 | arg_second.cpp | FUN_00407d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00408210 | arg_second.cpp | FUN_00408210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00408690 | arg_second.cpp | FUN_00408690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00408970 | arg_second.cpp | FUN_00408970 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00409450 | arg_second.cpp | FUN_00409450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a040 | arg_second.cpp | FUN_0040a040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a3b0 | arg_second.cpp | FUN_0040a3b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a440 | argentina_awards.cpp | FUN_0040a440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a5e0 | argentina_awards.cpp | FUN_0040a5e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a680 | argentina_rules.cpp | FUN_0040a680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a830 | argentina_rules.cpp | FUN_0040a830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040ab40 | asia_club_champ.cpp | FUN_0040ab40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040aef0 | asia_club_champ.cpp | FUN_0040aef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040b680 | asia_club_champ.cpp | FUN_0040b680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040b9e0 | asia_club_champ.cpp | FUN_0040b9e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040bec0 | asia_club_champ.cpp | FUN_0040bec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040c110 | asia_club_champ.cpp | FUN_0040c110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040c3d0 | asia_club_champ.cpp | FUN_0040c3d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040c720 | asia_club_champ.cpp | FUN_0040c720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040cbe0 | asia_cup_winner.cpp | FUN_0040cbe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040cf90 | asia_cup_winner.cpp | FUN_0040cf90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040d4d0 | asia_cup_winner.cpp | FUN_0040d4d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040d800 | asia_cup_winner.cpp | FUN_0040d800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040dd10 | asia_cup_winner.cpp | FUN_0040dd10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040df50 | asia_cup_winner.cpp | FUN_0040df50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040e2d0 | asia_cup_winner.cpp | FUN_0040e2d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040e780 | asia_nations.cpp | FUN_0040e780 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040e960 | asia_nations.cpp | FUN_0040e960 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040f2f0 | asia_nations.cpp | FUN_0040f2f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040f7c0 | asia_nations.cpp | FUN_0040f7c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040f9b0 | asia_nations.cpp | FUN_0040f9b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040fd10 | asia_nations.cpp | FUN_0040fd10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410090 | asia_nations.cpp | FUN_00410090 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410570 | asia_super_cup.cpp | FUN_00410570 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410830 | asia_super_cup.cpp | FUN_00410830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410970 | asia_super_cup.cpp | FUN_00410970 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410d70 | aus_nsl.cpp | FUN_00410d70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410fc0 | aus_nsl.cpp | FUN_00410fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00411e30 | aus_nsl.cpp | FUN_00411e30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004122a0 | aus_nsl.cpp | FUN_004122a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00412550 | aus_nsl.cpp | FUN_00412550 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00412980 | australia_awards.cpp | FUN_00412980 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00412ac0 | australia_awards.cpp | FUN_00412ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004130c0 | australia_rules.cpp | FUN_004130c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00413280 | australia_rules.cpp | FUN_00413280 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00413340 | australia_rules.cpp | FUN_00413340 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -85,133 +34,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00418ca0 | award_shortlist.cpp | FUN_00418ca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch10.rs | YES | UNVERIFIED |  |
 | 0x0041cb00 | background.cpp | FUN_0041cb00 | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x0041cda0 | background.cpp | FUN_0041cda0 | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
-| 0x0041dba0 | bel_fa_cup.cpp | FUN_0041dba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041e420 | bel_fa_cup.cpp | FUN_0041e420 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041e890 | bel_first.cpp | FUN_0041e890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041ead0 | bel_first.cpp | FUN_0041ead0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041f400 | bel_first.cpp | FUN_0041f400 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041f7e0 | bel_first.cpp | FUN_0041f7e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041fb80 | bel_second.cpp | FUN_0041fb80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041fdd0 | bel_second.cpp | FUN_0041fdd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004208c0 | bel_second.cpp | FUN_004208c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00420d80 | bel_second.cpp | FUN_00420d80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00421020 | bel_second.cpp | FUN_00421020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004217f0 | bel_second.cpp | FUN_004217f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00421a40 | bel_super.cpp | FUN_00421a40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00421d00 | bel_super.cpp | FUN_00421d00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00421e40 | bel_super.cpp | FUN_00421e40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00422240 | bel_third.cpp | FUN_00422240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00422490 | bel_third.cpp | FUN_00422490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00423030 | bel_third.cpp | FUN_00423030 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004234c0 | bel_third.cpp | FUN_004234c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00423840 | bel_third.cpp | FUN_00423840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00423e60 | bel_third.cpp | FUN_00423e60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00424260 | bel_third.cpp | FUN_00424260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004243d0 | bel_third.cpp | FUN_004243d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004246f0 | bel_third.cpp | FUN_004246f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00424b80 | bel_third.cpp | FUN_00424b80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00424dc0 | bel_third.cpp | FUN_00424dc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00424f60 | bel_third.cpp | FUN_00424f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00424ff0 | belgium_awards.cpp | FUN_00424ff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00425670 | belgium_awards.cpp | FUN_00425670 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004256e0 | belgium_rules.cpp | FUN_004256e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00425e70 | belgium_rules.cpp | FUN_00425e70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch10.rs | YES | UNVERIFIED |  |
-| 0x00425ed0 | belgium_rules.cpp | FUN_00425ed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004265e0 | bra_champ_cup.cpp | FUN_004265e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00426790 | bra_champ_cup.cpp | FUN_00426790 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00426d70 | bra_champ_cup.cpp | FUN_00426d70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004270b0 | bra_champ_cup.cpp | FUN_004270b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00427360 | bra_champ_cup.cpp | FUN_00427360 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00427f60 | bra_champ_cup.cpp | FUN_00427f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428070 | bra_cup.cpp | FUN_00428070 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428340 | bra_cup.cpp | FUN_00428340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428860 | bra_cup.cpp | FUN_00428860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428b40 | bra_cup.cpp | FUN_00428b40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042a490 | bra_nat_first.cpp | FUN_0042a490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042a6d0 | bra_nat_first.cpp | FUN_0042a6d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042b0c0 | bra_nat_first.cpp | FUN_0042b0c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042b620 | bra_nat_first.cpp | FUN_0042b620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042bd70 | bra_nat_first.cpp | FUN_0042bd70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042c160 | bra_nat_first.cpp | FUN_0042c160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042c3a0 | bra_nat_first.cpp | FUN_0042c3a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042ca80 | bra_nat_second.cpp | FUN_0042ca80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042ccc0 | bra_nat_second.cpp | FUN_0042ccc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042d6b0 | bra_nat_second.cpp | FUN_0042d6b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042daa0 | bra_nat_second.cpp | FUN_0042daa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042df00 | bra_nat_third.cpp | FUN_0042df00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042e180 | bra_nat_third.cpp | FUN_0042e180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042e8d0 | bra_nat_third.cpp | FUN_0042e8d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042f070 | bra_nat_third.cpp | FUN_0042f070 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042f340 | bra_nat_third.cpp | FUN_0042f340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042f5c0 | bra_nat_third.cpp | FUN_0042f5c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042fac0 | bra_nat_third.cpp | FUN_0042fac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042fce0 | bra_nat_third.cpp | FUN_0042fce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042ff10 | bra_reg_bahia.cpp | FUN_0042ff10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00430150 | bra_reg_bahia.cpp | FUN_00430150 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00430950 | bra_reg_bahia.cpp | FUN_00430950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00430c90 | bra_reg_bahia.cpp | FUN_00430c90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00430e60 | bra_reg_bahia.cpp | FUN_00430e60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00431030 | bra_reg_central.cpp | FUN_00431030 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00431270 | bra_reg_central.cpp | FUN_00431270 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00431a70 | bra_reg_central.cpp | FUN_00431a70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00431e50 | bra_reg_central.cpp | FUN_00431e50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00432190 | bra_reg_central.cpp | FUN_00432190 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004323a0 | bra_reg_gaucho.cpp | FUN_004323a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004325e0 | bra_reg_gaucho.cpp | FUN_004325e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00432db0 | bra_reg_gaucho.cpp | FUN_00432db0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004330f0 | bra_reg_gaucho.cpp | FUN_004330f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004333e0 | bra_reg_gaucho.cpp | FUN_004333e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00433550 | bra_reg_goias.cpp | FUN_00433550 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00433790 | bra_reg_goias.cpp | FUN_00433790 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00433f40 | bra_reg_goias.cpp | FUN_00433f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00434330 | bra_reg_goias.cpp | FUN_00434330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00434540 | bra_reg_goias.cpp | FUN_00434540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004346f0 | bra_reg_minas_gerais.cpp | FUN_004346f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00434930 | bra_reg_minas_gerais.cpp | FUN_00434930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004351b0 | bra_reg_minas_gerais.cpp | FUN_004351b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00435510 | bra_reg_minas_gerais.cpp | FUN_00435510 | PORTED_BEHAVIOURAL | crates/cm-domain/src/year_end_statuses.rs | YES | UNVERIFIED |  |
-| 0x00435950 | bra_reg_minas_gerais.cpp | FUN_00435950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00435b20 | bra_reg_minas_gerais.cpp | FUN_00435b20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00435cb0 | bra_reg_north.cpp | FUN_00435cb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00435ef0 | bra_reg_north.cpp | FUN_00435ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004366f0 | bra_reg_north.cpp | FUN_004366f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00436a30 | bra_reg_north.cpp | FUN_00436a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00436bf0 | bra_reg_north.cpp | FUN_00436bf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00436d60 | bra_reg_northeast.cpp | FUN_00436d60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00436fa0 | bra_reg_northeast.cpp | FUN_00436fa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00437700 | bra_reg_northeast.cpp | FUN_00437700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00437a40 | bra_reg_northeast.cpp | FUN_00437a40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00437c00 | bra_reg_northeast.cpp | FUN_00437c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00437d70 | bra_reg_parana.cpp | FUN_00437d70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00437fb0 | bra_reg_parana.cpp | FUN_00437fb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00438830 | bra_reg_parana.cpp | FUN_00438830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00438c30 | bra_reg_parana.cpp | FUN_00438c30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00438f90 | bra_reg_parana.cpp | FUN_00438f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00439160 | bra_reg_parana.cpp | FUN_00439160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004392f0 | bra_reg_pern.cpp | FUN_004392f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00439530 | bra_reg_pern.cpp | FUN_00439530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00439d30 | bra_reg_pern.cpp | FUN_00439d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043a110 | bra_reg_pern.cpp | FUN_0043a110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043a4d0 | bra_reg_pern.cpp | FUN_0043a4d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043a640 | bra_reg_rio.cpp | FUN_0043a640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043a880 | bra_reg_rio.cpp | FUN_0043a880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043b100 | bra_reg_rio.cpp | FUN_0043b100 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043b500 | bra_reg_rio.cpp | FUN_0043b500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043b720 | bra_reg_rio.cpp | FUN_0043b720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043b950 | bra_reg_rio.cpp | FUN_0043b950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043bae0 | bra_reg_santa.cpp | FUN_0043bae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043bd40 | bra_reg_santa.cpp | FUN_0043bd40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043c540 | bra_reg_santa.cpp | FUN_0043c540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043c920 | bra_reg_santa.cpp | FUN_0043c920 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043cae0 | bra_reg_santa.cpp | FUN_0043cae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043cc50 | bra_reg_sp.cpp | FUN_0043cc50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043ce90 | bra_reg_sp.cpp | FUN_0043ce90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043d5f0 | bra_reg_sp.cpp | FUN_0043d5f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043d6f0 | bra_reg_sp.cpp | FUN_0043d6f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043d9d0 | bra_reg_sp.cpp | FUN_0043d9d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043db90 | bra_reg_sp.cpp | FUN_0043db90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043dd00 | bra_reg_sp.cpp | FUN_0043dd00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043dd90 | brazil_awards.cpp | FUN_0043dd90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0043fb30 | brazil_rules.cpp | FUN_0043fb30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043fc60 | brazil_rules.cpp | FUN_0043fc60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043feb0 | brazil_rules.cpp | FUN_0043feb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -285,27 +109,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00493cb0 | comp.cpp | FUN_00493cb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00493e10 | comp.cpp | FUN_00493e10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch5.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
 | 0x00494250 | comp.cpp | FUN_00494250 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch6.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
-| 0x00495ad0 | comp_screens.cpp | FUN_00495ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00497520 | comp_screens.cpp | FUN_00497520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00498f50 | comp_screens.cpp | FUN_00498f50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00499880 | comp_screens.cpp | FUN_00499880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00499dd0 | comp_screens.cpp | FUN_00499dd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049a0d0 | comp_screens.cpp | FUN_0049a0d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049ae10 | comp_screens.cpp | FUN_0049ae10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049b3a0 | comp_screens.cpp | FUN_0049b3a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0049c9a0 | comp_screens.cpp | FUN_0049c9a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
-| 0x0049d260 | comp_screens.cpp | FUN_0049d260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049d280 | comp_screens.cpp | FUN_0049d280 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049d720 | comp_screens.cpp | FUN_0049d720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049dc50 | comp_screens.cpp | FUN_0049dc50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049de70 | comp_screens.cpp | FUN_0049de70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0049e0d0 | comp_screens.cpp | FUN_0049e0d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
-| 0x0049f410 | comp_screens.cpp | FUN_0049f410 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0049fa10 | comp_screens.cpp | FUN_0049fa10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004a0010 | comp_screens.cpp | FUN_004a0010 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
 | 0x004a0610 | comp_screens.cpp | FUN_004a0610 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
 | 0x004a2900 | comp_screens.cpp | FUN_004a2900 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
-| 0x004a3440 | comp_screens.cpp | FUN_004a3440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004a5550 | comp_screens.cpp | FUN_004a5550 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x004a6030 | comp_stats.cpp | FUN_004a6030 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch31.rs | YES | UNVERIFIED |  |
 | 0x004a8710 | comp_stats.cpp | FUN_004a8710 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
@@ -346,25 +154,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004c6b20 | comp_util.cpp | FUN_004c6b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004c6cf0 | comp_util.cpp | FUN_004c6cf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004c6f50 | comp_util.cpp | FUN_004c6f50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004c7040 | con_champ.cpp | FUN_004c7040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c7300 | con_champ.cpp | FUN_004c7300 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c75a0 | con_champ.cpp | FUN_004c75a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c7ac0 | con_merc_cup.cpp | FUN_004c7ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c7c70 | con_merc_cup.cpp | FUN_004c7c70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c81b0 | con_merc_cup.cpp | FUN_004c81b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c8510 | con_merc_cup.cpp | FUN_004c8510 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c8700 | con_merc_cup.cpp | FUN_004c8700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c8930 | con_merc_cup.cpp | FUN_004c8930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c94d0 | conmebol_liber.cpp | FUN_004c94d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c9b70 | conmebol_liber.cpp | FUN_004c9b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c9ee0 | conmebol_liber.cpp | FUN_004c9ee0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ca0e0 | conmebol_liber.cpp | FUN_004ca0e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ca310 | conmebol_liber.cpp | FUN_004ca310 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cac40 | conmebol_merc.cpp | FUN_004cac40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cb230 | conmebol_merc.cpp | FUN_004cb230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cb5b0 | conmebol_merc.cpp | FUN_004cb5b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cb7b0 | conmebol_merc.cpp | FUN_004cb7b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cbc30 | conmebol_merc.cpp | FUN_004cbc30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004d08a0 | contract_manager.cpp | FUN_004d08a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x004d14d0 | contract_manager.cpp | FUN_004d14d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x004d1680 | contract_manager.cpp | FUN_004d1680 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
@@ -385,38 +174,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004e3300 | contract_screens.cpp | FUN_004e3300 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs;crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
 | 0x004e4580 | contract_screens.cpp | FUN_004e4580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
 | 0x004e4960 | contract_screens.cpp | FUN_004e4960 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
-| 0x004e4e50 | contract_screens.cpp | FUN_004e4e50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004e6b80 | contract_screens.cpp | FUN_004e6b80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004e9a10 | contract_screens.cpp | FUN_004e9a10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ea4d0 | contract_screens.cpp | FUN_004ea4d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004eac70 | contract_screens.cpp | FUN_004eac70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004eb240 | contract_screens.cpp | FUN_004eb240 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch14.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
-| 0x004eb330 | contract_screens.cpp | FUN_004eb330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004ec3a0 | contract_screens.cpp | FUN_004ec3a0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x004ec550 | contract_screens.cpp | FUN_004ec550 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch14.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x004fd1b0 | contract_screens.cpp | FUN_004fd1b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch14.rs;crates/cm-domain/src/sidebar_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x004fda80 | contract_screens.cpp | FUN_004fda80 | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
-| 0x004fdad0 | cro_a1.cpp | FUN_004fdad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004fdd10 | cro_a1.cpp | FUN_004fdd10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004fe470 | cro_a1.cpp | FUN_004fe470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004fe920 | cro_a1.cpp | FUN_004fe920 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004feb90 | cro_a1.cpp | FUN_004feb90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004fee50 | cro_a1.cpp | FUN_004fee50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004feff0 | cro_a2a.cpp | FUN_004feff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ff230 | cro_a2a.cpp | FUN_004ff230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ff990 | cro_a2a.cpp | FUN_004ff990 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ffdd0 | cro_a2a.cpp | FUN_004ffdd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00500040 | cro_a2b.cpp | FUN_00500040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00500280 | cro_a2b.cpp | FUN_00500280 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005009e0 | cro_a2b.cpp | FUN_005009e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00500e20 | cro_a2b.cpp | FUN_00500e20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501160 | cro_cup.cpp | FUN_00501160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501420 | cro_cup.cpp | FUN_00501420 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501890 | cro_cup.cpp | FUN_00501890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501bf0 | cro_cup.cpp | FUN_00501bf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501c80 | croatia_awards.cpp | FUN_00501c80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005021e0 | croatia_rules.cpp | FUN_005021e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00502320 | croatia_rules.cpp | FUN_00502320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00503370 | cup.cpp | FUN_00503370 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00503570 | cup.cpp | FUN_00503570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00503970 | cup.cpp | FUN_00503970 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -485,21 +247,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0053a1a0 | db_files.cpp | FUN_0053a1a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x0053a350 | db_files.cpp | FUN_0053a350 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x0053a440 | db_files.cpp | FUN_0053a440 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
-| 0x0053a590 | den_cup.cpp | FUN_0053a590 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053a850 | den_cup.cpp | FUN_0053a850 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053ae20 | den_cup.cpp | FUN_0053ae20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053b2d0 | den_first.cpp | FUN_0053b2d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053b500 | den_first.cpp | FUN_0053b500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053be70 | den_first.cpp | FUN_0053be70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053c1c0 | den_prm.cpp | FUN_0053c1c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053c450 | den_prm.cpp | FUN_0053c450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053d4b0 | den_prm.cpp | FUN_0053d4b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053d890 | den_prm.cpp | FUN_0053d890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053da60 | den_second.cpp | FUN_0053da60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053dc90 | den_second.cpp | FUN_0053dc90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053e620 | den_second.cpp | FUN_0053e620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053e9a0 | den_second.cpp | FUN_0053e9a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053ea30 | denmark_awards.cpp | FUN_0053ea30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0053f390 | discipline.cpp | FUN_0053f390 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0053f460 | discipline.cpp | FUN_0053f460 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0053f9d0 | discipline.cpp | FUN_0053f9d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -612,42 +359,13 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005792a0 | file_screens.cpp | FUN_005792a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs | YES | UNVERIFIED |  |
 | 0x0057b9c0 | file_screens.cpp | FUN_0057b9c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs;crates/cm-domain/src/screen_batch27.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x0057bb30 | file_screens.cpp | FUN_0057bb30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs | YES | UNVERIFIED |  |
-| 0x0057c470 | fin_cup.cpp | FUN_0057c470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057cc40 | fin_cup.cpp | FUN_0057cc40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057d0c0 | fin_first.cpp | FUN_0057d0c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057d310 | fin_first.cpp | FUN_0057d310 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057dc80 | fin_first.cpp | FUN_0057dc80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057e290 | fin_first.cpp | FUN_0057e290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057e820 | fin_first.cpp | FUN_0057e820 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057eee0 | fin_first.cpp | FUN_0057eee0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057f200 | fin_first.cpp | FUN_0057f200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057f370 | fin_prm.cpp | FUN_0057f370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057f620 | fin_prm.cpp | FUN_0057f620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057fd70 | fin_prm.cpp | FUN_0057fd70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00580100 | fin_prm.cpp | FUN_00580100 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005829c0 | finance.cpp | FUN_005829c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
 | 0x005854d0 | finance.cpp | FUN_005854d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs | YES | UNVERIFIED |  |
 | 0x0058a490 | finance.cpp | FUN_0058a490 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x0058a550 | find_screens.cpp | FUN_0058a550 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-domain/tests/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
-| 0x0058b410 | find_screens.cpp | FUN_0058b410 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058b9b0 | find_screens.cpp | FUN_0058b9b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058bec0 | find_screens.cpp | FUN_0058bec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058c370 | find_screens.cpp | FUN_0058c370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058cce0 | find_screens.cpp | FUN_0058cce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0058cde0 | find_screens.cpp | FUN_0058cde0 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x0058d2c0 | find_screens.cpp | FUN_0058d2c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
-| 0x0058d830 | find_screens.cpp | FUN_0058d830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058de50 | find_screens.cpp | FUN_0058de50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058e4d0 | find_screens.cpp | FUN_0058e4d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058eb30 | find_screens.cpp | FUN_0058eb30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058eec0 | find_screens.cpp | FUN_0058eec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058f170 | find_screens.cpp | FUN_0058f170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058f690 | find_screens.cpp | FUN_0058f690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0058f6f0 | find_screens.cpp | FUN_0058f6f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005928e0 | fine.cpp | FUN_005928e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs | YES | UNVERIFIED |  |
-| 0x00593620 | finland_awards.cpp | FUN_00593620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00593760 | finland_awards.cpp | FUN_00593760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00593fd0 | finland_rules.cpp | FUN_00593fd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00594d00 | fix_man.cpp | FUN_00594d00 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x005962b0 | fix_man.cpp | FUN_005962b0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00597260 | fix_man.cpp | FUN_00597260 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
@@ -664,31 +382,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005a16b0 | formation.cpp | FUN_005a16b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/formation.rs | YES | UNVERIFIED |  |
 | 0x005a1890 | formation.cpp | FUN_005a1890 | PORTED_BEHAVIOURAL | crates/cm-domain/src/player_profile.rs | YES | UNVERIFIED |  |
 | 0x005a2910 | formation.cpp | FUN_005a2910 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x005a34d0 | fra_cfa.cpp | FUN_005a34d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a4290 | fra_cfa.cpp | FUN_005a4290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a4390 | fra_cup.cpp | FUN_005a4390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a4cb0 | fra_cup.cpp | FUN_005a4cb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a5390 | fra_first.cpp | FUN_005a5390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a5820 | fra_first.cpp | FUN_005a5820 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a64f0 | fra_first.cpp | FUN_005a64f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a69c0 | fra_first.cpp | FUN_005a69c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a6bc0 | fra_lge_cup.cpp | FUN_005a6bc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a73a0 | fra_lge_cup.cpp | FUN_005a73a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a7840 | fra_lower.cpp | FUN_005a7840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a8470 | fra_lower.cpp | FUN_005a8470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a8600 | fra_second.cpp | FUN_005a8600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a8830 | fra_second.cpp | FUN_005a8830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a91e0 | fra_second.cpp | FUN_005a91e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a95f0 | fra_super.cpp | FUN_005a95f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a98a0 | fra_super.cpp | FUN_005a98a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a9a40 | fra_super.cpp | FUN_005a9a40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a9e10 | fra_third.cpp | FUN_005a9e10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005aa040 | fra_third.cpp | FUN_005aa040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005aa8a0 | fra_third.cpp | FUN_005aa8a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005aac50 | fra_third.cpp | FUN_005aac50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005aacf0 | france_awards.cpp | FUN_005aacf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005ab840 | france_awards.cpp | FUN_005ab840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005ab8b0 | france_rules.cpp | FUN_005ab8b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005af840 | friendly.cpp | FUN_005af840 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005b09e0 | friendly.cpp | FUN_005b09e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs;crates/cm-domain/src/screen_batch30.rs;crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
 | 0x005b0b70 | friendly.cpp | FUN_005b0b70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -701,29 +394,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005b2c40 | friendly.cpp | FUN_005b2c40 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x005b6a10 | friendly.cpp | FUN_005b6a10 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/msgbox.rs | YES | UNVERIFIED |  |
 | 0x005b6a90 | friendly.cpp | FUN_005b6a90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/bin/simulate_season.rs;crates/cm-domain/src/game.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/season_roll_scheduler.rs;crates/cm-ui-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x005c28d0 | ger_cup.cpp | FUN_005c28d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c3020 | ger_cup.cpp | FUN_005c3020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c3660 | ger_first.cpp | FUN_005c3660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c3890 | ger_first.cpp | FUN_005c3890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c4ee0 | ger_first.cpp | FUN_005c4ee0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5460 | ger_first.cpp | FUN_005c5460 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5630 | ger_first.cpp | FUN_005c5630 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5880 | ger_first.cpp | FUN_005c5880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5c00 | ger_first.cpp | FUN_005c5c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5d90 | ger_lge_cup.cpp | FUN_005c5d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c63b0 | ger_lge_cup.cpp | FUN_005c63b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c6880 | ger_regional.cpp | FUN_005c6880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c6ad0 | ger_regional.cpp | FUN_005c6ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c7490 | ger_regional.cpp | FUN_005c7490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c78f0 | ger_regional.cpp | FUN_005c78f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c7dd0 | ger_regional.cpp | FUN_005c7dd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c7f80 | ger_second.cpp | FUN_005c7f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c81b0 | ger_second.cpp | FUN_005c81b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c8f50 | ger_second.cpp | FUN_005c8f50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c92f0 | germany_awards.cpp | FUN_005c92f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c9430 | germany_awards.cpp | FUN_005c9430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c9c60 | germany_awards.cpp | FUN_005c9c60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c9cd0 | germany_rules.cpp | FUN_005c9cd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005cc9b0 | goldcup.cpp | FUN_005cc9b0 | PORTED_BEHAVIOURAL | crates/cm-render/src/window_init.rs | YES | UNVERIFIED |  |
 | 0x005ccdd0 | goldcup.cpp | FUN_005ccdd0 | PORTED_BEHAVIOURAL | crates/cm-render/src/fade.rs | YES | UNVERIFIED |  |
 | 0x005cd370 | goldcup.cpp | FUN_005cd370 | PORTED_BEHAVIOURAL | crates/cm-render/src/background.rs;crates/cm-render/src/line.rs;crates/cm-render/src/primitives.rs | YES | UNVERIFIED |  |
@@ -732,24 +402,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005cf610 | goldcup.cpp | FUN_005cf610 | PORTED_BEHAVIOURAL | crates/cm-domain/src/ui_schema.rs;crates/cm-render/src/msgbox.rs;crates/cm-render/src/primitives.rs;crates/cm-render/src/widget_pool.rs | YES | UNVERIFIED |  |
 | 0x005d11e0 | goldcup.cpp | FUN_005d11e0 | PORTED_BEHAVIOURAL | crates/cm-render/src/bevel.rs | YES | UNVERIFIED |  |
 | 0x005d1b80 | goldcup.cpp | FUN_005d1b80 | PORTED_BEHAVIOURAL | crates/cm-render/src/cursor.rs | YES | UNVERIFIED |  |
-| 0x005d2240 | gre_cup.cpp | FUN_005d2240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d24b0 | gre_cup.cpp | FUN_005d24b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d2c00 | gre_cup.cpp | FUN_005d2c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d31f0 | gre_cup.cpp | FUN_005d31f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d3420 | gre_cup.cpp | FUN_005d3420 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d3950 | gre_cup.cpp | FUN_005d3950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d3d00 | gre_prm.cpp | FUN_005d3d00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d3f30 | gre_prm.cpp | FUN_005d3f30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d4650 | gre_prm.cpp | FUN_005d4650 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d4a10 | gre_prm.cpp | FUN_005d4a10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d4ba0 | gre_second.cpp | FUN_005d4ba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d4dd0 | gre_second.cpp | FUN_005d4dd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d55a0 | gre_second.cpp | FUN_005d55a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d5930 | gre_super.cpp | FUN_005d5930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d5d20 | gre_super.cpp | FUN_005d5d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d6140 | gre_super.cpp | FUN_005d6140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d61d0 | greece_awards.cpp | FUN_005d61d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d67a0 | greece_awards.cpp | FUN_005d67a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005d6bf0 | gui_utils.cpp | FUN_005d6bf0 | UNKNOWN | crates/cm-render/src/screens_auto.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | INDIRECT | UNVERIFIED |  |
 | 0x005d7070 | gui_utils.cpp | FUN_005d7070 | PORTED_BEHAVIOURAL | crates/cm-render/src/gen_screen_types.rs;crates/cm-render/src/view_render.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/bin/render_gen_screen.rs;crates/cm-widget/src/tab_strip.rs | YES | UNVERIFIED |  |
 | 0x005d8920 | guio.cpp | FUN_005d8920 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
@@ -763,27 +415,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005dc2a0 | history.cpp | FUN_005dc2a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
 | 0x005dc5e0 | history.cpp | FUN_005dc5e0 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x005dc660 | history.cpp | FUN_005dc660 | UNKNOWN | crates/cm-domain/src/history.rs;crates/cm-render/src/hsr.rs | INDIRECT | UNVERIFIED |  |
-| 0x005dcee0 | hol_cup.cpp | FUN_005dcee0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005dd090 | hol_cup.cpp | FUN_005dd090 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005dd800 | hol_cup.cpp | FUN_005dd800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005ddcb0 | hol_cup.cpp | FUN_005ddcb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005ddf10 | hol_cup.cpp | FUN_005ddf10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005de2b0 | hol_cup.cpp | FUN_005de2b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005def20 | hol_first.cpp | FUN_005def20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005df160 | hol_first.cpp | FUN_005df160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005dfcd0 | hol_first.cpp | FUN_005dfcd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e01b0 | hol_first.cpp | FUN_005e01b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e0560 | hol_first.cpp | FUN_005e0560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e0dc0 | hol_first.cpp | FUN_005e0dc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e10a0 | hol_prm.cpp | FUN_005e10a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e12d0 | hol_prm.cpp | FUN_005e12d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e1ec0 | hol_prm.cpp | FUN_005e1ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e22b0 | hol_super.cpp | FUN_005e22b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e2560 | hol_super.cpp | FUN_005e2560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e26a0 | hol_super.cpp | FUN_005e26a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e2a70 | hol_super.cpp | FUN_005e2a70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e2b00 | holland_awards.cpp | FUN_005e2b00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e3120 | holland_rules.cpp | FUN_005e3120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005e3490 | host_country.cpp | FUN_005e3490 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x005e42f0 | host_country.cpp | FUN_005e42f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x005e4690 | host_country.cpp | FUN_005e4690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -814,123 +445,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006176f0 | index.cpp | FUN_006176f0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x006180c0 | index.cpp | FUN_006180c0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00618450 | index.cpp | FUN_00618450 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x0061b760 | inter_amer_cup.cpp | FUN_0061b760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061c1a0 | inter_amer_cup.cpp | FUN_0061c1a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061c210 | international_awards.cpp | FUN_0061c210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061c690 | intertoto_cup.cpp | FUN_0061c690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061c980 | intertoto_cup.cpp | FUN_0061c980 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061d290 | intertoto_cup.cpp | FUN_0061d290 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/msgbox.rs | YES | UNVERIFIED |  |
-| 0x0061d730 | ire_chal_cup.cpp | FUN_0061d730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061de60 | ire_chal_cup.cpp | FUN_0061de60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061e2a0 | ire_first.cpp | FUN_0061e2a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061e4e0 | ire_first.cpp | FUN_0061e4e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061ef70 | ire_first.cpp | FUN_0061ef70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061f420 | ire_first.cpp | FUN_0061f420 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061fb00 | ire_leinster_cup.cpp | FUN_0061fb00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006200e0 | ire_leinster_cup.cpp | FUN_006200e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00620430 | ire_lge_cup.cpp | FUN_00620430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006206a0 | ire_lge_cup.cpp | FUN_006206a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00620c20 | ire_lge_cup.cpp | FUN_00620c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00621020 | ire_lge_cup.cpp | FUN_00621020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00621260 | ire_lge_cup.cpp | FUN_00621260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00621430 | ire_lge_cup.cpp | FUN_00621430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00621a80 | ire_lge_cup.cpp | FUN_00621a80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00622490 | ire_munster_cup.cpp | FUN_00622490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00622900 | ire_pres_cup.cpp | FUN_00622900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00622cf0 | ire_pres_cup.cpp | FUN_00622cf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00623240 | ire_prm.cpp | FUN_00623240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00623490 | ire_prm.cpp | FUN_00623490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00623dd0 | ire_prm.cpp | FUN_00623dd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624360 | ire_super_cup.cpp | FUN_00624360 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624530 | ire_super_cup.cpp | FUN_00624530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624750 | ire_super_cup.cpp | FUN_00624750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624ce0 | ireland_awards.cpp | FUN_00624ce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624e30 | ireland_awards.cpp | FUN_00624e30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006258b0 | ireland_rules.cpp | FUN_006258b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00625c60 | ita_c1_super.cpp | FUN_00625c60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00625f10 | ita_c1_super.cpp | FUN_00625f10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00626050 | ita_c1_super.cpp | FUN_00626050 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006262c0 | ita_c_cup.cpp | FUN_006262c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00626530 | ita_c_cup.cpp | FUN_00626530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00626c60 | ita_c_cup.cpp | FUN_00626c60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00627290 | ita_c_cup.cpp | FUN_00627290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00627660 | ita_c_cup.cpp | FUN_00627660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00627c00 | ita_c_cup.cpp | FUN_00627c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006281f0 | ita_cup.cpp | FUN_006281f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006288d0 | ita_cup.cpp | FUN_006288d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00628cc0 | ita_cup.cpp | FUN_00628cc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00628ef0 | ita_cup.cpp | FUN_00628ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00629170 | ita_cup.cpp | FUN_00629170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00629890 | ita_cup.cpp | FUN_00629890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00629d50 | ita_ser_a.cpp | FUN_00629d50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00629fa0 | ita_ser_a.cpp | FUN_00629fa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062ab90 | ita_ser_a.cpp | FUN_0062ab90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062b0f0 | ita_ser_a.cpp | FUN_0062b0f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062b640 | ita_ser_a.cpp | FUN_0062b640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062b840 | ita_ser_a.cpp | FUN_0062b840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062bcb0 | ita_ser_a.cpp | FUN_0062bcb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062c0f0 | ita_ser_a.cpp | FUN_0062c0f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062c180 | ita_ser_a.cpp | FUN_0062c180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062ef10 | ita_ser_b.cpp | FUN_0062ef10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062f160 | ita_ser_b.cpp | FUN_0062f160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062fe80 | ita_ser_b.cpp | FUN_0062fe80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006302b0 | ita_ser_b.cpp | FUN_006302b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006308a0 | ita_ser_b.cpp | FUN_006308a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006340e0 | ita_ser_c1a.cpp | FUN_006340e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00634330 | ita_ser_c1a.cpp | FUN_00634330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00634ce0 | ita_ser_c1a.cpp | FUN_00634ce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006350e0 | ita_ser_c1a.cpp | FUN_006350e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00635500 | ita_ser_c1a.cpp | FUN_00635500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00638290 | ita_ser_c1b.cpp | FUN_00638290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006384e0 | ita_ser_c1b.cpp | FUN_006384e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00638e90 | ita_ser_c1b.cpp | FUN_00638e90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006392a0 | ita_ser_c1b.cpp | FUN_006392a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00639890 | ita_ser_c1b.cpp | FUN_00639890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063c620 | ita_ser_c2a.cpp | FUN_0063c620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063c870 | ita_ser_c2a.cpp | FUN_0063c870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063d220 | ita_ser_c2a.cpp | FUN_0063d220 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063d620 | ita_ser_c2a.cpp | FUN_0063d620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063da20 | ita_ser_c2a.cpp | FUN_0063da20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006407b0 | ita_ser_c2b.cpp | FUN_006407b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00640a00 | ita_ser_c2b.cpp | FUN_00640a00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006413b0 | ita_ser_c2b.cpp | FUN_006413b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006417b0 | ita_ser_c2b.cpp | FUN_006417b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00641bb0 | ita_ser_c2b.cpp | FUN_00641bb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00644940 | ita_ser_c2c.cpp | FUN_00644940 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00644b90 | ita_ser_c2c.cpp | FUN_00644b90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00645540 | ita_ser_c2c.cpp | FUN_00645540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00645940 | ita_ser_c2c.cpp | FUN_00645940 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00645f50 | ita_ser_c2c.cpp | FUN_00645f50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00648ce0 | ita_super.cpp | FUN_00648ce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00648f90 | ita_super.cpp | FUN_00648f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006490d0 | ita_super.cpp | FUN_006490d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006494d0 | ita_super.cpp | FUN_006494d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00649560 | italy_awards.cpp | FUN_00649560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064aa20 | italy_awards.cpp | FUN_0064aa20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064aa90 | italy_rules.cpp | FUN_0064aa90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064acd0 | italy_rules.cpp | FUN_0064acd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064af90 | italy_rules.cpp | FUN_0064af90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064b3d0 | jap_emp_cup.cpp | FUN_0064b3d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064b690 | jap_emp_cup.cpp | FUN_0064b690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064bb90 | jap_emp_cup.cpp | FUN_0064bb90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064c200 | jap_j1.cpp | FUN_0064c200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064c440 | jap_j1.cpp | FUN_0064c440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064cbb0 | jap_j1.cpp | FUN_0064cbb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064d120 | jap_j1.cpp | FUN_0064d120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064d2f0 | jap_j1.cpp | FUN_0064d2f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064db90 | jap_j2.cpp | FUN_0064db90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064ddc0 | jap_j2.cpp | FUN_0064ddc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064e700 | jap_j2.cpp | FUN_0064e700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064eb00 | jap_j_cup.cpp | FUN_0064eb00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064edc0 | jap_j_cup.cpp | FUN_0064edc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f180 | jap_j_cup.cpp | FUN_0064f180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f520 | jap_super.cpp | FUN_0064f520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f7d0 | jap_super.cpp | FUN_0064f7d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f910 | jap_super.cpp | FUN_0064f910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064fe40 | jap_super.cpp | FUN_0064fe40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064fed0 | japan_awards.cpp | FUN_0064fed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00650380 | japan_awards.cpp | FUN_00650380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006503f0 | japan_rules.cpp | FUN_006503f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00652e60 | key_nation.cpp | FUN_00652e60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00652ff0 | key_nation.cpp | FUN_00652ff0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_history.rs | YES | UNVERIFIED |  |
 | 0x00653270 | key_nation.cpp | FUN_00653270 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
@@ -950,10 +468,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00695e60 | manager_manager.cpp | FUN_00695e60 | UNKNOWN | crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x00696fa0 | manager_screens.cpp | FUN_00696fa0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch16.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00697390 | manager_screens.cpp | FUN_00697390 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch16.rs | YES | UNVERIFIED |  |
-| 0x006976a0 | manager_screens.cpp | FUN_006976a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006977b0 | manager_screens.cpp | FUN_006977b0 | UNKNOWN | crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00697c30 | manager_screens.cpp | FUN_00697c30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch16.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x00698020 | manager_screens.cpp | FUN_00698020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006986c0 | manager_screens.cpp | FUN_006986c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch3.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x0069aa70 | match_day.cpp | FUN_0069aa70 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x0069ac90 | match_day.cpp | FUN_0069ac90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch17.rs | YES | UNVERIFIED |  |
@@ -1042,7 +558,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00762b90 | network.cpp | FUN_00762b90 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00762e80 | network.cpp | FUN_00762e80 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00763660 | new_transfer_rule_screens.cpp | FUN_00763660 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x007637b0 | new_transfer_rule_screens.cpp | FUN_007637b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00763b90 | new_transfer_rule_screens.cpp | FUN_00763b90 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/c14_stadium_expansion.rs;crates/cm-domain/src/person_news.rs | YES | UNVERIFIED |  |
 | 0x0076d610 | news.cpp | FUN_0076d610 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0076d7d0 | news.cpp | FUN_0076d7d0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch12.rs;crates/cm-domain/src/screen_batch13.rs;crates/cm-domain/src/screen_batch14.rs;crates/cm-domain/src/screen_batch16.rs;crates/cm-domain/src/screen_batch17.rs;crates/cm-domain/src/screen_batch18.rs;crates/cm-domain/src/screen_batch23.rs;crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch25.rs;crates/cm-domain/src/screen_batch27.rs;crates/cm-domain/src/screen_batch35.rs | YES | UNVERIFIED |  |
@@ -1052,73 +567,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00770170 | news_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs | YES | UNVERIFIED |  |
 | 0x00771810 | news_screens.cpp | FUN_00771810 | UNKNOWN | crates/cm-domain/src/screen_batch4.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x00771880 | news_screens.cpp | FUN_00771880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x00771c80 | news_screens.cpp | FUN_00771c80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00771ec0 | nir_charity.cpp | FUN_00771ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772170 | nir_charity.cpp | FUN_00772170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007722b0 | nir_charity.cpp | FUN_007722b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772680 | nir_cup.cpp | FUN_00772680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772940 | nir_cup.cpp | FUN_00772940 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772d60 | nir_cup.cpp | FUN_00772d60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007730e0 | nir_first.cpp | FUN_007730e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00773320 | nir_first.cpp | FUN_00773320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00773d20 | nir_first.cpp | FUN_00773d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00774170 | nir_first.cpp | FUN_00774170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00774850 | nir_lge_cup.cpp | FUN_00774850 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00774ac0 | nir_lge_cup.cpp | FUN_00774ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007750a0 | nir_lge_cup.cpp | FUN_007750a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00775490 | nir_lge_cup.cpp | FUN_00775490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007756d0 | nir_lge_cup.cpp | FUN_007756d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007758d0 | nir_lge_cup.cpp | FUN_007758d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00775da0 | nir_lge_cup.cpp | FUN_00775da0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00776140 | nir_prm.cpp | FUN_00776140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00776370 | nir_prm.cpp | FUN_00776370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00776d30 | nir_prm.cpp | FUN_00776d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007770f0 | nor_cup.cpp | FUN_007770f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007773b0 | nor_cup.cpp | FUN_007773b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00777960 | nor_cup.cpp | FUN_00777960 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00777e10 | nor_first.cpp | FUN_00777e10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00778050 | nor_first.cpp | FUN_00778050 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00778a70 | nor_first.cpp | FUN_00778a70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00778ef0 | nor_first.cpp | FUN_00778ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007795d0 | nor_prm.cpp | FUN_007795d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00779800 | nor_prm.cpp | FUN_00779800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077a6b0 | nor_prm.cpp | FUN_0077a6b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077aa30 | nor_prm.cpp | FUN_0077aa30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077ae50 | northern_ireland_awards.cpp | FUN_0077ae50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077af90 | northern_ireland_awards.cpp | FUN_0077af90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077b7a0 | northern_ireland_rules.cpp | FUN_0077b7a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077b9d0 | norway_awards.cpp | FUN_0077b9d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077bb10 | norway_awards.cpp | FUN_0077bb10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077c580 | norway_rules.cpp | FUN_0077c580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077caf0 | norway_rules.cpp | FUN_0077caf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077cbc0 | norway_rules.cpp | FUN_0077cbc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0077d770 | notes.cpp | FUN_0077d770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/scouting.rs;crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x0077e1d0 | notes.cpp | FUN_0077e1d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
-| 0x0077f150 | oceania_club_champ.cpp | FUN_0077f150 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077f2f0 | oceania_club_champ.cpp | FUN_0077f2f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077fa40 | oceania_club_champ.cpp | FUN_0077fa40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077fcc0 | oceania_club_champ.cpp | FUN_0077fcc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00780000 | oceania_club_champ.cpp | FUN_00780000 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007801d0 | oceania_club_champ.cpp | FUN_007801d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007803a0 | oceania_club_champ.cpp | FUN_007803a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00780a30 | oceania_nations.cpp | FUN_00780a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00780c20 | oceania_nations.cpp | FUN_00780c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00781720 | oceania_nations.cpp | FUN_00781720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00781be0 | oceania_nations.cpp | FUN_00781be0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00781dd0 | oceania_nations.cpp | FUN_00781dd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00781fb0 | oceania_nations.cpp | FUN_00781fb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00782280 | oceania_nations.cpp | FUN_00782280 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007826b0 | oceania_nations.cpp | FUN_007826b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00782ef0 | oceania_nations.cpp | FUN_00782ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00785890 | old_finland_awards.cpp | FUN_00785890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007859d0 | old_finland_awards.cpp | FUN_007859d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00786040 | old_finland_awards.cpp | FUN_00786040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007860d0 | old_france_awards.cpp | FUN_007860d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00786680 | old_france_awards.cpp | FUN_00786680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007868b0 | old_france_awards.cpp | FUN_007868b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00786920 | old_international_awards.cpp | FUN_00786920 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00786d30 | old_ireland_awards.cpp | FUN_00786d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00786e70 | old_ireland_awards.cpp | FUN_00786e70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00787860 | olympics.cpp | FUN_00787860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00787a40 | olympics.cpp | FUN_00787a40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00788470 | olympics.cpp | FUN_00788470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1156,111 +607,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007aef50 | player_stats.cpp | FUN_007aef50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af000 | player_stats.cpp | FUN_007af000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af190 | player_stats.cpp | FUN_007af190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007af320 | plot.cpp | FUN_007af320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007af460 | plot.cpp | FUN_007af460 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007af5a0 | plot.cpp | FUN_007af5a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007af6a0 | plot.cpp | FUN_007af6a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007af8e0 | plot.cpp | FUN_007af8e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0190 | pol_cup.cpp | FUN_007b0190 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0450 | pol_cup.cpp | FUN_007b0450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0960 | pol_cup.cpp | FUN_007b0960 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0e90 | pol_first.cpp | FUN_007b0e90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b1160 | pol_first.cpp | FUN_007b1160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b1860 | pol_first.cpp | FUN_007b1860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b1d10 | pol_first.cpp | FUN_007b1d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b1f70 | pol_first.cpp | FUN_007b1f70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b2440 | pol_first.cpp | FUN_007b2440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b28f0 | pol_lge_cup.cpp | FUN_007b28f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b2bb0 | pol_lge_cup.cpp | FUN_007b2bb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b3140 | pol_lge_cup.cpp | FUN_007b3140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b35e0 | pol_second.cpp | FUN_007b35e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b3820 | pol_second.cpp | FUN_007b3820 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b4200 | pol_second.cpp | FUN_007b4200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b46a0 | pol_second.cpp | FUN_007b46a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b4d30 | pol_super.cpp | FUN_007b4d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b4fe0 | pol_super.cpp | FUN_007b4fe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b5120 | pol_super.cpp | FUN_007b5120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b5540 | pol_super.cpp | FUN_007b5540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b55d0 | poland_awards.cpp | FUN_007b55d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b5c40 | poland_rules.cpp | FUN_007b5c40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b5d90 | por_cup.cpp | FUN_007b5d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b6050 | por_cup.cpp | FUN_007b6050 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b6630 | por_cup.cpp | FUN_007b6630 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b6b00 | por_prm.cpp | FUN_007b6b00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b6d30 | por_prm.cpp | FUN_007b6d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b7be0 | por_prm.cpp | FUN_007b7be0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b8110 | por_prm.cpp | FUN_007b8110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b8350 | por_prm.cpp | FUN_007b8350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b8700 | por_prm.cpp | FUN_007b8700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b8d30 | por_second.cpp | FUN_007b8d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b8f60 | por_second.cpp | FUN_007b8f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b9900 | por_second.cpp | FUN_007b9900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b9d00 | por_second_b.cpp | FUN_007b9d00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b9f60 | por_second_b.cpp | FUN_007b9f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ba7e0 | por_second_b.cpp | FUN_007ba7e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bac50 | por_second_b.cpp | FUN_007bac50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bb0b0 | por_second_b.cpp | FUN_007bb0b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bb290 | por_super.cpp | FUN_007bb290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bb540 | por_super.cpp | FUN_007bb540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bb6b0 | por_super.cpp | FUN_007bb6b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bba80 | por_super.cpp | FUN_007bba80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bbb10 | portugal_awards.cpp | FUN_007bbb10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bc1d0 | portugal_awards.cpp | FUN_007bc1d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bc240 | portugal_rules.cpp | FUN_007bc240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bc8b0 | printouts.cpp | FUN_007bc8b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bd6c0 | printouts.cpp | FUN_007bd6c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007be500 | printouts.cpp | FUN_007be500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bee30 | printouts.cpp | FUN_007bee30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c00c0 | printouts.cpp | FUN_007c00c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c0560 | printouts.cpp | FUN_007c0560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c1b60 | printouts.cpp | FUN_007c1b60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c24b0 | printouts.cpp | FUN_007c24b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c25d0 | printouts.cpp | FUN_007c25d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c2ac0 | printouts.cpp | FUN_007c2ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c2b10 | printouts.cpp | FUN_007c2b10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c2fc0 | printouts.cpp | FUN_007c2fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3150 | printouts.cpp | FUN_007c3150 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3380 | printouts.cpp | FUN_007c3380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3580 | printouts.cpp | FUN_007c3580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c37e0 | rb_argentina.cpp | FUN_007c37e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c3a30 | rb_asia.cpp | FUN_007c3a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3d70 | rb_australia.cpp | FUN_007c3d70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c4120 | rb_belgium_cup.cpp | FUN_007c4120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c4bc0 | rb_brazil_regional.cpp | FUN_007c4bc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c4fa0 | rb_croatia.cpp | FUN_007c4fa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c5400 | rb_denmark.cpp | FUN_007c5400 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c5480 | rb_denmark.cpp | FUN_007c5480 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c58c0 | rb_england.cpp | FUN_007c58c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c5b20 | rb_europe.cpp | FUN_007c5b20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c5e50 | rb_finland_cup.cpp | FUN_007c5e50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6180 | rb_finland_league.cpp | FUN_007c6180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c67a0 | rb_france.cpp | FUN_007c67a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6ae0 | rb_germany_cup.cpp | FUN_007c6ae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6e20 | rb_germany_league.cpp | FUN_007c6e20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c7210 | rb_greece.cpp | FUN_007c7210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c75f0 | rb_holland.cpp | FUN_007c75f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c7900 | rb_international.cpp | FUN_007c7900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c7de0 | rb_ireland.cpp | FUN_007c7de0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c81b0 | rb_italy_cup.cpp | FUN_007c81b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c85f0 | rb_italy_league.cpp | FUN_007c85f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c88d0 | rb_japan_cup.cpp | FUN_007c88d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c8b70 | rb_japan_league.cpp | FUN_007c8b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9450 | rb_norway_league.cpp | FUN_007c9450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c9690 | rb_oceania.cpp | FUN_007c9690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9ae0 | rb_poland.cpp | FUN_007c9ae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9e80 | rb_portugal.cpp | FUN_007c9e80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ca220 | rb_russia.cpp | FUN_007ca220 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ca4f0 | rb_scotland_cup.cpp | FUN_007ca4f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ca750 | rb_scotland_cup.cpp | FUN_007ca750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007caa60 | rb_scotland_league.cpp | FUN_007caa60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007cacb0 | rb_south_america.cpp | FUN_007cacb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cb040 | rb_spain_cup.cpp | FUN_007cb040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cb3d0 | rb_spain_league.cpp | FUN_007cb3d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cb7a0 | rb_sweden_cup.cpp | FUN_007cb7a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cbb10 | rb_sweden_league.cpp | FUN_007cbb10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cbea0 | rb_turkey_cup.cpp | FUN_007cbea0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cc1f0 | rb_turkey_league.cpp | FUN_007cc1f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cc4c0 | rb_usa.cpp | FUN_007cc4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007ccd10 | record_utils.cpp | FUN_007ccd10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x007cd740 | record_utils.cpp | FUN_007cd740 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x007cd7f0 | record_utils.cpp | FUN_007cd7f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/injury_table.rs | YES | UNVERIFIED |  |
@@ -1280,47 +632,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007d1170 | ruling_body.cpp | FUN_007d1170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007d12a0 | ruling_body.cpp | FUN_007d12a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007d12f0 | ruling_body.cpp | FUN_007d12f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1330 | rus_cup.cpp | FUN_007d1330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1650 | rus_cup.cpp | FUN_007d1650 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1ac0 | rus_cup.cpp | FUN_007d1ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2080 | rus_first.cpp | FUN_007d2080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d22b0 | rus_first.cpp | FUN_007d22b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2810 | rus_first.cpp | FUN_007d2810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2bd0 | rus_prm.cpp | FUN_007d2bd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2e10 | rus_prm.cpp | FUN_007d2e10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d3760 | rus_prm.cpp | FUN_007d3760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d3be0 | rus_prm.cpp | FUN_007d3be0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d3f70 | rus_prm.cpp | FUN_007d3f70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d4340 | rus_prm.cpp | FUN_007d4340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d43d0 | russia_awards.cpp | FUN_007d43d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d48a0 | russia_awards.cpp | FUN_007d48a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d4910 | russia_rules.cpp | FUN_007d4910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d4b20 | sco_chal_cup.cpp | FUN_007d4b20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d4de0 | sco_chal_cup.cpp | FUN_007d4de0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d51b0 | sco_chal_cup.cpp | FUN_007d51b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d54b0 | sco_fa_cup.cpp | FUN_007d54b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d5770 | sco_fa_cup.cpp | FUN_007d5770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d5c90 | sco_fa_cup.cpp | FUN_007d5c90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d6160 | sco_first.cpp | FUN_007d6160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d63c0 | sco_first.cpp | FUN_007d63c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d6ed0 | sco_first.cpp | FUN_007d6ed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d74e0 | sco_first.cpp | FUN_007d74e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d7b80 | sco_lge_cup.cpp | FUN_007d7b80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d7e50 | sco_lge_cup.cpp | FUN_007d7e50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d85a0 | sco_lge_cup.cpp | FUN_007d85a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d8d20 | sco_prm.cpp | FUN_007d8d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d8f90 | sco_prm.cpp | FUN_007d8f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007da9c0 | sco_prm.cpp | FUN_007da9c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007daf30 | sco_prm.cpp | FUN_007daf30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007db3f0 | sco_second.cpp | FUN_007db3f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007db620 | sco_second.cpp | FUN_007db620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dc020 | sco_second.cpp | FUN_007dc020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dc390 | sco_third.cpp | FUN_007dc390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dc5c0 | sco_third.cpp | FUN_007dc5c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dcfc0 | sco_third.cpp | FUN_007dcfc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dd310 | scotland_awards.cpp | FUN_007dd310 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dd450 | scotland_awards.cpp | FUN_007dd450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007de530 | scotland_rules.cpp | FUN_007de530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007dfac0 | scout_manager.cpp | FUN_007dfac0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/screen_batch4.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007e0490 | scout_manager.cpp | FUN_007e0490 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x007e05c0 | scout_manager.cpp | FUN_007e05c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -1343,21 +654,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007e9dc0 | scrman.cpp | FUN_007e9dc0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007eb990 | scrman.cpp | FUN_007eb990 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007ebca0 | scrman.cpp | FUN_007ebca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_manager_batch.rs | YES | UNVERIFIED |  |
-| 0x007ebf80 | search_edit_session.cpp | FUN_007ebf80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec020 | search_edit_session.cpp | FUN_007ec020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec070 | search_edit_session.cpp | FUN_007ec070 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec150 | search_edit_session.cpp | FUN_007ec150 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec2f0 | search_edit_session.cpp | FUN_007ec2f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec3c0 | search_edit_session.cpp | FUN_007ec3c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec480 | search_edit_session.cpp | FUN_007ec480 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec590 | search_edit_session.cpp | FUN_007ec590 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec7b0 | search_edit_session.cpp | FUN_007ec7b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec8f0 | search_edit_session.cpp | FUN_007ec8f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007f0020 | search_filters.cpp | FUN_007f0020 | UNKNOWN | crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x007f0170 | search_screens.cpp | FUN_007f0170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007f6720 | search_screens.cpp | FUN_007f6720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007faec0 | search_screens.cpp | FUN_007faec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008018b0 | search_screens.cpp | FUN_008018b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008055e0 | setup.cpp |  | UNKNOWN | crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | INDIRECT | UNVERIFIED |  |
 | 0x0080a450 | setup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_name_faithful.rs;crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x0080bbd0 | setup.cpp | FUN_0080bbd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch20.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -1373,36 +670,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0082a0b0 | shortlist_manager.cpp | FUN_0082a0b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x0082fc50 | shortlist_manager.cpp | FUN_0082fc50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00833210 | shortlist_manager.cpp | FUN_00833210 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x008360f0 | spa_cup.cpp | FUN_008360f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008363c0 | spa_cup.cpp | FUN_008363c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00836ab0 | spa_cup.cpp | FUN_00836ab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008372d0 | spa_first.cpp | FUN_008372d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00837550 | spa_first.cpp | FUN_00837550 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00838e10 | spa_first.cpp | FUN_00838e10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00839260 | spa_first.cpp | FUN_00839260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008394a0 | spa_first.cpp | FUN_008394a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008396d0 | spa_first.cpp | FUN_008396d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00839b10 | spa_first.cpp | FUN_00839b10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083a1c0 | spa_lower.cpp | FUN_0083a1c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083c570 | spa_lower.cpp | FUN_0083c570 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083cb40 | spa_second.cpp | FUN_0083cb40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083cd70 | spa_second.cpp | FUN_0083cd70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083f0e0 | spa_second_b.cpp | FUN_0083f0e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083f340 | spa_second_b.cpp | FUN_0083f340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083fe70 | spa_second_b.cpp | FUN_0083fe70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008403b0 | spa_second_b.cpp | FUN_008403b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00840710 | spa_second_b.cpp | FUN_00840710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00840a00 | spa_second_b.cpp | FUN_00840a00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00840ba0 | spa_second_b.cpp | FUN_00840ba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841490 | spa_second_b.cpp | FUN_00841490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841850 | spa_super.cpp | FUN_00841850 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841b00 | spa_super.cpp | FUN_00841b00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841c40 | spa_super.cpp | FUN_00841c40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00842010 | spa_super.cpp | FUN_00842010 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008420a0 | spain_awards.cpp | FUN_008420a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00842430 | spain_awards.cpp | FUN_00842430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00842570 | spain_awards.cpp | FUN_00842570 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008425e0 | spain_rules.cpp | FUN_008425e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00843100 | squad_manager.cpp | FUN_00843100 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00843880 | squad_manager.cpp | FUN_00843880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/contract_init.rs;crates/cm-domain/src/screen_batch11.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00843ef0 | squad_manager.cpp | FUN_00843ef0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/c14_5_squad_manager.rs;crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
@@ -1453,32 +720,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00874a10 | staff_screens.cpp | FUN_00874a10 | UNKNOWN | crates/cm-domain/src/screen_batch21.rs | INDIRECT | UNVERIFIED |  |
 | 0x00877450 | sub_league.cpp | FUN_00877450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00877770 | sub_league.cpp | FUN_00877770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00877930 | swe_cup.cpp | FUN_00877930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00877cc0 | swe_cup.cpp | FUN_00877cc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00878320 | swe_cup.cpp | FUN_00878320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008787a0 | swe_cup.cpp | FUN_008787a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00878b20 | swe_cup.cpp | FUN_00878b20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00878de0 | swe_cup.cpp | FUN_00878de0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008791a0 | swe_cup.cpp | FUN_008791a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00879360 | swe_first.cpp | FUN_00879360 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008795a0 | swe_first.cpp | FUN_008795a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00879d10 | swe_first.cpp | FUN_00879d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087a160 | swe_first.cpp | FUN_0087a160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087a890 | swe_prm.cpp | FUN_0087a890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087aba0 | swe_prm.cpp | FUN_0087aba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087b1b0 | swe_prm.cpp | FUN_0087b1b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087b700 | swe_prm.cpp | FUN_0087b700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087b8c0 | swe_prm.cpp | FUN_0087b8c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087b9f0 | swe_prm.cpp | FUN_0087b9f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087c3a0 | swe_second.cpp | FUN_0087c3a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087c650 | swe_second.cpp | FUN_0087c650 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087c710 | swe_second.cpp | FUN_0087c710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087d320 | swe_second.cpp | FUN_0087d320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087d6c0 | swe_second.cpp | FUN_0087d6c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087d860 | swe_second.cpp | FUN_0087d860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087e120 | swe_second.cpp | FUN_0087e120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087e3d0 | swe_second.cpp | FUN_0087e3d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087e460 | sweden_awards.cpp | FUN_0087e460 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00881220 | tactics.cpp | FUN_00881220 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 | 0x008815a0 | tactics.cpp | FUN_008815a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x00881910 | tactics.cpp | FUN_00881910 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
@@ -1499,16 +740,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00897e20 | tactics_screens.cpp | FUN_00897e20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0089bc20 | tcpip.cpp | FUN_0089bc20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/honours.rs | YES | UNVERIFIED |  |
 | 0x0089d100 | team_award.cpp | FUN_0089d100 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x0089d2f0 | training_edit_session.cpp | FUN_0089d2f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089d500 | training_edit_session.cpp | FUN_0089d500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089d570 | training_edit_session.cpp | FUN_0089d570 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a1c90 | training_schedule.cpp | FUN_008a1c90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a1e00 | training_schedule.cpp | FUN_008a1e00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a1f90 | training_schedule.cpp | FUN_008a1f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a20a0 | training_schedule.cpp | FUN_008a20a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
 | 0x008a6380 | training_schedule.cpp | FUN_008a6380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a6420 | training_screens.cpp | FUN_008a6420 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x008a7890 | training_screens.cpp | FUN_008a7890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008ac0c0 | transfer_manager.cpp | FUN_008ac0c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x008acd10 | transfer_manager.cpp | FUN_008acd10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008ad0e0 | transfer_manager.cpp | FUN_008ad0e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
@@ -1527,10 +764,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008d6510 | transfer_offer.cpp | FUN_008d6510 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008d6720 | transfer_screens.cpp | FUN_008d6720 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
 | 0x008da210 | transfer_screens.cpp | FUN_008da210 | UNKNOWN | crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | INDIRECT | UNVERIFIED |  |
-| 0x008dcd50 | transfer_screens.cpp | FUN_008dcd50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008dcfd0 | transfer_screens.cpp | FUN_008dcfd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008dd030 | transfer_screens.cpp | FUN_008dd030 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
-| 0x008ddc90 | transfer_screens.cpp | FUN_008ddc90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008def70 | transfer_screens.cpp | FUN_008def70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008df8f0 | transfer_screens.cpp | FUN_008df8f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008df9f0 | transfer_screens.cpp | FUN_008df9f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
@@ -1539,7 +774,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008e0760 | transfer_screens.cpp | FUN_008e0760 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs;crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008e0bb0 | transfer_screens.cpp | FUN_008e0bb0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
 | 0x008e10c0 | transfer_screens.cpp | FUN_008e10c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x008e1250 | transfer_screens.cpp | FUN_008e1250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008e26a0 | transfer_screens.cpp | FUN_008e26a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x008e26f0 | transfer_screens.cpp | FUN_008e26f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x008e3320 | transfer_screens.cpp | FUN_008e3320 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
@@ -1547,8 +781,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008e37e0 | transfer_screens.cpp | FUN_008e37e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_transfers.rs | YES | UNVERIFIED |  |
 | 0x008e5040 | transfer_screens.cpp | FUN_008e5040 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008e50e0 | transfer_screens.cpp | FUN_008e50e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
-| 0x008e5380 | transfer_screens.cpp | FUN_008e5380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008e61e0 | transfer_screens.cpp | FUN_008e61e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008e6cc0 | transfer_screens.cpp | FUN_008e6cc0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008e7270 | transfer_screens.cpp | FUN_008e7270 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008e72b0 | transfer_screens.cpp | FUN_008e72b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
@@ -1558,85 +790,13 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008e8920 | transfer_screens.cpp | FUN_008e8920 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008ea760 | transfer_screens.cpp | FUN_008ea760 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs | YES | UNVERIFIED |  |
 | 0x008eaef0 | transfer_screens.cpp | FUN_008eaef0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs | YES | UNVERIFIED |  |
-| 0x008eb690 | tur_cup.cpp | FUN_008eb690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008eb950 | tur_cup.cpp | FUN_008eb950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ebe70 | tur_cup.cpp | FUN_008ebe70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ec240 | tur_first.cpp | FUN_008ec240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ec470 | tur_first.cpp | FUN_008ec470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ed0a0 | tur_first.cpp | FUN_008ed0a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ed680 | tur_first.cpp | FUN_008ed680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ed9d0 | tur_second.cpp | FUN_008ed9d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008edc00 | tur_second.cpp | FUN_008edc00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ee430 | tur_second.cpp | FUN_008ee430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ee7a0 | tur_second_b.cpp | FUN_008ee7a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008eea00 | tur_second_b.cpp | FUN_008eea00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ef5a0 | tur_second_b.cpp | FUN_008ef5a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008efa60 | tur_second_b.cpp | FUN_008efa60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008efd90 | tur_second_b.cpp | FUN_008efd90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008effe0 | tur_second_b.cpp | FUN_008effe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f0320 | tur_second_b.cpp | FUN_008f0320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f0c30 | tur_second_b.cpp | FUN_008f0c30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f0f40 | tur_second_b.cpp | FUN_008f0f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f0fd0 | turkey_awards.cpp | FUN_008f0fd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f1370 | turkey_rules.cpp | FUN_008f1370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008f5800 | ultimatum.cpp | FUN_008f5800 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs | YES | UNVERIFIED |  |
-| 0x008f5d90 | usa_awards.cpp | FUN_008f5d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f5ed0 | usa_awards.cpp | FUN_008f5ed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f6390 | usa_mls.cpp | FUN_008f6390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f6620 | usa_mls.cpp | FUN_008f6620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f7970 | usa_mls.cpp | FUN_008f7970 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f7af0 | usa_mls.cpp | FUN_008f7af0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f83d0 | usa_mls.cpp | FUN_008f83d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f85f0 | usa_mls.cpp | FUN_008f85f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f88d0 | usa_mls.cpp | FUN_008f88d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f8be0 | usa_mls.cpp | FUN_008f8be0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f8fc0 | usa_mls.cpp | FUN_008f8fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008f92d0 | usa_mls.cpp | FUN_008f92d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
-| 0x008f9410 | usa_mls.cpp | FUN_008f9410 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9560 | usa_mls_all_stars.cpp | FUN_008f9560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9810 | usa_mls_all_stars.cpp | FUN_008f9810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9950 | usa_mls_all_stars.cpp | FUN_008f9950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9d10 | usa_mls_all_stars.cpp | FUN_008f9d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9d90 | usa_mls_all_stars.cpp | FUN_008f9d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fa2c0 | usa_open_cup.cpp | FUN_008fa2c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fa580 | usa_open_cup.cpp | FUN_008fa580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fa940 | usa_open_cup.cpp | FUN_008fa940 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fad50 | usa_rules.cpp | FUN_008fad50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008faef0 | utils.cpp | FUN_008faef0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008fb0b0 | utils.cpp | FUN_008fb0b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs | YES | UNVERIFIED |  |
 | 0x008fb240 | utils.cpp | FUN_008fb240 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/screen_menu_bar.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008fb3f0 | utils.cpp | FUN_008fb3f0 | UNKNOWN | crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/scrman.rs | INDIRECT | UNVERIFIED |  |
 | 0x008fc660 | utils.cpp | FUN_008fc660 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x008fe000 | wales_awards.cpp | FUN_008fe000 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fe140 | wales_awards.cpp | FUN_008fe140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fe5b0 | wales_rules.cpp | FUN_008fe5b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fe710 | wc_african_cup.cpp | FUN_008fe710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008feb20 | wc_african_cup.cpp | FUN_008feb20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ff630 | wc_african_cup.cpp | FUN_008ff630 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ffbb0 | wc_african_cup.cpp | FUN_008ffbb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ffef0 | wc_african_cup.cpp | FUN_008ffef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00900230 | wc_african_cup.cpp | FUN_00900230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009006e0 | wc_african_cup.cpp | FUN_009006e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009010e0 | wc_asia_league.cpp | FUN_009010e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009012f0 | wc_asia_league.cpp | FUN_009012f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00901fb0 | wc_asia_league.cpp | FUN_00901fb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009020b0 | wc_asia_league.cpp | FUN_009020b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00902290 | wc_asia_league.cpp | FUN_00902290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00902620 | wc_asia_league.cpp | FUN_00902620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00902a20 | wc_asia_league.cpp | FUN_00902a20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00902c20 | wc_asia_league.cpp | FUN_00902c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00903040 | wc_asia_league.cpp | FUN_00903040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00903230 | wc_asia_league.cpp | FUN_00903230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00903440 | wc_asia_league.cpp | FUN_00903440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009042c0 | wc_concacaf_cup.cpp | FUN_009042c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00905220 | wc_concacaf_cup.cpp | FUN_00905220 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00905320 | wc_concacaf_cup.cpp | FUN_00905320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00905730 | wc_concacaf_cup.cpp | FUN_00905730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009061b0 | wc_concacaf_cup.cpp | FUN_009061b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009065f0 | wc_concacaf_cup.cpp | FUN_009065f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00906800 | wc_concacaf_cup.cpp | FUN_00906800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00906d10 | wc_concacaf_cup.cpp | FUN_00906d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00907290 | wc_concacaf_cup.cpp | FUN_00907290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00907700 | wc_europe_league.cpp | FUN_00907700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x009079b0 | wc_europe_league.cpp | FUN_009079b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x009082c0 | wc_europe_league.cpp | FUN_009082c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1651,51 +811,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00909cd0 | wc_europe_league.cpp | FUN_00909cd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0090ac50 | wc_europe_league.cpp | FUN_0090ac50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0090d050 | wc_europe_league.cpp | FUN_0090d050 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090d480 | wc_oceania_league.cpp | FUN_0090d480 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090d6d0 | wc_oceania_league.cpp | FUN_0090d6d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090e0d0 | wc_oceania_league.cpp | FUN_0090e0d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090e670 | wc_oceania_league.cpp | FUN_0090e670 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090e8a0 | wc_oceania_league.cpp | FUN_0090e8a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090eb10 | wc_oceania_league.cpp | FUN_0090eb10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090ecd0 | wc_oceania_league.cpp | FUN_0090ecd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090ef50 | wc_oceania_league.cpp | FUN_0090ef50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090f400 | wc_oceania_league.cpp | FUN_0090f400 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090f780 | wc_south_american_league.cpp | FUN_0090f780 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090f9c0 | wc_south_american_league.cpp | FUN_0090f9c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009101d0 | wc_south_american_league.cpp | FUN_009101d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00910370 | wc_south_american_league.cpp | FUN_00910370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00910620 | wc_south_american_league.cpp | FUN_00910620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00911810 | wc_south_american_league.cpp | FUN_00911810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009138e0 | wel_cup.cpp | FUN_009138e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00913ba0 | wel_cup.cpp | FUN_00913ba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00913f70 | wel_cup.cpp | FUN_00913f70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009142f0 | wel_first.cpp | FUN_009142f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00914520 | wel_first.cpp | FUN_00914520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00915350 | wel_lge_cup.cpp | FUN_00915350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009155c0 | wel_lge_cup.cpp | FUN_009155c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00915bc0 | wel_lge_cup.cpp | FUN_00915bc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00915fc0 | wel_lge_cup.cpp | FUN_00915fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009161c0 | wel_lge_cup.cpp | FUN_009161c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009164d0 | wel_lge_cup.cpp | FUN_009164d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009169b0 | wel_lge_cup.cpp | FUN_009169b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00916cb0 | wel_prm_cup.cpp | FUN_00916cb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00916f10 | wel_prm_cup.cpp | FUN_00916f10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00917520 | wel_prm_cup.cpp | FUN_00917520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00917910 | wel_prm_cup.cpp | FUN_00917910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00917b10 | wel_prm_cup.cpp | FUN_00917b10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00917d20 | wel_prm_cup.cpp | FUN_00917d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00918370 | wel_prm_cup.cpp | FUN_00918370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009186b0 | world_club_champ.cpp | FUN_009186b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00918840 | world_club_champ.cpp | FUN_00918840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00919010 | world_club_champ.cpp | FUN_00919010 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009192b0 | world_club_champ.cpp | FUN_009192b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009193d0 | world_club_champ.cpp | FUN_009193d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009196b0 | world_club_champ.cpp | FUN_009196b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00919c20 | world_club_champ.cpp | FUN_00919c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00919e20 | world_club_champ.cpp | FUN_00919e20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091aa20 | world_club_cup.cpp | FUN_0091aa20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091ace0 | world_club_cup.cpp | FUN_0091ace0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091ae20 | world_club_cup.cpp | FUN_0091ae20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091b4c0 | world_cup.cpp | FUN_0091b4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091b740 | world_cup.cpp | FUN_0091b740 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091c660 | world_cup.cpp | FUN_0091c660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1731,22 +846,16 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004433a0 | club_history.cpp | FUN_004433a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004c6ea0 | comp_util.cpp | FUN_004c6ea0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004c7010 | comp_util.cpp | FUN_004c7010 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004cc3c0 | conmebol_merc.cpp | FUN_004cc3c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0053f0a0 | discipline.cpp | FUN_0053f0a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00584530 | finance.cpp | FUN_00584530 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs | YES | UNVERIFIED |  |
-| 0x0058f530 | find_screens.cpp | FUN_0058f530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005e32e0 | host_country.cpp | FUN_005e32e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x005e4f50 | human_manager.cpp | FUN_005e4f50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
-| 0x007838d0 | oceania_nations.cpp | FUN_007838d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00789a00 | olympics.cpp | FUN_00789a00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00789a40 | olympics.cpp | FUN_00789a40 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00789a80 | olympics.cpp | FUN_00789a80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00789b50 | os.cpp | FUN_00789b50 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x00842bc0 | spain_rules.cpp | FUN_00842bc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00851340 | staff_records.cpp | FUN_00851340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089d5c0 | training_edit_session.cpp | FUN_0089d5c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008fc280 | utils.cpp | FUN_008fc280 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x00911b80 | wc_south_american_league.cpp | FUN_00911b80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x009354ca | zipdir.cpp | FUN_009354ca | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0093cc01 | zipdir.cpp | FUN_0093cc01 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 
@@ -1766,72 +875,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00401ae0 | african_nations.cpp | FUN_00401ae0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00402b00 | african_nations.cpp | FUN_00402b00 | PORTED_BEHAVIOURAL | crates/cm-render/src/gen_screen_types.rs;crates/cm-render/src/widget_pool.rs | YES | UNVERIFIED |  |
 | 0x00403640 | area.cpp | FUN_00403640 | PORTED_BEHAVIOURAL | crates/cm-widget/src/lib.rs | YES | UNVERIFIED |  |
-| 0x004044d0 | arg_prm.cpp | FUN_004044d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004056b0 | arg_prm.cpp | FUN_004056b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00406e60 | arg_second.cpp | FUN_00406e60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00407e90 | arg_second.cpp | FUN_00407e90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040a770 | argentina_rules.cpp | FUN_0040a770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040adb0 | asia_club_champ.cpp | FUN_0040adb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040add0 | asia_club_champ.cpp | FUN_0040add0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040b9b0 | asia_club_champ.cpp | FUN_0040b9b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040cba0 | asia_club_champ.cpp | FUN_0040cba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040ce50 | asia_cup_winner.cpp | FUN_0040ce50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040ce70 | asia_cup_winner.cpp | FUN_0040ce70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040e6d0 | asia_cup_winner.cpp | FUN_0040e6d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040e940 | asia_nations.cpp | FUN_0040e940 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0040f3e0 | asia_nations.cpp | FUN_0040f3e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410740 | asia_super_cup.cpp | FUN_00410740 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410760 | asia_super_cup.cpp | FUN_00410760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00410fa0 | aus_nsl.cpp | FUN_00410fa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00411f30 | aus_nsl.cpp | FUN_00411f30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00413330 | australia_rules.cpp | FUN_00413330 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00413900 | australia_rules.cpp | FUN_00413900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00414e50 | award_manager.cpp | FUN_00414e50 | UNKNOWN | crates/cm-domain/src/screen_batch5.rs | INDIRECT | UNVERIFIED |  |
-| 0x0041dd70 | bel_fa_cup.cpp | FUN_0041dd70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041dd90 | bel_fa_cup.cpp | FUN_0041dd90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041eab0 | bel_first.cpp | FUN_0041eab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041f530 | bel_first.cpp | FUN_0041f530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041fac0 | bel_first.cpp | FUN_0041fac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0041fdb0 | bel_second.cpp | FUN_0041fdb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004209f0 | bel_second.cpp | FUN_004209f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00420c60 | bel_second.cpp | FUN_00420c60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00421c10 | bel_super.cpp | FUN_00421c10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00421c30 | bel_super.cpp | FUN_00421c30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00422470 | bel_third.cpp | FUN_00422470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00423240 | bel_third.cpp | FUN_00423240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00425990 | belgium_rules.cpp | FUN_00425990 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00426770 | bra_champ_cup.cpp | FUN_00426770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00426e70 | bra_champ_cup.cpp | FUN_00426e70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428250 | bra_cup.cpp | FUN_00428250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428270 | bra_cup.cpp | FUN_00428270 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00428b00 | bra_cup.cpp | FUN_00428b00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042a6b0 | bra_nat_first.cpp | FUN_0042a6b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042b1e0 | bra_nat_first.cpp | FUN_0042b1e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042cca0 | bra_nat_second.cpp | FUN_0042cca0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042d7b0 | bra_nat_second.cpp | FUN_0042d7b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042e160 | bra_nat_third.cpp | FUN_0042e160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0042ea90 | bra_nat_third.cpp | FUN_0042ea90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00430130 | bra_reg_bahia.cpp | FUN_00430130 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00431250 | bra_reg_central.cpp | FUN_00431250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00431b70 | bra_reg_central.cpp | FUN_00431b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004325c0 | bra_reg_gaucho.cpp | FUN_004325c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00433770 | bra_reg_goias.cpp | FUN_00433770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00434040 | bra_reg_goias.cpp | FUN_00434040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00434910 | bra_reg_minas_gerais.cpp | FUN_00434910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00435aa0 | bra_reg_minas_gerais.cpp | FUN_00435aa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00435ed0 | bra_reg_north.cpp | FUN_00435ed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00436f80 | bra_reg_northeast.cpp | FUN_00436f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00437f90 | bra_reg_parana.cpp | FUN_00437f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00438930 | bra_reg_parana.cpp | FUN_00438930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004390e0 | bra_reg_parana.cpp | FUN_004390e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00439510 | bra_reg_pern.cpp | FUN_00439510 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00439e30 | bra_reg_pern.cpp | FUN_00439e30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043a860 | bra_reg_rio.cpp | FUN_0043a860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043b200 | bra_reg_rio.cpp | FUN_0043b200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043b8d0 | bra_reg_rio.cpp | FUN_0043b8d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043bd20 | bra_reg_santa.cpp | FUN_0043bd20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043c640 | bra_reg_santa.cpp | FUN_0043c640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0043ce70 | bra_reg_sp.cpp | FUN_0043ce70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0043fd20 | brazil_rules.cpp | FUN_0043fd20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043fd50 | brazil_rules.cpp | FUN_0043fd50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043fda0 | brazil_rules.cpp | FUN_0043fda0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1847,25 +893,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004b62e0 | comp_util.cpp | FUN_004b62e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004b6440 | comp_util.cpp | FUN_004b6440 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004b6c90 | comp_util.cpp | FUN_004b6c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004c7210 | con_champ.cpp | FUN_004c7210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c7230 | con_champ.cpp | FUN_004c7230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c7c50 | con_merc_cup.cpp | FUN_004c7c50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c82a0 | con_merc_cup.cpp | FUN_004c82a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c94b0 | conmebol_liber.cpp | FUN_004c94b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004c9c60 | conmebol_liber.cpp | FUN_004c9c60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cac20 | conmebol_merc.cpp | FUN_004cac20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004cb320 | conmebol_merc.cpp | FUN_004cb320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004e6620 | contract_screens.cpp | FUN_004e6620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004fdcf0 | cro_a1.cpp | FUN_004fdcf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004fe5a0 | cro_a1.cpp | FUN_004fe5a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ff210 | cro_a2a.cpp | FUN_004ff210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004ffac0 | cro_a2a.cpp | FUN_004ffac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00500260 | cro_a2b.cpp | FUN_00500260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00500b10 | cro_a2b.cpp | FUN_00500b10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501330 | cro_cup.cpp | FUN_00501330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00501350 | cro_cup.cpp | FUN_00501350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00502350 | croatia_rules.cpp | FUN_00502350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00502370 | croatia_rules.cpp | FUN_00502370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00503ca0 | cup.cpp | FUN_00503ca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00508550 | cup.cpp | FUN_00508550 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0050b790 | cup.cpp | FUN_0050b790 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1875,16 +902,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0050e9b0 | cup_stage.cpp | FUN_0050e9b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs | YES | UNVERIFIED |  |
 | 0x00529fe0 | database.cpp | FUN_00529fe0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00537160 | date.cpp | FUN_00537160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053a760 | den_cup.cpp | FUN_0053a760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053a780 | den_cup.cpp | FUN_0053a780 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053b290 | den_cup.cpp | FUN_0053b290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053b4e0 | den_first.cpp | FUN_0053b4e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053bf90 | den_first.cpp | FUN_0053bf90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053c430 | den_prm.cpp | FUN_0053c430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053d5e0 | den_prm.cpp | FUN_0053d5e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053dc70 | den_second.cpp | FUN_0053dc70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053e740 | den_second.cpp | FUN_0053e740 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053f040 | denmark_awards.cpp | FUN_0053f040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0053fe10 | discipline.cpp | FUN_0053fe10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00540870 | discipline.cpp | FUN_00540870 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005467c0 | discipline.cpp | FUN_005467c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1934,142 +951,17 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00576cd0 | fifa_confed.cpp | FUN_00576cd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005774c0 | fifa_rankings.cpp | FUN_005774c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00577f40 | fifa_rankings.cpp | FUN_00577f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057c640 | fin_cup.cpp | FUN_0057c640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057c660 | fin_cup.cpp | FUN_0057c660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057d2f0 | fin_first.cpp | FUN_0057d2f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057dd90 | fin_first.cpp | FUN_0057dd90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057f600 | fin_prm.cpp | FUN_0057f600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0057fe90 | fin_prm.cpp | FUN_0057fe90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00580250 | fin_prm.cpp | FUN_00580250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0059bed0 | fog_of_war.cpp | FUN_0059bed0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/ui_schema.rs;crates/cm-render/src/primitives.rs | YES | UNVERIFIED |  |
-| 0x005a3730 | fra_cfa.cpp | FUN_005a3730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a3750 | fra_cfa.cpp | FUN_005a3750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a4560 | fra_cup.cpp | FUN_005a4560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a4580 | fra_cup.cpp | FUN_005a4580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a5770 | fra_first.cpp | FUN_005a5770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a5790 | fra_first.cpp | FUN_005a5790 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a57d0 | fra_first.cpp | FUN_005a57d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a57f0 | fra_first.cpp | FUN_005a57f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a5800 | fra_first.cpp | FUN_005a5800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a6650 | fra_first.cpp | FUN_005a6650 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a6d90 | fra_lge_cup.cpp | FUN_005a6d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a6db0 | fra_lge_cup.cpp | FUN_005a6db0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a7810 | fra_lge_cup.cpp | FUN_005a7810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a7a90 | fra_lower.cpp | FUN_005a7a90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a7ab0 | fra_lower.cpp | FUN_005a7ab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a8570 | fra_lower.cpp | FUN_005a8570 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a8810 | fra_second.cpp | FUN_005a8810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a9370 | fra_second.cpp | FUN_005a9370 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a97b0 | fra_super.cpp | FUN_005a97b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005a97d0 | fra_super.cpp | FUN_005a97d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005aa020 | fra_third.cpp | FUN_005aa020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005aa9d0 | fra_third.cpp | FUN_005aa9d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005ab9e0 | france_rules.cpp | FUN_005ab9e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005afaa0 | friendly.cpp | FUN_005afaa0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005b0b00 | friendly.cpp | FUN_005b0b00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005c1970 | game_config.cpp | FUN_005c1970 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs | YES | UNVERIFIED |  |
-| 0x005c2aa0 | ger_cup.cpp | FUN_005c2aa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c2ac0 | ger_cup.cpp | FUN_005c2ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c3870 | ger_first.cpp | FUN_005c3870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c50b0 | ger_first.cpp | FUN_005c50b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5f60 | ger_lge_cup.cpp | FUN_005c5f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c5f80 | ger_lge_cup.cpp | FUN_005c5f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c6840 | ger_lge_cup.cpp | FUN_005c6840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c6ab0 | ger_regional.cpp | FUN_005c6ab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c7690 | ger_regional.cpp | FUN_005c7690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c8190 | ger_second.cpp | FUN_005c8190 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c9080 | ger_second.cpp | FUN_005c9080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005c9c10 | germany_awards.cpp | FUN_005c9c10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005ce6e0 | goldcup.cpp | FUN_005ce6e0 | PORTED_BEHAVIOURAL | crates/cm-render/src/area.rs | YES | UNVERIFIED |  |
 | 0x005cf840 | goldcup.cpp | FUN_005cf840 | PORTED_BEHAVIOURAL | crates/cm-domain/src/ui_schema.rs;crates/cm-render/src/font.rs;crates/cm-render/src/primitives.rs | YES | UNVERIFIED |  |
 | 0x005d1900 | goldcup.cpp | FUN_005d1900 | PORTED_BEHAVIOURAL | crates/cm-render/src/blit.rs | YES | UNVERIFIED |  |
-| 0x005d2490 | gre_cup.cpp | FUN_005d2490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d2cf0 | gre_cup.cpp | FUN_005d2cf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d3f10 | gre_prm.cpp | FUN_005d3f10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d4780 | gre_prm.cpp | FUN_005d4780 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d4db0 | gre_second.cpp | FUN_005d4db0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d56d0 | gre_second.cpp | FUN_005d56d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d5af0 | gre_super.cpp | FUN_005d5af0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d5b10 | gre_super.cpp | FUN_005d5b10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005dd070 | hol_cup.cpp | FUN_005dd070 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005dd900 | hol_cup.cpp | FUN_005dd900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005deb00 | hol_cup.cpp | FUN_005deb00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005df140 | hol_first.cpp | FUN_005df140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005dfdd0 | hol_first.cpp | FUN_005dfdd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e0040 | hol_first.cpp | FUN_005e0040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e0e60 | hol_first.cpp | FUN_005e0e60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e12b0 | hol_prm.cpp | FUN_005e12b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e1ff0 | hol_prm.cpp | FUN_005e1ff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e2470 | hol_super.cpp | FUN_005e2470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e2490 | hol_super.cpp | FUN_005e2490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005e32c0 | holland_rules.cpp | FUN_005e32c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005e4800 | host_country.cpp | FUN_005e4800 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005f71d0 | index.cpp | FUN_005f71d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/finance.rs | YES | UNVERIFIED |  |
-| 0x0061b930 | inter_amer_cup.cpp | FUN_0061b930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061b950 | inter_amer_cup.cpp | FUN_0061b950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061c890 | intertoto_cup.cpp | FUN_0061c890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061c8b0 | intertoto_cup.cpp | FUN_0061c8b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061d900 | ire_chal_cup.cpp | FUN_0061d900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061d920 | ire_chal_cup.cpp | FUN_0061d920 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061e4c0 | ire_first.cpp | FUN_0061e4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061f100 | ire_first.cpp | FUN_0061f100 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061fcd0 | ire_leinster_cup.cpp | FUN_0061fcd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061fcf0 | ire_leinster_cup.cpp | FUN_0061fcf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00620680 | ire_lge_cup.cpp | FUN_00620680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00620d20 | ire_lge_cup.cpp | FUN_00620d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00621fd0 | ire_munster_cup.cpp | FUN_00621fd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00621ff0 | ire_munster_cup.cpp | FUN_00621ff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006228d0 | ire_munster_cup.cpp | FUN_006228d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00622ac0 | ire_pres_cup.cpp | FUN_00622ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00622ae0 | ire_pres_cup.cpp | FUN_00622ae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00623040 | ire_pres_cup.cpp | FUN_00623040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00623470 | ire_prm.cpp | FUN_00623470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00623f90 | ire_prm.cpp | FUN_00623f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624510 | ire_super_cup.cpp | FUN_00624510 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00624b50 | ire_super_cup.cpp | FUN_00624b50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00625800 | ireland_awards.cpp | FUN_00625800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006259d0 | ireland_rules.cpp | FUN_006259d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00625a50 | ireland_rules.cpp | FUN_00625a50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00625e20 | ita_c1_super.cpp | FUN_00625e20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00625e40 | ita_c1_super.cpp | FUN_00625e40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00626510 | ita_c_cup.cpp | FUN_00626510 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00626d60 | ita_c_cup.cpp | FUN_00626d60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006281d0 | ita_cup.cpp | FUN_006281d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006289d0 | ita_cup.cpp | FUN_006289d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00629f80 | ita_ser_a.cpp | FUN_00629f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062acc0 | ita_ser_a.cpp | FUN_0062acc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062be10 | ita_ser_a.cpp | FUN_0062be10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062f140 | ita_ser_b.cpp | FUN_0062f140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0062ffa0 | ita_ser_b.cpp | FUN_0062ffa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00634310 | ita_ser_c1a.cpp | FUN_00634310 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00634de0 | ita_ser_c1a.cpp | FUN_00634de0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006384c0 | ita_ser_c1b.cpp | FUN_006384c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00638f90 | ita_ser_c1b.cpp | FUN_00638f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063c850 | ita_ser_c2a.cpp | FUN_0063c850 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0063d320 | ita_ser_c2a.cpp | FUN_0063d320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006409e0 | ita_ser_c2b.cpp | FUN_006409e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006414b0 | ita_ser_c2b.cpp | FUN_006414b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00644b70 | ita_ser_c2c.cpp | FUN_00644b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00645640 | ita_ser_c2c.cpp | FUN_00645640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00648ea0 | ita_super.cpp | FUN_00648ea0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00648ec0 | ita_super.cpp | FUN_00648ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006494a0 | ita_super.cpp | FUN_006494a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064b5a0 | jap_emp_cup.cpp | FUN_0064b5a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064b5c0 | jap_emp_cup.cpp | FUN_0064b5c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064c1d0 | jap_emp_cup.cpp | FUN_0064c1d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064c420 | jap_j1.cpp | FUN_0064c420 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064ccf0 | jap_j1.cpp | FUN_0064ccf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064d010 | jap_j1.cpp | FUN_0064d010 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064da60 | jap_j1.cpp | FUN_0064da60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064dad0 | jap_j1.cpp | FUN_0064dad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064dda0 | jap_j2.cpp | FUN_0064dda0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064e810 | jap_j2.cpp | FUN_0064e810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064ecd0 | jap_j_cup.cpp | FUN_0064ecd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064ecf0 | jap_j_cup.cpp | FUN_0064ecf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f4f0 | jap_j_cup.cpp | FUN_0064f4f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f6e0 | jap_super.cpp | FUN_0064f6e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0064f700 | jap_super.cpp | FUN_0064f700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00650890 | japan_rules.cpp | FUN_00650890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006537a0 | key_nation.cpp |  | PORTED_BEHAVIOURAL | crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x006809d0 | manager_manager.cpp | FUN_006809d0 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00698140 | manager_screens.cpp | FUN_00698140 | UNKNOWN | crates/cm-domain/src/screen_batch4.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | UNVERIFIED |  |
@@ -2089,39 +981,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0074fe40 | month_ratings.cpp | FUN_0074fe40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074ffe0 | month_ratings.cpp | FUN_0074ffe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007553f0 | national_teams.cpp | FUN_007553f0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x00762730 | national_teams_screens.cpp | FUN_00762730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007627d0 | national_teams_screens.cpp | FUN_007627d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007628e0 | national_teams_screens.cpp | FUN_007628e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00762950 | national_teams_screens.cpp | FUN_00762950 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00762b60 | national_teams_screens.cpp | FUN_00762b60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00771300 | news_screens.cpp | FUN_00771300 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772080 | nir_charity.cpp | FUN_00772080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007720a0 | nir_charity.cpp | FUN_007720a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772850 | nir_cup.cpp | FUN_00772850 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00772870 | nir_cup.cpp | FUN_00772870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007730b0 | nir_cup.cpp | FUN_007730b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00773300 | nir_first.cpp | FUN_00773300 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00773e40 | nir_first.cpp | FUN_00773e40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00774aa0 | nir_lge_cup.cpp | FUN_00774aa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007751a0 | nir_lge_cup.cpp | FUN_007751a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00776350 | nir_prm.cpp | FUN_00776350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00776e50 | nir_prm.cpp | FUN_00776e50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007772c0 | nor_cup.cpp | FUN_007772c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007772e0 | nor_cup.cpp | FUN_007772e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00778030 | nor_first.cpp | FUN_00778030 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00778bd0 | nor_first.cpp | FUN_00778bd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007797e0 | nor_prm.cpp | FUN_007797e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077a7d0 | nor_prm.cpp | FUN_0077a7d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077ac10 | nor_prm.cpp | FUN_0077ac10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077b8c0 | northern_ireland_rules.cpp | FUN_0077b8c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077b940 | northern_ireland_rules.cpp | FUN_0077b940 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0077da00 | notes.cpp | FUN_0077da00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
-| 0x0077f2d0 | oceania_club_champ.cpp | FUN_0077f2d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077fb30 | oceania_club_champ.cpp | FUN_0077fb30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0077fee0 | oceania_club_champ.cpp | FUN_0077fee0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00780c00 | oceania_nations.cpp | FUN_00780c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00781810 | oceania_nations.cpp | FUN_00781810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00783b50 | oceania_nations.cpp | FUN_00783b50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00785160 | officials_manager.cpp | FUN_00785160 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00787a20 | olympics.cpp | FUN_00787a20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00788560 | olympics.cpp | FUN_00788560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -2129,130 +989,18 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007aec90 | player_stats.cpp | FUN_007aec90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af0f0 | player_stats.cpp | FUN_007af0f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af140 | player_stats.cpp | FUN_007af140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007af400 | plot.cpp | FUN_007af400 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0360 | pol_cup.cpp | FUN_007b0360 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0380 | pol_cup.cpp | FUN_007b0380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b0e60 | pol_cup.cpp | FUN_007b0e60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b1140 | pol_first.cpp | FUN_007b1140 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b1aa0 | pol_first.cpp | FUN_007b1aa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b28a0 | pol_first.cpp | FUN_007b28a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b2ac0 | pol_lge_cup.cpp | FUN_007b2ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b2ae0 | pol_lge_cup.cpp | FUN_007b2ae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b35a0 | pol_lge_cup.cpp | FUN_007b35a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b3800 | pol_second.cpp | FUN_007b3800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b4350 | pol_second.cpp | FUN_007b4350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b4ef0 | pol_super.cpp | FUN_007b4ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b4f10 | pol_super.cpp | FUN_007b4f10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b5f60 | por_cup.cpp | FUN_007b5f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b5f80 | por_cup.cpp | FUN_007b5f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b6d10 | por_prm.cpp | FUN_007b6d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b7d10 | por_prm.cpp | FUN_007b7d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b85f0 | por_prm.cpp | FUN_007b85f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b8f40 | por_second.cpp | FUN_007b8f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b9a80 | por_second.cpp | FUN_007b9a80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007b9f40 | por_second_b.cpp | FUN_007b9f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ba9f0 | por_second_b.cpp | FUN_007ba9f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bb450 | por_super.cpp | FUN_007bb450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007bb470 | por_super.cpp | FUN_007bb470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c2ea0 | printouts.cpp | FUN_007c2ea0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c2f60 | printouts.cpp | FUN_007c2f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3530 | printouts.cpp | FUN_007c3530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3790 | rb_argentina.cpp | FUN_007c3790 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c39e0 | rb_asia.cpp | FUN_007c39e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c3d20 | rb_australia.cpp | FUN_007c3d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c40d0 | rb_belgium_cup.cpp | FUN_007c40d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c44b0 | rb_belgium_league.cpp | FUN_007c44b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c4830 | rb_brazil_national.cpp | FUN_007c4830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c4b70 | rb_brazil_regional.cpp | FUN_007c4b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c4f50 | rb_croatia.cpp | FUN_007c4f50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c5870 | rb_england.cpp | FUN_007c5870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c5ad0 | rb_europe.cpp | FUN_007c5ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c5e00 | rb_finland_cup.cpp | FUN_007c5e00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6130 | rb_finland_league.cpp | FUN_007c6130 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6750 | rb_france.cpp | FUN_007c6750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6a90 | rb_germany_cup.cpp | FUN_007c6a90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c6dd0 | rb_germany_league.cpp | FUN_007c6dd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c71c0 | rb_greece.cpp | FUN_007c71c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c75b0 | rb_holland.cpp | FUN_007c75b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c78b0 | rb_international.cpp | FUN_007c78b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c7d90 | rb_ireland.cpp | FUN_007c7d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c8160 | rb_italy_cup.cpp | FUN_007c8160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c85a0 | rb_italy_league.cpp | FUN_007c85a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c8880 | rb_japan_cup.cpp | FUN_007c8880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c8b20 | rb_japan_league.cpp | FUN_007c8b20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c8f20 | rb_northern_ireland.cpp | FUN_007c8f20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9180 | rb_norway_cup.cpp | FUN_007c9180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9400 | rb_norway_league.cpp | FUN_007c9400 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c9640 | rb_oceania.cpp | FUN_007c9640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9a90 | rb_poland.cpp | FUN_007c9a90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9e30 | rb_portugal.cpp | FUN_007c9e30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ca1d0 | rb_russia.cpp | FUN_007ca1d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ca4a0 | rb_scotland_cup.cpp | FUN_007ca4a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ca960 | rb_scotland_league.cpp | FUN_007ca960 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007caa10 | rb_scotland_league.cpp | FUN_007caa10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007cac60 | rb_south_america.cpp | FUN_007cac60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007caff0 | rb_spain_cup.cpp | FUN_007caff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cb380 | rb_spain_league.cpp | FUN_007cb380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cb750 | rb_sweden_cup.cpp | FUN_007cb750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cbac0 | rb_sweden_league.cpp | FUN_007cbac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cbe50 | rb_turkey_cup.cpp | FUN_007cbe50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cc1a0 | rb_turkey_league.cpp | FUN_007cc1a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cc470 | rb_usa.cpp | FUN_007cc470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007d06b0 | ruling_body.cpp | FUN_007d06b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007d0e80 | ruling_body.cpp | FUN_007d0e80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1520 | rus_cup.cpp | FUN_007d1520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1540 | rus_cup.cpp | FUN_007d1540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1fe0 | rus_cup.cpp | FUN_007d1fe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2290 | rus_first.cpp | FUN_007d2290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2960 | rus_first.cpp | FUN_007d2960 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d2df0 | rus_prm.cpp | FUN_007d2df0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d3890 | rus_prm.cpp | FUN_007d3890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d47f0 | russia_awards.cpp | FUN_007d47f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d4cf0 | sco_chal_cup.cpp | FUN_007d4cf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d4d10 | sco_chal_cup.cpp | FUN_007d4d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d5480 | sco_chal_cup.cpp | FUN_007d5480 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d5680 | sco_fa_cup.cpp | FUN_007d5680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d56a0 | sco_fa_cup.cpp | FUN_007d56a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d63a0 | sco_first.cpp | FUN_007d63a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d6ff0 | sco_first.cpp | FUN_007d6ff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d7d60 | sco_lge_cup.cpp | FUN_007d7d60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d7d80 | sco_lge_cup.cpp | FUN_007d7d80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d8f70 | sco_prm.cpp | FUN_007d8f70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dab10 | sco_prm.cpp | FUN_007dab10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007db600 | sco_second.cpp | FUN_007db600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dc120 | sco_second.cpp | FUN_007dc120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dc5a0 | sco_third.cpp | FUN_007dc5a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007dd0c0 | sco_third.cpp | FUN_007dd0c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e6a20 | scrman.cpp | FUN_007e6a20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e74e0 | scrman.cpp | FUN_007e74e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch4.rs | YES | UNVERIFIED |  |
 | 0x007ebaf0 | scrman.cpp | FUN_007ebaf0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x007ec230 | search_edit_session.cpp | FUN_007ec230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec520 | search_edit_session.cpp | FUN_007ec520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007ec640 | search_edit_session.cpp | FUN_007ec640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007f6710 | search_screens.cpp | FUN_007f6710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007f6730 | search_screens.cpp | FUN_007f6730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007f6760 | search_screens.cpp | FUN_007f6760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007f6790 | search_screens.cpp | FUN_007f6790 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00800600 | search_screens.cpp | FUN_00800600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00800660 | search_screens.cpp | FUN_00800660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00803650 | search_screens.cpp | FUN_00803650 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00803d70 | search_screens.cpp | FUN_00803d70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0081a020 | setup.cpp | FUN_0081a020 | PORTED_BEHAVIOURAL | crates/cm-domain/src/league_calendar.rs | YES | UNVERIFIED |  |
-| 0x008362d0 | spa_cup.cpp | FUN_008362d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008362f0 | spa_cup.cpp | FUN_008362f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00837530 | spa_first.cpp | FUN_00837530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00838f90 | spa_first.cpp | FUN_00838f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00839a60 | spa_first.cpp | FUN_00839a60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083a330 | spa_lower.cpp | FUN_0083a330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083a350 | spa_lower.cpp | FUN_0083a350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083c930 | spa_lower.cpp | FUN_0083c930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083cd50 | spa_second.cpp | FUN_0083cd50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083ee60 | spa_second.cpp | FUN_0083ee60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0083f320 | spa_second_b.cpp | FUN_0083f320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00840090 | spa_second_b.cpp | FUN_00840090 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841300 | spa_second_b.cpp | FUN_00841300 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841a10 | spa_super.cpp | FUN_00841a10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00841a30 | spa_super.cpp | FUN_00841a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008469c0 | stadium.cpp | FUN_008469c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00847410 | stadium.cpp | FUN_00847410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x008474a0 | stadium.cpp | FUN_008474a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -2263,78 +1011,17 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008773e0 | staff_screens.cpp | FUN_008773e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch21.rs | YES | UNVERIFIED |  |
 | 0x008776f0 | sub_league.cpp | FUN_008776f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00877710 | sub_league.cpp | FUN_00877710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00877b80 | swe_cup.cpp | FUN_00877b80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00877ba0 | swe_cup.cpp | FUN_00877ba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00879580 | swe_first.cpp | FUN_00879580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00879e10 | swe_first.cpp | FUN_00879e10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087ab80 | swe_prm.cpp | FUN_0087ab80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087b2d0 | swe_prm.cpp | FUN_0087b2d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087c020 | swe_prm.cpp | FUN_0087c020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087c630 | swe_second.cpp | FUN_0087c630 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087d030 | swe_second.cpp | FUN_0087d030 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087ea30 | sweden_awards.cpp | FUN_0087ea30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00884b00 | tactics_screens.cpp | FUN_00884b00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0089a580 | tactics_screens.cpp | FUN_0089a580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0089afd0 | tcpip.cpp | FUN_0089afd0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x0089d410 | training_edit_session.cpp | FUN_0089d410 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089d460 | training_edit_session.cpp | FUN_0089d460 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089d4c0 | training_edit_session.cpp | FUN_0089d4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089d770 | training_edit_session.cpp | FUN_0089d770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008a8a70 | training_screens.cpp | FUN_008a8a70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008df880 | transfer_screens.cpp | FUN_008df880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008e0af0 | transfer_screens.cpp | FUN_008e0af0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
-| 0x008eb860 | tur_cup.cpp | FUN_008eb860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008eb880 | tur_cup.cpp | FUN_008eb880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ec450 | tur_first.cpp | FUN_008ec450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ed270 | tur_first.cpp | FUN_008ed270 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ed530 | tur_first.cpp | FUN_008ed530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ed860 | tur_first.cpp | FUN_008ed860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008edbe0 | tur_second.cpp | FUN_008edbe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ee560 | tur_second.cpp | FUN_008ee560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ee9e0 | tur_second_b.cpp | FUN_008ee9e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008ef740 | tur_second_b.cpp | FUN_008ef740 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f6600 | usa_mls.cpp | FUN_008f6600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9720 | usa_mls_all_stars.cpp | FUN_008f9720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008f9740 | usa_mls_all_stars.cpp | FUN_008f9740 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fa490 | usa_open_cup.cpp | FUN_008fa490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fa4b0 | usa_open_cup.cpp | FUN_008fa4b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fe9f0 | wc_african_cup.cpp | FUN_008fe9f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008fea10 | wc_african_cup.cpp | FUN_008fea10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00900620 | wc_african_cup.cpp | FUN_00900620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00901090 | wc_african_cup.cpp | FUN_00901090 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009012d0 | wc_asia_league.cpp | FUN_009012d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00902390 | wc_asia_league.cpp | FUN_00902390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009038f0 | wc_asia_league.cpp | FUN_009038f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00904180 | wc_concacaf_cup.cpp | FUN_00904180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009041a0 | wc_concacaf_cup.cpp | FUN_009041a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009071b0 | wc_concacaf_cup.cpp | FUN_009071b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00907990 | wc_europe_league.cpp | FUN_00907990 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x009086d0 | wc_europe_league.cpp | FUN_009086d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00909ca0 | wc_europe_league.cpp | FUN_00909ca0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0090ac00 | wc_europe_league.cpp | FUN_0090ac00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0090d3e0 | wc_europe_league.cpp | FUN_0090d3e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090d6b0 | wc_oceania_league.cpp | FUN_0090d6b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090e1c0 | wc_oceania_league.cpp | FUN_0090e1c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090f9a0 | wc_south_american_league.cpp | FUN_0090f9a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00910500 | wc_south_american_league.cpp | FUN_00910500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00910b30 | wc_south_american_league.cpp | FUN_00910b30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00910b90 | wc_south_american_league.cpp | FUN_00910b90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00911c90 | wc_south_american_league.cpp | FUN_00911c90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00912e30 | weather.cpp | FUN_00912e30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
-| 0x00913ab0 | wel_cup.cpp | FUN_00913ab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00913ad0 | wel_cup.cpp | FUN_00913ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009142c0 | wel_cup.cpp | FUN_009142c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00914500 | wel_first.cpp | FUN_00914500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00915110 | wel_first.cpp | FUN_00915110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009155a0 | wel_lge_cup.cpp | FUN_009155a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00915cc0 | wel_lge_cup.cpp | FUN_00915cc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00916ef0 | wel_prm_cup.cpp | FUN_00916ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00917620 | wel_prm_cup.cpp | FUN_00917620 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009182c0 | wel_prm_cup.cpp | FUN_009182c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00918820 | world_club_champ.cpp | FUN_00918820 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00919120 | world_club_champ.cpp | FUN_00919120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091abf0 | world_club_cup.cpp | FUN_0091abf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091ac10 | world_club_cup.cpp | FUN_0091ac10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091b720 | world_cup.cpp | FUN_0091b720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091c770 | world_cup.cpp | FUN_0091c770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091c880 | world_cup.cpp | FUN_0091c880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -2992,6 +1679,1223 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00669780 | league.cpp | matrix_seed_base | PORTED_EXACT | matrix_seed_base | YES | BYTE_EXACT | rust:eng_second_fixtures.rs |
 | 0x0066bd40 | league.cpp | matrix_perturb | PORTED_EXACT | matrix_perturb | YES | BYTE_EXACT | memory:perturb-resolver-slot-vs-club-bug.md |
 | 0x0066f280 | league.cpp | walker_step | PORTED_EXACT | walker_step | YES | BYTE_EXACT | memory:c11-2-fixture-subsystem-frozen.md |
+
+## foreign-comp
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00404290 | arg_prm.cpp | FUN_00404290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004044d0 | arg_prm.cpp | FUN_004044d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004044f0 | arg_prm.cpp | FUN_004044f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00405580 | arg_prm.cpp | FUN_00405580 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004056b0 | arg_prm.cpp | FUN_004056b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00405990 | arg_prm.cpp | FUN_00405990 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00405f30 | arg_prm.cpp | FUN_00405f30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00406910 | arg_prm.cpp | FUN_00406910 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00406c30 | arg_second.cpp | FUN_00406c30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00406e60 | arg_second.cpp | FUN_00406e60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00406e80 | arg_second.cpp | FUN_00406e80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00407d10 | arg_second.cpp | FUN_00407d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00407e90 | arg_second.cpp | FUN_00407e90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00408210 | arg_second.cpp | FUN_00408210 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00408690 | arg_second.cpp | FUN_00408690 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00408970 | arg_second.cpp | FUN_00408970 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00409450 | arg_second.cpp | FUN_00409450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a040 | arg_second.cpp | FUN_0040a040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a3b0 | arg_second.cpp | FUN_0040a3b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a440 | argentina_awards.cpp | FUN_0040a440 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a5e0 | argentina_awards.cpp | FUN_0040a5e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a680 | argentina_rules.cpp | FUN_0040a680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a770 | argentina_rules.cpp | FUN_0040a770 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040a830 | argentina_rules.cpp | FUN_0040a830 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040ab40 | asia_club_champ.cpp | FUN_0040ab40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040adb0 | asia_club_champ.cpp | FUN_0040adb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040add0 | asia_club_champ.cpp | FUN_0040add0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040aef0 | asia_club_champ.cpp | FUN_0040aef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040b680 | asia_club_champ.cpp | FUN_0040b680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040b9b0 | asia_club_champ.cpp | FUN_0040b9b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040b9e0 | asia_club_champ.cpp | FUN_0040b9e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040bec0 | asia_club_champ.cpp | FUN_0040bec0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040c110 | asia_club_champ.cpp | FUN_0040c110 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040c3d0 | asia_club_champ.cpp | FUN_0040c3d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040c720 | asia_club_champ.cpp | FUN_0040c720 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040cba0 | asia_club_champ.cpp | FUN_0040cba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040cbe0 | asia_cup_winner.cpp | FUN_0040cbe0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040ce50 | asia_cup_winner.cpp | FUN_0040ce50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040ce70 | asia_cup_winner.cpp | FUN_0040ce70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040cf90 | asia_cup_winner.cpp | FUN_0040cf90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040d4d0 | asia_cup_winner.cpp | FUN_0040d4d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040d800 | asia_cup_winner.cpp | FUN_0040d800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040dd10 | asia_cup_winner.cpp | FUN_0040dd10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040df50 | asia_cup_winner.cpp | FUN_0040df50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040e2d0 | asia_cup_winner.cpp | FUN_0040e2d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040e6d0 | asia_cup_winner.cpp | FUN_0040e6d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040e780 | asia_nations.cpp | FUN_0040e780 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040e940 | asia_nations.cpp | FUN_0040e940 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040e960 | asia_nations.cpp | FUN_0040e960 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040f2f0 | asia_nations.cpp | FUN_0040f2f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040f3e0 | asia_nations.cpp | FUN_0040f3e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040f7c0 | asia_nations.cpp | FUN_0040f7c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040f9b0 | asia_nations.cpp | FUN_0040f9b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0040fd10 | asia_nations.cpp | FUN_0040fd10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410090 | asia_nations.cpp | FUN_00410090 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410570 | asia_super_cup.cpp | FUN_00410570 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410740 | asia_super_cup.cpp | FUN_00410740 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410760 | asia_super_cup.cpp | FUN_00410760 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410830 | asia_super_cup.cpp | FUN_00410830 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410970 | asia_super_cup.cpp | FUN_00410970 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410d70 | aus_nsl.cpp | FUN_00410d70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410fa0 | aus_nsl.cpp | FUN_00410fa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00410fc0 | aus_nsl.cpp | FUN_00410fc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00411e30 | aus_nsl.cpp | FUN_00411e30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00411f30 | aus_nsl.cpp | FUN_00411f30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004122a0 | aus_nsl.cpp | FUN_004122a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00412550 | aus_nsl.cpp | FUN_00412550 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00412980 | australia_awards.cpp | FUN_00412980 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00412ac0 | australia_awards.cpp | FUN_00412ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041dba0 | bel_fa_cup.cpp | FUN_0041dba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041dd70 | bel_fa_cup.cpp | FUN_0041dd70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041dd90 | bel_fa_cup.cpp | FUN_0041dd90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041e420 | bel_fa_cup.cpp | FUN_0041e420 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041e890 | bel_first.cpp | FUN_0041e890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041eab0 | bel_first.cpp | FUN_0041eab0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041ead0 | bel_first.cpp | FUN_0041ead0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041f400 | bel_first.cpp | FUN_0041f400 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041f530 | bel_first.cpp | FUN_0041f530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041f7e0 | bel_first.cpp | FUN_0041f7e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041fac0 | bel_first.cpp | FUN_0041fac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041fb80 | bel_second.cpp | FUN_0041fb80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041fdb0 | bel_second.cpp | FUN_0041fdb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0041fdd0 | bel_second.cpp | FUN_0041fdd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004208c0 | bel_second.cpp | FUN_004208c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004209f0 | bel_second.cpp | FUN_004209f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00420c60 | bel_second.cpp | FUN_00420c60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00420d80 | bel_second.cpp | FUN_00420d80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00421020 | bel_second.cpp | FUN_00421020 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004217f0 | bel_second.cpp | FUN_004217f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00421a40 | bel_super.cpp | FUN_00421a40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00421c10 | bel_super.cpp | FUN_00421c10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00421c30 | bel_super.cpp | FUN_00421c30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00421d00 | bel_super.cpp | FUN_00421d00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00421e40 | bel_super.cpp | FUN_00421e40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00422240 | bel_third.cpp | FUN_00422240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00422470 | bel_third.cpp | FUN_00422470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00422490 | bel_third.cpp | FUN_00422490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00423030 | bel_third.cpp | FUN_00423030 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00423240 | bel_third.cpp | FUN_00423240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004234c0 | bel_third.cpp | FUN_004234c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00423840 | bel_third.cpp | FUN_00423840 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00423e60 | bel_third.cpp | FUN_00423e60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00424260 | bel_third.cpp | FUN_00424260 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004243d0 | bel_third.cpp | FUN_004243d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004246f0 | bel_third.cpp | FUN_004246f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00424b80 | bel_third.cpp | FUN_00424b80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00424dc0 | bel_third.cpp | FUN_00424dc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00424f60 | bel_third.cpp | FUN_00424f60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00424ff0 | belgium_awards.cpp | FUN_00424ff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00425670 | belgium_awards.cpp | FUN_00425670 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004256e0 | belgium_rules.cpp | FUN_004256e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00425990 | belgium_rules.cpp | FUN_00425990 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00425ed0 | belgium_rules.cpp | FUN_00425ed0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004265e0 | bra_champ_cup.cpp | FUN_004265e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00426770 | bra_champ_cup.cpp | FUN_00426770 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00426790 | bra_champ_cup.cpp | FUN_00426790 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00426d70 | bra_champ_cup.cpp | FUN_00426d70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00426e70 | bra_champ_cup.cpp | FUN_00426e70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004270b0 | bra_champ_cup.cpp | FUN_004270b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00427360 | bra_champ_cup.cpp | FUN_00427360 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004279c0 | bra_champ_cup.cpp | FUN_004279c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00427f60 | bra_champ_cup.cpp | FUN_00427f60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428070 | bra_cup.cpp | FUN_00428070 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428250 | bra_cup.cpp | FUN_00428250 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428270 | bra_cup.cpp | FUN_00428270 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428340 | bra_cup.cpp | FUN_00428340 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428860 | bra_cup.cpp | FUN_00428860 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428b00 | bra_cup.cpp | FUN_00428b00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00428b40 | bra_cup.cpp | FUN_00428b40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042a490 | bra_nat_first.cpp | FUN_0042a490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042a6b0 | bra_nat_first.cpp | FUN_0042a6b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042a6d0 | bra_nat_first.cpp | FUN_0042a6d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042b0c0 | bra_nat_first.cpp | FUN_0042b0c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042b1e0 | bra_nat_first.cpp | FUN_0042b1e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042b620 | bra_nat_first.cpp | FUN_0042b620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042bd70 | bra_nat_first.cpp | FUN_0042bd70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042c160 | bra_nat_first.cpp | FUN_0042c160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042c3a0 | bra_nat_first.cpp | FUN_0042c3a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042ca80 | bra_nat_second.cpp | FUN_0042ca80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042cca0 | bra_nat_second.cpp | FUN_0042cca0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042ccc0 | bra_nat_second.cpp | FUN_0042ccc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042d6b0 | bra_nat_second.cpp | FUN_0042d6b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042d7b0 | bra_nat_second.cpp | FUN_0042d7b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042daa0 | bra_nat_second.cpp | FUN_0042daa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042df00 | bra_nat_third.cpp | FUN_0042df00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042e160 | bra_nat_third.cpp | FUN_0042e160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042e180 | bra_nat_third.cpp | FUN_0042e180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042e8d0 | bra_nat_third.cpp | FUN_0042e8d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042ea90 | bra_nat_third.cpp | FUN_0042ea90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042f070 | bra_nat_third.cpp | FUN_0042f070 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042f340 | bra_nat_third.cpp | FUN_0042f340 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042f5c0 | bra_nat_third.cpp | FUN_0042f5c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042fac0 | bra_nat_third.cpp | FUN_0042fac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042fce0 | bra_nat_third.cpp | FUN_0042fce0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0042ff10 | bra_reg_bahia.cpp | FUN_0042ff10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00430130 | bra_reg_bahia.cpp | FUN_00430130 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00430150 | bra_reg_bahia.cpp | FUN_00430150 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00430950 | bra_reg_bahia.cpp | FUN_00430950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00430c90 | bra_reg_bahia.cpp | FUN_00430c90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00430e60 | bra_reg_bahia.cpp | FUN_00430e60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00431030 | bra_reg_central.cpp | FUN_00431030 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00431250 | bra_reg_central.cpp | FUN_00431250 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00431270 | bra_reg_central.cpp | FUN_00431270 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00431a70 | bra_reg_central.cpp | FUN_00431a70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00431b70 | bra_reg_central.cpp | FUN_00431b70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00431e50 | bra_reg_central.cpp | FUN_00431e50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00432190 | bra_reg_central.cpp | FUN_00432190 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004323a0 | bra_reg_gaucho.cpp | FUN_004323a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004325c0 | bra_reg_gaucho.cpp | FUN_004325c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004325e0 | bra_reg_gaucho.cpp | FUN_004325e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00432db0 | bra_reg_gaucho.cpp | FUN_00432db0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004330f0 | bra_reg_gaucho.cpp | FUN_004330f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004333e0 | bra_reg_gaucho.cpp | FUN_004333e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00433550 | bra_reg_goias.cpp | FUN_00433550 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00433770 | bra_reg_goias.cpp | FUN_00433770 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00433790 | bra_reg_goias.cpp | FUN_00433790 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00433f40 | bra_reg_goias.cpp | FUN_00433f40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00434040 | bra_reg_goias.cpp | FUN_00434040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00434330 | bra_reg_goias.cpp | FUN_00434330 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00434540 | bra_reg_goias.cpp | FUN_00434540 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004346f0 | bra_reg_minas_gerais.cpp | FUN_004346f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00434910 | bra_reg_minas_gerais.cpp | FUN_00434910 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00434930 | bra_reg_minas_gerais.cpp | FUN_00434930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004351b0 | bra_reg_minas_gerais.cpp | FUN_004351b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00435950 | bra_reg_minas_gerais.cpp | FUN_00435950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00435aa0 | bra_reg_minas_gerais.cpp | FUN_00435aa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00435b20 | bra_reg_minas_gerais.cpp | FUN_00435b20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00435cb0 | bra_reg_north.cpp | FUN_00435cb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00435ed0 | bra_reg_north.cpp | FUN_00435ed0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00435ef0 | bra_reg_north.cpp | FUN_00435ef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004366f0 | bra_reg_north.cpp | FUN_004366f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00436a30 | bra_reg_north.cpp | FUN_00436a30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00436bf0 | bra_reg_north.cpp | FUN_00436bf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00436d60 | bra_reg_northeast.cpp | FUN_00436d60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00436f80 | bra_reg_northeast.cpp | FUN_00436f80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00436fa0 | bra_reg_northeast.cpp | FUN_00436fa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00437700 | bra_reg_northeast.cpp | FUN_00437700 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00437a40 | bra_reg_northeast.cpp | FUN_00437a40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00437c00 | bra_reg_northeast.cpp | FUN_00437c00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00437d70 | bra_reg_parana.cpp | FUN_00437d70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00437f90 | bra_reg_parana.cpp | FUN_00437f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00437fb0 | bra_reg_parana.cpp | FUN_00437fb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00438830 | bra_reg_parana.cpp | FUN_00438830 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00438930 | bra_reg_parana.cpp | FUN_00438930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00438c30 | bra_reg_parana.cpp | FUN_00438c30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00438f90 | bra_reg_parana.cpp | FUN_00438f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004390e0 | bra_reg_parana.cpp | FUN_004390e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00439160 | bra_reg_parana.cpp | FUN_00439160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004392f0 | bra_reg_pern.cpp | FUN_004392f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00439510 | bra_reg_pern.cpp | FUN_00439510 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00439530 | bra_reg_pern.cpp | FUN_00439530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00439d30 | bra_reg_pern.cpp | FUN_00439d30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00439e30 | bra_reg_pern.cpp | FUN_00439e30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043a110 | bra_reg_pern.cpp | FUN_0043a110 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043a4d0 | bra_reg_pern.cpp | FUN_0043a4d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043a640 | bra_reg_rio.cpp | FUN_0043a640 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043a860 | bra_reg_rio.cpp | FUN_0043a860 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043a880 | bra_reg_rio.cpp | FUN_0043a880 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043b100 | bra_reg_rio.cpp | FUN_0043b100 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043b200 | bra_reg_rio.cpp | FUN_0043b200 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043b500 | bra_reg_rio.cpp | FUN_0043b500 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043b720 | bra_reg_rio.cpp | FUN_0043b720 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043b8d0 | bra_reg_rio.cpp | FUN_0043b8d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043b950 | bra_reg_rio.cpp | FUN_0043b950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043bae0 | bra_reg_santa.cpp | FUN_0043bae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043bd20 | bra_reg_santa.cpp | FUN_0043bd20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043bd40 | bra_reg_santa.cpp | FUN_0043bd40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043c540 | bra_reg_santa.cpp | FUN_0043c540 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043c640 | bra_reg_santa.cpp | FUN_0043c640 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043c920 | bra_reg_santa.cpp | FUN_0043c920 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043cae0 | bra_reg_santa.cpp | FUN_0043cae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043cc50 | bra_reg_sp.cpp | FUN_0043cc50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043ce70 | bra_reg_sp.cpp | FUN_0043ce70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043ce90 | bra_reg_sp.cpp | FUN_0043ce90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043d5f0 | bra_reg_sp.cpp | FUN_0043d5f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043d6f0 | bra_reg_sp.cpp | FUN_0043d6f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043d9d0 | bra_reg_sp.cpp | FUN_0043d9d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043db90 | bra_reg_sp.cpp | FUN_0043db90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043dd00 | bra_reg_sp.cpp | FUN_0043dd00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0043dd90 | brazil_awards.cpp | FUN_0043dd90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7040 | con_champ.cpp | FUN_004c7040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7210 | con_champ.cpp | FUN_004c7210 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7230 | con_champ.cpp | FUN_004c7230 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7300 | con_champ.cpp | FUN_004c7300 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c75a0 | con_champ.cpp | FUN_004c75a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7ac0 | con_merc_cup.cpp | FUN_004c7ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7c50 | con_merc_cup.cpp | FUN_004c7c50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c7c70 | con_merc_cup.cpp | FUN_004c7c70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c81b0 | con_merc_cup.cpp | FUN_004c81b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c82a0 | con_merc_cup.cpp | FUN_004c82a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c8510 | con_merc_cup.cpp | FUN_004c8510 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c8700 | con_merc_cup.cpp | FUN_004c8700 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c8930 | con_merc_cup.cpp | FUN_004c8930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c9320 | conmebol_liber.cpp | FUN_004c9320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c94b0 | conmebol_liber.cpp | FUN_004c94b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c94d0 | conmebol_liber.cpp | FUN_004c94d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c9b70 | conmebol_liber.cpp | FUN_004c9b70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c9c60 | conmebol_liber.cpp | FUN_004c9c60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004c9ee0 | conmebol_liber.cpp | FUN_004c9ee0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ca0e0 | conmebol_liber.cpp | FUN_004ca0e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ca310 | conmebol_liber.cpp | FUN_004ca310 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004caa90 | conmebol_liber.cpp | FUN_004caa90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cac20 | conmebol_merc.cpp | FUN_004cac20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cac40 | conmebol_merc.cpp | FUN_004cac40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cb230 | conmebol_merc.cpp | FUN_004cb230 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cb320 | conmebol_merc.cpp | FUN_004cb320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cb5b0 | conmebol_merc.cpp | FUN_004cb5b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cb7b0 | conmebol_merc.cpp | FUN_004cb7b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cbc30 | conmebol_merc.cpp | FUN_004cbc30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004cc3c0 | conmebol_merc.cpp | FUN_004cc3c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fdad0 | cro_a1.cpp | FUN_004fdad0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fdcf0 | cro_a1.cpp | FUN_004fdcf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fdd10 | cro_a1.cpp | FUN_004fdd10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fe470 | cro_a1.cpp | FUN_004fe470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fe5a0 | cro_a1.cpp | FUN_004fe5a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fe920 | cro_a1.cpp | FUN_004fe920 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004feb90 | cro_a1.cpp | FUN_004feb90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004fee50 | cro_a1.cpp | FUN_004fee50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004feff0 | cro_a2a.cpp | FUN_004feff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ff210 | cro_a2a.cpp | FUN_004ff210 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ff230 | cro_a2a.cpp | FUN_004ff230 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ff990 | cro_a2a.cpp | FUN_004ff990 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ffac0 | cro_a2a.cpp | FUN_004ffac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x004ffdd0 | cro_a2a.cpp | FUN_004ffdd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00500040 | cro_a2b.cpp | FUN_00500040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00500260 | cro_a2b.cpp | FUN_00500260 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00500280 | cro_a2b.cpp | FUN_00500280 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005009e0 | cro_a2b.cpp | FUN_005009e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00500b10 | cro_a2b.cpp | FUN_00500b10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00500e20 | cro_a2b.cpp | FUN_00500e20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501160 | cro_cup.cpp | FUN_00501160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501330 | cro_cup.cpp | FUN_00501330 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501350 | cro_cup.cpp | FUN_00501350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501420 | cro_cup.cpp | FUN_00501420 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501890 | cro_cup.cpp | FUN_00501890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501bf0 | cro_cup.cpp | FUN_00501bf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00501c80 | croatia_awards.cpp | FUN_00501c80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005021e0 | croatia_rules.cpp | FUN_005021e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00502320 | croatia_rules.cpp | FUN_00502320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00502350 | croatia_rules.cpp | FUN_00502350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00502370 | croatia_rules.cpp | FUN_00502370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053a590 | den_cup.cpp | FUN_0053a590 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053a760 | den_cup.cpp | FUN_0053a760 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053a780 | den_cup.cpp | FUN_0053a780 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053a850 | den_cup.cpp | FUN_0053a850 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053ae20 | den_cup.cpp | FUN_0053ae20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053b290 | den_cup.cpp | FUN_0053b290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053b2d0 | den_first.cpp | FUN_0053b2d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053b4e0 | den_first.cpp | FUN_0053b4e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053b500 | den_first.cpp | FUN_0053b500 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053be70 | den_first.cpp | FUN_0053be70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053bf90 | den_first.cpp | FUN_0053bf90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053c1c0 | den_prm.cpp | FUN_0053c1c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053c430 | den_prm.cpp | FUN_0053c430 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053c450 | den_prm.cpp | FUN_0053c450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053d4b0 | den_prm.cpp | FUN_0053d4b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053d5e0 | den_prm.cpp | FUN_0053d5e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053d890 | den_prm.cpp | FUN_0053d890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053da60 | den_second.cpp | FUN_0053da60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053dc70 | den_second.cpp | FUN_0053dc70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053dc90 | den_second.cpp | FUN_0053dc90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053e620 | den_second.cpp | FUN_0053e620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053e740 | den_second.cpp | FUN_0053e740 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053e9a0 | den_second.cpp | FUN_0053e9a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053ea30 | denmark_awards.cpp | FUN_0053ea30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0053f040 | denmark_awards.cpp | FUN_0053f040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057c470 | fin_cup.cpp | FUN_0057c470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057c640 | fin_cup.cpp | FUN_0057c640 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057c660 | fin_cup.cpp | FUN_0057c660 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057cc40 | fin_cup.cpp | FUN_0057cc40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057d0c0 | fin_first.cpp | FUN_0057d0c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057d2f0 | fin_first.cpp | FUN_0057d2f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057d310 | fin_first.cpp | FUN_0057d310 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057dc80 | fin_first.cpp | FUN_0057dc80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057dd90 | fin_first.cpp | FUN_0057dd90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057e290 | fin_first.cpp | FUN_0057e290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057e820 | fin_first.cpp | FUN_0057e820 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057eee0 | fin_first.cpp | FUN_0057eee0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057f200 | fin_first.cpp | FUN_0057f200 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057f370 | fin_prm.cpp | FUN_0057f370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057f600 | fin_prm.cpp | FUN_0057f600 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057f620 | fin_prm.cpp | FUN_0057f620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057fd70 | fin_prm.cpp | FUN_0057fd70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0057fe90 | fin_prm.cpp | FUN_0057fe90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00580100 | fin_prm.cpp | FUN_00580100 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00580250 | fin_prm.cpp | FUN_00580250 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00593620 | finland_awards.cpp | FUN_00593620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00593760 | finland_awards.cpp | FUN_00593760 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00593fd0 | finland_rules.cpp | FUN_00593fd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a34d0 | fra_cfa.cpp | FUN_005a34d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a3730 | fra_cfa.cpp | FUN_005a3730 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a3750 | fra_cfa.cpp | FUN_005a3750 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a4290 | fra_cfa.cpp | FUN_005a4290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a4390 | fra_cup.cpp | FUN_005a4390 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a4560 | fra_cup.cpp | FUN_005a4560 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a4580 | fra_cup.cpp | FUN_005a4580 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a4cb0 | fra_cup.cpp | FUN_005a4cb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a5390 | fra_first.cpp | FUN_005a5390 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a5770 | fra_first.cpp | FUN_005a5770 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a5790 | fra_first.cpp | FUN_005a5790 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a57d0 | fra_first.cpp | FUN_005a57d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a57f0 | fra_first.cpp | FUN_005a57f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a5800 | fra_first.cpp | FUN_005a5800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a5820 | fra_first.cpp | FUN_005a5820 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a64f0 | fra_first.cpp | FUN_005a64f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a6650 | fra_first.cpp | FUN_005a6650 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a69c0 | fra_first.cpp | FUN_005a69c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a6bc0 | fra_lge_cup.cpp | FUN_005a6bc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a6d90 | fra_lge_cup.cpp | FUN_005a6d90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a6db0 | fra_lge_cup.cpp | FUN_005a6db0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a73a0 | fra_lge_cup.cpp | FUN_005a73a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a7810 | fra_lge_cup.cpp | FUN_005a7810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a7840 | fra_lower.cpp | FUN_005a7840 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a7a90 | fra_lower.cpp | FUN_005a7a90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a7ab0 | fra_lower.cpp | FUN_005a7ab0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a8470 | fra_lower.cpp | FUN_005a8470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a8570 | fra_lower.cpp | FUN_005a8570 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a8600 | fra_second.cpp | FUN_005a8600 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a8810 | fra_second.cpp | FUN_005a8810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a8830 | fra_second.cpp | FUN_005a8830 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a91e0 | fra_second.cpp | FUN_005a91e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a9370 | fra_second.cpp | FUN_005a9370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a95f0 | fra_super.cpp | FUN_005a95f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a97b0 | fra_super.cpp | FUN_005a97b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a97d0 | fra_super.cpp | FUN_005a97d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a98a0 | fra_super.cpp | FUN_005a98a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a9a40 | fra_super.cpp | FUN_005a9a40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005a9e10 | fra_third.cpp | FUN_005a9e10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005aa020 | fra_third.cpp | FUN_005aa020 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005aa040 | fra_third.cpp | FUN_005aa040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005aa8a0 | fra_third.cpp | FUN_005aa8a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005aa9d0 | fra_third.cpp | FUN_005aa9d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005aac50 | fra_third.cpp | FUN_005aac50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005aacf0 | france_awards.cpp | FUN_005aacf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005ab840 | france_awards.cpp | FUN_005ab840 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005ab8b0 | france_rules.cpp | FUN_005ab8b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005ab9e0 | france_rules.cpp | FUN_005ab9e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c28d0 | ger_cup.cpp | FUN_005c28d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c2aa0 | ger_cup.cpp | FUN_005c2aa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c2ac0 | ger_cup.cpp | FUN_005c2ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c3020 | ger_cup.cpp | FUN_005c3020 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c3660 | ger_first.cpp | FUN_005c3660 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c3870 | ger_first.cpp | FUN_005c3870 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c3890 | ger_first.cpp | FUN_005c3890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c4ee0 | ger_first.cpp | FUN_005c4ee0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c50b0 | ger_first.cpp | FUN_005c50b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5460 | ger_first.cpp | FUN_005c5460 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5630 | ger_first.cpp | FUN_005c5630 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5880 | ger_first.cpp | FUN_005c5880 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5c00 | ger_first.cpp | FUN_005c5c00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5d90 | ger_lge_cup.cpp | FUN_005c5d90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5f60 | ger_lge_cup.cpp | FUN_005c5f60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c5f80 | ger_lge_cup.cpp | FUN_005c5f80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c63b0 | ger_lge_cup.cpp | FUN_005c63b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c6840 | ger_lge_cup.cpp | FUN_005c6840 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c6880 | ger_regional.cpp | FUN_005c6880 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c6ab0 | ger_regional.cpp | FUN_005c6ab0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c6ad0 | ger_regional.cpp | FUN_005c6ad0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c7490 | ger_regional.cpp | FUN_005c7490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c7690 | ger_regional.cpp | FUN_005c7690 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c78f0 | ger_regional.cpp | FUN_005c78f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c7dd0 | ger_regional.cpp | FUN_005c7dd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c7f80 | ger_second.cpp | FUN_005c7f80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c8190 | ger_second.cpp | FUN_005c8190 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c81b0 | ger_second.cpp | FUN_005c81b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c8f50 | ger_second.cpp | FUN_005c8f50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c9080 | ger_second.cpp | FUN_005c9080 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c92f0 | germany_awards.cpp | FUN_005c92f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c9430 | germany_awards.cpp | FUN_005c9430 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c9c10 | germany_awards.cpp | FUN_005c9c10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c9c60 | germany_awards.cpp | FUN_005c9c60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005c9cd0 | germany_rules.cpp | FUN_005c9cd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d2240 | gre_cup.cpp | FUN_005d2240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d2490 | gre_cup.cpp | FUN_005d2490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d24b0 | gre_cup.cpp | FUN_005d24b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d2c00 | gre_cup.cpp | FUN_005d2c00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d2cf0 | gre_cup.cpp | FUN_005d2cf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d31f0 | gre_cup.cpp | FUN_005d31f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d3420 | gre_cup.cpp | FUN_005d3420 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d3950 | gre_cup.cpp | FUN_005d3950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d3d00 | gre_prm.cpp | FUN_005d3d00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d3f10 | gre_prm.cpp | FUN_005d3f10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d3f30 | gre_prm.cpp | FUN_005d3f30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d4650 | gre_prm.cpp | FUN_005d4650 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d4780 | gre_prm.cpp | FUN_005d4780 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d4a10 | gre_prm.cpp | FUN_005d4a10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d4ba0 | gre_second.cpp | FUN_005d4ba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d4db0 | gre_second.cpp | FUN_005d4db0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d4dd0 | gre_second.cpp | FUN_005d4dd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d55a0 | gre_second.cpp | FUN_005d55a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d56d0 | gre_second.cpp | FUN_005d56d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d5930 | gre_super.cpp | FUN_005d5930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d5af0 | gre_super.cpp | FUN_005d5af0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d5b10 | gre_super.cpp | FUN_005d5b10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d5d20 | gre_super.cpp | FUN_005d5d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d6140 | gre_super.cpp | FUN_005d6140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d61d0 | greece_awards.cpp | FUN_005d61d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005d67a0 | greece_awards.cpp | FUN_005d67a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dcee0 | hol_cup.cpp | FUN_005dcee0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dd070 | hol_cup.cpp | FUN_005dd070 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dd090 | hol_cup.cpp | FUN_005dd090 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dd800 | hol_cup.cpp | FUN_005dd800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dd900 | hol_cup.cpp | FUN_005dd900 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005ddcb0 | hol_cup.cpp | FUN_005ddcb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005ddf10 | hol_cup.cpp | FUN_005ddf10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005de2b0 | hol_cup.cpp | FUN_005de2b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005deb00 | hol_cup.cpp | FUN_005deb00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005def20 | hol_first.cpp | FUN_005def20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005df140 | hol_first.cpp | FUN_005df140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005df160 | hol_first.cpp | FUN_005df160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dfcd0 | hol_first.cpp | FUN_005dfcd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005dfdd0 | hol_first.cpp | FUN_005dfdd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e0040 | hol_first.cpp | FUN_005e0040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e01b0 | hol_first.cpp | FUN_005e01b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e0560 | hol_first.cpp | FUN_005e0560 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e0dc0 | hol_first.cpp | FUN_005e0dc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e0e60 | hol_first.cpp | FUN_005e0e60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e10a0 | hol_prm.cpp | FUN_005e10a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e12b0 | hol_prm.cpp | FUN_005e12b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e12d0 | hol_prm.cpp | FUN_005e12d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e1ec0 | hol_prm.cpp | FUN_005e1ec0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e1ff0 | hol_prm.cpp | FUN_005e1ff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e22b0 | hol_super.cpp | FUN_005e22b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e2470 | hol_super.cpp | FUN_005e2470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e2490 | hol_super.cpp | FUN_005e2490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e2560 | hol_super.cpp | FUN_005e2560 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e26a0 | hol_super.cpp | FUN_005e26a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e2a70 | hol_super.cpp | FUN_005e2a70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e2b00 | holland_awards.cpp | FUN_005e2b00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e3120 | holland_rules.cpp | FUN_005e3120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x005e32c0 | holland_rules.cpp | FUN_005e32c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061b760 | inter_amer_cup.cpp | FUN_0061b760 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061b930 | inter_amer_cup.cpp | FUN_0061b930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061b950 | inter_amer_cup.cpp | FUN_0061b950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061c1a0 | inter_amer_cup.cpp | FUN_0061c1a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061d730 | ire_chal_cup.cpp | FUN_0061d730 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061d900 | ire_chal_cup.cpp | FUN_0061d900 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061d920 | ire_chal_cup.cpp | FUN_0061d920 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061de60 | ire_chal_cup.cpp | FUN_0061de60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061e2a0 | ire_first.cpp | FUN_0061e2a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061e4c0 | ire_first.cpp | FUN_0061e4c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061e4e0 | ire_first.cpp | FUN_0061e4e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061ef70 | ire_first.cpp | FUN_0061ef70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061f100 | ire_first.cpp | FUN_0061f100 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061f420 | ire_first.cpp | FUN_0061f420 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061fb00 | ire_leinster_cup.cpp | FUN_0061fb00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061fcd0 | ire_leinster_cup.cpp | FUN_0061fcd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0061fcf0 | ire_leinster_cup.cpp | FUN_0061fcf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006200e0 | ire_leinster_cup.cpp | FUN_006200e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00620430 | ire_lge_cup.cpp | FUN_00620430 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00620680 | ire_lge_cup.cpp | FUN_00620680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006206a0 | ire_lge_cup.cpp | FUN_006206a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00620c20 | ire_lge_cup.cpp | FUN_00620c20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00620d20 | ire_lge_cup.cpp | FUN_00620d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621020 | ire_lge_cup.cpp | FUN_00621020 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621260 | ire_lge_cup.cpp | FUN_00621260 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621430 | ire_lge_cup.cpp | FUN_00621430 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621a80 | ire_lge_cup.cpp | FUN_00621a80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621e00 | ire_munster_cup.cpp | FUN_00621e00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621fd0 | ire_munster_cup.cpp | FUN_00621fd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00621ff0 | ire_munster_cup.cpp | FUN_00621ff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00622490 | ire_munster_cup.cpp | FUN_00622490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006228d0 | ire_munster_cup.cpp | FUN_006228d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00622900 | ire_pres_cup.cpp | FUN_00622900 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00622ac0 | ire_pres_cup.cpp | FUN_00622ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00622ae0 | ire_pres_cup.cpp | FUN_00622ae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00622cf0 | ire_pres_cup.cpp | FUN_00622cf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00623040 | ire_pres_cup.cpp | FUN_00623040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00623240 | ire_prm.cpp | FUN_00623240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00623470 | ire_prm.cpp | FUN_00623470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00623490 | ire_prm.cpp | FUN_00623490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00623dd0 | ire_prm.cpp | FUN_00623dd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00623f90 | ire_prm.cpp | FUN_00623f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624360 | ire_super_cup.cpp | FUN_00624360 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624510 | ire_super_cup.cpp | FUN_00624510 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624530 | ire_super_cup.cpp | FUN_00624530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624750 | ire_super_cup.cpp | FUN_00624750 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624b50 | ire_super_cup.cpp | FUN_00624b50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624ce0 | ireland_awards.cpp | FUN_00624ce0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00624e30 | ireland_awards.cpp | FUN_00624e30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00625800 | ireland_awards.cpp | FUN_00625800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006258b0 | ireland_rules.cpp | FUN_006258b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006259d0 | ireland_rules.cpp | FUN_006259d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00625a50 | ireland_rules.cpp | FUN_00625a50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00625c60 | ita_c1_super.cpp | FUN_00625c60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00625e20 | ita_c1_super.cpp | FUN_00625e20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00625e40 | ita_c1_super.cpp | FUN_00625e40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00625f10 | ita_c1_super.cpp | FUN_00625f10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00626050 | ita_c1_super.cpp | FUN_00626050 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006262c0 | ita_c_cup.cpp | FUN_006262c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00626510 | ita_c_cup.cpp | FUN_00626510 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00626530 | ita_c_cup.cpp | FUN_00626530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00626c60 | ita_c_cup.cpp | FUN_00626c60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00626d60 | ita_c_cup.cpp | FUN_00626d60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00627290 | ita_c_cup.cpp | FUN_00627290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00627660 | ita_c_cup.cpp | FUN_00627660 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00627c00 | ita_c_cup.cpp | FUN_00627c00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00627f80 | ita_c_cup.cpp | FUN_00627f80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006281d0 | ita_cup.cpp | FUN_006281d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006281f0 | ita_cup.cpp | FUN_006281f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006288d0 | ita_cup.cpp | FUN_006288d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006289d0 | ita_cup.cpp | FUN_006289d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00628cc0 | ita_cup.cpp | FUN_00628cc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00628ef0 | ita_cup.cpp | FUN_00628ef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00629170 | ita_cup.cpp | FUN_00629170 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00629890 | ita_cup.cpp | FUN_00629890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00629d50 | ita_ser_a.cpp | FUN_00629d50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00629f80 | ita_ser_a.cpp | FUN_00629f80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00629fa0 | ita_ser_a.cpp | FUN_00629fa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062ab90 | ita_ser_a.cpp | FUN_0062ab90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062acc0 | ita_ser_a.cpp | FUN_0062acc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062b0f0 | ita_ser_a.cpp | FUN_0062b0f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062b640 | ita_ser_a.cpp | FUN_0062b640 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062b840 | ita_ser_a.cpp | FUN_0062b840 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062bcb0 | ita_ser_a.cpp | FUN_0062bcb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062be10 | ita_ser_a.cpp | FUN_0062be10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062c0f0 | ita_ser_a.cpp | FUN_0062c0f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062c180 | ita_ser_a.cpp | FUN_0062c180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062ef10 | ita_ser_b.cpp | FUN_0062ef10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062f140 | ita_ser_b.cpp | FUN_0062f140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062f160 | ita_ser_b.cpp | FUN_0062f160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062fe80 | ita_ser_b.cpp | FUN_0062fe80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0062ffa0 | ita_ser_b.cpp | FUN_0062ffa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006302b0 | ita_ser_b.cpp | FUN_006302b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006308a0 | ita_ser_b.cpp | FUN_006308a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006340e0 | ita_ser_c1a.cpp | FUN_006340e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00634310 | ita_ser_c1a.cpp | FUN_00634310 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00634330 | ita_ser_c1a.cpp | FUN_00634330 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00634ce0 | ita_ser_c1a.cpp | FUN_00634ce0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00634de0 | ita_ser_c1a.cpp | FUN_00634de0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006350e0 | ita_ser_c1a.cpp | FUN_006350e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00635500 | ita_ser_c1a.cpp | FUN_00635500 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00638290 | ita_ser_c1b.cpp | FUN_00638290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006384c0 | ita_ser_c1b.cpp | FUN_006384c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006384e0 | ita_ser_c1b.cpp | FUN_006384e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00638e90 | ita_ser_c1b.cpp | FUN_00638e90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00638f90 | ita_ser_c1b.cpp | FUN_00638f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006392a0 | ita_ser_c1b.cpp | FUN_006392a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00639890 | ita_ser_c1b.cpp | FUN_00639890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063c620 | ita_ser_c2a.cpp | FUN_0063c620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063c850 | ita_ser_c2a.cpp | FUN_0063c850 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063c870 | ita_ser_c2a.cpp | FUN_0063c870 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063d220 | ita_ser_c2a.cpp | FUN_0063d220 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063d320 | ita_ser_c2a.cpp | FUN_0063d320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063d620 | ita_ser_c2a.cpp | FUN_0063d620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0063da20 | ita_ser_c2a.cpp | FUN_0063da20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006407b0 | ita_ser_c2b.cpp | FUN_006407b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006409e0 | ita_ser_c2b.cpp | FUN_006409e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00640a00 | ita_ser_c2b.cpp | FUN_00640a00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006413b0 | ita_ser_c2b.cpp | FUN_006413b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006414b0 | ita_ser_c2b.cpp | FUN_006414b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006417b0 | ita_ser_c2b.cpp | FUN_006417b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00641bb0 | ita_ser_c2b.cpp | FUN_00641bb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00644940 | ita_ser_c2c.cpp | FUN_00644940 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00644b70 | ita_ser_c2c.cpp | FUN_00644b70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00644b90 | ita_ser_c2c.cpp | FUN_00644b90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00645540 | ita_ser_c2c.cpp | FUN_00645540 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00645640 | ita_ser_c2c.cpp | FUN_00645640 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00645940 | ita_ser_c2c.cpp | FUN_00645940 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00645f50 | ita_ser_c2c.cpp | FUN_00645f50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00648ce0 | ita_super.cpp | FUN_00648ce0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00648ea0 | ita_super.cpp | FUN_00648ea0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00648ec0 | ita_super.cpp | FUN_00648ec0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00648f90 | ita_super.cpp | FUN_00648f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006490d0 | ita_super.cpp | FUN_006490d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006494a0 | ita_super.cpp | FUN_006494a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006494d0 | ita_super.cpp | FUN_006494d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00649560 | italy_awards.cpp | FUN_00649560 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064aa20 | italy_awards.cpp | FUN_0064aa20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064aa90 | italy_rules.cpp | FUN_0064aa90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064acd0 | italy_rules.cpp | FUN_0064acd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064af90 | italy_rules.cpp | FUN_0064af90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064b3d0 | jap_emp_cup.cpp | FUN_0064b3d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064b5a0 | jap_emp_cup.cpp | FUN_0064b5a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064b5c0 | jap_emp_cup.cpp | FUN_0064b5c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064b690 | jap_emp_cup.cpp | FUN_0064b690 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064bb90 | jap_emp_cup.cpp | FUN_0064bb90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064c1d0 | jap_emp_cup.cpp | FUN_0064c1d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064c200 | jap_j1.cpp | FUN_0064c200 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064c420 | jap_j1.cpp | FUN_0064c420 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064c440 | jap_j1.cpp | FUN_0064c440 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064cbb0 | jap_j1.cpp | FUN_0064cbb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064ccf0 | jap_j1.cpp | FUN_0064ccf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064d010 | jap_j1.cpp | FUN_0064d010 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064d120 | jap_j1.cpp | FUN_0064d120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064d2f0 | jap_j1.cpp | FUN_0064d2f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064da60 | jap_j1.cpp | FUN_0064da60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064dad0 | jap_j1.cpp | FUN_0064dad0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064db90 | jap_j2.cpp | FUN_0064db90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064dda0 | jap_j2.cpp | FUN_0064dda0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064ddc0 | jap_j2.cpp | FUN_0064ddc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064e700 | jap_j2.cpp | FUN_0064e700 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064e810 | jap_j2.cpp | FUN_0064e810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064eb00 | jap_j_cup.cpp | FUN_0064eb00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064ecd0 | jap_j_cup.cpp | FUN_0064ecd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064ecf0 | jap_j_cup.cpp | FUN_0064ecf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064edc0 | jap_j_cup.cpp | FUN_0064edc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f180 | jap_j_cup.cpp | FUN_0064f180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f4f0 | jap_j_cup.cpp | FUN_0064f4f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f520 | jap_super.cpp | FUN_0064f520 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f6e0 | jap_super.cpp | FUN_0064f6e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f700 | jap_super.cpp | FUN_0064f700 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f7d0 | jap_super.cpp | FUN_0064f7d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064f910 | jap_super.cpp | FUN_0064f910 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064fe40 | jap_super.cpp | FUN_0064fe40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0064fed0 | japan_awards.cpp | FUN_0064fed0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00650380 | japan_awards.cpp | FUN_00650380 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x006503f0 | japan_rules.cpp | FUN_006503f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00650890 | japan_rules.cpp | FUN_00650890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00771ec0 | nir_charity.cpp | FUN_00771ec0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772080 | nir_charity.cpp | FUN_00772080 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007720a0 | nir_charity.cpp | FUN_007720a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772170 | nir_charity.cpp | FUN_00772170 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007722b0 | nir_charity.cpp | FUN_007722b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772680 | nir_cup.cpp | FUN_00772680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772850 | nir_cup.cpp | FUN_00772850 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772870 | nir_cup.cpp | FUN_00772870 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772940 | nir_cup.cpp | FUN_00772940 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00772d60 | nir_cup.cpp | FUN_00772d60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007730b0 | nir_cup.cpp | FUN_007730b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007730e0 | nir_first.cpp | FUN_007730e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00773300 | nir_first.cpp | FUN_00773300 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00773320 | nir_first.cpp | FUN_00773320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00773d20 | nir_first.cpp | FUN_00773d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00773e40 | nir_first.cpp | FUN_00773e40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00774170 | nir_first.cpp | FUN_00774170 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00774850 | nir_lge_cup.cpp | FUN_00774850 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00774aa0 | nir_lge_cup.cpp | FUN_00774aa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00774ac0 | nir_lge_cup.cpp | FUN_00774ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007750a0 | nir_lge_cup.cpp | FUN_007750a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007751a0 | nir_lge_cup.cpp | FUN_007751a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00775490 | nir_lge_cup.cpp | FUN_00775490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007756d0 | nir_lge_cup.cpp | FUN_007756d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007758d0 | nir_lge_cup.cpp | FUN_007758d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00775da0 | nir_lge_cup.cpp | FUN_00775da0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00776140 | nir_prm.cpp | FUN_00776140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00776350 | nir_prm.cpp | FUN_00776350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00776370 | nir_prm.cpp | FUN_00776370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00776d30 | nir_prm.cpp | FUN_00776d30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00776e50 | nir_prm.cpp | FUN_00776e50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007770f0 | nor_cup.cpp | FUN_007770f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007772c0 | nor_cup.cpp | FUN_007772c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007772e0 | nor_cup.cpp | FUN_007772e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007773b0 | nor_cup.cpp | FUN_007773b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00777960 | nor_cup.cpp | FUN_00777960 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00777e10 | nor_first.cpp | FUN_00777e10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00778030 | nor_first.cpp | FUN_00778030 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00778050 | nor_first.cpp | FUN_00778050 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00778a70 | nor_first.cpp | FUN_00778a70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00778bd0 | nor_first.cpp | FUN_00778bd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00778ef0 | nor_first.cpp | FUN_00778ef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007795d0 | nor_prm.cpp | FUN_007795d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007797e0 | nor_prm.cpp | FUN_007797e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00779800 | nor_prm.cpp | FUN_00779800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077a6b0 | nor_prm.cpp | FUN_0077a6b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077a7d0 | nor_prm.cpp | FUN_0077a7d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077aa30 | nor_prm.cpp | FUN_0077aa30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077ac10 | nor_prm.cpp | FUN_0077ac10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077ae50 | northern_ireland_awards.cpp | FUN_0077ae50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077af90 | northern_ireland_awards.cpp | FUN_0077af90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077b7a0 | northern_ireland_rules.cpp | FUN_0077b7a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077b8c0 | northern_ireland_rules.cpp | FUN_0077b8c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077b940 | northern_ireland_rules.cpp | FUN_0077b940 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077b9d0 | norway_awards.cpp | FUN_0077b9d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077bb10 | norway_awards.cpp | FUN_0077bb10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077c580 | norway_rules.cpp | FUN_0077c580 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077caf0 | norway_rules.cpp | FUN_0077caf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077cbc0 | norway_rules.cpp | FUN_0077cbc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077f150 | oceania_club_champ.cpp | FUN_0077f150 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077f2d0 | oceania_club_champ.cpp | FUN_0077f2d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077f2f0 | oceania_club_champ.cpp | FUN_0077f2f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077fa40 | oceania_club_champ.cpp | FUN_0077fa40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077fb30 | oceania_club_champ.cpp | FUN_0077fb30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077fcc0 | oceania_club_champ.cpp | FUN_0077fcc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0077fee0 | oceania_club_champ.cpp | FUN_0077fee0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00780000 | oceania_club_champ.cpp | FUN_00780000 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007801d0 | oceania_club_champ.cpp | FUN_007801d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007803a0 | oceania_club_champ.cpp | FUN_007803a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00780a30 | oceania_nations.cpp | FUN_00780a30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00780c00 | oceania_nations.cpp | FUN_00780c00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00780c20 | oceania_nations.cpp | FUN_00780c20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00781720 | oceania_nations.cpp | FUN_00781720 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00781810 | oceania_nations.cpp | FUN_00781810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00781be0 | oceania_nations.cpp | FUN_00781be0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00781dd0 | oceania_nations.cpp | FUN_00781dd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00781fb0 | oceania_nations.cpp | FUN_00781fb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00782280 | oceania_nations.cpp | FUN_00782280 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007826b0 | oceania_nations.cpp | FUN_007826b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00782ef0 | oceania_nations.cpp | FUN_00782ef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007838d0 | oceania_nations.cpp | FUN_007838d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00783b50 | oceania_nations.cpp | FUN_00783b50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00785890 | old_finland_awards.cpp | FUN_00785890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007859d0 | old_finland_awards.cpp | FUN_007859d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00786040 | old_finland_awards.cpp | FUN_00786040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007860d0 | old_france_awards.cpp | FUN_007860d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00786680 | old_france_awards.cpp | FUN_00786680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007868b0 | old_france_awards.cpp | FUN_007868b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00786d30 | old_ireland_awards.cpp | FUN_00786d30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00786e70 | old_ireland_awards.cpp | FUN_00786e70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0190 | pol_cup.cpp | FUN_007b0190 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0360 | pol_cup.cpp | FUN_007b0360 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0380 | pol_cup.cpp | FUN_007b0380 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0450 | pol_cup.cpp | FUN_007b0450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0960 | pol_cup.cpp | FUN_007b0960 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0e60 | pol_cup.cpp | FUN_007b0e60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b0e90 | pol_first.cpp | FUN_007b0e90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b1140 | pol_first.cpp | FUN_007b1140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b1160 | pol_first.cpp | FUN_007b1160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b1860 | pol_first.cpp | FUN_007b1860 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b1aa0 | pol_first.cpp | FUN_007b1aa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b1d10 | pol_first.cpp | FUN_007b1d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b1f70 | pol_first.cpp | FUN_007b1f70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b2440 | pol_first.cpp | FUN_007b2440 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b28a0 | pol_first.cpp | FUN_007b28a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b28f0 | pol_lge_cup.cpp | FUN_007b28f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b2ac0 | pol_lge_cup.cpp | FUN_007b2ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b2ae0 | pol_lge_cup.cpp | FUN_007b2ae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b2bb0 | pol_lge_cup.cpp | FUN_007b2bb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b3140 | pol_lge_cup.cpp | FUN_007b3140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b35a0 | pol_lge_cup.cpp | FUN_007b35a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b35e0 | pol_second.cpp | FUN_007b35e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b3800 | pol_second.cpp | FUN_007b3800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b3820 | pol_second.cpp | FUN_007b3820 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b4200 | pol_second.cpp | FUN_007b4200 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b4350 | pol_second.cpp | FUN_007b4350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b46a0 | pol_second.cpp | FUN_007b46a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b4d30 | pol_super.cpp | FUN_007b4d30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b4ef0 | pol_super.cpp | FUN_007b4ef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b4f10 | pol_super.cpp | FUN_007b4f10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b4fe0 | pol_super.cpp | FUN_007b4fe0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b5120 | pol_super.cpp | FUN_007b5120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b5540 | pol_super.cpp | FUN_007b5540 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b55d0 | poland_awards.cpp | FUN_007b55d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b5c40 | poland_rules.cpp | FUN_007b5c40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b5d90 | por_cup.cpp | FUN_007b5d90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b5f60 | por_cup.cpp | FUN_007b5f60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b5f80 | por_cup.cpp | FUN_007b5f80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b6050 | por_cup.cpp | FUN_007b6050 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b6630 | por_cup.cpp | FUN_007b6630 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b6b00 | por_prm.cpp | FUN_007b6b00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b6d10 | por_prm.cpp | FUN_007b6d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b6d30 | por_prm.cpp | FUN_007b6d30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b7be0 | por_prm.cpp | FUN_007b7be0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b7d10 | por_prm.cpp | FUN_007b7d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b8110 | por_prm.cpp | FUN_007b8110 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b8350 | por_prm.cpp | FUN_007b8350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b85f0 | por_prm.cpp | FUN_007b85f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b8700 | por_prm.cpp | FUN_007b8700 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b8d30 | por_second.cpp | FUN_007b8d30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b8f40 | por_second.cpp | FUN_007b8f40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b8f60 | por_second.cpp | FUN_007b8f60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b9900 | por_second.cpp | FUN_007b9900 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b9a80 | por_second.cpp | FUN_007b9a80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b9d00 | por_second_b.cpp | FUN_007b9d00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b9f40 | por_second_b.cpp | FUN_007b9f40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007b9f60 | por_second_b.cpp | FUN_007b9f60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ba7e0 | por_second_b.cpp | FUN_007ba7e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ba9f0 | por_second_b.cpp | FUN_007ba9f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bac50 | por_second_b.cpp | FUN_007bac50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bb0b0 | por_second_b.cpp | FUN_007bb0b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bb290 | por_super.cpp | FUN_007bb290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bb450 | por_super.cpp | FUN_007bb450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bb470 | por_super.cpp | FUN_007bb470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bb540 | por_super.cpp | FUN_007bb540 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bb6b0 | por_super.cpp | FUN_007bb6b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bba80 | por_super.cpp | FUN_007bba80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bbb10 | portugal_awards.cpp | FUN_007bbb10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bc1d0 | portugal_awards.cpp | FUN_007bc1d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007bc240 | portugal_rules.cpp | FUN_007bc240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c3790 | rb_argentina.cpp | FUN_007c3790 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c37e0 | rb_argentina.cpp | FUN_007c37e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c3d20 | rb_australia.cpp | FUN_007c3d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c3d70 | rb_australia.cpp | FUN_007c3d70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c40d0 | rb_belgium_cup.cpp | FUN_007c40d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c4120 | rb_belgium_cup.cpp | FUN_007c4120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c44b0 | rb_belgium_league.cpp | FUN_007c44b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c4830 | rb_brazil_national.cpp | FUN_007c4830 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c4b70 | rb_brazil_regional.cpp | FUN_007c4b70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c4bc0 | rb_brazil_regional.cpp | FUN_007c4bc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c4f50 | rb_croatia.cpp | FUN_007c4f50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c4fa0 | rb_croatia.cpp | FUN_007c4fa0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c5400 | rb_denmark.cpp | FUN_007c5400 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c5480 | rb_denmark.cpp | FUN_007c5480 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c5e00 | rb_finland_cup.cpp | FUN_007c5e00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c5e50 | rb_finland_cup.cpp | FUN_007c5e50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6130 | rb_finland_league.cpp | FUN_007c6130 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6180 | rb_finland_league.cpp | FUN_007c6180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6750 | rb_france.cpp | FUN_007c6750 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c67a0 | rb_france.cpp | FUN_007c67a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6a90 | rb_germany_cup.cpp | FUN_007c6a90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6ae0 | rb_germany_cup.cpp | FUN_007c6ae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6dd0 | rb_germany_league.cpp | FUN_007c6dd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c6e20 | rb_germany_league.cpp | FUN_007c6e20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c71c0 | rb_greece.cpp | FUN_007c71c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c7210 | rb_greece.cpp | FUN_007c7210 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c75b0 | rb_holland.cpp | FUN_007c75b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c75f0 | rb_holland.cpp | FUN_007c75f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c7d90 | rb_ireland.cpp | FUN_007c7d90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c7de0 | rb_ireland.cpp | FUN_007c7de0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c8160 | rb_italy_cup.cpp | FUN_007c8160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c81b0 | rb_italy_cup.cpp | FUN_007c81b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c85a0 | rb_italy_league.cpp | FUN_007c85a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c85f0 | rb_italy_league.cpp | FUN_007c85f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c8880 | rb_japan_cup.cpp | FUN_007c8880 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c88d0 | rb_japan_cup.cpp | FUN_007c88d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c8b20 | rb_japan_league.cpp | FUN_007c8b20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c8b70 | rb_japan_league.cpp | FUN_007c8b70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c8f20 | rb_northern_ireland.cpp | FUN_007c8f20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9180 | rb_norway_cup.cpp | FUN_007c9180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9400 | rb_norway_league.cpp | FUN_007c9400 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9450 | rb_norway_league.cpp | FUN_007c9450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9a90 | rb_poland.cpp | FUN_007c9a90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9ae0 | rb_poland.cpp | FUN_007c9ae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9e30 | rb_portugal.cpp | FUN_007c9e30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9e80 | rb_portugal.cpp | FUN_007c9e80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ca1d0 | rb_russia.cpp | FUN_007ca1d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ca220 | rb_russia.cpp | FUN_007ca220 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ca4a0 | rb_scotland_cup.cpp | FUN_007ca4a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ca4f0 | rb_scotland_cup.cpp | FUN_007ca4f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ca750 | rb_scotland_cup.cpp | FUN_007ca750 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007ca960 | rb_scotland_league.cpp | FUN_007ca960 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007caa10 | rb_scotland_league.cpp | FUN_007caa10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007caa60 | rb_scotland_league.cpp | FUN_007caa60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007caff0 | rb_spain_cup.cpp | FUN_007caff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cb040 | rb_spain_cup.cpp | FUN_007cb040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cb380 | rb_spain_league.cpp | FUN_007cb380 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cb3d0 | rb_spain_league.cpp | FUN_007cb3d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cb750 | rb_sweden_cup.cpp | FUN_007cb750 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cb7a0 | rb_sweden_cup.cpp | FUN_007cb7a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cbac0 | rb_sweden_league.cpp | FUN_007cbac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cbb10 | rb_sweden_league.cpp | FUN_007cbb10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cbe50 | rb_turkey_cup.cpp | FUN_007cbe50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cbea0 | rb_turkey_cup.cpp | FUN_007cbea0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cc1a0 | rb_turkey_league.cpp | FUN_007cc1a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cc1f0 | rb_turkey_league.cpp | FUN_007cc1f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cc470 | rb_usa.cpp | FUN_007cc470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cc4c0 | rb_usa.cpp | FUN_007cc4c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d1330 | rus_cup.cpp | FUN_007d1330 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d1520 | rus_cup.cpp | FUN_007d1520 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d1540 | rus_cup.cpp | FUN_007d1540 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d1650 | rus_cup.cpp | FUN_007d1650 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d1ac0 | rus_cup.cpp | FUN_007d1ac0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d1fe0 | rus_cup.cpp | FUN_007d1fe0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2080 | rus_first.cpp | FUN_007d2080 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2290 | rus_first.cpp | FUN_007d2290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d22b0 | rus_first.cpp | FUN_007d22b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2810 | rus_first.cpp | FUN_007d2810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2960 | rus_first.cpp | FUN_007d2960 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2bd0 | rus_prm.cpp | FUN_007d2bd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2df0 | rus_prm.cpp | FUN_007d2df0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d2e10 | rus_prm.cpp | FUN_007d2e10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d3760 | rus_prm.cpp | FUN_007d3760 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d3890 | rus_prm.cpp | FUN_007d3890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d3be0 | rus_prm.cpp | FUN_007d3be0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d3f70 | rus_prm.cpp | FUN_007d3f70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d4340 | rus_prm.cpp | FUN_007d4340 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d43d0 | russia_awards.cpp | FUN_007d43d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d47f0 | russia_awards.cpp | FUN_007d47f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d48a0 | russia_awards.cpp | FUN_007d48a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d4910 | russia_rules.cpp | FUN_007d4910 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d4b20 | sco_chal_cup.cpp | FUN_007d4b20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d4cf0 | sco_chal_cup.cpp | FUN_007d4cf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d4d10 | sco_chal_cup.cpp | FUN_007d4d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d4de0 | sco_chal_cup.cpp | FUN_007d4de0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d51b0 | sco_chal_cup.cpp | FUN_007d51b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d5480 | sco_chal_cup.cpp | FUN_007d5480 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d54b0 | sco_fa_cup.cpp | FUN_007d54b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d5680 | sco_fa_cup.cpp | FUN_007d5680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d56a0 | sco_fa_cup.cpp | FUN_007d56a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d5770 | sco_fa_cup.cpp | FUN_007d5770 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d5c90 | sco_fa_cup.cpp | FUN_007d5c90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d6160 | sco_first.cpp | FUN_007d6160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d63a0 | sco_first.cpp | FUN_007d63a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d63c0 | sco_first.cpp | FUN_007d63c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d6ed0 | sco_first.cpp | FUN_007d6ed0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d6ff0 | sco_first.cpp | FUN_007d6ff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d74e0 | sco_first.cpp | FUN_007d74e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d7b80 | sco_lge_cup.cpp | FUN_007d7b80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d7d60 | sco_lge_cup.cpp | FUN_007d7d60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d7d80 | sco_lge_cup.cpp | FUN_007d7d80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d7e50 | sco_lge_cup.cpp | FUN_007d7e50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d85a0 | sco_lge_cup.cpp | FUN_007d85a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d8d20 | sco_prm.cpp | FUN_007d8d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d8f70 | sco_prm.cpp | FUN_007d8f70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007d8f90 | sco_prm.cpp | FUN_007d8f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007da9c0 | sco_prm.cpp | FUN_007da9c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dab10 | sco_prm.cpp | FUN_007dab10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007daf30 | sco_prm.cpp | FUN_007daf30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007db3f0 | sco_second.cpp | FUN_007db3f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007db600 | sco_second.cpp | FUN_007db600 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007db620 | sco_second.cpp | FUN_007db620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dc020 | sco_second.cpp | FUN_007dc020 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dc120 | sco_second.cpp | FUN_007dc120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dc390 | sco_third.cpp | FUN_007dc390 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dc5a0 | sco_third.cpp | FUN_007dc5a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dc5c0 | sco_third.cpp | FUN_007dc5c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dcfc0 | sco_third.cpp | FUN_007dcfc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dd0c0 | sco_third.cpp | FUN_007dd0c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dd310 | scotland_awards.cpp | FUN_007dd310 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007dd450 | scotland_awards.cpp | FUN_007dd450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007de530 | scotland_rules.cpp | FUN_007de530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008360f0 | spa_cup.cpp | FUN_008360f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008362d0 | spa_cup.cpp | FUN_008362d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008362f0 | spa_cup.cpp | FUN_008362f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008363c0 | spa_cup.cpp | FUN_008363c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00836ab0 | spa_cup.cpp | FUN_00836ab0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008372d0 | spa_first.cpp | FUN_008372d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00837530 | spa_first.cpp | FUN_00837530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00837550 | spa_first.cpp | FUN_00837550 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00838e10 | spa_first.cpp | FUN_00838e10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00838f90 | spa_first.cpp | FUN_00838f90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00839260 | spa_first.cpp | FUN_00839260 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008394a0 | spa_first.cpp | FUN_008394a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008396d0 | spa_first.cpp | FUN_008396d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00839a60 | spa_first.cpp | FUN_00839a60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00839b10 | spa_first.cpp | FUN_00839b10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083a1c0 | spa_lower.cpp | FUN_0083a1c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083a330 | spa_lower.cpp | FUN_0083a330 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083a350 | spa_lower.cpp | FUN_0083a350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083c570 | spa_lower.cpp | FUN_0083c570 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083c930 | spa_lower.cpp | FUN_0083c930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083cb40 | spa_second.cpp | FUN_0083cb40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083cd50 | spa_second.cpp | FUN_0083cd50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083cd70 | spa_second.cpp | FUN_0083cd70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083ece0 | spa_second.cpp | FUN_0083ece0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083ee60 | spa_second.cpp | FUN_0083ee60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083f0e0 | spa_second_b.cpp | FUN_0083f0e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083f320 | spa_second_b.cpp | FUN_0083f320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083f340 | spa_second_b.cpp | FUN_0083f340 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0083fe70 | spa_second_b.cpp | FUN_0083fe70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00840090 | spa_second_b.cpp | FUN_00840090 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008403b0 | spa_second_b.cpp | FUN_008403b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00840710 | spa_second_b.cpp | FUN_00840710 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00840a00 | spa_second_b.cpp | FUN_00840a00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00840ba0 | spa_second_b.cpp | FUN_00840ba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841300 | spa_second_b.cpp | FUN_00841300 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841490 | spa_second_b.cpp | FUN_00841490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841850 | spa_super.cpp | FUN_00841850 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841a10 | spa_super.cpp | FUN_00841a10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841a30 | spa_super.cpp | FUN_00841a30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841b00 | spa_super.cpp | FUN_00841b00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00841c40 | spa_super.cpp | FUN_00841c40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00842010 | spa_super.cpp | FUN_00842010 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008420a0 | spain_awards.cpp | FUN_008420a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00842430 | spain_awards.cpp | FUN_00842430 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00842570 | spain_awards.cpp | FUN_00842570 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008425e0 | spain_rules.cpp | FUN_008425e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00842bc0 | spain_rules.cpp | FUN_00842bc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00877930 | swe_cup.cpp | FUN_00877930 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00877b80 | swe_cup.cpp | FUN_00877b80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00877ba0 | swe_cup.cpp | FUN_00877ba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00877cc0 | swe_cup.cpp | FUN_00877cc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00878320 | swe_cup.cpp | FUN_00878320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008787a0 | swe_cup.cpp | FUN_008787a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00878b20 | swe_cup.cpp | FUN_00878b20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00878de0 | swe_cup.cpp | FUN_00878de0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008791a0 | swe_cup.cpp | FUN_008791a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00879360 | swe_first.cpp | FUN_00879360 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00879580 | swe_first.cpp | FUN_00879580 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008795a0 | swe_first.cpp | FUN_008795a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00879d10 | swe_first.cpp | FUN_00879d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00879e10 | swe_first.cpp | FUN_00879e10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087a160 | swe_first.cpp | FUN_0087a160 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087a890 | swe_prm.cpp | FUN_0087a890 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087ab80 | swe_prm.cpp | FUN_0087ab80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087aba0 | swe_prm.cpp | FUN_0087aba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087b1b0 | swe_prm.cpp | FUN_0087b1b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087b2d0 | swe_prm.cpp | FUN_0087b2d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087b700 | swe_prm.cpp | FUN_0087b700 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087b8c0 | swe_prm.cpp | FUN_0087b8c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087b9f0 | swe_prm.cpp | FUN_0087b9f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087c020 | swe_prm.cpp | FUN_0087c020 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087c3a0 | swe_second.cpp | FUN_0087c3a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087c630 | swe_second.cpp | FUN_0087c630 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087c650 | swe_second.cpp | FUN_0087c650 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087c710 | swe_second.cpp | FUN_0087c710 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087ce60 | swe_second.cpp | FUN_0087ce60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087d030 | swe_second.cpp | FUN_0087d030 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087d320 | swe_second.cpp | FUN_0087d320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087d6c0 | swe_second.cpp | FUN_0087d6c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087d860 | swe_second.cpp | FUN_0087d860 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087e120 | swe_second.cpp | FUN_0087e120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087e3d0 | swe_second.cpp | FUN_0087e3d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087e460 | sweden_awards.cpp | FUN_0087e460 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0087ea30 | sweden_awards.cpp | FUN_0087ea30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008eb690 | tur_cup.cpp | FUN_008eb690 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008eb860 | tur_cup.cpp | FUN_008eb860 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008eb880 | tur_cup.cpp | FUN_008eb880 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008eb950 | tur_cup.cpp | FUN_008eb950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ebe70 | tur_cup.cpp | FUN_008ebe70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ec240 | tur_first.cpp | FUN_008ec240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ec450 | tur_first.cpp | FUN_008ec450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ec470 | tur_first.cpp | FUN_008ec470 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ed0a0 | tur_first.cpp | FUN_008ed0a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ed270 | tur_first.cpp | FUN_008ed270 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ed530 | tur_first.cpp | FUN_008ed530 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ed680 | tur_first.cpp | FUN_008ed680 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ed860 | tur_first.cpp | FUN_008ed860 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ed9d0 | tur_second.cpp | FUN_008ed9d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008edbe0 | tur_second.cpp | FUN_008edbe0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008edc00 | tur_second.cpp | FUN_008edc00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ee430 | tur_second.cpp | FUN_008ee430 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ee560 | tur_second.cpp | FUN_008ee560 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ee7a0 | tur_second_b.cpp | FUN_008ee7a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ee9e0 | tur_second_b.cpp | FUN_008ee9e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008eea00 | tur_second_b.cpp | FUN_008eea00 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ef5a0 | tur_second_b.cpp | FUN_008ef5a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ef740 | tur_second_b.cpp | FUN_008ef740 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008efa60 | tur_second_b.cpp | FUN_008efa60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008efd90 | tur_second_b.cpp | FUN_008efd90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008effe0 | tur_second_b.cpp | FUN_008effe0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f0320 | tur_second_b.cpp | FUN_008f0320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f0c30 | tur_second_b.cpp | FUN_008f0c30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f0f40 | tur_second_b.cpp | FUN_008f0f40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f0fd0 | turkey_awards.cpp | FUN_008f0fd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f1370 | turkey_rules.cpp | FUN_008f1370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f5d90 | usa_awards.cpp | FUN_008f5d90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f5ed0 | usa_awards.cpp | FUN_008f5ed0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f6390 | usa_mls.cpp | FUN_008f6390 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f6600 | usa_mls.cpp | FUN_008f6600 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f6620 | usa_mls.cpp | FUN_008f6620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f7970 | usa_mls.cpp | FUN_008f7970 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f7af0 | usa_mls.cpp | FUN_008f7af0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f83d0 | usa_mls.cpp | FUN_008f83d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f85f0 | usa_mls.cpp | FUN_008f85f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f88d0 | usa_mls.cpp | FUN_008f88d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f8be0 | usa_mls.cpp | FUN_008f8be0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f8fc0 | usa_mls.cpp | FUN_008f8fc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9410 | usa_mls.cpp | FUN_008f9410 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9560 | usa_mls_all_stars.cpp | FUN_008f9560 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9720 | usa_mls_all_stars.cpp | FUN_008f9720 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9740 | usa_mls_all_stars.cpp | FUN_008f9740 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9810 | usa_mls_all_stars.cpp | FUN_008f9810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9950 | usa_mls_all_stars.cpp | FUN_008f9950 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9d10 | usa_mls_all_stars.cpp | FUN_008f9d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008f9d90 | usa_mls_all_stars.cpp | FUN_008f9d90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fa2c0 | usa_open_cup.cpp | FUN_008fa2c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fa490 | usa_open_cup.cpp | FUN_008fa490 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fa4b0 | usa_open_cup.cpp | FUN_008fa4b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fa580 | usa_open_cup.cpp | FUN_008fa580 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fa940 | usa_open_cup.cpp | FUN_008fa940 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fad50 | usa_rules.cpp | FUN_008fad50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fe000 | wales_awards.cpp | FUN_008fe000 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fe140 | wales_awards.cpp | FUN_008fe140 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fe5b0 | wales_rules.cpp | FUN_008fe5b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fe710 | wc_african_cup.cpp | FUN_008fe710 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fe9f0 | wc_african_cup.cpp | FUN_008fe9f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008fea10 | wc_african_cup.cpp | FUN_008fea10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008feb20 | wc_african_cup.cpp | FUN_008feb20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ff630 | wc_african_cup.cpp | FUN_008ff630 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ffbb0 | wc_african_cup.cpp | FUN_008ffbb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x008ffef0 | wc_african_cup.cpp | FUN_008ffef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00900230 | wc_african_cup.cpp | FUN_00900230 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00900620 | wc_african_cup.cpp | FUN_00900620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009006e0 | wc_african_cup.cpp | FUN_009006e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00901090 | wc_african_cup.cpp | FUN_00901090 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009010e0 | wc_asia_league.cpp | FUN_009010e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009012d0 | wc_asia_league.cpp | FUN_009012d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009012f0 | wc_asia_league.cpp | FUN_009012f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00901fb0 | wc_asia_league.cpp | FUN_00901fb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009020b0 | wc_asia_league.cpp | FUN_009020b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00902290 | wc_asia_league.cpp | FUN_00902290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00902390 | wc_asia_league.cpp | FUN_00902390 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00902620 | wc_asia_league.cpp | FUN_00902620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00902a20 | wc_asia_league.cpp | FUN_00902a20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00902c20 | wc_asia_league.cpp | FUN_00902c20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00903040 | wc_asia_league.cpp | FUN_00903040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00903230 | wc_asia_league.cpp | FUN_00903230 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00903440 | wc_asia_league.cpp | FUN_00903440 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009038f0 | wc_asia_league.cpp | FUN_009038f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00903ed0 | wc_asia_league.cpp | FUN_00903ed0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00904180 | wc_concacaf_cup.cpp | FUN_00904180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009041a0 | wc_concacaf_cup.cpp | FUN_009041a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009042c0 | wc_concacaf_cup.cpp | FUN_009042c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00905220 | wc_concacaf_cup.cpp | FUN_00905220 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00905320 | wc_concacaf_cup.cpp | FUN_00905320 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00905730 | wc_concacaf_cup.cpp | FUN_00905730 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009061b0 | wc_concacaf_cup.cpp | FUN_009061b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009065f0 | wc_concacaf_cup.cpp | FUN_009065f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00906800 | wc_concacaf_cup.cpp | FUN_00906800 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00906d10 | wc_concacaf_cup.cpp | FUN_00906d10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009071b0 | wc_concacaf_cup.cpp | FUN_009071b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00907290 | wc_concacaf_cup.cpp | FUN_00907290 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090d480 | wc_oceania_league.cpp | FUN_0090d480 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090d6b0 | wc_oceania_league.cpp | FUN_0090d6b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090d6d0 | wc_oceania_league.cpp | FUN_0090d6d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090e0d0 | wc_oceania_league.cpp | FUN_0090e0d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090e1c0 | wc_oceania_league.cpp | FUN_0090e1c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090e670 | wc_oceania_league.cpp | FUN_0090e670 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090e8a0 | wc_oceania_league.cpp | FUN_0090e8a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090eb10 | wc_oceania_league.cpp | FUN_0090eb10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090ecd0 | wc_oceania_league.cpp | FUN_0090ecd0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090ef50 | wc_oceania_league.cpp | FUN_0090ef50 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090f400 | wc_oceania_league.cpp | FUN_0090f400 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090f780 | wc_south_american_league.cpp | FUN_0090f780 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090f9a0 | wc_south_american_league.cpp | FUN_0090f9a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0090f9c0 | wc_south_american_league.cpp | FUN_0090f9c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009101d0 | wc_south_american_league.cpp | FUN_009101d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00910370 | wc_south_american_league.cpp | FUN_00910370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00910500 | wc_south_american_league.cpp | FUN_00910500 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00910620 | wc_south_american_league.cpp | FUN_00910620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00910b30 | wc_south_american_league.cpp | FUN_00910b30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00910b90 | wc_south_american_league.cpp | FUN_00910b90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00911810 | wc_south_american_league.cpp | FUN_00911810 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00911b80 | wc_south_american_league.cpp | FUN_00911b80 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00911c90 | wc_south_american_league.cpp | FUN_00911c90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009138e0 | wel_cup.cpp | FUN_009138e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00913ab0 | wel_cup.cpp | FUN_00913ab0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00913ad0 | wel_cup.cpp | FUN_00913ad0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00913ba0 | wel_cup.cpp | FUN_00913ba0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00913f70 | wel_cup.cpp | FUN_00913f70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009142c0 | wel_cup.cpp | FUN_009142c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009142f0 | wel_first.cpp | FUN_009142f0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00914500 | wel_first.cpp | FUN_00914500 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00914520 | wel_first.cpp | FUN_00914520 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00914ff0 | wel_first.cpp | FUN_00914ff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00915110 | wel_first.cpp | FUN_00915110 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00915350 | wel_lge_cup.cpp | FUN_00915350 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009155a0 | wel_lge_cup.cpp | FUN_009155a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009155c0 | wel_lge_cup.cpp | FUN_009155c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00915bc0 | wel_lge_cup.cpp | FUN_00915bc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00915cc0 | wel_lge_cup.cpp | FUN_00915cc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00915fc0 | wel_lge_cup.cpp | FUN_00915fc0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009161c0 | wel_lge_cup.cpp | FUN_009161c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009164d0 | wel_lge_cup.cpp | FUN_009164d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009169b0 | wel_lge_cup.cpp | FUN_009169b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00916cb0 | wel_prm_cup.cpp | FUN_00916cb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00916ef0 | wel_prm_cup.cpp | FUN_00916ef0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00916f10 | wel_prm_cup.cpp | FUN_00916f10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00917520 | wel_prm_cup.cpp | FUN_00917520 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00917620 | wel_prm_cup.cpp | FUN_00917620 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00917910 | wel_prm_cup.cpp | FUN_00917910 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00917b10 | wel_prm_cup.cpp | FUN_00917b10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00917d20 | wel_prm_cup.cpp | FUN_00917d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009182c0 | wel_prm_cup.cpp | FUN_009182c0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00918370 | wel_prm_cup.cpp | FUN_00918370 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009186b0 | world_club_champ.cpp | FUN_009186b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00918820 | world_club_champ.cpp | FUN_00918820 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00918840 | world_club_champ.cpp | FUN_00918840 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00919010 | world_club_champ.cpp | FUN_00919010 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00919120 | world_club_champ.cpp | FUN_00919120 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009192b0 | world_club_champ.cpp | FUN_009192b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009193d0 | world_club_champ.cpp | FUN_009193d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x009196b0 | world_club_champ.cpp | FUN_009196b0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00919c20 | world_club_champ.cpp | FUN_00919c20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x00919e20 | world_club_champ.cpp | FUN_00919e20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091a3d0 | world_club_champ.cpp | FUN_0091a3d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091aa20 | world_club_cup.cpp | FUN_0091aa20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091abf0 | world_club_cup.cpp | FUN_0091abf0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091ac10 | world_club_cup.cpp | FUN_0091ac10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091ace0 | world_club_cup.cpp | FUN_0091ace0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091ae20 | world_club_cup.cpp | FUN_0091ae20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 
 ## friendly
 
@@ -4574,6 +4478,22 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0047ea60 | club_screens.cpp | squad-number kit panel | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch11.rs | NO | UNVERIFIED | memory:squad-number-not-at-45.md |
 | 0x00488f70 | club_screens.cpp | squad position-filter (consumer of 0x005a2030) | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00494640 | comp_screens.cpp | competition Rounds screen setup | PORTED_BEHAVIOURAL | build_screen_494640 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00495ad0 | comp_screens.cpp | FUN_00495ad0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00497520 | comp_screens.cpp | FUN_00497520 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00498f50 | comp_screens.cpp | FUN_00498f50 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00499880 | comp_screens.cpp | FUN_00499880 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00499dd0 | comp_screens.cpp | FUN_00499dd0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049a0d0 | comp_screens.cpp | FUN_0049a0d0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049a5b0 | comp_screens.cpp | FUN_0049a5b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049ae10 | comp_screens.cpp | FUN_0049ae10 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049b3a0 | comp_screens.cpp | FUN_0049b3a0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049d260 | comp_screens.cpp | FUN_0049d260 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049d280 | comp_screens.cpp | FUN_0049d280 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049d720 | comp_screens.cpp | FUN_0049d720 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049dc50 | comp_screens.cpp | FUN_0049dc50 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049de70 | comp_screens.cpp | FUN_0049de70 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049f410 | comp_screens.cpp | FUN_0049f410 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0049fa10 | comp_screens.cpp | FUN_0049fa10 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x004a0c10 | comp_screens.cpp | competition-list screen builder | PORTED_BEHAVIOURAL | build_comp_list_screen | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 | 0x004a16a0 | comp_screens.cpp | competition command pre-dispatcher (sibling) | PORTED_PARTIAL | dispatch_comp_command_val9 | INDIRECT | PARTIAL | memory:menu-command-tree.md |
 | 0x004a17f0 | comp_screens.cpp | fixture-view screen launcher | PORTED_BEHAVIOURAL | launch_fixture_view | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
@@ -4582,6 +4502,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004a2200 | comp_screens.cpp | FIFA World Rankings screen model | PORTED_BEHAVIOURAL | build_fifa_world_rankings_screen | INDIRECT | STRUCTURALLY_VERIFIED | memory:fifa-rankings-mechanism.md |
 | 0x004a28c0 | comp_screens.cpp | UEFA-coefficients screen launcher | PORTED_BEHAVIOURAL | launch_uefa_coefs_screen | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x004a3220 | comp_screens.cpp | competition loader pre-dispatcher | PORTED_BEHAVIOURAL | dispatch_comp_loader | INDIRECT | STRUCTURALLY_VERIFIED | memory:menu-command-tree.md |
+| 0x004a3440 | comp_screens.cpp | FUN_004a3440 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x004a3770 | comp_screens.cpp | competition-stages walker | PORTED_PARTIAL | build_competition_stages_walker | INDIRECT | PARTIAL | memory:screen-builders-ported.md |
 | 0x004a3d20 | comp_screens.cpp | competition-list row builder | PORTED_BEHAVIOURAL | build_comp_list_row | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 | 0x004a3f10 | comp_screens.cpp | competition fixture row builder | PORTED_BEHAVIOURAL | build_comp_fixture_row | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
@@ -4600,7 +4521,15 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004e2c70 | contract_manager.cpp | player screen setup | PORTED_BEHAVIOURAL | build_screen_4e2c70 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x004e38d0 | contract_screens.cpp | Set Role At Club screen setup | PORTED_BEHAVIOURAL | build_screen_4e38d0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x004e42b0 | contract_screens.cpp | empty screen builder | PORTED_PARTIAL | build_screen_4e42b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004e4e50 | contract_screens.cpp | FUN_004e4e50 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x004e6620 | contract_screens.cpp | FUN_004e6620 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x004e6680 | contract_screens.cpp | empty screen builder | PORTED_PARTIAL | build_screen_4e6680 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004e6b80 | contract_screens.cpp | FUN_004e6b80 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x004e8ba0 | contract_screens.cpp | FUN_004e8ba0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x004e9a10 | contract_screens.cpp | FUN_004e9a10 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x004ea4d0 | contract_screens.cpp | FUN_004ea4d0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x004eac70 | contract_screens.cpp | FUN_004eac70 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x004eb330 | contract_screens.cpp | FUN_004eb330 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x004ebfa0 | contract_screens.cpp | Terminate Contract screen setup | PORTED_BEHAVIOURAL | build_screen_4ebfa0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x004ec590 | contract_screens.cpp | Game Credits screen setup | PORTED_BEHAVIOURAL | build_screen_4ec590 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x004fd1f0 | contract_screens.cpp | Web Sites screen setup | PORTED_BEHAVIOURAL | build_screen_4fd1f0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
@@ -4608,11 +4537,28 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005488f0 | discipline.cpp | empty screen builder | PORTED_PARTIAL | build_screen_5488f0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00548b40 | discipline.cpp | ScreenManager session sub-object ctor | PORTED_BEHAVIOURAL | SessionSubObject::new | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 | 0x0058a740 | find_screens.cpp | Continent screen setup | PORTED_BEHAVIOURAL | build_screen_58a740 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x0058af50 | find_screens.cpp | FUN_0058af50 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058b410 | find_screens.cpp | FUN_0058b410 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058b9b0 | find_screens.cpp | FUN_0058b9b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058bec0 | find_screens.cpp | FUN_0058bec0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058c370 | find_screens.cpp | FUN_0058c370 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058cce0 | find_screens.cpp | FUN_0058cce0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x0058d000 | find_screens.cpp | Nation screen setup | PORTED_BEHAVIOURAL | build_screen_58d000 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x0058d830 | find_screens.cpp | FUN_0058d830 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058de50 | find_screens.cpp | FUN_0058de50 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058e4d0 | find_screens.cpp | FUN_0058e4d0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058eb30 | find_screens.cpp | FUN_0058eb30 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058eec0 | find_screens.cpp | FUN_0058eec0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058f170 | find_screens.cpp | FUN_0058f170 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058f530 | find_screens.cpp | FUN_0058f530 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058f690 | find_screens.cpp | FUN_0058f690 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0058f6f0 | find_screens.cpp | FUN_0058f6f0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x005dad10 | history.cpp | Ok dialog setup | PORTED_BEHAVIOURAL | build_screen_5dad10 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x005db600 | history.cpp | empty screen builder | PORTED_PARTIAL | build_screen_5db600 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00697440 | manager_screens.cpp | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_697440 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x006976a0 | manager_screens.cpp | FUN_006976a0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x00697dc0 | manager_screens.cpp | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_697dc0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00698020 | manager_screens.cpp | FUN_00698020 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x00698160 | manager_screens.cpp | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_698160 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x006fd7b0 | match_screens.cpp | day-part Results screen setup | PORTED_BEHAVIOURAL | build_screen_6fd7b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00700f20 | match_screens.cpp | Latest Scores screen builder | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch3.rs;crates/cm-render/src/screen_wire_batch3.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
@@ -4620,17 +4566,75 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007013d0 | match_screens.cpp | match aggregate/result screen setup | PORTED_BEHAVIOURAL | build_screen_7013d0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x007491e0 | media.cpp | global/menu-bar command dispatcher | PORTED_PARTIAL | crates/cm-render/src/dispatcher.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | PARTIAL | memory:screen-builders-ported.md |
 | 0x0074bf60 | media.cpp | club-context command dispatcher | PORTED_PARTIAL | crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | PARTIAL | memory:ui-five-layer-architecture.md |
+| 0x00762730 | national_teams_screens.cpp | FUN_00762730 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007627d0 | national_teams_screens.cpp | FUN_007627d0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007628e0 | national_teams_screens.cpp | FUN_007628e0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00762950 | national_teams_screens.cpp | FUN_00762950 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00762b60 | national_teams_screens.cpp | FUN_00762b60 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x00763590 | network.cpp | ScreenManager network-buffer ctor | REPLACED_BY_RUST | NetworkBuffer::new | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x007637b0 | new_transfer_rule_screens.cpp | FUN_007637b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x0076f2f0 | news.cpp | news home screen setup | PORTED_PARTIAL | crates/cm-render/src/screen_news.rs | INDIRECT | PARTIAL | memory:news-first-real-diff.md |
 | 0x0076ffb0 | news_screens.cpp | news home callback registrar | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | NO | UNVERIFIED | memory:news-screen-geometry.md |
+| 0x00771300 | news_screens.cpp | FUN_00771300 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x007719b0 | news_screens.cpp | Send-Message-To-All screen setup | PORTED_BEHAVIOURAL | build_screen_7719b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00771c80 | news_screens.cpp | FUN_00771c80 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007af320 | plot.cpp | FUN_007af320 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007af400 | plot.cpp | FUN_007af400 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007af460 | plot.cpp | FUN_007af460 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007af5a0 | plot.cpp | FUN_007af5a0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007af6a0 | plot.cpp | FUN_007af6a0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007af8e0 | plot.cpp | FUN_007af8e0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007bc8b0 | printouts.cpp | FUN_007bc8b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007bd6c0 | printouts.cpp | FUN_007bd6c0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007be500 | printouts.cpp | FUN_007be500 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007bee30 | printouts.cpp | FUN_007bee30 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c00c0 | printouts.cpp | FUN_007c00c0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c0560 | printouts.cpp | FUN_007c0560 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c1b60 | printouts.cpp | FUN_007c1b60 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c24b0 | printouts.cpp | FUN_007c24b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c25d0 | printouts.cpp | FUN_007c25d0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c2ac0 | printouts.cpp | FUN_007c2ac0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c2b10 | printouts.cpp | FUN_007c2b10 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c2ea0 | printouts.cpp | FUN_007c2ea0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c2f60 | printouts.cpp | FUN_007c2f60 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c2fc0 | printouts.cpp | FUN_007c2fc0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c3150 | printouts.cpp | FUN_007c3150 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c3380 | printouts.cpp | FUN_007c3380 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c3530 | printouts.cpp | FUN_007c3530 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007c3580 | printouts.cpp | FUN_007c3580 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x007cdc70 | record_utils.cpp | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_7cdc70 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x007e4520 | scout_manager.cpp | ScreenManager ctor + struct layout | PORTED_BEHAVIOURAL | ScreenManager::new | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 | 0x007e46a0 | scout_manager.cpp | ScreenManager reset | PORTED_BEHAVIOURAL | ScreenManager::reset | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 | 0x007e6420 | scrman.cpp | pending-push staging | PORTED_BEHAVIOURAL | ScreenManager::stage_pending_push | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 | 0x007e6570 | scrman.cpp | screen-visible gate (skip pushes) | PORTED_BEHAVIOURAL | build_* None arm | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x007e7130 | scrman.cpp | widget-slot writer | REPLACED_BY_RUST | View slot fields (serde) | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x007ebf80 | search_edit_session.cpp | FUN_007ebf80 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec020 | search_edit_session.cpp | FUN_007ec020 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec070 | search_edit_session.cpp | FUN_007ec070 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec150 | search_edit_session.cpp | FUN_007ec150 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec230 | search_edit_session.cpp | FUN_007ec230 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec2f0 | search_edit_session.cpp | FUN_007ec2f0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec3c0 | search_edit_session.cpp | FUN_007ec3c0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec480 | search_edit_session.cpp | FUN_007ec480 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec520 | search_edit_session.cpp | FUN_007ec520 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec590 | search_edit_session.cpp | FUN_007ec590 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec640 | search_edit_session.cpp | FUN_007ec640 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec7b0 | search_edit_session.cpp | FUN_007ec7b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007ec8f0 | search_edit_session.cpp | FUN_007ec8f0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007f0170 | search_screens.cpp | FUN_007f0170 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007f6710 | search_screens.cpp | FUN_007f6710 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007f6720 | search_screens.cpp | FUN_007f6720 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007f6730 | search_screens.cpp | FUN_007f6730 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007f6760 | search_screens.cpp | FUN_007f6760 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007f6790 | search_screens.cpp | FUN_007f6790 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007fadf0 | search_screens.cpp | FUN_007fadf0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x007faec0 | search_screens.cpp | FUN_007faec0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x007fb050 | search_screens.cpp | search Filters screen setup | PORTED_BEHAVIOURAL | build_screen_7fb050 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00800600 | search_screens.cpp | FUN_00800600 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00800660 | search_screens.cpp | FUN_00800660 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x008018b0 | search_screens.cpp | FUN_008018b0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00803650 | search_screens.cpp | FUN_00803650 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x00803d70 | search_screens.cpp | FUN_00803d70 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x00804020 | setup.cpp | title screen setup | PORTED_BEHAVIOURAL | build_screen_804020 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x008053d0 | setup.cpp | Select Leagues screen | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | NO | UNVERIFIED | memory:start-new-game-flow.md |
 | 0x00807280 | setup.cpp | Select Start Season screen | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | NO | UNVERIFIED | memory:start-new-game-flow.md |
@@ -4640,15 +4644,30 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0088def0 | tactics_screens.cpp | Team Instructions screen setup | PORTED_BEHAVIOURAL | build_screen_88def0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00890e50 | tactics_screens.cpp | large multi-tab screen setup | PORTED_BEHAVIOURAL | build_screen_890e50 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00893500 | tactics_screens.cpp | empty screen builder | PORTED_PARTIAL | build_screen_893500 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x0089d2f0 | training_edit_session.cpp | FUN_0089d2f0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d410 | training_edit_session.cpp | FUN_0089d410 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d460 | training_edit_session.cpp | FUN_0089d460 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d4c0 | training_edit_session.cpp | FUN_0089d4c0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d500 | training_edit_session.cpp | FUN_0089d500 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d570 | training_edit_session.cpp | FUN_0089d570 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d5c0 | training_edit_session.cpp | FUN_0089d5c0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x0089d770 | training_edit_session.cpp | FUN_0089d770 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x008a2180 | training_schedule.cpp | club Training screen setup | PORTED_BEHAVIOURAL | build_screen_8a2180 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x008a6580 | training_screens.cpp | large multi-tab screen setup | PORTED_BEHAVIOURAL | build_screen_8a6580 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008a7890 | training_screens.cpp | FUN_008a7890 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x008a8a70 | training_screens.cpp | FUN_008a8a70 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x008d6310 | transfer_offer.cpp | player screen family | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x008dcd50 | transfer_screens.cpp | FUN_008dcd50 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x008ddc90 | transfer_screens.cpp | FUN_008ddc90 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x008dfb10 | transfer_screens.cpp | contract-offer/move screen builder | PORTED_BEHAVIOURAL | build_contract_offer_or_move | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 | 0x008dfc20 | transfer_screens.cpp | small 3-slot screen builder | PORTED_BEHAVIOURAL | build_small_three_slot | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 | 0x008dfdf0 | transfer_screens.cpp | wage-offer/move screen builder | PORTED_BEHAVIOURAL | build_wage_offer_or_move | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 | 0x008e01d0 | transfer_screens.cpp | Transfer Bid screen setup | PORTED_BEHAVIOURAL | build_screen_8e01d0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x008e0710 | transfer_screens.cpp | 2-slot screen builder | PORTED_BEHAVIOURAL | build_two_slot_0710 | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 | 0x008e0b60 | transfer_screens.cpp | 2-slot screen builder | PORTED_BEHAVIOURAL | build_two_slot_0b60 | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x008e1250 | transfer_screens.cpp | FUN_008e1250 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x008e5380 | transfer_screens.cpp | FUN_008e5380 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
+| 0x008e61e0 | transfer_screens.cpp | FUN_008e61e0 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
 | 0x008e9e60 | transfer_screens.cpp | empty screen builder | PORTED_PARTIAL | build_screen_8e9e60 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 
 ## search
@@ -5273,14 +5292,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x0005e9b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x004279c0 | bra_champ_cup.cpp | FUN_004279c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00441f00 | cash.cpp | FUN_00441f00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00449e70 | club_records.cpp | FUN_00449e70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x0046a670 | club_screens.cpp | FUN_0046a670 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00487480 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x004878e0 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x004938d0 | comp.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x0049a5b0 | comp_screens.cpp | FUN_0049a5b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0049eb30 | comp_screens.cpp | FUN_0049eb30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x004a89d0 | comp_stats.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x004a98d0 | comp_stats.cpp | FUN_004a98d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
@@ -5288,11 +5305,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004b6e20 | comp_util.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x004c0cf0 | comp_util.cpp | FUN_004c0cf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004c5c50 | comp_util.cpp | FUN_004c5c50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004c9320 | conmebol_liber.cpp | FUN_004c9320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004caa90 | conmebol_liber.cpp | FUN_004caa90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004d35a0 | contract_manager.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x004d3700 | contract_manager.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x004e8ba0 | contract_screens.cpp | FUN_004e8ba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004ebf60 | contract_screens.cpp | FUN_004ebf60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch14.rs | YES | UNVERIFIED |  |
 | 0x0050cc90 | cup_stage.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x00524f20 | database.cpp | FUN_00524f20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
@@ -5320,7 +5334,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00562330 | eng_third.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x00584150 | finance.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x00585060 | finance.cpp | FUN_00585060 | PORTED_BEHAVIOURAL | crates/cm-domain/src/finance.rs | YES | UNVERIFIED |  |
-| 0x0058af50 | find_screens.cpp | FUN_0058af50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00598d20 | fix_man.cpp | FUN_00598d20 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x0059b550 | fog_of_war.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_glyph.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x005cd330 | goldcup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/src/packed_text.rs;crates/cm-render/tests/verify_clip_against_exe.rs | YES | UNVERIFIED |  |
@@ -5346,8 +5359,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d7710 | gui_utils.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/manager_creation.rs | YES | UNVERIFIED |  |
 | 0x005d8260 | gui_utils.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x005d8410 | gui_utils.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
-| 0x00621e00 | ire_munster_cup.cpp | FUN_00621e00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00627f80 | ita_c_cup.cpp | FUN_00627f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00654380 | langlib.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x00666500 | langlib.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/year_end_statuses.rs | YES | UNVERIFIED |  |
 | 0x00667560 | langlib.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
@@ -5378,16 +5389,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00784e70 | officials_manager.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x007e3f20 | scout_manager.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e4340 | scout_manager.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x007fadf0 | search_screens.cpp | FUN_007fadf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008070a3 | setup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-ui-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x0083ece0 | spa_second.cpp | FUN_0083ece0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0087ce60 | swe_second.cpp | FUN_0087ce60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0089a970 | tcpip.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x0089aeb0 | tcpip.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008fa820 | usa_open_cup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x00903ed0 | wc_asia_league.cpp | FUN_00903ed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00914ff0 | wel_first.cpp | FUN_00914ff0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091a3d0 | world_club_champ.cpp | FUN_0091a3d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x009203f0 | year_award.cpp | FUN_009203f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00933579 | zipdir.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_sprintf.rs;crates/cm-render/src/packed_widget.rs | YES | UNVERIFIED |  |
 
