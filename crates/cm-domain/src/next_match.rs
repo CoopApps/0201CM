@@ -76,6 +76,8 @@ fn weekday_name(g: &GameDate) -> &'static str {
         [(days.rem_euclid(7)) as usize]
 }
 
+// exe FUN_00536f90: month index -> full month name ("January".."December").
+// (exe is 0-indexed via a switch; this port takes 1-indexed month and subtracts 1.)
 fn month_name(m: u8) -> &'static str {
     ["January", "February", "March", "April", "May", "June", "July",
      "August", "September", "October", "November", "December"]

@@ -117,6 +117,10 @@ pub fn apply_flag_snap(buf: &mut [i16; 4], flag: i32) {
 /// applying the flag-snap chain.
 ///
 /// CM0102 0x00533b50 (`__thiscall`, this = `result` ptr).
+// exe FUN_00533d10: the DirectDraw carve's pack-date-with-snap entry —
+// validates day/month, sets [doy, year, leap, 0] from the DAT_009a4b28/40
+// tables, then chains FUN_00533eb0 (see `apply_flag_snap`) when flag != -1.
+// pack_date covers the pre-snap body; the snap tail is `apply_flag_snap`.
 pub fn pack_date(day: i16, month: i8, year: u16) -> [i16; 4] {
     let day = if !(1..=31).contains(&day) { 1 } else { day };
     let month = if !(0..=11).contains(&month) { 0 } else { month };

@@ -23006,6 +23006,8 @@ impl CmPackedDate {
         }
     }
 
+    // exe FUN_00536b50: day-of-month = day_of_year - cumulative_days_before_month[month]
+    // (exe scans months high→low for the first table entry below doy; equivalent).
     pub fn to_game_date(&self) -> GameDate {
         let cumulative = if self.leap_year {
             &LEAP_CUMULATIVE_DAYS_BEFORE_MONTH
@@ -23025,6 +23027,9 @@ impl CmPackedDate {
         }
     }
 
+    // exe FUN_005364c0 (subtract days, negative branch delegates to add) and
+    // FUN_00536350 (add N weeks == add_days(weeks*7)): forward year-crossing
+    // normalization — while day > year_length, subtract it and advance the year.
     pub fn add_days(&self, days: i16) -> Self {
         if days < 0 {
             return self.add_negative_days(days);
@@ -23046,6 +23051,9 @@ impl CmPackedDate {
         }
     }
 
+    // exe FUN_005364c0 (subtract N days) and FUN_00536690 (subtract N weeks ==
+    // add_negative_days(weeks*-7)): backward year-crossing normalization — while
+    // day < 1, borrow the previous year's length.
     fn add_negative_days(&self, days: i16) -> Self {
         let mut year = self.year;
         let mut day = self.day_of_year as i32 + i32::from(days);
@@ -24213,6 +24221,7 @@ fn cumulative_days_before_month(year: u16, month_index: usize) -> u16 {
     }
 }
 
+// exe FUN_00536bc0: is-leap-year predicate (non-leap iff odd | not /4 | century not /400).
 pub fn is_leap_year(year: u16) -> bool {
     let year = u32::from(year);
     (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
