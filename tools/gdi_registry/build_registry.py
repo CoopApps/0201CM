@@ -58,6 +58,18 @@ def main():
             by_va[norm(f["entry"])] = f
         except Exception:
             pass
+    # Useful game-logic universe = functions inside the game .text span
+    # 0x00401000..0x00922a85 (strictly alphabetical by .cpp). Everything OUTSIDE
+    # this span is CRT/MSVC-runtime/STL/Win32-DirectDraw-wrapper plumbing and is
+    # deliberately excluded. See reports/decompile_coverage_review.md methodology.
+    SPAN_LO, SPAN_HI = 0x00401000, 0x00922a85
+    span_useful = set()
+    for va in by_va:
+        try:
+            if SPAN_LO <= int(va, 16) <= SPAN_HI:
+                span_useful.add(va)
+        except Exception:
+            pass
     atlas_raw = load_json(ATLAS_JSON) or {}
     atlas = {}
     cpp_re = re.compile(r'code[\\/](.+?\.cpp)', re.I)
@@ -144,7 +156,7 @@ def main():
                 try: frontier.add(norm(l))
                 except Exception: pass
 
-    universe = set(cites) | set(curated) | frontier | set(gdireg)
+    universe = set(cites) | set(curated) | frontier | set(gdireg) | span_useful
 
     NEG = ("not implemented","not ported","not yet","frontier","unported","todo",
            "deferred","approximate","stub","see fun_","see the exe","blocked",
@@ -171,6 +183,8 @@ def main():
             if cpp in groups and groups[cpp].get("status"):
                 return groups[cpp]["status"].strip(), "frontier-group"
             return "UNKNOWN", "frontier-unclassified"
+        if va in span_useful:
+            return "UNKNOWN", "span-useful-unclassified"
         return "UNKNOWN", "no-signal"
 
     rows = []
@@ -201,7 +215,8 @@ def main():
         reach = cu.get("reachable") or ("YES" if status in PORTED and cites.get(va) else
                 ("NO" if status in {"NON_USEFUL","OUT_OF_SCOPE","UI_GDI_DOMAIN","DEAD_OR_UNREACHABLE","FOREIGN_BREADTH","NOT_YET_PORTED","BLOCKED_DEPENDENCY"} else "INDIRECT"))
         rel = cu.get("relevance") or ("IMPLEMENTATION_ONLY" if status == "NON_USEFUL" else
-              ("UI_RENDERING" if status == "UI_GDI_DOMAIN" else "SIMULATION_RELEVANT"))
+              ("UI_RENDERING" if status == "UI_GDI_DOMAIN" else
+               ("" if status == "UNKNOWN" else "SIMULATION_RELEVANT")))
         sup = superseded.get(va, {})
         rows.append({
             "dd_va": va,
@@ -248,6 +263,15 @@ def main():
         f.write("# GDI function coverage (generated)\n\n")
         f.write(f"Registered functions: **{len(rows)}**  ·  cited in Rust: "
                 f"**{sum(1 for r in rows if r['_cited'])}**\n\n")
+        n_unknown = by_status["UNKNOWN"]
+        n_classified = len(rows) - n_unknown
+        f.write(f"**Complete-picture denominator.** The registry now ingests the entire "
+                f"useful game-logic universe (the `.text` span `0x00401000..0x00922a85`; "
+                f"CRT/runtime plumbing outside the span is excluded). Of **{len(rows)}** useful "
+                f"functions, **{n_classified}** are classified and **{n_unknown}** remain "
+                f"`UNKNOWN` (ingested, awaiting classification). Drive UNKNOWN to zero via "
+                f"mechanical bucketing (NON_USEFUL/FOREIGN_BREADTH/DEAD) + subsystem curation "
+                f"waves.\n\n")
         f.write("> **Read carefully.** A `PORTED_*` row derived automatically from a Rust "
                 "citation is `confidence: UNVERIFIED` — it means *an exe address is cited in "
                 "Rust without a 'not-implemented' marker*, NOT that the port was human-verified. "
