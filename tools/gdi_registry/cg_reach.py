@@ -38,6 +38,9 @@ ROOT_SETS = {
     "UI": [
         ("0x007491e0", "menu/widget dispatcher", "memory:menu-command-tree"),
         ("0x0074bf60", "menu/widget sub-dispatcher", "memory:menu-command-tree"),
+        ("0x007e5bd0", "scrman modal run-loop (calls registered screen builder slot+0 / handler slot+8)",
+         "agent-decode:edges_uireg (entered via message pump)"),
+        ("0x007e6570", "scrman open/push-screen registrar", "agent-decode:edges_uireg"),
     ],
     # COMPETITION / MATCH / SAVE_LOAD roots are seeded from curated indirect_edges
     # (root_hint) + these known anchors; extended as agents confirm scheduler roots.

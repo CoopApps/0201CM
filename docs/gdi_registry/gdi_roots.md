@@ -1,6 +1,6 @@
 # GDI reachability roots (generated)
 
-Named live-entry root sets used to compute exe-reachability. Indirect dispatch edges with a matching `root_hint` (PROVEN/STRONG) also seed their set. `indirect_edges.csv` currently holds **57** curated indirect edges.
+Named live-entry root sets used to compute exe-reachability. Indirect dispatch edges with a matching `root_hint` (PROVEN/STRONG) also seed their set. `indirect_edges.csv` currently holds **248** curated indirect edges.
 
 | root set | address | semantic | evidence |
 |---|---|---|---|
@@ -12,6 +12,8 @@ Named live-entry root sets used to compute exe-reachability. Indirect dispatch e
 | AI | 0x005b85b0 | daily AI dispatcher (game.cpp step 10) | memory:sim-findings |
 | UI | 0x007491e0 | menu/widget dispatcher | memory:menu-command-tree |
 | UI | 0x0074bf60 | menu/widget sub-dispatcher | memory:menu-command-tree |
+| UI | 0x007e5bd0 | scrman modal run-loop (calls registered screen builder slot+0 / handler slot+8) | agent-decode:edges_uireg (entered via message pump) |
+| UI | 0x007e6570 | scrman open/push-screen registrar | agent-decode:edges_uireg |
 | MATCH | 0x00699640 | match build | curated |
 | MATCH | 0x00699d90 | match play | curated |
 | COMPETITION | 0x005b6f10 | seeded by COMPETITION_DISPATCH dispatch edge | 0x005b6f10 daily-tick loops comp array DAT_00ac688c -> vtable+0x14 per-comp date |
