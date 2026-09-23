@@ -88,6 +88,7 @@ fn le_f64(bytes: &[u8], off: usize) -> f64 {
 /// The exe uses `-1` for "unset/null" and `-2` for "extinct/placeholder"; both
 /// mean "no valid reference" so we collapse them.
 #[inline]
+// GDI-REG: 0051b110 REPLACED_BY_RUST
 fn id_opt(v: i32) -> Option<i32> {
     if v < 0 {
         None
@@ -118,6 +119,7 @@ fn read_latin1_cstr(bytes: &[u8], off: usize, len: usize) -> String {
 /// - `+0x57 i32` city_id (probable)
 /// - `+0x69 i32` stadium_id (probable)
 /// - `+0x80 u16` reputation — confirmed (Köln 7500, low leagues 1500)
+// GDI-REG: 005381b0 REPLACED_BY_RUST
 pub struct ClubView<'a> {
     raw: &'a [u8],
 }
@@ -545,6 +547,7 @@ impl CmDate {
 /// packed DOB at `+0x0a`. Those offsets were wrong — corrected 2026-08-20
 /// against the loader's field-by-field copy loop (`FUN_005121a0` lines
 /// 2004–2092).
+// GDI-REG: 00538300 REPLACED_BY_RUST
 pub struct PlayerView<'a> {
     /// Bytes from record offset `0x04` onward. The record's own `id` (offset
     /// `0x00`) is held separately because `rust-db` stores it as its own JSON
@@ -590,6 +593,7 @@ impl ReleaseClauses {
     ///   4. Rlg alone       → "Rlg."
     ///   5. manager_job     → "Man."
     ///   6. else            → ""
+    // GDI-REG: 00850fd0 PORTED_EXACT
     pub fn short_code(&self) -> &'static str {
         if self.minimum_fee != 0 { return "Min.Fee"; }
         let (np, rlg) = (self.non_promotion, self.relegation);
@@ -913,6 +917,7 @@ impl<'a> PlayerView<'a> {
 /// Probable cross-refs: `+0x5d`, `+0x69`, `+0x88`, `+0xbf` (i32 each). Semantics
 /// (continent, capital_city, etc.) are inferred but not yet locked, so they're
 /// exposed as raw `id_opt(i32)` and named by best guess.
+// GDI-REG: 00537420 REPLACED_BY_RUST
 pub struct NationView<'a> {
     raw: &'a [u8],
 }
@@ -1081,6 +1086,7 @@ impl<'a> NationView<'a> {
 /// `nation_comp.dat`, so those two links do get patched up at runtime through
 /// clubs (`club+0x53/0x57/0x5b/0x60`) — but continent/nation are real on disk
 /// and safe to trust straight out of the loader.
+// GDI-REG: 00539bb0 REPLACED_BY_RUST
 pub struct CompetitionView<'a> {
     raw: &'a [u8],
 }
@@ -1205,6 +1211,7 @@ impl<'a> StaffCompetitionView<'a> {
 ///
 /// Clubs reference colours by index at `club+0x83/0x87` (kit 1 fg/bg),
 /// `+0x8b/0x8f` (kit 2), `+0x93/0x97` (kit 3).
+// GDI-REG: 0053a0b0 REPLACED_BY_RUST
 pub struct ColourView<'a> {
     raw: &'a [u8],
 }
@@ -1252,6 +1259,7 @@ impl<'a> ColourView<'a> {
 /// Continent" / "Unknown Federation"); `FUN_00600f50` returns `+0x23` as the
 /// demonym. The `0xff` bytes that follow each string buffer are the grammatical
 /// gender markers the text formatter consumes.
+// GDI-REG: 005372c0 REPLACED_BY_RUST
 pub struct ContinentView<'a> {
     raw: &'a [u8],
 }
@@ -1419,6 +1427,7 @@ impl<'a> TacticView<'a> {
 /// - `+0x40 u32` capacity_seated
 /// - `+0x44 u32` capacity_expansion (verified: Old Trafford → 100000)
 /// - `+0x48 i32` alt_stadium_id (self-referential, "replacement stadium" slot)
+// GDI-REG: 005375e0 REPLACED_BY_RUST
 pub struct StadiumView<'a> {
     raw: &'a [u8],
 }
@@ -1452,6 +1461,7 @@ impl<'a> StadiumView<'a> {
 /// - `+0x2b f64` longitude (unaligned; verified: London -0.102°E)
 /// - `+0x33 u8` size_tier (0..20, label unverified)
 /// - `+0x34 i32` region_or_primary_club (label unverified)
+// GDI-REG: 00537480 REPLACED_BY_RUST
 pub struct CityView<'a> {
     raw: &'a [u8],
 }
@@ -1530,6 +1540,7 @@ impl<'a> ChairmanAttrsView<'a> {
 /// - `+0x1e u32` reputation_ca (label unverified)
 /// - `+0x22 u16` reputation_pa (label unverified)
 /// - `+0x24..+0x2a` seven 0..20 rating bytes (individual meanings unresolved)
+// GDI-REG: 0053a200 REPLACED_BY_RUST
 pub struct OfficialView<'a> {
     raw: &'a [u8],
 }
@@ -1576,6 +1587,7 @@ impl<'a> OfficialView<'a> {
 /// apps_sum, goals_sum)`. The "Too many goals for goalkeeper" guard
 /// (`5 < *(byte*)(+0x10)`) fixes `+0x10 = goals`, so `+0xf = apps` and
 /// `+0xe` is the substitute-appearance / unused byte.
+// GDI-REG: 00539940 REPLACED_BY_RUST
 pub struct StaffHistoryView<'a> {
     raw: &'a [u8],
 }
@@ -1623,6 +1635,7 @@ impl<'a> StaffHistoryView<'a> {
 /// 0x0761 = 1889, winner club 7269 = Preston North End, runner-up club
 /// 730 = Aston Villa. Matches the historical 1888-89 Football League: Preston
 /// "The Invincibles" won it, Aston Villa were runners-up.
+// GDI-REG: 00539e10 REPLACED_BY_RUST
 pub struct ClubCompHistoryView<'a> {
     raw: &'a [u8],
 }

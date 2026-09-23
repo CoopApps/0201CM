@@ -51,6 +51,7 @@ use serde::{Deserialize, Serialize};
 /// 222-byte news item that `FUN_008D0D90` builds and hands to
 /// `FUN_0076E180` / `FUN_0076DCE0` for persistence.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 008d0d90 PORTED_PARTIAL
 pub struct PersonNewsItem {
     /// News category id (`FUN_00763B90` `param_2`). For the two
     /// known callers of `FUN_008D0D90` (relegation `kind=3` and
@@ -125,6 +126,7 @@ impl PersonNewsMailboxPool {
     ///
     /// Never fails. The exe's ring-overflow / realloc failure
     /// paths are not modelled — see module deviations.
+    // GDI-REG: 008d0d90 PORTED_PARTIAL
     pub fn push(&mut self, person_id: u32, mut item: PersonNewsItem)
         -> AppendReceipt
     {

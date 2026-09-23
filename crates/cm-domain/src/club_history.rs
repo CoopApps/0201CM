@@ -329,6 +329,7 @@ pub fn ordinal_str(n: usize) -> String {
 // (FUN_00652ff0). The per-nation boundary source is FUN_00652a00 (nation →
 // DAT_00b4bc70 index; see league_calendar.rs). Needed to bucket records by
 // season byte-exactly — see reports/club_history_screen_decode.md TARGET 3.
+// GDI-REG: 00652cd0 PORTED_PARTIAL
 pub fn season_label(start_year: u16) -> String {
     format!("{}/{}", start_year, (start_year + 1) % 10)
 }
@@ -337,6 +338,9 @@ pub fn season_label(start_year: u16) -> String {
 /// archived league tables (newest-season first). Pure so it can be tested
 /// without constructing a whole `RuntimeSaveGame`. `comp_name` maps a
 /// competition id to its display (division) name.
+// GDI-REG: 006684e0 PORTED_PARTIAL
+// GDI-REG: 00667aa0 PORTED_BEHAVIOURAL
+// GDI-REG: 00447d20 PORTED_PARTIAL
 pub fn season_rows_for_club(
     tables: &[crate::ArchivedLeagueTable],
     club_id: u32,
@@ -485,6 +489,13 @@ impl crate::World {
     /// Income) are LINKED to the Transfers tab's four View modes — both derive
     /// from one per-season transfer ledger (Records = all-time aggregate;
     /// Transfers = per-season), so wire them from the same source.
+    // GDI-REG: 007abef0 PORTED_BEHAVIOURAL
+    // GDI-REG: 007abd80 PORTED_BEHAVIOURAL
+    // GDI-REG: 00449590 PORTED_BEHAVIOURAL
+    // GDI-REG: 007a8090 PORTED_BEHAVIOURAL
+    // GDI-REG: 007abef0 PORTED_BEHAVIOURAL
+    // GDI-REG: 007abd80 PORTED_BEHAVIOURAL
+    // GDI-REG: 00449590 PORTED_BEHAVIOURAL
     pub fn club_history_view(&self, club_id: u32) -> ClubHistoryView {
         use crate::typed_records::ClubView;
         let club = self.core.clubs.iter().find(|c| ClubView::new(c).id() == club_id);

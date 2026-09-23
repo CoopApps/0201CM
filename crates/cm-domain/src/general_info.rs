@@ -35,6 +35,7 @@ pub struct GeneralInfoView {
 /// exe's own role-name switch `FUN_00524850` (cases 0..0xd), confirmed
 /// against Burnley's staff in rust-db (job 6 = Sam Ellis / Assistant
 /// Manager, job 8 = coaches, job 9 = scouts).
+// GDI-REG: 00524850 PORTED_EXACT
 fn role_for_job(job: u8) -> &'static str {
     match job {
         0 => "Unemployed",

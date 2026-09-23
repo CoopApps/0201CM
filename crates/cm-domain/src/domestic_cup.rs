@@ -413,6 +413,7 @@ impl CupState {
     /// Returns `Ok(Some(club_id))` when decided, `Ok(None)` when still waiting
     /// (fixture unplayed), or `Err(())` when a replay is required but not yet
     /// scheduled (caller schedules it).
+    // GDI-REG: 00503e30 PORTED_BEHAVIOURAL
     fn tie_outcome(
         tie: &CupTie,
         spec: &CupRoundSpec,
@@ -483,6 +484,7 @@ impl CupState {
     /// round's fixtures (leg 2 for a two-legged round). Returns the fixtures
     /// and the ties. Uses the shared `GameRng` (RNG chronology differential
     /// vs the exe's shared stream is documented — structurally exact).
+    // GDI-REG: 00503e30 PORTED_BEHAVIOURAL
     fn draw_round(
         &self,
         spec: &CupRoundSpec,
@@ -534,6 +536,7 @@ impl CupState {
     /// resolves the current round (scheduling FA-Cup replays), advancing
     /// winners, and crowns the champion at the final. Idempotent per day: a
     /// round already drawn/resolved is not repeated.
+    // GDI-REG: 00502470 PORTED_BEHAVIOURAL
     pub fn progress(
         &mut self,
         date: &GameDate,

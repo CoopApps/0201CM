@@ -384,6 +384,7 @@ impl GuiRecordPool {
     ///     rootcount++
     ///     return n
     /// ```
+    // GDI-REG: 00549580 PORTED_EXACT
     pub fn spawn_widget(&mut self, desc: WidgetDescriptor, parent_area: i16) -> Option<u16> {
         if self.widgets.len() >= WIDGET_POOL_CAP {
             self.widget_overflow = true;
@@ -479,6 +480,7 @@ impl GuiRecordPool {
     /// The exe's phase-A serialization to `DAT_00ACDB08` (replay ring)
     /// is skipped in the Rust port — that section is only used for
     /// multiplayer replay recording, which we haven't ported yet.
+    // GDI-REG: 00549790 PORTED_EXACT
     pub fn spawn_area(
         &mut self,
         mut x0: i16, mut y0: i16, mut x1: i16, mut y1: i16,
@@ -620,6 +622,7 @@ pub fn enroll_area_order(pool: &mut GuiRecordPool, area_index: i16) -> bool {
 /// }
 /// z_order[0] = param_1;
 /// ```
+// GDI-REG: 00403240 PORTED_EXACT
 pub fn insert_widget_z_order(
     parent: &mut Widget,
     parent_area_widgets: &[Widget],

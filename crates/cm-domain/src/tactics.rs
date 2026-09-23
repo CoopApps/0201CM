@@ -21,6 +21,7 @@
 
 /// The 21-entry attribute-to-points curve at exe VA 0x00a01ce0 (verified).
 /// Applied to a 0..20 attribute value: `points = ATTR_CURVE[value.clamp(0,20)]`.
+// GDI-REG: 006c8930 PORTED_PARTIAL
 pub const ATTR_CURVE: [i32; 21] = [
     -150, -124, -107, -84, -60, -50, -40, -30, -20, -10,
        0,   10,   20,  30,  40,  50,  60,  70,  80,  90, 100,
@@ -32,6 +33,7 @@ pub const ATTR_CURVE: [i32; 21] = [
 /// (0x001..0x800). `condition_pct` scales the result (100 = fresh, 0 = broken).
 ///
 /// Returns the raw rating (signed; negatives for out-of-position players).
+// GDI-REG: 006c8930 PORTED_PARTIAL
 pub fn position_rating(aptitudes: &[u8; 12], position_mask: u16, condition_pct: u8) -> i32 {
     let get = |off_in_block: usize| -> i32 {
         // ATTR_CURVE indexed by the aptitude byte (clamped to 0..20).
@@ -77,6 +79,7 @@ pub fn position_rating(aptitudes: &[u8; 12], position_mask: u16, condition_pct: 
 ///
 /// Returns the normalised team score — higher = stronger vs this opponent.
 /// Clubs with a stronger squad AND a favourable matchup post a higher score.
+// GDI-REG: 006c5c40 PORTED_BEHAVIOURAL
 pub fn team_score(sum_position_ratings: i32, opp_reputation: u16) -> i32 {
     // Guard: opp_rep can be zero (data-less clubs). Floor at 1 so the divisor
     // is never 0; the resulting big score is faithful to how a top team would

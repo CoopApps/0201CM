@@ -512,6 +512,7 @@ pub struct WorldApplyReport {
 /// The C15 report already produces events in that order; the
 /// applier walks the event stream in the received order and
 /// preserves it in the queue.
+// GDI-REG: 00668470 PORTED_BEHAVIOURAL
 pub fn apply_report_to_world(
     world: &mut World,
     save: &mut RuntimeSaveGame,
@@ -713,6 +714,7 @@ pub fn apply_squad_position_writes_from_report(
 ///
 /// Returns silently on any gate failure; mutates the pool only
 /// when a write actually lands.
+// GDI-REG: 00843970 PORTED_BEHAVIOURAL
 fn write_squad_position(
     contracts: &mut crate::contract_init::ContractPool,
     person_id: u32,

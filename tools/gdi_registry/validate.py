@@ -52,6 +52,45 @@ def main():
             if rf and rf.endswith(".rs") and not os.path.exists(os.path.join(ROOT, rf)):
                 warns.append(f"{va}: rust_file not found: {rf}")
 
+    # --- rust_symbol existence: catch drift when a cited symbol is renamed ---
+    import re
+    def last_ident(sym):
+        return sym.split("::")[-1].split("(")[0].strip()
+    for r in rows:
+        syms = [s.strip() for s in (r["rust_symbol"] or "").split(";") if s.strip()]
+        files = [f.strip() for f in (r["rust_file"] or "").split(";") if f.strip()]
+        if not syms or not files:
+            continue
+        blobs = {}
+        for rf in files:
+            fp = os.path.join(ROOT, rf)
+            if os.path.isfile(fp):
+                blobs[rf] = open(fp, encoding="utf-8", errors="replace").read()
+        for sym in syms:
+            ident = last_ident(sym)
+            if ident and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", ident):
+                if not any(re.search(rf"\b{re.escape(ident)}\b", b) for b in blobs.values()):
+                    warns.append(f"{r['dd_va']}: rust_symbol '{ident}' not found in cited file(s) — drift?")
+
+    # --- // GDI-REG: <addr> <status> tags in code must match the registry ---
+    by_va = {r["dd_va"]: r for r in rows}
+    tag_re = re.compile(r'GDI-REG:\s*([0-9a-fA-F]{6,8})\s+([A-Z_]+)')
+    crates = os.path.join(ROOT, "crates")
+    for dp, _, fs in os.walk(crates):
+        for fn in fs:
+            if not fn.endswith(".rs"):
+                continue
+            for ln in open(os.path.join(dp, fn), encoding="utf-8", errors="replace"):
+                m = tag_re.search(ln)
+                if not m:
+                    continue
+                va = "0x%08x" % int(m.group(1), 16)
+                tag_status = m.group(2)
+                if va not in by_va:
+                    errors.append(f"GDI-REG tag {va} in {fn}: not in registry")
+                elif by_va[va]["status"] != tag_status:
+                    warns.append(f"GDI-REG tag {va} in {fn}: status {tag_status} != registry {by_va[va]['status']} (merge or drift)")
+
     for w in warns: print(f"WARN {w}")
     for e in errors: print(f"ERR  {e}")
     print(f"\n{len(rows)} rows · {len(errors)} errors · {len(warns)} warnings")

@@ -108,6 +108,7 @@ fn pack_channels(r: u8, g: u8, b: u8, green_mask: u16) -> u16 {
 /// * Transparent nibbles skip.
 /// * `0xF` nibbles write `fg_color` raw.
 /// * `1..0xE` nibbles blend against the current surface pixel.
+// GDI-REG: 005ced50 PORTED_PARTIAL
 pub fn blit_glyph(
     surface: &mut Surface,
     x: i32, y: i32,

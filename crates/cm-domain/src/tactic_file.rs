@@ -90,6 +90,7 @@ fn default_slot_instructions_array() -> [SlotInstructions; 11] {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+// GDI-REG: 0059d870 PORTED_PARTIAL
 pub struct TacticSlot {
     /// One-hot role mask over the 12 roles GK/SW/D/DM/M/AM/ST/WB/RS/LS/C/FR.
     /// This is the value `tactics::position_rating` takes as `position_mask`.
@@ -243,6 +244,7 @@ impl Tactic {
 
 /// Load a tactic file. Auto-detects `.pct` (packaged/preset) vs `.tct`
 /// (user-authored) from the extension.
+// GDI-REG: 00895c10 PORTED_EXACT
 pub fn load_tactic(path: &std::path::Path) -> std::io::Result<Tactic> {
     let bytes = std::fs::read(path)?;
     let is_packaged = path.extension()
@@ -256,6 +258,7 @@ pub fn load_tactic(path: &std::path::Path) -> std::io::Result<Tactic> {
 
 /// Parse tactic bytes. Returns `None` if the version tag is not one of the
 /// six known versions.
+// GDI-REG: 00895c10 PORTED_EXACT
 pub fn parse_tactic(bytes: &[u8], is_packaged: bool) -> Option<Tactic> {
     // Need at least the header + team_flags_2 block; the tighter check
     // comes AFTER we know the version — v5E carries the 88-byte slot-pair
@@ -579,6 +582,7 @@ pub enum Tackling { Easy, Hard, Normal, Unset }
 /// in `reports/team_flags_2_decode.md`. `Marking` is VERIFIED; the rest are
 /// INFERRED from group cardinality and shipped-preset value distribution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 005a1470 PORTED_PARTIAL
 pub struct TeamSettings {
     #[serde(default = "default_passing")]
     pub passing: Passing,
@@ -671,6 +675,7 @@ impl TeamSettings {
 }
 
 /// Read the seven team switches out of a tactic's `team_flags_2` word.
+// GDI-REG: 006c34c0 PORTED_BEHAVIOURAL
 pub fn team_settings(t: &Tactic) -> TeamSettings {
     let w = t.team_flags_2;
     // **CORRECTED** passing / counter_attack decode against ground-truth

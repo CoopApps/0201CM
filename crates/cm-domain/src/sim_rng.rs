@@ -41,6 +41,7 @@ impl Default for SimRng {
 impl SimRng {
     /// Port of `FUN_00935a94`: `state = state*0x343fd + 0x269ec3;
     /// return (state >> 16) & 0x7fff`.
+    // GDI-REG: 00935a94 PORTED_EXACT
     fn lcg(&mut self) -> u32 {
         self.lcg_state = self.lcg_state
             .wrapping_mul(0x343fd)
@@ -51,6 +52,7 @@ impl SimRng {
     /// Port of `FUN_008fc5d0(seed)` — seed the RNG. `seed` must be non-zero
     /// (the exe substitutes a clock read for 0; callers here always pass a
     /// concrete seed). `FUN_00935a8a(seed)` sets the LCG state to `seed`.
+    // GDI-REG: 008fc5d0 PORTED_EXACT
     pub fn seed(seed: u32) -> Self {
         let mut r = SimRng { cursor: 0, offset16: 0, lcg_state: seed };
         let c = r.lcg() as usize % RNG_TABLE_LEN;   // rand() % 51000
@@ -62,6 +64,7 @@ impl SimRng {
     /// Port of `FUN_008fc4f0(n)` — return a value in `0..n`. For `n` outside
     /// `(-0x10000, 0x10000)` the exe uses a recursive scaling path (ported
     /// below). `n == 0` returns 0.
+    // GDI-REG: 008fc4f0 PORTED_EXACT
     pub fn rand(&mut self, n: i32) -> i32 {
         if n == 0 {
             return 0;

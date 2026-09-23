@@ -73,6 +73,7 @@ impl PackedSurface {
     /// format descriptor). Every call site inside the renderer feeds
     /// through here, so `RGB555` vs `RGB565` differences never leak.
     #[inline]
+    // GDI-REG: 005ce4f0 PORTED_EXACT
     pub fn pack_rgb(&self, r: u8, g: u8, b: u8) -> u16 {
         if self.green_mask == 0x7e0 {
             // 565: ((r&0xF8)<<5 | g&0xFC) << 3 | (b&0xFF)>>3
@@ -268,6 +269,7 @@ impl PackedSurface {
     /// allocates a 48-byte header (width, height, size_bytes, ptr, then
     /// 8×4 bytes copied verbatim from the pixel-format descriptor at
     /// `DAT_00acde98`); we condense that to the `SavedRect` type.
+    // GDI-REG: 005cdac0 PORTED_EXACT
     pub fn save_rect(&self, x0: i32, y0: i32, x1: i32, y1: i32) -> Option<SavedRect> {
         let (cx0, cy0, cx1, cy1) = self.clip(x0, y0, x1, y1)?;
         let w = cx1 - cx0 + 1;
@@ -284,6 +286,7 @@ impl PackedSurface {
     /// saved by `save_rect` at `(x, y)`. Named "restore" in the exe but
     /// also does duty as a general image blit; the block copy is
     /// 4-byte-at-a-time with a byte tail.
+    // GDI-REG: 005cdcc0 PORTED_EXACT
     pub fn restore_rect(&mut self, x: i32, y: i32, saved: &SavedRect) {
         let x1 = x + saved.width - 1;
         let y1 = y + saved.height - 1;
@@ -307,6 +310,7 @@ impl PackedSurface {
     /// `DAT_00ad6b64` behind a `DAT_00af6b62 == 0` guard; the cache is
     /// invalidated whenever the format changes, so we tie it to the
     /// surface's format for correctness.
+    // GDI-REG: 005cdfd0 PORTED_EXACT
     pub fn darken_rect(&mut self, x0: i32, y0: i32, x1: i32, y1: i32) {
         let Some((cx0, cy0, cx1, cy1)) = self.clip(x0, y0, x1, y1) else { return };
         let lut = build_darken_lut(self.red_mask, self.green_mask, self.blue_mask);

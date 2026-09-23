@@ -79,6 +79,7 @@ pub mod fonts {
 ///
 /// Takes the pre-measured body-text width (what `FUN_005CF610(1, body)`
 /// would return) so the port stays independent of the font renderer.
+// GDI-REG: 005d1c30 PORTED_BEHAVIOURAL
 pub fn compute_msgbox_layout(body_measured_width: i32, has_quit: bool) -> MsgBoxLayout {
     // exe: `w = measure + 0x18` (24-pixel padding).
     let w_raw = body_measured_width + 0x18;

@@ -24,6 +24,7 @@ pub enum CardVerdict {
 
 /// Discipline map from the opponent's experience/discipline byte
 /// (`other+0x25`) → `cVar5`. Exe `FUN_006cf230` C79-94.
+// GDI-REG: 006cf040 PORTED_EXACT
 pub fn disc_map(exp: i32) -> i32 {
     if exp == 0x14 { 2 }
     else if exp >= 0x12 { 1 }
@@ -40,6 +41,7 @@ pub fn disc_map(exp: i32) -> i32 {
 /// `victim_bump` = the connected-tackle victim-reaction add (0/1/3/5).
 /// Byte-exact port of the `FUN_006cf230` accumulation (report §2).
 #[allow(clippy::too_many_arguments)]
+// GDI-REG: 006cf230 PORTED_EXACT
 pub fn foul_severity(
     foul_code: u8,
     cards_this_match: i32,
@@ -87,6 +89,7 @@ pub fn foul_severity(
 /// The applier verdict (`FUN_006cf040` C72-80): a staged foul of `severity`,
 /// with `already_yellow` = fouler already booked this match (second yellow →
 /// red). Draws in exe order: red-test `rand(15)`, then none-test `rand(5)`.
+// GDI-REG: 006cf040 PORTED_EXACT
 pub fn card_verdict(severity: i32, already_yellow: bool, rng: &mut SimRng) -> CardVerdict {
     if rng.rand(15) + 9 < severity {
         CardVerdict::Red

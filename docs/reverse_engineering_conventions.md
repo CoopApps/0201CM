@@ -19,7 +19,8 @@ the Rust port. The authoritative bridge is the **GDI function registry**.
 | `docs/gdi_registry/gdi_globals.md` | ✅ | executable global data symbols (generated) |
 | `tools/gdi_registry/build_registry.py` | ✅ | regenerates all of the above |
 | `tools/gdi_registry/query.py` | ✅ | address→Rust / Rust→address lookup |
-| `tools/gdi_registry/validate.py` | ✅ | integrity checks |
+| `tools/gdi_registry/validate.py` | ✅ | integrity checks: valid status; PORTED_* has a Rust link; NOT_YET not reachable; **curated `rust_symbol` still exists in its file (drift)**; **every in-code `// GDI-REG:` tag matches a registry row** |
+| `tools/gdi_registry/inject_tags.py` | ✅ | idempotently writes `// GDI-REG: <addr> <status>` at the Rust item for each curated row (skips ambiguous/absent identifiers) so the link lives in the code |
 | `tools/gdi_registry/data/*.csv` | ✅ | **curated** source rows (hand-authored) |
 
 The builder merges three sources: (1) `functions.json` + the carver atlas

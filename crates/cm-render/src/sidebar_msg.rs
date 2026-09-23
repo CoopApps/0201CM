@@ -15,6 +15,7 @@
 /// `WidgetDescriptor.msg_id` field and by the dispatch dispatchers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
+// GDI-REG: 00745540 PORTED_BEHAVIOURAL
 pub enum SidebarMsg {
     /// No-op / non-clickable label.
     None = 0,

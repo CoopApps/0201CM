@@ -61,6 +61,7 @@ pub struct MatchInput {
 
 /// A record match kept for the Results tab (ids + raw date; formatted lazily).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 007cc990 REPLACED_BY_RUST
 pub struct MatchRecord {
     pub our_goals: u32,
     pub their_goals: u32,
@@ -76,6 +77,7 @@ impl MatchRecord {
     // round codes at fixture+0x32, venue via FUN_004b5eb0, goals, club ids).
     // exe FUN_007cc990: the record's name-id store (3 person ids from +0x33 +
     // value + date) — we keep ids and format lazily instead.
+    // GDI-REG: 007cc7c0 PORTED_BEHAVIOURAL
     fn from_input(m: &MatchInput) -> Self {
         Self {
             our_goals: m.our_goals,
@@ -96,12 +98,14 @@ impl MatchRecord {
 
     /// New win replaces `stored` as Biggest Win? Decoded `FUN_007ccaa0`: larger
     /// MARGIN; equal margin → more goals SCORED; full tie → keep earlier.
+    // GDI-REG: 007ccaa0 PORTED_EXACT
     fn beats_win(&self, stored: &MatchRecord) -> bool {
         let (nm, sm) = (self.win_margin(), stored.win_margin());
         if nm != sm { nm > sm } else { self.our_goals > stored.our_goals }
     }
     /// New loss replaces `stored` as Biggest Defeat? Decoded `FUN_007ccb70`:
     /// larger losing margin; equal → more goals CONCEDED; else keep earlier.
+    // GDI-REG: 007ccb70 PORTED_EXACT
     fn beats_defeat(&self, stored: &MatchRecord) -> bool {
         let nm = self.their_goals as i64 - self.our_goals as i64;
         let sm = stored.their_goals as i64 - stored.our_goals as i64;
@@ -110,6 +114,7 @@ impl MatchRecord {
     /// New replaces `stored` as Highest Scoring? Decoded `FUN_007ccc50`: TOTAL
     /// goals, strictly greater; ties keep earlier; exe guard: only compares when
     /// `stored.their_goals + self.our_goals != 0`.
+    // GDI-REG: 007ccc50 PORTED_EXACT
     fn beats_scoring(&self, stored: &MatchRecord) -> bool {
         if stored.their_goals + self.our_goals == 0 {
             return false;
@@ -187,6 +192,8 @@ impl Streak {
 
 /// One club's accumulated records for one season.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 004531a0 PORTED_BEHAVIOURAL
+// GDI-REG: 00452fe0 PORTED_BEHAVIOURAL
 pub struct ClubSeasonRecords {
     pub season_year: u16,
     pub club_id: u32,
@@ -207,6 +214,7 @@ impl ClubSeasonRecords {
     // bodies per club via the 0x6a club_comp map — this-season FUN_00452fe0,
     // all-time FUN_004531a0; the port keeps one accumulator per (club, season)
     // and aggregates to all-time at view time.
+    // GDI-REG: 004538b0 PORTED_BEHAVIOURAL
     pub fn new(club_id: u32, season_year: u16) -> Self {
         Self { season_year, club_id, ..Default::default() }
     }
@@ -215,6 +223,7 @@ impl ClubSeasonRecords {
     // exe per-category league/cup applicability gate FUN_00449e70; the exe's
     // batch-flush driver FUN_00449710 writes each queued comp into the all-time
     // vs this-season body (FUN_004539f0) — the port folds inline per match.
+    // GDI-REG: 00445220 PORTED_BEHAVIOURAL
     pub fn update_with_match(&mut self, m: &MatchInput) {
         let r = MatchRecord::from_input(m);
         let win = r.our_goals > r.their_goals;

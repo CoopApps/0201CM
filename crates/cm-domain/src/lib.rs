@@ -1320,6 +1320,7 @@ impl PlayerInitState {
     /// (b) similar-player template cloning (mode B); (c) the Pass-2 CA-rescale;
     /// (d) the exact slot->byte order from FUN_00524560. So values are real and
     /// CA-consistent but not yet position-shaped or bit-exact.
+    // GDI-REG: 00524160 PORTED_PARTIAL
     pub fn generate_attributes_core(ca: i16, rng: &mut cm_rng::MatchRng) -> Vec<u8> {
         let mut out = vec![0u8; 42];
         let ca10 = (ca as i32) / 10;
@@ -1392,6 +1393,7 @@ impl PlayerInitState {
     /// reputation, 0..10000; 0 if unemployed) — needed to GENERATE CA for the
     /// records that ship CA=0. When an `rng` is supplied the generation runs on
     /// the same init RNG stream, in the game's order (PA → CA → attributes).
+    // GDI-REG: 0051f5d0 PORTED_PARTIAL
     pub fn seed(
         attr: &DomainStaffType10,
         person: Option<&DomainStaffType6>,
@@ -2683,6 +2685,7 @@ pub struct NationTierAssignment {
 /// Headless, `Instant` and `Detailed` both run the token engine (Instant is
 /// NOT a cheap score generator); only `NotSimulated` changes execution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// GDI-REG: 0069c0d0 PORTED_BEHAVIOURAL
 pub enum MatchDetailMode {
     NotSimulated,
     Instant,
@@ -2703,6 +2706,7 @@ pub enum MatchDetailMode {
 /// data is NOT tiered — every nation's full club/player set is resident in all
 /// three states; the tier only gates manageability and simulation depth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 00806640 PORTED_BEHAVIOURAL
 pub enum LeagueTier {
     Neither,
     Background,
@@ -13346,6 +13350,7 @@ impl World {
     /// game's ring-buffer RNG, seeded) is supplied, flexible-potential
     /// sentinels are resolved with the REAL game RNG; otherwise deterministic
     /// midpoints are used.
+    // GDI-REG: 0051f5d0 PORTED_PARTIAL
     pub fn initialise_players(
         &self,
         start: &GameDate,
@@ -13477,6 +13482,7 @@ impl World {
     /// (ring-buffer over `config/rng_table.bin`), so CA=0 records receive real
     /// CA/PA/attributes (kill #6). Falls back to the deterministic (no-RNG)
     /// path if the table isn't present.
+    // GDI-REG: 008120d0 PORTED_BEHAVIOURAL
     fn boot_player_init_states(&self, db_dir: &Path, start: &GameDate) -> Vec<PlayerInitState> {
         match std::fs::read(db_dir.join("config").join("rng_table.bin"))
             .ok()
@@ -14011,6 +14017,7 @@ impl World {
         Ok(())
     }
 
+    // GDI-REG: 005121a0 REPLACED_BY_RUST
     pub fn read_rust_db_dir(dir: &Path) -> io::Result<Self> {
         let metadata: RustDatabaseMetadata = read_json(&dir.join("metadata.json"))?;
         if metadata.format != RUST_DB_FORMAT {
@@ -14134,6 +14141,7 @@ impl World {
     ///
     /// Idempotent: calling twice replaces the pool wholesale, which
     /// matches the exe's behaviour on a fresh "New Game" click.
+    // GDI-REG: 008120d0 PORTED_BEHAVIOURAL
     pub fn run_start_game_init(&mut self, rng_table_path: Option<&Path>) {
         // 1. player_init — FUN_0051f5d0. Generates CA/PA/attributes/
         //    reputation for the ~55% of type10 records that ship with
@@ -14276,6 +14284,7 @@ impl World {
         a.apt_goalkeeper >= 15
     }
 
+    // GDI-REG: 008120d0 PORTED_BEHAVIOURAL
     pub fn assign_squad_numbers(&mut self) {
         use std::collections::BTreeMap;
         // person id -> club id (only staff-with-employer get a number).
@@ -18544,6 +18553,7 @@ impl World {
     /// `detailed_matches` follows the exe: foreground nations always run
     /// detailed; background nations inherit the game-wide setting (defaulted on
     /// here — the "Background Matches" option is not yet surfaced in the UI).
+    // GDI-REG: 00806640 PORTED_BEHAVIOURAL
     pub fn build_nation_tiers(&self, options: &NewGameOptions) -> Vec<NationTierAssignment> {
         let foreground_ids = self.nation_ids_for_picker_labels(&options.selected_nations);
         let background_ids = self.nation_ids_for_picker_labels(&options.background_nations);
@@ -18626,6 +18636,7 @@ impl World {
     /// "empty nation field" was a parse bug), restricted to manageable
     /// leagues. Falls back to club-membership then name-matching only if the
     /// record link yields nothing.
+    // GDI-REG: 00821e90 REPLACED_BY_RUST
     pub fn competition_ids_for_nations(&self, nations: &[String]) -> BTreeSet<u32> {
         let nation_ids = self.nation_ids_for_picker_labels(nations);
 
@@ -23008,6 +23019,7 @@ impl CmPackedDate {
 
     // exe FUN_00536b50: day-of-month = day_of_year - cumulative_days_before_month[month]
     // (exe scans months high→low for the first table entry below doy; equivalent).
+    // GDI-REG: 00536b50 PORTED_BEHAVIOURAL
     pub fn to_game_date(&self) -> GameDate {
         let cumulative = if self.leap_year {
             &LEAP_CUMULATIVE_DAYS_BEFORE_MONTH
@@ -23030,6 +23042,9 @@ impl CmPackedDate {
     // exe FUN_005364c0 (subtract days, negative branch delegates to add) and
     // FUN_00536350 (add N weeks == add_days(weeks*7)): forward year-crossing
     // normalization — while day > year_length, subtract it and advance the year.
+    // GDI-REG: 00536190 PORTED_BEHAVIOURAL
+    // GDI-REG: 00536350 PORTED_BEHAVIOURAL
+    // GDI-REG: 005364c0 PORTED_BEHAVIOURAL
     pub fn add_days(&self, days: i16) -> Self {
         if days < 0 {
             return self.add_negative_days(days);
@@ -23054,6 +23069,8 @@ impl CmPackedDate {
     // exe FUN_005364c0 (subtract N days) and FUN_00536690 (subtract N weeks ==
     // add_negative_days(weeks*-7)): backward year-crossing normalization — while
     // day < 1, borrow the previous year's length.
+    // GDI-REG: 00536690 PORTED_BEHAVIOURAL
+    // GDI-REG: 005364c0 PORTED_BEHAVIOURAL
     fn add_negative_days(&self, days: i16) -> Self {
         let mut year = self.year;
         let mut day = self.day_of_year as i32 + i32::from(days);

@@ -65,6 +65,7 @@ pub const DDBLT_COLORFILL_WAIT: u32 = 0x01000400;
 ///
 /// The fullscreen path is the safe default when the font-record table
 /// hasn't been loaded yet.
+// GDI-REG: 005cf7b0 PORTED_EXACT
 pub fn font_height(font_id: i16, fullscreen_mode: bool,
                    font_record_height: Option<u32>) -> u32 {
     if !fullscreen_mode {
@@ -111,6 +112,7 @@ pub enum FillRectAction {
     ColorFill { rect: (i32, i32, i32, i32), color: u16, flags: u32 },
 }
 
+// GDI-REG: 005cd840 PORTED_EXACT
 pub fn fill_rect(
     left: i32, top: i32, right: i32, bottom: i32,
     flag: u8, color: u16,
@@ -189,6 +191,7 @@ pub const FONT_POINT_SIZE_FULLSCREEN: [u32; 8] = [9, 9, 10, 14, 16, 18, 20, 22];
 ///   the exe's inter-glyph kerning adjustment.
 /// * `fullscreen_measure`: closure returning `FUN_0059BED0(0, point_size, str)`
 ///   result — the GDI TextOut-style measure used only in fullscreen mode.
+// GDI-REG: 005cf7b0 PORTED_EXACT
 pub fn measure_string(
     font_id: i16,
     s: &[u8],
@@ -271,6 +274,7 @@ pub const GLYPH_KERN_LEFT_OFFSET: u32 = 0x0C;
 /// delta = scaled - glyph[curr].kern_right - glyph[prev].kern_left
 /// return max(0, delta)
 /// ```
+// GDI-REG: 005cf7b0 PORTED_EXACT
 pub fn kerning_delta(
     font_id: i16,
     prev_char: Option<u8>,

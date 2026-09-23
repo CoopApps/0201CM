@@ -67,6 +67,8 @@ pub const MONTH_START_LEAP: [i16; 12] = [
 ///      overflow.
 ///
 /// CM0102 0x00533eb0.
+// GDI-REG: 00533d10 PORTED_BEHAVIOURAL
+// GDI-REG: 00533eb0 PORTED_EXACT
 pub fn apply_flag_snap(buf: &mut [i16; 4], flag: i32) {
     if flag == -1 {
         return;
@@ -121,6 +123,8 @@ pub fn apply_flag_snap(buf: &mut [i16; 4], flag: i32) {
 // validates day/month, sets [doy, year, leap, 0] from the DAT_009a4b28/40
 // tables, then chains FUN_00533eb0 (see `apply_flag_snap`) when flag != -1.
 // pack_date covers the pre-snap body; the snap tail is `apply_flag_snap`.
+// GDI-REG: 00533d10 PORTED_BEHAVIOURAL
+// GDI-REG: 00533b50 PORTED_EXACT
 pub fn pack_date(day: i16, month: i8, year: u16) -> [i16; 4] {
     let day = if !(1..=31).contains(&day) { 1 } else { day };
     let month = if !(0..=11).contains(&month) { 0 } else { month };
@@ -166,6 +170,7 @@ pub fn pack_date(day: i16, month: i8, year: u16) -> [i16; 4] {
 /// half of a Northern-hemisphere season).
 ///
 /// CM0102 0x0066f3b0.
+// GDI-REG: 0066f3b0 PORTED_EXACT
 pub fn write_round_record(
     buffer: &mut [u8],
     round_idx: u16,
@@ -225,6 +230,7 @@ pub fn write_round_record(
 /// and leaving slots 1..7 at malloc-returned bytes.
 ///
 /// CM0102 0x0066f410.
+// GDI-REG: 0066f410 PORTED_PARTIAL
 pub fn write_slot(
     buffer: &mut [u8],
     round_idx: u16,

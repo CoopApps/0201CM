@@ -100,6 +100,7 @@ impl PixelFormat {
 /// Direct port of `FUN_005CE250`. Packs 17 named RGB triples through
 /// [`crate::rgb_to_surface_pixel`] with the current pixel format, and
 /// selects mode-dependent constants for the 9 reserved entries.
+// GDI-REG: 005ce250 PORTED_BEHAVIOURAL
 pub fn derive_palette(fmt: PixelFormat) -> DerivedPalette {
     let g_mask = fmt.green_mask();
     let pack = |r: u8, g: u8, b: u8| crate::rgb_to_surface_pixel(r, g, b, g_mask);

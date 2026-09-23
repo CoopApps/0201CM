@@ -38,6 +38,7 @@ impl CursorMode {
 
 /// The single global cursor-state variable. Port of `DAT_009B9D54`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// GDI-REG: 005d1b10 PORTED_BEHAVIOURAL
 pub struct CursorState {
     pub mode: CursorMode,
 }

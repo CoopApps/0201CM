@@ -631,6 +631,7 @@ pub const EVT_WITHDRAWN_ILL: u16 = 0x1E;
 ///   4. Injury on low form
 ///   5. Injury above threshold
 ///   6. Suspension forgotten
+// GDI-REG: 0069d950 PORTED_PARTIAL
 pub fn run_pre_match_pass(
     ctx: &mut MatchCtx,
     home: &EngineTeamSnapshot,
@@ -819,6 +820,7 @@ pub struct DaySchedule {
 /// The exe iterates `DAT_00B4C600` competitions and pulls each schedule
 /// via `FUN_00598D20`; we accept the schedules as an argument so callers
 /// (the tick driver) can supply them from the world state.
+// GDI-REG: 00699640 PORTED_BEHAVIOURAL
 pub fn match_day_build(
     ctx: &mut MatchDayCtx,
     mode: u8,
@@ -942,6 +944,7 @@ fn event_type_byte(code: u16) -> u8 {
 
 /// Port of `FUN_006BC8D0` — pushes an event onto both rings. Recursive
 /// for follow-ups (goal → celebration, foul → card).
+// GDI-REG: 006bc8d0 PORTED_PARTIAL
 pub fn match_events_generate(
     ctx: &mut MatchCtx,
     event_code: u16,
@@ -1132,6 +1135,7 @@ pub struct SideShotCounters {
 ///
 /// Returns `(outcome, xg_float)`. Mutates the shooter's fatigue, shot
 /// counter, and pending-shot cursor exactly like the exe.
+// GDI-REG: 006cfef0 PORTED_EXACT
 pub fn shot_outcome_resolver(
     shooter: &mut ShooterMutable,
     gk_shot_count: &mut u8,     // param_2 +0x15
@@ -1304,6 +1308,7 @@ fn map_outcome(byte: u8) -> ShotOutcome {
 /// This port produces goals via `match_events_generate` on subtype 0x11
 /// action tokens (the exe's shot subtype) with an RNG roll biased by team
 /// CA.
+// GDI-REG: 0069f2f0 PORTED_PARTIAL
 pub fn match_tick(
     ctx: &mut MatchCtx,
     rng: &mut MatchRng,
@@ -1958,6 +1963,7 @@ impl Default for MatchToken {
 ///
 /// Called at each period boundary (half-time / full-time / extra-time) —
 /// the exe walks 20 slots × 2 sides at each of the three period cases.
+// GDI-REG: 006b3de0 PORTED_EXACT
 pub fn finalize_rating(rating_milli: i16) -> i8 {
     let acc = rating_milli as i32;
     let raw = (acc + 500) / 1000;   // integer round-toward-zero after +500 bias
@@ -2138,6 +2144,7 @@ pub fn apply_scorer_goal_bump(rating_milli: &mut i16, fatigue: &mut i16,
 ///
 /// Tie-break matches exe order: first-scanned wins on strict-greater
 /// (team 0 preferred over team 1; low-slot preferred).
+// GDI-REG: 006b69e0 PORTED_EXACT
 pub fn select_motm(engine: &TokenEngine,
                     home_scorer_ids: &[u32],
                     away_scorer_ids: &[u32]) -> Option<u32> {
@@ -2775,6 +2782,8 @@ impl TokenEngine {
     /// offset 0x601E20 in cm0102.exe): `LUT[|dy|*9 + |dx|]`.
     // exe FUN_006b1e60: standalone dist(x1,y1,x2,y2) = same DAT_00A01E20
     //   LUT[|dy|*9+|dx|], out-of-range -> _DAT_0095afac (1000.0); byte-exact here.
+    // GDI-REG: 006d63b0 PORTED_EXACT
+    // GDI-REG: 006b1e60 PORTED_EXACT
     pub fn distance_quality(&self, from_x: i8, from_y: i8, target_x: i8, target_y: i8) -> f32 {
         let dx = (from_x - target_x).unsigned_abs() as usize;
         let dy = (from_y - target_y).unsigned_abs() as usize;
@@ -2969,6 +2978,7 @@ pub const ATTENDANCE_STARS_FLOOR: i32 = 0x5DC;    // = 1500
 /// ```
 ///
 /// Caller supplies the RNG so results are deterministic.
+// GDI-REG: 00845cc0 PORTED_PARTIAL
 pub fn combine_attendance(home: i32, away: i32, rng: &mut MatchRng) -> i32 {
     let sum = home.saturating_add(away);
     let total = sum - (rng.range(0x32) as i32);
@@ -3391,6 +3401,7 @@ impl TokenEngine {
     ///    carrier, update ball_zone_x/y.
     ///
     /// Returns `true` on successful move, `false` on no-op or invalid.
+    // GDI-REG: 006da0b0 PORTED_EXACT
     pub fn cell_move(&mut self, side: u8, slot: usize,
                      new_x: i8, new_y: i8) -> bool {
         let side_idx = side as usize;
@@ -3549,6 +3560,7 @@ pub type RivalTable = [RivalSlot; 3];
 /// `compare_types` supplies the exe's `FUN_00529FE0(rival_type, target)`
 /// equality check (returns 0 on match). Callers typically pass a
 /// closure that resolves both to name strings then strcmp's.
+// GDI-REG: 006ba1e0 PORTED_EXACT
 pub fn derby_score(
     team_a_rivals: RivalTable,
     team_b_type_or_default: i32,
@@ -3633,6 +3645,7 @@ pub struct AtmosphereAttach {
 /// else if rand(0x96=150) < quality → 5750
 /// else                            → 5250 (very quiet)
 /// ```
+// GDI-REG: 006cee80 PORTED_EXACT
 pub fn compute_atmosphere(
     flag: u32,
     atmosphere_row_handle: Option<u32>,
@@ -3799,6 +3812,7 @@ pub fn refresh_gk(engine: &mut TokenEngine, side: u8) {
 ///
 /// Returns `true` only when every one of the above holds — i.e. this
 /// player, in possession, right now, actually pulls the trigger.
+// GDI-REG: 006f99c0 PORTED_PARTIAL
 pub fn shot_attempt_gate(token: &MatchToken, engine: &TokenEngine, rng: &mut MatchRng) -> bool {
     // (1) Carrier-only — exe: `self == M[0xF582]`.
     let slot = token.position_slot.max(0) as u8;
@@ -3844,6 +3858,7 @@ pub fn shot_attempt_gate(token: &MatchToken, engine: &TokenEngine, rng: &mut Mat
 
 /// exe `FUN_006F99C0` — decision dispatcher. Sets token's action
 /// subtype based on zone bits, fatigue, and current game state.
+// GDI-REG: 006f99c0 PORTED_PARTIAL
 pub fn decide_action(token: &mut MatchToken, engine: &TokenEngine, rng: &mut MatchRng) -> u16 {
     let side = token.side;
 
@@ -3885,6 +3900,7 @@ pub fn decide_action(token: &mut MatchToken, engine: &TokenEngine, rng: &mut Mat
 /// exe `FUN_006F5DE0` — physics tick. Advances one token's state and
 /// queues a shot if the branch fires. Returns true if the token
 /// registered a shot this tick.
+// GDI-REG: 006f5de0 PORTED_PARTIAL
 pub fn physics_tick(
     token: &mut MatchToken,
     engine: &TokenEngine,
@@ -4003,6 +4019,7 @@ pub fn physics_tick(
 /// exe `FUN_006B6C10` — resolve queued shots on `token` via
 /// `shot_outcome_resolver` (which ports `FUN_006CFEF0`). Emits real
 /// event codes and updates the score box on `ctx`.
+// GDI-REG: 006b6c10 PORTED_BEHAVIOURAL
 pub fn resolve_queued_shots(
     token: &mut MatchToken,
     engine_side: usize,
@@ -4124,6 +4141,7 @@ pub fn resolve_queued_shots(
 // exe FUN_006b1040: bearing_LUT[dx*24+dy] read wrapper (dx=x2-x1, dy=y2-y1);
 //   this reproduces the table value. Edge: exe returns stored +0x8ed8 when
 //   dx==0 && dy==0, where bearing_atan2 yields 0.
+// GDI-REG: 006b1040 PORTED_EXACT
 pub fn bearing_atan2(dx: i32, dy: i32) -> u16 {
     let a = (dy as f32).atan2(dx as f32).to_degrees();
     (((a as i32 % 360) + 360) % 360) as u16
@@ -4135,6 +4153,7 @@ pub fn bearing_atan2(dx: i32, dy: i32) -> u16 {
 /// * `current_bearing` — self's `+0x19A` bearing byte (0..359).
 /// * `rotation_speed` — the caller's agility-derived roll (roughly
 ///   agility/10 * random modifier).
+// GDI-REG: 006dfb40 PORTED_EXACT
 pub fn reachability_check(
     self_x: i8, self_y: i8, target_x: i8, target_y: i8,
     current_bearing: u16, rotation_speed: u16,
@@ -4244,6 +4263,7 @@ impl ClassifierResult {
 /// the intended action `cmd`, the target cell, and the defender cluster,
 /// returns the `ClassifierResult` byte. This is the exe's real "did the
 /// shot get through the defender line" die.
+// GDI-REG: 006ae160 PORTED_EXACT
 pub fn classify_shot_outcome(
     shooter: &MatchToken,
     cmd: ClassifierCmd,
@@ -4367,6 +4387,7 @@ pub fn classify_shot_outcome(
 /// * bit 3 (0x08) — skip wrong-side −4.5 penalty (long shot)
 ///
 /// Returns `Some((x, y))` if a valid target found, `None` otherwise.
+// GDI-REG: 006a2790 PORTED_EXACT
 pub fn target_picker(
     token: &MatchToken,
     engine: &TokenEngine,
@@ -4534,6 +4555,7 @@ fn defenders_at_cell(engine: &TokenEngine, x: i8, y: i8, side: u8) -> u8 {
 /// (playmaker) is set. Our token model doesn't currently port the
 /// role-bit shift stage; the picker's dzy filter (-2..=1) covers the
 /// short-pass case. See reports/match_engine_tactic_reads_decode.md §5.
+// GDI-REG: 006a1940 PORTED_EXACT
 pub fn pass_target_picker(
     carrier: &MatchToken,
     engine: &TokenEngine,
@@ -4789,6 +4811,7 @@ pub fn run_token_tick(
 /// Simulate one fixture using the FULL token model. Same result shape as
 /// [`simulate_one_fixture`] but drives per-token possession decisions
 /// through the ported pipeline every minute.
+// GDI-REG: 00699d90 PORTED_BEHAVIOURAL
 pub fn simulate_one_fixture_token_model(
     home: &EngineTeamSnapshot,
     away: &EngineTeamSnapshot,

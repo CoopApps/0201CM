@@ -158,6 +158,7 @@ pub fn wrap_text(
 /// `(x_pen, y_top + font_h - 1)` (`style=2` → solid). We draw it here
 /// after painting the first wrapped line, because that's where the
 /// pen position is unambiguously anchored to the label buffer index.
+// GDI-REG: 005d0870 PORTED_PARTIAL
 pub fn draw_wrapped_text(
     s: &mut PackedSurface,
     x0: i32,

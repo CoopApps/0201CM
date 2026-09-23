@@ -111,6 +111,7 @@ impl PlayerKnowledge {
     }
 
     /// A single-attribute reveal: precise value or a `[lo..=hi]` band.
+    // GDI-REG: 00599d60 PORTED_PARTIAL
     pub fn reveal(&self, attribute_index: usize, true_value: u8) -> AttributeReveal {
         assert!(attribute_index < 64);
         if self.attribute_reveal & (1u64 << attribute_index) != 0 {
@@ -127,6 +128,7 @@ impl PlayerKnowledge {
 /// What the manager sees for a single attribute — precise value or a fog
 /// range. The DISPLAY layer reads this instead of hitting raw type10 bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 00599d60 PORTED_PARTIAL
 pub enum AttributeReveal {
     Exact(u8),
     Range(u8, u8),
@@ -162,6 +164,7 @@ impl ScoutBook {
     pub fn new() -> Self { Self::default() }
 
     /// Assign a scout to watch something. Idempotent on (manager, slot).
+    // GDI-REG: 00799190 PORTED_PARTIAL
     pub fn assign(&mut self, manager_id: u32, assignment: ScoutAssignment) {
         let slot = assignment.slot_index as usize;
         if slot >= 10 { return; }
@@ -179,6 +182,7 @@ impl ScoutBook {
     }
 
     /// Read the current watch list for one manager.
+    // GDI-REG: 007974b0 PORTED_PARTIAL
     pub fn assignments(&self, manager_id: u32) -> Vec<&ScoutAssignment> {
         self.managers.get(&manager_id)
             .map(|b| b.slots.iter().filter_map(|s| s.as_ref()).collect())
@@ -208,6 +212,7 @@ impl ScoutBook {
     /// `reports/scout_knowledge_formula_decode.md` for the full audit and
     /// follow-up decode targets (FUN_00489790 staff→scalar, staff+0x113
     /// semantics, the profile-screen attribute-fog formatter).
+    // GDI-REG: 007df1b0 PORTED_PARTIAL
     pub fn weekly_tick(&mut self) {
         for book in self.managers.values_mut() {
             for slot in book.slots.iter().flatten() {

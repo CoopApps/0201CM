@@ -1495,12 +1495,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006b3de0 |  | per-match rating finalize | PORTED_EXACT | finalize_rating | YES | BEHAVIOURALLY_EXACT | rust:match_engine_exe.rs |
 | 0x006b69e0 |  | man-of-the-match selector | PORTED_EXACT | select_motm | YES | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x006b6c10 |  | resolve queued shots | PORTED_BEHAVIOURAL | resolve_queued_shots | YES | BEHAVIOURALLY_EXACT | reports:match_action_path_decode.md |
-| 0x006ba380 |  | post-match rating writeback | PORTED_EXACT | post_match_rating_writeback | YES | STRUCTURALLY_VERIFIED | rust:match_engine_exe.rs |
+| 0x006ba380 |  | post-match rating writeback | PORTED_EXACT | crates/cm-domain/src/match_engine_exe.rs | YES | STRUCTURALLY_VERIFIED | rust:match_engine_exe.rs |
 | 0x006cfef0 |  | shot outcome dice resolver | PORTED_EXACT | shot_outcome_resolver | YES | BEHAVIOURALLY_EXACT | reports:match_action_path_decode.md |
 | 0x006d1a20 |  | player evaluation float fields | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006d63b0 |  | distance-quality LUT lookup | PORTED_EXACT | distance_quality | YES | BYTE_EXACT | rust:match_engine_exe.rs |
 | 0x006f5de0 |  | physics/pressure continuation tick (subset) | PORTED_PARTIAL | physics_tick | YES | PARTIAL | memory:match-engine-gap-audit.md |
-| 0x00845cc0 |  | attendance + pitch modifiers | PORTED_PARTIAL | attendance_calc;pitch_modifiers | YES | PARTIAL | rust:match_engine_exe.rs |
+| 0x00845cc0 |  | attendance + pitch modifiers | PORTED_PARTIAL | combine_attendance | YES | PARTIAL | rust:match_engine_exe.rs |
 | 0x005a2c70 | formation.cpp | formation primary mask classifier | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x00699640 | match_day.cpp | match-day build | PORTED_BEHAVIOURAL | match_day_build | YES | STRUCTURALLY_VERIFIED | reports:match_day.md |
 | 0x00699d90 | match_day.cpp | match-day play driver | PORTED_BEHAVIOURAL | simulate_one_fixture_token_model | YES | PARTIAL | memory:match-engine-gap-audit.md |
@@ -1510,7 +1510,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006ae160 | match_eng.cpp | shot/pass/tackle outcome classifier | PORTED_EXACT | classify_shot_outcome | YES | BEHAVIOURALLY_EXACT | reports:match_action_path_decode.md |
 | 0x006b4510 | match_eng.cpp | positional candidate selector | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006ba1e0 | match_eng.cpp | derby/grudge score | PORTED_EXACT | derby_score | YES | BEHAVIOURALLY_EXACT | rust:match_engine_exe.rs |
-| 0x006bc8d0 | match_events.cpp | match event-queue writer (subset) | PORTED_PARTIAL | push_match_event | YES | PARTIAL | memory:match-engine-gap-audit.md |
+| 0x006bc8d0 | match_events.cpp | match event-queue writer (subset) | PORTED_PARTIAL | match_events_generate | YES | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006d63f0 | match_pl.cpp | positional move/action resolution | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006da0b0 | match_pl.cpp | token cell move | PORTED_EXACT | cell_move | INDIRECT | BYTE_EXACT | rust:match_engine_exe.rs |
 | 0x006e65e0 | match_pl.cpp | shot/action score (positional) | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
@@ -1534,7 +1534,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006508e0 | key_nation.cpp | per-nation season-table builder | PORTED_BEHAVIOURAL | season_start | YES | STRUCTURALLY_VERIFIED | memory/league-dates-and-comp-wiring.md |
 | 0x00652a00 | key_nation.cpp | nation -> season-boundary index resolver | NOT_YET_PORTED | crates/cm-domain/src/club_history.rs;crates/cm-domain/src/league_calendar.rs | BLOCKED | HYPOTHESIS | reports/club_history_screen_decode.md |
 | 0x00652cd0 | key_nation.cpp | season-year -> "YYYY/YY" label | PORTED_PARTIAL | season_label | INDIRECT | PARTIAL | reports/club_history_screen_decode.md |
-| 0x00806640 | setup.cpp | league picker tier bitfield | PORTED_BEHAVIOURAL | LeagueTier;assign_tiers_for_selection | YES | BEHAVIOURALLY_EXACT | memory:league-tier-model.md |
+| 0x00806640 | setup.cpp | league picker tier bitfield | PORTED_BEHAVIOURAL | LeagueTier;build_nation_tiers | YES | BEHAVIOURALLY_EXACT | memory:league-tier-model.md |
 | 0x00821e90 | setup.cpp | compid->loaded-league table | REPLACED_BY_RUST | competition_ids_for_nations | YES | STRUCTURALLY_VERIFIED | memory:league-dates-and-comp-wiring.md |
 
 ## national-caps
@@ -1626,7 +1626,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005cd840 |  | rect fill/outline | PORTED_EXACT | rect;fill_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cdac0 |  | save background behind popup | PORTED_EXACT | save_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cdcc0 |  | restore background / pixel-buffer copy | PORTED_EXACT | restore_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
-| 0x005cdfd0 |  | darken rect (65536-entry LUT) | PORTED_EXACT | darken | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
+| 0x005cdfd0 |  | darken rect (65536-entry LUT) | PORTED_EXACT | darken_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005ce250 |  | palette derivation (17 named + 9 packs) | PORTED_BEHAVIOURAL | derive_palette | INDIRECT | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
 | 0x005ce4f0 |  | RGB555/565 pixel packer | PORTED_EXACT | pack_rgb | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005ce890 |  | fnt font loader + Latin-1 alias | PORTED_BEHAVIOURAL | load_font_bytes | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
@@ -1700,7 +1700,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0088a850 |  | tactics-screen event dispatcher | PORTED_PARTIAL | TacticCmd;dispatch | INDIRECT | PARTIAL | memory:tactics-port-status.md |
 | 0x0059d870 | formation.cpp | per-slot player-instruction setter | PORTED_PARTIAL | TacticSlot | YES | PARTIAL | memory:tactics-port-status.md |
 | 0x006c5c40 | match_man.cpp | team score (sum ratings / opp_rep x8) | PORTED_BEHAVIOURAL | team_score | YES | BEHAVIOURALLY_EXACT | memory:tactics-port-status.md |
-| 0x00881310 | tactics.cpp | AI/per-club formation resolver | NOT_YET_PORTED | FLAT_442_ROLES;snapshot_team_for_engine | BLOCKED | PARTIAL | memory:tactics-port-status.md |
+| 0x00881310 | tactics.cpp | AI/per-club formation resolver | NOT_YET_PORTED | FLAT_442_ROLES | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x00884700 | tactics_screens.cpp | TacticScreenView widget builder | NOT_YET_PORTED | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/tactic_dispatcher.rs | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x008939c0 | tactics_screens.cpp | tactic-record initialiser | NOT_YET_PORTED | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/tactic_dispatcher.rs | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x00895c10 | tactics_screens.cpp | tct/pct tactic loader | PORTED_EXACT | load_tactic;parse_tactic | YES | BYTE_EXACT | memory:agevak-cross-check.md |
@@ -1727,7 +1727,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006ce0e0 |  | wage-estimate helper | PORTED_PARTIAL | predict_wage | INDIRECT | BEHAVIOURALLY_EXACT | memory:transfer-deep-ports-done.md |
 | 0x008286f0 |  | scout throttle + bucket + work-permit | PORTED_EXACT | scout_throttle;scout_bucket_range;foreign_player_permit | INDIRECT | STRUCTURALLY_VERIFIED | memory:scouting-and-transfers-status.md |
 | 0x0082dab0 |  | mentor-loyalty bypass allowlist | PORTED_EXACT | mentor_loyalty_bypass | INDIRECT | STRUCTURALLY_VERIFIED | rust:transfer.rs |
-| 0x00843590 |  | position-candidate placement tree | PORTED_EXACT | position_candidate_tree | INDIRECT | STRUCTURALLY_VERIFIED | rust:transfer.rs |
+| 0x00843590 |  | position-candidate placement tree | PORTED_EXACT | crates/cm-domain/src/transfer.rs | INDIRECT | STRUCTURALLY_VERIFIED | rust:transfer.rs |
 | 0x0084d5d0 |  | per-role x87 weekly-wage cascade | PORTED_EXACT | wage_formula_by_role | INDIRECT | BYTE_EXACT | memory:transfer-deep-ports-done.md |
 | 0x005ea590 | human_manager.cpp | related-club seniority gate | NOT_YET_PORTED | crates/cm-app/src/main.rs;crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/eng_second_fixtures.rs;crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch9.rs;crates/cm-domain/src/transfer.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | BLOCKED | UNVERIFIED | memory:transfer-deep-ports-done.md |
 | 0x00848da0 | staff_contracts.cpp | canonical contract/offer composer | PORTED_PARTIAL | compose_wage_offer | INDIRECT | PARTIAL | memory:scouting-and-transfers-status.md |

@@ -106,6 +106,7 @@ pub fn kern_between(font: &PixelFont, text: &[u8], idx: usize) -> i32 {
 /// Draw one glyph at `(dst_x, dst_y)` onto `surface`. Returns the pen's
 /// advance (the exe's `iVar5` — the glyph's width; the surrounding text
 /// walker uses this plus a per-char kern from `FUN_005cf4d0`).
+// GDI-REG: 005ced50 PORTED_PARTIAL
 pub fn draw_glyph(
     surface: &mut PackedSurface,
     dst_x: i32,

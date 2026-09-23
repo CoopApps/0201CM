@@ -72,6 +72,7 @@ pub struct ResolvedString {
 /// ported for the reorder-and-substitute skeleton but falls back to
 /// verbatim token emission where `FUN_006554C0`'s inflection engine
 /// would fire.
+// GDI-REG: 006547c0 PORTED_BEHAVIOURAL
 pub fn resolve_template(
     src: &str,
     args: &[TemplateArg],

@@ -41,6 +41,8 @@ pub fn has_save(dir: &Path) -> bool {
 /// Persist `save` + the mutated `world` into slot `dir` (created if needed).
 /// Writes to sibling temp files then renames, so an interrupted write never
 /// leaves a half-written slot that would fail to load.
+// GDI-REG: 005176c0 REPLACED_BY_RUST
+// GDI-REG: 00818060 REPLACED_BY_RUST
 pub fn save_game(dir: &Path, save: &RuntimeSaveGame, world: &World) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     let save_tmp = dir.join("save.json.tmp");
@@ -68,6 +70,7 @@ pub fn save_game(dir: &Path, save: &RuntimeSaveGame, world: &World) -> std::io::
 /// caller re-establishes `world_init_done` (the saved World is already
 /// initialised) and re-registers the season-roll scheduler if a legacy save
 /// arrived with an empty one.
+// GDI-REG: 00814870 REPLACED_BY_RUST
 pub fn load_game(dir: &Path) -> std::io::Result<(RuntimeSaveGame, World)> {
     // STREAMING reads: avoid slurping the ~1 GB World JSON into a String first.
     let world: World = {

@@ -95,6 +95,7 @@ pub const SEASON_STARTS: &[SeasonStart] = &[
 ];
 
 /// Look up a league's season start by its picker country label.
+// GDI-REG: 006508e0 PORTED_BEHAVIOURAL
 pub fn season_start(country: &str) -> Option<&'static SeasonStart> {
     SEASON_STARTS.iter().find(|s| s.country == country)
 }

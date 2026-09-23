@@ -241,6 +241,7 @@ pub struct RelegationApplyEffects {
 /// `reserve`; there is no early break. Duplicates between the two
 /// clubs are unusual but not defended against — the walk transforms
 /// them twice, which is idempotent (`1→2`, then `2→2` no-op).
+// GDI-REG: 004d3460 PORTED_BEHAVIOURAL
 pub fn walk_relegation_persons(
     club: &ClubPreApply,
     reserve: Option<&ClubPreApply>,

@@ -59,6 +59,7 @@ pub const FIFA_W_YEAR_MINUS_0: f64 = crate::exe_constants::DAT_009569B0; // 0.8
 /// nation record at +0xB0..+0xD8). Returns the exact score the shipped
 /// exe would sort by.
 #[inline]
+// GDI-REG: 005c01d0 PORTED_EXACT
 pub fn fifa_score(year_n_4: f64, year_n_3: f64, year_n_2: f64,
                   year_n_0: f64, pending_accrual: f64, year_n_1: f64) -> f64 {
     year_n_0 * FIFA_W_YEAR_MINUS_0
@@ -114,6 +115,9 @@ pub struct NationRanking {
 /// Later evolution of `points` (monthly maintenance on the 18th, annual
 /// history shift, match-result feed) is the runtime FIFA subsystem
 /// (`FUN_00577210`, `FUN_00577d70`) — a tick-side port still to do.
+// GDI-REG: 00577ff0 PORTED_EXACT
+// GDI-REG: 005773c0 PORTED_BEHAVIOURAL
+// GDI-REG: 00577b00 PORTED_EXACT
 pub fn compute(nations: &[DomainOpaqueRecord]) -> Vec<NationRanking> {
     let mut out: Vec<NationRanking> = nations
         .iter()

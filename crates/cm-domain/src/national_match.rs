@@ -122,6 +122,8 @@ impl World {
     /// Credit one team's appearances: +1 cap each, + goals; a player whose
     /// TOTAL caps (shipped + accrued) was 0 gets a debut achievement (code 6:
     /// "First international cap against <opponent nation> aged <age>").
+    // GDI-REG: 00855c00 PORTED_BEHAVIOURAL
+    // GDI-REG: 00753240 PORTED_BEHAVIOURAL
     fn credit_caps(
         &self,
         save: &mut RuntimeSaveGame,

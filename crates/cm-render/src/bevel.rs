@@ -113,6 +113,7 @@ pub enum BevelOp {
 /// `flags & SAMPLE_COLOR` — matches the exe's Lock/sample at (x0, y0)
 /// via IDirectDrawSurface. `outer_outline_color` is `DAT_00AD6BDC`
 /// (near-black), also computed at palette-derive time.
+// GDI-REG: 005cf8e0 PORTED_EXACT
 pub fn bevel_box(
     left: i32, top: i32, right: i32, bottom: i32,
     flags: u32,

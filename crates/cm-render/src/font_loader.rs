@@ -51,6 +51,7 @@ pub const LATIN1_ALIAS_TABLE: &[(u8, u8)] = &[
 ///
 /// `apply_alias_fixup` controls whether the slot 6/7 Latin-1 alias
 /// table is applied. Pass `true` for the two large "trade_cond" fonts.
+// GDI-REG: 005ce890 PORTED_BEHAVIOURAL
 pub fn load_font_bytes(bytes: &[u8], apply_alias_fixup: bool) -> Option<FontRecord> {
     let mut cur = 0usize;
     let line_height = read_u32(bytes, &mut cur)?;

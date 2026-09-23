@@ -47,6 +47,7 @@ use crate::{
 /// event `0x0080a450`). Password/re-type live in the human_manager pool
 /// (`DAT_00b4bba8`); first/second live in the seat's person record.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 00809cc0 PORTED_BEHAVIOURAL
 pub struct ManagerNameEntryView {
     pub first_name: String,
     pub second_name: String,
@@ -129,6 +130,7 @@ pub struct NationalityEntry {
 
 /// The Select Nationality screen — draw `0x0080a880`, event `0x0080b0a0`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 0080a880 PORTED_BEHAVIOURAL
 pub struct ManagerNationalitySelectView {
     pub nations: Vec<NationalityEntry>,
     /// The filter that produced this list.
@@ -213,6 +215,7 @@ impl ManagerNationalitySelectView {
 /// The two "regular club vs national team" branches of the decompile are
 /// collapsed here: we only run against `world.core.clubs`, so the
 /// `FUN_00525450(club) == 0` "not a national team" check is implicit.
+// GDI-REG: 0052e370 PORTED_BEHAVIOURAL
 pub fn club_is_pickable(
     club: &ClubView,
     nation: Option<&NationView>,
@@ -246,6 +249,7 @@ pub struct ClubPickerEntry {
 /// Laid out as two clubs per row × three columns in the exe; the view just
 /// carries the flat list, sorted alphabetically the way `FUN_005d7710` does.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+// GDI-REG: 0080b2b0 PORTED_BEHAVIOURAL
 pub struct ManagerClubSelectView {
     pub nation_id: u32,
     pub clubs: Vec<ClubPickerEntry>,
@@ -353,6 +357,8 @@ impl From<NameEntryError> for CreateManagerError {
 /// data model the humans live on `RuntimeSaveGame` (the save overlay), not
 /// on the immutable-base `World` — the two together are "the world" the
 /// game sees at runtime.
+// GDI-REG: 00810f50 PORTED_BEHAVIOURAL
+// GDI-REG: 00809ad0 PORTED_BEHAVIOURAL
 pub fn create_manager(
     save: &mut RuntimeSaveGame,
     name: ManagerNameEntryView,

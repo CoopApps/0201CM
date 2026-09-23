@@ -114,6 +114,7 @@ pub fn starts_with_vowel(token: &str) -> bool {
 ///   → des` post-fix pass from lines 21761-21783.
 /// * **Other langs** — pass-through until per-language morphology
 ///   tables are extracted from the 22 K-line decode.
+// GDI-REG: 006554c0 PORTED_PARTIAL
 pub fn inflect_token(
     token: &str,
     kind: &str,

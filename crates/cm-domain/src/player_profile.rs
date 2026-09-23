@@ -79,6 +79,7 @@ pub const PROFILE_CAREER_LABELS: [&str; 6] = [
 /// type10 — it lives on Person +0x58 — so it carries sentinel 0 here and
 /// is read specially. Table verified against the game's own attribute
 /// dispatch FUN_0052d090 (memory/type10-real-attribute-offsets.md).
+// GDI-REG: 0052d090 PORTED_BEHAVIOURAL
 const PROFILE_ATTR_OFFSETS: [usize; 31] = [
     0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x43, 0x23, 0x24, 0x00 /*Determination*/,
     0x26, 0x27, 0x28, 0x2a, 0x2b, 0x2f, 0x2e, 0x31, 0x32, 0x33,
@@ -348,6 +349,7 @@ pub const HISTORY_BREAKDOWN_LABELS: [&str; 6] = [
 ];
 
 impl World {
+    // GDI-REG: 007a8090 PORTED_BEHAVIOURAL
     pub fn player_history_view_for(
         &self,
         save: &RuntimeSaveGame,
@@ -521,6 +523,7 @@ impl World {
     /// nation adjective (e.g. "English" for the English leagues/cups).
     /// A player in England thus gets "English" domestically, "European"
     /// in continental ties — per the exe's scope word (FUN_00546a40).
+    // GDI-REG: 00546a40 PORTED_BEHAVIOURAL
     fn competition_scope_adjective(&self, comp_id: u32) -> String {
         use crate::typed_records::NationView;
         // Continental (European) competitions handled by dedicated engines.
@@ -552,6 +555,7 @@ impl World {
     /// nation and is byte-exact; other nations fall back to the generic
     /// `award_line` until their subsystem tables are ported. Decode:
     /// `reports/awards_engine_decode.md`.
+    // GDI-REG: 00562580 PORTED_PARTIAL
     fn resolve_award_text(
         &self,
         category: crate::awards_engine::AwardCategory,
@@ -697,6 +701,7 @@ fn preferred_foot_str(left: i32, right: i32) -> String {
 /// (the FUN_005289a0 stat test below). Names come from the exe string
 /// table (0x009a3b98.. and 0x009a3ae8..). Empty when no aptitude reaches
 /// 15 (a regen stub whose position the exe generates at init).
+// GDI-REG: 005289a0 PORTED_BEHAVIOURAL
 fn position_full_name(a: &crate::DomainStaffType10) -> String {
     // Use the exe-exact eligibility bitmask (sliding threshold 15→10),
     // NOT a fixed >=15 test — this returns 0 (no position) for a player

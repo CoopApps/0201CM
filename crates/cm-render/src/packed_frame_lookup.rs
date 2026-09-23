@@ -42,6 +42,7 @@ use crate::widget_pool::{Area, GuiRecordPool, Widget};
 /// out slot untouched on error / on paths that only fill one) from a
 /// legitimate zero.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+// GDI-REG: 00403a20 PORTED_PARTIAL
 pub struct FrameMetrics {
     /// arg1 (`[esp+0x210]` on entry) — sometimes the panel-code, sometimes
     /// a derived x-metric.
@@ -57,6 +58,7 @@ pub struct FrameMetrics {
 /// two `Option<i32>` fields mirror the exact set of out-writes each path
 /// performs (the exe would leave the slot untouched on paths that don't
 /// write it).
+// GDI-REG: 00403a20 PORTED_PARTIAL
 pub fn frame_lookup(this_area: &Area, pool: &GuiRecordPool) -> FrameMetrics {
     let mut out = FrameMetrics::default();
 

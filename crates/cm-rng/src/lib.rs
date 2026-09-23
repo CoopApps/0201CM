@@ -119,6 +119,7 @@ impl MatchRng {
     }
 
     /// `random(n)` → `0..n` (n > 0). Matches `FUN_008fc4f0`.
+    // GDI-REG: 008fc4f0 PORTED_EXACT
     pub fn random(&mut self, n: i32) -> i32 {
         if n == 0 {
             return 0;

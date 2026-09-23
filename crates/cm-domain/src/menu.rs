@@ -129,6 +129,7 @@ impl MenuBar {
     /// active human of `save`. Item presence follows the same gates the exe
     /// applies: nation items only when the human holds a nation job, club
     /// items only when they hold a club, resign items only when appointed.
+    // GDI-REG: 00745540 PORTED_BEHAVIOURAL
     pub fn in_game(world: &crate::World, save: &RuntimeSaveGame) -> Self {
         let human = save.humans.get(save.active_human);
         let has_club = human.and_then(|h| h.club).is_some();

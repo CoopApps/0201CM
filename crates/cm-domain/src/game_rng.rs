@@ -154,6 +154,7 @@ impl GameRng {
     ///   jitter   = rand() % 0xffff;                     ;
     ///   if (cursor < base || cursor > sentinel)         ; guard
     ///       cursor = base;                              ;
+    // GDI-REG: 008fc5d0 PORTED_EXACT
     pub fn new(seed: u32) -> Self {
         let mut rng = GameRng {
             cursor: 0, jitter: 0, lcg_state: seed,
@@ -178,6 +179,7 @@ impl GameRng {
     }
 
     /// FUN_00935a94: `seed = seed*0x343fd + 0x269ec3; return (seed >> 16) & 0x7fff`.
+    // GDI-REG: 00935a94 PORTED_EXACT
     fn msvc_rand(&mut self) -> u32 {
         self.lcg_state = self.lcg_state.wrapping_mul(0x343fd).wrapping_add(0x269ec3); // 00935a94
         (self.lcg_state >> 16) & 0x7fff                                                // 00935a9c
@@ -190,6 +192,7 @@ impl GameRng {
     ///
     /// Return domain: `[0, 0x8000)`. The `& 0x7fff` mask is baked
     /// in — matches the MSVC 6.0 C-runtime rand() semantics.
+    // GDI-REG: 00935a94 PORTED_EXACT
     pub fn lcg_next(&mut self) -> u32 {
         // Playback overrides algorithmic path when queue non-empty
         // (see `queue_lcg_returns`).
@@ -204,6 +207,7 @@ impl GameRng {
     /// the operation the perturbation calls with
     /// `(short)param_1[0x10] + DAT_00dbc3f8` to key the shuffle to
     /// the season year deterministically.
+    // GDI-REG: 00935a8a PORTED_EXACT
     pub fn lcg_srand(&mut self, seed: u32) {
         self.lcg_state = seed;
     }
@@ -284,6 +288,7 @@ impl GameRng {
     /// Byte-exact port of FUN_008fc4f0.  Returns a value in the range
     /// specified by the exe: for `n > 0` in `[0, n)`; for `n == 0`
     /// returns 0; for `n < 0` follows the exe's negated-remainder path.
+    // GDI-REG: 008fc4f0 PORTED_EXACT
     pub fn rand_mod(&mut self, n: i32) -> i32 {
         // Playback overrides algorithmic path when queue non-empty
         // (see `queue_pool_returns`).

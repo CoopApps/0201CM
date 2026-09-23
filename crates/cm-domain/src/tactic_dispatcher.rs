@@ -129,6 +129,7 @@ impl TacticModal {
 /// the sidebar-item struct at `+0xba966`.
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+// GDI-REG: 0088a850 PORTED_PARTIAL
 pub enum TacticCmd {
     /// 0x01 — **New Tactic**.  Spawns a fresh editor window
     /// (`operator_new(0xC4E2)` → `FUN_00894380` → `FUN_007E6570(&LAB_0088DEF0,
@@ -498,6 +499,7 @@ pub struct TacticDispatchResult {
 //    behaviour without needing the whole 15 kB scratch layout.
 // ---------------------------------------------------------------------------
 
+// GDI-REG: 0088a850 PORTED_PARTIAL
 pub fn dispatch(cmd: TacticCmd, state: &mut TacticState) -> TacticDispatchResult {
     use TacticCmd::*;
     use TacticDispatchReturn::*;

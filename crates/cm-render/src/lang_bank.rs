@@ -108,6 +108,7 @@ impl LangBank {
     /// Returns `Some((slot, index))` on hit, `None` on miss (or when
     /// the fast-path table is not populated — matching the exe's early
     /// return without falling through to disk).
+    // GDI-REG: 00654e90 PORTED_BEHAVIOURAL
     pub fn lookup(&self, raw_src: &str) -> Option<(&LangSlot, usize)> {
         if !self.fast_path_active { return None; }
         let key = normalise_fast(raw_src);

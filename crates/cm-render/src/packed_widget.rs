@@ -403,6 +403,7 @@ fn stipple(va: u32) -> &'static StipplePattern {
 /// `pool` gates block G's frame overlay: when `None` (or when the target
 /// area is out of range) the overlay is skipped — the exe would deref a
 /// stale pointer, but a soft skip is the safe port.
+// GDI-REG: 005d7bd0 PORTED_BEHAVIOURAL
 pub fn render_widget(
     surface: &mut PackedSurface,
     widget: &mut Widget,

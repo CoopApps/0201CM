@@ -144,6 +144,7 @@ impl PanelPalette {
 /// primary colour (`param_6`, `[esp+0x7c]`); `pattern_colour` is `param_7`
 /// (`[esp+0x80]`) — consumed only by the `P_BEVEL | P_ALT_PRIMITIVE`
 /// circle-outline path at `005cf9db`.
+// GDI-REG: 005cf8e0 PORTED_EXACT
 pub fn draw_panel(
     s: &mut PackedSurface,
     x0: i32,
