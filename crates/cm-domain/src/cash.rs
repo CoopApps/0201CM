@@ -52,6 +52,7 @@ impl Money {
 
     /// Format with a currency symbol prefix (default "£"), as `cash_format`
     /// renders it — e.g. `Money(1_500_000).format("£") == "£1,500,000"`.
+    // GDI-REG: 00442500 PORTED_PARTIAL
     pub fn format(self, symbol: &str) -> String {
         if self.0 < 0 {
             format!("-{symbol}{}", Money(-self.0).grouped())

@@ -230,6 +230,7 @@ pub struct LeagueTableRow {
 /// Returns one [`LeagueTableRow`] per input, in the same order,
 /// with `current_status` updated where a non-sticky write fired.
 /// The caller applies the writes.
+// GDI-REG: 00669fa0 PORTED_PARTIAL
 pub fn stamp_league_end_of_season_statuses(
     shape: EnglishLeagueEndShape,
     finalized_table: &[LeagueTableRow],

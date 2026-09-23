@@ -79,6 +79,7 @@ const CONTINENT_COUNT: i32 = 6;
 /// built by `FUN_00577b00` (comp_fifa): `{nation index @+0, points: f32 @+0xc,
 /// rank: i16 @+0x10, prev_rank: i16 @+0x12, history: [i32; 6] @+0x14}`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+// GDI-REG: 00577890 REPLACED_BY_RUST
 pub struct NationRanking {
     pub nation_id: u32,
     pub nation_name: String,
@@ -118,6 +119,7 @@ pub struct NationRanking {
 // GDI-REG: 00577ff0 PORTED_EXACT
 // GDI-REG: 005773c0 PORTED_BEHAVIOURAL
 // GDI-REG: 00577b00 PORTED_EXACT
+// GDI-REG: 00577550 REPLACED_BY_RUST
 pub fn compute(nations: &[DomainOpaqueRecord]) -> Vec<NationRanking> {
     let mut out: Vec<NationRanking> = nations
         .iter()

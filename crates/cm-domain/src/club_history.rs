@@ -497,6 +497,7 @@ impl crate::World {
     // GDI-REG: 007abd80 PORTED_BEHAVIOURAL
     // GDI-REG: 00449590 PORTED_BEHAVIOURAL
     // GDI-REG: 007a8090 PORTED_BEHAVIOURAL
+    // GDI-REG: 007abef0 PORTED_BEHAVIOURAL
     pub fn club_history_view(&self, club_id: u32) -> ClubHistoryView {
         use crate::typed_records::ClubView;
         let club = self.core.clubs.iter().find(|c| ClubView::new(c).id() == club_id);

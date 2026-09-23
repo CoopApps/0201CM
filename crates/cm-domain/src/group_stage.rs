@@ -77,6 +77,7 @@ impl GroupStageState {
     /// snake-draft style (highest-reputation team goes to group 0, next
     /// to group 1, ..., wrap back). Guarantees each group is
     /// approximately balanced.
+    // GDI-REG: 00877450 PORTED_BEHAVIOURAL
     pub fn build(
         pool: Vec<ArgTeam>,
         competition_id: i32,
@@ -109,6 +110,7 @@ impl GroupStageState {
 
     /// Generate every intra-group fixture. Double round-robin per group.
     /// Returns a list of `(group_index, home_id, away_id)` triples.
+    // GDI-REG: 00877770 PORTED_BEHAVIOURAL
     pub fn generate_fixtures(&self) -> Vec<(u8, u32, u32)> {
         let mut out = Vec::new();
         for (gi, group) in self.groups.iter().enumerate() {

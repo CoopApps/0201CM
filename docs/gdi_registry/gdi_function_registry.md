@@ -42,21 +42,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0043ff10 | brazil_rules.cpp | FUN_0043ff10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043ff30 | brazil_rules.cpp | FUN_0043ff30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043ffd0 | brazil_rules.cpp | FUN_0043ffd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
-| 0x00440070 | cash.cpp | FUN_00440070 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00440170 | cash.cpp | FUN_00440170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00440240 | cash.cpp | FUN_00440240 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00441f10 | cash.cpp | FUN_00441f10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00442500 | cash.cpp | FUN_00442500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00442fd0 | cash.cpp | FUN_00442fd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00443710 | club_history.cpp | FUN_00443710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00443770 | club_history.cpp | FUN_00443770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00443c70 | club_history.cpp | FUN_00443c70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00443e10 | club_history.cpp | FUN_00443e10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00444060 | club_history.cpp | FUN_00444060 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00444310 | club_history.cpp | FUN_00444310 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x004445c0 | club_history.cpp | FUN_004445c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00444840 | club_history.cpp | FUN_00444840 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00444a80 | club_history.cpp | FUN_00444a80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00448170 | club_records.cpp | FUN_00448170 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00448d90 | club_records.cpp | FUN_00448d90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
 | 0x00449710 | club_records.cpp | FUN_00449710 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
@@ -83,12 +68,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00480130 | club_screens.cpp | FUN_00480130 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
 | 0x00487210 | club_screens.cpp | FUN_00487210 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00487670 | club_screens.cpp | FUN_00487670 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
-| 0x0048f800 | coach.cpp | FUN_0048f800 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00490220 | coach.cpp | FUN_00490220 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00490410 | coach.cpp | FUN_00490410 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
-| 0x00490530 | coach.cpp | FUN_00490530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00490f00 | coach.cpp | FUN_00490f00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00491040 | coach.cpp | FUN_00491040 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00491830 | comp.cpp | FUN_00491830 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00491b70 | comp.cpp | FUN_00491b70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00491c20 | comp.cpp | FUN_00491c20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -214,23 +194,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0052e0e0 | database.cpp | FUN_0052e0e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x00531370 | database.cpp | FUN_00531370 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x005313f0 | database.cpp | FUN_005313f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x00533cf0 | date.cpp | FUN_00533cf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00533fd0 | date.cpp | FUN_00533fd0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x00534050 | date.cpp | FUN_00534050 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00534230 | date.cpp | FUN_00534230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00534530 | date.cpp | FUN_00534530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00534ed0 | date.cpp | FUN_00534ed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00535130 | date.cpp | FUN_00535130 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00535ad0 | date.cpp | FUN_00535ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00535f90 | date.cpp | FUN_00535f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00536810 | date.cpp | FUN_00536810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00536990 | date.cpp | FUN_00536990 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00536b90 | date.cpp | FUN_00536b90 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs;crates/cm-domain/src/screen_transfers.rs | YES | UNVERIFIED |  |
-| 0x00536c20 | date.cpp | FUN_00536c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00536d10 | date.cpp | FUN_00536d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00536d50 | date.cpp | FUN_00536d50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00537130 | date.cpp | FUN_00537130 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00537190 | date.cpp | FUN_00537190 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005371c0 | db_files.cpp | FUN_005371c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00537320 | db_files.cpp | FUN_00537320 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00537730 | db_files.cpp | FUN_00537730 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
@@ -280,46 +246,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005493b0 | display.cpp | FUN_005493b0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00549fd0 | display.cpp | FUN_00549fd0 | PORTED_BEHAVIOURAL | crates/cm-render/src/widget_pool.rs | YES | UNVERIFIED |  |
 | 0x0054dc60 | display.cpp | FUN_0054dc60 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x00554600 | eng_auto_cup.cpp | FUN_00554600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00554f90 | eng_auto_cup.cpp | FUN_00554f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00555310 | eng_auto_cup.cpp | FUN_00555310 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00555690 | eng_auto_cup.cpp | FUN_00555690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005558c0 | eng_auto_cup.cpp | FUN_005558c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00555bf0 | eng_auto_cup.cpp | FUN_00555bf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00555e80 | eng_cc_cup.cpp | FUN_00555e80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005568a0 | eng_cc_cup.cpp | FUN_005568a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00556f90 | eng_charity.cpp | FUN_00556f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00557250 | eng_charity.cpp | FUN_00557250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00557390 | eng_charity.cpp | FUN_00557390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005577a0 | eng_conf.cpp | FUN_005577a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005579e0 | eng_conf.cpp | FUN_005579e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00558c80 | eng_fa_cup.cpp | FUN_00558c80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005596f0 | eng_fa_cup.cpp | FUN_005596f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055a7d0 | eng_fa_cup.cpp | FUN_0055a7d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055a8f0 | eng_fa_trophy.cpp | FUN_0055a8f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055afa0 | eng_fa_trophy.cpp | FUN_0055afa0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055b340 | eng_first.cpp | FUN_0055b340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055b580 | eng_first.cpp | FUN_0055b580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055c8b0 | eng_first.cpp | FUN_0055c8b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055cd40 | eng_first.cpp | FUN_0055cd40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055cf20 | eng_prm.cpp | FUN_0055cf20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055d170 | eng_prm.cpp | FUN_0055d170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055e5c0 | eng_prm.cpp | FUN_0055e5c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055f280 | eng_second.cpp | FUN_0055f280 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005601d0 | eng_second.cpp | FUN_005601d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00560610 | eng_second.cpp | FUN_00560610 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00560b40 | eng_third.cpp | FUN_00560b40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00560d90 | eng_third.cpp | FUN_00560d90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00561ce0 | eng_third.cpp | FUN_00561ce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00562130 | eng_third.cpp | FUN_00562130 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00562440 | england_awards.cpp | FUN_00562440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005637f0 | england_rules.cpp | FUN_005637f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0056d120 | european_awards.cpp | FUN_0056d120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00574960 | european_cup.cpp | FUN_00574960 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
-| 0x00576d20 | fifa_rankings.cpp | FUN_00576d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00577550 | fifa_rankings.cpp | FUN_00577550 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00577890 | fifa_rankings.cpp | FUN_00577890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00577c50 | fifa_rankings.cpp | FUN_00577c50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005792a0 | file_screens.cpp | FUN_005792a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs | YES | UNVERIFIED |  |
 | 0x0057b9c0 | file_screens.cpp | FUN_0057b9c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs;crates/cm-domain/src/screen_batch27.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x0057bb30 | file_screens.cpp | FUN_0057bb30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs | YES | UNVERIFIED |  |
@@ -353,7 +282,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005b0c50 | friendly.cpp | FUN_005b0c50 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005b0e20 | friendly.cpp | FUN_005b0e20 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005b11a0 | friendly.cpp | FUN_005b11a0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
-| 0x005b1840 | friendly.cpp | FUN_005b1840 | UNKNOWN | crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-render/src/screen_club_fixtures_faithful.rs | INDIRECT | UNVERIFIED |  |
 | 0x005b2b90 | friendly.cpp | FUN_005b2b90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x005b2c40 | friendly.cpp | FUN_005b2c40 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x005b6a10 | friendly.cpp | FUN_005b6a10 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/msgbox.rs | YES | UNVERIFIED |  |
@@ -373,12 +301,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d9ac0 | hall_of_fame.cpp | FUN_005d9ac0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/hall_of_fame.rs | YES | UNVERIFIED |  |
 | 0x005dab70 | hall_of_fame.cpp | FUN_005dab70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs;crates/cm-domain/src/screen_batch16.rs | YES | UNVERIFIED |  |
 | 0x005db8b0 | history.cpp | FUN_005db8b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs;crates/cm-render/src/hsr.rs | YES | UNVERIFIED |  |
-| 0x005dbf60 | history.cpp | FUN_005dbf60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005dbfe0 | history.cpp | FUN_005dbfe0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
 | 0x005dc160 | history.cpp | FUN_005dc160 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
 | 0x005dc2a0 | history.cpp | FUN_005dc2a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
-| 0x005dc5e0 | history.cpp | FUN_005dc5e0 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
-| 0x005dc660 | history.cpp | FUN_005dc660 | UNKNOWN | crates/cm-domain/src/history.rs;crates/cm-render/src/hsr.rs | INDIRECT | UNVERIFIED |  |
 | 0x005e3490 | host_country.cpp | FUN_005e3490 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x005e42f0 | host_country.cpp | FUN_005e42f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x005e4690 | host_country.cpp | FUN_005e4690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -417,7 +342,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006547b0 | langlib.cpp | FUN_006547b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/index.rs | YES | UNVERIFIED |  |
 | 0x006679a0 | league.cpp | FUN_006679a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs;crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
 | 0x00668890 | league.cpp | FUN_00668890 | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs;crates/cm-domain/src/exe_date.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00669fa0 | league.cpp | FUN_00669fa0 | UNKNOWN | crates/cm-domain/src/c15_1g_snapshot.rs;crates/cm-domain/src/year_end_statuses.rs | INDIRECT | UNVERIFIED |  |
 | 0x0066a910 | league.cpp | FUN_0066a910 | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x00672400 | league_stage.cpp | FUN_00672400 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs;crates/cm-domain/src/screen_batch7.rs | YES | UNVERIFIED |  |
 | 0x00672420 | league_stage.cpp | FUN_00672420 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
@@ -452,11 +376,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006b57d0 | match_eng.cpp | FUN_006b57d0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x006b5800 | match_eng.cpp | FUN_006b5800 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x006bba10 | match_eng.cpp | FUN_006bba10 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x006be690 | match_events.cpp | FUN_006be690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006be730 | match_events.cpp | FUN_006be730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006bf2d0 | match_events.cpp | FUN_006bf2d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006bf660 | match_events.cpp | FUN_006bf660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006c0ce0 | match_events.cpp | FUN_006c0ce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006c0f10 | match_man.cpp | FUN_006c0f10 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x006d08b0 | match_official.cpp | FUN_006d08b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x006d1780 | match_official.cpp | FUN_006d1780 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
@@ -483,16 +402,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007297b0 | media.cpp | FUN_007297b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch17.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x007328a0 | media.cpp | FUN_007328a0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x0074d010 | media.cpp | FUN_0074d010 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch17.rs;crates/cm-domain/src/screen_nation_dashboard.rs | YES | UNVERIFIED |  |
-| 0x0074d830 | mini_cup.cpp | FUN_0074d830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074da70 | mini_cup.cpp | FUN_0074da70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074dbb0 | mini_cup.cpp | FUN_0074dbb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ded0 | mini_cup.cpp | FUN_0074ded0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074f760 | month_ratings.cpp | FUN_0074f760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074f9a0 | month_ratings.cpp | FUN_0074f9a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fbe0 | month_ratings.cpp | FUN_0074fbe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fed0 | month_ratings.cpp | FUN_0074fed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fef0 | month_ratings.cpp | FUN_0074fef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ff50 | month_ratings.cpp | FUN_0074ff50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00752830 | national_teams.cpp | FUN_00752830 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007536f0 | national_teams.cpp | FUN_007536f0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007553c0 | national_teams.cpp | FUN_007553c0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
@@ -540,7 +449,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007aef50 | player_stats.cpp | FUN_007aef50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af000 | player_stats.cpp | FUN_007af000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af190 | player_stats.cpp | FUN_007af190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c58c0 | rb_england.cpp | FUN_007c58c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007ccd10 | record_utils.cpp | FUN_007ccd10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x007cd740 | record_utils.cpp | FUN_007cd740 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x007cd7f0 | record_utils.cpp | FUN_007cd7f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/injury_table.rs | YES | UNVERIFIED |  |
@@ -574,11 +482,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0080a450 | setup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_name_faithful.rs;crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x0080bbd0 | setup.cpp | FUN_0080bbd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch20.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x0080cc20 | setup.cpp | FUN_0080cc20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs | YES | UNVERIFIED |  |
-| 0x0080fac0 | setup.cpp | FUN_0080fac0 | UNKNOWN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x008109c0 | setup.cpp | FUN_008109c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs | YES | UNVERIFIED |  |
 | 0x00810ca0 | setup.cpp | FUN_00810ca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x00811d80 | setup.cpp | FUN_00811d80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs | YES | UNVERIFIED |  |
-| 0x008224b0 | setup.cpp | FUN_008224b0 | UNKNOWN | crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00822580 | setup.cpp | FUN_00822580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00822920 | setup.cpp | FUN_00822920 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x00822940 | setup.cpp | FUN_00822940 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
@@ -599,42 +505,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00847530 | stadium.cpp | FUN_00847530 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x008475a0 | stadium.cpp | FUN_008475a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00848980 | staff_contracts.cpp | FUN_00848980 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x00851770 | staff_records.cpp | FUN_00851770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008517e0 | staff_records.cpp | FUN_008517e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00851c00 | staff_records.cpp | FUN_00851c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00852430 | staff_records.cpp | FUN_00852430 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00852a50 | staff_records.cpp | FUN_00852a50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00853020 | staff_records.cpp | FUN_00853020 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00853170 | staff_records.cpp | FUN_00853170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008537b0 | staff_records.cpp | FUN_008537b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00854060 | staff_records.cpp | FUN_00854060 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008546c0 | staff_records.cpp | FUN_008546c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00854d80 | staff_records.cpp | FUN_00854d80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00854fb0 | staff_records.cpp | FUN_00854fb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00855180 | staff_records.cpp | FUN_00855180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00855340 | staff_records.cpp | FUN_00855340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008556e0 | staff_records.cpp | FUN_008556e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00855870 | staff_records.cpp | FUN_00855870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00855d20 | staff_records.cpp | FUN_00855d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008567b0 | staff_records.cpp | FUN_008567b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008569d0 | staff_records.cpp | FUN_008569d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00856be0 | staff_records.cpp | FUN_00856be0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00856e20 | staff_records.cpp | FUN_00856e20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00856f40 | staff_records.cpp | FUN_00856f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00857060 | staff_records.cpp | FUN_00857060 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008582b0 | staff_records.cpp | FUN_008582b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858560 | staff_records.cpp | FUN_00858560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858900 | staff_records.cpp | FUN_00858900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858a60 | staff_records.cpp | FUN_00858a60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858b30 | staff_records.cpp | FUN_00858b30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858c90 | staff_records.cpp | FUN_00858c90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858f80 | staff_records.cpp | FUN_00858f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00859250 | staff_screens.cpp | FUN_00859250 | UNKNOWN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch3.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | INDIRECT | UNVERIFIED |  |
 | 0x00859600 | staff_screens.cpp | FUN_00859600 | UNKNOWN | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00873040 | staff_screens.cpp | FUN_00873040 | UNKNOWN | crates/cm-domain/src/screen_batch21.rs | INDIRECT | UNVERIFIED |  |
 | 0x00874a10 | staff_screens.cpp | FUN_00874a10 | UNKNOWN | crates/cm-domain/src/screen_batch21.rs | INDIRECT | UNVERIFIED |  |
-| 0x00877450 | sub_league.cpp | FUN_00877450 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00877770 | sub_league.cpp | FUN_00877770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00881220 | tactics.cpp | FUN_00881220 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 | 0x008815a0 | tactics.cpp | FUN_008815a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x00881910 | tactics.cpp | FUN_00881910 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
@@ -655,11 +529,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00897e20 | tactics_screens.cpp | FUN_00897e20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0089bc20 | tcpip.cpp | FUN_0089bc20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/honours.rs | YES | UNVERIFIED |  |
 | 0x0089d100 | team_award.cpp | FUN_0089d100 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x008a1c90 | training_schedule.cpp | FUN_008a1c90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008a1e00 | training_schedule.cpp | FUN_008a1e00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008a1f90 | training_schedule.cpp | FUN_008a1f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a20a0 | training_schedule.cpp | FUN_008a20a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x008a6380 | training_schedule.cpp | FUN_008a6380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a6420 | training_screens.cpp | FUN_008a6420 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
 | 0x008ac0c0 | transfer_manager.cpp | FUN_008ac0c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x008acd10 | transfer_manager.cpp | FUN_008acd10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
@@ -723,7 +593,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x004135c0 | australia_rules.cpp | FUN_004135c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x004433a0 | club_history.cpp | FUN_004433a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004c6ea0 | comp_util.cpp | FUN_004c6ea0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004c7010 | comp_util.cpp | FUN_004c7010 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0053f0a0 | discipline.cpp | FUN_0053f0a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -732,7 +601,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005e4f50 | human_manager.cpp | FUN_005e4f50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 | 0x00789a40 | olympics.cpp | FUN_00789a40 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00789b50 | os.cpp | FUN_00789b50 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x00851340 | staff_records.cpp | FUN_00851340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008fc280 | utils.cpp | FUN_008fc280 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x009354ca | zipdir.cpp | FUN_009354ca | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0093cc01 | zipdir.cpp | FUN_0093cc01 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
@@ -742,8 +610,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x005c2180 | game_config.cpp | FUN_005c2180 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs | YES | UNVERIFIED |  |
-| 0x006bd530 | match_events.cpp | FUN_006bd530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006bf870 | match_events.cpp | FUN_006bf870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 
 ## UNKNOWN
 
@@ -760,8 +626,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0043fd50 | brazil_rules.cpp | FUN_0043fd50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043fda0 | brazil_rules.cpp | FUN_0043fda0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0043fe90 | brazil_rules.cpp | FUN_0043fe90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00490f80 | coach.cpp | FUN_00490f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00490fd0 | coach.cpp | FUN_00490fd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004915e0 | comp.cpp | FUN_004915e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00491780 | comp.cpp | FUN_00491780 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004928b0 | comp.cpp | FUN_004928b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -779,39 +643,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0050c270 | cup.cpp | FUN_0050c270 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0050e9b0 | cup_stage.cpp | FUN_0050e9b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs | YES | UNVERIFIED |  |
 | 0x00529fe0 | database.cpp | FUN_00529fe0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
-| 0x00537160 | date.cpp | FUN_00537160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0053fe10 | discipline.cpp | FUN_0053fe10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00540870 | discipline.cpp | FUN_00540870 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005467c0 | discipline.cpp | FUN_005467c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00546f60 | discipline.cpp | FUN_00546f60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00546fc0 | discipline.cpp | FUN_00546fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00554870 | eng_auto_cup.cpp | FUN_00554870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00554890 | eng_auto_cup.cpp | FUN_00554890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005552d0 | eng_auto_cup.cpp | FUN_005552d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00556060 | eng_cc_cup.cpp | FUN_00556060 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00556080 | eng_cc_cup.cpp | FUN_00556080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00556ec0 | eng_cc_cup.cpp | FUN_00556ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00557160 | eng_charity.cpp | FUN_00557160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00557180 | eng_charity.cpp | FUN_00557180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00557770 | eng_charity.cpp | FUN_00557770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005579c0 | eng_conf.cpp | FUN_005579c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00558a20 | eng_conf.cpp | FUN_00558a20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00558e70 | eng_fa_cup.cpp | FUN_00558e70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00558e90 | eng_fa_cup.cpp | FUN_00558e90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055aac0 | eng_fa_trophy.cpp | FUN_0055aac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055aae0 | eng_fa_trophy.cpp | FUN_0055aae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055b560 | eng_first.cpp | FUN_0055b560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055ca50 | eng_first.cpp | FUN_0055ca50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055d150 | eng_prm.cpp | FUN_0055d150 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055e710 | eng_prm.cpp | FUN_0055e710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0055f260 | eng_second.cpp | FUN_0055f260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00560320 | eng_second.cpp | FUN_00560320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00560d70 | eng_third.cpp | FUN_00560d70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00561e30 | eng_third.cpp | FUN_00561e30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00563910 | england_rules.cpp | FUN_00563910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00563d30 | england_rules.cpp | FUN_00563d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005774c0 | fifa_rankings.cpp | FUN_005774c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00577f40 | fifa_rankings.cpp | FUN_00577f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0059bed0 | fog_of_war.cpp | FUN_0059bed0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/ui_schema.rs;crates/cm-render/src/primitives.rs | YES | UNVERIFIED |  |
 | 0x005afaa0 | friendly.cpp | FUN_005afaa0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005b0b00 | friendly.cpp | FUN_005b0b00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -828,23 +664,14 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006a2730 | match_eng.cpp | FUN_006a2730 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x006a88f0 | match_eng.cpp | FUN_006a88f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x006bb6e0 | match_eng.cpp | FUN_006bb6e0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x006bd2e0 | match_events.cpp | FUN_006bd2e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006fa700 | match_pl.cpp | FUN_006fa700 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x006fbdf0 | match_pl.cpp | FUN_006fbdf0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
-| 0x0074da50 | mini_cup.cpp | FUN_0074da50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074dae0 | mini_cup.cpp | FUN_0074dae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fb20 | month_ratings.cpp | FUN_0074fb20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fba0 | month_ratings.cpp | FUN_0074fba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fd70 | month_ratings.cpp | FUN_0074fd70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074fe40 | month_ratings.cpp | FUN_0074fe40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ffe0 | month_ratings.cpp | FUN_0074ffe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007553f0 | national_teams.cpp | FUN_007553f0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0077da00 | notes.cpp | FUN_0077da00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x00785160 | officials_manager.cpp | FUN_00785160 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x007aec90 | player_stats.cpp | FUN_007aec90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af0f0 | player_stats.cpp | FUN_007af0f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af140 | player_stats.cpp | FUN_007af140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c5870 | rb_england.cpp | FUN_007c5870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e6a20 | scrman.cpp | FUN_007e6a20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e74e0 | scrman.cpp | FUN_007e74e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch4.rs | YES | UNVERIFIED |  |
 | 0x007ebaf0 | scrman.cpp | FUN_007ebaf0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
@@ -853,12 +680,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00847410 | stadium.cpp | FUN_00847410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x008474a0 | stadium.cpp | FUN_008474a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00856690 | staff_records.cpp | FUN_00856690 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x00858bd0 | staff_records.cpp | FUN_00858bd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00858c20 | staff_records.cpp | FUN_00858c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00877170 | staff_screens.cpp | FUN_00877170 | UNKNOWN | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x008773e0 | staff_screens.cpp | FUN_008773e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch21.rs | YES | UNVERIFIED |  |
-| 0x008776f0 | sub_league.cpp | FUN_008776f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00877710 | sub_league.cpp | FUN_00877710 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00884b00 | tactics_screens.cpp | FUN_00884b00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0089a580 | tactics_screens.cpp | FUN_0089a580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0089afd0 | tcpip.cpp | FUN_0089afd0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
@@ -945,6 +768,45 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00920b70 | year_ratings.cpp | FUN_00920b70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00920de0 | year_ratings.cpp | FUN_00920de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00921590 | year_ratings.cpp | FUN_00921590 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+
+## cash
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00440070 | cash.cpp | cash_scale_value | NOT_YET_PORTED |  | NO | HYPOTHESIS | decompile 0x00440070 |
+| 0x00440170 | cash.cpp | cash_scale_value_bounded | NOT_YET_PORTED |  | NO | HYPOTHESIS | decompile 0x00440170 |
+| 0x00440240 | cash.cpp | cash_set_currency | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00440240 |
+| 0x00441f00 | cash.cpp | cash_get_default_currency | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00441f00 |
+| 0x00441f10 | cash.cpp | cash_currency_name_by_index | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00441f10 |
+| 0x00442500 | cash.cpp | cash_format | PORTED_PARTIAL | Money::format | YES | PARTIAL | rust:cash.rs |
+| 0x00442fd0 | cash.cpp | cash_round_divisor | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00442fd0 |
+
+## club_history
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x004433a0 | club_history.cpp | club_history_registry_init | NOT_YET_PORTED |  | NO | PARTIAL | decompile+grep-uncited |
+| 0x00443710 | club_history.cpp | club_history_registry_dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile |
+| 0x00443770 | club_history.cpp | club_history_record_appearances | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00443c70 | club_history.cpp | club_history_player_apps_list | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00443e10 | club_history.cpp | club_history_career_clubs_list | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00444060 | club_history.cpp | club_history_sorted_id_list_a | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00444310 | club_history.cpp | club_history_sorted_id_list_b | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x004445c0 | club_history.cpp | club_history_dat_read | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00444840 | club_history.cpp | club_history_dat_write | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00444a80 | club_history.cpp | club_history_find_player_record | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+
+## coach
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x0048f800 | coach.cpp | coach_report_assess_player | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0048f800 |
+| 0x00490220 | coach.cpp | coach_report_threshold | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00490220 |
+| 0x00490530 | coach.cpp | coach_report_build_screen | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00490530 |
+| 0x00490f00 | coach.cpp | coach_obj_ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00490f00 |
+| 0x00490f80 | coach.cpp | coach_obj_dtor_deleting | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00490f80 |
+| 0x00490fd0 | coach.cpp | coach_obj_dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00490fd0 |
+| 0x00491040 | coach.cpp | coach_league_fate_prompt | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00491040 |
 
 ## comp-stats
 
@@ -1360,14 +1222,31 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x00533b50 | date.cpp | pack_date (pre-snap) | PORTED_EXACT | pack_date | YES | BYTE_EXACT | memory/fixtures-runtime-capture-findings.md |
+| 0x00533cf0 | date.cpp | date_default_ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00533cf0 |
 | 0x00533d10 | date.cpp | pack-date-with-snap entry | PORTED_BEHAVIOURAL | pack_date;apply_flag_snap | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/exe_date.rs |
 | 0x00533eb0 | date.cpp | weekday flag-snap | PORTED_EXACT | apply_flag_snap | YES | BYTE_EXACT | memory/fixtures-runtime-capture-findings.md |
+| 0x00534050 | date.cpp | date_format_dm | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00534050 |
+| 0x00534230 | date.cpp | date_format_dmy_locale | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00534230 |
+| 0x00534530 | date.cpp | date_format_weekday_dmy | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00534530 |
+| 0x005349f0 | date.cpp | date_format_weekday_ordinal | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x005349f0 |
+| 0x00534ed0 | date.cpp | date_format_ordinal_month | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00534ed0 |
+| 0x00535130 | date.cpp | date_format_weekday_full | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00535130 |
+| 0x00535ad0 | date.cpp | date_format_long | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00535ad0 |
+| 0x00535f90 | date.cpp | date_format_ordinal_full | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00535f90 |
 | 0x00536190 | date.cpp | date-window builder | PORTED_BEHAVIOURAL | CmPackedDate::add_days | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
 | 0x00536350 | date.cpp | add N weeks | PORTED_BEHAVIOURAL | CmPackedDate::add_days | INDIRECT | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x005364c0 | date.cpp | add/subtract N days | PORTED_BEHAVIOURAL | CmPackedDate::add_days;CmPackedDate::add_negative_days | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00536690 | date.cpp | subtract N weeks | PORTED_BEHAVIOURAL | CmPackedDate::add_negative_days | INDIRECT | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00536810 | date.cpp | date_diff | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00536810 |
 | 0x00536b50 | date.cpp | doy -> day-of-month unpack | PORTED_BEHAVIOURAL | CmPackedDate::to_game_date | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00536bc0 | date.cpp | is-leap-year predicate | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00536c20 | date.cpp | date_period_label | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00536c20 |
+| 0x00536d10 | date.cpp | date_format_variant_by_lang | NOT_YET_PORTED |  | NO | HYPOTHESIS | decompile 0x00536d10 |
+| 0x00536d50 | date.cpp | date_weekday_name | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00536d50 |
+| 0x00536df0 | date.cpp | date_month_short_name | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00536df0 |
+| 0x00537130 | date.cpp | date_lang_order_predicate | NOT_YET_PORTED |  | NO | HYPOTHESIS | decompile 0x00537130 |
+| 0x00537160 | date.cpp | date_stream_write_thunk_a | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00537160 |
+| 0x00537190 | date.cpp | date_stream_write_thunk_b | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00537190 |
 | 0x0066f3b0 | league.cpp | schedule round-record writer | PORTED_EXACT | write_round_record | YES | BYTE_EXACT | memory/c11-2-fixture-subsystem-frozen.md |
 | 0x0066f410 | league.cpp | schedule fixture sub-slot writer | PORTED_PARTIAL | write_slot | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/exe_date.rs |
 
@@ -1448,6 +1327,89 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0044773c | club_records.cpp | editor record load code (ground truth) | UNKNOWN | crates/cm-data/src/lib.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | memory:editor-is-ground-truth.md |
 | 0x0048bd00 | club_screens.cpp | editor attribute-display code | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-ui-app/src/render_new.rs | NO | UNVERIFIED | memory:editor-is-ground-truth.md |
 
+## english_cup
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00554600 | eng_auto_cup.cpp | eng_auto_cup competition ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00554600 |
+| 0x00554870 | eng_auto_cup.cpp | eng_auto_cup scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00554870 |
+| 0x00554890 | eng_auto_cup.cpp | eng_auto_cup destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00554890 |
+| 0x00554f90 | eng_auto_cup.cpp | eng_auto_cup round-array init | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00554f90 |
+| 0x005552d0 | eng_auto_cup.cpp | eng_auto_cup prize/fixture-obj setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005552d0 |
+| 0x00555310 | eng_auto_cup.cpp | eng_auto_cup club selection/seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00555310 |
+| 0x00555690 | eng_auto_cup.cpp | eng_auto_cup fixture-list build | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00555690 |
+| 0x005558c0 | eng_auto_cup.cpp | eng_auto_cup second fixture build | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005558c0 |
+| 0x00555bf0 | eng_auto_cup.cpp | eng_auto_cup round seeding/scheduling | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00555bf0 |
+| 0x00555e80 | eng_cc_cup.cpp | eng_cc_cup (League Cup) ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00555e80 |
+| 0x00556060 | eng_cc_cup.cpp | eng_cc_cup scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00556060 |
+| 0x00556080 | eng_cc_cup.cpp | eng_cc_cup destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00556080 |
+| 0x005568a0 | eng_cc_cup.cpp | eng_cc_cup club selection/seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005568a0 |
+| 0x00556ec0 | eng_cc_cup.cpp | eng_cc_cup prize/fixture-obj setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00556ec0 |
+| 0x00556f90 | eng_charity.cpp | eng_charity (Charity Shield) ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00556f90 |
+| 0x00557160 | eng_charity.cpp | eng_charity scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00557160 |
+| 0x00557180 | eng_charity.cpp | eng_charity destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00557180 |
+| 0x00557250 | eng_charity.cpp | eng_charity single-match fixture build | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00557250 |
+| 0x00557390 | eng_charity.cpp | eng_charity participant selection | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00557390 |
+| 0x00557770 | eng_charity.cpp | eng_charity prize/fixture-obj setup | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00557770 |
+| 0x00558c80 | eng_fa_cup.cpp | eng_fa_cup (FA Cup) ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00558c80 |
+| 0x00558e70 | eng_fa_cup.cpp | eng_fa_cup scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00558e70 |
+| 0x00558e90 | eng_fa_cup.cpp | eng_fa_cup destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00558e90 |
+| 0x005596f0 | eng_fa_cup.cpp | eng_fa_cup draw/seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005596f0 |
+| 0x0055a7d0 | eng_fa_cup.cpp | eng_fa_cup screen/result dispatch | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055a7d0 |
+| 0x0055a8f0 | eng_fa_trophy.cpp | eng_fa_trophy ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055a8f0 |
+| 0x0055aac0 | eng_fa_trophy.cpp | eng_fa_trophy scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055aac0 |
+| 0x0055aae0 | eng_fa_trophy.cpp | eng_fa_trophy destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055aae0 |
+| 0x0055afa0 | eng_fa_trophy.cpp | eng_fa_trophy club selection/seeding | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055afa0 |
+| 0x0074d830 | mini_cup.cpp | mini_cup ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074d830 |
+| 0x0074da50 | mini_cup.cpp | mini_cup scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074da50 |
+| 0x0074da70 | mini_cup.cpp | mini_cup bare ctor variant | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074da70 |
+| 0x0074dae0 | mini_cup.cpp | mini_cup destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074dae0 |
+| 0x0074dbb0 | mini_cup.cpp | mini_cup fixture/bracket build | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074dbb0 |
+| 0x0074ded0 | mini_cup.cpp | mini_cup entrant registration | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074ded0 |
+
+## english_league
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x005577a0 | eng_conf.cpp | eng_conf (Conference) league ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005577a0 |
+| 0x005579c0 | eng_conf.cpp | eng_conf scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005579c0 |
+| 0x005579e0 | eng_conf.cpp | eng_conf destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005579e0 |
+| 0x005588f0 | eng_conf.cpp | eng_conf club membership selection | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005588f0 |
+| 0x00558a20 | eng_conf.cpp | eng_conf competition config | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00558a20 |
+| 0x0055b340 | eng_first.cpp | eng_first (Division One) league ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055b340 |
+| 0x0055b560 | eng_first.cpp | eng_first scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055b560 |
+| 0x0055b580 | eng_first.cpp | eng_first destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055b580 |
+| 0x0055c8b0 | eng_first.cpp | eng_first club membership selection | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055c8b0 |
+| 0x0055ca50 | eng_first.cpp | eng_first competition config | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055ca50 |
+| 0x0055cd40 | eng_first.cpp | eng_first promotion play-off bracket | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055cd40 |
+| 0x0055cf20 | eng_prm.cpp | eng_prm (Premier League) league ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055cf20 |
+| 0x0055d150 | eng_prm.cpp | eng_prm scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055d150 |
+| 0x0055d170 | eng_prm.cpp | eng_prm destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055d170 |
+| 0x0055e5c0 | eng_prm.cpp | eng_prm club membership selection | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055e5c0 |
+| 0x0055e710 | eng_prm.cpp | eng_prm competition config | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055e710 |
+| 0x0055f260 | eng_second.cpp | eng_second scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055f260 |
+| 0x0055f280 | eng_second.cpp | eng_second destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0055f280 |
+| 0x005601d0 | eng_second.cpp | eng_second club membership selection | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005601d0 |
+| 0x00560320 | eng_second.cpp | eng_second competition config | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00560320 |
+| 0x00560610 | eng_second.cpp | eng_second promotion play-off bracket | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00560610 |
+| 0x00560b40 | eng_third.cpp | eng_third (Division Three) league ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00560b40 |
+| 0x00560d70 | eng_third.cpp | eng_third scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00560d70 |
+| 0x00560d90 | eng_third.cpp | eng_third destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00560d90 |
+| 0x00561ce0 | eng_third.cpp | eng_third club membership selection | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00561ce0 |
+| 0x00561e30 | eng_third.cpp | eng_third competition config | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00561e30 |
+| 0x00562130 | eng_third.cpp | eng_third promotion play-off bracket | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00562130 |
+| 0x00669fa0 | league.cpp | league end-of-season status stamping | PORTED_PARTIAL | stamp_league_end_of_season_statuses | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/year_end_statuses.rs |
+
+## english_rules
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x005637f0 | england_rules.cpp | england_rules ruleset ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x005637f0 |
+| 0x00563910 | england_rules.cpp | england_rules match/replay date scheduler | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00563910 |
+| 0x00563d30 | england_rules.cpp | england_rules cup-winner rule predicate | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00563d30 |
+| 0x007c5870 | rb_england.cpp | rb_england ruling-body ctor | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007c5870 |
+| 0x007c58c0 | rb_england.cpp | rb_england periodic ruling-body action | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x007c58c0 |
+
 ## fifa-rankings
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
@@ -1458,6 +1420,17 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00577d70 | fifa_rankings.cpp | comp_fifa_recompute_points | NOT_YET_PORTED | crates/cm-domain/src/fifa_rankings.rs | NO | PARTIAL | memory:fifa-rankings-mechanism.md |
 | 0x00577ff0 | fifa_rankings.cpp | comp_fifa_sort_comparator | PORTED_EXACT | fifa_rankings::compute | YES | BEHAVIOURALLY_EXACT | rust:fifa_rankings.rs |
 | 0x005c01d0 | game.cpp | game_recompute_fifa_rankings | PORTED_EXACT | fifa_rankings::fifa_score | TEST_ONLY | BYTE_EXACT | memory:fifa-rankings-mechanism.md |
+
+## fifa_rankings
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00576d20 | fifa_rankings.cpp | fifa_match_result_feed | NOT_YET_PORTED |  | NO | PARTIAL | decompile+grep-uncited |
+| 0x005774c0 | fifa_rankings.cpp | fifa_history_window_count | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00577550 | fifa_rankings.cpp | fifa_rankings_dat_read | REPLACED_BY_RUST | compute | NO | PARTIAL | grep+decompile |
+| 0x00577890 | fifa_rankings.cpp | fifa_rankings_dat_write | REPLACED_BY_RUST | NationRanking | NO | PARTIAL | grep+decompile |
+| 0x00577c50 | fifa_rankings.cpp | fifa_record_match_result | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
+| 0x00577f40 | fifa_rankings.cpp | fifa_nation_strength_tier | NOT_YET_PORTED |  | NO | PARTIAL | decompile |
 
 ## finance
 
@@ -2815,6 +2788,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005b10b0 | friendly.cpp | FUN_005b10b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005b1490 | friendly.cpp | FUN_005b1490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005b1770 | friendly.cpp | FUN_005b1770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005b1840 | friendly.cpp | friendly match offer/processing | NOT_YET_PORTED | crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-render/src/screen_club_fixtures_faithful.rs | INDIRECT | STRUCTURALLY_VERIFIED | decompile 0x005b1840 |
 | 0x005b2500 | friendly.cpp | FUN_005b2500 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005b2870 | friendly.cpp | FUN_005b2870 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x005b2a50 | friendly.cpp | FUN_005b2a50 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
@@ -2873,6 +2847,23 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00403ab0 | area.cpp | FUN_00403ab0 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00403f20 | area.cpp | FUN_00403f20 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00404210 | area.cpp | FUN_00404210 | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED |  |
+
+## group_stage
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00877450 | sub_league.cpp | sub_league mini-table ctor/build | PORTED_BEHAVIOURAL | GroupStageState::build | INDIRECT | PARTIAL | rust:crates/cm-domain/src/group_stage.rs |
+| 0x008776f0 | sub_league.cpp | sub_league scalar deleting destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008776f0 |
+| 0x00877710 | sub_league.cpp | sub_league destructor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00877710 |
+| 0x00877770 | sub_league.cpp | sub_league fixture/result processing | PORTED_BEHAVIOURAL | GroupStageState::generate_fixtures | INDIRECT | PARTIAL | rust:crates/cm-domain/src/group_stage.rs |
+
+## history
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x005dbf60 | history.cpp | history_his_exists_probe | NOT_YET_PORTED |  | NO | PARTIAL | grep-uncited |
+| 0x005dc5e0 | history.cpp | history_screen_entry | UI_GDI_DOMAIN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | NO | STRUCTURALLY_VERIFIED | cited-unported-handler |
+| 0x005dc660 | history.cpp | history_screen_draw | UI_GDI_DOMAIN | crates/cm-domain/src/history.rs;crates/cm-render/src/hsr.rs | INDIRECT | PARTIAL | cited-comment |
 
 ## i18n
 
@@ -3446,6 +3437,19 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006fce50 | match_pl.cpp | FUN_006fce50 | OUT_OF_SCOPE |  | NO | PARTIAL |  |
 | 0x006fd670 | match_pl.cpp | FUN_006fd670 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 
+## match_events
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x006bd2e0 | match_events.cpp | match_commentary_queue_advance | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006bd530 | match_events.cpp | match_commentary_format_a | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006be690 | match_events.cpp | match_event_timer_expire | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006be730 | match_events.cpp | match_commentary_format_b | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006bf2d0 | match_events.cpp | match_event_log_write | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006bf660 | match_events.cpp | match_event_log_read | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006bf870 | match_events.cpp | match_events_cfg_load | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+| 0x006c0ce0 | match_events.cpp | match_commentary_name_format | OUT_OF_SCOPE |  | NO | PARTIAL | decompile |
+
 ## media
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
@@ -3516,6 +3520,22 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00748ed0 | media.cpp | FUN_00748ed0 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 | 0x0074cba0 | media.cpp | FUN_0074cba0 | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0074cd70 | media.cpp | FUN_0074cd70 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
+
+## month_ratings
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x0074f760 | month_ratings.cpp | month_ratings_load_from_disk | NOT_YET_PORTED |  | NO | PARTIAL | memory:deferred-awards-engine.md |
+| 0x0074f9a0 | month_ratings.cpp | month_ratings_save_to_disk | NOT_YET_PORTED |  | NO | PARTIAL | memory:deferred-awards-engine.md |
+| 0x0074fb20 | month_ratings.cpp | month_ratings_tally_all_clubs | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0074fb20 |
+| 0x0074fba0 | month_ratings.cpp | month_ratings_reset | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074fba0 |
+| 0x0074fbe0 | month_ratings.cpp | month_ratings_accumulate_player | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0074fbe0 |
+| 0x0074fd70 | month_ratings.cpp | month_ratings_best_player | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0074fd70 |
+| 0x0074fe40 | month_ratings.cpp | month_ratings_compare | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074fe40 |
+| 0x0074fed0 | month_ratings.cpp | month_ratings_ctor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074fed0 |
+| 0x0074fef0 | month_ratings.cpp | month_ratings_dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074fef0 |
+| 0x0074ff50 | month_ratings.cpp | month_ratings_monthly_rollover | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0074ff50 |
+| 0x0074ffe0 | month_ratings.cpp | month_ratings_tally_gate | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0074ffe0 |
 
 ## nation
 
@@ -4752,11 +4772,13 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x008077e0 | setup.cpp | FUN_008077e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0080ba60 | setup.cpp | FUN_0080ba60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0080fac0 | setup.cpp | hall_of_fame_screen | UI_GDI_DOMAIN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | NO | STRUCTURALLY_VERIFIED | cited-unported-handler |
 | 0x0080fb10 | setup.cpp | FUN_0080fb10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00819a40 | setup.cpp | FUN_00819a40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00821f80 | setup.cpp | FUN_00821f80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00822080 | setup.cpp | FUN_00822080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00822400 | setup.cpp | FUN_00822400 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
+| 0x008224b0 | setup.cpp | count_network_waiting_players | NOT_YET_PORTED | crates/cm-render/src/dispatcher.rs | NO | PARTIAL | cited-TODO |
 | 0x008226f0 | setup.cpp | FUN_008226f0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00822960 | setup.cpp | FUN_00822960 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00822b10 | setup.cpp | FUN_00822b10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -4784,6 +4806,44 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x00583fc0 | finance.cpp | stadium-expansion transaction + chairman-overrun-gate (CONFLICT) | PORTED_EXACT | apply_stadium_expansion;compute_expansion_cost;chairman_approves_overrun;stadium_meets_capacity_target | INDIRECT | STRUCTURALLY_VERIFIED | rust:c14_stadium_expansion.rs |
 | 0x0058a310 | finance.cpp | stadium-expansion news broadcast (template 0x1780) | PORTED_EXACT | StadiumExpansionNews | INDIRECT | STRUCTURALLY_VERIFIED | rust:c14_stadium_expansion.rs |
+
+## staff_records
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00851340 | staff_records.cpp | staffhistory_init_db | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00851340 |
+| 0x00851770 | staff_records.cpp | staffhistory_dtor | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00851770 |
+| 0x008517e0 | staff_records.cpp | staffhistory_record_match_result | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008517e0 |
+| 0x00851c00 | staff_records.cpp | staffhistory_update_rep_on_win | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00851c00 |
+| 0x00852430 | staff_records.cpp | staffhistory_update_rep_variant | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00852430 |
+| 0x00852a50 | staff_records.cpp | staffhistory_update_appointment | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00852a50 |
+| 0x00853020 | staff_records.cpp | staffhistory_reset_squad_entries | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00853020 |
+| 0x00853170 | staff_records.cpp | staffhistory_decrease_rep_on_loss | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00853170 |
+| 0x008537b0 | staff_records.cpp | staffhistory_result_update_a | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008537b0 |
+| 0x00854060 | staff_records.cpp | staffhistory_result_update_b | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00854060 |
+| 0x008546c0 | staff_records.cpp | staffhistory_result_update_c | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008546c0 |
+| 0x00854d80 | staff_records.cpp | staffhistory_record_event | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00854d80 |
+| 0x00854fb0 | staff_records.cpp | staffhistory_persist_record_a | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00854fb0 |
+| 0x00855180 | staff_records.cpp | staffhistory_persist_record_b | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00855180 |
+| 0x00855340 | staff_records.cpp | staffhistory_appoint_and_morale | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00855340 |
+| 0x008556e0 | staff_records.cpp | staffhistory_persist_record_c | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008556e0 |
+| 0x00855870 | staff_records.cpp | staffhistory_appoint_and_morale_b | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00855870 |
+| 0x00855d20 | staff_records.cpp | staffhistory_season_end_records | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00855d20 |
+| 0x008567b0 | staff_records.cpp | staffhistory_persist_current_club | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008567b0 |
+| 0x008569d0 | staff_records.cpp | staffhistory_persist_pair | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008569d0 |
+| 0x00856be0 | staff_records.cpp | staffhistory_persist_and_reassign | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00856be0 |
+| 0x00856e20 | staff_records.cpp | staffhistory_get_record_slot_a | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00856e20 |
+| 0x00856f40 | staff_records.cpp | staffhistory_get_record_slot_b | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00856f40 |
+| 0x00857060 | staff_records.cpp | staffhistory_event_description | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00857060 |
+| 0x008582b0 | staff_records.cpp | staffhistory_news_string | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x008582b0 |
+| 0x00858560 | staff_records.cpp | staffhistory_get_or_create_record | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00858560 |
+| 0x00858900 | staff_records.cpp | staffhistory_best_manager_by_ach | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00858900 |
+| 0x00858a60 | staff_records.cpp | staffhistory_top_managers | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00858a60 |
+| 0x00858b30 | staff_records.cpp | staffhistory_persist_record_d | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00858b30 |
+| 0x00858bd0 | staff_records.cpp | staffhistory_clear_record_a | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00858bd0 |
+| 0x00858c20 | staff_records.cpp | staffhistory_clear_record_b | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00858c20 |
+| 0x00858c90 | staff_records.cpp | staffhistory_load_from_disk | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00858c90 |
+| 0x00858f80 | staff_records.cpp | staffhistory_save_to_disk | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00858f80 |
 
 ## startup
 
@@ -4976,6 +5036,15 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008a1860 | training_manager.cpp | FUN_008a1860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x008a1990 | training_manager.cpp | FUN_008a1990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x008a1b40 | training_manager.cpp | FUN_008a1b40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+
+## training_schedule
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x008a1c90 | training_schedule.cpp | training_category_name | OUT_OF_SCOPE |  | NO | PARTIAL | rust:training.rs |
+| 0x008a1e00 | training_schedule.cpp | training_intensity_name | OUT_OF_SCOPE |  | NO | PARTIAL | rust:training.rs |
+| 0x008a1f90 | training_schedule.cpp | training_schedule_load_file | OUT_OF_SCOPE |  | NO | PARTIAL | rust:training.rs |
+| 0x008a6380 | training_schedule.cpp | training_schedule_registrar | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x008a6380 |
 
 ## transfer
 
@@ -5293,7 +5362,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x0005e9b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x00441f00 | cash.cpp | FUN_00441f00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00449e70 | club_records.cpp | FUN_00449e70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x0046a670 | club_screens.cpp | FUN_0046a670 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00487480 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -5312,13 +5380,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0050cc90 | cup_stage.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x00524f20 | database.cpp | FUN_00524f20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00533d80 | date.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x005349f0 | date.cpp | FUN_005349f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00536df0 | date.cpp | FUN_00536df0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00536f90 | date.cpp | FUN_00536f90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/next_match.rs | YES | UNVERIFIED |  |
 | 0x00548d50 | discipline.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00548de0 | display.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x0054be80 | display.cpp | FUN_0054be80 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x005588f0 | eng_conf.cpp | FUN_005588f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0055ceb0 | eng_first.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x0055e7c0 | eng_prm.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x0055e9b0 | eng_prm.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
