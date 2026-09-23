@@ -121,6 +121,8 @@ pub struct NationRanking {
 // GDI-REG: 00577b00 PORTED_EXACT
 // GDI-REG: 00577550 REPLACED_BY_RUST
 // GDI-REG: 00577ff0 PORTED_EXACT
+// GDI-REG: 005773c0 PORTED_BEHAVIOURAL
+// GDI-REG: 00577b00 PORTED_EXACT
 pub fn compute(nations: &[DomainOpaqueRecord]) -> Vec<NationRanking> {
     let mut out: Vec<NationRanking> = nations
         .iter()

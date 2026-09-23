@@ -9,7 +9,7 @@ Ranks the NOT_YET_PORTED backlog by **executable reachability**: whether the ori
 > - `UNRESOLVED` — no reference found anywhere; can prove neither reachable nor dead (the static graph misses computed `call [reg]`).
 > - `DEAD_OR_UNREACHABLE` — positive evidence of non-use; NEVER auto-assigned from mere absence of xrefs (curated only).
 
-NOT_YET_PORTED: **1391**  ·  DIRECT **790**  ·  INDIRECT **162**  ·  POSSIBLE_INDIRECT **213**  ·  UNRESOLVED **226**  ·  DEAD_OR_UNREACHABLE **0**
+NOT_YET_PORTED: **1388**  ·  DIRECT **787**  ·  INDIRECT **162**  ·  POSSIBLE_INDIRECT **213**  ·  UNRESOLVED **226**  ·  DEAD_OR_UNREACHABLE **0**
 
 ## Backlog by subsystem (live / possible / unresolved / dead / total)
 
@@ -19,15 +19,15 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **790**  ·  INDIRECT **162**  ·  POSSIBLE
 | GUI | 92 | 16 | 21 | 0 | 129 |
 | scouting | 70 | 2 | 1 | 0 | 73 |
 | contracts | 67 | 4 | 16 | 0 | 87 |
-| manager-ai | 53 | 4 | 28 | 0 | 85 |
+| manager-ai | 51 | 4 | 28 | 0 | 83 |
 | tactics | 51 | 29 | 6 | 0 | 86 |
 | condition-fitness | 33 | 1 | 6 | 0 | 40 |
 | national-teams | 33 | 5 | 9 | 0 | 47 |
 | international-comp | 30 | 32 | 10 | 0 | 72 |
 | discipline | 29 | 2 | 7 | 0 | 38 |
 | search | 28 | 1 | 14 | 0 | 43 |
-| tick | 27 | 0 | 0 | 0 | 27 |
 | regen | 27 | 0 | 3 | 0 | 30 |
+| tick | 26 | 0 | 0 | 0 | 26 |
 | manager-model | 24 | 2 | 1 | 0 | 27 |
 | finance | 21 | 1 | 10 | 0 | 32 |
 | awards | 19 | 14 | 14 | 0 | 47 |

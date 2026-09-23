@@ -1,10 +1,10 @@
 # GDI function coverage (generated)
 
-Registered functions: **5031**  ·  cited in Rust: **1008**
+Registered functions: **5031**  ·  cited in Rust: **1012**
 
 **Complete-picture denominator.** The registry now ingests the entire useful game-logic universe (the `.text` span `0x00401000..0x00922a85`; CRT/runtime plumbing outside the span is excluded). Of **5031** useful functions, **4933** are classified and **98** remain `UNKNOWN` (ingested, awaiting classification). Drive UNKNOWN to zero via mechanical bucketing (NON_USEFUL/FOREIGN_BREADTH/DEAD) + subsystem curation waves.
 
-> **Read carefully.** A `PORTED_*` row derived automatically from a Rust citation is `confidence: UNVERIFIED` — it means *an exe address is cited in Rust without a 'not-implemented' marker*, NOT that the port was human-verified. Of **880** PORTED_* rows, only **322** are curated/verified; **558** are auto-cited and PENDING CURATION. Do not headline the auto number as real coverage (see the coverage-vs-fidelity antipattern).
+> **Read carefully.** A `PORTED_*` row derived automatically from a Rust citation is `confidence: UNVERIFIED` — it means *an exe address is cited in Rust without a 'not-implemented' marker*, NOT that the port was human-verified. Of **882** PORTED_* rows, only **325** are curated/verified; **557** are auto-cited and PENDING CURATION. Do not headline the auto number as real coverage (see the coverage-vs-fidelity antipattern).
 
 ## Classification provenance
 
@@ -13,8 +13,8 @@ How each row's status was decided — a file-level default is a defensible per-`
 | provenance | count |
 |---|---|
 | file-level default (UNVERIFIED) | 2043 |
-| curated (hand-verified) | 1634 |
-| auto-cited (UNVERIFIED) | 593 |
+| curated (hand-verified) | 1635 |
+| auto-cited (UNVERIFIED) | 592 |
 | frontier-audit (per-fn audited) | 590 |
 | auto (UNVERIFIED) | 169 |
 | UNKNOWN (uningested/awaiting) | 2 |
@@ -23,25 +23,26 @@ How each row's status was decided — a file-level default is a defensible per-`
 
 | status | count |
 |---|---|
-| NOT_YET_PORTED | 1391 |
+| NOT_YET_PORTED | 1388 |
 | FOREIGN_BREADTH | 1338 |
-| PORTED_BEHAVIOURAL | 714 |
+| PORTED_BEHAVIOURAL | 715 |
 | OUT_OF_SCOPE | 523 |
 | NON_USEFUL | 411 |
 | UI_GDI_DOMAIN | 325 |
 | UNKNOWN | 98 |
-| PORTED_EXACT | 84 |
-| PORTED_PARTIAL | 82 |
+| PORTED_PARTIAL | 84 |
+| PORTED_EXACT | 83 |
 | REPLACED_BY_RUST | 65 |
+| BLOCKED_DEPENDENCY | 1 |
 
-ported (EXACT+BEHAVIOURAL+PARTIAL): **880** · genuine missing (NOT_YET_PORTED): **1391** · blocked: **0** · replaced/out-of-scope/ui: **913** · non-useful: **411** · foreign-breadth: **1338** · unknown: **98**
+ported (EXACT+BEHAVIOURAL+PARTIAL): **882** · genuine missing (NOT_YET_PORTED): **1388** · blocked: **1** · replaced/out-of-scope/ui: **913** · non-useful: **411** · foreign-breadth: **1338** · unknown: **98**
 
 ## By subsystem
 
 | subsystem | total | ported | missing | out/ui/replaced | non-useful | unknown |
 |---|---|---|---|---|---|---|
 | foreign-comp | 1218 | 0 | 0 | 0 | 0 | 0 |
-| GUI | 578 | 420 | 129 | 0 | 0 | 29 |
+| GUI | 577 | 419 | 129 | 0 | 0 | 29 |
 | render | 226 | 19 | 0 | 207 | 0 | 0 |
 | screens | 202 | 77 | 0 | 117 | 0 | 8 |
 | transfer-ai | 185 | 0 | 0 | 185 | 0 | 0 |
@@ -54,7 +55,7 @@ ported (EXACT+BEHAVIOURAL+PARTIAL): **880** · genuine missing (NOT_YET_PORTED):
 | records | 103 | 13 | 10 | 31 | 49 | 0 |
 | contracts | 101 | 4 | 87 | 0 | 10 | 0 |
 | ? | 99 | 96 | 2 | 0 | 0 | 1 |
-| manager-ai | 89 | 0 | 85 | 1 | 3 | 0 |
+| manager-ai | 92 | 4 | 83 | 1 | 3 | 0 |
 | UNKNOWN | 74 | 35 | 34 | 0 | 0 | 5 |
 | awards | 74 | 0 | 47 | 0 | 23 | 0 |
 | media | 66 | 0 | 0 | 66 | 0 | 0 |
@@ -75,18 +76,18 @@ ported (EXACT+BEHAVIOURAL+PARTIAL): **880** · genuine missing (NOT_YET_PORTED):
 | match-engine | 32 | 20 | 4 | 8 | 0 | 0 |
 | transfer | 31 | 0 | 25 | 0 | 6 | 0 |
 | comp-stats | 29 | 0 | 0 | 0 | 0 | 29 |
-| tick | 28 | 1 | 27 | 0 | 0 | 0 |
 | date | 28 | 11 | 14 | 0 | 3 | 0 |
 | english_league | 28 | 1 | 17 | 0 | 10 | 0 |
 | news | 28 | 4 | 17 | 3 | 4 | 0 |
+| tick | 27 | 1 | 26 | 0 | 0 | 0 |
 | nation | 26 | 6 | 15 | 1 | 4 | 0 |
 | util | 20 | 0 | 0 | 0 | 20 | 0 |
 | io | 20 | 0 | 0 | 20 | 0 | 0 |
-| transfers | 18 | 12 | 1 | 0 | 0 | 5 |
 | officials | 18 | 0 | 3 | 0 | 15 | 0 |
 | netcode | 18 | 0 | 0 | 18 | 0 | 0 |
 | notes | 18 | 0 | 18 | 0 | 0 | 0 |
 | player-stats | 18 | 3 | 0 | 15 | 0 | 0 |
+| transfers | 17 | 11 | 1 | 0 | 0 | 5 |
 | db-load | 15 | 2 | 0 | 13 | 0 | 0 |
 | plumbing | 14 | 0 | 0 | 0 | 14 | 0 |
 | setup | 13 | 0 | 11 | 1 | 1 | 0 |

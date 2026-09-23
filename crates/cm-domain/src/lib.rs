@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod tick_profile;
+pub mod manager_hiring;
 pub mod next_match;
 pub mod general_info;
 pub mod player_profile;
