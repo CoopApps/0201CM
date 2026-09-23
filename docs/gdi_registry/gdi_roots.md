@@ -1,6 +1,6 @@
 # GDI reachability roots (generated)
 
-Named live-entry root sets used to compute exe-reachability. Indirect dispatch edges with a matching `root_hint` (PROVEN/STRONG) also seed their set. `indirect_edges.csv` currently holds **248** curated indirect edges.
+Named live-entry root sets used to compute exe-reachability. Indirect dispatch edges with a matching `root_hint` (PROVEN/STRONG) also seed their set. `indirect_edges.csv` currently holds **372** curated indirect edges.
 
 | root set | address | semantic | evidence |
 |---|---|---|---|
@@ -23,3 +23,10 @@ Named live-entry root sets used to compute exe-reachability. Indirect dispatch e
 | COMPETITION | 0x00554600 | seeded by VTABLE dispatch edge | eng_auto_cup ctor 0x00554600 -> vtable 0x0095788c slot+0x3c 0x009578c8 -> draw b |
 | COMPETITION | 0x0055a8f0 | seeded by VTABLE dispatch edge | eng_fa_trophy ctor 0x0055a8f0 -> vtable 0x00957bc0 slot+0x3c 0x00957bfc -> draw  |
 | COMPETITION | 0x0074d830 | seeded by VTABLE dispatch edge | mini_cup ctor 0x0074d830 (called from friendly.cpp 0x005afaf0) -> vtable 0x0095b |
+| COMPETITION | 0x0050ba60 | seeded by COMPETITION_DISPATCH dispatch edge | all-divisions-ready check recurses +0x10 over child divisions |
+| COMPETITION | 0x0064f4f0 | seeded by COMPETITION_DISPATCH dispatch edge | FA Cup season-init(+0x8c) calls draw/bracket builder +0x3c |
+| COMPETITION | 0x00556ec0 | seeded by COMPETITION_DISPATCH dispatch edge | League Cup season-init(+0x8c) calls draw/bracket builder +0x3c |
+| COMPETITION | 0x005552d0 | seeded by COMPETITION_DISPATCH dispatch edge | Auto Windscreens season-init(+0x8c) calls draw/bracket builder +0x3c |
+| COMPETITION | 0x00557770 | seeded by COMPETITION_DISPATCH dispatch edge | FA Trophy season-init(+0x8c) calls draw/bracket builder +0x3c |
+| COMPETITION | 0x006494a0 | seeded by COMPETITION_DISPATCH dispatch edge | mini_cup season-init(+0x8c) calls draw/bracket builder +0x3c |
+| COMPETITION | 0x005098e0 | seeded by COMPETITION_DISPATCH dispatch edge | 0x005098e0 cup-base dispatch -> vtable 0x0095ef98+0x20 -> 0x0091e0b0 |

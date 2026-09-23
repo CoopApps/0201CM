@@ -9,7 +9,7 @@ Ranks the NOT_YET_PORTED backlog by **executable reachability**: whether the ori
 > - `UNRESOLVED` — no reference found anywhere; can prove neither reachable nor dead (the static graph misses computed `call [reg]`).
 > - `DEAD_OR_UNREACHABLE` — positive evidence of non-use; NEVER auto-assigned from mere absence of xrefs (curated only).
 
-NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE_INDIRECT **224**  ·  UNRESOLVED **256**  ·  DEAD_OR_UNREACHABLE **0**
+NOT_YET_PORTED: **1391**  ·  DIRECT **790**  ·  INDIRECT **162**  ·  POSSIBLE_INDIRECT **213**  ·  UNRESOLVED **226**  ·  DEAD_OR_UNREACHABLE **0**
 
 ## Backlog by subsystem (live / possible / unresolved / dead / total)
 
@@ -19,11 +19,12 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE
 | GUI | 92 | 16 | 21 | 0 | 129 |
 | scouting | 70 | 2 | 1 | 0 | 73 |
 | contracts | 67 | 4 | 16 | 0 | 87 |
+| manager-ai | 53 | 4 | 28 | 0 | 85 |
 | tactics | 51 | 29 | 6 | 0 | 86 |
-| manager-ai | 51 | 4 | 30 | 0 | 85 |
 | condition-fitness | 33 | 1 | 6 | 0 | 40 |
-| national-teams | 32 | 6 | 9 | 0 | 47 |
-| discipline | 28 | 2 | 8 | 0 | 38 |
+| national-teams | 33 | 5 | 9 | 0 | 47 |
+| international-comp | 30 | 32 | 10 | 0 | 72 |
+| discipline | 29 | 2 | 7 | 0 | 38 |
 | search | 28 | 1 | 14 | 0 | 43 |
 | tick | 27 | 0 | 0 | 0 | 27 |
 | regen | 27 | 0 | 3 | 0 | 30 |
@@ -32,16 +33,16 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE
 | awards | 19 | 14 | 14 | 0 | 47 |
 | transfer | 19 | 6 | 0 | 0 | 25 |
 | friendly | 18 | 4 | 13 | 0 | 35 |
+| fixtures | 17 | 0 | 2 | 0 | 19 |
 | training | 17 | 1 | 8 | 0 | 26 |
-| fixtures | 16 | 0 | 3 | 0 | 19 |
 | notes | 16 | 0 | 2 | 0 | 18 |
+| UNKNOWN | 15 | 9 | 10 | 0 | 34 |
+| english_cup | 15 | 7 | 0 | 0 | 22 |
 | nation | 15 | 0 | 0 | 0 | 15 |
-| UNKNOWN | 14 | 10 | 10 | 0 | 34 |
 | match | 13 | 3 | 5 | 0 | 21 |
-| english_cup | 12 | 10 | 0 | 0 | 22 |
 | news | 12 | 4 | 1 | 0 | 17 |
 | staff_records | 12 | 11 | 7 | 0 | 30 |
-| competition | 8 | 10 | 5 | 0 | 23 |
+| competition | 10 | 9 | 4 | 0 | 23 |
 | date | 7 | 4 | 3 | 0 | 14 |
 | records | 7 | 2 | 1 | 0 | 10 |
 | squad | 7 | 0 | 2 | 0 | 9 |
@@ -63,7 +64,6 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE
 | transfers | 1 | 0 | 0 | 0 | 1 |
 | promotion | 0 | 0 | 1 | 0 | 1 |
 | english_league | 0 | 17 | 0 | 0 | 17 |
-| international-comp | 0 | 37 | 35 | 0 | 72 |
 | history | 0 | 1 | 0 | 0 | 1 |
 
 ## Top 30 live targets (reachability, root type, relevance, depth, callers)
@@ -103,7 +103,7 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE
 
 ## POSSIBLE_INDIRECT (address-taken, unproven) — top decode targets to promote
 
-224 functions whose address is stored in a table / loaded in code but whose invocation is not yet proven. Decoding their dispatch mechanism is what converts them to INDIRECT_REACHABLE.
+213 functions whose address is stored in a table / loaded in code but whose invocation is not yet proven. Decoding their dispatch mechanism is what converts them to INDIRECT_REACHABLE.
 
 | DD VA | subsystem | data_refs | code_refs | semantic |
 |---|---|---|---|---|
@@ -125,7 +125,6 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE
 | 0x004c6920 | GUI | 0 | 1 | FUN_004c6920 |
 | 0x008475a0 | GUI | 0 | 1 | FUN_008475a0 |
 | 0x00491780 | UNKNOWN | 184 | 0 | FUN_00491780 |
-| 0x0050ba60 | UNKNOWN | 61 | 0 | FUN_0050ba60 |
 | 0x00413330 | UNKNOWN | 4 | 0 | FUN_00413330 |
 | 0x00401230 | UNKNOWN | 1 | 0 | FUN_00401230 |
 | 0x00401ae0 | UNKNOWN | 1 | 0 | FUN_00401ae0 |
@@ -137,7 +136,8 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **125**  ·  POSSIBLE
 | 0x00418280 | awards | 0 | 1 | award shortlist serialize to save |
 | 0x0074ed90 | awards | 0 | 18 | month-award result record (winner lookup) |
 | 0x0074ee00 | awards | 0 | 29 | month-award winner apply + announce |
+| 0x00750000 | awards | 0 | 22 | nation player-of-season award compute (year-rating |
 
-## UNRESOLVED (no reference found): 256  ·  DEAD_OR_UNREACHABLE (curated positive-evidence only): 0
+## UNRESOLVED (no reference found): 226  ·  DEAD_OR_UNREACHABLE (curated positive-evidence only): 0
 
 UNRESOLVED functions have no static caller and no address-taken evidence, but the static graph cannot see computed `call [reg]`, so absence is NOT proof of death — they are candidates for targeted decode, not deletion.
