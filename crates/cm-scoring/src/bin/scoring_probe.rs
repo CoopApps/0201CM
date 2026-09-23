@@ -42,6 +42,14 @@ fn main() {
                 let l: i32 = t[1].parse().unwrap();
                 score_base_reweight(l, t[2] == "1", t[3] == "1") as i64
             }
+            "skeleton" => {
+                // base status club_rep standing_c standing_4 standing_6 incumbent
+                //   incumbent_active ambition aff_a aff_b   (aff: -1 none / 0 neg / 1 pos)
+                let p = |i: usize| t[i].parse::<i32>().unwrap();
+                let aff = |i: usize| match t[i] { "1" => Some(true), "0" => Some(false), _ => None };
+                score_skeleton(p(1), p(2) as u8, p(3), p(4) as i16, p(5) as i16, p(6) as i16,
+                    t[7] == "1", t[8] == "1", p(9), aff(10), aff(11)) as i64
+            }
             _ => -999999,
         };
         writeln!(o, "{}", r).ok();

@@ -157,6 +157,68 @@ def test_closeness(emu):
             mism.append((c, er, rr))
     return len(combos), mism
 
+# ── C. score core skeleton (FUN_00682420 base+incumbency+affinity, case 5/0xc) ──
+FUN_SCORE = 0x00682420
+FUN_BASE  = 0x0052a330   # repfit (force to a known base)
+AFF = [0x00531370, 0x005313b0, 0x005313f0, 0x00531420]
+FUN_SEH = 0x00533cf0     # SEH scope helper (force 0, noise)
+DAT_EPOCH = 0x00acd56c   # active-player epoch global
+
+def test_score_skeleton(emu, seed=7):
+    import itertools
+    rng = random.Random(seed)
+    emu._call_hooks.clear()
+    st = {"base": 0, "a370": 0, "a3b0": 0, "a3f0": 0, "a420": 0}
+    emu.hook_call(FUN_BASE, lambda e, a, s: force_return(e, st["base"] & 0xFFFF))
+    emu.hook_call(FUN_SEH,  lambda e, a, s: force_return(e, 0))
+    emu.hook_call(AFF[0], lambda e, a, s: force_return(e, st["a370"]))
+    emu.hook_call(AFF[1], lambda e, a, s: force_return(e, st["a3b0"]))
+    emu.hook_call(AFF[2], lambda e, a, s: force_return(e, st["a3f0"]))
+    emu.hook_call(AFF[3], lambda e, a, s: force_return(e, st["a420"]))
+    # epoch: make it large so a small person.id is "active" unless we set id high
+    emu.uc.mem_write(DAT_EPOCH, struct.pack("<i", 0x40000000))
+
+    cases, exe_res = [], []
+    affmodes = [(0, 0), (1, 0), (0, 1)]  # none / positive / negative
+    for base in (-5000, -1, 0, 1, 250, 3000, 9000):
+        for inc in (0, 1):
+            for active in (0, 1):
+                for amb in (-8, 0, 5, 20):
+                    for (a1, a2) in affmodes:
+                        for (b1, b2) in affmodes:
+                            club = emu.malloc(0x300)
+                            emu.write_field(club, 0x53, "I", 0)          # nation 0 -> skip loyalty
+                            emu.write_field(club, 0x80, "h", 6000)       # rep (irrelevant, standing_c=0)
+                            emu.write_field(club, 0xbf, "I", 0)          # assistant 0 -> param_3 stays 0
+                            standing = emu.malloc(0x20)                  # all zero -> factors=1, no bonus
+                            person = emu.malloc(0x80)
+                            pid = 5 if active else 0x50000000
+                            emu.write_field(person, 0x00, "I", pid)
+                            emu.write_field(person, 0x18, "b", 50)       # age in [45,60)
+                            emu.write_field(person, 0x3d, "b", 5)        # status 5
+                            emu.write_field(person, 0x39, "I", club if inc else 0)  # incumbency
+                            emu.write_field(person, 0x59, "b", amb)      # ambition
+                            emu.write_field(person, 0x5b, "b", 10)       # local_98 = 0 -> return path 459
+                            emu.write_field(person, 0x69, "I", standing)
+                            st["base"] = base & 0xFFFF
+                            st["a370"], st["a3b0"] = a1, a2
+                            st["a3f0"], st["a420"] = b1, b2
+                            r = emu.call(FUN_SCORE, person, club, 0, 5)
+                            r = struct.unpack("<i", struct.pack("<I", r & 0xFFFFFFFF))[0]
+                            exe_res.append(r)
+                            aff_a = 1 if a1 else (0 if a2 else -1)
+                            aff_b = 1 if b1 else (0 if b2 else -1)
+                            base_s = struct.unpack("<h", struct.pack("<H", base & 0xFFFF))[0]
+                            cases.append((base_s, inc, active, amb, aff_a, aff_b))
+    lines = [f"skeleton {c[0]} 5 6000 0 0 0 {c[1]} {c[2]} {c[3]} {c[4]} {c[5]}" for c in cases]
+    rust = run_probe(lines)
+    mm = []
+    for i, c in enumerate(cases):
+        rr = int(rust[i])
+        if rr != exe_res[i]:
+            mm.append((c, exe_res[i], rr))
+    return len(cases), mm
+
 def main():
     if not os.path.exists(PROBE):
         sys.exit(f"build the probe first: cargo build -p cm-scoring --bin scoring_probe\nmissing {PROBE}")
@@ -175,6 +237,12 @@ def main():
     for c, er, rr in cmm[:20]:
         print(f"  MISMATCH inputs={c}  exe={er} rust={rr}")
     print("CLOSENESS:", "PASS" if not cmm else "FAIL")
+    stotal, smm = test_score_skeleton(emu)
+    print("\n=== FUN_00682420 score skeleton (base+incumbency+affinity, case 5) ===")
+    print(f"cases: {stotal}   mismatches: {len(smm)}")
+    for c, er, rr in smm[:20]:
+        print(f"  MISMATCH {c}  exe={er} rust={rr}")
+    print("SCORE_SKELETON:", "PASS" if not smm else "FAIL")
 
 if __name__ == "__main__":
     main()

@@ -76,6 +76,38 @@ pub fn score_base_reweight(l: i32, affinity_positive: bool, affinity_negative: b
     out.round_ties_even() as i32
 }
 
+/// `FUN_00682420` integer **skeleton** (pre-switch + the case-5/0xc no-op path):
+/// base rating (from repfit, supplied as `base`), the standing bonus, the
+/// incumbency bonus, then the two affinity base re-weights. With every attribute
+/// source byte zero and status 5 the per-jobtype float factors all collapse to
+/// 1.0, so the function returns exactly this. Verified differentially against
+/// cm0102.exe (docs/manager_hiring/diff_report.md). The per-jobtype term products
+/// are added in `score_apply_terms` (chunked, still in progress) — NOT here.
+///
+/// Args mirror the decompile: `status`=local_8e, `club_rep`=*(club+0x80),
+/// `standing_c/_4/_6` = *(standing+0xc/+4/+6), `incumbent`= person+0x39==club,
+/// `incumbent_active`= person.id < epoch-0x10, `ambition`= person+0x59,
+/// `aff_a/_b` = the two affinity gate outcomes (Some(true)=positive → max(L*1.1,
+/// L+2000); Some(false)=negative → L*0.25; None = gate not taken).
+#[allow(clippy::too_many_arguments)]
+pub fn score_skeleton(
+    base: i32, status: u8, club_rep: i32, standing_c: i16, standing_4: i16, standing_6: i16,
+    incumbent: bool, incumbent_active: bool, ambition: i32,
+    aff_a: Option<bool>, aff_b: Option<bool>,
+) -> i32 {
+    let mut l = base;
+    if (status == 0x0c || status == 0x05) && club_rep > 0x109a && (standing_c as i32) > 0xcb2 {
+        l += standing_4 as i32 * 0x19;   // *(standing+4) * 25
+        l += standing_6 as i32 * 5;      // *(standing+6) * 5
+    }
+    if incumbent {
+        l += if incumbent_active { ambition * ambition } else { 100 };
+    }
+    if let Some(pos) = aff_a { l = score_base_reweight(l, pos, !pos); }
+    if let Some(pos) = aff_b { l = score_base_reweight(l, pos, !pos); }
+    l
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
