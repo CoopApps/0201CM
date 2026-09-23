@@ -78,12 +78,14 @@ def main():
     # --- live citations from crates/ ---
     cites = defaultdict(list)       # va -> [(file, line, text)]
     gdireg = {}                     # va -> status token from // GDI-REG:
+    rs_paths = {}                   # basename.rs -> repo-relative path (for resolving bare names)
     for dirpath, _, files in os.walk(CRATES):
         for fn in files:
             if not fn.endswith(".rs"):
                 continue
             fp = os.path.join(dirpath, fn)
             rel = os.path.relpath(fp, ROOT).replace("\\", "/")
+            rs_paths.setdefault(fn, rel)
             try:
                 lines = open(fp, encoding="utf-8", errors="replace").read().splitlines()
             except Exception:
@@ -96,7 +98,41 @@ def main():
                 if g:
                     gdireg[norm(g.group(1))] = g.group(2)
 
-    curated = {norm(r["dd_va"]): r for r in load_csv("curated.csv") if r.get("dd_va")}
+    # Curated rows: MERGE multiple rows for the same DD VA (one exe fn may map to
+    # several Rust symbols / carry conflicting interpretations). Status by
+    # precedence; rust/evidence joined; notes preserved (incl. conflicts).
+    STATUS_PREC = ["PORTED_EXACT","PORTED_BEHAVIOURAL","PORTED_PARTIAL","REPLACED_BY_RUST",
+        "BLOCKED_DEPENDENCY","NOT_YET_PORTED","FOREIGN_BREADTH","UI_GDI_DOMAIN",
+        "OUT_OF_SCOPE","NON_USEFUL","DEAD_OR_UNREACHABLE","UNKNOWN"]
+    def sprec(s): return STATUS_PREC.index(s) if s in STATUS_PREC else len(STATUS_PREC)
+    cur_groups = defaultdict(list)
+    for r in load_csv("curated.csv"):
+        if r.get("dd_va"):
+            cur_groups[norm(r["dd_va"])].append(r)
+    def joinf(rowset, key):
+        seen, out = set(), []
+        for r in rowset:
+            v = (r.get(key) or "").strip()
+            for part in v.split(";"):
+                part = part.strip()
+                if part and part not in seen:
+                    seen.add(part); out.append(part)
+        return ";".join(out)
+    curated = {}
+    for va, rs in cur_groups.items():
+        rs = sorted(rs, key=lambda r: sprec((r.get("status") or "UNKNOWN").strip()))
+        primary = rs[0]
+        notes = " | ".join(dict.fromkeys(r.get("notes","").strip() for r in rs if r.get("notes","").strip()))
+        if len(rs) > 1:
+            notes = (notes + " | MULTI-ROLE: " + "; ".join(
+                f"{(r.get('status') or '').strip()}={r.get('semantic_name','') or r.get('rust_symbol','')}"
+                for r in rs)).strip(" |")
+        m = dict(primary)
+        m["rust_file"] = joinf(rs, "rust_file")
+        m["rust_symbol"] = joinf(rs, "rust_symbol")
+        m["evidence"] = joinf(rs, "evidence")
+        m["notes"] = notes
+        curated[va] = m
     groups = {r["source_file"].strip().lower(): r for r in load_csv("frontier_groups.csv") if r.get("source_file")}
     superseded = {norm(r["dd_va"]): r for r in load_csv("superseded.csv") if r.get("dd_va")}
     frontier = set()
@@ -144,6 +180,16 @@ def main():
         cu = curated.get(va, {})
         status, how = derive_status(va)
         rustfiles = cu.get("rust_file") or ";".join(sorted({c[0] for c in cites.get(va, [])}))
+        # Resolve bare "foo.rs" basenames (agents emit these) to repo paths.
+        if rustfiles:
+            parts = []
+            for p in rustfiles.split(";"):
+                p = p.strip()
+                if p and "/" not in p and p in rs_paths:
+                    p = rs_paths[p]
+                if p:
+                    parts.append(p)
+            rustfiles = ";".join(dict.fromkeys(parts))
         rustsyms = cu.get("rust_symbol", "")
         # HONESTY GUARD: never assert PORTED_* without a Rust link. An
         # auto/group classification that claims ported but has no rust file and
