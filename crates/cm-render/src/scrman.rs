@@ -1394,6 +1394,7 @@ impl ScreenManager {
 
     /// Port of `FUN_007e46a0`'s structure-clearing tail. Re-runs the ctor's write sequence in
     /// place; sub-object dtors follow the "empty on ctor-fresh state" contract each carries.
+    // GDI-REG: 007e46a0 PORTED_BEHAVIOURAL
     pub fn reset(&mut self) {
         // Invoke session dtors on populated state BEFORE zeroing (matches the
         // exe's dtor-then-ctor sequence during a session-end / new-game reset).
@@ -1443,6 +1444,7 @@ impl ScreenManager {
     /// array) are stored in the arena as presence markers (1 / 0) and owned
     /// Rust-side (`pending_cleanup`, `pending_bag`); every other slot is
     /// written verbatim.
+    // GDI-REG: 007e6420 PORTED_BEHAVIOURAL
     pub fn stage_pending_push(
         &mut self,
         screen_id: u32,

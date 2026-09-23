@@ -35,6 +35,7 @@ fn spawn_navbar_stub(pool: &mut GuiRecordPool, parent: i16, back: bool, next: bo
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_701070 / callback_va 0x701070 — 4 widgets.
+// GDI-REG: 00701070 PORTED_BEHAVIOURAL
 pub fn build_screen_701070(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -82,6 +83,7 @@ pub fn build_screen_701070(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_8596b0 / callback_va 0x8596b0 — 8 widgets.
+// GDI-REG: 008596b0 PORTED_BEHAVIOURAL
 pub fn build_screen_8596b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -148,6 +150,7 @@ pub fn build_screen_8596b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_698160 / callback_va 0x698160 — 10 widgets.
+// GDI-REG: 00698160 PORTED_BEHAVIOURAL
 pub fn build_screen_698160(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -256,6 +259,7 @@ pub fn build_screen_698160(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_7719b0 / callback_va 0x7719b0 — 10 widgets.
+// GDI-REG: 007719b0 PORTED_BEHAVIOURAL
 pub fn build_screen_7719b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -381,6 +385,7 @@ pub fn build_screen_7719b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4150e0 / callback_va 0x4150e0 — 10 widgets.
+// GDI-REG: 004150e0 PORTED_BEHAVIOURAL
 pub fn build_screen_4150e0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -473,6 +478,7 @@ pub fn build_screen_4150e0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_494640 / callback_va 0x494640 — 25 widgets.
+// GDI-REG: 00494640 PORTED_BEHAVIOURAL
 pub fn build_screen_494640(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -663,6 +669,7 @@ pub fn build_screen_494640(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_46bdf0 / callback_va 0x46bdf0 — 13 widgets.
+// GDI-REG: 0046bdf0 PORTED_BEHAVIOURAL
 pub fn build_screen_46bdf0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -719,6 +726,7 @@ pub fn build_screen_46bdf0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_476ef0 / callback_va 0x476ef0 — 11 widgets.
+// GDI-REG: 00476ef0 PORTED_BEHAVIOURAL
 pub fn build_screen_476ef0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -848,6 +856,7 @@ pub fn build_screen_476ef0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_7013d0 / callback_va 0x7013d0 — 21 widgets.
+// GDI-REG: 007013d0 PORTED_BEHAVIOURAL
 pub fn build_screen_7013d0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1014,6 +1023,7 @@ pub fn build_screen_7013d0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_58a740 / callback_va 0x58a740 — 7 widgets.
+// GDI-REG: 0058a740 PORTED_BEHAVIOURAL
 pub fn build_screen_58a740(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1071,6 +1081,7 @@ pub fn build_screen_58a740(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_58d000 / callback_va 0x58d000 — 7 widgets.
+// GDI-REG: 0058d000 PORTED_BEHAVIOURAL
 pub fn build_screen_58d000(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1122,6 +1133,7 @@ pub fn build_screen_58d000(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_810ce0 / callback_va 0x810ce0 — 8 widgets.
+// GDI-REG: 00810ce0 PORTED_BEHAVIOURAL
 pub fn build_screen_810ce0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1203,6 +1215,7 @@ pub fn build_screen_810ce0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_417870 / callback_va 0x417870 — 8 widgets.
+// GDI-REG: 00417870 PORTED_BEHAVIOURAL
 pub fn build_screen_417870(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1294,6 +1307,7 @@ pub fn build_screen_417870(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_474760 / callback_va 0x474760 — 21 widgets.
+// GDI-REG: 00474760 PORTED_BEHAVIOURAL
 pub fn build_screen_474760(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1509,6 +1523,7 @@ pub fn build_screen_474760(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4751b0 / callback_va 0x4751b0 — 14 widgets.
+// GDI-REG: 004751b0 PORTED_BEHAVIOURAL
 pub fn build_screen_4751b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1661,6 +1676,7 @@ pub fn build_screen_4751b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4e2c70 / callback_va 0x4e2c70 — 13 widgets.
+// GDI-REG: 004e2c70 PORTED_BEHAVIOURAL
 pub fn build_screen_4e2c70(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1790,6 +1806,7 @@ pub fn build_screen_4e2c70(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4e38d0 / callback_va 0x4e38d0 — 15 widgets.
+// GDI-REG: 004e38d0 PORTED_BEHAVIOURAL
 pub fn build_screen_4e38d0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1964,6 +1981,7 @@ pub fn build_screen_4e38d0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4e42b0 / callback_va 0x4e42b0 — 0 widgets.
+// GDI-REG: 004e42b0 PORTED_PARTIAL
 pub fn build_screen_4e42b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -1988,6 +2006,7 @@ pub fn build_screen_4e42b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4e6680 / callback_va 0x4e6680 — 0 widgets.
+// GDI-REG: 004e6680 PORTED_PARTIAL
 pub fn build_screen_4e6680(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -2012,6 +2031,7 @@ pub fn build_screen_4e6680(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4ebfa0 / callback_va 0x4ebfa0 — 10 widgets.
+// GDI-REG: 004ebfa0 PORTED_BEHAVIOURAL
 pub fn build_screen_4ebfa0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -2120,6 +2140,7 @@ pub fn build_screen_4ebfa0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4ec590 / callback_va 0x4ec590 — 38 widgets.
+// GDI-REG: 004ec590 PORTED_BEHAVIOURAL
 pub fn build_screen_4ec590(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -2311,6 +2332,7 @@ pub fn build_screen_4ec590(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_4fd1f0 / callback_va 0x4fd1f0 — 25 widgets.
+// GDI-REG: 004fd1f0 PORTED_BEHAVIOURAL
 pub fn build_screen_4fd1f0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -2657,6 +2679,7 @@ pub fn build_screen_4fd1f0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_548560 / callback_va 0x548560 — 11 widgets.
+// GDI-REG: 00548560 PORTED_BEHAVIOURAL
 pub fn build_screen_548560(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -2766,6 +2789,7 @@ pub fn build_screen_548560(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_5488f0 / callback_va 0x5488f0 — 0 widgets.
+// GDI-REG: 005488f0 PORTED_PARTIAL
 pub fn build_screen_5488f0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -2790,6 +2814,7 @@ pub fn build_screen_5488f0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_5dad10 / callback_va 0x5dad10 — 15 widgets.
+// GDI-REG: 005dad10 PORTED_BEHAVIOURAL
 pub fn build_screen_5dad10(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3001,6 +3026,7 @@ pub fn build_screen_5dad10(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_5db600 / callback_va 0x5db600 — 0 widgets.
+// GDI-REG: 005db600 PORTED_PARTIAL
 pub fn build_screen_5db600(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3025,6 +3051,7 @@ pub fn build_screen_5db600(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_697440 / callback_va 0x697440 — 10 widgets.
+// GDI-REG: 00697440 PORTED_BEHAVIOURAL
 pub fn build_screen_697440(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3133,6 +3160,7 @@ pub fn build_screen_697440(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_697dc0 / callback_va 0x697dc0 — 10 widgets.
+// GDI-REG: 00697dc0 PORTED_BEHAVIOURAL
 pub fn build_screen_697dc0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3241,6 +3269,7 @@ pub fn build_screen_697dc0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_6fd7b0 / callback_va 0x6fd7b0 — 13 widgets.
+// GDI-REG: 006fd7b0 PORTED_BEHAVIOURAL
 pub fn build_screen_6fd7b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3416,6 +3445,7 @@ pub fn build_screen_6fd7b0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_7cdc70 / callback_va 0x7cdc70 — 10 widgets.
+// GDI-REG: 007cdc70 PORTED_BEHAVIOURAL
 pub fn build_screen_7cdc70(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3524,6 +3554,7 @@ pub fn build_screen_7cdc70(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_7fb050 / callback_va 0x7fb050 — 43 widgets.
+// GDI-REG: 007fb050 PORTED_BEHAVIOURAL
 pub fn build_screen_7fb050(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -3973,6 +4004,7 @@ pub fn build_screen_7fb050(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_804020 / callback_va 0x804020 — 16 widgets.
+// GDI-REG: 00804020 PORTED_BEHAVIOURAL
 pub fn build_screen_804020(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -4048,6 +4080,7 @@ pub fn build_screen_804020(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_808ae0 / callback_va 0x808ae0 — 15 widgets.
+// GDI-REG: 00808ae0 PORTED_BEHAVIOURAL
 pub fn build_screen_808ae0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -4185,6 +4218,7 @@ pub fn build_screen_808ae0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_88def0 / callback_va 0x88def0 — 45 widgets.
+// GDI-REG: 0088def0 PORTED_BEHAVIOURAL
 pub fn build_screen_88def0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -4615,6 +4649,7 @@ pub fn build_screen_88def0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_890e50 / callback_va 0x890e50 — 56 widgets.
+// GDI-REG: 00890e50 PORTED_BEHAVIOURAL
 pub fn build_screen_890e50(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -5160,6 +5195,7 @@ pub fn build_screen_890e50(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_893500 / callback_va 0x893500 — 0 widgets.
+// GDI-REG: 00893500 PORTED_PARTIAL
 pub fn build_screen_893500(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -5184,6 +5220,7 @@ pub fn build_screen_893500(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_8a2180 / callback_va 0x8a2180 — 37 widgets.
+// GDI-REG: 008a2180 PORTED_BEHAVIOURAL
 pub fn build_screen_8a2180(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -5527,6 +5564,7 @@ pub fn build_screen_8a2180(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_8a6580 / callback_va 0x8a6580 — 37 widgets.
+// GDI-REG: 008a6580 PORTED_BEHAVIOURAL
 pub fn build_screen_8a6580(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -5969,6 +6007,7 @@ pub fn build_screen_8a6580(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_8e01d0 / callback_va 0x8e01d0 — 12 widgets.
+// GDI-REG: 008e01d0 PORTED_BEHAVIOURAL
 pub fn build_screen_8e01d0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();
@@ -6096,6 +6135,7 @@ pub fn build_screen_8e01d0(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
 /// regenerate to pick up JSON schema fixes.
 ///
 /// Source: FUN_8e9e60 / callback_va 0x8e9e60 — 0 widgets.
+// GDI-REG: 008e9e60 PORTED_PARTIAL
 pub fn build_screen_8e9e60(pool: &mut GuiRecordPool) -> Option<(usize, usize)> {
     let a0 = pool.areas.len();
     let w0 = pool.widgets.len();

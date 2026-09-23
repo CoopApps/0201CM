@@ -129,6 +129,7 @@ pub struct MinGoalsTrackerState {
 /// - `k_zero`: `_DAT_00956948` — the exe's "0.0" constant.
 /// - `attr_431..439`: the payload bytes `+0x431..+0x439` copied when
 ///   the tick fires (opaque to us).
+// GDI-REG: 004a84b0 PORTED_BEHAVIOURAL
 pub fn update_match_min_goals_tracker(
     state: &mut MinGoalsTrackerState,
     outer_gate_hits: bool,
@@ -279,6 +280,7 @@ pub struct MatchStatSlot {
 /// The exe iterates 2 halves (0, 1) × 20 slots (0..0x14) per half,
 /// sharing per-slot state through offsets relative to a stride-`0x625`
 /// per-half base. This port takes the pre-flattened 40-slot input.
+// GDI-REG: 004a90b0 PORTED_BEHAVIOURAL
 pub fn aggregate_team_match_stats(
     counters: &mut MatchStatCounters,
     fixture_state_at_0x4c: u8,
@@ -360,6 +362,7 @@ pub struct FifaRankingsView {
 /// - `page`: `get_field(1)` — the current page (1-based).
 /// - `page_size`: computed as `0x15d / FUN_005cf7b0(...)`.
 /// - `month_label`, `year`: rendered as `< {month} > < {year} >`.
+// GDI-REG: 004a2200 PORTED_BEHAVIOURAL
 pub fn build_fifa_world_rankings_screen(
     rankings: Vec<(String, f64, bool)>,
     page: u32,
@@ -473,6 +476,7 @@ pub enum StagesWalkerOutcome {
 /// [`crate::screen_batch28::comp_list_row_build`] via `FUN_004a3d20`
 /// several times to emit Stage/Group/Round widgets. This port takes
 /// a pre-classified per-round descriptor and emits the row list.
+// GDI-REG: 004a3770 PORTED_PARTIAL
 pub fn build_competition_stages_walker(
     comp_is_null: bool,
     comp_stage_30_at_minus_one: bool,

@@ -372,6 +372,7 @@ pub struct TransferState {
 /// The `_viewer_person_arg` argument corresponds to `param_2`
 /// (Person\*): the classifier only ever reads it through env
 /// accessors, so the port passes those in the env instead.
+// GDI-REG: 0076ab10 PORTED_BEHAVIOURAL
 pub fn classify_news_action<E: NewsClassifyEnv>(
     item: &RawNewsItem,
     env: &E,

@@ -39,6 +39,7 @@ pub struct PackedSurface {
 
 impl PackedSurface {
     /// RGB555 constructor (the mask set `FUN_005cc4f0` installs).
+    // GDI-REG: 005cc4f0 PORTED_EXACT
     pub fn rgb555(width: i32, height: i32) -> Self {
         let pitch = width;
         Self {
@@ -345,6 +346,7 @@ impl PackedSurface {
     /// * 0x5cd914..920 advance dst by (pitch - w) after each row
     /// * 0x5cd923 `jne` — outer row loop; note `xor eax,eax` at 0x5cd8fd
     ///   is the loop entry so `eax` resets each row.
+    // GDI-REG: 005cd870 PORTED_EXACT
     pub fn draw_stipple(&mut self, x: i32, y: i32, colour: u16, pattern: &StipplePattern) {
         let w = pattern.width as i32;
         let h = pattern.height as i32;
@@ -474,6 +476,7 @@ impl PackedSurface {
 ///
 /// Every asm site cited inline. Address prefix is the byte offset inside
 /// `FUN_005ce2d0`.
+// GDI-REG: 005ce2d0 PORTED_EXACT
 pub fn colour_scale(
     colour: u16,
     intensity_pct: u32,

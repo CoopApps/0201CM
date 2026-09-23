@@ -1200,6 +1200,7 @@ impl DomainStaffType10 {
     /// 0x008/0x010/0x020 central-defensive variants (branches on +0x12/
     /// +0x13/+0x14), 0x040 defensive-mid/anchor, then a second pass over
     /// +0x17/+0x18/+0x19 sets the wide/attacking bits 0x800/0x080/0x200.
+    // GDI-REG: 005a2030 PORTED_EXACT
     pub fn position_eligibility_bits(&self) -> u16 {
         // +0xf..+0x1a, 12 bytes — via full_attributes() so the typed fields
         // are used on post-migration rust-db (legacy array is zero there).
@@ -1321,6 +1322,7 @@ impl PlayerInitState {
     /// (d) the exact slot->byte order from FUN_00524560. So values are real and
     /// CA-consistent but not yet position-shaped or bit-exact.
     // GDI-REG: 00524160 PORTED_PARTIAL
+    // GDI-REG: 00524560 PORTED_PARTIAL
     pub fn generate_attributes_core(ca: i16, rng: &mut cm_rng::MatchRng) -> Vec<u8> {
         let mut out = vec![0u8; 42];
         let ca10 = (ca as i32) / 10;
@@ -14285,6 +14287,7 @@ impl World {
     }
 
     // GDI-REG: 008120d0 PORTED_BEHAVIOURAL
+    // GDI-REG: 00842f40 PORTED_BEHAVIOURAL
     pub fn assign_squad_numbers(&mut self) {
         use std::collections::BTreeMap;
         // person id -> club id (only staff-with-employer get a number).
@@ -21975,6 +21978,7 @@ impl RuntimeSaveGame {
     /// port: mark FIFA rankings dirty so `World::refresh_after_tick` recomputes
     /// them (the exe's yearly recompute lives in `game_recompute_fifa_rankings`
     /// `0x005c01d0`, called opportunistically). Also stamps `last_year_rollover`.
+    // GDI-REG: 00594950 PORTED_BEHAVIOURAL
     fn hook_year_rollover(&mut self, _date: &GameDate) {
         if self.date.year != self.last_year_rollover {
             self.last_year_rollover = self.date.year;

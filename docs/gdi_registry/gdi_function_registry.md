@@ -2,14 +2,8 @@
 
 Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tools/gdi_registry/data/*.csv`; see docs/reverse_engineering_conventions.md.
 
-1673 functions registered. Coverage: docs/gdi_registry/gdi_function_coverage.md. Globals: docs/gdi_registry/gdi_globals.md.
+1674 functions registered. Coverage: docs/gdi_registry/gdi_function_coverage.md. Globals: docs/gdi_registry/gdi_globals.md.
 
-
-## FILESYSTEM
-
-| DD VA | source | semantic | status | Rust | reach | conf | evidence |
-|---|---|---|---|---|---|---|---|
-| 0x00808ae0 | setup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs;crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 
 ## GUI
 
@@ -25,10 +19,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00415b70 |  | FUN_00415b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00415c30 |  | FUN_00415c30 | PORTED_BEHAVIOURAL | crates/cm-ui-app/src/screens.rs | YES | UNVERIFIED |  |
 | 0x004176e0 |  | FUN_004176e0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x00417870 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00418770 |  | FUN_00418770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00419ac0 |  | FUN_00419ac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00419c30 |  | FUN_00419c30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0041a200 |  | FUN_0041a200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0041a270 |  | FUN_0041a270 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0041a320 |  | FUN_0041a320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -73,7 +65,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0046a6f0 |  | FUN_0046a6f0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x0046ba80 |  | FUN_0046ba80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch6.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
 | 0x00476dc0 |  | FUN_00476dc0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
-| 0x00476ef0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00478580 |  | FUN_00478580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x00480130 |  | FUN_00480130 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
 | 0x00487210 |  | FUN_00487210 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -90,16 +81,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0049e0d0 |  | FUN_0049e0d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
 | 0x004a0010 |  | FUN_004a0010 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
 | 0x004a0610 |  | FUN_004a0610 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
-| 0x004a0c10 |  | FUN_004a0c10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
-| 0x004a16a0 |  | FUN_004a16a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
-| 0x004a1fd0 |  | FUN_004a1fd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
-| 0x004a28c0 |  | FUN_004a28c0 | UNKNOWN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch29.rs;crates/cm-domain/src/screen_batch3.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | INDIRECT | UNVERIFIED |  |
 | 0x004a2900 |  | FUN_004a2900 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x004a5550 |  | FUN_004a5550 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x004a84b0 |  | FUN_004a84b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
 | 0x004a8710 |  | FUN_004a8710 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
-| 0x004a8f10 |  | FUN_004a8f10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
-| 0x004abbe0 |  | FUN_004abbe0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
 | 0x004ae9e0 |  | FUN_004ae9e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch34.rs | YES | UNVERIFIED |  |
 | 0x004b2090 |  | FUN_004b2090 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004b42b0 |  | FUN_004b42b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
@@ -117,7 +101,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004cdd80 |  | FUN_004cdd80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004d06d0 |  | FUN_004d06d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004d08a0 |  | FUN_004d08a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x004d0b00 |  | FUN_004d0b00 | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/transfer.rs | INDIRECT | UNVERIFIED |  |
 | 0x004d14d0 |  | FUN_004d14d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x004d1680 |  | FUN_004d1680 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x004d1dc0 |  | FUN_004d1dc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -142,17 +125,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004da820 |  | FUN_004da820 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x004e2af0 |  | FUN_004e2af0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x004e2b80 |  | FUN_004e2b80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x004e2c70 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x004e38d0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x004e42b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x004e4580 |  | FUN_004e4580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
 | 0x004e4960 |  | FUN_004e4960 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
-| 0x004e6680 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x004eb240 |  | FUN_004eb240 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch14.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
-| 0x004ebfa0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x004ec3a0 |  | FUN_004ec3a0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x004ec550 |  | FUN_004ec550 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch14.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x004ec590 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x004fd1b0 |  | FUN_004fd1b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch14.rs;crates/cm-domain/src/sidebar_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x004fda80 |  | FUN_004fda80 | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x0050bac0 |  | FUN_0050bac0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -161,7 +138,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0050c8d0 |  | FUN_0050c8d0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x0051f490 |  | FUN_0051f490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00524100 |  | FUN_00524100 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00524560 |  | FUN_00524560 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00525160 |  | FUN_00525160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00525170 |  | FUN_00525170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005269e0 |  | FUN_005269e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -171,15 +147,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0052a330 |  | FUN_0052a330 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x0052a410 |  | FUN_0052a410 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0052a4d0 |  | FUN_0052a4d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0052c3f0 |  | FUN_0052c3f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-render/src/screen_club_squad_faithful.rs | YES | UNVERIFIED |  |
 | 0x0052cdd0 |  | FUN_0052cdd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0052df60 |  | FUN_0052df60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/injury_gen.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x0052dff0 |  | FUN_0052dff0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x0052e070 |  | FUN_0052e070 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0052e0e0 |  | FUN_0052e0e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x0052e150 |  | FUN_0052e150 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0052e1c0 |  | FUN_0052e1c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0052e260 |  | FUN_0052e260 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0052f010 |  | FUN_0052f010 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0052f0f0 |  | FUN_0052f0f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0052f3d0 |  | FUN_0052f3d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -204,7 +177,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00532390 |  | FUN_00532390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00533870 |  | FUN_00533870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00533a30 |  | FUN_00533a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00533ad0 |  | FUN_00533ad0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/african_nations.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x00533cf0 |  | FUN_00533cf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00533fd0 |  | FUN_00533fd0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00536810 |  | FUN_00536810 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -227,8 +199,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00546600 |  | FUN_00546600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00546e70 |  | FUN_00546e70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs;crates/cm-import/src/bin/regen_clubs.rs | YES | UNVERIFIED |  |
 | 0x00548170 |  | FUN_00548170 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch14.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x00548560 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x005488f0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00548bd0 |  | FUN_00548bd0 | UNKNOWN | crates/cm-render/src/scrman.rs | INDIRECT | UNVERIFIED |  |
 | 0x00548ef0 |  | FUN_00548ef0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005493b0 |  | FUN_005493b0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
@@ -248,7 +218,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00553110 |  | FUN_00553110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005531e0 |  | FUN_005531e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00553a00 |  | FUN_00553a00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00553aa0 |  | FUN_00553aa0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00553c00 |  | FUN_00553c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00553c60 |  | FUN_00553c60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00553f80 |  | FUN_00553f80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -261,21 +230,16 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005829c0 |  | FUN_005829c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs | YES | UNVERIFIED |  |
 | 0x00583b60 |  | FUN_00583b60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00585900 |  | FUN_00585900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00585ae0 |  | FUN_00585ae0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c14_stadium_expansion.rs;crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/finance.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x005899e0 |  | FUN_005899e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00589b60 |  | FUN_00589b60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00589d10 |  | FUN_00589d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00589eb0 |  | FUN_00589eb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0058a1f0 |  | FUN_0058a1f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0058cde0 |  | FUN_0058cde0 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
-| 0x0058d000 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x0058d2c0 |  | FUN_0058d2c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
-| 0x0058fd80 |  | FUN_0058fd80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00592480 |  | FUN_00592480 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005928e0 |  | FUN_005928e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs | YES | UNVERIFIED |  |
-| 0x00595580 |  | FUN_00595580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00595a40 |  | FUN_00595a40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00596fa0 |  | FUN_00596fa0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00598ef0 |  | FUN_00598ef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00599c30 |  | FUN_00599c30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0059a460 |  | FUN_0059a460 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -292,13 +256,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005b0be0 |  | FUN_005b0be0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x005b2b90 |  | FUN_005b2b90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x005b2c40 |  | FUN_005b2c40 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
-| 0x005b6940 |  | FUN_005b6940 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x005b6a10 |  | FUN_005b6a10 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/msgbox.rs | YES | UNVERIFIED |  |
 | 0x005b6a90 |  | FUN_005b6a90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/bin/simulate_season.rs;crates/cm-domain/src/game.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/season_roll_scheduler.rs;crates/cm-ui-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x005b7f10 |  | FUN_005b7f10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005b8390 |  | FUN_005b8390 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005c0d20 |  | FUN_005c0d20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005c0f90 |  | FUN_005c0f90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x005c1410 |  | FUN_005c1410 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005c1a10 |  | FUN_005c1a10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005cc9b0 |  | FUN_005cc9b0 | PORTED_BEHAVIOURAL | crates/cm-render/src/window_init.rs | YES | UNVERIFIED |  |
@@ -312,25 +271,21 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d11e0 |  | FUN_005d11e0 | PORTED_BEHAVIOURAL | crates/cm-render/src/bevel.rs | YES | UNVERIFIED |  |
 | 0x005d1b80 |  | FUN_005d1b80 | PORTED_BEHAVIOURAL | crates/cm-render/src/cursor.rs | YES | UNVERIFIED |  |
 | 0x005d6960 |  | FUN_005d6960 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005d75b0 |  | FUN_005d75b0 | UNKNOWN | crates/cm-render/src/gen_screen_types.rs;crates/cm-render/src/layout.rs;crates/cm-render/src/screen_club_squad_faithful.rs;crates/cm-render/src/screen_menu_bar.rs;crates/cm-render/src/screen_nav_back_next.rs;crates/cm-render/src/screen_news.rs;crates/cm-render/src/screen_wire_batch3.rs;crates/cm-render/src/screens_auto.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/bin/render_gen_screen.rs | INDIRECT | UNVERIFIED |  |
 | 0x005d7ec0 |  | FUN_005d7ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005d8920 |  | FUN_005d8920 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005d8ad0 |  | FUN_005d8ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005d8c20 |  | FUN_005d8c20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005dab70 |  | FUN_005dab70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs;crates/cm-domain/src/screen_batch16.rs | YES | UNVERIFIED |  |
-| 0x005db600 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x005dbfe0 |  | FUN_005dbfe0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
 | 0x005dc160 |  | FUN_005dc160 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
 | 0x005dc2a0 |  | FUN_005dc2a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
 | 0x005dc5e0 |  | FUN_005dc5e0 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x005e42f0 |  | FUN_005e42f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
-| 0x005e4370 |  | FUN_005e4370 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x005e49e0 |  | FUN_005e49e0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x005ea860 |  | FUN_005ea860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005eb410 |  | FUN_005eb410 | PORTED_BEHAVIOURAL | crates/cm-domain/src/index.rs | YES | UNVERIFIED |  |
 | 0x00600f50 |  | FUN_00600f50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00614080 |  | FUN_00614080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00614e90 |  | FUN_00614e90 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x006153f0 |  | FUN_006153f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00615ab0 |  | FUN_00615ab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00615ae0 |  | FUN_00615ae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -355,19 +310,14 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00653ad0 |  | FUN_00653ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006547b0 |  | FUN_006547b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/index.rs | YES | UNVERIFIED |  |
 | 0x006679a0 |  | FUN_006679a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs;crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
-| 0x00672260 |  | FUN_00672260 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00672270 |  | FUN_00672270 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00672290 |  | FUN_00672290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006722d0 |  | FUN_006722d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00672320 |  | FUN_00672320 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00672400 |  | FUN_00672400 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs;crates/cm-domain/src/screen_batch7.rs | YES | UNVERIFIED |  |
 | 0x00672420 |  | FUN_00672420 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x00672440 |  | FUN_00672440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006724d0 |  | FUN_006724d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00672530 |  | FUN_00672530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00672540 |  | FUN_00672540 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00675980 |  | FUN_00675980 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x006809e0 |  | FUN_006809e0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/eng_second_fixtures.rs;crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00680cc0 |  | FUN_00680cc0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/c13_promotion_apply.rs | YES | UNVERIFIED |  |
 | 0x006817b0 |  | FUN_006817b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00684fc0 |  | FUN_00684fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -379,14 +329,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006917d0 |  | FUN_006917d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00693410 |  | FUN_00693410 | UNKNOWN | crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00695e60 |  | FUN_00695e60 | UNKNOWN | crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
-| 0x00697440 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x00697dc0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x00698160 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x006986c0 |  | FUN_006986c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch3.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x00699bc0 |  | FUN_00699bc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0069aa70 |  | FUN_0069aa70 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x0069bc10 |  | FUN_0069bc10 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x0069c6f0 |  | FUN_0069c6f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0069d880 |  | FUN_0069d880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x0069f1d0 |  | FUN_0069f1d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006a04a0 |  | FUN_006a04a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -458,8 +404,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006fce10 |  | FUN_006fce10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x006fce50 |  | FUN_006fce50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006fce70 |  | FUN_006fce70 | PORTED_BEHAVIOURAL | crates/cm-events/src/lib.rs | YES | UNVERIFIED |  |
-| 0x006fd7b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x00701070 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00701240 |  | FUN_00701240 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch7.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
 | 0x00713090 |  | FUN_00713090 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007328a0 |  | FUN_007328a0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
@@ -470,7 +414,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0074d010 |  | FUN_0074d010 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch17.rs;crates/cm-domain/src/screen_nation_dashboard.rs | YES | UNVERIFIED |  |
 | 0x0074ea50 |  | FUN_0074ea50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00752830 |  | FUN_00752830 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x00752d40 |  | FUN_00752d40 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x007536f0 |  | FUN_007536f0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00753ca0 |  | FUN_00753ca0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007553c0 |  | FUN_007553c0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
@@ -493,15 +436,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00770170 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs | YES | UNVERIFIED |  |
 | 0x00771810 |  | FUN_00771810 | UNKNOWN | crates/cm-domain/src/screen_batch4.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x00771880 |  | FUN_00771880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x007719b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x0077d380 |  | FUN_0077d380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0077d770 |  | FUN_0077d770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/scouting.rs;crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x0077e1d0 |  | FUN_0077e1d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x0078ad80 |  | FUN_0078ad80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x0078b4c0 |  | FUN_0078b4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0078db30 |  | FUN_0078db30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0078dd80 |  | FUN_0078dd80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0078f4f0 |  | FUN_0078f4f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/player_regen.rs | YES | UNVERIFIED |  |
 | 0x00790270 |  | FUN_00790270 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007909e0 |  | FUN_007909e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00792690 |  | FUN_00792690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -512,13 +452,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007aeb90 |  | FUN_007aeb90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007af000 |  | FUN_007af000 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007cdb80 |  | FUN_007cdb80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs | YES | UNVERIFIED |  |
-| 0x007cdc70 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x007ce4a0 |  | FUN_007ce4a0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007ceb90 |  | FUN_007ceb90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007cf040 |  | FUN_007cf040 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007e0da0 |  | FUN_007e0da0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e18c0 |  | FUN_007e18c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007e46a0 |  | FUN_007e46a0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e4750 |  | FUN_007e4750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e47f0 |  | FUN_007e47f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e6430 |  | FUN_007e6430 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch16.rs;crates/cm-domain/src/screen_batch17.rs;crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
@@ -535,22 +473,17 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007eb0d0 |  | FUN_007eb0d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007ebca0 |  | FUN_007ebca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_manager_batch.rs | YES | UNVERIFIED |  |
 | 0x007f0020 |  | FUN_007f0020 | UNKNOWN | crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x00804020 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_pre_boot.rs;crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x008055e0 |  |  | UNKNOWN | crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | INDIRECT | UNVERIFIED |  |
-| 0x00807280 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00808a70 |  | FUN_00808a70 | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch19.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x0080a450 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_name_faithful.rs;crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x0080bbd0 |  | FUN_0080bbd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch20.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x0080cc20 |  | FUN_0080cc20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs | YES | UNVERIFIED |  |
 | 0x0080fac0 |  | FUN_0080fac0 | UNKNOWN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
 | 0x008109c0 |  | FUN_008109c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs | YES | UNVERIFIED |  |
 | 0x00810ca0 |  | FUN_00810ca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch20.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x00810ce0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00822580 |  | FUN_00822580 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00822920 |  | FUN_00822920 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x00822940 |  | FUN_00822940 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
 | 0x00823a80 |  | FUN_00823a80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00823ad0 |  | FUN_00823ad0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0082a0b0 |  | FUN_0082a0b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x0082b3b0 |  | FUN_0082b3b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0082b4b0 |  | FUN_0082b4b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -565,11 +498,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00834720 |  | FUN_00834720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00834890 |  | FUN_00834890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00835d10 |  | FUN_00835d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00842f40 |  | FUN_00842f40 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/transfer.rs;crates/cm-ui-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00843100 |  | FUN_00843100 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00843880 |  | FUN_00843880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/contract_init.rs;crates/cm-domain/src/screen_batch11.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x00843fe0 |  | FUN_00843fe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00844940 |  | FUN_00844940 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00847530 |  | FUN_00847530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00847870 |  | FUN_00847870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00847a10 |  | FUN_00847a10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -582,16 +513,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008506a0 |  | FUN_008506a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00850ce0 |  | FUN_00850ce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008511c0 |  | FUN_008511c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00856d50 |  | FUN_00856d50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x008596b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x0086f9c0 |  | FUN_0086f9c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00874a10 |  | FUN_00874a10 | UNKNOWN | crates/cm-domain/src/screen_batch21.rs | INDIRECT | UNVERIFIED |  |
 | 0x008760d0 |  | FUN_008760d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0088dde0 |  | FUN_0088dde0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0088def0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00890360 |  | FUN_00890360 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
-| 0x00890e50 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x00893500 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00894650 |  | FUN_00894650 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x008958f0 |  | FUN_008958f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008962f0 |  | FUN_008962f0 | UNKNOWN | crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/tactic_dispatcher.rs | INDIRECT | UNVERIFIED |  |
@@ -601,8 +527,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0089d100 |  | FUN_0089d100 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
 | 0x008a16d0 |  | FUN_008a16d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a20a0 |  | FUN_008a20a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x008a2180 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x008a6580 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x008acd10 |  | FUN_008acd10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008ad0e0 |  | FUN_008ad0e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x008ae8d0 |  | FUN_008ae8d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -635,21 +559,15 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008d4a30 |  | FUN_008d4a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008d4b10 |  | FUN_008d4b10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x008d52f0 |  | FUN_008d52f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x008d6310 |  | FUN_008d6310 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008d6510 |  | FUN_008d6510 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008da210 |  | FUN_008da210 | UNKNOWN | crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | INDIRECT | UNVERIFIED |  |
 | 0x008dcfd0 |  | FUN_008dcfd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008def70 |  | FUN_008def70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008df8f0 |  | FUN_008df8f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008df9f0 |  | FUN_008df9f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x008dfb10 |  | FUN_008dfb10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x008dfc20 |  | FUN_008dfc20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008dfd00 |  | FUN_008dfd00 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x008e01d0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x008e0560 |  | FUN_008e0560 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
-| 0x008e0710 |  | FUN_008e0710 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
 | 0x008e0760 |  | FUN_008e0760 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs;crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
-| 0x008e0b60 |  | FUN_008e0b60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
 | 0x008e0bb0 |  | FUN_008e0bb0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
 | 0x008e10c0 |  | FUN_008e10c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008e26a0 |  | FUN_008e26a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
@@ -664,7 +582,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008e72b0 |  | FUN_008e72b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008e78d0 |  | FUN_008e78d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008e8590 |  | FUN_008e8590 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
-| 0x008e9e60 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x008ea760 |  | FUN_008ea760 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs | YES | UNVERIFIED |  |
 | 0x008eaef0 |  | FUN_008eaef0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs | YES | UNVERIFIED |  |
 | 0x008f4c40 |  | FUN_008f4c40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -678,22 +595,13 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008fc660 |  | FUN_008fc660 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x008fca20 |  | FUN_008fca20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008fcbe0 |  | FUN_008fcbe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009123a0 |  | FUN_009123a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00913180 |  | FUN_00913180 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00913510 |  | FUN_00913510 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0091ef10 |  | FUN_0091ef10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00921b90 |  | FUN_00921b90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00921cc0 |  | FUN_00921cc0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00922110 |  | FUN_00922110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00933d24 |  | FUN_00933d24 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00933d2f |  | FUN_00933d2f | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_manager_batch.rs | YES | UNVERIFIED |  |
-| 0x00933d8f |  | FUN_00933d8f | PORTED_BEHAVIOURAL | crates/cm-domain/src/c14_5_squad_manager.rs;crates/cm-domain/src/exe_date.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x009343c3 |  | FUN_009343c3 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/history.rs | YES | UNVERIFIED |  |
-| 0x009349c4 |  | FUN_009349c4 | UNKNOWN | crates/cm-domain/src/screen_batch19.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/msgbox.rs;crates/cm-render/src/scrman.rs | INDIRECT | UNVERIFIED |  |
-| 0x00934ba3 |  | FUN_00934ba3 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x00934c8e |  | FUN_00934c8e | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
-| 0x00935080 |  | FUN_00935080 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/player_regen.rs | YES | UNVERIFIED |  |
-| 0x0093534b |  | FUN_0093534b | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x0093543f |  | FUN_0093543f | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/finance.rs | YES | UNVERIFIED |  |
 | 0x009354f4 |  | FUN_009354f4 | PORTED_BEHAVIOURAL | crates/cm-render/src/lang_bank.rs | YES | UNVERIFIED |  |
 | 0x00403cc0 | area.cpp | FUN_00403cc0 | PORTED_BEHAVIOURAL | crates/cm-widget/src/lib.rs | YES | UNVERIFIED |  |
@@ -702,20 +610,14 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00418b40 | award/award_shortlist.cpp | FUN_00418b40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00418ca0 | award/award_shortlist.cpp | FUN_00418ca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch10.rs | YES | UNVERIFIED |  |
 | 0x00415010 | award_screens.cpp | FUN_00415010 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch5.rs | YES | UNVERIFIED |  |
-| 0x004150e0 | award_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00417780 | award_screens.cpp | FUN_00417780 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch10.rs | YES | UNVERIFIED |  |
 | 0x00448170 | club_records.cpp | FUN_00448170 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00453360 | club_records.cpp | FUN_00453360 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00453580 | club_records.cpp | FUN_00453580 | NON_USEFUL |  | NO | UNVERIFIED |  |
-| 0x004539f0 | club_records.cpp | FUN_004539f0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/club_season_records.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00454bb0 | club_screens.cpp | FUN_00454bb0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_nation_dashboard.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x004551c0 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_club_dashboard.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
 | 0x0046ad30 | club_screens.cpp | FUN_0046ad30 | UNKNOWN | crates/cm-domain/src/screen_batch10.rs | INDIRECT | UNVERIFIED |  |
-| 0x0046bdf0 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00470bf0 | club_screens.cpp | FUN_00470bf0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch10.rs | YES | UNVERIFIED |  |
 | 0x00472bf0 | club_screens.cpp | FUN_00472bf0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch10.rs | YES | UNVERIFIED |  |
-| 0x00474760 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x004751b0 | club_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x00475870 | club_screens.cpp | FUN_00475870 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x00476df0 | club_screens.cpp | FUN_00476df0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch6.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
 | 0x004776a0 | club_screens.cpp | FUN_004776a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
@@ -723,25 +625,15 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004787f0 | club_screens.cpp | FUN_004787f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x00478a30 | club_screens.cpp | FUN_00478a30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch12.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x00478ca0 | club_screens.cpp | FUN_00478ca0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
-| 0x0047ea60 | club_screens.cpp | FUN_0047ea60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
-| 0x00488f70 | club_screens.cpp | FUN_00488f70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00489790 | club_screens.cpp | FUN_00489790 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/scouting.rs | YES | UNVERIFIED |  |
 | 0x00491b70 | comp/comp.cpp | FUN_00491b70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00492640 | comp/comp.cpp | FUN_00492640 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00493650 | comp/comp.cpp | FUN_00493650 | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x004a6030 | comp/comp_stats.cpp | FUN_004a6030 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch31.rs | YES | UNVERIFIED |  |
-| 0x004a9000 | comp/comp_stats.cpp | FUN_004a9000 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
-| 0x004a90b0 | comp/comp_stats.cpp | FUN_004a90b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs;crates/cm-domain/src/screen_batch31.rs | YES | UNVERIFIED |  |
-| 0x004a92d0 | comp/comp_stats.cpp | FUN_004a92d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
-| 0x004a9980 | comp/comp_stats.cpp | FUN_004a9980 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs;crates/cm-domain/src/screen_batch30.rs;crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
-| 0x004a9d10 | comp/comp_stats.cpp | FUN_004a9d10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
-| 0x004aa480 | comp/comp_stats.cpp | FUN_004aa480 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
 | 0x004aa9a0 | comp/comp_stats.cpp | FUN_004aa9a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
 | 0x004ab310 | comp/comp_stats.cpp | FUN_004ab310 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs;crates/cm-domain/src/screen_batch30.rs;crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
 | 0x004ab4f0 | comp/comp_stats.cpp | FUN_004ab4f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
 | 0x004ab5e0 | comp/comp_stats.cpp | FUN_004ab5e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
 | 0x004ab880 | comp/comp_stats.cpp | FUN_004ab880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch33.rs | YES | UNVERIFIED |  |
-| 0x004abad0 | comp/comp_stats.cpp | FUN_004abad0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
 | 0x004abff0 | comp/comp_stats.cpp | FUN_004abff0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
 | 0x004ac150 | comp/comp_stats.cpp | FUN_004ac150 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_batch34.rs;crates/cm-domain/src/screen_batch35.rs | YES | UNVERIFIED |  |
 | 0x004aea10 | comp/comp_stats.cpp | FUN_004aea10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs;crates/cm-domain/src/screen_batch35.rs | YES | UNVERIFIED |  |
@@ -753,36 +645,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004c63c0 | comp/comp_util.cpp | FUN_004c63c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x004ccf40 | comp/conmebol_seeding.cpp | FUN_004ccf40 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x00503970 | comp/cup.cpp | FUN_00503970 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0041de60 | comp/cups/bel_fa_cup.cpp | FUN_0041de60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005549b0 | comp/cups/eng_auto_cup.cpp | FUN_005549b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00556150 | comp/cups/eng_cc_cup.cpp | FUN_00556150 | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00558f60 | comp/cups/eng_fa_cup.cpp | FUN_00558f60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0055abb0 | comp/cups/eng_fa_trophy.cpp | FUN_0055abb0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0057c730 | comp/cups/fin_cup.cpp | FUN_0057c730 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005a4650 | comp/cups/fra_cup.cpp | FUN_005a4650 | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005a6e80 | comp/cups/fra_lge_cup.cpp | FUN_005a6e80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005c2b90 | comp/cups/ger_cup.cpp | FUN_005c2b90 | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005c6050 | comp/cups/ger_lge_cup.cpp | FUN_005c6050 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005d2ff0 | comp/cups/gre_cup.cpp | FUN_005d2ff0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005d5be0 | comp/cups/gre_super.cpp | FUN_005d5be0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x005dd170 | comp/cups/hol_cup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0061d9f0 | comp/cups/ire_chal_cup.cpp | FUN_0061d9f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0061fdc0 | comp/cups/ire_leinster_cup.cpp | FUN_0061fdc0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x006220c0 | comp/cups/ire_munster_cup.cpp | FUN_006220c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00622bb0 | comp/cups/ire_pres_cup.cpp | FUN_00622bb0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x006245f0 | comp/cups/ire_super_cup.cpp | FUN_006245f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x00627060 | comp/cups/ita_c_cup.cpp | FUN_00627060 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x006282d0 | comp/cups/ita_cup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/domestic_cup.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0061ba20 | comp/eurocomp/inter_amer_cup.cpp | FUN_0061ba20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0061bb60 | comp/eurocomp/inter_amer_cup.cpp | FUN_0061bb60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/intl_comps.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
-| 0x0061cd40 | comp/eurocomp/intertoto_cup.cpp | FUN_0061cd40 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00594750 | comp/fix_man.cpp | FUN_00594750 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00594950 | comp/fix_man.cpp | FUN_00594950 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00594d00 | comp/fix_man.cpp | FUN_00594d00 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x005958b0 | comp/fix_man.cpp | FUN_005958b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005962b0 | comp/fix_man.cpp | FUN_005962b0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00596410 | comp/fix_man.cpp | FUN_00596410 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00596590 | comp/fix_man.cpp | FUN_00596590 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00597260 | comp/fix_man.cpp | FUN_00597260 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00599800 | comp/fix_man.cpp | FUN_00599800 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005af840 | comp/friendly.cpp | FUN_005af840 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -806,18 +673,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00842de0 | comp/squad_manager.cpp | FUN_00842de0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00843ef0 | comp/squad_manager.cpp | FUN_00843ef0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/c14_5_squad_manager.rs;crates/cm-domain/src/screen_batch11.rs | YES | UNVERIFIED |  |
 | 0x008470e0 | comp/stadium.cpp | FUN_008470e0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x008f2900 | comp/uefa_seeding.cpp | FUN_008f2900 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x008f2b10 | comp/uefa_seeding.cpp | FUN_008f2b10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x008f33a0 | comp/uefa_seeding.cpp | FUN_008f33a0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
-| 0x00494640 | comp_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x004a17f0 | comp_screens.cpp | FUN_004a17f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs;crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
-| 0x004a2200 | comp_screens.cpp | FUN_004a2200 | PORTED_BEHAVIOURAL | crates/cm-domain/src/exe_constants.rs;crates/cm-domain/src/fifa_rankings.rs;crates/cm-domain/src/screen_batch30.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | YES | UNVERIFIED |  |
-| 0x004a3220 | comp_screens.cpp | FUN_004a3220 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
-| 0x004a3770 | comp_screens.cpp | FUN_004a3770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
-| 0x004a3d20 | comp_screens.cpp | FUN_004a3d20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
-| 0x004a3f10 | comp_screens.cpp | FUN_004a3f10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
-| 0x004a5610 | comp_screens.cpp | FUN_004a5610 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch29.rs;crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
-| 0x004a5760 | comp_screens.cpp | FUN_004a5760 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs;crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
 | 0x004b5120 | comp_text.cpp | FUN_004b5120 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch34.rs;crates/cm-domain/src/screen_batch35.rs | YES | UNVERIFIED |  |
 | 0x004b5230 | comp_text.cpp | FUN_004b5230 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x004b5360 | comp_text.cpp | FUN_004b5360 | UNKNOWN | crates/cm-domain/src/screen_batch34.rs;crates/cm-domain/src/screen_batch35.rs | INDIRECT | UNVERIFIED |  |
@@ -829,7 +686,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x004dcf60 | contract_manager.cpp | FUN_004dcf60 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x004e3300 | contract_screens.cpp | FUN_004e3300 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch13.rs;crates/cm-domain/src/screen_batch24.rs | YES | UNVERIFIED |  |
 | 0x005246e0 | database.cpp | FUN_005246e0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x00525040 | database.cpp | FUN_00525040 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00525190 | database.cpp | FUN_00525190 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs;crates/cm-domain/src/tactic_dispatcher.rs;crates/cm-domain/src/typed_records.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00525310 | database.cpp | FUN_00525310 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00525450 | database.cpp | FUN_00525450 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c14_stadium_expansion.rs;crates/cm-domain/src/club_season_records.rs;crates/cm-domain/src/manager_creation.rs;crates/cm-domain/src/screen_batch11.rs;crates/cm-domain/src/screen_batch9.rs;crates/cm-domain/src/screen_club_dashboard.rs;crates/cm-domain/src/transfer.rs;crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-render/src/screen_club_squad_faithful.rs | YES | UNVERIFIED |  |
@@ -846,7 +702,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0052c290 | database.cpp | FUN_0052c290 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0052cd30 | database.cpp | FUN_0052cd30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0052da80 | database.cpp | FUN_0052da80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00535600 | date.cpp | FUN_00535600 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x005371c0 | db_files.cpp | FUN_005371c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00537320 | db_files.cpp | FUN_00537320 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x00537730 | db_files.cpp | FUN_00537730 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
@@ -873,7 +728,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005855e0 | finance.cpp | FUN_005855e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0058a490 | finance.cpp | FUN_0058a490 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/screen_batch25.rs | YES | UNVERIFIED |  |
 | 0x0058a550 | find_screens.cpp | FUN_0058a550 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-domain/tests/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs | INDIRECT | UNVERIFIED |  |
-| 0x0058a740 | find_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x0059cc40 | formation.cpp | FUN_0059cc40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0059cdf0 | formation.cpp | FUN_0059cdf0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x0059ceb0 | formation.cpp | FUN_0059ceb0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
@@ -888,9 +742,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005a0c10 | formation.cpp | FUN_005a0c10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
 | 0x005a16b0 | formation.cpp | FUN_005a16b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/formation.rs | YES | UNVERIFIED |  |
 | 0x005a1890 | formation.cpp | FUN_005a1890 | PORTED_BEHAVIOURAL | crates/cm-domain/src/player_profile.rs | YES | UNVERIFIED |  |
-| 0x005a2030 | formation.cpp | FUN_005a2030 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/player_rating.rs;crates/cm-ui-app/src/render_new.rs | YES | UNVERIFIED |  |
 | 0x005a2910 | formation.cpp | FUN_005a2910 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
-| 0x005b85b0 | game.cpp | FUN_005b85b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x005c1ec0 | game_config.cpp | FUN_005c1ec0 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x005d6bf0 | gui_utils.cpp | FUN_005d6bf0 | UNKNOWN | crates/cm-render/src/screens_auto.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | INDIRECT | UNVERIFIED |  |
 | 0x005d7070 | gui_utils.cpp | FUN_005d7070 | PORTED_BEHAVIOURAL | crates/cm-render/src/gen_screen_types.rs;crates/cm-render/src/view_render.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/bin/render_gen_screen.rs;crates/cm-widget/src/tab_strip.rs | YES | UNVERIFIED |  |
@@ -899,10 +751,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d8c90 | hall_of_fame.cpp | FUN_005d8c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005d9ac0 | hall_of_fame.cpp | FUN_005d9ac0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/hall_of_fame.rs | YES | UNVERIFIED |  |
 | 0x005da080 | hall_of_fame.cpp | FUN_005da080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x005dad10 | history.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x005db8b0 | history.cpp | FUN_005db8b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/history.rs;crates/cm-render/src/hsr.rs | YES | UNVERIFIED |  |
 | 0x005dc660 | history.cpp | FUN_005dc660 | UNKNOWN | crates/cm-domain/src/history.rs;crates/cm-render/src/hsr.rs | INDIRECT | UNVERIFIED |  |
-| 0x005e5330 | human_manager.cpp | FUN_005e5330 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/manager_creation.rs | YES | UNVERIFIED |  |
 | 0x005e5820 | human_manager.cpp | FUN_005e5820 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005e5940 | human_manager.cpp | FUN_005e5940 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005e5b30 | human_manager.cpp | FUN_005e5b30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -947,11 +797,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006535f0 | key_nation.cpp |  | PORTED_BEHAVIOURAL | crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x00653a00 | key_nation.cpp | FUN_00653a00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00653d30 | langlib.cpp | FUN_00653d30 | NON_USEFUL |  | NO | UNVERIFIED |  |
-| 0x00672770 | main.cpp | FUN_00672770 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/game.rs | YES | UNVERIFIED |  |
-| 0x00674c10 | manager_manager.cpp | FUN_00674c10 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x006808a0 | manager_manager.cpp | FUN_006808a0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 | 0x006822d0 | manager_manager.cpp | FUN_006822d0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
-| 0x00683e30 | manager_manager.cpp | FUN_00683e30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/manager_creation.rs | YES | UNVERIFIED |  |
 | 0x00684ed0 | manager_manager.cpp | FUN_00684ed0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00691160 | manager_manager.cpp | FUN_00691160 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00696fa0 | manager_screens.cpp | FUN_00696fa0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch16.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -968,24 +815,18 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006fa740 | match_pl.cpp | FUN_006fa740 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x006fd6c0 | match_screens.cpp | FUN_006fd6c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch16.rs | YES | UNVERIFIED |  |
 | 0x006fe590 | match_screens.cpp | FUN_006fe590 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch17.rs | YES | UNVERIFIED |  |
-| 0x00700f20 | match_screens.cpp | FUN_00700f20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch3.rs;crates/cm-render/src/screen_wire_batch3.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | YES | UNVERIFIED |  |
-| 0x007013d0 | match_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
 | 0x0070d350 | match_screens.cpp | FUN_0070d350 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch17.rs | YES | UNVERIFIED |  |
 | 0x0070f550 | match_screens.cpp | FUN_0070f550 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch17.rs | YES | UNVERIFIED |  |
 | 0x00710c70 | match_stats.cpp | FUN_00710c70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00710d80 | match_stats.cpp | FUN_00710d80 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 | 0x007116b0 | match_stats.cpp | FUN_007116b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch7.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007297b0 | media.cpp | FUN_007297b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch17.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x0075ee00 | national_teams.cpp | FUN_0075ee00 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00762b90 | network.cpp | FUN_00762b90 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x00763590 | network.cpp | FUN_00763590 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00763660 | new_transfer_rule_screens.cpp | FUN_00763660 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x0076ab10 | news.cpp | FUN_0076ab10 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0076d610 | news.cpp | FUN_0076d610 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0076d7d0 | news.cpp | FUN_0076d7d0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch12.rs;crates/cm-domain/src/screen_batch13.rs;crates/cm-domain/src/screen_batch14.rs;crates/cm-domain/src/screen_batch16.rs;crates/cm-domain/src/screen_batch17.rs;crates/cm-domain/src/screen_batch18.rs;crates/cm-domain/src/screen_batch23.rs;crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch25.rs;crates/cm-domain/src/screen_batch27.rs;crates/cm-domain/src/screen_batch35.rs | YES | UNVERIFIED |  |
 | 0x0076d860 | news.cpp | FUN_0076d860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0076e270 | news.cpp | FUN_0076e270 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076e390 | news.cpp | FUN_0076e390 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0076e5e0 | news.cpp | FUN_0076e5e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0076e720 | news.cpp | FUN_0076e720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0076e800 | news.cpp | FUN_0076e800 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -993,12 +834,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0076ecd0 | news.cpp | FUN_0076ecd0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0076ef80 | news.cpp | FUN_0076ef80 | UNKNOWN | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_news.rs | INDIRECT | UNVERIFIED |  |
 | 0x0076f450 | news.cpp | FUN_0076f450 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x0076ffb0 | news_screens.cpp | FUN_0076ffb0 | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x0078e970 | player_regen.cpp | FUN_0078e970 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/player_rating.rs;crates/cm-domain/src/player_regen.rs | YES | UNVERIFIED |  |
 | 0x007906a0 | player_regen.cpp | FUN_007906a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00797a70 | player_search.cpp | FUN_00797a70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0079af40 | player_search.cpp | FUN_0079af40 | UNKNOWN | crates/cm-domain/src/scouting.rs | INDIRECT | UNVERIFIED |  |
-| 0x007a90b0 | player_stats.cpp | FUN_007a90b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/match_engine_exe.rs;crates/cm-domain/src/player_rating.rs | YES | UNVERIFIED |  |
 | 0x007a9690 | player_stats.cpp | FUN_007a9690 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007a97f0 | player_stats.cpp | FUN_007a97f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007a9c90 | player_stats.cpp | FUN_007a9c90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1027,7 +865,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007e06a0 | scout_manager.cpp | FUN_007e06a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x007e0f10 | scout_manager.cpp | FUN_007e0f10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007e1190 | scout_manager.cpp | FUN_007e1190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007e4940 | scrman.cpp | FUN_007e4940 | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/scrman.rs | INDIRECT | UNVERIFIED |  |
 | 0x007e6ab0 | scrman.cpp | FUN_007e6ab0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_menu_bar.rs | YES | UNVERIFIED |  |
 | 0x007e6b60 | scrman.cpp | FUN_007e6b60 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_menu_bar.rs | YES | UNVERIFIED |  |
 | 0x007e6c30 | scrman.cpp | FUN_007e6c30 | UI_GDI_DOMAIN |  | NO | UNVERIFIED |  |
@@ -1040,23 +877,16 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007e9180 | scrman.cpp | FUN_007e9180 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_menu_bar.rs | YES | UNVERIFIED |  |
 | 0x007e9a80 | scrman.cpp | FUN_007e9a80 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007e9dc0 | scrman.cpp | FUN_007e9dc0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x007ead30 | scrman.cpp | FUN_007ead30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x007eb990 | scrman.cpp | FUN_007eb990 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007ec9e0 | search_eng.cpp | FUN_007ec9e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007eead0 | search_filters.cpp | FUN_007eead0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007eecb0 | search_filters.cpp | FUN_007eecb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007fb050 | search_screens.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-| 0x00803e00 | setup.cpp | FUN_00803e00 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch19.rs | YES | UNVERIFIED |  |
-| 0x008053d0 | setup.cpp | FUN_008053d0 | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | INDIRECT | UNVERIFIED |  |
-| 0x00811140 | setup.cpp | FUN_00811140 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/typed_records.rs;crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x00811d80 | setup.cpp | FUN_00811d80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs | YES | UNVERIFIED |  |
 | 0x00822400 | setup.cpp | FUN_00822400 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x008224b0 | setup.cpp | FUN_008224b0 | UNKNOWN | crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00822960 | setup.cpp | FUN_00822960 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00823210 | shortlist_manager.cpp | FUN_00823210 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0082d630 | shortlist_manager.cpp | FUN_0082d630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00834670 | shortlist_manager.cpp | FUN_00834670 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x00834fc0 | simulated_stats.cpp | FUN_00834fc0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00835820 | simulated_stats.cpp | FUN_00835820 | OUT_OF_SCOPE |  | NO | UNVERIFIED |  |
 | 0x00850510 | staff_contracts.cpp | FUN_00850510 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00850ea0 | staff_contracts.cpp | FUN_00850ea0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1109,7 +939,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008d48b0 | transfer_offer.cpp | FUN_008d48b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x008d6720 | transfer_screens.cpp | FUN_008d6720 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch22.rs | YES | UNVERIFIED |  |
 | 0x008dd030 | transfer_screens.cpp | FUN_008dd030 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
-| 0x008dfdf0 | transfer_screens.cpp | FUN_008dfdf0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008e82b0 | transfer_screens.cpp | FUN_008e82b0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch26.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x008e8920 | transfer_screens.cpp | FUN_008e8920 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
 | 0x008f5800 | ultimatum.cpp | FUN_008f5800 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch27.rs | YES | UNVERIFIED |  |
@@ -1121,12 +950,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008fc820 | virtual_staff.cpp | FUN_008fc820 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00921770 | zipdir.cpp | FUN_00921770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 
-## NET
-
-| DD VA | source | semantic | status | Rust | reach | conf | evidence |
-|---|---|---|---|---|---|---|---|
-| 0x004fd1f0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screens_auto.rs | YES | UNVERIFIED |  |
-
 ## RESOURCE
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
@@ -1136,16 +959,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00511b40 |  | FUN_00511b40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00789a40 |  | FUN_00789a40 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x008fc280 |  | FUN_008fc280 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x0093435a |  | FUN_0093435a | UNKNOWN | crates/cm-render/src/cursor.rs;crates/cm-render/src/scrman.rs | INDIRECT | UNVERIFIED |  |
 | 0x009354ca |  | FUN_009354ca | PORTED_BEHAVIOURAL | crates/cm-domain/src/tactic_dispatcher.rs | YES | UNVERIFIED |  |
-| 0x00935f4b |  | FUN_00935f4b | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x0093b4b0 |  | FUN_0093b4b0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x0093cc01 |  | FUN_0093cc01 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005e32e0 | comp/host_country.cpp | FUN_005e32e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x00584530 | finance.cpp | FUN_00584530 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs | YES | UNVERIFIED |  |
 | 0x005e4f50 | human_manager.cpp | FUN_005e4f50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 | 0x00789b50 | os.cpp | FUN_00789b50 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x0087ea70 | tactics.cpp | FUN_0087ea70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 
 ## SOUND
 
@@ -1155,7 +974,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006bb550 |  | FUN_006bb550 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00835cb0 |  | FUN_00835cb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00835d60 |  | FUN_00835d60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005b6f10 | game.cpp | FUN_005b6f10 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-render/src/background.rs;crates/cm-render/src/fade.rs | YES | UNVERIFIED |  |
 | 0x005c2180 | game_config.cpp | FUN_005c2180 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs | YES | UNVERIFIED |  |
 
 ## UNKNOWN
@@ -1166,7 +984,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00403640 |  | FUN_00403640 | PORTED_BEHAVIOURAL | crates/cm-widget/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00404210 |  | FUN_00404210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00413900 |  | FUN_00413900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00413980 |  | FUN_00413980 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00414e50 |  | FUN_00414e50 | UNKNOWN | crates/cm-domain/src/screen_batch5.rs | INDIRECT | UNVERIFIED |  |
 | 0x00451350 |  | FUN_00451350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0045da20 |  | FUN_0045da20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1186,12 +1003,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005318c0 |  | FUN_005318c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00531b30 |  | FUN_00531b30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00531b70 |  | FUN_00531b70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00536bc0 |  | FUN_00536bc0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00537160 |  | FUN_00537160 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0053fe10 |  | FUN_0053fe10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0053fe40 |  | FUN_0053fe40 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00546f60 |  | FUN_00546f60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00548b40 |  | FUN_00548b40 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005516a0 |  | FUN_005516a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005516c0 |  | FUN_005516c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005516e0 |  | FUN_005516e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1240,7 +1054,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006809d0 |  | FUN_006809d0 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00698140 |  | FUN_00698140 | UNKNOWN | crates/cm-domain/src/screen_batch4.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x006986a0 |  | FUN_006986a0 | UNKNOWN | crates/cm-domain/src/screen_batch3.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | INDIRECT | UNVERIFIED |  |
-| 0x00699cd0 |  | FUN_00699cd0 | UNKNOWN | crates/cm-domain/src/lib.rs | INDIRECT | UNVERIFIED |  |
 | 0x006a1390 |  | FUN_006a1390 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006a2730 |  | FUN_006a2730 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x006a8350 |  | FUN_006a8350 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1279,7 +1092,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0071cfe0 |  | FUN_0071cfe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0071d0a0 |  | FUN_0071d0a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007553f0 |  | FUN_007553f0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x0075f0f0 |  | FUN_0075f0f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x0075f1d0 |  | FUN_0075f1d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00763640 |  | FUN_00763640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0077da00 |  | FUN_0077da00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
@@ -1287,11 +1099,9 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0077da80 |  | FUN_0077da80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00784290 |  | FUN_00784290 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00785160 |  | FUN_00785160 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
-| 0x0078f200 |  | FUN_0078f200 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/player_regen.rs | YES | UNVERIFIED |  |
 | 0x00790600 |  | FUN_00790600 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00790ec0 |  | FUN_00790ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007aec90 |  | FUN_007aec90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007e4520 |  | FUN_007e4520 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e6a20 |  | FUN_007e6a20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e6a70 |  | FUN_007e6a70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e74e0 |  | FUN_007e74e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch4.rs | YES | UNVERIFIED |  |
@@ -1324,7 +1134,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0089b480 |  | FUN_0089b480 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0089b500 |  | FUN_0089b500 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0089c4c0 |  | FUN_0089c4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0089de30 |  | FUN_0089de30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x008a1520 |  | FUN_008a1520 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008a16c0 |  | FUN_008a16c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008b4330 |  | FUN_008b4330 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1340,7 +1149,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00912e30 |  | FUN_00912e30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x00920b30 |  | FUN_00920b30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00922200 |  | FUN_00922200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009350a2 |  | FUN_009350a2 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x0093bc41 |  | FUN_0093bc41 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 
 ## comp-stats
@@ -1365,7 +1173,18 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x005e4250 |  | host lookup by (sub year) | PORTED_PARTIAL | HostCountry::lookup | INDIRECT | PARTIAL |  |
+| 0x0075f0f0 |  | notification cleanup helper (day%0x46) | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00596590 | comp/fix_man.cpp | participant maintenance branch | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x005e4e40 | comp/host_country.cpp | HostCountry.tmp writer | PORTED_BEHAVIOURAL | HostCountry::save_tmp | YES | STRUCTURALLY_VERIFIED |  |
+| 0x00525040 | database.cpp | linked +0x53 record resolver | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x0075ee00 | national_teams.cpp | participant-notification helper | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+
+## containers
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00672320 |  | queue enqueue helper | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/match_engine_exe.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x006724d0 |  | queue helper companion | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 
 ## contracts
 
@@ -1375,12 +1194,45 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00847a80 |  | per-person release-clause roll | PORTED_PARTIAL | roll_clauses | YES | BEHAVIOURALLY_EXACT | memory:contract-clauses-generated-at-boot.md |
 | 0x004cd930 | contract_manager.cpp | CONTRACT_MANAGER::initialise_all | PORTED_BEHAVIOURAL | initialise_all | YES | STRUCTURALLY_VERIFIED | memory:contract-clauses-generated-at-boot.md |
 
+## crt
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00921cc0 |  | container store helper | NON_USEFUL | crates/cm-domain/src/lib.rs;crates/cm-domain/src/typed_records.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x009343c3 |  | CRT memcpy/plumbing thunk | NON_USEFUL | crates/cm-app/src/main.rs;crates/cm-domain/src/history.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x00935080 |  | CRT float/plumbing thunk | NON_USEFUL | crates/cm-app/src/main.rs;crates/cm-domain/src/player_regen.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x009350a2 |  | CRT x87 double helper | NON_USEFUL | crates/cm-app/src/main.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x0095a080 |  | ire_super_cup vtable pointer | NON_USEFUL |  | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+
 ## cups
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x00502470 | comp/cup.cpp | cup fixture-tree mapper | PORTED_BEHAVIOURAL | CupState::progress | YES | BEHAVIOURALLY_EXACT | memory/cup-engine-progressive.md |
 | 0x00503e30 | comp/cup.cpp | cup fixture processor (leg/replay) | PORTED_BEHAVIOURAL | CupState::tie_outcome;draw_round | YES | BEHAVIOURALLY_EXACT | memory/cup-engine-progressive.md |
+| 0x0041de60 | comp/cups/bel_fa_cup.cpp | Belgian FA Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005549b0 | comp/cups/eng_auto_cup.cpp | English Vans/AWS Trophy main-draw date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00556150 | comp/cups/eng_cc_cup.cpp | English League Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00558f60 | comp/cups/eng_fa_cup.cpp | English FA Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x0055abb0 | comp/cups/eng_fa_trophy.cpp | English FA Trophy round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x0057c730 | comp/cups/fin_cup.cpp | Finnish Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005a4650 | comp/cups/fra_cup.cpp | French Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005a6e80 | comp/cups/fra_lge_cup.cpp | French League Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005c2b90 | comp/cups/ger_cup.cpp | DFB-Pokal round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005c6050 | comp/cups/ger_lge_cup.cpp | German League Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005d2ff0 | comp/cups/gre_cup.cpp | Greek Cup sub-comp round helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x005d5be0 | comp/cups/gre_super.cpp | Greek Cup main round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x005dd170 | comp/cups/hol_cup.cpp | Dutch Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x0061d9f0 | comp/cups/ire_chal_cup.cpp | Ireland Challenge Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x0061fdc0 | comp/cups/ire_leinster_cup.cpp | Ireland Leinster Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x006220c0 | comp/cups/ire_munster_cup.cpp | Ireland League Cup KO round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00622bb0 | comp/cups/ire_pres_cup.cpp | Ireland President's Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x006245f0 | comp/cups/ire_super_cup.cpp | Italian League Cup KO round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00627060 | comp/cups/ita_c_cup.cpp | Italian League Cup group-phase helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x006282d0 | comp/cups/ita_cup.cpp | Italian Cup round-date helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x0061ba20 | comp/eurocomp/inter_amer_cup.cpp | CONCACAF single-round setup helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x0061bb60 | comp/eurocomp/inter_amer_cup.cpp | CONCACAF club filter helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
+| 0x0061cd40 | comp/eurocomp/intertoto_cup.cpp | Intertoto Cup participant/round helper | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
 
 ## date
 
@@ -1392,6 +1244,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005364c0 |  | add/subtract N days | PORTED_BEHAVIOURAL | CmPackedDate::add_days;CmPackedDate::add_negative_days | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00536690 |  | subtract N weeks | PORTED_BEHAVIOURAL | CmPackedDate::add_negative_days | INDIRECT | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00536b50 |  | doy -> day-of-month unpack | PORTED_BEHAVIOURAL | CmPackedDate::to_game_date | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00536bc0 |  | is-leap-year predicate | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x0066f3b0 |  | schedule round-record writer | PORTED_EXACT | write_round_record | YES | BYTE_EXACT | memory/c11-2-fixture-subsystem-frozen.md |
 | 0x0066f410 | comp/league.cpp | schedule fixture sub-slot writer | PORTED_PARTIAL | write_slot | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/exe_date.rs |
 | 0x00533b50 | date.cpp | pack_date (pre-snap) | PORTED_EXACT | pack_date | YES | BYTE_EXACT | memory/fixtures-runtime-capture-findings.md |
@@ -1401,6 +1254,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x00842f40 |  | squad-number assignment pass | PORTED_BEHAVIOURAL | World::assign_squad_numbers | YES | STRUCTURALLY_VERIFIED | memory:start-new-game-flow.md |
 | 0x00843970 | comp/squad_manager.cpp | squad_position_code_write | PORTED_BEHAVIOURAL | write_squad_position | YES | STRUCTURALLY_VERIFIED | rust:c15_1_world_apply.rs |
 | 0x005121a0 | database.cpp | start_new_game_section_loader | REPLACED_BY_RUST | World::read_rust_db_dir | YES | STRUCTURALLY_VERIFIED | memory:start-new-game-flow.md |
 | 0x0051b110 | database.cpp | pool_link_id_to_pointer_swizzle | REPLACED_BY_RUST | id_opt | YES | STRUCTURALLY_VERIFIED | rust:typed_records.rs |
@@ -1411,6 +1265,14 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x006cf040 |  | card applier verdict (red never live) | PORTED_EXACT | card_verdict;disc_map | INDIRECT | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x006cf230 |  | foul severity accumulation (algo exact; live red blocked) | PORTED_EXACT | foul_severity | INDIRECT | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
+
+## editor
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00414d5c |  | editor Set-Position popup / load code | UNKNOWN | crates/cm-data/src/lib.rs;crates/cm-domain/src/lib.rs;crates/cm-ui-app/src/render_new.rs | NO | UNVERIFIED | memory:editor-is-ground-truth.md |
+| 0x0044773c |  | editor record load code (ground truth) | UNKNOWN | crates/cm-data/src/lib.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | memory:editor-is-ground-truth.md |
+| 0x0048bd00 |  | editor attribute-display code | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-ui-app/src/render_new.rs | NO | UNVERIFIED | memory:editor-is-ground-truth.md |
 
 ## fifa-rankings
 
@@ -1445,6 +1307,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x00533ad0 |  | undecoded schedule function | UNKNOWN | crates/cm-domain/src/african_nations.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch11.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00557970 |  | eng_conf_schedule | PORTED_EXACT | ENGLISH_CONFERENCE_RUNTIME | YES | STATE_EXACT | memory:c11-2-fixture-subsystem-frozen.md |
 | 0x0055b540 |  | eng_first_schedule | PORTED_EXACT | ENGLISH_FIRST_RUNTIME | YES | STATE_EXACT | memory:c11-2-fixture-subsystem-frozen.md |
 | 0x0055d120 |  | eng_prem_schedule | PORTED_EXACT | ENGLISH_PREMIER_RUNTIME | YES | STATE_EXACT | memory:c11-2-fixture-subsystem-frozen.md |
@@ -1462,6 +1325,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x0052df60 |  | physio rating (x87) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:history-panels-noheuristic-ports.md |
 | 0x00616820 |  | pick injury id within body region | PORTED_EXACT | pick_injury | INDIRECT | BYTE_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x00616930 |  | injury recovery-days formula | PORTED_EXACT | compute_injury | INDIRECT | BYTE_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x00618610 |  | injury-name switch + duration table | PORTED_EXACT | INJURY_TYPES | INDIRECT | BYTE_EXACT | memory:history-panels-noheuristic-ports.md |
@@ -1471,11 +1335,14 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x0052e370 |  | club-pickable/league filter gate | PORTED_BEHAVIOURAL | club_is_pickable | YES | BEHAVIOURALLY_EXACT | memory:league-dates-and-comp-wiring.md |
+| 0x006809e0 |  | human-manager resign / clear-club link | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | memory:dashboard-manager-model.md |
 | 0x00809cc0 |  | Enter Name screen | PORTED_BEHAVIOURAL | ManagerNameEntryView | YES | BEHAVIOURALLY_EXACT | memory:manager-creation-flow.md |
+| 0x005e5330 | human_manager.cpp | add-human index allocator | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | memory:manager-creation-flow.md |
 | 0x00809ad0 | setup.cpp | create manager person+seat | PORTED_BEHAVIOURAL | create_manager | YES | BEHAVIOURALLY_EXACT | memory:manager-creation-flow.md |
 | 0x0080a880 | setup.cpp | Select Nationality screen | PORTED_BEHAVIOURAL | ManagerNationalitySelectView | YES | BEHAVIOURALLY_EXACT | memory:manager-creation-flow.md |
 | 0x0080b2b0 | setup.cpp | Select Team screen | PORTED_BEHAVIOURAL | ManagerClubSelectView | YES | BEHAVIOURALLY_EXACT | memory:manager-creation-flow.md |
 | 0x00810f50 | setup.cpp | install human manager at club | PORTED_BEHAVIOURAL | create_manager | YES | BEHAVIOURALLY_EXACT | memory:manager-creation-flow.md |
+| 0x00811140 | setup.cpp | start-game manageable gate + club-picker loop | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | memory:manager-creation-flow.md |
 
 ## match
 
@@ -1487,6 +1354,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x00699cd0 |  | match pre-play pass | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
 | 0x006a0550 |  | stored-action event resolver | NOT_YET_PORTED | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006a1940 |  | pass-target picker | PORTED_EXACT | pass_target_picker | YES | BEHAVIOURALLY_EXACT | reports:match_action_path_decode.md |
 | 0x006a2790 |  | shot/pass target-lane picker | PORTED_EXACT | target_picker | YES | BEHAVIOURALLY_EXACT | reports:match_action_path_decode.md |
@@ -1516,6 +1384,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006e65e0 | match_pl.cpp | shot/action score (positional) | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006f63f0 | match_pl.cpp | event-resolution dispatcher (positional) | OUT_OF_SCOPE | crates/cm-domain/src/match_engine_exe.rs | NO | PARTIAL | memory:match-engine-gap-audit.md |
 | 0x006f99c0 | match_pl.cpp | per-tick action selector (subset; full positional out-of-scope) | PORTED_PARTIAL | decide_action;shot_attempt_gate | YES | PARTIAL | memory:match-engine-gap-audit.md |
+| 0x007a90b0 | player_stats.cpp | per-match rating accumulator writer | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00834fc0 | simulated_stats.cpp | non-engine competition advance | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:league-tier-model.md |
 
 ## match-physics
 
@@ -1534,6 +1404,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006508e0 | key_nation.cpp | per-nation season-table builder | PORTED_BEHAVIOURAL | season_start | YES | STRUCTURALLY_VERIFIED | memory/league-dates-and-comp-wiring.md |
 | 0x00652a00 | key_nation.cpp | nation -> season-boundary index resolver | NOT_YET_PORTED | crates/cm-domain/src/club_history.rs;crates/cm-domain/src/league_calendar.rs | BLOCKED | HYPOTHESIS | reports/club_history_screen_decode.md |
 | 0x00652cd0 | key_nation.cpp | season-year -> "YYYY/YY" label | PORTED_PARTIAL | season_label | INDIRECT | PARTIAL | reports/club_history_screen_decode.md |
+| 0x00683e30 | manager_manager.cpp | nation-tier selected-bit set/clear + job-take | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs | YES | STRUCTURALLY_VERIFIED | memory:league-tier-model.md |
 | 0x00806640 | setup.cpp | league picker tier bitfield | PORTED_BEHAVIOURAL | LeagueTier;build_nation_tiers | YES | BEHAVIOURALLY_EXACT | memory:league-tier-model.md |
 | 0x00821e90 | setup.cpp | compid->loaded-league table | REPLACED_BY_RUST | competition_ids_for_nations | YES | STRUCTURALLY_VERIFIED | memory:league-dates-and-comp-wiring.md |
 
@@ -1552,15 +1423,24 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008d0d90 |  | person_news_item_build | PORTED_PARTIAL | PersonNewsItem;PersonNewsMailboxPool::push | INDIRECT | STRUCTURALLY_VERIFIED | memory:news-generation-logic.md |
 | 0x009346f7 |  | person_news_pool_realloc | REPLACED_BY_RUST | PersonNewsMailboxPool::by_person | INDIRECT | STRUCTURALLY_VERIFIED | rust:person_news.rs |
 | 0x0067ce90 | manager_manager.cpp | news_weekly_predicate_cascade | NOT_YET_PORTED | crates/cm-domain/src/news.rs | BLOCKED | HYPOTHESIS | memory:news-generation-logic.md |
+| 0x0076ab10 | news.cpp | news-item action classifier | PORTED_BEHAVIOURAL | classify_news_action | INDIRECT | STRUCTURALLY_VERIFIED | memory:news-generation-logic.md |
 | 0x0076ce50 | news.cpp | person_news_severity_overwrite | NOT_YET_PORTED | PersonNewsItem::severity | NO | PARTIAL | rust:person_news.rs |
 | 0x0076d730 | news.cpp | person_news_set_param_slot | PORTED_PARTIAL | PersonNewsItem::params | INDIRECT | STRUCTURALLY_VERIFIED | rust:person_news.rs |
 | 0x0076dce0 | news.cpp | person_news_persist_and_id | PORTED_BEHAVIOURAL | PersonNewsMailboxPool::next_news_id | INDIRECT | BEHAVIOURALLY_EXACT | rust:person_news.rs |
+
+## player
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x0052e260 |  | form/morale byte setter | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | memory:squad-number-not-at-45.md |
+| 0x0069c6f0 |  | form/morale post-match writer | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | memory:squad-number-not-at-45.md |
 
 ## player-init
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x00524160 |  | player_attr_generate_mode_a | PORTED_PARTIAL | PlayerInitState::generate_attributes_core | YES | PARTIAL | memory:player-init-decode.md |
+| 0x00524560 |  | player attr generate mode-A slot order | PORTED_PARTIAL | PlayerInitState::generate_attributes_core | YES | PARTIAL | memory:player-init-decode.md |
 | 0x008120d0 |  | init_game_data_boot_pass | PORTED_BEHAVIOURAL | World::boot_player_init_states;World::run_start_game_init;World::assign_squad_numbers | YES | STRUCTURALLY_VERIFIED | memory:start-new-game-flow.md |
 | 0x0051f5d0 | database.cpp | player_init_seed_person | PORTED_PARTIAL | PlayerInitState::seed;World::initialise_players | YES | STATE_EXACT | memory:player-init-decode.md |
 
@@ -1571,6 +1451,21 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007abd80 | player_stats.cpp | career apps per competition | PORTED_BEHAVIOURAL | World::club_history_view | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
 | 0x007abef0 | player_stats.cpp | career goals per competition | PORTED_BEHAVIOURAL | World::club_history_view | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
 | 0x007ac060 | player_stats.cpp | career total apps | PORTED_BEHAVIOURAL | total_apps | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
+
+## plumbing
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00933d24 |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x00933d8f |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/dispatcher.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/dispatcher.rs |
+| 0x0093435a |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x009349c4 |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render |
+| 0x00934ba3 |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/dispatcher.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/dispatcher.rs |
+| 0x0093534b |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x0093578b |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x00935f4b |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render |
+| 0x0093acf0 |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x0093b4b0 |  | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 
 ## promotion
 
@@ -1592,6 +1487,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x004a84b0 |  | per-match min-goals/max-attr tracker | PORTED_BEHAVIOURAL | update_match_min_goals_tracker | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x005372c0 |  | continent_record_serializer | REPLACED_BY_RUST | ContinentView | YES | STRUCTURALLY_VERIFIED | rust:typed_records.rs |
 | 0x00537420 |  | nation_record_serializer | REPLACED_BY_RUST | NationView | YES | STRUCTURALLY_VERIFIED | memory:record-layouts-decoded.md |
 | 0x005381b0 |  | club_record_serializer | REPLACED_BY_RUST | ClubView | YES | STRUCTURALLY_VERIFIED | memory:club-record-decoded.md |
@@ -1603,6 +1499,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00452fe0 | club_records.cpp | this-season record body accessor | PORTED_BEHAVIOURAL | ClubSeasonRecords | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
 | 0x004531a0 | club_records.cpp | all-time record body accessor | PORTED_BEHAVIOURAL | ClubSeasonRecords | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
 | 0x004538b0 | club_records.cpp | record-body initializer | PORTED_BEHAVIOURAL | ClubSeasonRecords::new | YES | STRUCTURALLY_VERIFIED | reports/club_history_screen_decode.md |
+| 0x004a90b0 | comp/comp_stats.cpp | aggregate team match stats | PORTED_BEHAVIOURAL | aggregate_team_match_stats | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00537480 | db_files.cpp | city_record_serializer | REPLACED_BY_RUST | CityView | YES | STRUCTURALLY_VERIFIED | rust:typed_records.rs |
 | 0x005375e0 | db_files.cpp | stadium_record_serializer | REPLACED_BY_RUST | StadiumView | YES | STRUCTURALLY_VERIFIED | rust:typed_records.rs |
 | 0x00539940 | db_files.cpp | staff_history_record_serializer | REPLACED_BY_RUST | StaffHistoryView | YES | STRUCTURALLY_VERIFIED | memory:club-history-screen.md |
@@ -1616,24 +1513,36 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007ccb70 | record_utils.cpp | biggest-defeat compare | PORTED_EXACT | MatchRecord::beats_defeat | YES | BEHAVIOURALLY_EXACT | reports/club_history_screen_decode.md |
 | 0x007ccc50 | record_utils.cpp | highest-scoring compare | PORTED_EXACT | MatchRecord::beats_scoring | YES | BEHAVIOURALLY_EXACT | reports/club_history_screen_decode.md |
 
+## regen
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x0078f200 |  | regen free-agent selector | PORTED_BEHAVIOURAL | select_free_agent | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/player_regen.rs |
+| 0x0078f4f0 |  | regen suitability score | PORTED_BEHAVIOURAL | regen_suitability_score | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/player_regen.rs |
+| 0x0078e970 | player_regen.cpp | regen fill-club-squad | PORTED_BEHAVIOURAL | regen_fill_club_squad | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/player_regen.rs |
+
 ## render
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x005cc310 |  | graphics device/framebuffer init | UI_GDI_DOMAIN | WindowInitConfig | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
+| 0x005cc4f0 |  | RGB555 pixel-format install | PORTED_EXACT | PackedSurface::rgb555 | INDIRECT | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005ccba0 |  | present dirty rectangle | UI_GDI_DOMAIN | dispatch_dirty_blit | YES | STRUCTURALLY_VERIFIED | memory:directdraw-callsites-found.md |
 | 0x005cd420 |  | line drawer (H/V/Bresenham; dashed) | PORTED_EXACT | line;draw_line | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cd840 |  | rect fill/outline | PORTED_EXACT | rect;fill_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
+| 0x005cd870 |  | stipple blit | PORTED_EXACT | PackedSurface::draw_stipple | INDIRECT | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cdac0 |  | save background behind popup | PORTED_EXACT | save_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cdcc0 |  | restore background / pixel-buffer copy | PORTED_EXACT | restore_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cdfd0 |  | darken rect (65536-entry LUT) | PORTED_EXACT | darken_rect | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005ce250 |  | palette derivation (17 named + 9 packs) | PORTED_BEHAVIOURAL | derive_palette | INDIRECT | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
+| 0x005ce2d0 |  | colour-scale per-channel /100 | PORTED_EXACT | colour_scale | INDIRECT | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005ce4f0 |  | RGB555/565 pixel packer | PORTED_EXACT | pack_rgb | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005ce890 |  | fnt font loader + Latin-1 alias | PORTED_BEHAVIOURAL | load_font_bytes | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
 | 0x005ced50 |  | glyph renderer (4bpp nibble alpha) | PORTED_PARTIAL | draw_glyph;blit_glyph | TEST_ONLY | PARTIAL | memory:gdi-renderer-is-ground-truth.md |
 | 0x005cf7b0 |  | font metrics (height/measure/kerning) | PORTED_EXACT | font_height;measure_string;kerning_delta | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
 | 0x005cf8e0 |  | panel/bevel frame drawer | PORTED_EXACT | draw_panel;bevel_box | TEST_ONLY | BYTE_EXACT | memory:gdi-renderer-is-ground-truth.md |
 | 0x005d0870 |  | word-wrapped multi-line text box | PORTED_PARTIAL | draw_wrapped_text | TEST_ONLY | PARTIAL | memory:gdi-renderer-is-ground-truth.md |
+| 0x005d7aa0 |  | Layer-2 widget renderer hot path | PORTED_PARTIAL | crates/cm-render/src/packed_widget.rs | INDIRECT | PARTIAL | memory:layer2-widget-renderer-status.md |
 | 0x006547c0 |  | l10n template resolver | PORTED_BEHAVIOURAL | resolve_template | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
 | 0x006554c0 |  | inflection engine | PORTED_PARTIAL | inflect_token | YES | PARTIAL | memory:gui-core-ported.md |
 | 0x00654e90 | langlib.cpp | language-bank lookup (bsearch) | PORTED_BEHAVIOURAL | LangBank::lookup | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
@@ -1660,6 +1569,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x00489790 | club_screens.cpp | scouting decode (pending) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:scouting-and-transfers-status.md |
 | 0x00599d60 | fog_of_war.cpp | attribute-fog display filter | PORTED_PARTIAL | AttributeReveal;PlayerKnowledge::reveal | YES | PARTIAL | rust:scouting.rs |
 | 0x007974b0 | player_search.cpp | scout-task result consumer | PORTED_PARTIAL | ScoutBook::assignments | YES | PARTIAL | memory:scouting-and-transfers-status.md |
 | 0x00799190 | player_search.cpp | scout-task builder | PORTED_PARTIAL | ScoutBook::assign | YES | STRUCTURALLY_VERIFIED | memory:scouting-and-transfers-status.md |
@@ -1669,19 +1579,100 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x00417870 |  | Nominations screen setup | PORTED_BEHAVIOURAL | build_screen_417870 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x00454620 |  | club dashboard setup | PORTED_BEHAVIOURAL | build_club_dashboard | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x00476ef0 |  | Invited Clubs screen setup | PORTED_BEHAVIOURAL | build_screen_476ef0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a0c10 |  | competition-list screen builder | PORTED_BEHAVIOURAL | build_comp_list_screen | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x004a16a0 |  | competition command pre-dispatcher (sibling) | PORTED_PARTIAL | dispatch_comp_command_val9 | INDIRECT | PARTIAL | memory:menu-command-tree.md |
+| 0x004a1fd0 |  | competition command pre-dispatcher | PORTED_PARTIAL | dispatch_comp_command | INDIRECT | PARTIAL | memory:menu-command-tree.md |
 | 0x004a2190 |  | league-table/division comp screen setup | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x004a28c0 |  | UEFA-coefficients screen launcher | PORTED_BEHAVIOURAL | launch_uefa_coefs_screen | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a8f10 |  | drain pending comp-news flags | PORTED_BEHAVIOURAL | drain_pending_comp_news | INDIRECT | STRUCTURALLY_VERIFIED | memory:news-generation-logic.md |
+| 0x004a95d0 |  | player stat column names | PORTED_EXACT | player_stat_column_name | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004abbe0 |  | season-record column names | PORTED_EXACT | season_record_column_name | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004abf80 |  | per-tab screen enable gate | PORTED_BEHAVIOURAL | screen_enable_gate | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004e2c70 |  | player screen setup | PORTED_BEHAVIOURAL | build_screen_4e2c70 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004e38d0 |  | Set Role At Club screen setup | PORTED_BEHAVIOURAL | build_screen_4e38d0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004e42b0 |  | empty screen builder | PORTED_PARTIAL | build_screen_4e42b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004e6680 |  | empty screen builder | PORTED_PARTIAL | build_screen_4e6680 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004ebfa0 |  | Terminate Contract screen setup | PORTED_BEHAVIOURAL | build_screen_4ebfa0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004ec590 |  | Game Credits screen setup | PORTED_BEHAVIOURAL | build_screen_4ec590 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004fd1f0 |  | Web Sites screen setup | PORTED_BEHAVIOURAL | build_screen_4fd1f0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00548560 |  | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_548560 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x005488f0 |  | empty screen builder | PORTED_PARTIAL | build_screen_5488f0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00548b40 |  | ScreenManager session sub-object ctor | PORTED_BEHAVIOURAL | SessionSubObject::new | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x0058d000 |  | Nation screen setup | PORTED_BEHAVIOURAL | build_screen_58d000 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x005db600 |  | empty screen builder | PORTED_PARTIAL | build_screen_5db600 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00697440 |  | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_697440 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00697dc0 |  | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_697dc0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00698160 |  | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_698160 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x006fd7b0 |  | day-part Results screen setup | PORTED_BEHAVIOURAL | build_screen_6fd7b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00701070 |  | Latest Scores screen setup | PORTED_BEHAVIOURAL | build_screen_701070 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x007491e0 |  | global/menu-bar command dispatcher | PORTED_PARTIAL | crates/cm-render/src/dispatcher.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | PARTIAL | memory:screen-builders-ported.md |
 | 0x0074bf60 |  | club-context command dispatcher | PORTED_PARTIAL | crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | PARTIAL | memory:ui-five-layer-architecture.md |
+| 0x007719b0 |  | Send-Message-To-All screen setup | PORTED_BEHAVIOURAL | build_screen_7719b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x007cdc70 |  | Please-Confirm dialog setup | PORTED_BEHAVIOURAL | build_screen_7cdc70 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x007e4520 |  | ScreenManager ctor + struct layout | PORTED_BEHAVIOURAL | ScreenManager::new | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x007e46a0 |  | ScreenManager reset | PORTED_BEHAVIOURAL | ScreenManager::reset | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x007e6420 |  | pending-push staging | PORTED_BEHAVIOURAL | ScreenManager::stage_pending_push | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
+| 0x00804020 |  | title screen setup | PORTED_BEHAVIOURAL | build_screen_804020 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00807280 |  | Select Start Season screen | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-render/src/screen_pre_boot.rs;crates/cm-ui-app/src/game_state.rs;crates/cm-ui-app/src/screens.rs;crates/cm-widget/src/lib.rs | NO | UNVERIFIED | memory:start-new-game-flow.md |
+| 0x00810ce0 |  | title/splash screen setup | PORTED_BEHAVIOURAL | build_screen_810ce0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008596b0 |  | shortlist-action screen setup | PORTED_BEHAVIOURAL | build_screen_8596b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x0088def0 |  | Team Instructions screen setup | PORTED_BEHAVIOURAL | build_screen_88def0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00890e50 |  | large multi-tab screen setup | PORTED_BEHAVIOURAL | build_screen_890e50 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00893500 |  | empty screen builder | PORTED_PARTIAL | build_screen_893500 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008a2180 |  | club Training screen setup | PORTED_BEHAVIOURAL | build_screen_8a2180 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008a6580 |  | large multi-tab screen setup | PORTED_BEHAVIOURAL | build_screen_8a6580 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008d6310 |  | player screen family | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch22.rs;crates/cm-domain/src/screen_batch23.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x008dfb10 |  | contract-offer/move screen builder | PORTED_BEHAVIOURAL | build_contract_offer_or_move | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x008dfc20 |  | small 3-slot screen builder | PORTED_BEHAVIOURAL | build_small_three_slot | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x008e01d0 |  | Transfer Bid screen setup | PORTED_BEHAVIOURAL | build_screen_8e01d0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008e0710 |  | 2-slot screen builder | PORTED_BEHAVIOURAL | build_two_slot_0710 | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x008e0b60 |  | 2-slot screen builder | PORTED_BEHAVIOURAL | build_two_slot_0b60 | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x008e9e60 |  | empty screen builder | PORTED_PARTIAL | build_screen_8e9e60 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004150e0 | award_screens.cpp | International Awards screen setup | PORTED_BEHAVIOURAL | build_screen_4150e0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004551c0 | club_screens.cpp | club home-screen draw | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_club_dashboard.rs;crates/cm-render/src/view_render.rs | NO | UNVERIFIED | memory:dashboard-manager-model.md |
+| 0x0046bdf0 | club_screens.cpp | club History screen setup | PORTED_BEHAVIOURAL | build_screen_46bdf0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:club-history-screen.md |
+| 0x00474760 | club_screens.cpp | Arrange Friendly Tour screen setup | PORTED_BEHAVIOURAL | build_screen_474760 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004751b0 | club_screens.cpp | Arrange Tour Of Nation screen setup | PORTED_BEHAVIOURAL | build_screen_4751b0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x0047ea60 | club_screens.cpp | squad-number kit panel | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_batch11.rs | NO | UNVERIFIED | memory:squad-number-not-at-45.md |
+| 0x00488f70 | club_screens.cpp | squad position-filter (consumer of 0x005a2030) | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x004a9000 | comp/comp_stats.cpp | comp-history flag byte setter | PORTED_BEHAVIOURAL | set_comp_history_team_of_month | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a92d0 | comp/comp_stats.cpp | team stat column names | PORTED_EXACT | team_stat_column_name | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a9980 | comp/comp_stats.cpp | player-history attribute reader | PORTED_BEHAVIOURAL | read_player_attribute_value | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a9d10 | comp/comp_stats.cpp | team attribute value reader | PORTED_BEHAVIOURAL | read_team_attribute_value | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004aa480 | comp/comp_stats.cpp | player-attr formatted reader | PORTED_EXACT | format_player_attribute | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004abad0 | comp/comp_stats.cpp | history-scope label | PORTED_EXACT | history_scope_label | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00494640 | comp_screens.cpp | competition Rounds screen setup | PORTED_BEHAVIOURAL | build_screen_494640 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a17f0 | comp_screens.cpp | fixture-view screen launcher | PORTED_BEHAVIOURAL | launch_fixture_view | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a2200 | comp_screens.cpp | FIFA World Rankings screen model | PORTED_BEHAVIOURAL | build_fifa_world_rankings_screen | INDIRECT | STRUCTURALLY_VERIFIED | memory:fifa-rankings-mechanism.md |
+| 0x004a3220 | comp_screens.cpp | competition loader pre-dispatcher | PORTED_BEHAVIOURAL | dispatch_comp_loader | INDIRECT | STRUCTURALLY_VERIFIED | memory:menu-command-tree.md |
+| 0x004a3770 | comp_screens.cpp | competition-stages walker | PORTED_PARTIAL | build_competition_stages_walker | INDIRECT | PARTIAL | memory:screen-builders-ported.md |
+| 0x004a3d20 | comp_screens.cpp | competition-list row builder | PORTED_BEHAVIOURAL | build_comp_list_row | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x004a3f10 | comp_screens.cpp | competition fixture row builder | PORTED_BEHAVIOURAL | build_comp_fixture_row | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
+| 0x004a5610 | comp_screens.cpp | competition slot-probe (22-slot) | PORTED_BEHAVIOURAL | comp_slot_probe | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x004a5760 | comp_screens.cpp | extract teams from fixture id | PORTED_BEHAVIOURAL | extract_fixture_teams | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x0058a740 | find_screens.cpp | Continent screen setup | PORTED_BEHAVIOURAL | build_screen_58a740 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x005dad10 | history.cpp | Ok dialog setup | PORTED_BEHAVIOURAL | build_screen_5dad10 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00700f20 | match_screens.cpp | Latest Scores screen builder | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch3.rs;crates/cm-render/src/screen_wire_batch3.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x007013d0 | match_screens.cpp | match aggregate/result screen setup | PORTED_BEHAVIOURAL | build_screen_7013d0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x00763590 | network.cpp | ScreenManager network-buffer ctor | REPLACED_BY_RUST | NetworkBuffer::new | INDIRECT | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 | 0x0076f2f0 | news.cpp | news home screen setup | PORTED_PARTIAL | crates/cm-render/src/screen_news.rs | INDIRECT | PARTIAL | memory:news-first-real-diff.md |
+| 0x0076ffb0 | news_screens.cpp | news home callback registrar | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/screen_manager_batch.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | NO | UNVERIFIED | memory:news-screen-geometry.md |
 | 0x007e6570 | scrman.cpp | screen-visible gate (skip pushes) | PORTED_BEHAVIOURAL | build_* None arm | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
 | 0x007e7130 | scrman.cpp | widget-slot writer | REPLACED_BY_RUST | View slot fields (serde) | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x007fb050 | search_screens.cpp | search Filters screen setup | PORTED_BEHAVIOURAL | build_screen_7fb050 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008053d0 | setup.cpp | Select Leagues screen | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch8.rs;crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/view_render.rs;crates/cm-ui-app/src/main.rs;crates/cm-ui-app/src/screens.rs | NO | UNVERIFIED | memory:start-new-game-flow.md |
+| 0x00808ae0 | setup.cpp | title screen setup | PORTED_BEHAVIOURAL | build_screen_808ae0 | INDIRECT | STRUCTURALLY_VERIFIED | memory:screen-builders-ported.md |
+| 0x008dfdf0 | transfer_screens.cpp | wage-offer/move screen builder | PORTED_BEHAVIOURAL | build_wage_offer_or_move | INDIRECT | STRUCTURALLY_VERIFIED | memory:wired-screens-are-approximations.md |
 
 ## season-roll
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x005bfd90 |  | season_roll_dispatcher | PORTED_BEHAVIOURAL | SeasonRollScheduler::fire_for_day | YES | STRUCTURALLY_VERIFIED | memory:league-dates-and-comp-wiring.md |
+| 0x005e4370 |  | season-roll driver companion | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
 
 ## stadium
 
@@ -1689,6 +1680,16 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 |---|---|---|---|---|---|---|---|
 | 0x00583fc0 |  | stadium-expansion transaction + chairman-overrun-gate (CONFLICT) | PORTED_EXACT | apply_stadium_expansion;compute_expansion_cost;chairman_approves_overrun;stadium_meets_capacity_target | INDIRECT | STRUCTURALLY_VERIFIED | rust:c14_stadium_expansion.rs |
 | 0x0058a310 |  | stadium-expansion news broadcast (template 0x1780) | PORTED_EXACT | StadiumExpansionNews | INDIRECT | STRUCTURALLY_VERIFIED | rust:c14_stadium_expansion.rs |
+
+## startup
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x005b6940 |  | init / DB-load entry | UNKNOWN | crates/cm-app/src/main.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x00672270 |  | main-loop helper | UNKNOWN | crates/cm-app/src/main.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x005b6f10 | game.cpp | startup intro/logo flow | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-render/src/background.rs;crates/cm-render/src/fade.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x00672770 | main.cpp | per-iteration message-pump tick shell | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/game.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x00803e00 | setup.cpp | startup setup (CM3_QSTART/-seed) | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch19.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
 
 ## tactics
 
@@ -1700,10 +1701,44 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0088a850 |  | tactics-screen event dispatcher | PORTED_PARTIAL | TacticCmd;dispatch | INDIRECT | PARTIAL | memory:tactics-port-status.md |
 | 0x0059d870 | formation.cpp | per-slot player-instruction setter | PORTED_PARTIAL | TacticSlot | YES | PARTIAL | memory:tactics-port-status.md |
 | 0x006c5c40 | match_man.cpp | team score (sum ratings / opp_rep x8) | PORTED_BEHAVIOURAL | team_score | YES | BEHAVIOURALLY_EXACT | memory:tactics-port-status.md |
+| 0x0087ea70 | tactics.cpp | tactics-AI XI selection (faithful picker) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:tactics-port-status.md |
 | 0x00881310 | tactics.cpp | AI/per-club formation resolver | NOT_YET_PORTED | FLAT_442_ROLES | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x00884700 | tactics_screens.cpp | TacticScreenView widget builder | NOT_YET_PORTED | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/tactic_dispatcher.rs | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x008939c0 | tactics_screens.cpp | tactic-record initialiser | NOT_YET_PORTED | crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/tactic_dispatcher.rs | BLOCKED | PARTIAL | memory:tactics-port-status.md |
 | 0x00895c10 | tactics_screens.cpp | tct/pct tactic loader | PORTED_EXACT | load_tactic;parse_tactic | YES | BYTE_EXACT | memory:agevak-cross-check.md |
+
+## tick
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00413980 |  | background subsystem F | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00419c30 |  | manager-job lifecycle C | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x0053fe40 |  | background subsystem D | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00553aa0 |  | manager-job lifecycle D | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00585ae0 |  | media/board mood pass B | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x0058fd80 |  | manager-job lifecycle E | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00595580 |  | fixture/news cleanup | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x005b7f10 |  | background subsystem A | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x005b8390 |  | event-drain predicate | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x005c0d20 |  | player-ranking summary B | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x005c0f90 |  | player-ranking summary A | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00614e90 |  | background subsystem C | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00752d40 |  | tie-participant notification | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | memory:sim-findings-2026-09.md |
+| 0x0078dd80 |  | media/scouting pass C | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00808a70 |  | per-seat hotseat processing | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00823ad0 |  | media/board mood pass A | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00844940 |  | manager-job lifecycle B | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00856d50 |  | post-comp dispatch | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x0089de30 |  | media/board mood pass E | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x009123a0 |  | background subsystem B | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00594950 | comp/fix_man.cpp | year-rollover tick hook | PORTED_BEHAVIOURAL | RuntimeSaveGame::hook_year_rollover | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x008f2900 | comp/uefa_seeding.cpp | background subsystem E | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00535600 | date.cpp | news-manager pacing A | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x005b85b0 | game.cpp | daily AI dispatcher (staff/transfers/AI) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00674c10 | manager_manager.cpp | manager-job lifecycle A | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x007e4940 | scrman.cpp | post-hotseat finalize | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x007ead30 | scrman.cpp | news-manager pacing B | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
+| 0x00823210 | shortlist_manager.cpp | monthly hook (date%30) | NOT_YET_PORTED | crates/cm-domain/src/lib.rs | NO | HYPOTHESIS | rust:crates/cm-domain/src/lib.rs |
 
 ## training
 
@@ -1719,17 +1754,23 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x004d0b00 |  | played-XI morale delta | PORTED_PARTIAL | crates/cm-domain/src/lib.rs | INDIRECT | PARTIAL | rust:crates/cm-domain/src/lib.rs |
 | 0x004d2710 |  | player-morale display thresholds | PORTED_EXACT | morale_label | YES | BYTE_EXACT | rust:transfer.rs |
 | 0x004d79c0 |  | contract-cost readback | PORTED_PARTIAL | contract_cost_readback | INDIRECT | STRUCTURALLY_VERIFIED | memory:transfer-deep-ports-done.md |
 | 0x004dfbd0 |  | squad-status 7-branch enum | PORTED_BEHAVIOURAL | SquadStatus | INDIRECT | STRUCTURALLY_VERIFIED | memory:scouting-and-transfers-status.md |
 | 0x00580a90 |  | player-rating wage-cap cascade | PORTED_PARTIAL | resolve_wage_cap | INDIRECT | STRUCTURALLY_VERIFIED | memory:transfer-deep-ports-done.md |
 | 0x00594220 |  | loan recall/send-back date gate | PORTED_EXACT | compute_earliest_recall | INDIRECT | STATE_EXACT | memory:transfer-deep-ports-done.md |
+| 0x00596fa0 |  | contract date-window helper | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
+| 0x00672260 |  | queue helper (transfer emit) | UNKNOWN | crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x006ce0e0 |  | wage-estimate helper | PORTED_PARTIAL | predict_wage | INDIRECT | BEHAVIOURALLY_EXACT | memory:transfer-deep-ports-done.md |
+| 0x0076e180 |  | transfer normal-club dispatch | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/person_news.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x008286f0 |  | scout throttle + bucket + work-permit | PORTED_EXACT | scout_throttle;scout_bucket_range;foreign_player_permit | INDIRECT | STRUCTURALLY_VERIFIED | memory:scouting-and-transfers-status.md |
 | 0x0082dab0 |  | mentor-loyalty bypass allowlist | PORTED_EXACT | mentor_loyalty_bypass | INDIRECT | STRUCTURALLY_VERIFIED | rust:transfer.rs |
 | 0x00843590 |  | position-candidate placement tree | PORTED_EXACT | crates/cm-domain/src/transfer.rs | INDIRECT | STRUCTURALLY_VERIFIED | rust:transfer.rs |
 | 0x0084d5d0 |  | per-role x87 weekly-wage cascade | PORTED_EXACT | wage_formula_by_role | INDIRECT | BYTE_EXACT | memory:transfer-deep-ports-done.md |
+| 0x004539f0 | club_records.cpp | transfer-queue preprocessing | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/club_season_records.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x005ea590 | human_manager.cpp | related-club seniority gate | NOT_YET_PORTED | crates/cm-app/src/main.rs;crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/eng_second_fixtures.rs;crates/cm-domain/src/human_manager.rs;crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch9.rs;crates/cm-domain/src/transfer.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | BLOCKED | UNVERIFIED | memory:transfer-deep-ports-done.md |
+| 0x0076e390 | news.cpp | transfer linked +0x53 dispatch | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00848da0 | staff_contracts.cpp | canonical contract/offer composer | PORTED_PARTIAL | compose_wage_offer | INDIRECT | PARTIAL | memory:scouting-and-transfers-status.md |
 
 ## view-model
@@ -1737,10 +1778,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x00524850 |  | club_job_role_name_switch | PORTED_EXACT | role_for_job | YES | BEHAVIOURALLY_EXACT | rust:general_info.rs |
+| 0x0052c3f0 |  | attribute-name function | UNKNOWN | crates/cm-domain/src/lib.rs;crates/cm-render/src/screen_club_squad_faithful.rs | NO | UNVERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00562580 | award/england_awards.cpp | english_award_pool_resolver | PORTED_PARTIAL | World::resolve_award_text | YES | PARTIAL | memory:deferred-awards-engine.md |
 | 0x005289a0 | database.cpp | multi_position_name_formatter | PORTED_BEHAVIOURAL | position_full_name | YES | BEHAVIOURALLY_EXACT | memory:no-inferring-display-codes.md |
 | 0x0052d090 | database.cpp | type10_attribute_offset_dispatch | PORTED_BEHAVIOURAL | PROFILE_ATTR_OFFSETS | YES | STRUCTURALLY_VERIFIED | memory:type10-real-attribute-offsets.md |
 | 0x00546a40 | discipline.cpp | ban_scope_adjective | PORTED_BEHAVIOURAL | World::competition_scope_adjective | YES | STRUCTURALLY_VERIFIED | rust:player_profile.rs |
+| 0x005a2030 | formation.cpp | position eligibility-bits decoder | PORTED_EXACT | PlayerView::position_eligibility_bits | YES | STRUCTURALLY_VERIFIED | rust:crates/cm-domain/src/lib.rs |
 | 0x00850fd0 | staff_contracts.cpp | release_clause_short_code_formatter | PORTED_EXACT | ReleaseClauses::short_code | YES | BEHAVIOURALLY_EXACT | memory:contract-clauses-generated-at-boot.md |
 
 ## widgets
@@ -1752,6 +1795,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00549790 |  | area spawner | PORTED_EXACT | spawn_area | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
 | 0x005d1b10 |  | cursor state (Default/Hand/Busy) | PORTED_BEHAVIOURAL | CursorState | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
 | 0x005d1c30 |  | message-box layout | PORTED_BEHAVIOURAL | compute_msgbox_layout | YES | STRUCTURALLY_VERIFIED | memory:gui-core-ported.md |
+| 0x005d75b0 |  | nav-bar Back/Next builder | PORTED_PARTIAL | crates/cm-render/src/dispatcher.rs | INDIRECT | PARTIAL | memory:news-screen-geometry.md |
 | 0x005d7bd0 |  | per-widget renderer (THE draw layer) | PORTED_BEHAVIOURAL | render_widget | INDIRECT | STRUCTURALLY_VERIFIED | memory:widgets-not-screens.md |
 | 0x00745540 |  | sidebar msg dispatch + in-game menu bar | PORTED_BEHAVIOURAL | SidebarMsg;MenuBar::in_game | YES | STRUCTURALLY_VERIFIED | memory:menu-command-tree.md |
 | 0x00403390 | area.cpp | area_rebuild_layout_tables (layout engine) | PORTED_EXACT | area_rebuild_layout_tables | YES | STRUCTURALLY_VERIFIED | memory:ui-five-layer-architecture.md |
@@ -1763,19 +1807,14 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
 | 0x0005e9b0 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x00414d5c |  |  | PORTED_BEHAVIOURAL | crates/cm-data/src/lib.rs;crates/cm-domain/src/lib.rs;crates/cm-ui-app/src/render_new.rs | YES | UNVERIFIED |  |
-| 0x0044773c |  |  | PORTED_BEHAVIOURAL | crates/cm-data/src/lib.rs;crates/cm-domain/src/lib.rs | YES | UNVERIFIED |  |
 | 0x00449e70 |  | FUN_00449e70 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x0046a670 |  | FUN_0046a670 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00487480 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x004878e0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
-| 0x0048bd00 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/lib.rs;crates/cm-ui-app/src/render_new.rs | YES | UNVERIFIED |  |
 | 0x004938d0 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x0049eb30 |  | FUN_0049eb30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x004a89d0 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
-| 0x004a95d0 |  | FUN_004a95d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs | YES | UNVERIFIED |  |
 | 0x004a98d0 |  | FUN_004a98d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch30.rs | YES | UNVERIFIED |  |
-| 0x004abf80 |  | FUN_004abf80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs;crates/cm-domain/src/screen_batch32.rs | YES | UNVERIFIED |  |
 | 0x004b6230 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x004b6e20 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
 | 0x004d35a0 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/eng_second_fixtures.rs | YES | UNVERIFIED |  |
@@ -1810,18 +1849,15 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00598d20 |  | FUN_00598d20 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x0059b550 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_glyph.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x0059f580 |  | FUN_0059f580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005cc4f0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/src/packed_text.rs;crates/cm-render/src/packed_widget_globals.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005cd330 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/src/packed_text.rs;crates/cm-render/tests/verify_clip_against_exe.rs | YES | UNVERIFIED |  |
 | 0x005cd3e0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_capture.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/src/packed_text.rs;crates/cm-render/tests/verify_line_against_exe.rs | YES | UNVERIFIED |  |
 | 0x005cd730 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_capture.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/tests/verify_rect_against_exe.rs | YES | UNVERIFIED |  |
-| 0x005cd870 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_stipples.rs | YES | UNVERIFIED |  |
 | 0x005cd930 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_widget.rs;crates/cm-render/src/scrman.rs;crates/cm-render/tests/verify_save_restore_against_exe.rs | YES | UNVERIFIED |  |
 | 0x005cda90 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_capture.rs;crates/cm-render/src/packed_widget.rs;crates/cm-render/tests/verify_save_restore_against_exe.rs | YES | UNVERIFIED |  |
 | 0x005cdb50 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_icon_loader.rs;crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x005cdd30 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_widget.rs | YES | UNVERIFIED |  |
 | 0x005cdd60 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_capture.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/tests/verify_darken_against_exe.rs | YES | UNVERIFIED |  |
 | 0x005ce240 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_panel.rs;crates/cm-render/src/scrman.rs;crates/cm-render/tests/verify_pack_rgb_against_exe.rs | YES | UNVERIFIED |  |
-| 0x005ce2d0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_text.rs;crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005ce3e0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/tests/news_pixel_diff_against_exe.rs | YES | UNVERIFIED |  |
 | 0x005ce430 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x005ceaa0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_capture.rs;crates/cm-render/src/packed_glyph.rs;crates/cm-render/src/packed_text.rs;crates/cm-render/src/packed_widget_globals.rs;crates/cm-render/tests/verify_glyph_against_exe.rs | YES | UNVERIFIED |  |
@@ -1834,7 +1870,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d70a0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs | YES | UNVERIFIED |  |
 | 0x005d76c0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_nav_back_next.rs;crates/cm-render/src/view_render.rs;crates/cm-render/src/widget_pool.rs | YES | UNVERIFIED |  |
 | 0x005d7710 |  |  | PORTED_BEHAVIOURAL | crates/cm-domain/src/manager_creation.rs | YES | UNVERIFIED |  |
-| 0x005d7aa0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed.rs;crates/cm-render/src/packed_icon_loader.rs;crates/cm-render/src/packed_sprintf.rs;crates/cm-render/src/packed_stipples.rs;crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs;crates/cm-render/src/screen_news.rs;crates/cm-render/src/screens_faithful.rs | YES | UNVERIFIED |  |
 | 0x005d8260 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x005d8410 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_widget.rs;crates/cm-render/src/packed_widget_globals.rs | YES | UNVERIFIED |  |
 | 0x00654380 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs;crates/cm-render/src/screen_wire_batch3.rs | YES | UNVERIFIED |  |
@@ -1864,7 +1899,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007631d0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x0076a750 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0076bcee |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
-| 0x0076e180 |  | FUN_0076e180 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/lib.rs;crates/cm-domain/src/person_news.rs | YES | UNVERIFIED |  |
 | 0x0076ed20 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs | YES | UNVERIFIED |  |
 | 0x0076fdb0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs | YES | UNVERIFIED |  |
 | 0x00770f40 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/screen_news.rs | YES | UNVERIFIED |  |
@@ -1872,7 +1906,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00790200 |  | FUN_00790200 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e3f20 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e4340 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x007e6420 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008070a3 |  |  | PORTED_BEHAVIOURAL | crates/cm-ui-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00834a50 |  | FUN_00834a50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00850b00 |  | FUN_00850b00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -1880,8 +1913,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0089aeb0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008fa820 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x00933579 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_sprintf.rs;crates/cm-render/src/packed_widget.rs | YES | UNVERIFIED |  |
-| 0x0093578b |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x0093acf0 |  |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 
 ## Superseded interpretations
 

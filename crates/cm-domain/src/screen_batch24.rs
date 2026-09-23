@@ -53,6 +53,7 @@ pub enum ContractOfferOutcome {
 /// * `entity_kind_24` / `entity_kind_2c` model `*entity+0x24` / `+0x2c`.
 /// * `nation_stride_base` models `DAT_00acd5c4 + slot_0 * 0x6e`.
 /// * `registration_ok` gates the screen-registered branch.
+// GDI-REG: 008dfb10 PORTED_BEHAVIOURAL
 pub fn build_contract_offer_or_move(
     slot_8: u32,
     entity_ptr: u32,
@@ -88,6 +89,7 @@ pub struct SmallThreeSlotView {
 }
 
 /// Direct port of `FUN_008dfc20`.
+// GDI-REG: 008dfc20 PORTED_BEHAVIOURAL
 pub fn build_small_three_slot(
     registration_ok: bool,
     param_1: u32,
@@ -154,6 +156,7 @@ pub enum WageOfferOutcome {
 /// Within the match branch, if `FUN_004d2e10` returns 0 the exe fires
 /// a MsgBox and returns without registering.
 #[allow(clippy::too_many_arguments)]
+// GDI-REG: 008dfdf0 PORTED_BEHAVIOURAL
 pub fn build_wage_offer_or_move(
     slot_7: u32,
     entity_ptr: u32,
@@ -252,6 +255,7 @@ pub struct TwoSlot0710View {
 }
 
 /// Direct port of `FUN_008e0710`.
+// GDI-REG: 008e0710 PORTED_BEHAVIOURAL
 pub fn build_two_slot_0710(
     registration_ok: bool,
     param_1: u32,
@@ -273,6 +277,7 @@ pub struct TwoSlot0B60View {
 }
 
 /// Direct port of `FUN_008e0b60`.
+// GDI-REG: 008e0b60 PORTED_BEHAVIOURAL
 pub fn build_two_slot_0b60(
     registration_ok: bool,
     param_1: u32,

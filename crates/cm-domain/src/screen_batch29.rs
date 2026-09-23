@@ -52,6 +52,7 @@ pub struct CompSlotClassification {
 }
 
 /// Direct port of `FUN_004a5610(slot: u8, out_row_count: &mut u32)`.
+// GDI-REG: 004a5610 PORTED_BEHAVIOURAL
 pub fn comp_slot_probe(slot: u8) -> CompSlotClassification {
     match slot {
         1 => CompSlotClassification { family_code: 0xFF, row_count: None,       out_of_range: false },
@@ -76,6 +77,7 @@ pub fn comp_slot_probe(slot: u8) -> CompSlotClassification {
 /// Returns [`crate::screen_batch28::HANDLED_REFRESH_SENTINEL`] (-11)
 /// when the id at the slot doesn't match the field's current value —
 /// otherwise falls through with `0`.
+// GDI-REG: 004a16a0 PORTED_PARTIAL
 pub fn dispatch_comp_command_val9(
     slot: i16,
     gate_byte: u16,
@@ -111,6 +113,7 @@ pub enum CompLoaderOutcome {
 }
 
 /// Direct port of `FUN_004a3220(slot)`.
+// GDI-REG: 004a3220 PORTED_BEHAVIOURAL
 pub fn dispatch_comp_loader(
     slot: i16,
     gate_byte: u16,
@@ -158,6 +161,7 @@ pub enum ExtractFixtureTeamsResult {
 /// - `round_type_is_2`: `round+0x43 == 2`.
 /// - `home_found`, `away_found`: outputs of the team-list scan
 ///   `FUN_006679a0` looking for `fixture[7]` and `fixture[8]`.
+// GDI-REG: 004a5760 PORTED_BEHAVIOURAL
 pub fn extract_fixture_teams(
     any_input_null: bool,
     comp_id: i32,
@@ -205,6 +209,7 @@ pub struct FixtureViewSeed {
 /// - `fixture_id == 0` → error dialog, no screen.
 /// - `|fixture_id| <= 9999` → early return without registering.
 /// - Fixture-teams extraction fails and all outputs zero → error, no screen.
+// GDI-REG: 004a17f0 PORTED_BEHAVIOURAL
 pub fn launch_fixture_view(
     fixture_id: i32,
     extraction: ExtractFixtureTeamsResult,
@@ -228,6 +233,7 @@ pub fn launch_fixture_view(
 
 /// Direct port of `FUN_004a28c0` — trivial launcher that seeds
 /// `field(0) = 0, field(1) = 0`.
+// GDI-REG: 004a28c0 PORTED_BEHAVIOURAL
 pub fn launch_uefa_coefs_screen() -> (u32, u32) { (0, 0) }
 
 /// Direct port of `FUN_004a2190` — launcher seeding
@@ -262,6 +268,7 @@ pub const TEAM_STAT_COLUMN_NAMES: [&str; 17] = [
 
 /// Look up a team-stat column name by 1-based index. Returns `None`
 /// for out-of-range indices (the exe raises an "Error" dialog).
+// GDI-REG: 004a92d0 PORTED_EXACT
 pub fn team_stat_column_name(idx: u8) -> Option<&'static str> {
     if (1..=17).contains(&idx) {
         Some(TEAM_STAT_COLUMN_NAMES[(idx - 1) as usize])
@@ -295,6 +302,7 @@ pub const PLAYER_STAT_COLUMN_NAMES: [&str; 17] = [
 ];
 
 /// Look up a player-stat column name by 1-based index.
+// GDI-REG: 004a95d0 PORTED_EXACT
 pub fn player_stat_column_name(idx: u8) -> Option<&'static str> {
     if (1..=17).contains(&idx) {
         Some(PLAYER_STAT_COLUMN_NAMES[(idx - 1) as usize])
@@ -385,6 +393,7 @@ pub enum TeamAttributeValue {
 /// - `k2`: `_DAT_00956968` — RedCards-specific comparison constant.
 /// - `scale_960`: `_DAT_00956960` — the corners/yellow-cards scaling
 ///   constant.
+// GDI-REG: 004a9d10 PORTED_BEHAVIOURAL
 pub fn read_team_attribute_value(
     attr: TeamAttribute,
     bytes_c_through_19: [u8; 14],
@@ -487,6 +496,7 @@ pub fn read_team_attribute_value(
 /// then clears them all. `+0x562` is the master dirty flag.
 ///
 /// Returns the list of slot indices (1..=22) that fired.
+// GDI-REG: 004a8f10 PORTED_BEHAVIOURAL
 pub fn drain_pending_comp_news(
     master_dirty: bool,
     per_slot_dirty: [bool; 22],

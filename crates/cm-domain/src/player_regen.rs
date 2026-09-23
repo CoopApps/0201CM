@@ -84,6 +84,7 @@ fn type10_field_0xb(t: &DomainStaffType10) -> i16 {
 /// `0..bound` (exclusive upper bound, matching the exe's RNG-bound-N
 /// convention). Returns [`REGEN_SCORE_INVALID`] for a candidate the exe
 /// would reject outright.
+// GDI-REG: 0078f4f0 PORTED_BEHAVIOURAL
 pub fn regen_suitability_score(
     person: &PlayerView,
     type10: Option<&DomainStaffType10>,
@@ -185,6 +186,7 @@ pub fn regen_suitability_score(
 /// reputation etc.) that the exe would otherwise reach via live pointers.
 /// Only candidates with a positive score are eligible, matching the
 /// decompile's `0 < iVar1` guard.
+// GDI-REG: 0078f200 PORTED_BEHAVIOURAL
 pub fn select_free_agent<'a>(
     pool: &[PlayerView<'a>],
     type10_by_index: &[Option<&DomainStaffType10>],
@@ -232,6 +234,7 @@ pub fn select_free_agent<'a>(
 /// from further picks so a squad fill doesn't repeat the same player.
 ///
 /// Returns the staff ids assigned, in assignment order.
+// GDI-REG: 0078e970 PORTED_BEHAVIOURAL
 pub fn regen_fill_club_squad(
     staff_pool: &mut [crate::DomainStaffType6],
     type10_pool: &[DomainStaffType10],

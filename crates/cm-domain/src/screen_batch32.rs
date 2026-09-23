@@ -86,6 +86,7 @@ pub enum PlayerAttributeValue {
 }
 
 /// Direct port of `FUN_004a9980(record, attr)`.
+// GDI-REG: 004a9980 PORTED_BEHAVIOURAL
 pub fn read_player_attribute_value(
     rec: &PlayerHistoryRecord,
     attr: PlayerHistoryAttr,
@@ -162,6 +163,7 @@ pub fn format_form_window(window: [i8; 5]) -> String {
 ///
 /// Matches the exe's `FUN_004aa480` — same 17 cases plus the fifth
 /// (KeyPasses) as case 0x11.
+// GDI-REG: 004aa480 PORTED_EXACT
 pub fn format_player_attribute(
     rec: &PlayerHistoryRecord,
     attr: PlayerHistoryAttr,
@@ -248,6 +250,7 @@ pub const SEASON_RECORD_COLUMN_NAMES: [&str; 22] = [
 
 /// Look up a season-record column label by 1-based index. Returns
 /// `None` for out-of-range indices.
+// GDI-REG: 004abbe0 PORTED_EXACT
 pub fn season_record_column_name(idx: u8) -> Option<&'static str> {
     if (1..=22).contains(&idx) {
         Some(SEASON_RECORD_COLUMN_NAMES[(idx - 1) as usize])
@@ -261,6 +264,7 @@ pub fn season_record_column_name(idx: u8) -> Option<&'static str> {
 // =====================================================================
 
 /// Direct port of `FUN_004abad0(scope, out, out_len)`.
+// GDI-REG: 004abad0 PORTED_EXACT
 pub fn history_scope_label(scope: u8) -> Option<&'static str> {
     match scope {
         1 => Some("All Time"),
@@ -293,6 +297,7 @@ pub enum ScreenGateBranch {
 ///   consulted for `RequiresRefreshOk`).
 /// - `comp_type_byte`: value of `+0x502[0]+0x42` (only consulted for
 ///   `ExcludesCompType4`).
+// GDI-REG: 004abf80 PORTED_BEHAVIOURAL
 pub fn screen_enable_gate(
     outer_gate_ok: bool,
     branch: ScreenGateBranch,
@@ -314,6 +319,7 @@ pub fn screen_enable_gate(
 /// Direct port of `FUN_004a9000(team, value)`. Writes `value` to the
 /// competition-history record's `+0x72` byte (TeamOfMonth flag —
 /// matches [`PlayerHistoryAttr::TeamOfMonth`] in read direction).
+// GDI-REG: 004a9000 PORTED_BEHAVIOURAL
 pub fn set_comp_history_team_of_month(
     team_history_record: &mut PlayerHistoryRecord,
     value: u8,

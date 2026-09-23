@@ -95,6 +95,7 @@ pub struct CompListView {
 /// `registration_ok` mirrors `FUN_00549580` returning a valid parent
 /// widget — `false` short-circuits with `None` (matches the exe's
 /// null-guard behaviour higher up the call chain).
+// GDI-REG: 004a0c10 PORTED_BEHAVIOURAL
 pub fn build_comp_list_screen(
     registration_ok: bool,
     base_x: i16,
@@ -205,6 +206,7 @@ pub enum CompCommandOutcome {
 /// - `slot_id_word`: the u32 at `seat + 0xba9a6 + slot * 0x18c`.
 /// - `field_1_value`, `field_2_value`: `get_field(1)` / `get_field(2)`
 ///   snapshots.
+// GDI-REG: 004a1fd0 PORTED_PARTIAL
 pub fn dispatch_comp_command(
     slot: i16,
     gate_byte: u16,
@@ -279,6 +281,7 @@ pub enum CompListRowOutcome {
 /// - `row_idx`: `param_9` — used in the packed-id formula.
 /// - `base_id`: `param_10`.
 #[allow(clippy::too_many_arguments)]
+// GDI-REG: 004a3d20 PORTED_BEHAVIOURAL
 pub fn build_comp_list_row(
     ctx_is_null: bool,
     cached_parent: i16,
@@ -483,6 +486,7 @@ pub fn decode_score_marker(byte: i8) -> ScoreMarker {
 /// - `venue_stadium_name`, `venue_city_name` — for the optional venue
 ///   row when `show_venue && fixture + 0x38 stadium ptr != NULL`.
 #[allow(clippy::too_many_arguments)]
+// GDI-REG: 004a3f10 PORTED_BEHAVIOURAL
 pub fn build_comp_fixture_row(
     fixture_is_null: bool,
     home_mode: TeamNameMode, away_mode: TeamNameMode,
