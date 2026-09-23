@@ -105,3 +105,29 @@ an exact diagnosis instead of a bare UcError:
    re-run. This is the next chunk; 00682420 stays PORTED_PARTIAL.
 10. **Emulator changes:** `setup_seh()` + `enable_fault_log()` added to
     tools/cm-lift/cm_lift/emulate.py (reusable for any SEH/TLS executable function).
+
+## FUN_00682420 case-5 attribute terms — 9/11 verified + a FUNDAMENTAL x87 finding
+
+Verified the case-5 attribute run against the exe L-trajectory (tools/exe_diff/
+verify_case5_attr.py, 240 random cases, base/rep-band/signed-deltas):
+- attr-block (person.standing +0x11,+0x10 w=1/1200; +0x17,+0x18,+0x19,+0x1b w=1/500): VERIFIED
+- rep-gated +0x21 (rep>0x1c52→1/125; >0x1676→1/250; else 1/500): VERIFIED (all bands)
+- person +0x59, +0x58 terms ((v-10)·1/200): VERIFIED
+- person +0x5a, +0x5b terms: 12/240 OFF-BY-ONE, exclusively at integer-boundary products.
+
+ROOT CAUSE (not a transcription error): the shape is right, but the exe evaluates
+these terms in **x87 80-bit extended precision**, then `__ftol` truncates toward
+zero. Where the f64 product lands exactly on an integer (e.g. L=2880, delta=10,
+w=1/200 → 2880×1.05 = 3024.0 exactly in f64), the x87 80-bit factor 1.05 makes the
+product 3023.9999… → truncates to **3023**, not 3024. A pure-f64 Rust port CANNOT
+reproduce this at truncation boundaries.
+
+IMPLICATION FOR "100% ACCURATE": byte-exact scoring requires an x87-accurate
+arithmetic layer in cm-scoring (software 80-bit / extended precision for the term
+products), OR accepting rare ±1 differences at exact-integer boundaries. This is a
+port-wide design point for every x87-heavy formula (scoring, attractiveness,
+finance floats), not specific to these two terms. (Windows numpy longdouble is f64,
+so the 80-bit oracle here is the emulator itself.)
+
+STATUS: case-5 attribute terms structurally decoded + 9/11 differentially verified;
+the 2 boundary cases pinpoint the x87-precision requirement. 00682420 PORTED_PARTIAL.
