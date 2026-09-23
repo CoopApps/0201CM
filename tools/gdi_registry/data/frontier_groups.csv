@@ -1,0 +1,93 @@
+source_file,status,subsystem,relevance,confidence,notes
+database.cpp,NOT_YET_PORTED,player-relationships,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,frontier-audit group default: preference-relationship + eligibility gaps (some NON_USEFUL overridden in curated)
+match_eng.cpp,OUT_OF_SCOPE,match-physics,SIMULATION_RELEVANT,PARTIAL,real-time physics deliberately replaced by the simplified token model; observable match result only
+match_pl.cpp,OUT_OF_SCOPE,match-physics,SIMULATION_RELEVANT,PARTIAL,real-time positional physics deliberately replaced; observable match result only
+transfer_manager.cpp,OUT_OF_SCOPE,transfer-ai,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,runtime offer/loan AI replaced by run_ai_transfer_pass; 6 genuine gaps overridden in curated
+human_manager.cpp,NOT_YET_PORTED,manager-model,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,slot-refresh/relationship gaps (raw-slot accessors are OUT_OF_SCOPE, overridden in curated)
+contract_manager.cpp,NOT_YET_PORTED,contracts,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,contract offer-list negotiation + approach AI
+manager_manager.cpp,NOT_YET_PORTED,manager-ai,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,manager hiring AI + job-application queue + manager news events
+staff_contracts.cpp,NOT_YET_PORTED,contracts,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,contract status/flag/formatter layer (+0x10/35/40/45/4f)
+club_records.cpp,NON_USEFUL,records,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,mostly compiler copy-ctors/dtors; the engine accessors are COVERED (curated)
+record_utils.cpp,OUT_OF_SCOPE,records,PERSISTENCE_RELEVANT,STRUCTURALLY_VERIFIED,save/load byte serializers replaced by serde; stamp/name-id COVERED (curated)
+player_stats.cpp,PORTED_PARTIAL,player-stats,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,career sums COVERED; rating/aptitude helpers partial
+comp/comp_stats.cpp,UNKNOWN,comp-stats,SIMULATION_RELEVANT,UNVERIFIED,NO_DECOMPILE for the 0x004a range (see UNKNOWN rows)
+simulated_stats.cpp,OUT_OF_SCOPE,player-stats,UI_RENDERING,STRUCTURALLY_VERIFIED,stats graph widget + .dat loader (serde/cm-render)
+db_files.cpp,REPLACED_BY_RUST,db-load,PERSISTENCE_RELEVANT,STRUCTURALLY_VERIFIED,.dat record serializers; layouts ported in typed_records.rs + serde
+index.cpp,NOT_YET_PORTED,condition-fitness,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,match-fitness/condition/availability engine (injury=duration-only today)
+utils.cpp,NON_USEFUL,util,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,string/FS helpers replaced by Rust std
+display.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,GDI renderer replaced by cm-render
+scrman.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,screen manager replaced by cm-render
+media.cpp,OUT_OF_SCOPE,media,UI_RENDERING,STRUCTURALLY_VERIFIED,asset/media loading
+game.cpp,NON_USEFUL,game-loop,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,game-loop field getters/plumbing
+background.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,background-picture selection UI
+shortlist_manager.cpp,NOT_YET_PORTED,scouting,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,player-interest pool + manager watch lists
+scout_manager.cpp,NOT_YET_PORTED,scouting,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,scout assignment/knowledge + real weekly tick
+finance.cpp,NOT_YET_PORTED,finance,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,0x167 ledger buckets + prize/sponsorship/gate income (board/chairman ported)
+tactics.cpp,NOT_YET_PORTED,tactics,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,runtime TacticSheet accessors (distinct from ported .tct reader)
+formation.cpp,NOT_YET_PORTED,tactics,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,runtime formation accessors + auto-assign (static catalogue ported)
+player_regen.cpp,NOT_YET_PORTED,regen,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,world-sweep regen driver + retire conversion (selector ported)
+national_teams.cpp,NOT_YET_PORTED,national-teams,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,real per-club selection + eligibility tiers (CA-rank proxy today)
+key_nation.cpp,NOT_YET_PORTED,nation,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,per-nation season boundary resolver + nation classification/UI
+news.cpp,NOT_YET_PORTED,news,PLAYER_VISIBLE,STRUCTURALLY_VERIFIED,news-screen view/filter layer + multi-line assembly (mailbox pool ported)
+discipline.cpp,PORTED_PARTIAL,discipline,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,suspensions modeled; per-person record reset detail partial
+training_manager.cpp,NOT_YET_PORTED,training,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,byte-exact training-schedule query (CA-growth model ported)
+physio.cpp,NOT_YET_PORTED,condition-fitness,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,physio/condition
+match_official.cpp,NOT_YET_PORTED,officials,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,referee assignment
+officials_manager.cpp,NON_USEFUL,officials,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,manager ctor/dtor plumbing
+match_man.cpp,OUT_OF_SCOPE,match,SIMULATION_RELEVANT,PARTIAL,matchday scheduling/registration plumbing
+match_day.cpp,NOT_YET_PORTED,match,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,matchday helpers
+match_stats.cpp,OUT_OF_SCOPE,match,SIMULATION_RELEVANT,PARTIAL,match-stat percentage bars (physics-adjacent)
+virtual_staff.cpp,NOT_YET_PORTED,transfer,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,squad registration/deregistration on transfer/loan completion
+dispute.cpp,REPLACED_BY_RUST,io,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,file-list IO container -> Rust std IO
+fine.cpp,NOT_YET_PORTED,discipline,SIMULATION_RELEVANT,UNVERIFIED,fines
+awol.cpp,NOT_YET_PORTED,discipline,SIMULATION_RELEVANT,UNVERIFIED,AWOL
+hall_of_fame.cpp,NOT_YET_PORTED,records,PLAYER_VISIBLE,UNVERIFIED,hall of fame
+fog_of_war.cpp,NOT_YET_PORTED,scouting,SIMULATION_RELEVANT,UNVERIFIED,knowledge fog
+weather.cpp,NOT_YET_PORTED,match,SIMULATION_RELEVANT,UNVERIFIED,weather/pitch
+area.cpp,NON_USEFUL,geography,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,region membership/geography helpers
+game_config.cpp,NON_USEFUL,config,IMPLEMENTATION_ONLY,UNVERIFIED,config plumbing
+setup.cpp,NOT_YET_PORTED,setup,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,FIFA transfer-rules region scoping + zip loader; mailbox slot alloc
+langlib.cpp,NON_USEFUL,i18n,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,language table plumbing
+file_llist.cpp,REPLACED_BY_RUST,io,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,file-list container -> Rust std IO
+zipdir.cpp,REPLACED_BY_RUST,io,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,zip dir -> Rust IO
+network.cpp,OUT_OF_SCOPE,netcode,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,multiplayer netcode excluded (single-player port)
+tcpip.cpp,OUT_OF_SCOPE,netcode,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,multiplayer netcode excluded
+transfer_offer.cpp,NOT_YET_PORTED,transfer,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,transfer offer helpers
+transfer/australia_rules.cpp,PORTED_PARTIAL,transfer-rules,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,per-nation rule (aus_rules.rs)
+transfer/brazil_rules.cpp,PORTED_PARTIAL,transfer-rules,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,per-nation rule
+transfer/greece_rules.cpp,NOT_YET_PORTED,transfer-rules,SIMULATION_RELEVANT,UNVERIFIED,per-nation rule (attribution drift: some 008a14xx are training.cpp)
+comp/comp.cpp,PORTED_PARTIAL,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,comp framework; English cited, id utilities partial
+comp/comp_util.cpp,PORTED_PARTIAL,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,comp continent/id utilities
+comp/league.cpp,NOT_YET_PORTED,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,foreign/generic league writers (English uses Rust round-robin)
+comp/leagues/league_stage.cpp,NON_USEFUL,competition,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,intrusive linked-list ops -> Vec/HashMap
+comp/cup.cpp,PORTED_BEHAVIOURAL,cups,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,English cups ported in domestic_cup.rs; foreign cups legacy
+comp/cups/cup_stage.cpp,FOREIGN_BREADTH,cups,SIMULATION_RELEVANT,UNVERIFIED,foreign cup stage
+comp/fix_man.cpp,NOT_YET_PORTED,fixtures,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,international fixture management
+comp/friendly.cpp,NOT_YET_PORTED,friendly,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,friendly-match arranging AI (deferred)
+comp/friendly/mini_league.cpp,FOREIGN_BREADTH,friendly,SIMULATION_RELEVANT,UNVERIFIED,mini-league friendly
+comp/host_country.cpp,PORTED_BEHAVIOURAL,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,host_country.rs
+comp/squad_manager.cpp,NOT_YET_PORTED,squad,SIMULATION_RELEVANT,UNVERIFIED,squad manager loader/news
+comp/stadium.cpp,PORTED_PARTIAL,stadium,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,stadium; expansion deferred
+comp/conmebol_seeding.cpp,FOREIGN_BREADTH,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,NOT-STARTED CONMEBOL seeding
+comp/uefa_seeding.cpp,FOREIGN_BREADTH,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,NOT-STARTED UEFA/continental coefficient
+comp/eurocomp/european_cup.cpp,FOREIGN_BREADTH,competition,SIMULATION_RELEVANT,UNVERIFIED,European cup engine (not started)
+comp/eurocomp/uefa_cup.cpp,FOREIGN_BREADTH,competition,SIMULATION_RELEVANT,UNVERIFIED,UEFA cup engine (not started)
+comp/intercomp/african_nations.cpp,PORTED_BEHAVIOURAL,competition,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,ACN ported (african_nations.rs)
+comp/intercomp/goldcup.cpp,FOREIGN_BREADTH,competition,SIMULATION_RELEVANT,UNVERIFIED,Gold Cup engine (not started)
+award/award_manager.cpp,NOT_YET_PORTED,awards,PLAYER_VISIBLE,STRUCTURALLY_VERIFIED,award byte-engine (awards_engine.rs is a CA proxy)
+award/award_shortlist.cpp,NOT_YET_PORTED,awards,PLAYER_VISIBLE,UNVERIFIED,award shortlist
+award/team_award.cpp,NOT_YET_PORTED,awards,PLAYER_VISIBLE,UNVERIFIED,team award
+award/world_cup_awards.cpp,FOREIGN_BREADTH,awards,PLAYER_VISIBLE,UNVERIFIED,world-cup awards
+award/year_ratings.cpp,NOT_YET_PORTED,awards,SIMULATION_RELEVANT,UNVERIFIED,year ratings
+award_screens.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,award screen geometry -> cm-render
+club_screens.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,club screens (setup builders ported in screen_batch*)
+match_screens.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,match screens
+staff_screens.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,staff screens
+tactics_screens.cpp,NOT_YET_PORTED,tactics,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,tactics instruction setters + auto-pick XI (screen setup ported)
+player_search.cpp,NOT_YET_PORTED,search,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,player-search result engine
+search_eng.cpp,NOT_YET_PORTED,search,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,search engine internals
+search_filters.cpp,NOT_YET_PORTED,search,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,search filter setters
+comp_text.cpp,NON_USEFUL,util,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,string helpers
+gui_utils.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,gui utils -> cm-render
+guio.cpp,UI_GDI_DOMAIN,render,UI_RENDERING,STRUCTURALLY_VERIFIED,Guio widget primitives -> cm-render
+notes.cpp,NOT_YET_PORTED,notes,PLAYER_VISIBLE,STRUCTURALLY_VERIFIED,manager notes panel

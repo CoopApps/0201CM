@@ -1,0 +1,4 @@
+dd_va,prev,why,current
+0x008fcbe0,"player_regen ghost-id cleanup","decompile source is virtual_staff.cpp squad DE-registration; player_regen.rs actually cites FUN_008FC4F0 (the RNG). The two addresses were conflated.","virtual_staff.cpp squad deregistration on transfer/loan completion (unported)"
+0x004d5a20,"foul-interaction / match-event leaf hypothesis","later decode identified it as contract-manager logic, not match","contract manager function"
+0x00594eb0,"driver divergence (792 vs 552 fixtures)","240 extra GDI inserts are a recursive self-call into the year-cache, not a driver bug","eng_second recursive year-cache insert (not divergence)"

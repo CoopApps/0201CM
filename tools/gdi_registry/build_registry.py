@@ -1,0 +1,263 @@
+#!/usr/bin/env python3
+"""Build the canonical GDI function registry that bridges the decompiled
+cm0102 executable to the Rust port.
+
+Sources merged (curated always wins over auto-derived):
+  1. functions.json + carver atlas   (D:/cm0102-carve; build-time only)
+  2. live grep of crates/**/*.rs      (FUN_/sub_ citations, // GDI-REG: tags)
+  3. tools/gdi_registry/data/*.csv    (curated overlays, hand-authored)
+
+Outputs (committed): docs/gdi_registry/gdi_function_registry.{md,csv,json},
+gdi_function_coverage.md, gdi_globals.md.
+
+Run: python tools/gdi_registry/build_registry.py
+"""
+import csv, json, os, re, sys
+from collections import defaultdict, Counter
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+CARVE = os.environ.get("CM_CARVE", "D:/cm0102-carve")
+DATA = os.path.join(os.path.dirname(__file__), "data")
+OUT = os.path.join(ROOT, "docs", "gdi_registry")
+CRATES = os.path.join(ROOT, "crates")
+
+FUNCS_JSON = os.path.join(CARVE, "ghidra_out", "cm0102.exe", "functions.json")
+ATLAS_JSON = os.path.join(CARVE, "newcarve", "atlas", "subsystem_map.json")
+
+STATUSES = {"PORTED_EXACT","PORTED_BEHAVIOURAL","PORTED_PARTIAL","REPLACED_BY_RUST",
+    "NOT_YET_PORTED","BLOCKED_DEPENDENCY","FOREIGN_BREADTH","UI_GDI_DOMAIN",
+    "OUT_OF_SCOPE","NON_USEFUL","DEAD_OR_UNREACHABLE","UNKNOWN"}
+PORTED = {"PORTED_EXACT","PORTED_BEHAVIOURAL","PORTED_PARTIAL"}
+
+CITE_RE = re.compile(r'\b(?:FUN|sub)_([0-9a-fA-F]{6,8})\b')
+GDIREG_RE = re.compile(r'GDI-REG:\s*([0-9a-fA-F]{6,8})\s+([A-Z_]+)')
+
+def norm(h):
+    h = h.lower().lstrip("0x")
+    return "0x%08x" % int(h, 16)
+
+def load_json(p):
+    try:
+        return json.load(open(p, encoding="utf-8"))
+    except Exception as e:
+        print(f"[warn] could not load {p}: {e}", file=sys.stderr)
+        return None
+
+def load_csv(name):
+    p = os.path.join(DATA, name)
+    if not os.path.exists(p):
+        return []
+    with open(p, encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+def main():
+    funcs = load_json(FUNCS_JSON) or []
+    by_va = {}
+    for f in funcs:
+        try:
+            by_va[norm(f["entry"])] = f
+        except Exception:
+            pass
+    atlas_raw = load_json(ATLAS_JSON) or {}
+    atlas = {}
+    cpp_re = re.compile(r'code[\\/](.+?\.cpp)', re.I)
+    for k, v in atlas_raw.items():
+        try:
+            va = norm(k)
+        except Exception:
+            continue
+        cpp = ""
+        for s in v.get("string_hits", []):
+            sl = s.lower()
+            if "cm3" in sl and "code" in sl and ".cpp" in sl:
+                m = cpp_re.search(s)
+                if m:
+                    cpp = m.group(1).replace("\\", "/").lower(); break
+        atlas[va] = {"subsystem": v.get("subsystem", ""), "cpp": cpp}
+
+    # --- live citations from crates/ ---
+    cites = defaultdict(list)       # va -> [(file, line, text)]
+    gdireg = {}                     # va -> status token from // GDI-REG:
+    for dirpath, _, files in os.walk(CRATES):
+        for fn in files:
+            if not fn.endswith(".rs"):
+                continue
+            fp = os.path.join(dirpath, fn)
+            rel = os.path.relpath(fp, ROOT).replace("\\", "/")
+            try:
+                lines = open(fp, encoding="utf-8", errors="replace").read().splitlines()
+            except Exception:
+                continue
+            for i, ln in enumerate(lines, 1):
+                for m in CITE_RE.finditer(ln):
+                    va = norm(m.group(1))
+                    cites[va].append((rel, i, ln.strip()[:200]))
+                g = GDIREG_RE.search(ln)
+                if g:
+                    gdireg[norm(g.group(1))] = g.group(2)
+
+    curated = {norm(r["dd_va"]): r for r in load_csv("curated.csv") if r.get("dd_va")}
+    groups = {r["source_file"].strip().lower(): r for r in load_csv("frontier_groups.csv") if r.get("source_file")}
+    superseded = {norm(r["dd_va"]): r for r in load_csv("superseded.csv") if r.get("dd_va")}
+    frontier = set()
+    fp = os.path.join(DATA, "frontier_addresses.txt")
+    if os.path.exists(fp):
+        for l in open(fp):
+            l = l.strip()
+            if l:
+                try: frontier.add(norm(l))
+                except Exception: pass
+
+    universe = set(cites) | set(curated) | frontier | set(gdireg)
+
+    NEG = ("not implemented","not ported","not yet","frontier","unported","todo",
+           "deferred","approximate","stub","see fun_","see the exe","blocked",
+           "gap:","missing")
+    def derive_status(va):
+        if va in curated and curated[va].get("status"):
+            return curated[va]["status"].strip(), "curated"
+        if va in gdireg:
+            return gdireg[va], "gdi-reg-tag"
+        if va in cites:
+            low = " ".join(t for _, _, t in cites[va]).lower()
+            # A bare mention in a "not implemented"/frontier/see-also comment is a
+            # REFERENCE, not a port -> stay UNKNOWN (cited, pending curation).
+            if any(n in low for n in NEG):
+                return "UNKNOWN", "cite-reference"
+            if "partial" in low: return "PORTED_PARTIAL", "cite-text"
+            if "out-of-scope" in low or "out of scope" in low:
+                return "OUT_OF_SCOPE", "cite-text"
+            # Explicit provenance markers = a real port; otherwise still auto,
+            # flagged UNVERIFIED below (confidence), pending curation.
+            return "PORTED_BEHAVIOURAL", "cite-default"
+        if va in frontier:
+            cpp = atlas.get(va, {}).get("cpp", "")
+            if cpp in groups and groups[cpp].get("status"):
+                return groups[cpp]["status"].strip(), "frontier-group"
+            return "UNKNOWN", "frontier-unclassified"
+        return "UNKNOWN", "no-signal"
+
+    rows = []
+    for va in sorted(universe):
+        f = by_va.get(va, {})
+        a = atlas.get(va, {})
+        cu = curated.get(va, {})
+        status, how = derive_status(va)
+        rustfiles = cu.get("rust_file") or ";".join(sorted({c[0] for c in cites.get(va, [])}))
+        rustsyms = cu.get("rust_symbol", "")
+        # HONESTY GUARD: never assert PORTED_* without a Rust link. An
+        # auto/group classification that claims ported but has no rust file and
+        # is not cited is downgraded to NOT_YET_PORTED.
+        if status in PORTED and how != "curated" and not (rustfiles or va in cites):
+            status, how = "NOT_YET_PORTED", how + "+no-rust-downgrade"
+        # Auto (non-curated) classifications are UNVERIFIED until a human curates.
+        conf = cu.get("confidence") or ("UNVERIFIED" if how != "curated" else "STRUCTURALLY_VERIFIED")
+        reach = cu.get("reachable") or ("YES" if status in PORTED and cites.get(va) else
+                ("NO" if status in {"NON_USEFUL","OUT_OF_SCOPE","UI_GDI_DOMAIN","DEAD_OR_UNREACHABLE","FOREIGN_BREADTH","NOT_YET_PORTED","BLOCKED_DEPENDENCY"} else "INDIRECT"))
+        rel = cu.get("relevance") or ("IMPLEMENTATION_ONLY" if status == "NON_USEFUL" else
+              ("UI_RENDERING" if status == "UI_GDI_DOMAIN" else "SIMULATION_RELEVANT"))
+        sup = superseded.get(va, {})
+        rows.append({
+            "dd_va": va,
+            "gdi_va": cu.get("gdi_va", ""),
+            "source_file": cu.get("source_file") or a.get("cpp", ""),
+            "symbol": f.get("name", ""),
+            "semantic_name": cu.get("semantic_name", ""),
+            "subsystem": cu.get("subsystem") or a.get("subsystem", ""),
+            "status": status,
+            "rust_file": rustfiles,
+            "rust_symbol": rustsyms,
+            "reachable": reach,
+            "relevance": rel,
+            "confidence": conf,
+            "evidence": cu.get("evidence", ""),
+            "notes": cu.get("notes", "") + ("" if not sup else ""),
+            "superseded_prev": sup.get("prev", ""),
+            "superseded_why": sup.get("why", ""),
+            "_how": how,
+            "_size": f.get("size", ""),
+            "_cited": "Y" if va in cites else "",
+        })
+
+    os.makedirs(OUT, exist_ok=True)
+    cols = ["dd_va","gdi_va","source_file","symbol","semantic_name","subsystem","status",
+            "rust_file","rust_symbol","reachable","relevance","confidence","evidence",
+            "notes","superseded_prev","superseded_why"]
+    with open(os.path.join(OUT, "gdi_function_registry.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
+        w.writeheader()
+        for r in rows: w.writerow(r)
+    json.dump([{k: r[k] for k in cols} for r in rows],
+              open(os.path.join(OUT, "gdi_function_registry.json"), "w", encoding="utf-8"),
+              indent=1)
+
+    # --- coverage ---
+    by_status = Counter(r["status"] for r in rows)
+    by_sub = defaultdict(Counter)
+    for r in rows: by_sub[r["subsystem"] or "?"][r["status"]] += 1
+    ported = sum(by_status[s] for s in PORTED)
+    ported_curated = sum(1 for r in rows if r["status"] in PORTED and r["_how"] == "curated")
+    ported_auto = ported - ported_curated
+    with open(os.path.join(OUT, "gdi_function_coverage.md"), "w", encoding="utf-8") as f:
+        f.write("# GDI function coverage (generated)\n\n")
+        f.write(f"Registered functions: **{len(rows)}**  ·  cited in Rust: "
+                f"**{sum(1 for r in rows if r['_cited'])}**\n\n")
+        f.write("> **Read carefully.** A `PORTED_*` row derived automatically from a Rust "
+                "citation is `confidence: UNVERIFIED` — it means *an exe address is cited in "
+                "Rust without a 'not-implemented' marker*, NOT that the port was human-verified. "
+                f"Of **{ported}** PORTED_* rows, only **{ported_curated}** are curated/verified; "
+                f"**{ported_auto}** are auto-cited and PENDING CURATION. Do not headline the auto "
+                "number as real coverage (see the coverage-vs-fidelity antipattern).\n\n")
+        f.write("## By status\n\n| status | count |\n|---|---|\n")
+        for s in sorted(by_status, key=lambda x: -by_status[x]):
+            f.write(f"| {s} | {by_status[s]} |\n")
+        f.write(f"\nported (EXACT+BEHAVIOURAL+PARTIAL): **{ported}** · "
+                f"genuine missing (NOT_YET_PORTED): **{by_status['NOT_YET_PORTED']}** · "
+                f"blocked: **{by_status['BLOCKED_DEPENDENCY']}** · "
+                f"replaced/out-of-scope/ui: **{by_status['REPLACED_BY_RUST']+by_status['OUT_OF_SCOPE']+by_status['UI_GDI_DOMAIN']}** · "
+                f"non-useful: **{by_status['NON_USEFUL']}** · "
+                f"foreign-breadth: **{by_status['FOREIGN_BREADTH']}** · "
+                f"unknown: **{by_status['UNKNOWN']}**\n")
+        f.write("\n## By subsystem\n\n| subsystem | total | ported | missing | out/ui/replaced | non-useful | unknown |\n|---|---|---|---|---|---|---|\n")
+        for sub in sorted(by_sub, key=lambda s: -sum(by_sub[s].values())):
+            c = by_sub[sub]
+            f.write(f"| {sub} | {sum(c.values())} | {sum(c[s] for s in PORTED)} | {c['NOT_YET_PORTED']} | "
+                    f"{c['OUT_OF_SCOPE']+c['UI_GDI_DOMAIN']+c['REPLACED_BY_RUST']} | {c['NON_USEFUL']} | {c['UNKNOWN']} |\n")
+
+    # --- globals ---
+    globs = load_csv("globals.csv")
+    with open(os.path.join(OUT, "gdi_globals.md"), "w", encoding="utf-8") as f:
+        f.write("# GDI global data symbols (generated from data/globals.csv)\n\n")
+        f.write("| address | meaning | Rust equivalent | lifetime | used by | confidence |\n|---|---|---|---|---|---|\n")
+        for g in globs:
+            f.write(f"| {g.get('address','')} | {g.get('meaning','')} | {g.get('rust_equiv','')} | "
+                    f"{g.get('lifetime','')} | {g.get('used_by','')} | {g.get('confidence','')} |\n")
+
+    # --- human-readable registry (grouped by subsystem then status) ---
+    with open(os.path.join(OUT, "gdi_function_registry.md"), "w", encoding="utf-8") as f:
+        f.write("# GDI function registry (generated — do not hand-edit)\n\n")
+        f.write("Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in "
+                "`tools/gdi_registry/data/*.csv`; see docs/reverse_engineering_conventions.md.\n\n")
+        f.write(f"{len(rows)} functions registered. Coverage: docs/gdi_registry/gdi_function_coverage.md. "
+                "Globals: docs/gdi_registry/gdi_globals.md.\n\n")
+        cur = None
+        for r in sorted(rows, key=lambda x: (x["subsystem"] or "~", x["source_file"], x["dd_va"])):
+            sub = r["subsystem"] or "(unclassified)"
+            if sub != cur:
+                f.write(f"\n## {sub}\n\n| DD VA | source | semantic | status | Rust | reach | conf | evidence |\n|---|---|---|---|---|---|---|---|\n")
+                cur = sub
+            f.write(f"| {r['dd_va']} | {r['source_file']} | {r['semantic_name'] or r['symbol']} | "
+                    f"{r['status']} | {r['rust_symbol'] or r['rust_file']} | {r['reachable']} | "
+                    f"{r['confidence']} | {r['evidence']} |\n")
+        sup_rows = [r for r in rows if r["superseded_prev"]]
+        if sup_rows:
+            f.write("\n## Superseded interpretations\n\n| DD VA | previous | why superseded | current |\n|---|---|---|---|\n")
+            for r in sup_rows:
+                f.write(f"| {r['dd_va']} | {r['superseded_prev']} | {r['superseded_why']} | {r['semantic_name']} |\n")
+
+    print(f"registered {len(rows)} functions -> {OUT}")
+    print("status:", dict(by_status))
+    print(f"cited-in-rust: {sum(1 for r in rows if r['_cited'])}  ported: {ported}")
+
+if __name__ == "__main__":
+    main()

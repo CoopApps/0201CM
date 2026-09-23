@@ -1,0 +1,42 @@
+dd_va,gdi_va,semantic_name,subsystem,status,rust_file,rust_symbol,reachable,relevance,confidence,evidence,notes
+0x00502470,,cup fixture-tree mapper,cups,PORTED_BEHAVIOURAL,crates/cm-domain/src/domestic_cup.rs,CupState::progress,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,memory/cup-engine-progressive.md,shared cup map fn; English cups progressive
+0x00503e30,,cup fixture processor (leg/replay),cups,PORTED_BEHAVIOURAL,crates/cm-domain/src/domestic_cup.rs,CupState::tie_outcome;draw_round,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,memory/cup-engine-progressive.md,leg==2 / replay via round_rec +0x20/+0x21/+0x22
+0x00445220,,club-record recompute engine,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_season_records.rs,ClubSeasonRecords::update_with_match,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,reports/club_history_screen_decode.md,Results/Sequences rules ported byte-faithful; season_records_probe
+0x007ccaa0,,biggest-win compare,records,PORTED_EXACT,crates/cm-domain/src/club_season_records.rs,MatchRecord::beats_win,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,reports/club_history_screen_decode.md,margin then goals-scored tiebreak
+0x007ccb70,,biggest-defeat compare,records,PORTED_EXACT,crates/cm-domain/src/club_season_records.rs,MatchRecord::beats_defeat,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,reports/club_history_screen_decode.md,margin then goals-conceded tiebreak
+0x007ccc50,,highest-scoring compare,records,PORTED_EXACT,crates/cm-domain/src/club_season_records.rs,MatchRecord::beats_scoring,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,reports/club_history_screen_decode.md,total goals strict + stored.against+new.for!=0 guard
+0x007cc7c0,,fixture->record stamp builder,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_season_records.rs,MatchRecord::from_input,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,stage/round codes fixture+0x32/+0xc
+0x007cc990,,record name-id store,records,REPLACED_BY_RUST,crates/cm-domain/src/club_season_records.rs,MatchRecord,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,exe stores 3 name ids; port keeps ids + lazy format
+0x004538b0,,record-body initializer,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_season_records.rs,ClubSeasonRecords::new,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,-1/0xff sentinels; +0x1f1 -1.0f rating -> "-"
+0x00452fe0,,this-season record body accessor,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_season_records.rs,ClubSeasonRecords,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,0x38b body; club_comp map stride 0x6a
+0x004531a0,,all-time record body accessor,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_season_records.rs,ClubSeasonRecords,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,aggregated from per-season at view
+0x00447d20,,highest/lowest league position writer,records,PORTED_PARTIAL,crates/cm-domain/src/club_history.rs,season_rows_for_club,INDIRECT,SIMULATION_RELEVANT,PARTIAL,reports/club_history_screen_decode.md,division-strength latching; port uses final position (per-season highest/lowest source open)
+0x00667aa0,,league final-table sort,fixtures,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_history.rs,season_rows_for_club,INDIRECT,SIMULATION_RELEVANT,PARTIAL,reports/club_history_screen_decode.md,points/GD/GF; exe uses comp+0xc5 tiebreak bytes (DB-driven) not hardcoded
+0x006684e0,,league table comparator,fixtures,PORTED_PARTIAL,crates/cm-domain/src/club_history.rs,season_rows_for_club,INDIRECT,SIMULATION_RELEVANT,PARTIAL,reports/club_history_screen_decode.md,Points->comp+0xc5 order->reputation->club id
+0x007a8090,,records apps/goals boot seed,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_history.rs,World::club_history_view,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,memory/club-history-screen.md,staff_history +0x0a = club; Chester 361/124 Rimmer verified
+0x00449590,,per-club apps/goals updater,records,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_history.rs,World::club_history_view,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,memory/club-history-screen.md,max(sum apps)/max(sum goals) per (person club)
+0x007abd80,,career apps per competition,player-stats,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_history.rs,World::club_history_view,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,per-person accumulation
+0x007abef0,,career goals per competition,player-stats,PORTED_BEHAVIOURAL,crates/cm-domain/src/club_history.rs,World::club_history_view,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,
+0x007ac060,,career total apps,player-stats,PORTED_BEHAVIOURAL,crates/cm-domain/src/player_profile.rs,total_apps,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,reports/club_history_screen_decode.md,
+0x00652cd0,,season-year -> "YYYY/YY" label,nation,PORTED_PARTIAL,crates/cm-domain/src/club_history.rs,season_label,INDIRECT,SIMULATION_RELEVANT,PARTIAL,reports/club_history_screen_decode.md,split-year branch ported; per-nation calendar/split decision + year==0 fallback NOT
+0x00652a00,,nation -> season-boundary index resolver,nation,NOT_YET_PORTED,,,BLOCKED,SIMULATION_RELEVANT,HYPOTHESIS,reports/club_history_screen_decode.md,DAT_00b4bc70 index; unblocks club-history record season-bucketing
+0x006508e0,,per-nation season-table builder,nation,PORTED_BEHAVIOURAL,crates/cm-domain/src/league_calendar.rs,season_start,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,memory/league-dates-and-comp-wiring.md,builds DAT_00b4bc70 start dates
+0x004d3460,,relegation per-person walk,promotion,PORTED_BEHAVIOURAL,crates/cm-domain/src/c13_promotion_apply.rs,walk_relegation_persons,YES,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,,Club+0xD7 slots; staff +0x1F 1->2; kind=3 news
+0x005e4e40,,HostCountry.tmp writer,competition,PORTED_BEHAVIOURAL,crates/cm-domain/src/host_country.rs,HostCountry::save_tmp,YES,PERSISTENCE_RELEVANT,STRUCTURALLY_VERIFIED,,u16 count + count*0x22 records
+0x005e4250,,host lookup by (sub year),competition,PORTED_PARTIAL,crates/cm-domain/src/host_country.rs,HostCountry::lookup,INDIRECT,SIMULATION_RELEVANT,PARTIAL,,drops +0x1e chosen-host-slot (primary vs co-host)
+0x006b1e60,,match distance LUT read,match-physics,PORTED_EXACT,crates/cm-domain/src/match_engine_exe.rs,distance_quality,YES,SIMULATION_RELEVANT,BYTE_EXACT,,DAT_00A01E20 LUT
+0x006b1040,,match bearing LUT read,match-physics,PORTED_EXACT,crates/cm-domain/src/match_engine_exe.rs,bearing_atan2,YES,SIMULATION_RELEVANT,BYTE_EXACT,,DAT_00B4D7A4 LUT
+0x006dfb40,,match reachability die,match-physics,PORTED_EXACT,crates/cm-domain/src/match_engine_exe.rs,reachability_check,YES,SIMULATION_RELEVANT,BEHAVIOURALLY_EXACT,,turn-to-face in 1 tick
+0x006cee80,,match atmosphere/attendance factor,match,PORTED_EXACT,crates/cm-domain/src/match_engine_exe.rs,compute_atmosphere,YES,SIMULATION_RELEVANT,BYTE_EXACT,,RNG threshold cascade 350..150 factors 7750..5250
+0x004a8a70,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE: re-run Ghidra 0x004a0000-0x004affff
+0x004a5bf0,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a5dd0,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a5e30,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a5e40,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a5e50,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a5eb0,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a8a00,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a8a30,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a8b10,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a8db0,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE
+0x004a9c60,,comp_stats (no decompile),comp-stats,UNKNOWN,,,BLOCKED,SIMULATION_RELEVANT,UNVERIFIED,,NO_DECOMPILE

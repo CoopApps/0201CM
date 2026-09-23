@@ -1,3 +1,9 @@
+//! Executable provenance
+//!   GDI/DD functions represented here:
+//!     0x00502470 cup fixture-tree mapper (CupState::progress)
+//!     0x00503e30 cup fixture processor — leg/replay (tie_outcome / draw_round)
+//!   Full mapping + status: docs/gdi_registry/gdi_function_registry.md
+//!
 //! A reusable single-elimination **domestic cup** engine — the shape of
 //! `bel_fa_cup.cpp` (VA `0x0041dba0`, vtable `0x009558a0`, club base
 //! `0x00502320`) and every other national cup. Clubs are seeded into a
