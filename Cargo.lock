@@ -242,6 +242,7 @@ version = "0.1.0"
 dependencies = [
  "cm-data",
  "cm-rng",
+ "cm-scoring",
  "serde",
  "serde_json",
  "sha2",
@@ -284,6 +285,10 @@ dependencies = [
 
 [[package]]
 name = "cm-rng"
+version = "0.1.0"
+
+[[package]]
+name = "cm-scoring"
 version = "0.1.0"
 
 [[package]]

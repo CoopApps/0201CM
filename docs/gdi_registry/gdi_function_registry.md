@@ -186,7 +186,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00525450 | database.cpp | FUN_00525450 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c14_stadium_expansion.rs;crates/cm-domain/src/club_season_records.rs;crates/cm-domain/src/manager_creation.rs;crates/cm-domain/src/screen_batch11.rs;crates/cm-domain/src/screen_batch9.rs;crates/cm-domain/src/screen_club_dashboard.rs;crates/cm-domain/src/transfer.rs;crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-render/src/screen_club_squad_faithful.rs | YES | UNVERIFIED |  |
 | 0x005265e0 | database.cpp | FUN_005265e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00527340 | database.cpp | FUN_00527340 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x005274d0 | database.cpp | FUN_005274d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/manager_hiring.rs | YES | UNVERIFIED |  |
+| 0x005274d0 | database.cpp | FUN_005274d0 | PORTED_BEHAVIOURAL | crates/cm-scoring/src/lib.rs | YES | UNVERIFIED |  |
 | 0x005276f0 | database.cpp | FUN_005276f0 | UNKNOWN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch27.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | INDIRECT | UNVERIFIED |  |
 | 0x0052a500 | database.cpp | FUN_0052a500 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x0052a5a0 | database.cpp | FUN_0052a5a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/c14_5_squad_manager.rs;crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
@@ -3042,8 +3042,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x0052a330 | database.cpp | manager-club reputation-fit primitive | PORTED_EXACT | manager_club_repfit | NO | STRUCTURALLY_VERIFIED | docs/manager_hiring/rating_constants.md |
-| 0x0052a410 | database.cpp | manager-club closeness classifier | PORTED_EXACT | closeness_class | NO | STRUCTURALLY_VERIFIED | docs/manager_hiring/rating_constants.md |
+| 0x0052a330 | database.cpp | manager-club reputation-fit primitive | PORTED_EXACT | manager_club_repfit | NO | BYTE_EXACT | reports:manager_hiring_diff.md (differential vs cm0102.exe: 0 mismatch) |
+| 0x0052a410 | database.cpp | manager-club closeness classifier | PORTED_EXACT | closeness_class | NO | BYTE_EXACT | reports:manager_hiring_diff.md (differential vs cm0102.exe: 0 mismatch) |
 | 0x00672e40 | manager_manager.cpp | CD-presence check (find cm0102.exe on CD drives / Insert CD prompt) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00672e40 |
 | 0x00673330 | manager_manager.cpp | manager-confidence pool destructor (frees 5 sub-arrays) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00673330 |
 | 0x006733d0 | manager_manager.cpp | save man_conf.dat (board-confidence save section writer) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006733d0 |

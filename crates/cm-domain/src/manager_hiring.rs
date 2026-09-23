@@ -275,77 +275,15 @@ fn set_i16(b: &mut [u8], o: usize, v: i16) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Scoring core — reputation-fit (FUN_0052a330 / FUN_0052a410). CONFIRMED pure
-// integer, zero x87 (docs/manager_hiring/rating_constants.md §7). Byte-exact.
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Resolved manager↔club relationship inputs for the closeness classifier
-/// `FUN_0052a410`. Cross-record lookups (nation/league equality, "ref known in
-/// nation" = FUN_005274d0) are resolved by the caller so the classifier logic
-/// stays byte-exact and self-contained.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct ClosenessInputs {
-    pub ref_null: bool,
-    pub person_has_club: bool,
-    pub same_club: bool,
-    pub same_club_nation: bool,
-    pub same_person_nation: bool,
-    pub ref_known_in_person_nation: bool,
-    pub ref_known_in_person_club_nation: bool,
-    pub regional_rep_pass: bool,
-}
-
-/// `FUN_0052a410` — returns closeness code {0,2,3,4}. Decision tree verbatim.
-// GDI-REG: 0052a410 PORTED_EXACT
-pub fn closeness_class(i: &ClosenessInputs) -> u8 {
-    if i.ref_null { return 4; }
-    if i.person_has_club {
-        if i.same_club { return 0; }        // same club
-        if i.same_club_nation { return 0; } // same league/country
-    }
-    if i.same_person_nation { return 2; }               // same country
-    if !i.ref_known_in_person_nation { return 2; }      // ref not known in person's nation
-    if i.person_has_club && !i.ref_known_in_person_club_nation { return 3; }
-    if i.regional_rep_pass { return 3; }
-    4                                                    // foreign / unknown
-}
-
-/// `FUN_0052a330` — reputation-fit base rating. Picks/averages one short from the
-/// person's 3-entry reputation vector (`block`), selected by closeness code `c`.
-/// `mode0=true` reads the +0x61 block at odd offsets 9/0xb/0xd; else the +0x69
-/// block at even offsets 8/0xa/0xc. Slots = national / home / world. Codes 3 and
-/// 1 average two slots, each `/2` as a short before summing. The score core calls
-/// it with mode!=0. No RNG, no float — byte-exact.
+// Scoring core — reputation-fit (FUN_0052a330 / FUN_0052a410) + score base
+// re-weight (FUN_00682420 §5.1). The CANONICAL implementations live in the pure
+// leaf crate `cm-scoring` (differentially verified against cm0102.exe by
+// tools/exe_diff); re-exported here so cm-domain has one impl.
 // GDI-REG: 0052a330 PORTED_EXACT
-pub fn manager_club_repfit(block: &[u8], mode0: bool, c: u8) -> i32 {
-    let (nat, home, world) = if mode0 { (9usize, 0xb, 0xd) } else { (8usize, 0xa, 0xc) };
-    let s = |o: usize| i16_at(block, o) as i32; // short reputation slot
-    match c {
-        4 => s(world),
-        2 => s(nat),
-        0 => s(home),
-        3 => (s(world) / 2) + (s(nat) / 2),
-        _ => (s(home) / 2) + (s(nat) / 2), // c == 1
-    }
-}
-
-/// §5.1 base re-weight (FUN_00682420 lines 88/92). The same-nationality /
-/// works-abroad affinity gates re-weight the accumulator: a positive affinity
-/// takes `max(L*1.1, L+2000)`, a negative one `L*0.25`, else unchanged; then
-/// round-to-nearest-even (x87 default, exe helper 0x009346d0). Constants from
-/// docs/manager_hiring/rating_constants.md §5.1 (1.1, 2000.0, 0.25).
+// GDI-REG: 0052a410 PORTED_EXACT
 // GDI-REG: 00682420 PORTED_PARTIAL
-pub fn score_base_reweight(l: i32, affinity_positive: bool, affinity_negative: bool) -> i32 {
-    let lf = l as f64;
-    let out = if affinity_positive {
-        (lf * 1.1).max(lf + 2000.0)
-    } else if affinity_negative {
-        lf * 0.25
-    } else {
-        return l;
-    };
-    out.round_ties_even() as i32
-}
+// ─────────────────────────────────────────────────────────────────────────────
+pub use cm_scoring::{closeness_class, manager_club_repfit, score_base_reweight, ClosenessInputs};
 
 /// §4 poach jitter (FUN_00681c70): scale the poached club's own job-security
 /// confidence rows by the recovered multipliers, `round(row * k)` (ties-even).

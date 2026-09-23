@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/cm-rng",
+    "crates/cm-scoring",
     "crates/cm-data",
     "crates/cm-events",
     "crates/cm-domain",

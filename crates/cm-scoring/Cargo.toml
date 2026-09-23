@@ -1,0 +1,12 @@
+[package]
+name = "cm-scoring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CM0102 manager/AI scoring primitives — pure, differentially verified against cm0102.exe"
+
+[dependencies]
+
+[[bin]]
+name = "scoring_probe"
+path = "src/bin/scoring_probe.rs"
