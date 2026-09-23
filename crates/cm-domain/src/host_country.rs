@@ -202,6 +202,8 @@ impl HostCountryTable {
     }
 
     /// Save to `CM3_TEMP\HostCountry.tmp` (round-trip of `load_tmp`).
+    // exe FUN_005e4e40: HostCountry.tmp writer (u16 count + count * 0x22-byte
+    // records) — the write complement of the already-cited read FUN_005e4c80.
     pub fn save_tmp(&self, path: &Path) -> std::io::Result<()> {
         let mut buf = Vec::with_capacity(2 + self.rows.len() * HOST_RECORD_STRIDE);
         let count = self.rows.len() as u16;
@@ -221,6 +223,9 @@ impl HostCountryTable {
     }
 
     /// Find the host of a specific tournament in a specific year.
+    // exe FUN_005e4250 / FUN_005e42f0: host lookup by (sub_tournament, year).
+    // PARTIAL — the exe also dereferences the chosen-host-slot index at +0x1e
+    // (primary vs co-host disambiguation), which this row-find does not model.
     pub fn lookup(&self, sub: HostSubTournament, year: u16) -> Option<&HostEntry> {
         self.rows.iter().find(|r| r.sub_tournament == sub as u8 && r.year == year)
     }

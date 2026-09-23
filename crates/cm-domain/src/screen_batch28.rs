@@ -151,12 +151,16 @@ pub fn build_comp_list_screen(
 /// Byte offset inside a per-competition-slot seat record for the
 /// gate byte the pre-dispatcher tests. Verified from the read
 /// `[seat + 0xba966 + slot * 0x18c]`.
+// exe FUN_0046a670 / FUN_0046a6a0: read the menu-item cmd/gate code at
+// `[seat + 0xba966 + slot*0x18c]` — reproduced inline via this offset + the
+// ported dispatchers (sidebar_dispatcher.rs / tactic_dispatcher.rs).
 pub const SEAT_SLOT_GATE_OFFSET: usize = 0x0;
 
 /// Offset inside a per-competition-slot seat record for the id-word
 /// the exe cross-checks against `get_field(1)`/`get_field(2)`.
 /// Verified from the read `[seat + 0xba9a6 + slot * 0x18c]`
 /// (`0xba9a6 - 0xba966 = 0x40`).
+// exe FUN_00476dc0: read the menu-item id-word at `[seat + 0xba9a6 + slot*0x18c]`.
 pub const SEAT_SLOT_ID_OFFSET: usize = 0x40;
 
 /// Per-competition-slot record stride inside the seat.
