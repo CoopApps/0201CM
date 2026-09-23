@@ -1,5 +1,24 @@
 //! Honest port of the cm0102.exe match engine cluster.
 //!
+//! Executable provenance (full map: docs/gdi_registry/gdi_function_registry.md).
+//! OBSERVABLE CONTRACT: this is a TOKEN model, not the exe's real-time positional
+//! simulation — it reproduces the player-visible OUTCOMES (scoreline, scorers,
+//! ratings, MotM, match injuries, yellows) but NOT event ordering, the event-queue
+//! layout, or the exe's global table-RNG draw stream (it threads a per-match
+//! splitmix64 MatchRng). No byte-for-byte outcome parity is claimed.
+//!   Ported leaf/shared math (behaviour reproduced): 0x006cfef0 shot dice ·
+//!   0x006ae160 outcome classifier · 0x006a2790/0x006a1940 target pickers ·
+//!   0x006b1e60/0x006d63b0 distance LUT · 0x006b1040 bearing · 0x006dfb40
+//!   reachability · 0x006cee80 atmosphere · 0x006ba1e0 derby · 0x006b69e0 MotM ·
+//!   0x006b3de0 rating finalize · 0x006ba380 writeback · 0x006da0b0 cell move.
+//!   Ported PARTIAL: 0x0069f2f0 tick · 0x0069d950 setup · 0x006f99c0 selector ·
+//!   0x006f5de0 physics · 0x006bc8d0 event queue.
+//!   Reds (0x006cf040/0x006cf230, card_model.rs): BLOCKED_DEPENDENCY — verdict
+//!   recovered but cards_from_events returns empty reds (not fabricated).
+//!   OUT_OF_SCOPE positional bulk (frontier ledger lib.rs ~23130-23234):
+//!   0x006d63f0 0x006a4020 0x006a3240 0x006b4510 0x006d1a20 0x006e65e0
+//!   0x006f63f0 0x005a2c70.
+//!
 //! Replaces the Poisson placeholder in [`crate::match_engine`] with a
 //! direct port of the exe's own code. Structure mirrors the exe's TU
 //! layout (see `reports/match_*.md` for decode maps):
