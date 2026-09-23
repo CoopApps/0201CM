@@ -5,8 +5,13 @@
   python tools/gdi_registry/query.py season_label    # Rust symbol/file -> GDI fns
   python tools/gdi_registry/query.py domestic_cup    # subsystem / file substring
   python tools/gdi_registry/query.py --status NOT_YET_PORTED   # list by status
+  python tools/gdi_registry/query.py --unresolved    # UNRESOLVED_REACHABILITY rows
+  python tools/gdi_registry/query.py --indirect-only # INDIRECT_REACHABLE rows
+  python tools/gdi_registry/query.py --zero-caller   # 0 direct callers (indirect/dead)
 
 Reads docs/gdi_registry/gdi_function_registry.json (run build_registry.py first).
+An address query also prints direct callers/callees counts, reachability kind,
+root sets, indirect edge types/confidence, and the provenance path.
 """
 import json, os, re, sys
 
@@ -26,6 +31,13 @@ def show(r):
     if r['evidence']: print(f"    evidence  : {r['evidence']}")
     if r['notes']: print(f"    notes     : {r['notes']}")
     if r['superseded_prev']: print(f"    superseded: was '{r['superseded_prev']}' -> {r['superseded_why']}")
+    # executable reachability (call-graph axis, separate from Rust `reachable`)
+    print(f"    exe-reach : {r.get('cg_reach_kind','?')}  depth={r.get('cg_min_depth','')}  "
+          f"callers={r.get('callers','')} callees={r.get('callees','')}  roots=[{r.get('cg_root_sets','')}]")
+    if r.get('cg_addr_taken'): print(f"    addr-taken: {r['cg_addr_taken']}")
+    if r.get('cg_indirect_edge_types'):
+        print(f"    ind-edges : {r['cg_indirect_edge_types']} (conf {r.get('cg_indirect_confidence','')})")
+    if r.get('cg_provenance'): print(f"    provenance: {r['cg_provenance']}")
 
 def main():
     rows = load()
@@ -38,6 +50,18 @@ def main():
         for r in sorted(hits, key=lambda x: x["subsystem"]):
             print(f"{r['dd_va']}  {r['subsystem']:20}  {r['semantic_name'] or r['symbol']}")
         print(f"\n{len(hits)} functions with status {st}")
+        return
+    if args[0] in ("--unresolved", "--indirect-only", "--zero-caller"):
+        if args[0] == "--unresolved":
+            hits = [r for r in rows if r.get("cg_reach_kind") == "UNRESOLVED_REACHABILITY"]
+        elif args[0] == "--indirect-only":
+            hits = [r for r in rows if r.get("cg_reach_kind") == "INDIRECT_REACHABLE"]
+        else:
+            hits = [r for r in rows if str(r.get("callers", "")) in ("0", "")]
+        for r in sorted(hits, key=lambda x: (x["subsystem"], x["dd_va"])):
+            print(f"{r['dd_va']}  [{r['status']:16}]  {r.get('cg_reach_kind',''):24}  "
+                  f"{r['subsystem']:18}  {r['semantic_name'] or r['symbol']}")
+        print(f"\n{len(hits)} rows for {args[0]}")
         return
     q = args[0]
     m = re.fullmatch(r'(?:0x|FUN_|sub_)?([0-9a-fA-F]{6,8})', q)

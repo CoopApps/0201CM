@@ -16,7 +16,10 @@ the Rust port. The authoritative bridge is the **GDI function registry**.
 | `docs/gdi_registry/gdi_function_registry.csv` | ✅ | machine-readable registry (generated) |
 | `docs/gdi_registry/gdi_function_registry.json` | ✅ | same, JSON (generated) |
 | `docs/gdi_registry/gdi_function_coverage.md` | ✅ | coverage counts + classification provenance (generated) |
-| `docs/gdi_registry/gdi_port_order.md` | ✅ | call-graph-driven NOT_YET_PORTED plan: exe-reachability from live roots + depth (generated) |
+| `docs/gdi_registry/gdi_port_order.md` | ✅ | call-graph-driven NOT_YET_PORTED plan: exe-reachability kind + depth (generated) |
+| `docs/gdi_registry/gdi_roots.md` | ✅ | named reachability root sets (BOOT/DAILY_TICK/AI/UI/MATCH/…) with evidence (generated) |
+| `tools/gdi_registry/cg_reach.py` | ✅ | executable reachability engine: direct + indirect dispatch, root sets, kinds, provenance |
+| `tools/gdi_registry/data/indirect_edges.csv` | ✅ | curated/agent-recovered indirect dispatch edges (see schema below) |
 | `docs/gdi_registry/gdi_globals.md` | ✅ | executable global data symbols (generated) |
 | `tools/gdi_registry/build_registry.py` | ✅ | regenerates all of the above |
 | `tools/gdi_registry/query.py` | ✅ | address→Rust / Rust→address lookup |
@@ -51,7 +54,36 @@ evidence         report/memory path(s) or capture id backing the classification
 notes            free text
 superseded_prev  previous (wrong) interpretation, if any
 superseded_why   why it was superseded
+callers,callees  direct in/out degree (static call graph)
+cg_reach_kind    DIRECT_REACHABLE | INDIRECT_REACHABLE | UNRESOLVED_REACHABILITY | PROBABLY_DEAD
+cg_direct_reach  Y if reached from a live root by DIRECT calls only
+cg_indirect_reach Y if reached only via a PROVEN/STRONG indirect dispatch edge
+cg_root_sets     which named root sets reach it (";"-joined)
+cg_min_depth     BFS distance from nearest live root (direct+strong/proven graph)
+cg_addr_taken    "data"/"code"/"data+code" — where the function's address is referenced
+cg_indirect_edge_types  incoming indirect edge types (VTABLE/MENU_DISPATCH/…)
+cg_indirect_confidence  best incoming indirect-edge confidence (PROVEN/STRONG/POSSIBLE)
+cg_provenance    one reconstructed root->fn path (why it is reachable)
 ```
+
+## Executable reachability (indirect dispatch)
+
+`cg_reach_kind` is a **new axis, separate from the Rust `reachable` field and from
+whether a Rust port exists**. It answers: *can the original GDI game reach this
+function?* The direct call graph is only a lower bound — most UI/menu, competition,
+and AI handlers are invoked through function pointers, vtables and dispatch tables.
+
+`data/indirect_edges.csv` (7 cols, headerless): `src_va,dst_va,edge_type,confidence,
+root_hint,evidence,provenance`. Edge types: DIRECT_CALL (implicit), FUNCTION_POINTER,
+VTABLE, MENU_DISPATCH, AI_DISPATCH, COMPETITION_DISPATCH, SCHEDULER_CALLBACK,
+REGISTERED_CALLBACK, DATA_XREF_TARGET, UNKNOWN_INDIRECT. Confidence: PROVEN (target in
+a decoded dispatch table whose consumer calls through it), STRONG (pointer in a known
+callback slot later invoked), POSSIBLE (address referenced from data, invocation
+unproven). **Only PROVEN/STRONG promote a function to reachable**; POSSIBLE leaves it
+`UNRESOLVED_REACHABILITY`. Never treat "not directly called" as "not used", and never
+treat indirect-reachable as ported. Mechanical address-taken evidence (from
+`xrefs.json`) is computed live by `cg_reach.py`, so `indirect_edges.csv` holds only
+curated/proven dispatch edges, not the raw xref bulk.
 
 ## Status taxonomy (exactly one per function)
 

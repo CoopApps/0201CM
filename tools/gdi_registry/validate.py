@@ -91,6 +91,42 @@ def main():
                 elif by_va[va]["status"] != tag_status:
                     warns.append(f"GDI-REG tag {va} in {fn}: status {tag_status} != registry {by_va[va]['status']} (merge or drift)")
 
+    # --- indirect reachability + edge integrity (Stage: indirect graph) ---
+    for r in rows:
+        k = r.get("cg_reach_kind", "")
+        if k == "INDIRECT_REACHABLE" and not r.get("cg_provenance"):
+            warns.append(f"{r['dd_va']}: INDIRECT_REACHABLE without provenance path")
+        if k == "PROBABLY_DEAD" and (r.get("cg_direct_reach") or r.get("cg_indirect_reach")):
+            errors.append(f"{r['dd_va']}: PROBABLY_DEAD but marked reachable (contradiction)")
+        if k == "DIRECT_REACHABLE" and not r.get("cg_direct_reach"):
+            errors.append(f"{r['dd_va']}: DIRECT_REACHABLE but cg_direct_reach empty")
+    edges_p = os.path.join(ROOT, "tools", "gdi_registry", "data", "indirect_edges.csv")
+    VALID_ET = {"FUNCTION_POINTER","VTABLE","MENU_DISPATCH","AI_DISPATCH","COMPETITION_DISPATCH",
+                "SCHEDULER_CALLBACK","REGISTERED_CALLBACK","DATA_XREF_TARGET","UNKNOWN_INDIRECT"}
+    if os.path.exists(edges_p):
+        seen_edges = {}
+        n_edges = 0
+        for ln in open(edges_p, encoding="utf-8"):
+            if ln.startswith("#") or not ln.strip():
+                continue
+            row = next(csv.reader([ln]), None)
+            if not row or len(row) < 4:
+                continue
+            n_edges += 1
+            src, dst, et, cf = row[0].strip(), row[1].strip(), row[2].strip().upper(), row[3].strip().upper()
+            ev = row[5].strip() if len(row) > 5 else ""
+            if et not in VALID_ET:
+                warns.append(f"indirect edge {src}->{dst}: unknown edge_type {et!r}")
+            if cf not in {"PROVEN","STRONG","POSSIBLE"}:
+                warns.append(f"indirect edge {src}->{dst}: bad confidence {cf!r}")
+            if cf in {"PROVEN","STRONG"} and not ev:
+                warns.append(f"indirect edge {src}->{dst} [{cf}]: no source evidence")
+            key = (src.lower(), dst.lower(), et)
+            if key in seen_edges:
+                warns.append(f"duplicate indirect edge {src}->{dst} [{et}] (slot mapping repeated)")
+            seen_edges[key] = 1
+        print(f"(indirect_edges.csv: {n_edges} edges checked)")
+
     for w in warns: print(f"WARN {w}")
     for e in errors: print(f"ERR  {e}")
     print(f"\n{len(rows)} rows · {len(errors)} errors · {len(warns)} warnings")
