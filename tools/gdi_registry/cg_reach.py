@@ -214,6 +214,15 @@ def compute(carve, data_dir):
             "cg_indirect_confidence": in_conf,
             "cg_provenance": provenance(va) if (direct_reach or indirect_reach) else "",
         }
-    roots_meta = ROOT_SETS
+    # roots documentation = declared ROOT_SETS + roots seeded from proven edge hints
+    roots_doc = {name: list(lst) for name, lst in ROOT_SETS.items()}
+    declared_by_set = {name: {_h(a) for (a, _, _) in lst} for name, lst in ROOT_SETS.items()}
+    for s, d, et, cf, rh, ev, pv in ind:
+        if rh and cf in ("PROVEN", "STRONG") and s not in declared_by_set.get(rh, set()):
+            roots_doc.setdefault(rh, [])
+            if s not in {_h(a) for (a, _, _) in roots_doc[rh]}:
+                roots_doc[rh].append((_fmt(s), "seeded by %s dispatch edge" % et,
+                                       pv[:80] or ev[:80] or "indirect_edges.csv"))
+                declared_by_set.setdefault(rh, set()).add(s)
     n_ind = len(ind)
-    return out, roots_meta, n_ind
+    return out, roots_doc, n_ind

@@ -1,6 +1,6 @@
 # GDI reachability roots (generated)
 
-Named live-entry root sets used to compute exe-reachability. Indirect dispatch edges with a matching `root_hint` (PROVEN/STRONG) also seed their set. `indirect_edges.csv` currently holds **48** curated indirect edges.
+Named live-entry root sets used to compute exe-reachability. Indirect dispatch edges with a matching `root_hint` (PROVEN/STRONG) also seed their set. `indirect_edges.csv` currently holds **57** curated indirect edges.
 
 | root set | address | semantic | evidence |
 |---|---|---|---|
@@ -14,3 +14,10 @@ Named live-entry root sets used to compute exe-reachability. Indirect dispatch e
 | UI | 0x0074bf60 | menu/widget sub-dispatcher | memory:menu-command-tree |
 | MATCH | 0x00699640 | match build | curated |
 | MATCH | 0x00699d90 | match play | curated |
+| COMPETITION | 0x005b6f10 | seeded by COMPETITION_DISPATCH dispatch edge | 0x005b6f10 daily-tick loops comp array DAT_00ac688c -> vtable+0x14 per-comp date |
+| COMPETITION | 0x00509570 | seeded by VTABLE dispatch edge | per-comp tick 0x00509570 -> own vtable+0x28 round-progression -> 0x0061d290 |
+| COMPETITION | 0x00558c80 | seeded by VTABLE dispatch edge | eng_fa_cup ctor 0x00558c80 -> vtable 0x00957b20 slot+0x3c 0x00957b5c -> draw bui |
+| COMPETITION | 0x00555e80 | seeded by VTABLE dispatch edge | eng_cc_cup ctor 0x00555e80 -> vtable 0x0095792c slot+0x3c 0x00957968 -> draw bui |
+| COMPETITION | 0x00554600 | seeded by VTABLE dispatch edge | eng_auto_cup ctor 0x00554600 -> vtable 0x0095788c slot+0x3c 0x009578c8 -> draw b |
+| COMPETITION | 0x0055a8f0 | seeded by VTABLE dispatch edge | eng_fa_trophy ctor 0x0055a8f0 -> vtable 0x00957bc0 slot+0x3c 0x00957bfc -> draw  |
+| COMPETITION | 0x0074d830 | seeded by VTABLE dispatch edge | mini_cup ctor 0x0074d830 (called from friendly.cpp 0x005afaf0) -> vtable 0x0095b |

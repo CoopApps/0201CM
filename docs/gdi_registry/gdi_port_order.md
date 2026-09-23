@@ -8,14 +8,14 @@ Ranks the NOT_YET_PORTED backlog by **executable reachability**: whether the ori
 > - `UNRESOLVED_REACHABILITY` — address is taken (stored in a table or loaded in code) but no proven path yet; almost certainly live, not yet proven.
 > - `PROBABLY_DEAD` — no direct caller and no address-taken evidence anywhere.
 
-NOT_YET_PORTED: **1391**  ·  DIRECT **772**  ·  INDIRECT **0**  ·  UNRESOLVED **286**  ·  PROBABLY_DEAD **333**
+NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **0**  ·  UNRESOLVED **273**  ·  PROBABLY_DEAD **332**
 
 ## Backlog by subsystem (live / unresolved / probably-dead / total)
 
 | subsystem | live | unresolved | dead | total |
 |---|---|---|---|---|
 | player-relationships | 101 | 14 | 12 | 127 |
-| GUI | 79 | 27 | 23 | 129 |
+| GUI | 83 | 23 | 23 | 129 |
 | scouting | 64 | 7 | 2 | 73 |
 | contracts | 54 | 5 | 28 | 87 |
 | manager-ai | 47 | 5 | 33 | 85 |
@@ -35,6 +35,7 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **772**  ·  INDIRECT **0**  ·  UNRESOLVED
 | friendly | 15 | 4 | 16 | 35 |
 | UNKNOWN | 13 | 10 | 11 | 34 |
 | match | 13 | 3 | 5 | 21 |
+| english_cup | 12 | 10 | 0 | 22 |
 | news | 12 | 4 | 1 | 17 |
 | staff_records | 12 | 11 | 7 | 30 |
 | nation | 10 | 5 | 0 | 15 |
@@ -43,11 +44,10 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **772**  ·  INDIRECT **0**  ·  UNRESOLVED
 | records | 5 | 3 | 2 | 10 |
 | notes | 5 | 2 | 11 | 18 |
 | RESOURCE | 4 | 0 | 0 | 4 |
+| club_history | 4 | 1 | 4 | 9 |
 | date | 4 | 6 | 4 | 14 |
 | fifa_rankings | 4 | 0 | 0 | 4 |
 | match-engine | 4 | 0 | 0 | 4 |
-| club_history | 3 | 1 | 5 | 9 |
-| english_cup | 3 | 19 | 0 | 22 |
 | officials | 3 | 0 | 0 | 3 |
 | setup | 3 | 5 | 3 | 11 |
 | cash | 2 | 2 | 1 | 5 |
@@ -69,13 +69,22 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **772**  ·  INDIRECT **0**  ·  UNRESOLVED
 
 | DD VA | kind | depth | callers | subsystem | semantic | provenance |
 |---|---|---|---|---|---|---|
+| 0x00509570 | DIRECT | 0 | 2 | GUI | FUN_00509570 | 0x00509570 |
 | 0x005b85b0 | DIRECT | 0 | 1 | tick | daily AI dispatcher (staff/transfers/AI) | 0x005b85b0 |
+| 0x0074d830 | DIRECT | 0 | 1 | english_cup | mini_cup ctor | 0x0074d830 |
+| 0x00554600 | DIRECT | 0 | 0 | english_cup | eng_auto_cup competition ctor | 0x00554600 |
+| 0x00555e80 | DIRECT | 0 | 0 | english_cup | eng_cc_cup (League Cup) ctor | 0x00555e80 |
+| 0x00558c80 | DIRECT | 0 | 0 | english_cup | eng_fa_cup (FA Cup) ctor | 0x00558c80 |
+| 0x0055a8f0 | DIRECT | 0 | 0 | english_cup | eng_fa_trophy ctor | 0x0055a8f0 |
 | 0x005ea590 | DIRECT | 1 | 181 | transfers | related-club seniority gate | 0x005ea590 <- 0x005b85b0 |
+| 0x005064e0 | DIRECT | 1 | 68 | GUI | FUN_005064e0 | 0x005064e0 <- 0x00509570 |
+| 0x005098e0 | DIRECT | 1 | 59 | GUI | FUN_005098e0 | 0x005098e0 <- 0x00558c80 |
 | 0x0076f580 | DIRECT | 1 | 57 | news | FUN_0076f580 | 0x0076f580 <- 0x005b85b0 |
 | 0x00615ae0 | DIRECT | 1 | 51 | condition-fitness | FUN_00615ae0 | 0x00615ae0 <- 0x005b85b0 |
 | 0x004c6ea0 | DIRECT | 1 | 39 | RESOURCE | FUN_004c6ea0 | 0x004c6ea0 <- 0x008120d0 |
 | 0x004c7010 | DIRECT | 1 | 38 | RESOURCE | FUN_004c7010 | 0x004c7010 <- 0x008120d0 |
 | 0x004d7090 | DIRECT | 1 | 37 | contracts | exact staff wage formula | 0x004d7090 <- 0x005b85b0 |
+| 0x0050c000 | DIRECT | 1 | 35 | GUI | FUN_0050c000 | 0x0050c000 <- 0x0055a8f0 |
 | 0x007aa170 | DIRECT | 1 | 27 | GUI | FUN_007aa170 | 0x007aa170 <- 0x005b85b0 |
 | 0x005274d0 | DIRECT | 1 | 26 | player-relationships | FUN_005274d0 | 0x005274d0 <- 0x008120d0 |
 | 0x00531420 | DIRECT | 1 | 25 | player-relationships | FUN_00531420 | 0x00531420 <- 0x005b85b0 |
@@ -83,6 +92,7 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **772**  ·  INDIRECT **0**  ·  UNRESOLVED
 | 0x00832ed0 | DIRECT | 1 | 25 | scouting | FUN_00832ed0 | 0x00832ed0 <- 0x005b85b0 |
 | 0x0052df60 | DIRECT | 1 | 23 | injuries | physio rating (x87) | 0x0052df60 <- 0x005b85b0 |
 | 0x0052e070 | DIRECT | 1 | 22 | player-relationships | FUN_0052e070 | 0x0052e070 <- 0x005b85b0 |
+| 0x005060f0 | DIRECT | 1 | 20 | GUI | FUN_005060f0 | 0x005060f0 <- 0x00509570 |
 | 0x007ead30 | DIRECT | 1 | 20 | tick | news-manager pacing B | 0x007ead30 <- 0x008120d0 |
 | 0x008506b0 | DIRECT | 1 | 20 | contracts | staff contract status-flag set + reaction di | 0x008506b0 <- 0x005b85b0 |
 | 0x005316d0 | DIRECT | 1 | 19 | player-relationships | FUN_005316d0 | 0x005316d0 <- 0x005b85b0 |
@@ -119,20 +129,10 @@ NOT_YET_PORTED: **1391**  ·  DIRECT **772**  ·  INDIRECT **0**  ·  UNRESOLVED
 | 0x00531970 | DIRECT | 1 | 5 | player-relationships | FUN_00531970 | 0x00531970 <- 0x005b85b0 |
 | 0x00531cd0 | DIRECT | 1 | 5 | player-relationships | FUN_00531cd0 | 0x00531cd0 <- 0x005b85b0 |
 | 0x0075ce20 | DIRECT | 1 | 5 | national-teams | FUN_0075ce20 | 0x0075ce20 <- 0x005b85b0 |
-| 0x007a4dd0 | DIRECT | 1 | 5 | search | Player value/price estimate | 0x007a4dd0 <- 0x005b85b0 |
-| 0x007aed90 | DIRECT | 1 | 5 | GUI | FUN_007aed90 | 0x007aed90 <- 0x005b85b0 |
-| 0x007e4940 | DIRECT | 1 | 5 | tick | post-hotseat finalize | 0x007e4940 <- 0x00803e00 |
-| 0x008a0160 | DIRECT | 1 | 5 | training | effective training schedule query | 0x008a0160 <- 0x005b85b0 |
-| 0x008f2900 | DIRECT | 1 | 5 | tick | background subsystem E | 0x008f2900 <- 0x005b6f10 |
-| 0x0078b4c0 | DIRECT | 1 | 4 | condition-fitness | FUN_0078b4c0 | 0x0078b4c0 <- 0x00803e00 |
-| 0x008224b0 | DIRECT | 1 | 4 | setup | count_network_waiting_players | 0x008224b0 <- 0x007491e0 |
-| 0x00881c90 | DIRECT | 1 | 4 | tactics | register/unregister opponent tactic cache | 0x00881c90 <- 0x007491e0 |
-| 0x008fc820 | DIRECT | 1 | 4 | transfer | FUN_008fc820 | 0x008fc820 <- 0x00699d90 |
-| 0x00527690 | DIRECT | 1 | 3 | player-relationships | FUN_00527690 | 0x00527690 <- 0x008120d0 |
 
 ## PROBABLY_DEAD candidates (no caller, no address-taken) — review before pruning
 
-333 functions. These have zero direct callers AND their address is never taken in code or data. Still a HINT (the static graph misses computed `call [reg]`), so review, don't auto-delete.
+332 functions. These have zero direct callers AND their address is never taken in code or data. Still a HINT (the static graph misses computed `call [reg]`), so review, don't auto-delete.
 
 | DD VA | subsystem | semantic |
 |---|---|---|
