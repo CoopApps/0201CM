@@ -2754,6 +2754,8 @@ impl TokenEngine {
     /// exe `FUN_006D63B0(target_x, target_y)` — distance-quality LUT
     /// lookup. Ports the exact 9×12 float table at `DAT_00A01E20` (file
     /// offset 0x601E20 in cm0102.exe): `LUT[|dy|*9 + |dx|]`.
+    // exe FUN_006b1e60: standalone dist(x1,y1,x2,y2) = same DAT_00A01E20
+    //   LUT[|dy|*9+|dx|], out-of-range -> _DAT_0095afac (1000.0); byte-exact here.
     pub fn distance_quality(&self, from_x: i8, from_y: i8, target_x: i8, target_y: i8) -> f32 {
         let dx = (from_x - target_x).unsigned_abs() as usize;
         let dy = (from_y - target_y).unsigned_abs() as usize;
@@ -4100,6 +4102,9 @@ pub fn resolve_queued_shots(
 
 /// exe: `bearing_LUT[dx*24 + dy]` — atan2(dy, dx) in integer degrees.
 /// Populated once by `FUN_0069D950` (see setup decode §4).
+// exe FUN_006b1040: bearing_LUT[dx*24+dy] read wrapper (dx=x2-x1, dy=y2-y1);
+//   this reproduces the table value. Edge: exe returns stored +0x8ed8 when
+//   dx==0 && dy==0, where bearing_atan2 yields 0.
 pub fn bearing_atan2(dx: i32, dy: i32) -> u16 {
     let a = (dy as f32).atan2(dx as f32).to_degrees();
     (((a as i32 % 360) + 360) % 360) as u16
