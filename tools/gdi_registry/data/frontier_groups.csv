@@ -336,3 +336,24 @@ wel_lge_cup.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VE
 wel_prm_cup.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,foreign domestic/continental competition engine; outside England-first scope (reclassify if scope expands)
 world_club_champ.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,foreign domestic/continental competition engine; outside England-first scope (reclassify if scope expands)
 world_club_cup.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,foreign domestic/continental competition engine; outside England-first scope (reclassify if scope expands)
+rb_asia.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,Asian confederation ruling body; outside England-first scope
+rb_oceania.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,Oceania confederation ruling body; outside England-first scope
+rb_south_america.cpp,FOREIGN_BREADTH,foreign-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,South American confederation ruling body; outside England-first scope
+os.cpp,NON_USEFUL,plumbing,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,OS abstraction / filesystem-timing plumbing replaced by Rust std
+main.cpp,NON_USEFUL,startup,IMPLEMENTATION_ONLY,STRUCTURALLY_VERIFIED,WinMain/bootstrap harness; Rust entry is cm-app; not game logic
+euro_champ.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,European Championship (national teams England plays); in-scope but not simulated
+euro_champ_qual.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,Euro qualifying; in-scope (England) but not simulated
+wc_europe_league.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,World Cup European qualifying (England); in-scope but not simulated
+world_cup.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,World Cup finals (England); in-scope but not simulated
+olympics.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,Olympic football; in-scope but not simulated
+fifa_confed.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,FIFA Confederations Cup; in-scope but not simulated
+eur_super_cup.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,European Super Cup (English clubs qualify); in-scope but not simulated
+intertoto_cup.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,Intertoto (English clubs enter); partial date-lift only (see lib.rs 0x0061cd40)
+ruling_body.cpp,NOT_YET_PORTED,discipline,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,global governance + suspension/ban issuance; affects English clubs; not ported
+rb_europe.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,UEFA governance layer (English clubs in Europe); not ported
+rb_international.cpp,NOT_YET_PORTED,international-comp,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,FIFA governance layer; not ported
+nation_awards.cpp,NOT_YET_PORTED,awards,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,per-nation awards; awards engine deferred (see deferred-awards-engine)
+international_awards.cpp,NOT_YET_PORTED,awards,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,international awards; awards engine deferred
+old_international_awards.cpp,NOT_YET_PORTED,awards,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,historical international awards; awards engine deferred
+month_award.cpp,NOT_YET_PORTED,awards,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,player/manager of the month; awards engine deferred
+year_award.cpp,NOT_YET_PORTED,awards,SIMULATION_RELEVANT,STRUCTURALLY_VERIFIED,player/manager of the year; awards engine deferred

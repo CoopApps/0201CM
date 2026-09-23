@@ -314,44 +314,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00562130 | eng_third.cpp | FUN_00562130 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00562440 | england_awards.cpp | FUN_00562440 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005637f0 | england_rules.cpp | FUN_005637f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00563da0 | eur_super_cup.cpp | FUN_00563da0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00564060 | eur_super_cup.cpp | FUN_00564060 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005641a0 | eur_super_cup.cpp | FUN_005641a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00564530 | euro_champ.cpp | FUN_00564530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00564770 | euro_champ.cpp | FUN_00564770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005651d0 | euro_champ.cpp | FUN_005651d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005655b0 | euro_champ.cpp | FUN_005655b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005657e0 | euro_champ.cpp | FUN_005657e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00565a20 | euro_champ.cpp | FUN_00565a20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00565dc0 | euro_champ.cpp | FUN_00565dc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00565e70 | euro_champ.cpp | FUN_00565e70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00565fc0 | euro_champ.cpp | FUN_00565fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005663b0 | euro_champ.cpp | FUN_005663b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00566ab0 | euro_champ_qual.cpp | FUN_00566ab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00566d40 | euro_champ_qual.cpp | FUN_00566d40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00567680 | euro_champ_qual.cpp | FUN_00567680 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00567760 | euro_champ_qual.cpp | FUN_00567760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00568490 | euro_champ_qual.cpp | FUN_00568490 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005689c0 | euro_champ_qual.cpp | FUN_005689c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00568c00 | euro_champ_qual.cpp | FUN_00568c00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005692b0 | euro_champ_qual.cpp | FUN_005692b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005695d0 | euro_champ_qual.cpp | FUN_005695d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005696c0 | euro_champ_qual.cpp | FUN_005696c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00569a10 | euro_champ_qual.cpp | FUN_00569a10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0056a880 | euro_champ_qual.cpp | FUN_0056a880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0056cba0 | euro_champ_qual.cpp | FUN_0056cba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0056d0b0 | euro_champ_qual.cpp | FUN_0056d0b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0056d120 | european_awards.cpp | FUN_0056d120 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00574960 | european_cup.cpp | FUN_00574960 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch15.rs;crates/cm-render/src/view_render.rs | YES | UNVERIFIED |  |
-| 0x005750c0 | fifa_confed.cpp | FUN_005750c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00575250 | fifa_confed.cpp | FUN_00575250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00575a60 | fifa_confed.cpp | FUN_00575a60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00575eb0 | fifa_confed.cpp | FUN_00575eb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00576080 | fifa_confed.cpp | FUN_00576080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00576260 | fifa_confed.cpp | FUN_00576260 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00576460 | fifa_confed.cpp | FUN_00576460 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00576a60 | fifa_confed.cpp | FUN_00576a60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00576c50 | fifa_confed.cpp | FUN_00576c50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00576d20 | fifa_rankings.cpp | FUN_00576d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00577550 | fifa_rankings.cpp | FUN_00577550 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00577890 | fifa_rankings.cpp | FUN_00577890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -445,9 +409,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006176f0 | index.cpp | FUN_006176f0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x006180c0 | index.cpp | FUN_006180c0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x00618450 | index.cpp | FUN_00618450 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
-| 0x0061c210 | international_awards.cpp | FUN_0061c210 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061c690 | intertoto_cup.cpp | FUN_0061c690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061c980 | intertoto_cup.cpp | FUN_0061c980 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0061d290 | intertoto_cup.cpp | FUN_0061d290 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs;crates/cm-render/src/msgbox.rs | YES | UNVERIFIED |  |
 | 0x00652e60 | key_nation.cpp | FUN_00652e60 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch28.rs | YES | UNVERIFIED |  |
 | 0x00652ff0 | key_nation.cpp | FUN_00652ff0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_history.rs | YES | UNVERIFIED |  |
@@ -526,29 +487,12 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0074da70 | mini_cup.cpp | FUN_0074da70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074dbb0 | mini_cup.cpp | FUN_0074dbb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074ded0 | mini_cup.cpp | FUN_0074ded0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074eb90 | month_award.cpp | FUN_0074eb90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ee00 | month_award.cpp | FUN_0074ee00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ef20 | month_award.cpp | FUN_0074ef20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ef70 | month_award.cpp | FUN_0074ef70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074f730 | month_award.cpp | FUN_0074f730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074f760 | month_ratings.cpp | FUN_0074f760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074f9a0 | month_ratings.cpp | FUN_0074f9a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074fbe0 | month_ratings.cpp | FUN_0074fbe0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074fed0 | month_ratings.cpp | FUN_0074fed0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074fef0 | month_ratings.cpp | FUN_0074fef0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074ff50 | month_ratings.cpp | FUN_0074ff50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750000 | nation_awards.cpp | FUN_00750000 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750360 | nation_awards.cpp | FUN_00750360 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750580 | nation_awards.cpp | FUN_00750580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750760 | nation_awards.cpp | FUN_00750760 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750930 | nation_awards.cpp | FUN_00750930 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750d00 | nation_awards.cpp | FUN_00750d00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00750fc0 | nation_awards.cpp | FUN_00750fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00751530 | nation_awards.cpp | FUN_00751530 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00751730 | nation_awards.cpp | FUN_00751730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007518b0 | nation_awards.cpp | FUN_007518b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00751ec0 | nation_awards.cpp | FUN_00751ec0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00751fc0 | nation_awards.cpp | FUN_00751fc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00752830 | national_teams.cpp | FUN_00752830 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007536f0 | national_teams.cpp | FUN_007536f0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007553c0 | national_teams.cpp | FUN_007553c0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
@@ -569,17 +513,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00771880 | news_screens.cpp | FUN_00771880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs;crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0077d770 | notes.cpp | FUN_0077d770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/scouting.rs;crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x0077e1d0 | notes.cpp | FUN_0077e1d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
-| 0x00786920 | old_international_awards.cpp | FUN_00786920 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00787860 | olympics.cpp | FUN_00787860 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00787a40 | olympics.cpp | FUN_00787a40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00788470 | olympics.cpp | FUN_00788470 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00788900 | olympics.cpp | FUN_00788900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00788af0 | olympics.cpp | FUN_00788af0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00788d10 | olympics.cpp | FUN_00788d10 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007894f0 | olympics.cpp | FUN_007894f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00789dc0 | os.cpp | FUN_00789dc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0078a000 | os.cpp | FUN_0078a000 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0078a980 | os.cpp | FUN_0078a980 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0078ad80 | physio.cpp | FUN_0078ad80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x0079af40 | player_search.cpp | FUN_0079af40 | UNKNOWN | crates/cm-domain/src/scouting.rs | INDIRECT | UNVERIFIED |  |
 | 0x007a9040 | player_stats.cpp | FUN_007a9040 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -607,31 +540,13 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007aef50 | player_stats.cpp | FUN_007aef50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af000 | player_stats.cpp | FUN_007af000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af190 | player_stats.cpp | FUN_007af190 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c3a30 | rb_asia.cpp | FUN_007c3a30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c58c0 | rb_england.cpp | FUN_007c58c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c5b20 | rb_europe.cpp | FUN_007c5b20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c7900 | rb_international.cpp | FUN_007c7900 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9690 | rb_oceania.cpp | FUN_007c9690 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cacb0 | rb_south_america.cpp | FUN_007cacb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007ccd10 | record_utils.cpp | FUN_007ccd10 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x007cd740 | record_utils.cpp | FUN_007cd740 | PORTED_BEHAVIOURAL | crates/cm-domain/src/club_season_records.rs | YES | UNVERIFIED |  |
 | 0x007cd7f0 | record_utils.cpp | FUN_007cd7f0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/injury_table.rs | YES | UNVERIFIED |  |
 | 0x007cdb80 | record_utils.cpp | FUN_007cdb80 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs | YES | UNVERIFIED |  |
 | 0x007ce4a0 | record_utils.cpp | FUN_007ce4a0 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs | YES | UNVERIFIED |  |
 | 0x007cf040 | record_utils.cpp | FUN_007cf040 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch29.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x007cf880 | ruling_body.cpp | FUN_007cf880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cf980 | ruling_body.cpp | FUN_007cf980 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cf9c0 | ruling_body.cpp | FUN_007cf9c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cfca0 | ruling_body.cpp | FUN_007cfca0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d0110 | ruling_body.cpp | FUN_007d0110 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d0400 | ruling_body.cpp | FUN_007d0400 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d0630 | ruling_body.cpp | FUN_007d0630 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d06d0 | ruling_body.cpp | FUN_007d06d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d09f0 | ruling_body.cpp | FUN_007d09f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d0f30 | ruling_body.cpp | FUN_007d0f30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d1170 | ruling_body.cpp | FUN_007d1170 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d12a0 | ruling_body.cpp | FUN_007d12a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d12f0 | ruling_body.cpp | FUN_007d12f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007dfac0 | scout_manager.cpp | FUN_007dfac0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch21.rs;crates/cm-domain/src/screen_batch4.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
 | 0x007e0490 | scout_manager.cpp | FUN_007e0490 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x007e05c0 | scout_manager.cpp | FUN_007e05c0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
@@ -797,46 +712,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x008fb240 | utils.cpp | FUN_008fb240 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/screen_menu_bar.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008fb3f0 | utils.cpp | FUN_008fb3f0 | UNKNOWN | crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/scrman.rs | INDIRECT | UNVERIFIED |  |
 | 0x008fc660 | utils.cpp | FUN_008fc660 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
-| 0x00907700 | wc_europe_league.cpp | FUN_00907700 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009079b0 | wc_europe_league.cpp | FUN_009079b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009082c0 | wc_europe_league.cpp | FUN_009082c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009083b0 | wc_europe_league.cpp | FUN_009083b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009085c0 | wc_europe_league.cpp | FUN_009085c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00908bc0 | wc_europe_league.cpp | FUN_00908bc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00908e00 | wc_europe_league.cpp | FUN_00908e00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00909320 | wc_europe_league.cpp | FUN_00909320 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00909630 | wc_europe_league.cpp | FUN_00909630 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00909730 | wc_europe_league.cpp | FUN_00909730 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009099f0 | wc_europe_league.cpp | FUN_009099f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00909cd0 | wc_europe_league.cpp | FUN_00909cd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090ac50 | wc_europe_league.cpp | FUN_0090ac50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090d050 | wc_europe_league.cpp | FUN_0090d050 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091b4c0 | world_cup.cpp | FUN_0091b4c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091b740 | world_cup.cpp | FUN_0091b740 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091c660 | world_cup.cpp | FUN_0091c660 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091cab0 | world_cup.cpp | FUN_0091cab0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091cce0 | world_cup.cpp | FUN_0091cce0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091cfb0 | world_cup.cpp | FUN_0091cfb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091dcb0 | world_cup.cpp | FUN_0091dcb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091dd60 | world_cup.cpp | FUN_0091dd60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091deb0 | world_cup.cpp | FUN_0091deb0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091e250 | world_cup.cpp | FUN_0091e250 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091e2e0 | world_cup.cpp | FUN_0091e2e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091eca0 | world_cup.cpp | FUN_0091eca0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091f080 | year_award.cpp | FUN_0091f080 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091f380 | year_award.cpp | FUN_0091f380 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091f580 | year_award.cpp | FUN_0091f580 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00921770 | zipdir.cpp | FUN_00921770 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
 | 0x00933d2f | zipdir.cpp | FUN_00933d2f | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch32.rs;crates/cm-domain/src/screen_manager_batch.rs | YES | UNVERIFIED |  |
 | 0x00934c8e | zipdir.cpp | FUN_00934c8e | PORTED_BEHAVIOURAL | crates/cm-domain/src/typed_records.rs | YES | UNVERIFIED |  |
 | 0x0093543f | zipdir.cpp | FUN_0093543f | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/finance.rs | YES | UNVERIFIED |  |
 | 0x009354f4 | zipdir.cpp | FUN_009354f4 | PORTED_BEHAVIOURAL | crates/cm-render/src/lang_bank.rs | YES | UNVERIFIED |  |
-
-## REGISTRY
-
-| DD VA | source | semantic | status | Rust | reach | conf | evidence |
-|---|---|---|---|---|---|---|---|
-| 0x006725c0 | main.cpp | FUN_006725c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 
 ## RESOURCE
 
@@ -850,9 +730,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00584530 | finance.cpp | FUN_00584530 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c15_1_world_apply.rs | YES | UNVERIFIED |  |
 | 0x005e32e0 | host_country.cpp | FUN_005e32e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/host_country.rs | YES | UNVERIFIED |  |
 | 0x005e4f50 | human_manager.cpp | FUN_005e4f50 | PORTED_BEHAVIOURAL | crates/cm-domain/src/human_manager.rs | YES | UNVERIFIED |  |
-| 0x00789a00 | olympics.cpp | FUN_00789a00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00789a40 | olympics.cpp | FUN_00789a40 | UNKNOWN | crates/cm-domain/src/screen_batch8.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
-| 0x00789a80 | olympics.cpp | FUN_00789a80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00789b50 | os.cpp | FUN_00789b50 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00851340 | staff_records.cpp | FUN_00851340 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x008fc280 | utils.cpp | FUN_008fc280 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
@@ -932,23 +810,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00561e30 | eng_third.cpp | FUN_00561e30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00563910 | england_rules.cpp | FUN_00563910 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00563d30 | england_rules.cpp | FUN_00563d30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00563f70 | eur_super_cup.cpp | FUN_00563f70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00563f90 | eur_super_cup.cpp | FUN_00563f90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00564750 | euro_champ.cpp | FUN_00564750 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005652d0 | euro_champ.cpp | FUN_005652d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005653d0 | euro_champ.cpp | FUN_005653d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00566a20 | euro_champ.cpp | FUN_00566a20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00566d20 | euro_champ_qual.cpp | FUN_00566d20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x005685a0 | euro_champ_qual.cpp | FUN_005685a0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00569cc0 | euro_champ_qual.cpp | FUN_00569cc0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00569cf0 | euro_champ_qual.cpp | FUN_00569cf0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0056a830 | euro_champ_qual.cpp | FUN_0056a830 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0056cf30 | euro_champ_qual.cpp | FUN_0056cf30 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0056cf70 | euro_champ_qual.cpp | FUN_0056cf70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00575230 | fifa_confed.cpp | FUN_00575230 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00575b60 | fifa_confed.cpp | FUN_00575b60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00575da0 | fifa_confed.cpp | FUN_00575da0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00576cd0 | fifa_confed.cpp | FUN_00576cd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x005774c0 | fifa_rankings.cpp | FUN_005774c0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00577f40 | fifa_rankings.cpp | FUN_00577f40 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0059bed0 | fog_of_war.cpp | FUN_0059bed0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/ui_schema.rs;crates/cm-render/src/primitives.rs | YES | UNVERIFIED |  |
@@ -960,8 +821,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005d1900 | goldcup.cpp | FUN_005d1900 | PORTED_BEHAVIOURAL | crates/cm-render/src/blit.rs | YES | UNVERIFIED |  |
 | 0x005e4800 | host_country.cpp | FUN_005e4800 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x005f71d0 | index.cpp | FUN_005f71d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/finance.rs | YES | UNVERIFIED |  |
-| 0x0061c890 | intertoto_cup.cpp | FUN_0061c890 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0061c8b0 | intertoto_cup.cpp | FUN_0061c8b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x006537a0 | key_nation.cpp |  | PORTED_BEHAVIOURAL | crates/cm-ui-app/src/game_state.rs | YES | UNVERIFIED |  |
 | 0x006809d0 | manager_manager.cpp | FUN_006809d0 | UNKNOWN | crates/cm-domain/src/sidebar_dispatcher.rs;crates/cm-render/src/dispatcher.rs | INDIRECT | UNVERIFIED |  |
 | 0x00698140 | manager_screens.cpp | FUN_00698140 | UNKNOWN | crates/cm-domain/src/screen_batch4.rs;crates/cm-domain/src/sidebar_dispatcher.rs | INDIRECT | UNVERIFIED |  |
@@ -974,7 +833,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006fbdf0 | match_pl.cpp | FUN_006fbdf0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
 | 0x0074da50 | mini_cup.cpp | FUN_0074da50 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074dae0 | mini_cup.cpp | FUN_0074dae0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0074ed90 | month_award.cpp | FUN_0074ed90 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074fb20 | month_ratings.cpp | FUN_0074fb20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074fba0 | month_ratings.cpp | FUN_0074fba0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0074fd70 | month_ratings.cpp | FUN_0074fd70 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
@@ -983,20 +841,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007553f0 | national_teams.cpp | FUN_007553f0 | PORTED_BEHAVIOURAL | crates/cm-render/src/news_action_classify.rs | YES | UNVERIFIED |  |
 | 0x0077da00 | notes.cpp | FUN_0077da00 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch18.rs | YES | UNVERIFIED |  |
 | 0x00785160 | officials_manager.cpp | FUN_00785160 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
-| 0x00787a20 | olympics.cpp | FUN_00787a20 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00788560 | olympics.cpp | FUN_00788560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0078a8f0 | os.cpp | FUN_0078a8f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007aec90 | player_stats.cpp | FUN_007aec90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af0f0 | player_stats.cpp | FUN_007af0f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x007af140 | player_stats.cpp | FUN_007af140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
-| 0x007c39e0 | rb_asia.cpp | FUN_007c39e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007c5870 | rb_england.cpp | FUN_007c5870 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c5ad0 | rb_europe.cpp | FUN_007c5ad0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c78b0 | rb_international.cpp | FUN_007c78b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007c9640 | rb_oceania.cpp | FUN_007c9640 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007cac60 | rb_south_america.cpp | FUN_007cac60 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d06b0 | ruling_body.cpp | FUN_007d06b0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x007d0e80 | ruling_body.cpp | FUN_007d0e80 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x007e6a20 | scrman.cpp | FUN_007e6a20 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch19.rs;crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x007e74e0 | scrman.cpp | FUN_007e74e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch4.rs | YES | UNVERIFIED |  |
 | 0x007ebaf0 | scrman.cpp | FUN_007ebaf0 | PORTED_BEHAVIOURAL | crates/cm-render/src/dispatcher.rs | YES | UNVERIFIED |  |
@@ -1016,17 +864,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0089afd0 | tcpip.cpp | FUN_0089afd0 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008df880 | transfer_screens.cpp | FUN_008df880 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch23.rs | YES | UNVERIFIED |  |
 | 0x008e0af0 | transfer_screens.cpp | FUN_008e0af0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch24.rs;crates/cm-domain/src/screen_batch26.rs | YES | UNVERIFIED |  |
-| 0x00907990 | wc_europe_league.cpp | FUN_00907990 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x009086d0 | wc_europe_league.cpp | FUN_009086d0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x00909ca0 | wc_europe_league.cpp | FUN_00909ca0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090ac00 | wc_europe_league.cpp | FUN_0090ac00 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0090d3e0 | wc_europe_league.cpp | FUN_0090d3e0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00912e30 | weather.cpp | FUN_00912e30 | PORTED_BEHAVIOURAL | crates/cm-domain/src/match_engine_exe.rs | YES | UNVERIFIED |  |
-| 0x0091b720 | world_cup.cpp | FUN_0091b720 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091c770 | world_cup.cpp | FUN_0091c770 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091c880 | world_cup.cpp | FUN_0091c880 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091ebd0 | world_cup.cpp | FUN_0091ebd0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
-| 0x0091f560 | year_award.cpp | FUN_0091f560 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x0093bc41 | zipdir.cpp | FUN_0093bc41 | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 
 ## awards
@@ -1058,6 +896,26 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00418fa0 | award_shortlist.cpp | FUN_00418fa0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00419150 | award_shortlist.cpp | FUN_00419150 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x004191d0 | award_shortlist.cpp | FUN_004191d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0061c210 | international_awards.cpp | FUN_0061c210 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0074eb90 | month_award.cpp | FUN_0074eb90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0074ed90 | month_award.cpp | FUN_0074ed90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0074ee00 | month_award.cpp | FUN_0074ee00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0074ef20 | month_award.cpp | FUN_0074ef20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0074ef70 | month_award.cpp | FUN_0074ef70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0074f730 | month_award.cpp | FUN_0074f730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750000 | nation_awards.cpp | FUN_00750000 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750360 | nation_awards.cpp | FUN_00750360 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750580 | nation_awards.cpp | FUN_00750580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750760 | nation_awards.cpp | FUN_00750760 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750930 | nation_awards.cpp | FUN_00750930 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750d00 | nation_awards.cpp | FUN_00750d00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00750fc0 | nation_awards.cpp | FUN_00750fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00751530 | nation_awards.cpp | FUN_00751530 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00751730 | nation_awards.cpp | FUN_00751730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007518b0 | nation_awards.cpp | FUN_007518b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00751ec0 | nation_awards.cpp | FUN_00751ec0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00751fc0 | nation_awards.cpp | FUN_00751fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00786920 | old_international_awards.cpp | FUN_00786920 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0089bd60 | team_award.cpp | FUN_0089bd60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0089c140 | team_award.cpp | FUN_0089c140 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x0089c490 | team_award.cpp | FUN_0089c490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1074,6 +932,11 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0091ef10 | world_cup_awards.cpp | FUN_0091ef10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x0091eff0 | world_cup_awards.cpp | FUN_0091eff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x0091f010 | world_cup_awards.cpp | FUN_0091f010 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x0091f080 | year_award.cpp | FUN_0091f080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091f380 | year_award.cpp | FUN_0091f380 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091f560 | year_award.cpp | FUN_0091f560 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091f580 | year_award.cpp | FUN_0091f580 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009203f0 | year_award.cpp | FUN_009203f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00920420 | year_ratings.cpp | FUN_00920420 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00920570 | year_ratings.cpp | FUN_00920570 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x00920660 | year_ratings.cpp | FUN_00920660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
@@ -1561,6 +1424,21 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00592940 | fine.cpp | FUN_00592940 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 | 0x006cf040 | match_man.cpp | card applier verdict (red never live) | PORTED_EXACT | card_verdict;disc_map | INDIRECT | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x006cf230 | match_man.cpp | foul severity accumulation (algo exact; live red blocked) | PORTED_EXACT | foul_severity | INDIRECT | BEHAVIOURALLY_EXACT | memory:history-panels-noheuristic-ports.md |
+| 0x007cf880 | ruling_body.cpp | FUN_007cf880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007cf980 | ruling_body.cpp | FUN_007cf980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007cf9c0 | ruling_body.cpp | FUN_007cf9c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007cfca0 | ruling_body.cpp | FUN_007cfca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d0110 | ruling_body.cpp | FUN_007d0110 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d0400 | ruling_body.cpp | FUN_007d0400 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d0630 | ruling_body.cpp | FUN_007d0630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d06b0 | ruling_body.cpp | FUN_007d06b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d06d0 | ruling_body.cpp | FUN_007d06d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d09f0 | ruling_body.cpp | FUN_007d09f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d0e80 | ruling_body.cpp | FUN_007d0e80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d0f30 | ruling_body.cpp | FUN_007d0f30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d1170 | ruling_body.cpp | FUN_007d1170 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d12a0 | ruling_body.cpp | FUN_007d12a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007d12f0 | ruling_body.cpp | FUN_007d12f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 
 ## editor
 
@@ -2515,6 +2393,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007bc240 | portugal_rules.cpp | FUN_007bc240 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c3790 | rb_argentina.cpp | FUN_007c3790 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c37e0 | rb_argentina.cpp | FUN_007c37e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c39e0 | rb_asia.cpp | FUN_007c39e0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c3a30 | rb_asia.cpp | FUN_007c3a30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c3d20 | rb_australia.cpp | FUN_007c3d20 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c3d70 | rb_australia.cpp | FUN_007c3d70 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c40d0 | rb_belgium_cup.cpp | FUN_007c40d0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
@@ -2555,6 +2435,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007c9180 | rb_norway_cup.cpp | FUN_007c9180 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c9400 | rb_norway_league.cpp | FUN_007c9400 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c9450 | rb_norway_league.cpp | FUN_007c9450 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9640 | rb_oceania.cpp | FUN_007c9640 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007c9690 | rb_oceania.cpp | FUN_007c9690 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c9a90 | rb_poland.cpp | FUN_007c9a90 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c9ae0 | rb_poland.cpp | FUN_007c9ae0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007c9e30 | rb_portugal.cpp | FUN_007c9e30 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
@@ -2567,6 +2449,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x007ca960 | rb_scotland_league.cpp | FUN_007ca960 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007caa10 | rb_scotland_league.cpp | FUN_007caa10 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007caa60 | rb_scotland_league.cpp | FUN_007caa60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cac60 | rb_south_america.cpp | FUN_007cac60 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
+| 0x007cacb0 | rb_south_america.cpp | FUN_007cacb0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007caff0 | rb_spain_cup.cpp | FUN_007caff0 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007cb040 | rb_spain_cup.cpp | FUN_007cb040 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
 | 0x007cb380 | rb_spain_league.cpp | FUN_007cb380 | FOREIGN_BREADTH |  | NO | UNVERIFIED |  |
@@ -3011,6 +2895,118 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00616820 | index.cpp | pick injury id within body region | PORTED_EXACT | pick_injury | INDIRECT | BYTE_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x00616930 | index.cpp | injury recovery-days formula | PORTED_EXACT | compute_injury | INDIRECT | BYTE_EXACT | memory:history-panels-noheuristic-ports.md |
 | 0x00618610 | index.cpp | injury-name switch + duration table | PORTED_EXACT | INJURY_TYPES | INDIRECT | BYTE_EXACT | memory:history-panels-noheuristic-ports.md |
+
+## international-comp
+
+| DD VA | source | semantic | status | Rust | reach | conf | evidence |
+|---|---|---|---|---|---|---|---|
+| 0x00563da0 | eur_super_cup.cpp | FUN_00563da0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00563f70 | eur_super_cup.cpp | FUN_00563f70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00563f90 | eur_super_cup.cpp | FUN_00563f90 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00564060 | eur_super_cup.cpp | FUN_00564060 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005641a0 | eur_super_cup.cpp | FUN_005641a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00564530 | euro_champ.cpp | FUN_00564530 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00564750 | euro_champ.cpp | FUN_00564750 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00564770 | euro_champ.cpp | FUN_00564770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005651d0 | euro_champ.cpp | FUN_005651d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005652d0 | euro_champ.cpp | FUN_005652d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005653d0 | euro_champ.cpp | FUN_005653d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005655b0 | euro_champ.cpp | FUN_005655b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005657e0 | euro_champ.cpp | FUN_005657e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00565a20 | euro_champ.cpp | FUN_00565a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00565dc0 | euro_champ.cpp | FUN_00565dc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00565e70 | euro_champ.cpp | FUN_00565e70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00565fc0 | euro_champ.cpp | FUN_00565fc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005663b0 | euro_champ.cpp | FUN_005663b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00566a20 | euro_champ.cpp | FUN_00566a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00566ab0 | euro_champ_qual.cpp | FUN_00566ab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00566d20 | euro_champ_qual.cpp | FUN_00566d20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00566d40 | euro_champ_qual.cpp | FUN_00566d40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00567680 | euro_champ_qual.cpp | FUN_00567680 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00567760 | euro_champ_qual.cpp | FUN_00567760 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00568490 | euro_champ_qual.cpp | FUN_00568490 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005685a0 | euro_champ_qual.cpp | FUN_005685a0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005689c0 | euro_champ_qual.cpp | FUN_005689c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00568c00 | euro_champ_qual.cpp | FUN_00568c00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005692b0 | euro_champ_qual.cpp | FUN_005692b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005695d0 | euro_champ_qual.cpp | FUN_005695d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005696c0 | euro_champ_qual.cpp | FUN_005696c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00569a10 | euro_champ_qual.cpp | FUN_00569a10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00569cc0 | euro_champ_qual.cpp | FUN_00569cc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00569cf0 | euro_champ_qual.cpp | FUN_00569cf0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0056a830 | euro_champ_qual.cpp | FUN_0056a830 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0056a880 | euro_champ_qual.cpp | FUN_0056a880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0056cba0 | euro_champ_qual.cpp | FUN_0056cba0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0056cf30 | euro_champ_qual.cpp | FUN_0056cf30 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0056cf70 | euro_champ_qual.cpp | FUN_0056cf70 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0056d0b0 | euro_champ_qual.cpp | FUN_0056d0b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x005750c0 | fifa_confed.cpp | FUN_005750c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00575230 | fifa_confed.cpp | FUN_00575230 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00575250 | fifa_confed.cpp | FUN_00575250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00575a60 | fifa_confed.cpp | FUN_00575a60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00575b60 | fifa_confed.cpp | FUN_00575b60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00575da0 | fifa_confed.cpp | FUN_00575da0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00575eb0 | fifa_confed.cpp | FUN_00575eb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00576080 | fifa_confed.cpp | FUN_00576080 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00576260 | fifa_confed.cpp | FUN_00576260 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00576460 | fifa_confed.cpp | FUN_00576460 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00576a60 | fifa_confed.cpp | FUN_00576a60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00576c50 | fifa_confed.cpp | FUN_00576c50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00576cd0 | fifa_confed.cpp | FUN_00576cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0061c690 | intertoto_cup.cpp | FUN_0061c690 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0061c890 | intertoto_cup.cpp | FUN_0061c890 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0061c8b0 | intertoto_cup.cpp | FUN_0061c8b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0061c980 | intertoto_cup.cpp | FUN_0061c980 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00787860 | olympics.cpp | FUN_00787860 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00787a20 | olympics.cpp | FUN_00787a20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00787a40 | olympics.cpp | FUN_00787a40 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00788470 | olympics.cpp | FUN_00788470 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00788560 | olympics.cpp | FUN_00788560 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00788900 | olympics.cpp | FUN_00788900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00788af0 | olympics.cpp | FUN_00788af0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00788d10 | olympics.cpp | FUN_00788d10 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007894f0 | olympics.cpp | FUN_007894f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00789a00 | olympics.cpp | FUN_00789a00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00789a80 | olympics.cpp | FUN_00789a80 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007c5ad0 | rb_europe.cpp | FUN_007c5ad0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007c5b20 | rb_europe.cpp | FUN_007c5b20 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007c78b0 | rb_international.cpp | FUN_007c78b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x007c7900 | rb_international.cpp | FUN_007c7900 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00907700 | wc_europe_league.cpp | FUN_00907700 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00907990 | wc_europe_league.cpp | FUN_00907990 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009079b0 | wc_europe_league.cpp | FUN_009079b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009082c0 | wc_europe_league.cpp | FUN_009082c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009083b0 | wc_europe_league.cpp | FUN_009083b0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009085c0 | wc_europe_league.cpp | FUN_009085c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009086d0 | wc_europe_league.cpp | FUN_009086d0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00908bc0 | wc_europe_league.cpp | FUN_00908bc0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00908e00 | wc_europe_league.cpp | FUN_00908e00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00909320 | wc_europe_league.cpp | FUN_00909320 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00909630 | wc_europe_league.cpp | FUN_00909630 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00909730 | wc_europe_league.cpp | FUN_00909730 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x009099f0 | wc_europe_league.cpp | FUN_009099f0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00909ca0 | wc_europe_league.cpp | FUN_00909ca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x00909cd0 | wc_europe_league.cpp | FUN_00909cd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0090ac00 | wc_europe_league.cpp | FUN_0090ac00 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0090ac50 | wc_europe_league.cpp | FUN_0090ac50 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0090d050 | wc_europe_league.cpp | FUN_0090d050 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0090d3e0 | wc_europe_league.cpp | FUN_0090d3e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091b4c0 | world_cup.cpp | FUN_0091b4c0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091b720 | world_cup.cpp | FUN_0091b720 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091b740 | world_cup.cpp | FUN_0091b740 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091c660 | world_cup.cpp | FUN_0091c660 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091c770 | world_cup.cpp | FUN_0091c770 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091c880 | world_cup.cpp | FUN_0091c880 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091cab0 | world_cup.cpp | FUN_0091cab0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091cce0 | world_cup.cpp | FUN_0091cce0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091cfb0 | world_cup.cpp | FUN_0091cfb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091dcb0 | world_cup.cpp | FUN_0091dcb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091dd60 | world_cup.cpp | FUN_0091dd60 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091deb0 | world_cup.cpp | FUN_0091deb0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091e250 | world_cup.cpp | FUN_0091e250 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091e2e0 | world_cup.cpp | FUN_0091e2e0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091ebd0 | world_cup.cpp | FUN_0091ebd0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
+| 0x0091eca0 | world_cup.cpp | FUN_0091eca0 | NOT_YET_PORTED |  | NO | UNVERIFIED |  |
 
 ## io
 
@@ -3911,6 +3907,10 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
+| 0x00789dc0 | os.cpp | FUN_00789dc0 | NON_USEFUL |  | NO | UNVERIFIED |  |
+| 0x0078a000 | os.cpp | FUN_0078a000 | NON_USEFUL |  | NO | UNVERIFIED |  |
+| 0x0078a8f0 | os.cpp | FUN_0078a8f0 | NON_USEFUL |  | NO | UNVERIFIED |  |
+| 0x0078a980 | os.cpp | FUN_0078a980 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00933d24 | zipdir.cpp | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
 | 0x00933d8f | zipdir.cpp | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/dispatcher.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/dispatcher.rs |
 | 0x0093435a | zipdir.cpp | CRT/container plumbing thunk | NON_USEFUL | crates/cm-render/src/scrman.rs | NO | STRUCTURALLY_VERIFIED | rust:cm-render/scrman.rs |
@@ -4792,6 +4792,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x005b6940 | friendly.cpp | init / DB-load entry | UNKNOWN | crates/cm-app/src/main.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
 | 0x005b6f10 | game.cpp | startup intro/logo flow | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-render/src/background.rs;crates/cm-render/src/fade.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
 | 0x00672270 | league_stage.cpp | main-loop helper | UNKNOWN | crates/cm-app/src/main.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
+| 0x006725c0 | main.cpp | FUN_006725c0 | NON_USEFUL |  | NO | UNVERIFIED |  |
 | 0x00672770 | main.cpp | per-iteration message-pump tick shell | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/game.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
 | 0x00803e00 | setup.cpp | startup setup (CM3_QSTART/-seed) | UNKNOWN | crates/cm-app/src/main.rs;crates/cm-domain/src/screen_batch19.rs | NO | UNVERIFIED | rust:crates/cm-app/src/main.rs |
 
@@ -5393,7 +5394,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x0089a970 | tcpip.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x0089aeb0 | tcpip.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
 | 0x008fa820 | usa_open_cup.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/scrman.rs | YES | UNVERIFIED |  |
-| 0x009203f0 | year_award.cpp | FUN_009203f0 | UNKNOWN |  | INDIRECT | UNVERIFIED |  |
 | 0x00933579 | zipdir.cpp |  | PORTED_BEHAVIOURAL | crates/cm-render/src/packed_sprintf.rs;crates/cm-render/src/packed_widget.rs | YES | UNVERIFIED |  |
 
 ## Superseded interpretations
