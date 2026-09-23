@@ -1,10 +1,10 @@
 # GDI function coverage (generated)
 
-Registered functions: **5031**  ·  cited in Rust: **1012**
+Registered functions: **5031**  ·  cited in Rust: **1015**
 
 **Complete-picture denominator.** The registry now ingests the entire useful game-logic universe (the `.text` span `0x00401000..0x00922a85`; CRT/runtime plumbing outside the span is excluded). Of **5031** useful functions, **4933** are classified and **98** remain `UNKNOWN` (ingested, awaiting classification). Drive UNKNOWN to zero via mechanical bucketing (NON_USEFUL/FOREIGN_BREADTH/DEAD) + subsystem curation waves.
 
-> **Read carefully.** A `PORTED_*` row derived automatically from a Rust citation is `confidence: UNVERIFIED` — it means *an exe address is cited in Rust without a 'not-implemented' marker*, NOT that the port was human-verified. Of **882** PORTED_* rows, only **325** are curated/verified; **557** are auto-cited and PENDING CURATION. Do not headline the auto number as real coverage (see the coverage-vs-fidelity antipattern).
+> **Read carefully.** A `PORTED_*` row derived automatically from a Rust citation is `confidence: UNVERIFIED` — it means *an exe address is cited in Rust without a 'not-implemented' marker*, NOT that the port was human-verified. Of **887** PORTED_* rows, only **329** are curated/verified; **558** are auto-cited and PENDING CURATION. Do not headline the auto number as real coverage (see the coverage-vs-fidelity antipattern).
 
 ## Classification provenance
 
@@ -13,9 +13,9 @@ How each row's status was decided — a file-level default is a defensible per-`
 | provenance | count |
 |---|---|
 | file-level default (UNVERIFIED) | 2043 |
-| curated (hand-verified) | 1635 |
-| auto-cited (UNVERIFIED) | 592 |
-| frontier-audit (per-fn audited) | 590 |
+| curated (hand-verified) | 1636 |
+| auto-cited (UNVERIFIED) | 593 |
+| frontier-audit (per-fn audited) | 588 |
 | auto (UNVERIFIED) | 169 |
 | UNKNOWN (uningested/awaiting) | 2 |
 
@@ -23,39 +23,38 @@ How each row's status was decided — a file-level default is a defensible per-`
 
 | status | count |
 |---|---|
-| NOT_YET_PORTED | 1388 |
+| NOT_YET_PORTED | 1384 |
 | FOREIGN_BREADTH | 1338 |
-| PORTED_BEHAVIOURAL | 715 |
+| PORTED_BEHAVIOURAL | 716 |
 | OUT_OF_SCOPE | 523 |
 | NON_USEFUL | 411 |
 | UI_GDI_DOMAIN | 325 |
 | UNKNOWN | 98 |
-| PORTED_PARTIAL | 84 |
-| PORTED_EXACT | 83 |
+| PORTED_PARTIAL | 86 |
+| PORTED_EXACT | 85 |
 | REPLACED_BY_RUST | 65 |
-| BLOCKED_DEPENDENCY | 1 |
 
-ported (EXACT+BEHAVIOURAL+PARTIAL): **882** · genuine missing (NOT_YET_PORTED): **1388** · blocked: **1** · replaced/out-of-scope/ui: **913** · non-useful: **411** · foreign-breadth: **1338** · unknown: **98**
+ported (EXACT+BEHAVIOURAL+PARTIAL): **887** · genuine missing (NOT_YET_PORTED): **1384** · blocked: **0** · replaced/out-of-scope/ui: **913** · non-useful: **411** · foreign-breadth: **1338** · unknown: **98**
 
 ## By subsystem
 
 | subsystem | total | ported | missing | out/ui/replaced | non-useful | unknown |
 |---|---|---|---|---|---|---|
 | foreign-comp | 1218 | 0 | 0 | 0 | 0 | 0 |
-| GUI | 577 | 419 | 129 | 0 | 0 | 29 |
+| GUI | 578 | 420 | 129 | 0 | 0 | 29 |
 | render | 226 | 19 | 0 | 207 | 0 | 0 |
 | screens | 202 | 77 | 0 | 117 | 0 | 8 |
 | transfer-ai | 185 | 0 | 0 | 185 | 0 | 0 |
 | match-physics | 166 | 3 | 0 | 163 | 0 | 0 |
 | competition | 143 | 2 | 23 | 1 | 16 | 4 |
-| player-relationships | 139 | 0 | 127 | 0 | 12 | 0 |
+| player-relationships | 137 | 0 | 125 | 0 | 12 | 0 |
 | scouting | 112 | 4 | 73 | 8 | 27 | 0 |
 | international-comp | 107 | 7 | 72 | 0 | 28 | 0 |
 | tactics | 105 | 8 | 86 | 1 | 10 | 0 |
 | records | 103 | 13 | 10 | 31 | 49 | 0 |
 | contracts | 101 | 4 | 87 | 0 | 10 | 0 |
 | ? | 99 | 96 | 2 | 0 | 0 | 1 |
-| manager-ai | 92 | 4 | 83 | 1 | 3 | 0 |
+| manager-ai | 93 | 8 | 81 | 1 | 3 | 0 |
 | UNKNOWN | 74 | 35 | 34 | 0 | 0 | 5 |
 | awards | 74 | 0 | 47 | 0 | 23 | 0 |
 | media | 66 | 0 | 0 | 66 | 0 | 0 |

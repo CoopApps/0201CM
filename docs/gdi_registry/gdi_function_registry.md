@@ -186,6 +186,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00525450 | database.cpp | FUN_00525450 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c14_stadium_expansion.rs;crates/cm-domain/src/club_season_records.rs;crates/cm-domain/src/manager_creation.rs;crates/cm-domain/src/screen_batch11.rs;crates/cm-domain/src/screen_batch9.rs;crates/cm-domain/src/screen_club_dashboard.rs;crates/cm-domain/src/transfer.rs;crates/cm-render/src/dispatcher_club_toolbar.rs;crates/cm-render/src/screen_club_squad_faithful.rs | YES | UNVERIFIED |  |
 | 0x005265e0 | database.cpp | FUN_005265e0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/screen_batch9.rs;crates/cm-render/src/dispatcher_club_toolbar.rs | YES | UNVERIFIED |  |
 | 0x00527340 | database.cpp | FUN_00527340 | PORTED_BEHAVIOURAL | crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
+| 0x005274d0 | database.cpp | FUN_005274d0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/manager_hiring.rs | YES | UNVERIFIED |  |
 | 0x005276f0 | database.cpp | FUN_005276f0 | UNKNOWN | crates/cm-domain/src/menu.rs;crates/cm-domain/src/screen_batch27.rs;crates/cm-render/src/dispatcher.rs;crates/cm-render/src/screen_wire_batch3.rs | INDIRECT | UNVERIFIED |  |
 | 0x0052a500 | database.cpp | FUN_0052a500 | PORTED_BEHAVIOURAL | crates/cm-app/src/main.rs;crates/cm-domain/src/transfer.rs | YES | UNVERIFIED |  |
 | 0x0052a5a0 | database.cpp | FUN_0052a5a0 | PORTED_BEHAVIOURAL | crates/cm-domain/src/c13_promotion_apply.rs;crates/cm-domain/src/c14_5_squad_manager.rs;crates/cm-domain/src/c15_1_world_apply.rs;crates/cm-domain/src/screen_batch12.rs | YES | UNVERIFIED |  |
@@ -3041,7 +3042,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 
 | DD VA | source | semantic | status | Rust | reach | conf | evidence |
 |---|---|---|---|---|---|---|---|
-| 0x0052a330 | database.cpp | manager-club reputation-fit primitive | NOT_YET_PORTED | crates/cm-domain/src/manager_hiring.rs;crates/cm-domain/src/transfer.rs | NO | STRUCTURALLY_VERIFIED | scratchpad:rating_primitives_spec.md |
+| 0x0052a330 | database.cpp | manager-club reputation-fit primitive | PORTED_EXACT | manager_club_repfit | NO | STRUCTURALLY_VERIFIED | docs/manager_hiring/rating_constants.md |
+| 0x0052a410 | database.cpp | manager-club closeness classifier | PORTED_EXACT | closeness_class | NO | STRUCTURALLY_VERIFIED | docs/manager_hiring/rating_constants.md |
 | 0x00672e40 | manager_manager.cpp | CD-presence check (find cm0102.exe on CD drives / Insert CD prompt) | OUT_OF_SCOPE |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00672e40 |
 | 0x00673330 | manager_manager.cpp | manager-confidence pool destructor (frees 5 sub-arrays) | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00673330 |
 | 0x006733d0 | manager_manager.cpp | save man_conf.dat (board-confidence save section writer) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006733d0 |
@@ -3070,8 +3072,8 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00681920 | manager_manager.cpp | news formatter: club-name board memo variants | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681920 |
 | 0x00681a50 | manager_manager.cpp | news event emit type 0x1390 (board/manager) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681a50 |
 | 0x00681b80 | manager_manager.cpp | news formatter: memo from board of directors | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681b80 |
-| 0x00681c70 | manager_manager.cpp | manager job-poaching decision AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00681c70 |
-| 0x00682420 | manager_manager.cpp | manager job-interest score core | NOT_YET_PORTED | crates/cm-domain/src/manager_hiring.rs | NO | PARTIAL | scratchpad:rating_primitives_spec.md |
+| 0x00681c70 | manager_manager.cpp | manager job-poaching decision | PORTED_PARTIAL | poach_jitter_primary | NO | STRUCTURALLY_VERIFIED | docs/manager_hiring/rating_constants.md |
+| 0x00682420 | manager_manager.cpp | manager job-interest score core | PORTED_PARTIAL | score_base_reweight | NO | PARTIAL | docs/manager_hiring/rating_constants.md |
 | 0x00683dc0 | manager_manager.cpp | vacancy-target predicate | PORTED_PARTIAL | club_is_vacancy_target | NO | STRUCTURALLY_VERIFIED | scratchpad:manager_hiring_spec.md |
 | 0x00684a30 | manager_manager.cpp | set four board-relationship fields to one value | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00684a30 |
 | 0x00684a80 | manager_manager.cpp | manager would-accept/want-job decision AI | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00684a80 |
@@ -3132,7 +3134,7 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x006933f0 | manager_manager.cpp | predicate: manager availability gate (type 2 vs rep 0x14) | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006933f0 |
 | 0x00693510 | manager_manager.cpp | manager-confidence screen event handler | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00693510 |
 | 0x006959d0 | manager_manager.cpp | copy-assignment of manager-offer struct | NON_USEFUL |  | NO | STRUCTURALLY_VERIFIED | decompile 0x006959d0 |
-| 0x0082dab0 | shortlist_manager.cpp | manager attractiveness score | BLOCKED_DEPENDENCY | crates/cm-domain/src/manager_hiring.rs;crates/cm-domain/src/transfer.rs | NO | PARTIAL | scratchpad:rating_primitives_spec.md |
+| 0x0082dab0 | shortlist_manager.cpp | manager attractiveness score | NOT_YET_PORTED | crates/cm-domain/src/manager_hiring.rs;crates/cm-domain/src/transfer.rs | NO | STRUCTURALLY_VERIFIED | docs/manager_hiring/rating_constants.md |
 
 ## manager-model
 
@@ -3807,7 +3809,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00527320 | database.cpp | predicate on person contract flag | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00527320 |
 | 0x00527450 | database.cpp | competition-membership predicate set 1 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00527450 |
 | 0x00527490 | database.cpp | competition-membership predicate set 2 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x00527490 |
-| 0x005274d0 | database.cpp | FUN_005274d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00527690 | database.cpp | FUN_00527690 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00527c90 | database.cpp | FUN_00527c90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x00527e30 | database.cpp | person name string formatter | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x00527e30 |
@@ -3819,7 +3820,6 @@ Regenerate: `python tools/gdi_registry/build_registry.py`. Curated rows in `tool
 | 0x00529e90 | database.cpp | FUN_00529e90 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052a070 | database.cpp | competition to language/region code map | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052a070 |
 | 0x0052a2d0 | database.cpp | sort comparator by fields +4/+8 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED | decompile 0x0052a2d0 |
-| 0x0052a410 | database.cpp | FUN_0052a410 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052a4d0 | database.cpp | FUN_0052a4d0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |
 | 0x0052b9b0 | database.cpp | set has-contract flag and squad experience analysis | NOT_YET_PORTED |  | NO | PARTIAL | decompile 0x0052b9b0 |
 | 0x0052bae0 | database.cpp | FUN_0052bae0 | NOT_YET_PORTED |  | NO | STRUCTURALLY_VERIFIED |  |

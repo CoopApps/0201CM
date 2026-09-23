@@ -269,9 +269,135 @@ pub fn appoint_manager_links(person: &mut [u8], club: &mut [u8], is_national_tea
     }
 }
 
+#[inline]
+fn set_i16(b: &mut [u8], o: usize, v: i16) {
+    if let Some(s) = b.get_mut(o..o + 2) { s.copy_from_slice(&v.to_le_bytes()); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scoring core — reputation-fit (FUN_0052a330 / FUN_0052a410). CONFIRMED pure
+// integer, zero x87 (docs/manager_hiring/rating_constants.md §7). Byte-exact.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Resolved manager↔club relationship inputs for the closeness classifier
+/// `FUN_0052a410`. Cross-record lookups (nation/league equality, "ref known in
+/// nation" = FUN_005274d0) are resolved by the caller so the classifier logic
+/// stays byte-exact and self-contained.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ClosenessInputs {
+    pub ref_null: bool,
+    pub person_has_club: bool,
+    pub same_club: bool,
+    pub same_club_nation: bool,
+    pub same_person_nation: bool,
+    pub ref_known_in_person_nation: bool,
+    pub ref_known_in_person_club_nation: bool,
+    pub regional_rep_pass: bool,
+}
+
+/// `FUN_0052a410` — returns closeness code {0,2,3,4}. Decision tree verbatim.
+// GDI-REG: 0052a410 PORTED_EXACT
+pub fn closeness_class(i: &ClosenessInputs) -> u8 {
+    if i.ref_null { return 4; }
+    if i.person_has_club {
+        if i.same_club { return 0; }        // same club
+        if i.same_club_nation { return 0; } // same league/country
+    }
+    if i.same_person_nation { return 2; }               // same country
+    if !i.ref_known_in_person_nation { return 2; }      // ref not known in person's nation
+    if i.person_has_club && !i.ref_known_in_person_club_nation { return 3; }
+    if i.regional_rep_pass { return 3; }
+    4                                                    // foreign / unknown
+}
+
+/// `FUN_0052a330` — reputation-fit base rating. Picks/averages one short from the
+/// person's 3-entry reputation vector (`block`), selected by closeness code `c`.
+/// `mode0=true` reads the +0x61 block at odd offsets 9/0xb/0xd; else the +0x69
+/// block at even offsets 8/0xa/0xc. Slots = national / home / world. Codes 3 and
+/// 1 average two slots, each `/2` as a short before summing. The score core calls
+/// it with mode!=0. No RNG, no float — byte-exact.
+// GDI-REG: 0052a330 PORTED_EXACT
+pub fn manager_club_repfit(block: &[u8], mode0: bool, c: u8) -> i32 {
+    let (nat, home, world) = if mode0 { (9usize, 0xb, 0xd) } else { (8usize, 0xa, 0xc) };
+    let s = |o: usize| i16_at(block, o) as i32; // short reputation slot
+    match c {
+        4 => s(world),
+        2 => s(nat),
+        0 => s(home),
+        3 => (s(world) / 2) + (s(nat) / 2),
+        _ => (s(home) / 2) + (s(nat) / 2), // c == 1
+    }
+}
+
+/// §5.1 base re-weight (FUN_00682420 lines 88/92). The same-nationality /
+/// works-abroad affinity gates re-weight the accumulator: a positive affinity
+/// takes `max(L*1.1, L+2000)`, a negative one `L*0.25`, else unchanged; then
+/// round-to-nearest-even (x87 default, exe helper 0x009346d0). Constants from
+/// docs/manager_hiring/rating_constants.md §5.1 (1.1, 2000.0, 0.25).
+// GDI-REG: 00682420 PORTED_PARTIAL
+pub fn score_base_reweight(l: i32, affinity_positive: bool, affinity_negative: bool) -> i32 {
+    let lf = l as f64;
+    let out = if affinity_positive {
+        (lf * 1.1).max(lf + 2000.0)
+    } else if affinity_negative {
+        lf * 0.25
+    } else {
+        return l;
+    };
+    out.round_ties_even() as i32
+}
+
+/// §4 poach jitter (FUN_00681c70): scale the poached club's own job-security
+/// confidence rows by the recovered multipliers, `round(row * k)` (ties-even).
+/// board×0.9, patience×0.75, fans×0.9, media×0.9 then ×0.975.
+// GDI-REG: 00681c70 PORTED_PARTIAL
+pub fn poach_jitter_primary(row: &mut JobSecurityRow) {
+    let scale = |v: i16, k: f64| (v as f64 * k).round_ties_even() as i16;
+    let b = scale(row.board_confidence(), 0.9);
+    let p = scale(row.chairman_patience(), 0.75);
+    let f = scale(row.fans_confidence(), 0.9);
+    let m1 = scale(row.media_expectation(), 0.9);
+    let m2 = (m1 as f64 * 0.975).round_ties_even() as i16;
+    set_i16(&mut row.raw, 0x06, b);
+    set_i16(&mut row.raw, 0x08, p);
+    set_i16(&mut row.raw, 0x0a, f);
+    set_i16(&mut row.raw, 0x0c, m2);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn repfit_selects_and_averages() {
+        // mode!=0 block: national@8, home@0xa, world@0xc
+        let mut b = vec![0u8; 0x10];
+        set_i16(&mut b, 0x08, 3000); // national
+        set_i16(&mut b, 0x0a, 6000); // home
+        set_i16(&mut b, 0x0c, 9000); // world
+        assert_eq!(manager_club_repfit(&b, false, 4), 9000); // foreign -> world
+        assert_eq!(manager_club_repfit(&b, false, 2), 3000); // same nation -> national
+        assert_eq!(manager_club_repfit(&b, false, 0), 6000); // same club -> home
+        assert_eq!(manager_club_repfit(&b, false, 3), 9000 / 2 + 3000 / 2); // avg(world,nat)
+    }
+
+    #[test]
+    fn closeness_tree() {
+        let mut i = ClosenessInputs { ref_null: true, ..Default::default() };
+        assert_eq!(closeness_class(&i), 4);
+        i = ClosenessInputs { person_has_club: true, same_club: true, ..Default::default() };
+        assert_eq!(closeness_class(&i), 0);
+        i = ClosenessInputs { same_person_nation: true, ..Default::default() };
+        assert_eq!(closeness_class(&i), 2);
+    }
+
+    #[test]
+    fn base_reweight_gates() {
+        assert_eq!(score_base_reweight(1000, false, false), 1000); // no affinity
+        assert_eq!(score_base_reweight(1000, true, false), 3000);  // max(1100, 3000)
+        assert_eq!(score_base_reweight(30000, true, false), 33000);// max(33000, 32000)
+        assert_eq!(score_base_reweight(1000, false, true), 250);   // *0.25
+    }
 
     #[test]
     fn job_row_accessors() {
