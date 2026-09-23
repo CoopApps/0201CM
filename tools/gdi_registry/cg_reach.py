@@ -184,14 +184,18 @@ def compute(carve, data_dir):
         at_code = taken_code.get(va, []); at_data = taken_data.get(va, [])
         addr_taken = bool(at_code or at_data)
         poss_in = ind_in_all.get(va, [])
+        # 5-state model (spec): DEAD_OR_UNREACHABLE is NEVER auto-assigned — it
+        # requires positive evidence (a curated status), so absence of xrefs maps
+        # to UNRESOLVED, not dead. Raw address-taking is POSSIBLE_INDIRECT, never
+        # promoted to reachable without a PROVEN/STRONG dispatch edge.
         if direct_reach:
             kind = "DIRECT_REACHABLE"
         elif indirect_reach:
             kind = "INDIRECT_REACHABLE"
         elif addr_taken or poss_in:
-            kind = "UNRESOLVED_REACHABILITY"
+            kind = "POSSIBLE_INDIRECT"
         else:
-            kind = "PROBABLY_DEAD"
+            kind = "UNRESOLVED"
         rsets = [n for n, s in rootset_reach.items() if va in s]
         # incoming indirect edges (why it's indirect-reachable / address-taken)
         in_types = sorted({et for (_, et, _, _) in poss_in})
@@ -200,6 +204,7 @@ def compute(carve, data_dir):
         for c in ("PROVEN", "STRONG", "POSSIBLE"):
             if c in confs:
                 in_conf = c; break
+        at = "+".join(x for x in [("data" if at_data else ""), ("code" if at_code else "")] if x)
         out[dv] = {
             "cg_direct_reach": "Y" if direct_reach else "",
             "cg_indirect_reach": "Y" if indirect_reach else "",
@@ -209,9 +214,13 @@ def compute(carve, data_dir):
             "cg_direct_depth": d_depth.get(va, ""),
             "callers": len(direct_in.get(va, ())),
             "callees": len(direct_out.get(va, ())),
-            "cg_addr_taken": ("data" if at_data else "") + ("+code" if at_code else "") or "",
-            "cg_indirect_edge_types": ";".join(in_types),
-            "cg_indirect_confidence": in_conf,
+            "cg_direct_callers": len(direct_in.get(va, ())),
+            "cg_indirect_callers": len(poss_in),
+            "cg_address_taken": at,
+            "cg_data_ref_count": len(at_data),
+            "cg_code_ref_count": len(at_code),
+            "cg_edge_types": ";".join(in_types),
+            "cg_confidence": in_conf,
             "cg_provenance": provenance(va) if (direct_reach or indirect_reach) else "",
         }
     # roots documentation = declared ROOT_SETS + roots seeded from proven edge hints

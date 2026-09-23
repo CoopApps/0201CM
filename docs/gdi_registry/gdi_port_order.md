@@ -1,178 +1,143 @@
 # GDI port order (generated — executable-reachability driven)
 
-Ranks the NOT_YET_PORTED backlog by **executable reachability**: whether the original GDI game can reach the function from a live root, via DIRECT calls or PROVEN/STRONG INDIRECT dispatch (function pointers, vtables, menu/AI/competition tables). Roots: docs/gdi_registry/gdi_roots.md.
+Ranks the NOT_YET_PORTED backlog by **executable reachability**: whether the original GDI game can reach the function from a live root, via DIRECT calls or PROVEN/STRONG INDIRECT dispatch. Roots: docs/gdi_registry/gdi_roots.md. This is a NEW axis, separate from the Rust `reachable` field and from whether a Rust port exists.
 
-> **Four reachability kinds** (a NEW axis, separate from the Rust `reachable` field and from whether a Rust port exists):
+> **Five reachability kinds:**
 > - `DIRECT_REACHABLE` — reached by direct calls from a live root.
 > - `INDIRECT_REACHABLE` — reached via a PROVEN/STRONG indirect dispatch edge (provenance recorded).
-> - `UNRESOLVED_REACHABILITY` — address is taken (stored in a table or loaded in code) but no proven path yet; almost certainly live, not yet proven.
-> - `PROBABLY_DEAD` — no direct caller and no address-taken evidence anywhere.
+> - `POSSIBLE_INDIRECT` — address is taken (stored in a table or loaded in code) but invocation not yet proven; probably live, prioritize for decode — NOT auto-promoted.
+> - `UNRESOLVED` — no reference found anywhere; can prove neither reachable nor dead (the static graph misses computed `call [reg]`).
+> - `DEAD_OR_UNREACHABLE` — positive evidence of non-use; NEVER auto-assigned from mere absence of xrefs (curated only).
 
-NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **0**  ·  UNRESOLVED **273**  ·  PROBABLY_DEAD **332**
+NOT_YET_PORTED: **1391**  ·  DIRECT **786**  ·  INDIRECT **0**  ·  POSSIBLE_INDIRECT **273**  ·  UNRESOLVED **332**  ·  DEAD_OR_UNREACHABLE **0**
 
-## Backlog by subsystem (live / unresolved / probably-dead / total)
+## Backlog by subsystem (live / possible / unresolved / dead / total)
 
-| subsystem | live | unresolved | dead | total |
+| subsystem | live | possible | unresolved | dead | total |
+|---|---|---|---|---|---|
+| player-relationships | 101 | 14 | 12 | 0 | 127 |
+| GUI | 83 | 23 | 23 | 0 | 129 |
+| scouting | 64 | 7 | 2 | 0 | 73 |
+| contracts | 54 | 5 | 28 | 0 | 87 |
+| manager-ai | 47 | 5 | 33 | 0 | 85 |
+| national-teams | 30 | 7 | 10 | 0 | 47 |
+| condition-fitness | 28 | 4 | 8 | 0 | 40 |
+| tick | 27 | 0 | 0 | 0 | 27 |
+| tactics | 27 | 36 | 23 | 0 | 86 |
+| regen | 27 | 0 | 3 | 0 | 30 |
+| discipline | 26 | 3 | 9 | 0 | 38 |
+| finance | 21 | 1 | 10 | 0 | 32 |
+| search | 18 | 3 | 22 | 0 | 43 |
+| awards | 17 | 14 | 16 | 0 | 47 |
+| manager-model | 17 | 2 | 8 | 0 | 27 |
+| training | 17 | 1 | 8 | 0 | 26 |
+| transfer | 17 | 6 | 2 | 0 | 25 |
+| fixtures | 16 | 0 | 3 | 0 | 19 |
+| friendly | 15 | 4 | 16 | 0 | 35 |
+| UNKNOWN | 13 | 10 | 11 | 0 | 34 |
+| match | 13 | 3 | 5 | 0 | 21 |
+| english_cup | 12 | 10 | 0 | 0 | 22 |
+| news | 12 | 4 | 1 | 0 | 17 |
+| staff_records | 12 | 11 | 7 | 0 | 30 |
+| nation | 10 | 5 | 0 | 0 | 15 |
+| competition | 8 | 10 | 5 | 0 | 23 |
+| squad | 7 | 0 | 2 | 0 | 9 |
+| records | 5 | 3 | 2 | 0 | 10 |
+| notes | 5 | 2 | 11 | 0 | 18 |
+| RESOURCE | 4 | 0 | 0 | 0 | 4 |
+| club_history | 4 | 1 | 4 | 0 | 9 |
+| date | 4 | 6 | 4 | 0 | 14 |
+| fifa_rankings | 4 | 0 | 0 | 0 | 4 |
+| match-engine | 4 | 0 | 0 | 0 | 4 |
+| officials | 3 | 0 | 0 | 0 | 3 |
+| setup | 3 | 5 | 3 | 0 | 11 |
+| cash | 2 | 2 | 1 | 0 | 5 |
+| english_rules | 2 | 3 | 0 | 0 | 5 |
+| fifa-rankings | 2 | 0 | 0 | 0 | 2 |
+| month_ratings | 2 | 2 | 2 | 0 | 6 |
+| injuries | 1 | 0 | 0 | 0 | 1 |
+| season-roll | 1 | 0 | 0 | 0 | 1 |
+| transfers | 1 | 0 | 0 | 0 | 1 |
+| coach | 0 | 2 | 2 | 0 | 4 |
+| ? | 0 | 2 | 0 | 0 | 2 |
+| promotion | 0 | 0 | 1 | 0 | 1 |
+| english_league | 0 | 17 | 0 | 0 | 17 |
+| international-comp | 0 | 37 | 35 | 0 | 72 |
+| transfer-rules | 0 | 2 | 0 | 0 | 2 |
+| history | 0 | 1 | 0 | 0 | 1 |
+
+## Top 30 live targets (reachability, root type, relevance, depth, callers)
+
+| DD VA | kind | depth | roots | callers | subsystem | relevance | semantic |
+|---|---|---|---|---|---|---|---|
+| 0x0076f580 | DIRECT | 1 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 57 | news | PLAYER_VISIBLE | FUN_0076f580 |
+| 0x00535600 | DIRECT | 1 | BOOT;DAILY_TICK;MATCH;COMPETITION | 25 | tick | PLAYER_VISIBLE | news-manager pacing A |
+| 0x007ead30 | DIRECT | 1 | BOOT;DAILY_TICK;UI;MATCH;COMPETITION | 20 | tick | PLAYER_VISIBLE | news-manager pacing B |
+| 0x004df980 | DIRECT | 1 | DAILY_TICK;AI;COMPETITION | 1 | contracts | PLAYER_VISIBLE | contract news build (type 0xbc1) |
+| 0x004e00c0 | DIRECT | 1 | DAILY_TICK;AI;COMPETITION | 1 | contracts | PLAYER_VISIBLE | contract news build (type 0xbc2) |
+| 0x0077d380 | DIRECT | 1 | DAILY_TICK;COMPETITION | 1 | notes | PLAYER_VISIBLE | FUN_0077d380 |
+| 0x0076e720 | DIRECT | 2 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 22 | news | PLAYER_VISIBLE | FUN_0076e720 |
+| 0x0076e5e0 | DIRECT | 2 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 8 | news | PLAYER_VISIBLE | FUN_0076e5e0 |
+| 0x005349f0 | DIRECT | 2 | BOOT;DAILY_TICK;UI;MATCH;COMPETITION | 4 | date | PLAYER_VISIBLE | date_format_weekday_ordinal |
+| 0x005952f0 | DIRECT | 2 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 4 | fixtures | PLAYER_VISIBLE | create/update fixture news record |
+| 0x006a0550 | DIRECT | 2 | BOOT;DAILY_TICK;UI;MATCH;COMPETITION | 4 | match-engine | PLAYER_VISIBLE | stored-action event resolver |
+| 0x0076f450 | DIRECT | 2 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 4 | news | PLAYER_VISIBLE | FUN_0076f450 |
+| 0x0076e800 | DIRECT | 2 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 3 | news | PLAYER_VISIBLE | FUN_0076e800 |
+| 0x0079f7e0 | DIRECT | 2 | BOOT;DAILY_TICK;MATCH;COMPETITION | 3 | search | PLAYER_VISIBLE | PlayerSearch player-matches-target predi |
+| 0x0041a630 | DIRECT | 2 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 2 | discipline | PLAYER_VISIBLE | AWOL news event builder |
+| 0x007e1a30 | DIRECT | 2 | BOOT;DAILY_TICK;MATCH;COMPETITION | 2 | scouting | PLAYER_VISIBLE | Compile and sort scout reports then grou |
+| 0x004e06d0 | DIRECT | 2 | BOOT;DAILY_TICK;COMPETITION | 1 | contracts | PLAYER_VISIBLE | contract news build/dispatch (type 0xbb9 |
+| 0x005d8c90 | DIRECT | 2 | BOOT;DAILY_TICK;COMPETITION | 1 | records | PLAYER_VISIBLE | FUN_005d8c90 |
+| 0x0067ce90 | DIRECT | 2 | BOOT;DAILY_TICK;COMPETITION | 1 | news | PLAYER_VISIBLE | news_weekly_predicate_cascade |
+| 0x006aae20 | DIRECT | 2 | BOOT;DAILY_TICK;UI;MATCH;COMPETITION | 1 | match-engine | PLAYER_VISIBLE | per-tick tactical/commentary updater |
+| 0x0075f620 | DIRECT | 2 | BOOT;DAILY_TICK;COMPETITION | 1 | national-teams | PLAYER_VISIBLE | squad-selection news item builder (CA-so |
+| 0x0077de40 | DIRECT | 2 | DAILY_TICK;COMPETITION | 1 | notes | PLAYER_VISIBLE | Populate note-edit screen state |
+| 0x00791630 | DIRECT | 2 | DAILY_TICK;COMPETITION | 1 | regen | PLAYER_VISIBLE | retirement/international news generation |
+| 0x0076e270 | DIRECT | 3 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 13 | news | PLAYER_VISIBLE | FUN_0076e270 |
+| 0x00536df0 | DIRECT | 3 | BOOT;DAILY_TICK;UI;MATCH;COMPETITION | 5 | date | PLAYER_VISIBLE | date_month_short_name |
+| 0x0076d860 | DIRECT | 3 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 4 | news | PLAYER_VISIBLE | FUN_0076d860 |
+| 0x007a5d10 | DIRECT | 3 | BOOT;DAILY_TICK;MATCH;COMPETITION | 4 | search | PLAYER_VISIBLE | Player attribute-comparison flag builder |
+| 0x00796d10 | DIRECT | 3 | BOOT;DAILY_TICK;MATCH;COMPETITION | 3 | search | PLAYER_VISIBLE | PlayerSearch configure target label and  |
+| 0x005b2500 | DIRECT | 3 | BOOT;DAILY_TICK;AI;UI;MATCH;COMPETITION | 2 | friendly | PLAYER_VISIBLE | friendly news item |
+| 0x00685c00 | DIRECT | 3 | DAILY_TICK;COMPETITION | 2 | manager-ai | PLAYER_VISIBLE | news event emit type 0x1778 |
+
+## POSSIBLE_INDIRECT (address-taken, unproven) — top decode targets to promote
+
+273 functions whose address is stored in a table / loaded in code but whose invocation is not yet proven. Decoding their dispatch mechanism is what converts them to INDIRECT_REACHABLE.
+
+| DD VA | subsystem | data_refs | code_refs | semantic |
 |---|---|---|---|---|
-| player-relationships | 101 | 14 | 12 | 127 |
-| GUI | 83 | 23 | 23 | 129 |
-| scouting | 64 | 7 | 2 | 73 |
-| contracts | 54 | 5 | 28 | 87 |
-| manager-ai | 47 | 5 | 33 | 85 |
-| national-teams | 30 | 7 | 10 | 47 |
-| condition-fitness | 28 | 4 | 8 | 40 |
-| tick | 27 | 0 | 0 | 27 |
-| tactics | 27 | 36 | 23 | 86 |
-| regen | 27 | 0 | 3 | 30 |
-| discipline | 26 | 3 | 9 | 38 |
-| finance | 21 | 1 | 10 | 32 |
-| search | 18 | 3 | 22 | 43 |
-| awards | 17 | 14 | 16 | 47 |
-| manager-model | 17 | 2 | 8 | 27 |
-| training | 17 | 1 | 8 | 26 |
-| transfer | 17 | 6 | 2 | 25 |
-| fixtures | 16 | 0 | 3 | 19 |
-| friendly | 15 | 4 | 16 | 35 |
-| UNKNOWN | 13 | 10 | 11 | 34 |
-| match | 13 | 3 | 5 | 21 |
-| english_cup | 12 | 10 | 0 | 22 |
-| news | 12 | 4 | 1 | 17 |
-| staff_records | 12 | 11 | 7 | 30 |
-| nation | 10 | 5 | 0 | 15 |
-| competition | 8 | 10 | 5 | 23 |
-| squad | 7 | 0 | 2 | 9 |
-| records | 5 | 3 | 2 | 10 |
-| notes | 5 | 2 | 11 | 18 |
-| RESOURCE | 4 | 0 | 0 | 4 |
-| club_history | 4 | 1 | 4 | 9 |
-| date | 4 | 6 | 4 | 14 |
-| fifa_rankings | 4 | 0 | 0 | 4 |
-| match-engine | 4 | 0 | 0 | 4 |
-| officials | 3 | 0 | 0 | 3 |
-| setup | 3 | 5 | 3 | 11 |
-| cash | 2 | 2 | 1 | 5 |
-| english_rules | 2 | 3 | 0 | 5 |
-| fifa-rankings | 2 | 0 | 0 | 2 |
-| month_ratings | 2 | 2 | 2 | 6 |
-| injuries | 1 | 0 | 0 | 1 |
-| season-roll | 1 | 0 | 0 | 1 |
-| transfers | 1 | 0 | 0 | 1 |
-| coach | 0 | 2 | 2 | 4 |
-| ? | 0 | 2 | 0 | 2 |
-| promotion | 0 | 0 | 1 | 1 |
-| english_league | 0 | 17 | 0 | 17 |
-| international-comp | 0 | 37 | 35 | 72 |
-| transfer-rules | 0 | 2 | 0 | 2 |
-| history | 0 | 1 | 0 | 1 |
+| 0x004c0cf0 |  | 0 | 1 | FUN_004c0cf0 |
+| 0x004c5c50 |  | 0 | 63 | FUN_004c5c50 |
+| 0x00492b30 | GUI | 181 | 1 | FUN_00492b30 |
+| 0x00503370 | GUI | 61 | 0 | FUN_00503370 |
+| 0x00503570 | GUI | 52 | 1 | FUN_00503570 |
+| 0x004025e0 | GUI | 1 | 0 | FUN_004025e0 |
+| 0x0043fc60 | GUI | 1 | 0 | FUN_0043fc60 |
+| 0x00401000 | GUI | 0 | 1 | FUN_00401000 |
+| 0x004020d0 | GUI | 0 | 1 | FUN_004020d0 |
+| 0x00491830 | GUI | 0 | 1 | FUN_00491830 |
+| 0x00491d80 | GUI | 0 | 1 | FUN_00491d80 |
+| 0x00492d50 | GUI | 0 | 2 | FUN_00492d50 |
+| 0x004b6600 | GUI | 0 | 3 | FUN_004b6600 |
+| 0x004b6f80 | GUI | 0 | 48 | FUN_004b6f80 |
+| 0x004ba820 | GUI | 0 | 17 | FUN_004ba820 |
+| 0x004ba990 | GUI | 0 | 48 | FUN_004ba990 |
+| 0x004bac50 | GUI | 0 | 2 | FUN_004bac50 |
+| 0x004c5e30 | GUI | 0 | 2 | FUN_004c5e30 |
+| 0x004c6920 | GUI | 0 | 1 | FUN_004c6920 |
+| 0x007a97f0 | GUI | 0 | 1 | FUN_007a97f0 |
+| 0x007a99a0 | GUI | 0 | 2 | FUN_007a99a0 |
+| 0x007a9e60 | GUI | 0 | 1 | FUN_007a9e60 |
+| 0x007aa8f0 | GUI | 0 | 3 | FUN_007aa8f0 |
+| 0x007aaa90 | GUI | 0 | 1 | FUN_007aaa90 |
+| 0x008475a0 | GUI | 0 | 1 | FUN_008475a0 |
+| 0x00491780 | UNKNOWN | 184 | 0 | FUN_00491780 |
+| 0x0050ba60 | UNKNOWN | 61 | 0 | FUN_0050ba60 |
+| 0x00413330 | UNKNOWN | 4 | 0 | FUN_00413330 |
+| 0x00401230 | UNKNOWN | 1 | 0 | FUN_00401230 |
+| 0x00401ae0 | UNKNOWN | 1 | 0 | FUN_00401ae0 |
 
-## Top 60 proven-reachable targets (direct first, then shallow indirect, many callers)
+## UNRESOLVED (no reference found): 332  ·  DEAD_OR_UNREACHABLE (curated positive-evidence only): 0
 
-| DD VA | kind | depth | callers | subsystem | semantic | provenance |
-|---|---|---|---|---|---|---|
-| 0x00509570 | DIRECT | 0 | 2 | GUI | FUN_00509570 | 0x00509570 |
-| 0x005b85b0 | DIRECT | 0 | 1 | tick | daily AI dispatcher (staff/transfers/AI) | 0x005b85b0 |
-| 0x0074d830 | DIRECT | 0 | 1 | english_cup | mini_cup ctor | 0x0074d830 |
-| 0x00554600 | DIRECT | 0 | 0 | english_cup | eng_auto_cup competition ctor | 0x00554600 |
-| 0x00555e80 | DIRECT | 0 | 0 | english_cup | eng_cc_cup (League Cup) ctor | 0x00555e80 |
-| 0x00558c80 | DIRECT | 0 | 0 | english_cup | eng_fa_cup (FA Cup) ctor | 0x00558c80 |
-| 0x0055a8f0 | DIRECT | 0 | 0 | english_cup | eng_fa_trophy ctor | 0x0055a8f0 |
-| 0x005ea590 | DIRECT | 1 | 181 | transfers | related-club seniority gate | 0x005ea590 <- 0x005b85b0 |
-| 0x005064e0 | DIRECT | 1 | 68 | GUI | FUN_005064e0 | 0x005064e0 <- 0x00509570 |
-| 0x005098e0 | DIRECT | 1 | 59 | GUI | FUN_005098e0 | 0x005098e0 <- 0x00558c80 |
-| 0x0076f580 | DIRECT | 1 | 57 | news | FUN_0076f580 | 0x0076f580 <- 0x005b85b0 |
-| 0x00615ae0 | DIRECT | 1 | 51 | condition-fitness | FUN_00615ae0 | 0x00615ae0 <- 0x005b85b0 |
-| 0x004c6ea0 | DIRECT | 1 | 39 | RESOURCE | FUN_004c6ea0 | 0x004c6ea0 <- 0x008120d0 |
-| 0x004c7010 | DIRECT | 1 | 38 | RESOURCE | FUN_004c7010 | 0x004c7010 <- 0x008120d0 |
-| 0x004d7090 | DIRECT | 1 | 37 | contracts | exact staff wage formula | 0x004d7090 <- 0x005b85b0 |
-| 0x0050c000 | DIRECT | 1 | 35 | GUI | FUN_0050c000 | 0x0050c000 <- 0x0055a8f0 |
-| 0x007aa170 | DIRECT | 1 | 27 | GUI | FUN_007aa170 | 0x007aa170 <- 0x005b85b0 |
-| 0x005274d0 | DIRECT | 1 | 26 | player-relationships | FUN_005274d0 | 0x005274d0 <- 0x008120d0 |
-| 0x00531420 | DIRECT | 1 | 25 | player-relationships | FUN_00531420 | 0x00531420 <- 0x005b85b0 |
-| 0x00535600 | DIRECT | 1 | 25 | tick | news-manager pacing A | 0x00535600 <- 0x005b6f10 |
-| 0x00832ed0 | DIRECT | 1 | 25 | scouting | FUN_00832ed0 | 0x00832ed0 <- 0x005b85b0 |
-| 0x0052df60 | DIRECT | 1 | 23 | injuries | physio rating (x87) | 0x0052df60 <- 0x005b85b0 |
-| 0x0052e070 | DIRECT | 1 | 22 | player-relationships | FUN_0052e070 | 0x0052e070 <- 0x005b85b0 |
-| 0x005060f0 | DIRECT | 1 | 20 | GUI | FUN_005060f0 | 0x005060f0 <- 0x00509570 |
-| 0x007ead30 | DIRECT | 1 | 20 | tick | news-manager pacing B | 0x007ead30 <- 0x008120d0 |
-| 0x008506b0 | DIRECT | 1 | 20 | contracts | staff contract status-flag set + reaction di | 0x008506b0 <- 0x005b85b0 |
-| 0x005316d0 | DIRECT | 1 | 19 | player-relationships | FUN_005316d0 | 0x005316d0 <- 0x005b85b0 |
-| 0x005e8590 | DIRECT | 1 | 19 | manager-model | FUN_005e8590 | 0x005e8590 <- 0x007491e0 |
-| 0x0075d410 | DIRECT | 1 | 17 | national-teams | international selection/retirement decision | 0x0075d410 <- 0x005b85b0 |
-| 0x008506a0 | DIRECT | 1 | 17 | contracts | FUN_008506a0 | 0x008506a0 <- 0x005b85b0 |
-| 0x00531940 | DIRECT | 1 | 15 | player-relationships | FUN_00531940 | 0x00531940 <- 0x005b85b0 |
-| 0x00419ac0 | DIRECT | 1 | 14 | discipline | FUN_00419ac0 | 0x00419ac0 <- 0x005b85b0 |
-| 0x0052c290 | DIRECT | 1 | 14 | player-relationships | FUN_0052c290 | 0x0052c290 <- 0x005121a0 |
-| 0x005313b0 | DIRECT | 1 | 14 | player-relationships | FUN_005313b0 | 0x005313b0 <- 0x005b85b0 |
-| 0x00531910 | DIRECT | 1 | 14 | player-relationships | FUN_00531910 | 0x00531910 <- 0x005b85b0 |
-| 0x00790200 | DIRECT | 1 | 14 | regen | FUN_00790200 | 0x00790200 <- 0x005b85b0 |
-| 0x00755580 | DIRECT | 1 | 13 | national-teams | FUN_00755580 | 0x00755580 <- 0x005b85b0 |
-| 0x0084ff10 | DIRECT | 1 | 12 | contracts | staff wants-to-leave / unhappiness evaluator | 0x0084ff10 <- 0x005b85b0 |
-| 0x00525ce0 | DIRECT | 1 | 11 | player-relationships | add person relationship link variant | 0x00525ce0 <- 0x005121a0 |
-| 0x0082bf30 | DIRECT | 1 | 11 | scouting | Iterate all clubs to offer a player out / fi | 0x0082bf30 <- 0x005b85b0 |
-| 0x00850490 | DIRECT | 1 | 11 | contracts | FUN_00850490 | 0x00850490 <- 0x005b85b0 |
-| 0x00850510 | DIRECT | 1 | 11 | contracts | FUN_00850510 | 0x00850510 <- 0x005b85b0 |
-| 0x005acc60 | DIRECT | 1 | 9 | friendly | FUN_005acc60 | 0x005acc60 <- 0x0074bf60 |
-| 0x0041a3a0 | DIRECT | 1 | 7 | discipline | set player AWOL with morale/relationship hit | 0x0041a3a0 <- 0x005b85b0 |
-| 0x00522710 | DIRECT | 1 | 7 | player-relationships | per-player attribute-bar computation | 0x00522710 <- 0x005b85b0 |
-| 0x00595b90 | DIRECT | 1 | 7 | fixtures | build/fill a fixture record (date/teams/venu | 0x00595b90 <- 0x00699640 |
-| 0x005e5820 | DIRECT | 1 | 7 | manager-model | FUN_005e5820 | 0x005e5820 <- 0x00699d90 |
-| 0x005e5940 | DIRECT | 1 | 7 | manager-model | FUN_005e5940 | 0x005e5940 <- 0x00699d90 |
-| 0x00615ab0 | DIRECT | 1 | 7 | condition-fitness | FUN_00615ab0 | 0x00615ab0 <- 0x005b85b0 |
-| 0x007a9c90 | DIRECT | 1 | 7 | GUI | FUN_007a9c90 | 0x007a9c90 <- 0x005b85b0 |
-| 0x00850680 | DIRECT | 1 | 7 | contracts | FUN_00850680 | 0x00850680 <- 0x005b85b0 |
-| 0x008fcbe0 | DIRECT | 1 | 7 | transfer | FUN_008fcbe0 | 0x008fcbe0 <- 0x00699d90 |
-| 0x004c6f50 | DIRECT | 1 | 6 | GUI | FUN_004c6f50 | 0x004c6f50 <- 0x005121a0 |
-| 0x00531350 | DIRECT | 1 | 6 | player-relationships | FUN_00531350 | 0x00531350 <- 0x005b85b0 |
-| 0x00531a50 | DIRECT | 1 | 6 | player-relationships | FUN_00531a50 | 0x00531a50 <- 0x005b85b0 |
-| 0x004b6c70 | DIRECT | 1 | 5 | GUI | FUN_004b6c70 | 0x004b6c70 <- 0x0074bf60 |
-| 0x00522fe0 | DIRECT | 1 | 5 | player-relationships | per-staff attribute computation | 0x00522fe0 <- 0x005b85b0 |
-| 0x00531970 | DIRECT | 1 | 5 | player-relationships | FUN_00531970 | 0x00531970 <- 0x005b85b0 |
-| 0x00531cd0 | DIRECT | 1 | 5 | player-relationships | FUN_00531cd0 | 0x00531cd0 <- 0x005b85b0 |
-| 0x0075ce20 | DIRECT | 1 | 5 | national-teams | FUN_0075ce20 | 0x0075ce20 <- 0x005b85b0 |
-
-## PROBABLY_DEAD candidates (no caller, no address-taken) — review before pruning
-
-332 functions. These have zero direct callers AND their address is never taken in code or data. Still a HINT (the static graph misses computed `call [reg]`), so review, don't auto-delete.
-
-| DD VA | subsystem | semantic |
-|---|---|---|
-| 0x00401250 | GUI | FUN_00401250 |
-| 0x004019f0 | GUI | FUN_004019f0 |
-| 0x00401ee0 | GUI | FUN_00401ee0 |
-| 0x00413340 | GUI | FUN_00413340 |
-| 0x0043ff10 | GUI | FUN_0043ff10 |
-| 0x00491c20 | GUI | FUN_00491c20 |
-| 0x00492f00 | GUI | FUN_00492f00 |
-| 0x004933b0 | GUI | FUN_004933b0 |
-| 0x00493470 | GUI | FUN_00493470 |
-| 0x004937b0 | GUI | FUN_004937b0 |
-| 0x004c5d30 | GUI | FUN_004c5d30 |
-| 0x004c6540 | GUI | FUN_004c6540 |
-| 0x00503970 | GUI | FUN_00503970 |
-| 0x00503a70 | GUI | FUN_00503a70 |
-| 0x0050b3f0 | GUI | FUN_0050b3f0 |
-| 0x0050b610 | GUI | FUN_0050b610 |
-| 0x0050bea0 | GUI | FUN_0050bea0 |
-| 0x005412e0 | GUI | FUN_005412e0 |
-| 0x005454b0 | GUI | FUN_005454b0 |
-| 0x00546820 | GUI | FUN_00546820 |
-| 0x00546ca0 | GUI | FUN_00546ca0 |
-| 0x005e4690 | GUI | FUN_005e4690 |
-| 0x007ab3a0 | GUI | FUN_007ab3a0 |
-| 0x0043fe90 | UNKNOWN | FUN_0043fe90 |
-| 0x004915e0 | UNKNOWN | FUN_004915e0 |
-| 0x004b62e0 | UNKNOWN | FUN_004b62e0 |
-| 0x004b6440 | UNKNOWN | FUN_004b6440 |
-| 0x004b6c90 | UNKNOWN | FUN_004b6c90 |
-| 0x0050b790 | UNKNOWN | FUN_0050b790 |
-| 0x0050b9c0 | UNKNOWN | FUN_0050b9c0 |
-| 0x005467c0 | UNKNOWN | FUN_005467c0 |
-| 0x00546f60 | UNKNOWN | FUN_00546f60 |
-| 0x00546fc0 | UNKNOWN | FUN_00546fc0 |
-| 0x005e4800 | UNKNOWN | FUN_005e4800 |
-| 0x00414730 | awards | FUN_00414730 |
-| 0x00414810 | awards | award vote processing from news event |
-| 0x00418400 | awards | award shortlist append entry (player+rating+vote init) |
-| 0x00418580 | awards | award shortlist finalize + news announcement |
-| 0x004187b0 | awards | award shortlist vote simulation (RNG over staff) |
-| 0x00418b40 | awards | FUN_00418b40 |
+UNRESOLVED functions have no static caller and no address-taken evidence, but the static graph cannot see computed `call [reg]`, so absence is NOT proof of death — they are candidates for targeted decode, not deletion.

@@ -92,12 +92,13 @@ def main():
                     warns.append(f"GDI-REG tag {va} in {fn}: status {tag_status} != registry {by_va[va]['status']} (merge or drift)")
 
     # --- indirect reachability + edge integrity (Stage: indirect graph) ---
+    prom_targets = set()  # dst of PROVEN/STRONG indirect edges (for dead-vs-edge check)
     for r in rows:
         k = r.get("cg_reach_kind", "")
         if k == "INDIRECT_REACHABLE" and not r.get("cg_provenance"):
             warns.append(f"{r['dd_va']}: INDIRECT_REACHABLE without provenance path")
-        if k == "PROBABLY_DEAD" and (r.get("cg_direct_reach") or r.get("cg_indirect_reach")):
-            errors.append(f"{r['dd_va']}: PROBABLY_DEAD but marked reachable (contradiction)")
+        if k == "DEAD_OR_UNREACHABLE" and (r.get("cg_direct_reach") or r.get("cg_indirect_reach")):
+            errors.append(f"{r['dd_va']}: DEAD_OR_UNREACHABLE but marked reachable (contradiction)")
         if k == "DIRECT_REACHABLE" and not r.get("cg_direct_reach"):
             errors.append(f"{r['dd_va']}: DIRECT_REACHABLE but cg_direct_reach empty")
     edges_p = os.path.join(ROOT, "tools", "gdi_registry", "data", "indirect_edges.csv")
@@ -121,11 +122,22 @@ def main():
                 warns.append(f"indirect edge {src}->{dst}: bad confidence {cf!r}")
             if cf in {"PROVEN","STRONG"} and not ev:
                 warns.append(f"indirect edge {src}->{dst} [{cf}]: no source evidence")
+            if cf in {"PROVEN","STRONG"}:
+                try:
+                    prom_targets.add("0x%08x" % int(dst.lower().replace("0x",""), 16))
+                except Exception:
+                    pass
             key = (src.lower(), dst.lower(), et)
             if key in seen_edges:
                 warns.append(f"duplicate indirect edge {src}->{dst} [{et}] (slot mapping repeated)")
             seen_edges[key] = 1
         print(f"(indirect_edges.csv: {n_edges} edges checked)")
+    # a function with a PROVEN/STRONG incoming edge must not be DEAD_OR_UNREACHABLE
+    by_va2 = {r["dd_va"]: r for r in rows}
+    for t in prom_targets:
+        r = by_va2.get(t)
+        if r and r.get("cg_reach_kind") == "DEAD_OR_UNREACHABLE":
+            errors.append(f"{t}: DEAD_OR_UNREACHABLE but has a PROVEN/STRONG incoming edge")
 
     for w in warns: print(f"WARN {w}")
     for e in errors: print(f"ERR  {e}")

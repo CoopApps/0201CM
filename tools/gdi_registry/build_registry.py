@@ -290,15 +290,17 @@ def main():
             "callees": cgd.get("callees", 0),
             "cg_direct_reach": cgd.get("cg_direct_reach", ""),
             "cg_indirect_reach": cgd.get("cg_indirect_reach", ""),
-            "cg_reach_kind": cgd.get("cg_reach_kind", "PROBABLY_DEAD"),
+            "cg_reach_kind": cgd.get("cg_reach_kind", "UNRESOLVED"),
             "cg_root_sets": cgd.get("cg_root_sets", ""),
             "cg_min_depth": cgd.get("cg_min_depth", ""),
-            "cg_addr_taken": cgd.get("cg_addr_taken", ""),
-            "cg_indirect_edge_types": cgd.get("cg_indirect_edge_types", ""),
-            "cg_indirect_confidence": cgd.get("cg_indirect_confidence", ""),
+            "cg_direct_callers": cgd.get("cg_direct_callers", 0),
+            "cg_indirect_callers": cgd.get("cg_indirect_callers", 0),
+            "cg_address_taken": cgd.get("cg_address_taken", ""),
+            "cg_data_ref_count": cgd.get("cg_data_ref_count", 0),
+            "cg_code_ref_count": cgd.get("cg_code_ref_count", 0),
+            "cg_edge_types": cgd.get("cg_edge_types", ""),
+            "cg_confidence": cgd.get("cg_confidence", ""),
             "cg_provenance": cgd.get("cg_provenance", ""),
-            # legacy compat: cg_reach="Y" if reachable by any means
-            "cg_reach": "Y" if (cgd.get("cg_direct_reach") or cgd.get("cg_indirect_reach")) else "",
             "_how": how,
             "_size": f.get("size", ""),
             "_cited": "Y" if va in cites else "",
@@ -310,8 +312,9 @@ def main():
             "rust_file","rust_symbol","reachable","relevance","confidence","evidence",
             "notes","superseded_prev","superseded_why","callers","callees",
             "cg_reach_kind","cg_direct_reach","cg_indirect_reach","cg_root_sets",
-            "cg_min_depth","cg_addr_taken","cg_indirect_edge_types",
-            "cg_indirect_confidence","cg_provenance"]
+            "cg_min_depth","cg_direct_callers","cg_indirect_callers","cg_address_taken",
+            "cg_data_ref_count","cg_code_ref_count","cg_edge_types","cg_confidence",
+            "cg_provenance"]
     with open(os.path.join(OUT, "gdi_function_registry.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
@@ -392,54 +395,68 @@ def main():
 
     # --- port order (executable-reachability driven backlog plan) ---
     KIND = "cg_reach_kind"
+    REL_RANK = {"PLAYER_VISIBLE": 0, "SIMULATION_RELEVANT": 1}
     nyp = [r for r in rows if r["status"] == "NOT_YET_PORTED"]
     kc = Counter(r[KIND] for r in nyp)
-    direct = [r for r in nyp if r[KIND] == "DIRECT_REACHABLE"]
-    indirect = [r for r in nyp if r[KIND] == "INDIRECT_REACHABLE"]
-    unresolved = [r for r in nyp if r[KIND] == "UNRESOLVED_REACHABILITY"]
-    dead = [r for r in nyp if r[KIND] == "PROBABLY_DEAD"]
-    live = direct + indirect  # proven-reachable (direct or via STRONG/PROVEN indirect)
+    live = [r for r in nyp if r[KIND] in ("DIRECT_REACHABLE", "INDIRECT_REACHABLE")]
+    possible = [r for r in nyp if r[KIND] == "POSSIBLE_INDIRECT"]
+    unresolved = [r for r in nyp if r[KIND] == "UNRESOLVED"]
+    dead = [r for r in nyp if r[KIND] == "DEAD_OR_UNREACHABLE"]
     def _porder(r):
+        # live reachability first, then root type (tick/UI/competition), then
+        # player/sim relevance, then depth, then caller count. Size never dominates.
+        rootrank = 0 if "DAILY_TICK" in r["cg_root_sets"] else (1 if r["cg_root_sets"] else 2)
         d = r["cg_min_depth"]
-        return (0 if r[KIND] == "DIRECT_REACHABLE" else 1,
+        return (0 if r[KIND] == "DIRECT_REACHABLE" else 1, rootrank,
+                REL_RANK.get((r["relevance"] or "").split(";")[0], 2),
                 d if d != "" else 9999, -int(r["callers"]))
-    sub_live = defaultdict(lambda: [0, 0, 0, 0])  # total, live, unresolved, dead
+    sub = defaultdict(lambda: [0, 0, 0, 0, 0])  # total, live, possible, unresolved, dead
     for r in nyp:
-        s = sub_live[r["subsystem"] or "?"]; s[0] += 1
-        if r[KIND] in ("DIRECT_REACHABLE", "INDIRECT_REACHABLE"): s[1] += 1
-        elif r[KIND] == "UNRESOLVED_REACHABILITY": s[2] += 1
-        else: s[3] += 1
+        s = sub[r["subsystem"] or "?"]; s[0] += 1
+        k = r[KIND]
+        if k in ("DIRECT_REACHABLE", "INDIRECT_REACHABLE"): s[1] += 1
+        elif k == "POSSIBLE_INDIRECT": s[2] += 1
+        elif k == "UNRESOLVED": s[3] += 1
+        else: s[4] += 1
     with open(os.path.join(OUT, "gdi_port_order.md"), "w", encoding="utf-8") as f:
         f.write("# GDI port order (generated — executable-reachability driven)\n\n")
         f.write("Ranks the NOT_YET_PORTED backlog by **executable reachability**: whether the "
                 "original GDI game can reach the function from a live root, via DIRECT calls or "
-                "PROVEN/STRONG INDIRECT dispatch (function pointers, vtables, menu/AI/competition "
-                "tables). Roots: docs/gdi_registry/gdi_roots.md.\n\n")
-        f.write("> **Four reachability kinds** (a NEW axis, separate from the Rust `reachable` "
-                "field and from whether a Rust port exists):\n"
+                "PROVEN/STRONG INDIRECT dispatch. Roots: docs/gdi_registry/gdi_roots.md. This is a "
+                "NEW axis, separate from the Rust `reachable` field and from whether a Rust port exists.\n\n")
+        f.write("> **Five reachability kinds:**\n"
                 "> - `DIRECT_REACHABLE` — reached by direct calls from a live root.\n"
                 "> - `INDIRECT_REACHABLE` — reached via a PROVEN/STRONG indirect dispatch edge (provenance recorded).\n"
-                "> - `UNRESOLVED_REACHABILITY` — address is taken (stored in a table or loaded in code) but no proven path yet; almost certainly live, not yet proven.\n"
-                "> - `PROBABLY_DEAD` — no direct caller and no address-taken evidence anywhere.\n\n")
-        f.write(f"NOT_YET_PORTED: **{len(nyp)}**  ·  "
-                f"DIRECT **{kc['DIRECT_REACHABLE']}**  ·  INDIRECT **{kc['INDIRECT_REACHABLE']}**  ·  "
-                f"UNRESOLVED **{kc['UNRESOLVED_REACHABILITY']}**  ·  PROBABLY_DEAD **{kc['PROBABLY_DEAD']}**\n\n")
-        f.write("## Backlog by subsystem (live / unresolved / probably-dead / total)\n\n"
-                "| subsystem | live | unresolved | dead | total |\n|---|---|---|---|---|\n")
-        for s, (tot, lv, un, dd) in sorted(sub_live.items(), key=lambda x: -x[1][1]):
-            f.write(f"| {s} | {lv} | {un} | {dd} | {tot} |\n")
-        f.write("\n## Top 60 proven-reachable targets (direct first, then shallow indirect, many callers)\n\n"
-                "| DD VA | kind | depth | callers | subsystem | semantic | provenance |\n|---|---|---|---|---|---|---|\n")
-        for r in sorted(live, key=_porder)[:60]:
-            f.write(f"| {r['dd_va']} | {r[KIND].split('_')[0]} | {r['cg_min_depth']} | {r['callers']} | "
-                    f"{r['subsystem']} | {(r['semantic_name'] or r['symbol'])[:44]} | {r['cg_provenance'][:60]} |\n")
-        f.write("\n## PROBABLY_DEAD candidates (no caller, no address-taken) — review before pruning\n\n"
-                f"{len(dead)} functions. These have zero direct callers AND their address is "
-                "never taken in code or data. Still a HINT (the static graph misses computed "
-                "`call [reg]`), so review, don't auto-delete.\n\n"
-                "| DD VA | subsystem | semantic |\n|---|---|---|\n")
-        for r in sorted(dead, key=lambda r: r["subsystem"] or "")[:40]:
-            f.write(f"| {r['dd_va']} | {r['subsystem']} | {(r['semantic_name'] or r['symbol'])[:60]} |\n")
+                "> - `POSSIBLE_INDIRECT` — address is taken (stored in a table or loaded in code) but invocation not yet proven; probably live, prioritize for decode — NOT auto-promoted.\n"
+                "> - `UNRESOLVED` — no reference found anywhere; can prove neither reachable nor dead (the static graph misses computed `call [reg]`).\n"
+                "> - `DEAD_OR_UNREACHABLE` — positive evidence of non-use; NEVER auto-assigned from mere absence of xrefs (curated only).\n\n")
+        f.write(f"NOT_YET_PORTED: **{len(nyp)}**  ·  DIRECT **{kc['DIRECT_REACHABLE']}**  ·  "
+                f"INDIRECT **{kc['INDIRECT_REACHABLE']}**  ·  POSSIBLE_INDIRECT **{kc['POSSIBLE_INDIRECT']}**  ·  "
+                f"UNRESOLVED **{kc['UNRESOLVED']}**  ·  DEAD_OR_UNREACHABLE **{kc['DEAD_OR_UNREACHABLE']}**\n\n")
+        f.write("## Backlog by subsystem (live / possible / unresolved / dead / total)\n\n"
+                "| subsystem | live | possible | unresolved | dead | total |\n|---|---|---|---|---|---|\n")
+        for s, (tot, lv, po, un, dd) in sorted(sub.items(), key=lambda x: -x[1][1]):
+            f.write(f"| {s} | {lv} | {po} | {un} | {dd} | {tot} |\n")
+        f.write("\n## Top 30 live targets (reachability, root type, relevance, depth, callers)\n\n"
+                "| DD VA | kind | depth | roots | callers | subsystem | relevance | semantic |\n"
+                "|---|---|---|---|---|---|---|---|\n")
+        for r in sorted(live, key=_porder)[:30]:
+            f.write(f"| {r['dd_va']} | {r[KIND].split('_')[0]} | {r['cg_min_depth']} | {r['cg_root_sets']} | "
+                    f"{r['callers']} | {r['subsystem']} | {(r['relevance'] or '').split(';')[0]} | "
+                    f"{(r['semantic_name'] or r['symbol'])[:40]} |\n")
+        f.write("\n## POSSIBLE_INDIRECT (address-taken, unproven) — top decode targets to promote\n\n"
+                f"{len(possible)} functions whose address is stored in a table / loaded in code but "
+                "whose invocation is not yet proven. Decoding their dispatch mechanism is what "
+                "converts them to INDIRECT_REACHABLE.\n\n"
+                "| DD VA | subsystem | data_refs | code_refs | semantic |\n|---|---|---|---|---|\n")
+        for r in sorted(possible, key=lambda r: (r["subsystem"] or "", -int(r["cg_data_ref_count"] or 0)))[:30]:
+            f.write(f"| {r['dd_va']} | {r['subsystem']} | {r['cg_data_ref_count']} | {r['cg_code_ref_count']} | "
+                    f"{(r['semantic_name'] or r['symbol'])[:50]} |\n")
+        f.write(f"\n## UNRESOLVED (no reference found): {len(unresolved)}  ·  "
+                f"DEAD_OR_UNREACHABLE (curated positive-evidence only): {len(dead)}\n\n"
+                "UNRESOLVED functions have no static caller and no address-taken evidence, but the "
+                "static graph cannot see computed `call [reg]`, so absence is NOT proof of death — "
+                "they are candidates for targeted decode, not deletion.\n")
 
     # --- globals ---
     globs = load_csv("globals.csv")

@@ -73,6 +73,17 @@ whether a Rust port exists**. It answers: *can the original GDI game reach this
 function?* The direct call graph is only a lower bound — most UI/menu, competition,
 and AI handlers are invoked through function pointers, vtables and dispatch tables.
 
+Five kinds: `DIRECT_REACHABLE` (direct calls from a live root) · `INDIRECT_REACHABLE`
+(via a PROVEN/STRONG dispatch edge, provenance recorded) · `POSSIBLE_INDIRECT`
+(address is taken — stored in a table or loaded in code — but invocation unproven;
+prioritize for decode, never auto-promote) · `UNRESOLVED` (no reference found at all;
+the static graph misses computed `call [reg]`, so this is NOT proof of death) ·
+`DEAD_OR_UNREACHABLE` (**curated only** — positive evidence of non-use; never
+auto-assigned from absence of xrefs). The success criterion this encodes: "the static
+call graph cannot see this" (POSSIBLE_INDIRECT / UNRESOLVED) is distinct from "the
+shipped game does not use this" (DEAD_OR_UNREACHABLE), and that distinction is
+evidence-backed and queryable.
+
 `data/indirect_edges.csv` (7 cols, headerless): `src_va,dst_va,edge_type,confidence,
 root_hint,evidence,provenance`. Edge types: DIRECT_CALL (implicit), FUNCTION_POINTER,
 VTABLE, MENU_DISPATCH, AI_DISPATCH, COMPETITION_DISPATCH, SCHEDULER_CALLBACK,

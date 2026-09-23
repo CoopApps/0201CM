@@ -5,9 +5,11 @@
   python tools/gdi_registry/query.py season_label    # Rust symbol/file -> GDI fns
   python tools/gdi_registry/query.py domestic_cup    # subsystem / file substring
   python tools/gdi_registry/query.py --status NOT_YET_PORTED   # list by status
-  python tools/gdi_registry/query.py --unresolved    # UNRESOLVED_REACHABILITY rows
-  python tools/gdi_registry/query.py --indirect-only # INDIRECT_REACHABLE rows
-  python tools/gdi_registry/query.py --zero-caller   # 0 direct callers (indirect/dead)
+  python tools/gdi_registry/query.py --indirect-only     # INDIRECT_REACHABLE rows
+  python tools/gdi_registry/query.py --possible-indirect # POSSIBLE_INDIRECT (address-taken, unproven)
+  python tools/gdi_registry/query.py --unresolved        # UNRESOLVED (no reference found)
+  python tools/gdi_registry/query.py --zero-direct-caller# 0 direct callers
+  python tools/gdi_registry/query.py --root UI_ROOTS     # reachable from a named root set
 
 Reads docs/gdi_registry/gdi_function_registry.json (run build_registry.py first).
 An address query also prints direct callers/callees counts, reachability kind,
@@ -33,10 +35,14 @@ def show(r):
     if r['superseded_prev']: print(f"    superseded: was '{r['superseded_prev']}' -> {r['superseded_why']}")
     # executable reachability (call-graph axis, separate from Rust `reachable`)
     print(f"    exe-reach : {r.get('cg_reach_kind','?')}  depth={r.get('cg_min_depth','')}  "
-          f"callers={r.get('callers','')} callees={r.get('callees','')}  roots=[{r.get('cg_root_sets','')}]")
-    if r.get('cg_addr_taken'): print(f"    addr-taken: {r['cg_addr_taken']}")
-    if r.get('cg_indirect_edge_types'):
-        print(f"    ind-edges : {r['cg_indirect_edge_types']} (conf {r.get('cg_indirect_confidence','')})")
+          f"roots=[{r.get('cg_root_sets','')}]")
+    print(f"    callers   : direct={r.get('cg_direct_callers', r.get('callers',''))} "
+          f"indirect={r.get('cg_indirect_callers','')}   callees={r.get('callees','')}")
+    if r.get('cg_address_taken'):
+        print(f"    addr-taken: {r['cg_address_taken']}  (data_refs={r.get('cg_data_ref_count','')} "
+              f"code_refs={r.get('cg_code_ref_count','')})")
+    if r.get('cg_edge_types'):
+        print(f"    ind-edges : {r['cg_edge_types']} (conf {r.get('cg_confidence','')})")
     if r.get('cg_provenance'): print(f"    provenance: {r['cg_provenance']}")
 
 def main():
@@ -51,15 +57,25 @@ def main():
             print(f"{r['dd_va']}  {r['subsystem']:20}  {r['semantic_name'] or r['symbol']}")
         print(f"\n{len(hits)} functions with status {st}")
         return
-    if args[0] in ("--unresolved", "--indirect-only", "--zero-caller"):
-        if args[0] == "--unresolved":
-            hits = [r for r in rows if r.get("cg_reach_kind") == "UNRESOLVED_REACHABILITY"]
-        elif args[0] == "--indirect-only":
-            hits = [r for r in rows if r.get("cg_reach_kind") == "INDIRECT_REACHABLE"]
+    if args[0] == "--root":
+        rs = args[1] if len(args) > 1 else ""
+        rsn = rs.upper().replace("_ROOTS", "")
+        hits = [r for r in rows if rsn in (r.get("cg_root_sets", "") or "").upper().split(";")]
+        for r in sorted(hits, key=lambda x: (x.get("cg_min_depth", 9999) if x.get("cg_min_depth") != "" else 9999, x["dd_va"])):
+            print(f"{r['dd_va']}  d{r.get('cg_min_depth','')}  [{r.get('cg_reach_kind',''):18}]  "
+                  f"{r['subsystem']:18}  {r['semantic_name'] or r['symbol']}")
+        print(f"\n{len(hits)} rows reachable from root set {rsn}")
+        return
+    KINDMAP = {"--indirect-only": "INDIRECT_REACHABLE", "--possible-indirect": "POSSIBLE_INDIRECT",
+               "--unresolved": "UNRESOLVED", "--direct": "DIRECT_REACHABLE",
+               "--dead": "DEAD_OR_UNREACHABLE"}
+    if args[0] in KINDMAP or args[0] in ("--zero-caller", "--zero-direct-caller"):
+        if args[0] in ("--zero-caller", "--zero-direct-caller"):
+            hits = [r for r in rows if str(r.get("cg_direct_callers", r.get("callers", ""))) in ("0", "")]
         else:
-            hits = [r for r in rows if str(r.get("callers", "")) in ("0", "")]
+            hits = [r for r in rows if r.get("cg_reach_kind") == KINDMAP[args[0]]]
         for r in sorted(hits, key=lambda x: (x["subsystem"], x["dd_va"])):
-            print(f"{r['dd_va']}  [{r['status']:16}]  {r.get('cg_reach_kind',''):24}  "
+            print(f"{r['dd_va']}  [{r['status']:16}]  {r.get('cg_reach_kind',''):20}  "
                   f"{r['subsystem']:18}  {r['semantic_name'] or r['symbol']}")
         print(f"\n{len(hits)} rows for {args[0]}")
         return
