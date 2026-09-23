@@ -1,6 +1,16 @@
 //! English Second Division exact schedule integration + generic
 //! cm0102-gdi walker/matrix primitives.
 //!
+//! Executable provenance (default DirectDraw · GDI goldens; full map:
+//! docs/gdi_registry/gdi_function_registry.md — never translate VAs by a fixed
+//! offset, deltas are non-uniform):
+//!   walker_step 0x0066f280·0x0066ee40 · matrix_seed 0x00669780·0x00669340 ·
+//!   matrix_perturb 0x0066bd40·0x0066b900 · driver ·0x00668450 ·
+//!   sort_and_shuffle 0x004b6000·0x004b6230 — all BYTE_EXACT (C11.2 frozen).
+//!   Pyramid P/R primitives (promote_relegate_swap 0x0066eed0·0x0066ea90,
+//!   conference_feeder_swap 0x0055ec40·0x0055ee40, …) are STRUCTURAL / TEST_ONLY
+//!   (decoded + unit-tested, not yet driven by the production tick).
+//!
 //! **AUTHORITATIVE SPECIFICATION**: `D:/cm0102/cm0102_GDI.exe`.
 //! DirectDraw (`cm0102.exe`) VAs appear only as corroborating
 //! cross-references.

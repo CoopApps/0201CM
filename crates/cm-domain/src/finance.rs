@@ -1,5 +1,14 @@
 //! Club finance substrate — balance, wages, transfer budget.
 //!
+//! Executable provenance (DirectDraw VAs; full map: docs/gdi_registry/):
+//!   0x005803d0 finance seed · 0x00582870 status classifier ·
+//!   0x00586ec0 weekly tick (stadium-share £20M + wage cascade) ·
+//!   0x005884a0 takeover · 0x00587c40 debt payment · 0x00587f50 cash inject ·
+//!   0x0067fdf0 sack roll · 0x00588840 silent takeover · 0x00588c70 monthly board ·
+//!   0x00586cf0 end-of-month · 0x00584790 match income.
+//!   CONFLICT: 0x00583fc0 is read here as the chairman-overrun gate but c14_
+//!   stadium_expansion.rs ports the same VA as the stadium refuse-counter gate.
+//!
 //! Consumed by every country's `*_rules.cpp` file at new-game time to
 //! declare the ceilings and defaults for that country's domestic economy
 //! (contract lengths, wage caps, transfer window rules, foreigner limits).
