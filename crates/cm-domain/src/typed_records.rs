@@ -15,6 +15,20 @@
 //! and similar for fast dereference, but Rust resolves IDs to references in O(1) via
 //! `Vec` indexing, so the Rust world model needs only the persistent ID (+0x61 for
 //! current_club_id) and an accessor that returns `&Club`.
+//!
+//! **exe `.dat` serializers (`db_files.cpp`) covered by these views.** Each of the
+//! following read/write serializers (file `FUN_00921cc0/ea0`, memory
+//! `FUN_00934c8e/d76`; per-record variants carry a version guard at +0x3f and id
+//! at +0x37) writes/reads a record whose byte layout is exactly what the matching
+//! view below decodes — so porting the LAYOUT (these views) + serde replaces them:
+//!   FUN_005372c0 Continent(0xc6) · FUN_00537420 Nation(0x122) ·
+//!   FUN_00537480/00537580 City(0x38) · FUN_005375e0/005376d0 Stadium(0x4e) ·
+//!   FUN_005381b0 Club(0x245) · FUN_00538300 Staff/type6(0x6e) ·
+//!   FUN_00538460/00538bb0 Staff-section(0x44) · FUN_00538c10/00539790 type10(0x46) ·
+//!   FUN_005397f0/005398e0 type8/9 pool(0x34) · FUN_00539940 staff_history(0x11) ·
+//!   FUN_00539bb0/00539db0 Competition(0x6b) · FUN_00539e10 comp_history(0x1a) ·
+//!   FUN_00539f60/0053a050 staff_comp(0x65) · FUN_0053a0b0 Colour(0x3a) ·
+//!   FUN_0053a200/0053a2f0 Official(0x2b) · FUN_0053a440/0053a530 type8/9-section(0x3c).
 
 use crate::DomainOpaqueRecord;
 

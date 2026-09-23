@@ -7,6 +7,14 @@
 //! `.cpp` source of the per-league handler function it installs (e.g. entry 14
 //! installs `eng_prm.cpp`).
 //!
+//! GAP (not ported): the RUNTIME resolver `FUN_00652a00` (key_nation.cpp) that
+//! maps a club's nation (club+0x53) to its `DAT_00b4bc70` index, and the
+//! split-year flag at entry +0x17 / season-start day at +0x15 that
+//! `FUN_00652cd0` uses to pick a season year. Only the table BUILDER
+//! (FUN_006508e0) + per-country start dates below are ported. Wiring the
+//! per-nation season boundary (to bucket club-history records byte-exactly)
+//! needs that resolver — see reports/club_history_screen_decode.md TARGET 3.
+//!
 //! The first 8 table entries (indices 0–7) are the international competitions
 //! the picker skips (World/African/European cups, Libertadores, etc.); indices
 //! 8–33 are the 26 playable countries. Their start dates are reproduced below.

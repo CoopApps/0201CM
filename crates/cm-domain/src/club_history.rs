@@ -322,6 +322,13 @@ pub fn ordinal_str(n: usize) -> String {
 }
 
 /// Season label from a starting year: 2001 → "2001/2", 2029 → "2029/0".
+// exe FUN_00652cd0 (key_nation.cpp): renders the split-year label `"%d/%d",
+// year,(year+1)%10`. PARTIAL — the port ports only this split branch; it does
+// NOT yet do the per-nation calendar-vs-split decision, the `season_year==0 →
+// current year (DAT_00acde92)` fallback, or the split `-1` day-boundary adjust
+// (FUN_00652ff0). The per-nation boundary source is FUN_00652a00 (nation →
+// DAT_00b4bc70 index; see league_calendar.rs). Needed to bucket records by
+// season byte-exactly — see reports/club_history_screen_decode.md TARGET 3.
 pub fn season_label(start_year: u16) -> String {
     format!("{}/{}", start_year, (start_year + 1) % 10)
 }
@@ -599,6 +606,9 @@ impl crate::World {
         // label `competition_id` is a misnomer, and player_profile already
         // treats it as the club). The holder is max(sum(apps)) / max(sum(goals))
         // per (person, club). VERIFIED: Chester -> 361 / 124 Stuart Rimmer.
+        // exe career sums: FUN_007abd80 (apps per competition), FUN_007abef0
+        // (goals per competition), FUN_007ac060 (total apps) — same per-person
+        // accumulation the exe does over its in-memory history rows.
         use std::collections::HashMap;
         let mut apps_sum: HashMap<u32, u64> = HashMap::new();
         let mut goals_sum: HashMap<u32, u64> = HashMap::new();

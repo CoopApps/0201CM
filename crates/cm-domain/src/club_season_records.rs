@@ -72,6 +72,10 @@ pub struct MatchRecord {
 }
 
 impl MatchRecord {
+    // exe FUN_007cc7c0: fixture→record-body stamp builder (competition id, stage/
+    // round codes at fixture+0x32, venue via FUN_004b5eb0, goals, club ids).
+    // exe FUN_007cc990: the record's name-id store (3 person ids from +0x33 +
+    // value + date) — we keep ids and format lazily instead.
     fn from_input(m: &MatchInput) -> Self {
         Self {
             our_goals: m.our_goals,
@@ -123,6 +127,9 @@ impl MatchRecord {
             season: season.to_string(),
             score: format!("{}-{}", self.our_goals, self.their_goals),
             opponent: club_name(self.opponent_id),
+            // exe FUN_007ccd10: venue token H/A/N (the exe also has Neutral; the
+            // port stores home:bool, so only H/A) — FUN_007cd740 derives the
+            // venue code from body +0x19/+0x1a.
             venue: if self.home { "H".to_string() } else { "A".to_string() },
             competition: comp_disp(self.competition_id, &self.round),
             date: fmt_date(self.date),
@@ -195,11 +202,19 @@ pub struct ClubSeasonRecords {
 }
 
 impl ClubSeasonRecords {
+    // exe FUN_004538b0: record-body initializer (-1/0xff sentinels, +0x1f1 =
+    // -1.0f rating → the "-" shown for an unset rating). The exe keeps two 0x38b
+    // bodies per club via the 0x6a club_comp map — this-season FUN_00452fe0,
+    // all-time FUN_004531a0; the port keeps one accumulator per (club, season)
+    // and aggregates to all-time at view time.
     pub fn new(club_id: u32, season_year: u16) -> Self {
         Self { season_year, club_id, ..Default::default() }
     }
 
     /// Fold one resolved match (called in chronological order).
+    // exe per-category league/cup applicability gate FUN_00449e70; the exe's
+    // batch-flush driver FUN_00449710 writes each queued comp into the all-time
+    // vs this-season body (FUN_004539f0) — the port folds inline per match.
     pub fn update_with_match(&mut self, m: &MatchInput) {
         let r = MatchRecord::from_input(m);
         let win = r.our_goals > r.their_goals;
