@@ -15,7 +15,8 @@ the Rust port. The authoritative bridge is the **GDI function registry**.
 | `docs/gdi_registry/gdi_function_registry.md` | ✅ | human-readable registry (generated) |
 | `docs/gdi_registry/gdi_function_registry.csv` | ✅ | machine-readable registry (generated) |
 | `docs/gdi_registry/gdi_function_registry.json` | ✅ | same, JSON (generated) |
-| `docs/gdi_registry/gdi_function_coverage.md` | ✅ | coverage counts (generated) |
+| `docs/gdi_registry/gdi_function_coverage.md` | ✅ | coverage counts + classification provenance (generated) |
+| `docs/gdi_registry/gdi_port_order.md` | ✅ | call-graph-driven NOT_YET_PORTED plan: exe-reachability from live roots + depth (generated) |
 | `docs/gdi_registry/gdi_globals.md` | ✅ | executable global data symbols (generated) |
 | `tools/gdi_registry/build_registry.py` | ✅ | regenerates all of the above |
 | `tools/gdi_registry/query.py` | ✅ | address→Rust / Rust→address lookup |

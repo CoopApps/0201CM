@@ -23,6 +23,13 @@ CRATES = os.path.join(ROOT, "crates")
 
 FUNCS_JSON = os.path.join(CARVE, "ghidra_out", "cm0102.exe", "functions.json")
 ATLAS_JSON = os.path.join(CARVE, "newcarve", "atlas", "subsystem_map.json")
+CALLGRAPH_JSON = os.path.join(CARVE, "ghidra_out", "cm0102.exe", "callgraph.json")
+
+# Live entry roots for exe-reachability (distinct from the Rust `reachable` field).
+# 0x005b6f10 is the per-day tick driver (only fn calling all 9 known tick-step
+# hooks); the rest are boot / new-game / message-pump entries.
+CG_ROOTS = ["0x005b6f10", "0x005b6a90", "0x005b6940", "0x008120d0",
+            "0x005121a0", "0x00803e00", "0x00672770"]
 
 STATUSES = {"PORTED_EXACT","PORTED_BEHAVIOURAL","PORTED_PARTIAL","REPLACED_BY_RUST",
     "NOT_YET_PORTED","BLOCKED_DEPENDENCY","FOREIGN_BREADTH","UI_GDI_DOMAIN",
@@ -112,6 +119,31 @@ def main():
             return ""
         j = bisect.bisect_right(_avas, iva) - 1
         return anchors[j][1] if j >= 0 else ""
+
+    # --- call graph: adjacency, degrees, reachability + depth from live roots ---
+    cg = load_json(CALLGRAPH_JSON) or []
+    callees = defaultdict(set); indeg = Counter(); outdeg = Counter()
+    def _cgnorm(h):
+        s = str(h).lower().replace("0x", "")
+        if not s or any(c not in "0123456789abcdef" for c in s):
+            return None
+        return "0x%08x" % int(s, 16)
+    for e in cg:
+        fr = _cgnorm(e.get("from")); to = _cgnorm(e.get("to"))
+        if fr is None or to is None or to in callees[fr]:
+            continue
+        callees[fr].add(to); outdeg[fr] += 1; indeg[to] += 1
+    cg_depth = {}
+    _dq = __import__("collections").deque()
+    for r in CG_ROOTS:
+        rn = _cgnorm(r)
+        if rn is not None:
+            cg_depth[rn] = 0; _dq.append(rn)
+    while _dq:
+        u = _dq.popleft()
+        for v in callees.get(u, ()):
+            if v not in cg_depth:
+                cg_depth[v] = cg_depth[u] + 1; _dq.append(v)
 
     # --- live citations from crates/ ---
     cites = defaultdict(list)       # va -> [(file, line, text)]
@@ -281,6 +313,10 @@ def main():
                 if how == "cpp-group" else "")) if gg else "")),
             "superseded_prev": sup.get("prev", ""),
             "superseded_why": sup.get("why", ""),
+            "callers": indeg.get(va, 0),
+            "callees": outdeg.get(va, 0),
+            "cg_reach": "Y" if va in cg_depth else "",
+            "cg_depth": cg_depth.get(va, ""),
             "_how": how,
             "_size": f.get("size", ""),
             "_cited": "Y" if va in cites else "",
@@ -289,7 +325,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     cols = ["dd_va","gdi_va","source_file","symbol","semantic_name","subsystem","status",
             "rust_file","rust_symbol","reachable","relevance","confidence","evidence",
-            "notes","superseded_prev","superseded_why"]
+            "notes","superseded_prev","superseded_why","callers","callees","cg_reach","cg_depth"]
     with open(os.path.join(OUT, "gdi_function_registry.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
@@ -355,6 +391,41 @@ def main():
             c = by_sub[sub]
             f.write(f"| {sub} | {sum(c.values())} | {sum(c[s] for s in PORTED)} | {c['NOT_YET_PORTED']} | "
                     f"{c['OUT_OF_SCOPE']+c['UI_GDI_DOMAIN']+c['REPLACED_BY_RUST']} | {c['NON_USEFUL']} | {c['UNKNOWN']} |\n")
+
+    # --- port order (call-graph driven backlog plan) ---
+    nyp = [r for r in rows if r["status"] == "NOT_YET_PORTED"]
+    reach = [r for r in nyp if r["cg_reach"]]
+    unreach = [r for r in nyp if not r["cg_reach"]]
+    dead_hint = [r for r in unreach if not r["callers"]]
+    def _porder(r):
+        return (r["cg_depth"] if r["cg_depth"] != "" else 9999, -r["callers"])
+    sub_reach = defaultdict(lambda: [0, 0])
+    for r in nyp:
+        s = sub_reach[r["subsystem"] or "?"]; s[0] += 1
+        if r["cg_reach"]: s[1] += 1
+    with open(os.path.join(OUT, "gdi_port_order.md"), "w", encoding="utf-8") as f:
+        f.write("# GDI port order (generated — call-graph driven)\n\n")
+        f.write("Ranks the NOT_YET_PORTED backlog by **exe-reachability** from the live "
+                "roots (per-day tick driver 0x005b6f10 + boot/new-game/message-pump) and "
+                "depth from those roots. This is the order in which porting unblocks the "
+                "running game.\n\n")
+        f.write("> **Caveat.** The static call graph misses indirect/vtable/function-pointer "
+                "calls, so `cg-unreachable` is a HINT, not proof of dead code. A 0-caller "
+                "unreachable function is a candidate to review, not an automatic "
+                "DEAD_OR_UNREACHABLE.\n\n")
+        f.write(f"NOT_YET_PORTED: **{len(nyp)}** · reachable from live roots: **{len(reach)}** "
+                f"· unreachable: **{len(unreach)}** · of those 0-caller (review as dead/indirect): "
+                f"**{len(dead_hint)}**\n\n")
+        f.write("## Reachable backlog by subsystem (reachable / total)\n\n"
+                "| subsystem | reachable | total |\n|---|---|---|\n")
+        for s, (tot, rc) in sorted(sub_reach.items(), key=lambda x: -x[1][1]):
+            if rc:
+                f.write(f"| {s} | {rc} | {tot} |\n")
+        f.write("\n## Top 60 reachable targets (shallow depth, many callers first)\n\n"
+                "| DD VA | depth | callers | subsystem | semantic |\n|---|---|---|---|---|\n")
+        for r in sorted(reach, key=_porder)[:60]:
+            f.write(f"| {r['dd_va']} | {r['cg_depth']} | {r['callers']} | {r['subsystem']} | "
+                    f"{(r['semantic_name'] or r['symbol'])[:60]} |\n")
 
     # --- globals ---
     globs = load_csv("globals.csv")
