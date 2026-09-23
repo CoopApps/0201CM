@@ -66,3 +66,11 @@ of the classifier.
   GDTR, and load the FS selector. Then the score-core skeleton and per-jobtype term
   chunks can be driven exactly as repfit/closeness were. Until then `00682420`
   stays PORTED_PARTIAL and score_skeleton is transcribed-unverified.
+
+- **Update:** GDT-based FS setup (map GDT, FS descriptor base=TEB, set GDTR + FS
+  selector) alone did NOT clear the fault — `00682420` still `UcError()`. So the
+  fault is not solely FS:[0]. Next diagnostic step: add a `UC_HOOK_MEM_INVALID`
+  hook to the emulator to capture the exact faulting VA + access, then map/handle
+  it (candidates: the x87 `__ftol` helper `0x009346d0`, the `&LAB_0094bb58` SEH
+  handler write, or a deref of an unset record pointer). This is the concrete
+  harness-hardening task gating all `00682420` term verification.
