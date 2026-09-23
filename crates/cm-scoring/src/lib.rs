@@ -61,9 +61,16 @@ pub fn manager_club_repfit(block: &[u8], mode0: bool, c: u8) -> i32 {
     }
 }
 
+/// Truncation toward zero — the exe's float→int helper `0x009346d0` is `__ftol`
+/// (C `(long)` cast), which CHOPS toward zero, NOT round-to-nearest. Differentially
+/// confirmed against cm0102.exe (3000×1.0025=3007.5 → 3007, not 3008). Rust `as i32`
+/// truncates toward zero for in-range values; this wrapper documents intent.
+#[inline]
+pub fn ftol(x: f64) -> i32 { x.trunc() as i32 }
+
 /// `FUN_00682420` lines 88/92 — affinity base re-weight. Positive affinity →
-/// `max(L*1.1, L+2000)`, negative → `L*0.25`, else unchanged; round ties-to-even
-/// (x87 default via exe helper 0x009346d0). Constants 1.1/2000/0.25 (rating_constants §5.1).
+/// `max(L*1.1, L+2000)`, negative → `L*0.25`, else unchanged; then `__ftol`
+/// (truncate). Constants 1.1/2000/0.25 (rating_constants §5.1).
 pub fn score_base_reweight(l: i32, affinity_positive: bool, affinity_negative: bool) -> i32 {
     let lf = l as f64;
     let out = if affinity_positive {
@@ -73,7 +80,16 @@ pub fn score_base_reweight(l: i32, affinity_positive: bool, affinity_negative: b
     } else {
         return l;
     };
-    out.round_ties_even() as i32
+    ftol(out)
+}
+
+/// `FUN_00682420` attr term: `L = ftol( L * (1.0 + attr * w) )` — one signed-byte
+/// attribute re-weight (attr-block 0x682bc4+ and the person-attribute terms). The
+/// weight `w` is a recovered reciprocal (rating_constants §2). Differentially
+/// verified against the exe L-trajectory.
+#[inline]
+pub fn score_attr_term(l: i32, attr: i8, w: f64) -> i32 {
+    ftol(l as f64 * (1.0 + attr as f64 * w))
 }
 
 /// `FUN_00682420` integer **skeleton** (pre-switch + the case-5/0xc no-op path):

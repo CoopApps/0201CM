@@ -81,3 +81,26 @@ and cross-checked against the resolved constants. Rust transcription of (a)+(b)+
 tail and per-term differential freeze via the harness is the active next step;
 00682420 remains PORTED_PARTIAL. The earlier single-shape assumption is superseded
 by this three-sub-block decode.
+
+## VERIFIED (differential L-trajectory) — attr terms + __ftol truncation
+Captured L after every `0x009346d0` round call (EAX) for (param_4=5, local_8e=5,
+ref=0, club-nation=0, age=50, rep=6000). **Critical finding: `0x009346d0` is `__ftol`
+= TRUNCATE toward zero, NOT round-to-nearest.** e.g. 3000×(1+3/1200)=3007.5 → exe
+3007 (not 3008). cm_scoring now uses `ftol(x)=x.trunc() as i32` and had a rounding
+bug in score_base_reweight (was round_ties_even) — corrected.
+
+With truncation, these terms reproduce the exe L-trajectory EXACTLY:
+- attr-block (edi=person.standing): off +0x11,+0x10 (w=1/1200), +0x17,+0x18,+0x19,+0x1b
+  (w=1/500): `L = ftol(L*(1 + sbyte(standing+off)*w))` — trajectory 3007,3012,3036,
+  3066,3102,3145 ✓ (attrs 3,2,4,5,6,7).
+- rep21 term: `w` by club rep (rep 6000 → 1/250 @0x956d60): 3145→3245 ✓ (attr 8).
+- person-attr terms: person+0x59,+0x58,+0x5a,+0x5b, each `(val-10)`, w=1/200
+  (0x956ee8): `L=ftol(L*(1+(sbyte-10)*0.005))` — val=10 → factor 1 → 3245 unchanged ✓.
+- tail (this path): 3245 → +2000 (0x68395e add edi,0x7d0) → 5245 → ftol(×0.25
+  @0x9569e0) → 1311 ✓. (The +2000 term and ×0.25 are gated — full gate map pending.)
+
+Rust helpers added: `ftol`, `score_attr_term(l,attr,w)`. Terms above are VERIFIED
+against the exe trajectory; the pre-block (age-gated), standing bonus (word*25/*5),
+similarity block (ref!=0), the gated nation-rep tail term, and the return-multiplier
+selection (nation+0x7e ∈{1,2}→×0.25 etc.) remain to transcribe+freeze. 00682420
+stays PORTED_PARTIAL.
