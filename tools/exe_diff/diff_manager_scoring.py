@@ -223,7 +223,9 @@ def main():
     if not os.path.exists(PROBE):
         sys.exit(f"build the probe first: cargo build -p cm-scoring --bin scoring_probe\nmissing {PROBE}")
     emu = Emulator(pe=load_pe(EXE))
-    print(f"loaded {EXE}")
+    emu.setup_seh()          # flat GDT + FS->TEB so SEH-prologue fns (00682420) run
+    emu.enable_fault_log()
+    print(f"loaded {EXE}  (SEH/FS enabled)")
     total, mm = test_repfit(emu)
     print(f"\n=== FUN_0052a330 manager_club_repfit ===")
     print(f"cases: {total}   mismatches: {len(mm)}")

@@ -139,6 +139,52 @@ class Emulator:
                 self._import_iat_to_name[stub_va] = f"{dll}!{name}"
                 stub_offset += 16
 
+    def setup_seh(self, teb_base: int = 0x7EFDD000, gdt_base: int = 0x30000000):
+        """Enable 32-bit SEH/TLS execution: a flat GDT (code/data at base 0 so the
+        32-bit stack & code segments stay intact) plus an FS segment whose base is
+        a minimal TEB with ExceptionList (FS:[0]) = 0xFFFFFFFF (SEH chain end).
+        Required for any function with an SEH prologue (`mov eax, fs:[0]`).
+        Reusable across targets."""
+        import struct as _s
+        from unicorn.x86_const import (UC_X86_REG_GDTR, UC_X86_REG_CS, UC_X86_REG_DS,
+            UC_X86_REG_ES, UC_X86_REG_SS, UC_X86_REG_FS, UC_X86_REG_GS)
+        def _ent(b, l, acc, fl):
+            return _s.pack('<HHBBBB', l & 0xffff, b & 0xffff, (b >> 16) & 0xff, acc,
+                           ((fl << 4) & 0xf0) | ((l >> 16) & 0xf), (b >> 24) & 0xff)
+        for region, size in ((gdt_base, 0x1000), (teb_base & ~0xFFF, 0x2000)):
+            try: self.uc.mem_map(region, size)
+            except Exception: pass
+        self.uc.mem_write(teb_base, _s.pack("<I", 0xFFFFFFFF))       # ExceptionList head
+        self.uc.mem_write(gdt_base + 0x00, b"\x00" * 8)               # null
+        self.uc.mem_write(gdt_base + 0x08, _ent(0, 0xfffff, 0x9a, 0xc))       # code flat
+        self.uc.mem_write(gdt_base + 0x10, _ent(0, 0xfffff, 0x92, 0xc))       # data flat
+        self.uc.mem_write(gdt_base + 0x18, _ent(teb_base, 0xfffff, 0x92, 0xc)) # FS -> TEB
+        self.uc.reg_write(UC_X86_REG_GDTR, (0, gdt_base, 0x1000, 0))
+        for reg in (UC_X86_REG_CS,): self.uc.reg_write(reg, 0x08)
+        for reg in (UC_X86_REG_DS, UC_X86_REG_ES, UC_X86_REG_SS, UC_X86_REG_GS):
+            self.uc.reg_write(reg, 0x10)
+        self.uc.reg_write(UC_X86_REG_FS, 0x18)
+        self._teb_base = teb_base
+
+    def enable_fault_log(self):
+        """Record the FIRST invalid-memory access with full context (never
+        swallow it). Populates self.first_fault. Faults are NOT auto-handled —
+        this is diagnosis, not a zero-page cover-up."""
+        from unicorn import UC_HOOK_MEM_INVALID
+        from unicorn.x86_const import (UC_X86_REG_EIP, UC_X86_REG_ESP, UC_X86_REG_EBP,
+            UC_X86_REG_EAX, UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_ESI, UC_X86_REG_EDI)
+        self.first_fault = None
+        def _inv(u, access, address, size, value, user):
+            if self.first_fault is None:
+                self.first_fault = {"access": access, "address": address, "size": size,
+                    "value": value, "eip": u.reg_read(UC_X86_REG_EIP),
+                    "esp": u.reg_read(UC_X86_REG_ESP), "ebp": u.reg_read(UC_X86_REG_EBP),
+                    "eax": u.reg_read(UC_X86_REG_EAX), "ecx": u.reg_read(UC_X86_REG_ECX),
+                    "edx": u.reg_read(UC_X86_REG_EDX), "esi": u.reg_read(UC_X86_REG_ESI),
+                    "edi": u.reg_read(UC_X86_REG_EDI)}
+            return False
+        self.uc.hook_add(UC_HOOK_MEM_INVALID, _inv)
+
     def _install_code_hook(self):
         def _hook(uc, addr, size, user):
             cb = self._call_hooks.get(addr)

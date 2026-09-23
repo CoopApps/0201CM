@@ -74,3 +74,34 @@ of the classifier.
   it (candidates: the x87 `__ftol` helper `0x009346d0`, the `&LAB_0094bb58` SEH
   handler write, or a deref of an unset record pointer). This is the concrete
   harness-hardening task gating all `00682420` term verification.
+
+## FUN_00682420 — emulator hardened; real RET achieved (tooling step)
+
+Instrumented the emulator (UC_HOOK_MEM_INVALID + rolling instruction trace) and got
+an exact diagnosis instead of a bare UcError:
+
+1. **First invalid access:** WRITE_UNMAPPED @ 0x0000efe8, size 4, value 0xffffffff.
+2. **Faulting instruction:** `push -1` @ 0x00682426 (the SEH frame push).
+3. **Root cause:** NOT the SEH/FS itself — `mov eax, fs:[0]` @ 0x00682420 executed
+   fine. Setting GDTR to a 1-entry custom GDT had invalidated the CS/SS/DS
+   descriptors, collapsing the 32-bit stack to 16-bit (esp 0x00efefe8 truncated to
+   0xefe8). Fix: a FULL flat GDT (code@0x08, data@0x10 both base 0) plus FS@0x18
+   base=TEB, and reload CS/DS/ES/SS/GS/FS selectors. Now reusable as
+   `Emulator.setup_seh()`.
+4. **TEB/FS result:** fs:[0] = 0xFFFFFFFF (SEH chain end) reads/writes correctly.
+5. **SEH behavior:** standard frame (push -1; push handler; push fs:[0]; mov
+   fs:[0],esp); only the ExceptionList head is needed.
+6. **Helpers encountered:** 0052a330 (forced base), affinity gates 00531370/b0/f0/420
+   (forced), 00533cf0 SEH scope (forced 0), and `__ftol` 0x009346d0 which executes
+   natively with NO fault or stub.
+7. **Fixture ranges:** person 0x100, club 0x300, standing 0x40 — sufficient, no OOB.
+8. **Real RET reached:** YES — last_exc=None, returned to sentinel, e.g. base 3000 →
+   0x487(1159), base -5000 → 0. Execution is genuine, not stale EAX.
+9. **Skeleton differential:** FAIL (968/1008). This DISPROVES the "zero attributes →
+   pure base+bonus+incumbency" hypothesis: case 5/0xc applies UNCONDITIONAL constant
+   terms to local_94 (negative base clamps to 0; base 3000→1159 ≈ ×0.386). So
+   score_skeleton is an incomplete model — the case-5 x87 term sequence
+   (docs/manager_hiring/rating_constants §5) must be transcribed and the harness
+   re-run. This is the next chunk; 00682420 stays PORTED_PARTIAL.
+10. **Emulator changes:** `setup_seh()` + `enable_fault_log()` added to
+    tools/cm-lift/cm_lift/emulate.py (reusable for any SEH/TLS executable function).
